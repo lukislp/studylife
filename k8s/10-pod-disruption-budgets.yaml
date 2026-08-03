@@ -1,0 +1,54 @@
+# Prevents a voluntary node drain/cluster upgrade from taking down ALL replicas of a deployment
+# at once - a direct complement to the anti-affinity from the second-to-last round (anti-affinity
+# spreads, the PDB limits how many can voluntarily disappear at the same time). CNPG doesn't
+# need a manual PDB - the operator already manages one automatically for its cluster pods
+# (specifically protecting the primary from voluntary eviction).
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: studylife-web
+  namespace: studylife-scale
+spec:
+  # Lean profile: 1 of 2 (instead of 2 of 5) - with only 2 replicas, "2" would completely block
+  # any voluntary eviction (node drain), see docs/SCALING.md.
+  minAvailable: 1 # of 2
+  selector:
+    matchLabels: { app: studylife-web }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: studylife-worker
+  namespace: studylife-scale
+spec:
+  minAvailable: 1 # of 2 (lean profile) - claim-first (TryClaimReminderAsync) catches the rest
+  selector:
+    matchLabels: { app: studylife-worker }
+---
+# 6 pods (3 master + 3 replica, see k8s/03-redis.yaml) - with cluster-require-full-coverage
+# (the Redis default), it's safer to always remove only ONE node voluntarily at a time, rather
+# than risk e.g. an entire master/replica pair at once.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: redis-cluster
+  namespace: studylife-scale
+spec:
+  minAvailable: 5 # of 6
+  selector:
+    matchLabels: { app: redis-cluster }
+---
+# ingress-nginx (previously here: a PDB in the ingress-nginx namespace) has been decommissioned,
+# see docs/SCALING.md "Migration to NGINX Gateway Fabric". Replacement for the NGF data plane
+# (2 replicas, Deployment "studylife-gateway-nginx" in the nginx-gateway namespace) - found live:
+# this didn't exist before at all (NGF doesn't create its own PDB), would have been unprotected
+# during a node drain without this PDB.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: studylife-gateway-nginx
+  namespace: nginx-gateway
+spec:
+  minAvailable: 1 # of 2
+  selector:
+    matchLabels: { app.kubernetes.io/name: studylife-gateway-nginx }

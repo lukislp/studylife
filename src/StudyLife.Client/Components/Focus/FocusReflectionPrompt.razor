@@ -1,0 +1,18 @@
+<div class="focus-reflection">
+    <div class="focus-reflection__title">@Label</div>
+    <textarea class="input focus-reflection__textarea" placeholder="@Label" value="@ReflectionText" @oninput='e => ReflectionTextChanged.InvokeAsync(e.Value?.ToString() ?? "")'></textarea>
+    <div class="focus-reflection__actions">
+        <button class="btn-secondary" @onclick="() => OnSkip.InvokeAsync()">@SkipText</button>
+        <button class="btn-primary" @onclick="() => OnSave.InvokeAsync()">@SaveText</button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string ReflectionText { get; set; } = "";
+    [Parameter] public EventCallback<string> ReflectionTextChanged { get; set; }
+    [Parameter] public string SkipText { get; set; } = "";
+    [Parameter] public string SaveText { get; set; } = "";
+    [Parameter] public EventCallback OnSkip { get; set; }
+    [Parameter] public EventCallback OnSave { get; set; }
+}

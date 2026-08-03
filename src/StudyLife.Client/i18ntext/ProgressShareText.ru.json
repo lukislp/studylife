@@ -1,0 +1,19 @@
+{
+  "PageTitleTag": "StudyLife — Прогресс",
+  "Heading": "Учебный прогресс",
+  "SubHeading": "Общий снимок только для просмотра — обновляется автоматически.",
+  "EctsLabel": "Получено ECTS",
+  "EctsFormat": "{0} / {1} ECTS",
+  "AverageGradeLabel": "Средний балл",
+  "NoGradeYet": "Оценок пока нет",
+  "CoursesCompletedFormat": "Завершено {0} из {1} курсов",
+  "ActiveCoursesHeading": "Активные курсы",
+  "NoActiveCourses": "Сейчас нет активных курсов.",
+  "TopicProgressFormat": "{0}% тем",
+  "InvalidLinkHeading": "Ссылка недоступна",
+  "InvalidLinkMessage": "Эта ссылка прогресса недействительна, истекла или отключена владельцем.",
+  "TemporaryErrorHeading": "Временно недоступно",
+  "TemporaryErrorMessage": "Что-то пошло не так при загрузке этой страницы. Пожалуйста, попробуйте ещё раз через некоторое время.",
+  "GeneratedAtFormat": "Последнее обновление: {0}",
+  "PoweredByLabel": "Опубликовано через StudyLife"
+}

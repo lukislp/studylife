@@ -1,0 +1,67 @@
+<div class="field field-repeat">
+    <label class="checkbox-label">
+        <input type="checkbox" checked="@RepeatWeekly" @onchange="e => RepeatWeeklyChanged.InvokeAsync((bool)(e.Value ?? false))" />
+        @RepeatWeeklyUntilLabel
+    </label>
+    @if (RepeatWeekly)
+    {
+        <div class="repeat-options">
+            <div class="field-row">
+                <div class="field">
+                    <label>@RepeatIntervalLabel</label>
+                    <select value="@RepeatIntervalWeeks" @onchange="e => RepeatIntervalWeeksChanged.InvokeAsync(int.TryParse(e.Value?.ToString(), out var v) ? v : RepeatIntervalWeeks)" class="select input-sm">
+                        <option value="1">@RepeatIntervalWeeklyLabel</option>
+                        <option value="2">@RepeatIntervalBiweeklyLabel</option>
+                        <option value="3">@string.Format(RepeatIntervalEveryNWeeksFormat, 3)</option>
+                        <option value="4">@string.Format(RepeatIntervalEveryNWeeksFormat, 4)</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>@RepeatUntilLabel</label>
+                    <input type="date" value="@RepeatUntil.ToString("yyyy-MM-dd")"
+                           @onchange="e => RepeatUntilChanged.InvokeAsync(DateTime.TryParse(e.Value?.ToString(), out var v) ? v : RepeatUntil)"
+                           class="input" min="@FormStart.ToString("yyyy-MM-dd")" />
+                </div>
+            </div>
+            <div class="field">
+                <label>@RepeatWeekdaysLabel</label>
+                <div class="weekday-picker">
+                    @foreach (var day in WeekdayOrder)
+                    {
+                        var d = day;
+                        <button type="button" class="weekday-chip @(RepeatWeekdays.Contains(d) ? "selected" : "")" @onclick="() => OnToggleWeekday.InvokeAsync(d)">@WeekdayShortLabel(d)</button>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public bool RepeatWeekly { get; set; }
+    [Parameter] public EventCallback<bool> RepeatWeeklyChanged { get; set; }
+    [Parameter] public int RepeatIntervalWeeks { get; set; }
+    [Parameter] public EventCallback<int> RepeatIntervalWeeksChanged { get; set; }
+    [Parameter] public DateTime RepeatUntil { get; set; }
+    [Parameter] public EventCallback<DateTime> RepeatUntilChanged { get; set; }
+    [Parameter] public DateTime FormStart { get; set; }
+    [Parameter] public HashSet<DayOfWeek> RepeatWeekdays { get; set; } = new();
+    [Parameter] public EventCallback<DayOfWeek> OnToggleWeekday { get; set; }
+    [Parameter] public string RepeatWeeklyUntilLabel { get; set; } = "";
+    [Parameter] public string RepeatIntervalLabel { get; set; } = "";
+    [Parameter] public string RepeatIntervalWeeklyLabel { get; set; } = "";
+    [Parameter] public string RepeatIntervalBiweeklyLabel { get; set; } = "";
+    [Parameter] public string RepeatIntervalEveryNWeeksFormat { get; set; } = "";
+    [Parameter] public string RepeatUntilLabel { get; set; } = "";
+    [Parameter] public string RepeatWeekdaysLabel { get; set; } = "";
+
+    private static readonly DayOfWeek[] WeekdayOrder =
+        { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday };
+
+    private static string WeekdayShortLabel(DayOfWeek d)
+    {
+        var mondayRef = new DateTime(2024, 1, 1);
+        var offset = ((int)d - (int)DayOfWeek.Monday + 7) % 7;
+        return mondayRef.AddDays(offset).ToString("ddd");
+    }
+}

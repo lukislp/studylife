@@ -1,0 +1,19 @@
+<div class="dash-card card-achievements">
+    <div class="card-label">@HeaderText</div>
+    <div class="achievements-grid">
+        @foreach (var a in Achievements)
+        {
+            <div class="achievement-badge @(a.Unlocked ? "unlocked" : "locked")" title="@a.Name: @((int)a.Current)/@((int)a.Threshold)">
+                <span class="achievement-icon">@a.Icon</span>
+                <span class="achievement-name">@a.Name</span>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    public record Achievement(string Icon, string Name, bool Unlocked, double Current, double Threshold);
+
+    [Parameter] public string HeaderText { get; set; } = "";
+    [Parameter] public List<Achievement> Achievements { get; set; } = new();
+}

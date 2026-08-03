@@ -1,0 +1,63 @@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    <div class="rhythm-grid">
+        <div class="rhythm-col">
+            <div class="rhythm-subtitle">@ByWeekdayLabel</div>
+            <div class="mini-bar-chart">
+                @foreach (var b in WeekdayHours)
+                {
+                    <div class="mini-bar-col" title="@BarTitle(b)">
+                        <div class="mini-bar-track">
+                            @if (b.IsPeak)
+                            {
+                                <span class="mini-bar-peak-star">★</span>
+                            }
+                            <div class="mini-bar-fill @(b.IsPeak ? "peak" : "")" style="height: @b.Percent%"></div>
+                        </div>
+                        <div class="mini-bar-label">@b.Label</div>
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="rhythm-col">
+            <div class="rhythm-subtitle">@ByTimeOfDayLabel</div>
+            <div class="mini-bar-chart">
+                @foreach (var b in TimeOfDayHours)
+                {
+                    <div class="mini-bar-col" title="@BarTitle(b)">
+                        <div class="mini-bar-track">
+                            @if (b.IsPeak)
+                            {
+                                <span class="mini-bar-peak-star">★</span>
+                            }
+                            <div class="mini-bar-fill @(b.IsPeak ? "peak" : "")" style="height: @b.Percent%"></div>
+                        </div>
+                        <div class="mini-bar-label">@b.Label</div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    public record BarPoint(string Label, double Hours, double Percent)
+    {
+        public string HoursLabel => $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
+        // The Stats.razor builders normalize the max bucket to exactly 100 (Math.Min(100, x / max * 100)
+        // with x == max), so "at the cap" reliably identifies the single (or tied) peak bar - no need
+        // for a separate flag to be threaded through from Stats.razor.
+        public bool IsPeak => Hours > 0 && Percent >= 99.95;
+    }
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string ByWeekdayLabel { get; set; } = "";
+    [Parameter] public string ByTimeOfDayLabel { get; set; } = "";
+    [Parameter] public string PeakLabel { get; set; } = "";
+    [Parameter] public List<BarPoint> WeekdayHours { get; set; } = new();
+    [Parameter] public List<BarPoint> TimeOfDayHours { get; set; } = new();
+
+    // Built as a plain method rather than inline in the markup: nesting a C#-interpolated string
+    // (with its own double quotes) inside a Razor HTML attribute value confuses the Razor parser.
+    private string BarTitle(BarPoint b) => b.IsPeak ? $"{b.Label}: {b.HoursLabel} · {PeakLabel}" : $"{b.Label}: {b.HoursLabel}";
+}

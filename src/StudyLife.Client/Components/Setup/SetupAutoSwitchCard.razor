@@ -1,0 +1,32 @@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    <p class="ss-desc">@Desc</p>
+    <div class="toggle-row">
+        <label class="toggle">
+            <input type="checkbox" checked="@AutoSwitchFocus" @onchange="e => AutoSwitchFocusChanged.InvokeAsync((bool)(e.Value ?? false))" />
+            <span class="toggle-track"></span>
+        </label>
+        <span>@(AutoSwitchFocus ? EnabledText : DisabledText)</span>
+    </div>
+    @if (AutoSwitchFocus)
+    {
+        <div class="field" style="margin-top:1rem">
+            <label>@MinutesBeforeLabel</label>
+            <input type="number" value="@MinutesBefore"
+                   @onchange="e => MinutesBeforeChanged.InvokeAsync(int.TryParse(e.Value?.ToString(), out var v) ? v : MinutesBefore)"
+                   min="0" max="30" class="input input-sm" />
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string Desc { get; set; } = "";
+    [Parameter] public string EnabledText { get; set; } = "";
+    [Parameter] public string DisabledText { get; set; } = "";
+    [Parameter] public string MinutesBeforeLabel { get; set; } = "";
+    [Parameter] public bool AutoSwitchFocus { get; set; }
+    [Parameter] public EventCallback<bool> AutoSwitchFocusChanged { get; set; }
+    [Parameter] public int MinutesBefore { get; set; }
+    [Parameter] public EventCallback<int> MinutesBeforeChanged { get; set; }
+}

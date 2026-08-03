@@ -1,0 +1,60 @@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    @if (Weeks.Count == 0 || Legend.Count == 0)
+    {
+        <div style="color:var(--text3);font-size:0.875rem">@EmptyText</div>
+    }
+    else
+    {
+        <div class="grouped-chart-wrap">
+            <div class="grouped-chart">
+                @foreach (var w in Weeks)
+                {
+                    <div class="grouped-col">
+                        <div class="grouped-bars">
+                            @foreach (var b in w.Bars)
+                            {
+                                <div class="grouped-bar-track" title="@BarTooltip(w, b)">
+                                    <div class="grouped-bar-fill" style="height: @b.HeightPercentLabel%; background: @b.Color"></div>
+                                </div>
+                            }
+                        </div>
+                        <div class="grouped-label">@w.Label</div>
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="donut-legend" style="margin-top:0.75rem">
+            @foreach (var entry in Legend)
+            {
+                <div class="donut-legend-row">
+                    <span class="donut-swatch" style="background:@entry.Color"></span>
+                    <span class="donut-legend-name">@entry.Name</span>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    public record CourseBar(string Name, string Color, double Hours, double HeightPercent)
+    {
+        public string HoursLabel => $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
+        // Invariant + clamped, same reasoning as _donutGradient/ScatterPoint elsewhere in this
+        // codebase: CSS percentages must never carry a locale decimal comma.
+        public string HeightPercentLabel => Math.Clamp(HeightPercent, 0, 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    public record WeekGroup(string Label, List<CourseBar> Bars);
+    public record LegendEntry(string Name, string Color);
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public List<WeekGroup> Weeks { get; set; } = new();
+    [Parameter] public List<LegendEntry> Legend { get; set; } = new();
+    [Parameter] public string EmptyText { get; set; } = "";
+
+    // Extracted rather than inlined: a C#-interpolated string embedded directly in an HTML
+    // attribute confuses the Razor parser (established gotcha in this codebase, see
+    // StatsRhythmCard.BarTitle).
+    private string BarTooltip(WeekGroup w, CourseBar b) => $"{w.Label} · {b.Name}: {b.HoursLabel}";
+}

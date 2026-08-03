@@ -1,0 +1,10 @@
+{
+  "Description": "Cén freastalaí StudyLife ar cheart don aip seo nascadh leis?",
+  "ServerUrlLabel": "URL an fhreastalaí",
+  "CheckingConnection": "Ag seiceáil an cheangail…",
+  "UseAnyway": "Úsáid mar sin féin",
+  "Connect": "Nasc",
+  "InvalidUrl": "Ní URL bailí é sin.",
+  "UnexpectedResponse": "D'fhreagair an freastalaí, ach gan choinne (HTTP {0}). Tapáil arís chun é a úsáid mar sin féin.",
+  "ServerUnreachable": "Ní féidir teacht ar an bhfreastalaí. Tapáil arís chun an URL a úsáid mar sin féin."
+}

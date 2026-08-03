@@ -1,0 +1,19 @@
+{
+  "PageTitleTag": "StudyLife — Voortgang",
+  "Heading": "Studievoortgang",
+  "SubHeading": "Een gedeelde alleen-lezen momentopname — wordt automatisch bijgewerkt.",
+  "EctsLabel": "Behaalde ECTS",
+  "EctsFormat": "{0} / {1} ECTS",
+  "AverageGradeLabel": "Gemiddeld cijfer",
+  "NoGradeYet": "Nog geen cijfers",
+  "CoursesCompletedFormat": "{0} van {1} vakken afgerond",
+  "ActiveCoursesHeading": "Actieve vakken",
+  "NoActiveCourses": "Op dit moment geen actieve vakken.",
+  "TopicProgressFormat": "{0}% van de onderwerpen",
+  "InvalidLinkHeading": "Link niet beschikbaar",
+  "InvalidLinkMessage": "Deze voortgangslink is ongeldig, verlopen of uitgeschakeld door de eigenaar.",
+  "TemporaryErrorHeading": "Tijdelijk niet beschikbaar",
+  "TemporaryErrorMessage": "Er is iets misgegaan bij het laden van deze pagina. Probeer het straks opnieuw.",
+  "GeneratedAtFormat": "Laatst bijgewerkt: {0}",
+  "PoweredByLabel": "Gedeeld via StudyLife"
+}

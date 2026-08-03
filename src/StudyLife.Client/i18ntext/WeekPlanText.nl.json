@@ -1,0 +1,18 @@
+{
+  "Heading": "Weekplan",
+  "Subtitle": "Een afdrukbaar overzicht van je geplande studiesessies deze week — druk het af en hang het aan de muur.",
+  "BackLink": "← Terug naar kalender",
+  "ExportButton": "🖨 Weekplan afdrukken",
+  "WeekRangeFormat": "Week: {0} – {1}",
+  "GeneratedOnFormat": "Gegenereerd op {0}",
+  "SummaryHeading": "Samenvatting",
+  "PlannedHoursLabel": "Geplande uren deze week",
+  "WeeklyGoalLabel": "Weekdoel",
+  "WeeklyGoalFormat": "{0}–{1} h",
+  "SessionCountLabel": "Geplande sessies",
+  "NoSessions": "Voor deze dag zijn geen sessies gepland.",
+  "TableTime": "Tijd",
+  "TableCourse": "Vak",
+  "TableTopic": "Onderwerp",
+  "FooterNote": "Automatisch gegenereerd door StudyLife."
+}

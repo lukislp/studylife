@@ -1,0 +1,26 @@
+# Dedicated namespace for the scalability learning setup, isolated from everything else in the
+# cluster. Pod Security Standards: "baseline" hard-enforced (no hostPath/hostNetwork/privileged
+# needed - all workloads here use PVCs/secrets/ConfigMaps), "restricted" only as warn/audit
+# (visibility into still-missing hardening like readOnlyRootFilesystem, without blocking
+# existing rollouts).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: studylife-scale
+  labels:
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/audit: restricted
+---
+# CIS benchmark 5.1.5/5.1.6 (kube-bench, k3s-cis-1.9 profile): token automount disabled on the
+# "default" service account itself - a pure defense-in-depth backstop in case some future pod
+# in this namespace ever ends up WITHOUT an explicit dedicated SA/without its own
+# automountServiceAccountToken:false. Doesn't change anything for existing workloads (they
+# either use a dedicated SA or already have their own automountServiceAccountToken explicitly
+# set, see k8s/04-web.yaml, 03-redis.yaml, 09-uptime-kuma.yaml).
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: default
+  namespace: studylife-scale
+automountServiceAccountToken: false

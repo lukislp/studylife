@@ -1,0 +1,10 @@
+{
+  "Description": "Melyik StudyLife szerverhez csatlakozzon ez az alkalmazás?",
+  "ServerUrlLabel": "Szerver URL-je",
+  "CheckingConnection": "Kapcsolat ellenőrzése…",
+  "UseAnyway": "Használd mégis",
+  "Connect": "Kapcsolódás",
+  "InvalidUrl": "Ez nem érvényes URL.",
+  "UnexpectedResponse": "A szerver válaszolt, de váratlanul (HTTP {0}). Koppints újra, hogy mégis használd.",
+  "ServerUnreachable": "A szerver nem érhető el. Koppints újra, hogy mégis ezt az URL-t használd."
+}

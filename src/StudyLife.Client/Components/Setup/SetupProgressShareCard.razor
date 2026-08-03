@@ -1,0 +1,156 @@
+@using StudyLife.Shared
+@inject HttpClient Http
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+@* Read-only progress link for sharing with parents/mentors/study advisors, without login -
+   analogous to SetupCalendarSubscriptionCard, but with its own token (ProgressController/
+   UserSettingsEntity.ProgressShareToken instead of AuthUserEntity.CalendarToken): semantically
+   separate (appointments vs. progress snapshot). Self-contained component modeled after
+   SetupRestoreCard: its own SetupText instance + its own HttpClient, Setup.razor just wires
+   it in - keeps changes to the (concurrently used by several feature batches)
+   Setup.razor down to a single line. Enable/Disable/Regenerate go through dedicated
+   POST endpoints instead of the normal settings PUT (see SettingsController rationale). *@
+
+<div class="setup-section">
+    <div class="ss-label">@T.ProgressShareHeading</div>
+    <p class="ss-desc">@T.ProgressShareDesc</p>
+
+    @if (_enabled && !string.IsNullOrEmpty(_token))
+    {
+        <div class="field-row" style="flex-wrap:wrap">
+            <input class="input" readonly value="@ShareUrl" />
+            <button type="button" class="btn-secondary" @onclick="CopyUrl" style="flex-shrink:0">
+                @(_copied ? $"✓ {T.Copied}" : T.Copy)
+            </button>
+            <button type="button" class="btn-secondary" @onclick="Disable" disabled="@_busy" style="flex-shrink:0">
+                @T.ProgressShareDisableButton
+            </button>
+            <button type="button" class="btn-danger" @onclick="() => _confirming = true" disabled="@_busy" style="flex-shrink:0">
+                @(_regenerateSuccess ? $"✓ {T.ProgressShareRegenerateSuccess}" : T.ProgressShareRegenerateButton)
+            </button>
+        </div>
+    }
+    else
+    {
+        <button type="button" class="btn-secondary" @onclick="Enable" disabled="@_busy">
+            @T.ProgressShareEnableButton
+        </button>
+    }
+</div>
+
+@if (_confirming)
+{
+    <div class="modal-overlay" @onclick="() => _confirming = false">
+        <div class="modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>@T.ProgressShareRegenerateConfirmTitle</h3>
+                <button type="button" class="modal-close" @onclick="() => _confirming = false">✕</button>
+            </div>
+            <div class="modal-body">
+                <p>⚠️ @T.ProgressShareRegenerateConfirmWarning</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" @onclick="() => _confirming = false" disabled="@_regenerating">
+                    @T.ProgressShareRegenerateConfirmCancel
+                </button>
+                <button type="button" class="btn-danger" @onclick="ConfirmRegenerate" disabled="@_regenerating">
+                    @(_regenerating ? "…" : T.ProgressShareRegenerateConfirmYes)
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private I18nText.SetupText T = new();
+
+    private bool _enabled;
+    private string? _token;
+    private bool _copied;
+    private bool _busy;
+    private bool _confirming;
+    private bool _regenerating;
+    private bool _regenerateSuccess;
+
+    private string ShareUrl => string.IsNullOrEmpty(_token) ? "" : $"{Nav.BaseUri}shared/{_token}";
+
+    protected override async Task OnInitializedAsync()
+    {
+        T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
+        try
+        {
+            var dto = await Http.GetFromJsonAsync<UserSettingsDto>("api/settings");
+            _enabled = dto?.ProgressShareEnabled ?? false;
+            _token = dto?.ProgressShareToken;
+        }
+        catch { /* offline: card shows the disabled default */ }
+    }
+
+    private async Task Enable()
+    {
+        _busy = true;
+        try
+        {
+            var response = await Http.PostAsync("api/settings/progress-share/enable", null);
+            if (response.IsSuccessStatusCode)
+            {
+                var dto = await response.Content.ReadFromJsonAsync<UserSettingsDto>();
+                _enabled = dto?.ProgressShareEnabled ?? true;
+                _token = dto?.ProgressShareToken;
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task Disable()
+    {
+        _busy = true;
+        try
+        {
+            var response = await Http.PostAsync("api/settings/progress-share/disable", null);
+            if (response.IsSuccessStatusCode) _enabled = false;
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task CopyUrl()
+    {
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", ShareUrl);
+        _copied = true;
+        StateHasChanged();
+        await Task.Delay(2000);
+        _copied = false;
+        StateHasChanged();
+    }
+
+    // Manual "regenerate now" after confirmation in the modal - immediately breaks any
+    // existing link (SettingsController.RegenerateProgressShareToken); regenerating also
+    // enables the feature along the way (server semantics, see there).
+    private async Task ConfirmRegenerate()
+    {
+        _confirming = false;
+        _regenerating = true;
+        StateHasChanged();
+        try
+        {
+            var response = await Http.PostAsync("api/settings/progress-share/regenerate", null);
+            if (response.IsSuccessStatusCode)
+            {
+                var dto = await response.Content.ReadFromJsonAsync<UserSettingsDto>();
+                _enabled = dto?.ProgressShareEnabled ?? true;
+                _token = dto?.ProgressShareToken;
+                _regenerateSuccess = true;
+                StateHasChanged();
+                await Task.Delay(2000);
+                _regenerateSuccess = false;
+            }
+        }
+        finally
+        {
+            _regenerating = false;
+            StateHasChanged();
+        }
+    }
+}

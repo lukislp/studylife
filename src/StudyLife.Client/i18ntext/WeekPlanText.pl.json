@@ -1,0 +1,18 @@
+{
+  "Heading": "Plan tygodnia",
+  "Subtitle": "Gotowy do druku przegląd zaplanowanych sesji nauki w tym tygodniu — wydrukuj go i powieś na ścianie.",
+  "BackLink": "← Powrót do kalendarza",
+  "ExportButton": "🖨 Drukuj plan tygodnia",
+  "WeekRangeFormat": "Tydzień: {0} – {1}",
+  "GeneratedOnFormat": "Wygenerowano {0}",
+  "SummaryHeading": "Podsumowanie",
+  "PlannedHoursLabel": "Zaplanowane godziny w tym tygodniu",
+  "WeeklyGoalLabel": "Cel tygodniowy",
+  "WeeklyGoalFormat": "{0}–{1} h",
+  "SessionCountLabel": "Zaplanowane sesje",
+  "NoSessions": "Na ten dzień nie zaplanowano żadnych sesji.",
+  "TableTime": "Godzina",
+  "TableCourse": "Kurs",
+  "TableTopic": "Temat",
+  "FooterNote": "Wygenerowano automatycznie przez StudyLife."
+}

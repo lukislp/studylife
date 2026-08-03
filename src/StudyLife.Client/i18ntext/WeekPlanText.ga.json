@@ -1,0 +1,18 @@
+{
+  "Heading": "Plean Seachtainiúil",
+  "Subtitle": "Forbhreathnú inphriontáilte ar na seisiúin staidéir atá beartaithe an tseachtain seo — priontáil é agus greamaigh é ar an mballa.",
+  "BackLink": "← Ar ais chuig an bhFéilire",
+  "ExportButton": "🖨 Priontáil an plean seachtainiúil",
+  "WeekRangeFormat": "Seachtain: {0} – {1}",
+  "GeneratedOnFormat": "Ginte an {0}",
+  "SummaryHeading": "Achoimre",
+  "PlannedHoursLabel": "Uaireanta beartaithe an tseachtain seo",
+  "WeeklyGoalLabel": "Sprioc sheachtainiúil",
+  "WeeklyGoalFormat": "{0}–{1} h",
+  "SessionCountLabel": "Seisiúin bheartaithe",
+  "NoSessions": "Níl aon seisiún beartaithe don lá seo.",
+  "TableTime": "Am",
+  "TableCourse": "Cúrsa",
+  "TableTopic": "Ábhar",
+  "FooterNote": "Ginte go huathoibríoch ag StudyLife."
+}

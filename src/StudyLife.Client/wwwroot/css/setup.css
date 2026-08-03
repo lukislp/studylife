@@ -1,0 +1,529 @@
+/* === Setup Page === */
+.setup-page { padding: 2.5rem 2rem; max-width: 800px; }
+.setup-header { margin-bottom: 2.5rem; }
+.setup-header h1 { font-size: 1.75rem; font-weight: 300; letter-spacing: -0.02em; }
+.setup-header p { color: var(--text2); margin-top: 0.4rem; font-size: 0.875rem; }
+
+.setup-sections { display: flex; flex-direction: column; gap: 2rem; }
+
+.setup-section {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+}
+
+.ss-label {
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text3);
+    margin-bottom: 0.75rem;
+}
+
+.ss-desc { font-size: 0.875rem; color: var(--text2); margin-bottom: 1rem; line-height: 1.6; }
+
+.programme-badge {
+    background: var(--bg3);
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--accent);
+    display: inline-block;
+}
+
+.course-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 0.75rem;
+}
+
+.semester-header {
+    grid-column: 1 / -1;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 0.5rem 0 0.25rem;
+    border-bottom: 1px solid var(--border);
+    margin-top: 0.5rem;
+}
+
+.course-group-header {
+    grid-column: 1 / -1;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    padding: 0.75rem 0 0.2rem;
+    margin-top: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.course-group-header::before {
+    content: '';
+    display: inline-block;
+    width: 3px;
+    height: 0.85em;
+    background: var(--accent);
+    border-radius: 2px;
+    opacity: 0.7;
+}
+
+.course-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0.875rem;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    cursor: pointer;
+    transition: var(--transition);
+    position: relative;
+}
+.course-card:hover { border-color: var(--c); }
+.course-card.selected { border-color: var(--c); background: color-mix(in srgb, var(--c) 8%, var(--bg3)); }
+.course-card.completed { border-color: #55EFC4; background: color-mix(in srgb, #55EFC4 8%, var(--bg3)); opacity: 0.7; }
+.course-card.completed .cc-name { text-decoration: line-through; color: var(--text3); }
+.cc-done { color: #55EFC4; font-size: 0.875rem; }
+
+.cc-head { display: flex; align-items: flex-start; gap: 0.75rem; }
+.cc-icon { font-size: 1.5rem; margin-top: 2px; width: 28px; text-align: center; }
+.cc-code { font-family: var(--font-mono); font-size: 0.7rem; color: var(--text3); }
+.cc-name { font-size: 0.875rem; font-weight: 500; margin-top: 2px; }
+.cc-check { margin-left: auto; color: var(--c); font-size: 0.875rem; flex-shrink: 0; }
+.cc-topics { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 0.5rem; }
+
+.cc-goal {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.6rem;
+    padding-top: 0.6rem;
+    border-top: 1px dashed var(--border);
+}
+.cc-goal-icon { font-size: 0.8rem; opacity: 0.7; }
+.cc-goal-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    color: var(--text2);
+    font-size: 0.75rem;
+    padding: 0.3rem 0.5rem;
+    font-family: inherit;
+}
+.cc-goal-input:focus { border-color: var(--accent); color: var(--text); }
+.cc-grade-pill {
+    flex-shrink: 0;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, #55EFC4 15%, transparent);
+    color: #55efc4;
+}
+.cc-completion-note { margin-top: 0.4rem; font-size: 0.75rem; font-style: italic; color: var(--text2); }
+.cc-tag-pill {
+    flex-shrink: 0;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent2) 18%, transparent);
+    color: var(--accent2);
+}
+.topic-pill {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    background: var(--bg2);
+    border-radius: 4px;
+    color: var(--text3);
+}
+.topic-pill.clickable { cursor: pointer; transition: var(--transition); }
+.topic-pill.clickable:hover { filter: brightness(1.3); }
+.topic-pill.done { background: color-mix(in srgb, var(--c) 35%, var(--bg2)); color: var(--c); font-weight: 600; }
+.cc-topics-progress { font-size: 0.65rem; color: var(--text3); margin-left: auto; align-self: center; }
+
+/* Course resources button (opens CourseResourcesModal) - its own small icon button next to
+   cc-check, deliberately with stopPropagation so a click doesn't cycle the course status. */
+.cc-resources-btn {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: var(--bg2);
+    color: var(--text3);
+    font-size: 0.8rem;
+    transition: var(--transition);
+}
+.cc-resources-btn:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 15%, var(--bg2)); }
+
+/* Course resources modal (CourseResourcesModal) - somewhat wider than the standard .modal (440px)
+   so title + link + delete button don't get too cramped in the list. */
+.cr-modal { width: 480px; }
+.cr-list { display: flex; flex-direction: column; gap: 0.5rem; max-height: 40vh; overflow-y: auto; }
+.cr-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.6rem 0.8rem;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+.cr-row-link { color: var(--accent); font-size: 0.85rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cr-row-delete { flex-shrink: 0; padding: 0.3rem 0.5rem; }
+.cr-add-form { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.cr-add-form .input { flex: 1 1 160px; min-width: 0; }
+.cr-add-form .btn-secondary { flex-shrink: 0; }
+
+/* Toggle */
+.toggle-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.65rem; }
+.toggle-row:last-child { margin-bottom: 0; }
+.toggle { position: relative; display: inline-block; width: 40px; height: 22px; cursor: pointer; }
+.toggle input { display: none; }
+.toggle-track {
+    position: absolute;
+    inset: 0;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 11px;
+    transition: var(--transition);
+}
+.toggle-track::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background: var(--text3);
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: var(--transition);
+}
+.toggle input:checked + .toggle-track { background: var(--accent); border-color: var(--accent); }
+.toggle input:checked + .toggle-track::after { transform: translateX(18px); background: white; }
+
+/* Theme switch */
+.theme-switch { display: inline-flex; gap: 0.35rem; }
+.theme-opt {
+    padding: 0.45rem 1rem;
+    border-radius: 8px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: var(--transition);
+}
+.theme-opt:hover { color: var(--text); border-color: var(--border2); }
+.theme-opt.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* Accent-color swatches (SetupAccentColorCard) - a larger variant of the .apm-swatch pattern */
+.accent-swatches { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.accent-swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15);
+}
+.accent-swatch:hover { transform: scale(1.1); }
+.accent-swatch.selected { border-color: var(--text); transform: scale(1.1); }
+.accent-swatch-check { color: #fff; font-size: 0.85rem; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+
+/* Style picker */
+.style-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.75rem; }
+.style-card {
+    padding: 1rem;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    cursor: pointer;
+    transition: var(--transition);
+}
+.style-card:hover { border-color: var(--border2); }
+.style-card.selected { border-color: var(--accent); }
+.sc-emoji { font-size: 1.5rem; margin-bottom: 0.5rem; }
+.sc-name { font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem; }
+.sc-desc { font-size: 0.75rem; color: var(--text3); line-height: 1.5; }
+
+
+/* Custom timer modes */
+.custom-mode-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+.custom-mode-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg3);
+}
+.cm-emoji { font-size: 1rem; }
+.cm-name { font-size: 0.875rem; font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cm-meta { font-family: var(--font-mono); font-size: 0.7rem; color: var(--text3); flex-shrink: 0; }
+.cm-delete {
+    margin-left: auto;
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    color: var(--text3);
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 0.15rem 0.35rem;
+    border-radius: 6px;
+    transition: var(--transition);
+}
+.cm-delete:hover { color: #E17055; background: color-mix(in srgb, #E17055 12%, transparent); }
+
+.reminder-custom-note {
+    font-size: 0.75rem;
+    color: var(--text3);
+    margin-top: 0.5rem;
+    font-style: italic;
+}
+
+.setup-actions { display: flex; justify-content: flex-end; }
+
+/* === Programme switcher (Setup section "Studiengang") === */
+.programme-row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+.programme-select {
+    flex: 1 1 240px;
+    max-width: 420px;
+    font-weight: 500;
+    color: var(--accent);
+}
+.btn-add-programme { flex-shrink: 0; white-space: nowrap; }
+
+/* Manual "study programme completed" flag below the switcher (custom programmes only) */
+.programme-completed-row {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 0.6rem;
+}
+.programme-completed-badge {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #00B894;
+    background: color-mix(in srgb, #00B894 12%, transparent);
+    border-radius: 999px;
+    padding: 0.2rem 0.6rem;
+    white-space: nowrap;
+}
+.btn-programme-completed { flex-shrink: 0; white-space: nowrap; }
+.programme-completed-hint {
+    font-size: 0.75rem;
+    color: var(--text3);
+    font-style: italic;
+}
+.btn-delete-programme { flex-shrink: 0; white-space: nowrap; margin-left: auto; }
+/* Delete-confirmation dialog reuses the shared .modal-overlay/.modal/.modal-footer shell
+   (see shared.css) - no dedicated CSS needed here. */
+
+/* === Add-study-programme modal (AddStudyProgramModal.razor) === */
+.program-modal {
+    width: 720px;
+    max-width: 94vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+.program-modal-body { overflow-y: auto; flex: 1 1 auto; gap: 1.25rem; }
+
+.apm-section {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+}
+.apm-section-title {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text3);
+    margin-bottom: 0.5rem;
+}
+.apm-section-desc { font-size: 0.78rem; color: var(--text3); line-height: 1.5; margin-bottom: 0.85rem; }
+
+/* Elective groups */
+.apm-group-list { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.85rem; }
+.apm-group-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.45rem 0.7rem;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+.apm-group-name { font-size: 0.85rem; font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.apm-group-quota {
+    margin-left: auto;
+    flex-shrink: 0;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    color: var(--accent);
+}
+.apm-add-group { display: flex; gap: 0.6rem; align-items: flex-end; flex-wrap: wrap; }
+.apm-add-group > .input { flex: 1 1 180px; }
+.apm-quota-field { flex: 0 0 90px; }
+.apm-quota-field .input { width: 90px; }
+
+/* Semester cards */
+.apm-semester {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    margin-bottom: 0.85rem;
+}
+.apm-semester-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.6rem;
+    padding-bottom: 0.45rem;
+    border-bottom: 1px solid var(--border);
+}
+.apm-semester-title {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+}
+
+.apm-course-list { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 0.75rem; }
+.apm-course-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.6rem;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--c);
+    border-radius: 8px;
+}
+.apm-course-dot { display: none; }
+.apm-course-icon { font-size: 0.95rem; flex-shrink: 0; }
+.apm-course-name { font-size: 0.82rem; font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.apm-course-meta { font-family: var(--font-mono); font-size: 0.68rem; color: var(--text3); flex-shrink: 0; margin-left: auto; }
+.apm-course-group-pill {
+    flex-shrink: 0;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    color: var(--accent);
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Add-course form inside a semester card */
+.apm-course-form { display: flex; flex-direction: column; gap: 0.6rem; }
+.apm-course-form-row { display: flex; gap: 0.6rem; align-items: flex-end; flex-wrap: wrap; }
+.apm-course-form-row > .input { flex: 1 1 160px; }
+.apm-input-code { flex: 0 1 150px !important; }
+.apm-input-ects { flex: 0 0 70px; }
+.apm-input-ects .input { width: 70px; }
+.apm-input-group { flex: 1 1 200px; }
+.apm-course-form-actions { display: flex; justify-content: flex-end; }
+
+/* Icon picker (replaces the old free-text icon input) */
+.apm-icon-field { flex: 1 1 100%; }
+.apm-icon-picker { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.apm-icon-btn {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    line-height: 1;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 0;
+    transition: var(--transition);
+}
+.apm-icon-btn:hover { border-color: var(--accent); }
+.apm-icon-btn.selected {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 16%, var(--bg3));
+}
+
+/* Color swatches */
+.apm-color-field { flex: 1 1 100%; }
+.apm-color-swatches { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.apm-swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    padding: 0;
+    transition: var(--transition);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15);
+}
+.apm-swatch:hover { transform: scale(1.15); }
+.apm-swatch.selected {
+    border-color: var(--text);
+    transform: scale(1.15);
+}
+
+.apm-add-semester { align-self: flex-start; }
+
+.apm-summary {
+    font-size: 0.8rem;
+    color: var(--text2);
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+    border: 1px dashed color-mix(in srgb, var(--accent) 35%, transparent);
+    border-radius: 8px;
+    padding: 0.55rem 0.8rem;
+}
+
+.apm-error {
+    font-size: 0.75rem;
+    color: #E17055;
+    margin-top: 0.4rem;
+}
+
+.setup-version {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text2);
+    opacity: 0.6;
+    padding: 0.5rem 0 1rem;
+}
+

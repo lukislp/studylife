@@ -1,0 +1,27 @@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    <div class="quota-row">
+        <div class="quota-hours">
+            <span class="stat-val">@EctsEarned</span>
+            <span class="quota-target">/ @EctsTotal ECTS</span>
+        </div>
+        <div class="quota-badge badge-ok">@(EctsPercent.ToString("0"))@PercentCompletedSuffix</div>
+    </div>
+    <div class="quota-bar-track">
+        <div class="quota-bar-fill fill-ok" style="width: @EctsPercent%"></div>
+    </div>
+    <div class="quota-legend">
+        <span>@ForecastLabel</span>
+        <span>@ForecastText</span>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public int EctsEarned { get; set; }
+    [Parameter] public int EctsTotal { get; set; }
+    [Parameter] public double EctsPercent { get; set; }
+    [Parameter] public string PercentCompletedSuffix { get; set; } = "";
+    [Parameter] public string ForecastLabel { get; set; } = "";
+    [Parameter] public string ForecastText { get; set; } = "";
+}

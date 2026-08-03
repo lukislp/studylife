@@ -1,0 +1,17 @@
+@* Self-contained mini component instead of a field on Stats.razor.cs: loads its own
+   ReportText table in its own OnInitializedAsync, so that the study report link
+   on Stats.razor needs no change to Stats.razor.cs (collision risk with agents
+   working on it in parallel). *@
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+<a class="btn-secondary report-export-link" href="/report">@_label</a>
+
+@code {
+    private string _label = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var t = await I18nText.GetTextTableAsync<I18nText.ReportText>(this);
+        _label = t.ReportButton ?? "";
+    }
+}

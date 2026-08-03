@@ -1,0 +1,171 @@
+# Real Redis cluster (3 masters + 3 replicas) instead of a single instance - all Redis usage in
+# the code (IDistributedCache Get/Set per key in CacheHelper.cs, RedisVersionCounter.cs as a
+# pure INCR/GET per key) is single-key, so it's 1:1 compatible with cluster slots, with no code
+# changes at all - see docs/SCALING.md. No Helm available in the cluster, so hand-built as a
+# StatefulSet instead of e.g. the Bitnami chart; functionally the same result.
+#
+# TLS for the client hop (app<->Redis) - certificate from the same cluster-internal CA as the
+# other backend certificates (k8s/07b-cert-manager-issuers.yaml). ONE certificate for all 6 pods
+# (DNS names of all pods + a wildcard as SAN) instead of 6 individual ones - Redis pods are
+# configured identically via a shared ConfigMap/secret volume anyway, a per-pod certificate
+# would only add unnecessary complexity (6 Certificate resources) without a real security gain
+# (same internal CA, same trust domain).
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: redis-tls
+  namespace: studylife-scale
+spec:
+  secretName: redis-tls
+  dnsNames:
+    - redis-cluster.studylife-scale.svc.cluster.local
+    - "*.redis-cluster.studylife-scale.svc.cluster.local"
+  issuerRef:
+    name: studylife-internal-ca-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-cluster-config
+  namespace: studylife-scale
+data:
+  redis.conf: |
+    cluster-enabled yes
+    cluster-config-file /data/nodes.conf
+    cluster-node-timeout 5000
+    appendonly no
+    dir /data
+    # Pure cache with no persistent required data (see IDistributedCache/RedisVersionCounter) -
+    # eviction under memory pressure is unproblematic here, a lost cache entry invalidates one
+    # time too many at worst, never incorrectly. maxmemory chosen to fit under the 128Mi
+    # container limit below.
+    maxmemory 96mb
+    maxmemory-policy allkeys-lru
+    # Client TLS (app<->Redis) active, cluster bus (Redis<->Redis gossip/replication)
+    # DELIBERATELY still plaintext - tested live locally and reverted: "tls-cluster yes" via a
+    # rolling update across all 6 pods reliably breaks the gossip protocol (cluster_state:fail,
+    # stale IP/port entries in the node table, no self-healing even after several minutes) -
+    # this hand-built, pod-IP-based cluster setup (no cluster-announce-hostname) can't tolerate
+    # the bus protocol change during a sequential rollout. On prod with real user data this
+    # would be a genuine outage risk - deliberately NOT implemented, see docs/SCALING.md for the
+    # details of the failed attempt. The cluster bus stays cluster-internal only, between the
+    # redis-cluster pods themselves anyway (NetworkPolicy already restricts this tightly) - the
+    # connection actually worth protecting (app<->Redis, where real cache/session data flows) is
+    # already encrypted via tls-port.
+    tls-port 6380
+    tls-cluster no
+    tls-cert-file /tls/tls.crt
+    tls-key-file /tls/tls.key
+    tls-ca-cert-file /tls/ca.crt
+    tls-auth-clients no
+---
+# Headless service (clusterIP: None) - gives every pod a stable DNS identity
+# (redis-cluster-N.redis-cluster.studylife-scale.svc.cluster.local), which the cluster bus
+# communication between nodes needs. Port 16379 is the internal cluster bus (client port +
+# 10000), not used by the app.
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-cluster
+  namespace: studylife-scale
+spec:
+  clusterIP: None
+  selector: { app: redis-cluster }
+  ports:
+    - name: client
+      port: 6379
+    - name: bus
+      port: 16379
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-cluster
+  namespace: studylife-scale
+spec:
+  serviceName: redis-cluster
+  # 6 replicas (3 masters + 3 replicas) - real redundancy restored, now with actual benefit: the
+  # asymmetric hardware (pinode01 4GB, pinode02 8GB) provides enough buffer for a replica to
+  # actually land on the OTHER node from its corresponding master, rather than just standing
+  # next to it symbolically. New pods (replicas) added to the existing cluster topology via
+  # "redis-cli --cluster add-node --cluster-slave" instead of a fresh bootstrap - the 3 existing
+  # masters remain untouched in the process (cluster bus gossip reacts sensitively to
+  # simultaneous IP changes of multiple nodes, see docs/SCALING.md).
+  replicas: 6
+  selector:
+    matchLabels: { app: redis-cluster }
+  template:
+    metadata:
+      labels: { app: redis-cluster }
+    spec:
+      # Redis needs no Kubernetes API access whatsoever - token automount explicitly off
+      # (defense in depth, prevents misuse of a mounted API token by a compromised pod).
+      automountServiceAccountToken: false
+      # Soft (preferred), not hard - see the k8s/04-web.yaml comment. With 6 pods across e.g. 4
+      # nodes, at least 2 nodes will get 2 pods each anyway, but the anti-affinity still helps
+      # the scheduler avoid placing a master and its corresponding replica (from "redis-cli
+      # --cluster create --cluster-replicas 1") on the same node as much as possible -
+      # otherwise a node failure would hit master+replica simultaneously and Redis's own
+      # redundancy would be ineffective.
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels: { app: redis-cluster }
+                topologyKey: kubernetes.io/hostname
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+          ports:
+            - containerPort: 6379
+            - containerPort: 16379
+            - containerPort: 6380 # TLS client port, migration phase 1 (dual-stack, see ConfigMap)
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { cpu: 200m, memory: 128Mi }
+          volumeMounts:
+            - name: config
+              mountPath: /usr/local/etc/redis
+            - name: data
+              mountPath: /data
+            - name: tls
+              mountPath: /tls
+              readOnly: true
+          readinessProbe:
+            exec: { command: ["redis-cli", "ping"] }
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            exec: { command: ["redis-cli", "ping"] }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+        # Sidecar instead of a separate deployment - one exporter per Redis pod, connects to its
+        # own Redis process via localhost. "--check-keys=worker:shard:*" exports the existing
+        # shard-claim keys (see RedisWorkerShardClaim.cs) directly as a Prometheus metric,
+        # WITHOUT any app code change - the basis of the worker shard dashboard.
+        - name: redis-exporter
+          image: oliver006/redis_exporter:v1.66.0
+          args:
+            - --redis.addr=redis://localhost:6379
+            - --check-keys=worker:shard:*
+          ports:
+            - containerPort: 9121
+          resources:
+            requests: { cpu: 25m, memory: 32Mi }
+            limits: { cpu: 100m, memory: 64Mi }
+      volumes:
+        - name: config
+          configMap: { name: redis-cluster-config }
+        - name: tls
+          secret: { secretName: redis-tls }
+  volumeClaimTemplates:
+    - metadata: { name: data }
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests: { storage: 256Mi }

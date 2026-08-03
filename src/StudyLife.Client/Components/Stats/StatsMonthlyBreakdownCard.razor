@@ -1,0 +1,44 @@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    @if (Stacks.All(m => m.Segments.Count == 0))
+    {
+        <div style="color:var(--text3);font-size:0.875rem">@EmptyText</div>
+    }
+    else
+    {
+        <div class="stacked-chart">
+            @foreach (var m in Stacks)
+            {
+                <div class="stacked-col" title="@m.Label: @m.TotalLabel">
+                    <div class="stacked-track">
+                        @foreach (var seg in m.Segments)
+                        {
+                            <div class="stacked-seg" style="height: @seg.HeightPercent%; background: @seg.Color"></div>
+                        }
+                    </div>
+                    <div class="stacked-label">@m.Label</div>
+                </div>
+            }
+        </div>
+        <div class="donut-legend" style="margin-top:0.75rem">
+            @foreach (var entry in Legend)
+            {
+                <div class="donut-legend-row">
+                    <span class="donut-swatch" style="background:@entry.Color"></span>
+                    <span class="donut-legend-name">@entry.Name</span>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    public record StackSegment(string Name, string Color, double Hours, double HeightPercent);
+    public record StackedMonth(string Label, List<StackSegment> Segments, string TotalLabel);
+    public record LegendEntry(string Name, string Color);
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public List<StackedMonth> Stacks { get; set; } = new();
+    [Parameter] public List<LegendEntry> Legend { get; set; } = new();
+    [Parameter] public string EmptyText { get; set; } = "";
+}

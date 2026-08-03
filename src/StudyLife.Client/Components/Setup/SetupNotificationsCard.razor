@@ -1,0 +1,65 @@
+@using Microsoft.AspNetCore.Components
+
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    <p class="ss-desc">
+        @if (NotifStatus == "granted")
+        {
+            <span>@ActiveMessage</span>
+        }
+        else if (NotifStatus == "denied")
+        {
+            <span>@BlockedMessage</span>
+        }
+        else if (NotifStatus == "ios-browser")
+        {
+            <span>@IosMessage</span>
+        }
+        else if (NotifStatus == "unsupported")
+        {
+            <span>@UnsupportedMessage</span>
+        }
+        else
+        {
+            <span>@DefaultMessage</span>
+        }
+    </p>
+    <div class="toggle-row" style="gap:0.75rem;flex-wrap:wrap">
+        @if (NotifStatus == "default")
+        {
+            <button class="btn-primary" @onclick="() => OnEnableNotifications.InvokeAsync()">
+                @AllowNotificationsButtonText
+            </button>
+        }
+        @if (NotifStatus == "granted")
+        {
+            <button class="btn-primary" @onclick="() => OnSendTest.InvokeAsync()">
+                @(TestSent ? $"✓ {SentText}" : SendTestNotificationButtonText)
+            </button>
+            <button class="btn-secondary" @onclick="() => OnResubscribe.InvokeAsync()" disabled="@Resubscribing">
+                @(Resubscribing ? "…" : (ResubscribeDone ? $"✓ {ResubscribeDoneText}" : ResubscribeButtonText))
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string NotifStatus { get; set; } = "default";
+    [Parameter] public string ActiveMessage { get; set; } = "";
+    [Parameter] public string BlockedMessage { get; set; } = "";
+    [Parameter] public MarkupString IosMessage { get; set; }
+    [Parameter] public string UnsupportedMessage { get; set; } = "";
+    [Parameter] public string DefaultMessage { get; set; } = "";
+    [Parameter] public string AllowNotificationsButtonText { get; set; } = "";
+    [Parameter] public string SendTestNotificationButtonText { get; set; } = "";
+    [Parameter] public string SentText { get; set; } = "";
+    [Parameter] public bool TestSent { get; set; }
+    [Parameter] public string ResubscribeButtonText { get; set; } = "";
+    [Parameter] public string ResubscribeDoneText { get; set; } = "";
+    [Parameter] public bool Resubscribing { get; set; }
+    [Parameter] public bool ResubscribeDone { get; set; }
+    [Parameter] public EventCallback OnEnableNotifications { get; set; }
+    [Parameter] public EventCallback OnSendTest { get; set; }
+    [Parameter] public EventCallback OnResubscribe { get; set; }
+}

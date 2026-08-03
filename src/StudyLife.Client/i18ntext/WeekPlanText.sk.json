@@ -1,0 +1,18 @@
+{
+  "Heading": "Týždenný plán",
+  "Subtitle": "Prehľad tvojich plánovaných študijných sedení tento týždeň vhodný na tlač — vytlač si ho a pripevni na stenu.",
+  "BackLink": "← Späť na kalendár",
+  "ExportButton": "🖨 Vytlačiť týždenný plán",
+  "WeekRangeFormat": "Týždeň: {0} – {1}",
+  "GeneratedOnFormat": "Vytvorené {0}",
+  "SummaryHeading": "Zhrnutie",
+  "PlannedHoursLabel": "Plánované hodiny tento týždeň",
+  "WeeklyGoalLabel": "Týždenný cieľ",
+  "WeeklyGoalFormat": "{0}–{1} h",
+  "SessionCountLabel": "Plánované sedenia",
+  "NoSessions": "Na tento deň nie sú naplánované žiadne sedenia.",
+  "TableTime": "Čas",
+  "TableCourse": "Predmet",
+  "TableTopic": "Téma",
+  "FooterNote": "Automaticky vytvorené aplikáciou StudyLife."
+}

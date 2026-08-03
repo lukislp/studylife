@@ -1,0 +1,509 @@
+@page "/focus"
+@using StudyLife.Client.Components.Focus
+@using StudyLife.Client.Models
+@using StudyLife.Client.Services
+@using StudyLife.Shared
+@inject AppStateService State
+@inject TimerService Timer
+@inject NotificationService Notifications
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+@inject IJSRuntime JS
+@inject HttpClient Http
+@implements IDisposable
+
+<PageTitle>StudyLife — Focus</PageTitle>
+
+<div class="focus-page" style="--g1: @_gradientFrom; --g2: @_gradientTo">
+    <div class="focus-bg-gradient"></div>
+
+    @if (_activeSession != null)
+    {
+        <FocusSessionHeader Session="_activeSession" />
+    }
+
+    @if (_remoteTimer != null && !_isRunning && _remoteSecondsLeft > 0)
+    {
+        <!-- This user's own timer is currently running on ANOTHER device
+             (api/timerstate is tenant-isolated). Purely informational - this device
+             can start its own timer in parallel at any time. -->
+        <div class="focus-remote-banner">
+            ⟳ @string.Format((_remoteTimer.IsBreak ? T.RemoteTimerBreak : T.RemoteTimerFocus) ?? "", FormatTime(_remoteSecondsLeft))
+        </div>
+    }
+
+    <FocusTimerDisplay CurrentMode="_currentMode" IsBreak="_isBreak" FormattedTime="@FormatTime(_secondsLeft)"
+                        CurrentRound="_currentRound" PhaseBreakLabel="@T.PhaseBreakLabel" PhaseFocusLabel="@T.PhaseFocusLabel" />
+
+    <FocusTimerControls IsRunning="_isRunning" ResetTitle="@T.Reset" SkipTitle="@T.TryAnotherMode"
+                         OnReset="ResetTimer" OnToggle="ToggleTimer" OnNext="NextMode" />
+
+    <FocusAmbientControl IsOpen="_ambientPopoverOpen" SoundType="_ambientType" Volume="_ambientVolume"
+                         AmbientSoundTitle="@T.AmbientSoundLabel" OffLabel="@T.AmbientOff"
+                         WhiteNoiseLabel="@T.AmbientWhiteNoise" BrownNoiseLabel="@T.AmbientBrownNoise"
+                         RainLabel="@T.AmbientRain" OceanLabel="@T.AmbientOcean" ToneLabel="@T.AmbientTone"
+                         VolumeLabel="@T.AmbientVolume" OnTogglePopover="ToggleAmbientPopover"
+                         OnSelectType="SelectAmbientType" OnVolumeChanged="SetAmbientVolume" />
+
+    <!-- Motivation -->
+    <div class="focus-motivation @(_showMotivation ? "visible" : "")">
+        <p>"@_motivationText"</p>
+    </div>
+
+    <!-- Mode description -->
+    @if (_currentMode != null)
+    {
+        <div class="mode-desc">@_currentMode.Description</div>
+    }
+
+    @if (_showReflection)
+    {
+        <FocusReflectionPrompt Label="@T.WhatDidYouLearn" ReflectionText="@_reflectionText" ReflectionTextChanged="text => _reflectionText = text"
+                                SkipText="@T.SkipReflection" SaveText="@T.SaveReflection" OnSkip="SkipReflection" OnSave="SaveReflection" />
+    }
+
+    @if (_activeSession == null)
+    {
+        <FocusSessionStatus UpcomingSession="_upcomingSession" NoSessionTitle="@T.NoSessionActive" PlanSessionPrompt="@T.PlanSessionPrompt"
+                             OpenCalendarText="@T.OpenCalendar" UpNextInFormat="@T.UpNextIn" MotivationText="@_motivationText" />
+    }
+
+    <FocusModeSwitcher Modes="_allModes" CurrentModeId="_currentMode?.Id" OnSelectMode="m => SelectMode(m)" />
+</div>
+
+@code {
+    private StudySession? _activeSession;
+    private StudySession? _upcomingSession;
+    private TimerMode? _currentMode;
+    private List<TimerMode> _allModes = DefaultData.TimerModes;
+    private string _gradientFrom = "#6C5CE7";
+    private string _gradientTo = "#A29BFE";
+    private string _motivationText = "";
+    private bool _showMotivation;
+
+    // Post-session reflection prompt
+    private bool _showReflection;
+    private string _reflectionText = "";
+    private int? _reflectionSessionId;
+    private int? _reflectionCourseId;
+
+    // Timer state (mirrored from service)
+    private int _secondsLeft;
+    private bool _isBreak;
+    private int _currentRound;
+    private bool _isRunning;
+    private I18nText.FocusText T = new();
+
+    // Ambient background sound (white/brown noise), generated purely client-side via the Web
+    // Audio API (see Focus.razor.js). Preference lives in localStorage, not on the
+    // server - purely a per-device setting with no need to sync across clients.
+    private IJSObjectReference? _ambientModule;
+    private string _ambientType = "off"; // "off" | "white" | "brown"
+    private double _ambientVolume = 0.3;
+    private bool _ambientPopoverOpen;
+    private string _ambientPlayingType = "off"; // what's actually playing on the JS side right now
+
+    private sealed class AmbientPrefs
+    {
+        public string? Type { get; set; }
+        public double? Volume { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        T = await I18nText.GetTextTableAsync<I18nText.FocusText>(this);
+        _activeSession = await State.GetActiveSessionAsync();
+        _upcomingSession = await State.GetUpcomingSessionAsync();
+        await RefreshRemoteTimerAsync();
+
+        // Built-in + user-defined modes (from settings) in the same switcher
+        var settings = await State.GetSettingsAsync();
+        _allModes = CustomTimerModes.Combined(settings.CustomTimerModes);
+
+        var random = new Random();
+
+        // If the timer is already running (user navigated away and back), just reattach
+        if (Timer.CurrentMode != null)
+        {
+            _currentMode = Timer.CurrentMode;
+            _gradientFrom = _currentMode.GradientFrom;
+            _gradientTo = _currentMode.GradientTo;
+            _secondsLeft = Timer.SecondsLeft;
+            _isBreak = Timer.IsBreak;
+            _currentRound = Timer.CurrentRound;
+            _isRunning = Timer.IsRunning;
+            // The wake lock was released when this page was last disposed; if the
+            // timer kept running in the background, re-acquire it now.
+            if (_isRunning) AcquireWakeLock();
+        }
+        else
+        {
+            int modeIndex;
+            if (_activeSession != null)
+                modeIndex = ((_activeSession.TimerModeId - 1) % _allModes.Count);
+            else
+                modeIndex = random.Next(_allModes.Count);
+            _currentMode = _allModes[modeIndex];
+            LoadMode(_currentMode);
+        }
+
+        // Subscribe to timer
+        Timer.OnTick += OnTimerTick;
+        Timer.OnSessionComplete += OnSessionComplete;
+        Timer.OnBreakStarted += OnBreakStarted;
+        Timer.OnPaused += OnTimerPaused;
+        Timer.OnModeChanged += OnModeChangedFromService;
+
+        _motivationText = DefaultData.ClaudeMotivations[random.Next(DefaultData.ClaudeMotivations.Count)];
+        _ = ShowMotivationAfterDelay();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        // Collocated JS module (Focus.razor.js) instead of a global index.html script -
+        // index.html is intentionally left untouched.
+        try
+        {
+            _ambientModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/Focus.razor.js");
+            var prefs = await _ambientModule.InvokeAsync<AmbientPrefs?>("loadAmbientPrefs");
+            if (prefs != null)
+            {
+                _ambientType = prefs.Type ?? "off";
+                _ambientVolume = prefs.Volume is > 0 and <= 1 ? prefs.Volume.Value : 0.3;
+            }
+            await SyncAmbientPlayback();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch { /* Web Audio unavailable or similar - ambient sound is purely optional */ }
+    }
+
+    private async Task ShowMotivationAfterDelay()
+    {
+        await Task.Delay(800);
+        _showMotivation = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void LoadMode(TimerMode mode)
+    {
+        HideReflection();
+        ReleaseWakeLock(); // Timer.LoadMode stops any running timer
+        _currentMode = mode;
+        _gradientFrom = mode.GradientFrom;
+        _gradientTo = mode.GradientTo;
+        Timer.LoadMode(mode, _activeSession?.Id);
+        _secondsLeft = mode.FocusMinutes * 60;
+        _isBreak = false;
+        _currentRound = 1;
+        _isRunning = false;
+        _ = SyncAmbientPlayback();
+    }
+
+    /// <summary>Mirrors a mode change triggered from elsewhere (e.g. the Watch app's mode
+    /// picker, relayed through WatchTimerCoordinator on a native callback thread) - same
+    /// display fields as LoadMode above, but does NOT call Timer.LoadMode again (this handler
+    /// fires BECAUSE that already happened, on whichever device/surface initiated it). Also
+    /// fires as a harmless redundant echo when this page's own LoadMode caused the change.
+    /// Unlike OnTimerTick/OnBreakStarted (only ever raised from this page's own UI-thread-
+    /// originated timer), this event can arrive from a genuinely different thread - the whole
+    /// body must be marshaled via InvokeAsync, not just the final StateHasChanged.</summary>
+    private void OnModeChangedFromService(TimerMode mode)
+    {
+        _ = InvokeAsync(async () =>
+        {
+            HideReflection();
+            ReleaseWakeLock();
+            _currentMode = mode;
+            _gradientFrom = mode.GradientFrom;
+            _gradientTo = mode.GradientTo;
+            _secondsLeft = mode.FocusMinutes * 60;
+            _isBreak = false;
+            _currentRound = 1;
+            _isRunning = false;
+            await SyncAmbientPlayback();
+            StateHasChanged();
+        });
+    }
+
+    private void SelectMode(TimerMode mode)
+    {
+        LoadMode(mode);
+        StateHasChanged();
+    }
+
+    private void ToggleTimer()
+    {
+        if (_isRunning)
+        {
+            Timer.Pause();
+            ReleaseWakeLock();
+        }
+        else
+        {
+            HideReflection();
+            Timer.Start();
+            if (Timer.IsRunning) AcquireWakeLock();
+        }
+        _ = SyncAmbientPlayback();
+    }
+
+    private void ResetTimer()
+    {
+        HideReflection();
+        Timer.Reset();
+        ReleaseWakeLock();
+        _secondsLeft = _currentMode?.FocusMinutes * 60 ?? 1500;
+        _isBreak = false;
+        _currentRound = 1;
+        _isRunning = false;
+        _ = SyncAmbientPlayback();
+    }
+
+    private void NextMode()
+    {
+        var idx = _allModes.FindIndex(m => m.Id == _currentMode?.Id);
+        var next = _allModes[(idx + 1) % _allModes.Count];
+        LoadMode(next);
+        _motivationText = DefaultData.ClaudeMotivations[new Random().Next(DefaultData.ClaudeMotivations.Count)];
+        StateHasChanged();
+    }
+
+    private async void OnTimerTick(int secondsLeft, bool isBreak, int round, bool isRunning)
+    {
+        _secondsLeft = secondsLeft;
+        _isBreak = isBreak;
+        _currentRound = round;
+        _isRunning = isRunning;
+        if (isBreak && secondsLeft == (_currentMode?.BreakMinutes ?? 5) * 60)
+        {
+            _motivationText = DefaultData.ClaudeMotivations[new Random().Next(DefaultData.ClaudeMotivations.Count)];
+        }
+        // Best-effort: async-void timer handler - an unhandled throw here would crash the app.
+        try { await JS.InvokeVoidAsync("setPageTitle", $"{FormatTime(secondsLeft)} · {(isBreak ? T.PhaseBreakLabel : T.PhaseFocusLabel)}"); } catch { /* ignore */ }
+        await SyncAmbientPlayback(); // no-op if the target state doesn't change (called every second)
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async void OnBreakStarted()
+    {
+        var modeName = _currentMode?.Name ?? T.PhaseFocus;
+        await Notifications.ShowLocalNotificationAsync(
+            T.BreakStartedTitle,
+            string.Format(T.BreakStartedBody, modeName));
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async void OnTimerPaused()
+    {
+        if (_currentMode == null) return;
+        var phase = _isBreak ? T.PhaseBreak : T.PhaseFocus;
+        await Notifications.ShowLocalNotificationAsync(
+            T.TimerPausedTitle,
+            string.Format(T.TimerPausedBody, phase, FormatTime(_secondsLeft)));
+    }
+
+    private async void OnSessionComplete()
+    {
+        ReleaseWakeLock();
+        await SyncAmbientPlayback(); // Timer.IsRunning is already false at this point
+        await Notifications.ShowLocalNotificationAsync(
+            T.SessionCompletedTitle,
+            string.Format(T.SessionCompletedBody, _activeSession?.CourseName ?? "Session"));
+        if (_activeSession != null)
+        {
+            _activeSession.IsCompleted = true;
+            await State.SaveSessionAsync(_activeSession);
+        }
+        try { await JS.InvokeVoidAsync("playCompletionSound"); } catch { /* best-effort, ignore */ }
+        _motivationText = DefaultData.ClaudeMotivations[new Random().Next(DefaultData.ClaudeMotivations.Count)];
+
+        if (_activeSession != null)
+        {
+            _reflectionSessionId = _activeSession.Id;
+            _reflectionCourseId = _activeSession.CourseId;
+            _reflectionText = "";
+            _showReflection = true;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SaveReflection()
+    {
+        if (!string.IsNullOrWhiteSpace(_reflectionText))
+        {
+            var note = new NoteDto
+            {
+                Title = "",
+                Content = _reflectionText,
+                CourseId = _reflectionCourseId,
+                SessionId = _reflectionSessionId,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            };
+            // Offline: the session reflection is especially likely to happen out of signal
+            // range — enqueue instead of losing it (replayed on the next poll, see AppStateService).
+            try { await Http.PostAsJsonAsync("api/notes", note); }
+            catch { await State.EnqueueNoteSaveAsync(note); }
+        }
+        HideReflection();
+    }
+
+    private void SkipReflection() => HideReflection();
+
+    private void HideReflection()
+    {
+        _showReflection = false;
+        _reflectionText = "";
+        _reflectionSessionId = null;
+        _reflectionCourseId = null;
+    }
+
+    private void AcquireWakeLock()
+    {
+        try { _ = JS.InvokeVoidAsync("requestWakeLock"); } catch { /* best-effort, ignore */ }
+    }
+
+    private void ReleaseWakeLock()
+    {
+        try { _ = JS.InvokeVoidAsync("releaseWakeLock"); } catch { /* best-effort, ignore */ }
+    }
+
+    private string FormatTime(int seconds)
+    {
+        var m = seconds / 60;
+        var s = seconds % 60;
+        return $"{m:D2}:{s:D2}";
+    }
+
+    private Task ToggleAmbientPopover()
+    {
+        _ambientPopoverOpen = !_ambientPopoverOpen;
+        return Task.CompletedTask;
+    }
+
+    private async Task SelectAmbientType(string type)
+    {
+        _ambientType = type;
+        await PersistAmbientPrefsAsync();
+        await SyncAmbientPlayback();
+    }
+
+    private async Task SetAmbientVolume(double volume)
+    {
+        _ambientVolume = volume;
+        await PersistAmbientPrefsAsync();
+        // Adjust ongoing playback live without restarting the noise buffer.
+        if (_ambientModule != null && _ambientPlayingType != "off")
+        {
+            try { await _ambientModule.InvokeVoidAsync("setAmbientVolume", _ambientVolume); } catch { /* ignore */ }
+        }
+    }
+
+    private async Task PersistAmbientPrefsAsync()
+    {
+        if (_ambientModule == null) return;
+        try { await _ambientModule.InvokeVoidAsync("saveAmbientPrefs", _ambientType, _ambientVolume); } catch { /* localStorage possibly blocked, not critical */ }
+    }
+
+    /// <summary>
+    /// Brings the JS-side noise playback into alignment with the desired sound type AND
+    /// the actual timer state (Timer.IsRunning instead of the mirrored _isRunning,
+    /// which no longer gets updated on a session's natural end - see OnSessionComplete).
+    /// Idempotent: only calls into JS when the target state has changed since the last call,
+    /// so the buffer isn't restarted on every one-second tick.
+    /// </summary>
+    private async Task SyncAmbientPlayback()
+    {
+        if (_ambientModule == null) return;
+        var target = Timer.IsRunning ? _ambientType : "off";
+        if (target == _ambientPlayingType) return;
+
+        if (target == "off")
+        {
+            try { await _ambientModule.InvokeVoidAsync("stopAmbient"); } catch { /* ignore */ }
+        }
+        else
+        {
+            try { await _ambientModule.InvokeVoidAsync("playAmbient", target, _ambientVolume); } catch { /* ignore */ }
+        }
+        _ambientPlayingType = target;
+    }
+
+    // ── "Timer running on another device" display ──────────────────────────────
+    // api/timerstate is per-user (query filter on AuthUserId) - so only this user's OWN
+    // timer from another device can ever appear here, never another user's.
+    // The ticker runs as long as the page is open: advance the display every second,
+    // fetch the server state every 30s - this way the banner also appears if device A only
+    // starts WHILE this page is already open. Remaining time is anchored to the SERVER
+    // CLOCK (PhaseEndsAt - ServerNow at fetch time, then counted down locally): this
+    // device's local clock no longer shortens/stretches the display.
+    private TimerStateDto? _remoteTimer;
+    private int _remoteSecondsLeft;
+    private double _remoteBaseRemainingSeconds;
+    private DateTime _remoteFetchedAt;
+    private int _remoteTickCount;
+    private System.Threading.Timer? _remoteTicker;
+
+    private async Task RefreshRemoteTimerAsync()
+    {
+        _remoteTicker ??= new System.Threading.Timer(_ => _ = InvokeAsync(OnRemoteTickAsync), null, 1000, 1000);
+        try
+        {
+            var dto = await Http.GetFromJsonAsync<TimerStateDto>("api/timerstate");
+            var remaining = dto is { IsRunning: true, PhaseEndsAt: { } endsAt }
+                ? (endsAt - (dto.ServerNow ?? DateTime.Now)).TotalSeconds
+                : 0;
+            if (!Timer.IsRunning && remaining > 0)
+            {
+                _remoteTimer = dto;
+                _remoteBaseRemainingSeconds = remaining;
+                _remoteFetchedAt = DateTime.Now;
+                _remoteSecondsLeft = (int)Math.Ceiling(remaining);
+            }
+            else
+            {
+                _remoteTimer = null;
+            }
+        }
+        catch { _remoteTimer = null; /* offline: banner is purely cosmetic */ }
+    }
+
+    private async Task OnRemoteTickAsync()
+    {
+        if (Timer.IsRunning) _remoteTimer = null;
+        var bannerVisible = _remoteTimer != null;
+        if (bannerVisible)
+        {
+            _remoteSecondsLeft = Math.Max(0, (int)Math.Ceiling(
+                _remoteBaseRemainingSeconds - (DateTime.Now - _remoteFetchedAt).TotalSeconds));
+        }
+        // Refetch cadence: every 30s (even WITHOUT a visible banner, otherwise a start on
+        // device A would never be noticed); immediately once the displayed phase ends.
+        if (++_remoteTickCount % 30 == 0 || (bannerVisible && _remoteSecondsLeft == 0))
+            await RefreshRemoteTimerAsync();
+        if (bannerVisible || _remoteTimer != null) StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        _remoteTicker?.Dispose();
+        Timer.OnTick -= OnTimerTick;
+        Timer.OnSessionComplete -= OnSessionComplete;
+        Timer.OnBreakStarted -= OnBreakStarted;
+        Timer.OnPaused -= OnTimerPaused;
+        Timer.OnModeChanged -= OnModeChangedFromService;
+        // Conservative: release even if the (app-scoped) timer keeps running after
+        // navigating away — the screen may sleep, which is acceptable off this page.
+        ReleaseWakeLock();
+        // Unlike the wake lock: ambient sound should NOT keep playing when the page
+        // is left - that would be surprising for the user. So stop it hard.
+        if (_ambientModule != null)
+        {
+            try { _ = _ambientModule.InvokeVoidAsync("disposeAmbient"); } catch { /* best-effort, component is unmounting */ }
+            try { _ = _ambientModule.DisposeAsync(); } catch { /* best-effort, component is unmounting */ }
+        }
+        try { _ = JS.InvokeVoidAsync("setPageTitle", "StudyLife"); } catch { /* best-effort, component is unmounting */ }
+    }
+}

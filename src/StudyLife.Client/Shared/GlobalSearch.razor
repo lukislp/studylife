@@ -1,0 +1,242 @@
+@using StudyLife.Client.Services
+@using StudyLife.Shared
+@inject AppStateService State
+@inject HttpClient Http
+@inject NavigationManager Nav
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+@implements IDisposable
+
+@* Global search (command palette): overlay above the entire shell, opened via
+   Ctrl+K/Cmd+K (hotkey wiring in MainLayout) or the search button in the sidebar.
+   Searches courses (local cache), notes (server FTS) and upcoming sessions. *@
+
+@if (Open)
+{
+    <div class="modal-overlay gs-overlay" @onclick="CloseAsync">
+        <div class="gs-box" @onclick:stopPropagation="true">
+            <input @ref="_inputRef"
+                   class="gs-input"
+                   type="text"
+                   value="@_query"
+                   placeholder="@T.SearchPlaceholder"
+                   @oninput="OnInput"
+                   @onkeydown="OnKeyDown" />
+            @if (_results.Count > 0)
+            {
+                <div class="gs-results">
+                    @{ string? lastGroup = null; }
+                    @for (var i = 0; i < _results.Count; i++)
+                    {
+                        var idx = i;
+                        var r = _results[idx];
+                        @if (r.Group != lastGroup)
+                        {
+                            lastGroup = r.Group;
+                            <div class="gs-group-header">@GroupLabel(r.Group)</div>
+                        }
+                        <button class="gs-row @(idx == _highlight ? "highlighted" : "")"
+                                @onclick="() => SelectAsync(r)">
+                            <span class="gs-row-icon">@r.Icon</span>
+                            <span class="gs-row-title">@r.Title</span>
+                            @if (!string.IsNullOrEmpty(r.Detail))
+                            {
+                                <span class="gs-row-detail">@r.Detail</span>
+                            }
+                        </button>
+                    }
+                </div>
+            }
+            else if (_searched && _query.Trim().Length >= MinQueryLength)
+            {
+                <div class="gs-results">
+                    <div class="gs-empty">@T.SearchNoResults</div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private const int MinQueryLength = 2;
+    private const int MaxPerGroup = 5;
+
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private I18nText.MainLayoutText T = new();
+    private ElementReference _inputRef;
+    private string _query = "";
+    private bool _searched;          // true once a search run has finished for the current query
+    private bool _shouldFocus;       // focus request on open, handled in OnAfterRenderAsync
+    private bool _wasOpen;
+    private int _highlight;
+    private System.Threading.Timer? _debounce;
+    private readonly List<SearchResult> _results = new();
+
+    private record SearchResult(string Group, string Icon, string Title, string? Detail, string Href);
+
+    protected override async Task OnInitializedAsync()
+    {
+        T = await I18nText.GetTextTableAsync<I18nText.MainLayoutText>(this);
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (Open && !_wasOpen)
+        {
+            // Freshly opened: empty state + autofocus on the input field
+            _query = "";
+            _results.Clear();
+            _searched = false;
+            _highlight = 0;
+            _shouldFocus = true;
+        }
+        _wasOpen = Open;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_shouldFocus && Open)
+        {
+            _shouldFocus = false;
+            try { await _inputRef.FocusAsync(); }
+            catch { /* element may not be in the DOM yet, or interop isn't ready - ignore */ }
+        }
+    }
+
+    private string GroupLabel(string group) => group switch
+    {
+        "courses" => T.SearchCourses,
+        "notes" => T.SearchNotes,
+        _ => T.SearchSessions,
+    };
+
+    private void OnInput(ChangeEventArgs e)
+    {
+        _query = e.Value?.ToString() ?? "";
+        _debounce?.Dispose();
+        _debounce = null;
+        _searched = false;
+
+        if (_query.Trim().Length < MinQueryLength)
+        {
+            _results.Clear();
+            _highlight = 0;
+            return;
+        }
+
+        // Debounce like the notes search (System.Threading.Timer pattern from Notes.razor)
+        _debounce = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(RunSearchAsync);
+        }, null, TimeSpan.FromMilliseconds(250), Timeout.InfiniteTimeSpan);
+    }
+
+    private async Task RunSearchAsync()
+    {
+        var q = _query.Trim();
+        if (q.Length < MinQueryLength) return;
+
+        var results = new List<SearchResult>();
+
+        // Courses: local catalog cache, name/code substring match
+        try
+        {
+            var courses = await State.GetCoursesAsync();
+            results.AddRange(courses
+                .Where(c => c.Name.Contains(q, StringComparison.OrdinalIgnoreCase)
+                    || c.Code.Contains(q, StringComparison.OrdinalIgnoreCase))
+                .Take(MaxPerGroup)
+                .Select(c => new SearchResult("courses", c.Icon, c.Name, c.Code, "/setup")));
+        }
+        catch { /* offline/error: leave the group empty */ }
+
+        // Notes: server FTS5 (same endpoint as the notes page)
+        try
+        {
+            var notes = await Http.GetFromJsonAsync<List<NoteDto>>(
+                $"api/notes/search?q={Uri.EscapeDataString(q)}");
+            if (notes != null)
+            {
+                results.AddRange(notes
+                    .Take(MaxPerGroup)
+                    .Select(n => new SearchResult("notes", "◪",
+                        string.IsNullOrWhiteSpace(n.Title) ? Preview(n.Content, 40) : n.Title,
+                        Preview(n.Content, 60), "/notes")));
+            }
+        }
+        catch { /* offline/error: leave the group empty */ }
+
+        // Upcoming sessions: local cache, from today onward, sorted by start time
+        try
+        {
+            var sessions = await State.GetSessionsAsync();
+            var today = DateTime.Today;
+            results.AddRange(sessions
+                .Where(s => s.StartTime.Date >= today
+                    && (s.CourseName.Contains(q, StringComparison.OrdinalIgnoreCase)
+                        || (s.Topic?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false)))
+                .OrderBy(s => s.StartTime)
+                .Take(MaxPerGroup)
+                .Select(s => new SearchResult("sessions", "◫",
+                    string.IsNullOrWhiteSpace(s.Topic) ? s.CourseName : $"{s.CourseName} — {s.Topic}",
+                    s.StartTime.ToString("dd.MM. HH:mm"), "/calendar")));
+        }
+        catch { /* offline/error: leave the group empty */ }
+
+        // Only apply if the query hasn't been typed further in the meantime
+        if (q != _query.Trim()) return;
+
+        _results.Clear();
+        _results.AddRange(results);
+        _highlight = 0;
+        _searched = true;
+        StateHasChanged();
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "ArrowDown":
+                if (_results.Count > 0) _highlight = (_highlight + 1) % _results.Count;
+                break;
+            case "ArrowUp":
+                if (_results.Count > 0) _highlight = (_highlight - 1 + _results.Count) % _results.Count;
+                break;
+            case "Enter":
+                if (_highlight >= 0 && _highlight < _results.Count)
+                {
+                    await SelectAsync(_results[_highlight]);
+                }
+                break;
+            case "Escape":
+                await CloseAsync();
+                break;
+        }
+    }
+
+    private async Task SelectAsync(SearchResult r)
+    {
+        await CloseAsync();
+        Nav.NavigateTo(r.Href);
+    }
+
+    private async Task CloseAsync()
+    {
+        _debounce?.Dispose();
+        _debounce = null;
+        await OnClose.InvokeAsync();
+    }
+
+    private static string Preview(string content, int max)
+    {
+        var oneline = content.Replace("\n", " ").Replace("\r", " ").Trim();
+        return oneline.Length > max ? oneline[..max] + "…" : oneline;
+    }
+
+    public void Dispose()
+    {
+        _debounce?.Dispose();
+    }
+}

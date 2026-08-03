@@ -1,0 +1,532 @@
+@inherits LayoutComponentBase
+@using StudyLife.Client.Services
+@using StudyLife.Client.Models
+@using StudyLife.Shared
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject AppStateService State
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@inject NotificationService Notifications
+@inject SessionTokenStore TokenStore
+@inject INativeAppAuth NativeAuth
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+@implements IDisposable
+
+@if (_authenticated)
+{
+<div class="app-shell @(_currentPage)">
+    @if (_pendingWrites > 0)
+    {
+        <!-- Offline sync badge: visible as long as writes from an offline period are
+             still waiting to be replayed (AppStateService write queue, replay on the 30s poll). -->
+        <div class="pending-sync-chip" title="@string.Format(T.PendingSyncTooltip ?? "", _pendingWrites)">
+            <span class="psc-icon">⟳</span>@_pendingWrites
+        </div>
+    }
+
+    @if (_updateAvailable)
+    {
+        <!-- If the browser is still running an older WASM bundle than the server (service worker
+             cache), the toast offers a reload - the service worker has already preloaded the new
+             version in the background by this point (skipWaiting+claim). -->
+        <div class="update-toast" role="status" aria-live="polite">
+            @if (_updateReloading)
+            {
+                <!-- Visible feedback until the hard reload: the WASM restart takes a
+                     moment, and without a spinner the click looks like it did nothing. -->
+                <span class="ut-spinner" aria-hidden="true"></span>
+                <span>@T.UpdateReloadButton …</span>
+            }
+            else
+            {
+                <span>@T.UpdateAvailableText</span>
+                <button type="button" class="btn-primary" @onclick="ReloadForUpdateAsync">@T.UpdateReloadButton</button>
+                <button type="button" class="ut-close" @onclick="() => _updateAvailable = false">✕</button>
+            }
+        </div>
+    }
+    <nav class="sidebar">
+        <div class="brand">
+            <span class="brand-icon">✦</span>
+            <span class="brand-name">StudyLife</span>
+        </div>
+        <div class="nav-links">
+            <NavLink href="/" Match="NavLinkMatch.All" class="nav-item">
+                <span class="nav-icon">◈</span>
+                <span class="nav-label">@T.Dashboard</span>
+            </NavLink>
+            <NavLink href="/calendar" class="nav-item">
+                <span class="nav-icon">◫</span>
+                <span class="nav-label">@T.Calendar</span>
+            </NavLink>
+            <NavLink href="/focus" class="nav-item nav-focus">
+                <span class="nav-icon">◉</span>
+                <span class="nav-label">@T.Focus</span>
+                @if (_hasActive)
+                {
+                    <span class="nav-badge">●</span>
+                }
+            </NavLink>
+            <NavLink href="/notes" class="nav-item">
+                <span class="nav-icon">◪</span>
+                <span class="nav-label">@T.Notes</span>
+            </NavLink>
+            <NavLink href="/planner" class="nav-item">
+                <span class="nav-icon">⌘</span>
+                <span class="nav-label">@T.Planner</span>
+            </NavLink>
+            <NavLink href="/auswertung" class="nav-item">
+                <span class="nav-icon">▦</span>
+                <span class="nav-label">@T.Stats</span>
+            </NavLink>
+            <NavLink href="/setup" class="nav-item">
+                <span class="nav-icon">◧</span>
+                <span class="nav-label">@T.Setup</span>
+            </NavLink>
+        </div>
+        <div class="sidebar-foot">
+            <div class="time-display">@DateTime.Now.ToString("HH:mm")</div>
+            <div class="date-display">@DateTime.Now.ToString("ddd, MMM d")</div>
+        </div>
+    </nav>
+
+    <!-- Speed dial: combines search + language switcher into one floating action button in the
+         bottom right, instead of two separate fixed elements (previously: its own sidebar nav
+         entry for search, a standalone language switcher in the top right). Ctrl+K keeps working
+         independently of this (initGlobalSearchHotkey in OnAfterRenderAsync). -->
+    <div class="fab-dial">
+        @if (_langPopupOpen)
+        {
+            <div class="lang-popup fab-lang-popup" @onclick:stopPropagation="true">
+                @foreach (var lang in Languages)
+                {
+                    var l = lang;
+                    <button class="lang-option @(l.Code == _lang ? "active" : "")" @onclick="() => SetLanguageAsync(l.Code)">
+                        <span class="lang-flag">@l.Flag</span>
+                        <span class="lang-name">@l.Name</span>
+                    </button>
+                }
+            </div>
+        }
+        else if (_fabOpen)
+        {
+            <div class="fab-actions" @onclick:stopPropagation="true">
+                <button class="fab-action" title="@T.SearchLabel" @onclick="OpenSearchFromFab">
+                    <span>⌕</span>
+                </button>
+                <button class="fab-action" title="@CurrentLanguage.Name" @onclick="OpenLangFromFab">
+                    <span class="lang-flag">@CurrentLanguage.Flag</span>
+                </button>
+                <button class="fab-action" title="@T.PushDevicesLabel" @onclick="OpenDeviceManagerFromFab">
+                    <span>🔔</span>
+                </button>
+                <button class="fab-action" title="@T.PasskeysLabel" @onclick="OpenPasskeyManagerFromFab">
+                    <span>🔑</span>
+                </button>
+            </div>
+        }
+        <button class="fab-main @(_fabOpen || _langPopupOpen ? "open" : "")" @onclick="ToggleFab" @onclick:stopPropagation="true">
+            <span>@((_fabOpen || _langPopupOpen) ? "✕" : "⋯")</span>
+        </button>
+    </div>
+
+    @if (_fabOpen || _langPopupOpen)
+    {
+        <div class="lang-popup-backdrop" @onclick="CloseFab"></div>
+    }
+
+    <GlobalSearch Open="_searchOpen" OnClose="CloseSearch" />
+    <PushDeviceManager Open="_deviceManagerOpen" OnClose="CloseDeviceManager" />
+    <PasskeyDeviceManager Open="_passkeyManagerOpen" OnClose="ClosePasskeyManager" />
+
+    <main class="main-content" id="main-scroll">
+        @* Catches rendering exceptions of individual pages instead of crashing the whole WASM app
+           - mainly for the 401 race on session expiry: SessionHandler discards the token and
+           OnSessionInvalidated above redirects to /login via forceLoad at almost the same time,
+           but a currently running Http.GetFromJsonAsync load on ONE page throws its own
+           EnsureSuccessStatusCode exception independently of that - without an ErrorBoundary that
+           surfaces as "Unhandled exception rendering component" and takes the whole page down
+           with it. The fallback here is deliberately minimal because the 401 race only shows it
+           for the split second until the forceLoad reload anyway; Recover() in OnLocationChanged
+           resets the boundary on normal navigation so a genuine error on one page doesn't
+           permanently block every following page. *@
+        <ErrorBoundary @ref="_errorBoundary">
+            <ChildContent>
+                @Body
+            </ChildContent>
+            <ErrorContent>
+                <div class="setup-section"><p class="ss-desc">@T.PageLoadErrorText</p></div>
+            </ErrorContent>
+        </ErrorBoundary>
+    </main>
+</div>
+}
+
+@code {
+    private bool _hasActive;
+    private string _currentPage = "page-dashboard";
+    private System.Threading.Timer? _clockTimer;
+    private I18nText.MainLayoutText T = new();
+    private string _lang = "en";
+    private bool _langPopupOpen;
+    private bool _fabOpen;
+    private bool _searchOpen;
+    private bool _deviceManagerOpen;
+    private bool _passkeyManagerOpen;
+    private DotNetObjectReference<MainLayout>? _searchHotkeyRef;
+    private ErrorBoundary? _errorBoundary;
+    private bool _authenticated;
+
+    private record Language(string Code, string Flag, string Name);
+
+    private static readonly List<Language> Languages = new()
+    {
+        new("en", "🇬🇧", "English"),
+        new("de", "🇩🇪", "Deutsch"),
+        new("fr", "🇫🇷", "Français"),
+        new("es", "🇪🇸", "Español"),
+        new("it", "🇮🇹", "Italiano"),
+        new("pt", "🇵🇹", "Português"),
+        new("nl", "🇳🇱", "Nederlands"),
+        new("da", "🇩🇰", "Dansk"),
+        new("sv", "🇸🇪", "Svenska"),
+        new("fi", "🇫🇮", "Suomi"),
+        new("el", "🇬🇷", "Ελληνικά"),
+        new("pl", "🇵🇱", "Polski"),
+        new("cs", "🇨🇿", "Čeština"),
+        new("sk", "🇸🇰", "Slovenčina"),
+        new("hu", "🇭🇺", "Magyar"),
+        new("ro", "🇷🇴", "Română"),
+        new("bg", "🇧🇬", "Български"),
+        new("hr", "🇭🇷", "Hrvatski"),
+        new("sl", "🇸🇮", "Slovenščina"),
+        new("et", "🇪🇪", "Eesti"),
+        new("lv", "🇱🇻", "Latviešu"),
+        new("lt", "🇱🇹", "Lietuvių"),
+        new("mt", "🇲🇹", "Malti"),
+        new("ga", "🇮🇪", "Gaeilge"),
+        new("uk", "🇺🇦", "Українська"),
+        new("ru", "🇷🇺", "Русский"),
+    };
+
+    private Language CurrentLanguage => Languages.FirstOrDefault(l => l.Code == _lang) ?? Languages[0];
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Must be the VERY FIRST line (before any await): TokenStore.Token is available
+        // synchronously (loaded in Program.cs before RunAsync), so this check still runs BEFORE
+        // this component's first render. @Body (the actual, potentially sensitive page - e.g.
+        // stats) is bound to _authenticated in the markup and isn't instantiated at all when
+        // false - no mounting, no data fetch of its own, no visible output, not even for a split
+        // second. The reactive SessionHandler redirect (401 on a token that already EXISTS but
+        // is invalid server-side) still remains as a fallback in addition - the case covered
+        // here is "no token present at all".
+        if (string.IsNullOrEmpty(TokenStore.Token))
+        {
+            Nav.NavigateTo("/login", forceLoad: true);
+            return;
+        }
+        _authenticated = true;
+
+        try
+        {
+            _clockTimer = new System.Threading.Timer(_ => _ = InvokeAsync(OnClockTickAsync), null, 0, 10000);
+            await CheckActive();
+            Nav.LocationChanged += OnLocationChanged;
+            UpdateCurrentPage(Nav.Uri);
+            await Notifications.InitializeAsync();
+            T = await I18nText.GetTextTableAsync<I18nText.MainLayoutText>(this);
+            _lang = await I18nText.GetCurrentLanguageAsync();
+
+            var settings = await State.GetSettingsAsync();
+            // Best-effort: never let a missing/failing JS helper (e.g. stale cached index.html
+            // in an installed PWA) crash the whole layout - the CSS default theme applies then.
+            try { await JS.InvokeVoidAsync("applyTheme", settings.Theme); } catch { /* ignore */ }
+
+            State.OnSessionsChanged += OnSessionsChanged;
+            State.OnPendingWritesChanged += OnPendingWritesChanged;
+            _pendingWrites = await State.GetPendingWriteCountAsync();
+            await CheckForClientUpdateAsync();
+            // Server declared the passkey session invalid via 401 (SessionHandler has already
+            // discarded the token) - redirect to the login page. This is the ONLY path that
+            // triggers a logout; network errors/timeouts never touch the token.
+            TokenStore.OnSessionInvalidated += OnSessionInvalidated;
+            await UpdateAppBadgeAsync();
+        }
+        catch (Exception ex)
+        {
+            // Diagnostics for the "unhandled error" banner that had so far only been reproduced
+            // blindly: this startup path runs on EVERY authenticated cold start, and an exception
+            // in it previously went completely unlogged into the Blazor renderer. Same flush
+            // pattern as AppleInAppPasskeys.LogDiag, visible via "devicectl device process launch --console".
+            Console.WriteLine($"[MainLayout.OnInitializedAsync] Error: {ex}");
+            Console.Out.Flush();
+            throw;
+        }
+    }
+
+    private void OnSessionInvalidated() =>
+        InvokeAsync(() => Nav.NavigateTo("/login", forceLoad: true));
+
+    private async void OnSessionsChanged() => await UpdateAppBadgeAsync();
+
+    private int _pendingWrites;
+
+    private void OnPendingWritesChanged() => _ = InvokeAsync(() =>
+    {
+        _pendingWrites = State.PendingWriteCount;
+        StateHasChanged();
+    });
+
+    // ── "New version available" toast ───────────────────────────────────────
+    // Compares the version of the RUNNING bundle (CI sets -p:Version globally, including on
+    // StudyLife.Client) against the server version - same detection as the yellow UI line
+    // on the setup page, but here as an active heads-up at app start. Lesson from the
+    // 1.25.0 evening: otherwise users only notice service worker staleness by the app "feeling old".
+    private bool _updateAvailable;
+    private int _updateCheckCounter;
+    private IJSObjectReference? _visibilityHandle;
+    private DateTime _lastClockTickUtc = DateTime.UtcNow;
+
+    /// <summary>
+    /// Clock tick (10s) + recurring update check: the check at app start alone isn't enough -
+    /// a PWA left open indefinitely would otherwise only learn about a deploy after a restart.
+    /// Checked every minute (the check is a tiny GET) and after a detected iOS freeze (large
+    /// gap between ticks); the visibility change is additionally handled by the real
+    /// visibilitychange listener (OnPageBecameVisible).
+    /// </summary>
+    private async Task OnClockTickAsync()
+    {
+        StateHasChanged(); // Clock/date in the sidebar, as before
+
+        if (_updateAvailable) return;
+
+        var nowUtc = DateTime.UtcNow;
+        var resumedFromFreeze = nowUtc - _lastClockTickUtc > TimeSpan.FromSeconds(30);
+        _lastClockTickUtc = nowUtc;
+
+        try
+        {
+            if (await JS.InvokeAsync<bool>("isPageHidden")) return;
+        }
+        catch { /* Helper not available (stale index.html) - keep the minute cadence */ }
+
+        if (resumedFromFreeze || ++_updateCheckCounter >= 6)
+        {
+            _updateCheckCounter = 0;
+            await CheckForClientUpdateAsync();
+            if (_updateAvailable) StateHasChanged();
+        }
+    }
+
+    private async Task CheckForClientUpdateAsync()
+    {
+        // The native app shell (MAUI BlazorWebView, studylife-app repo) bundles the same
+        // StudyLife.Client component, but WITHOUT a service worker and without the -p:Version
+        // stamp (which only comes from the studylife CI) - the client assembly there stays
+        // permanently at "1.0.0", which permanently mismatches the real server version, and
+        // "reload" would just show the same embedded bundle again anyway (no network fetch of
+        // new assets possible). The toast is meaningless in this context - disable it entirely.
+        if (NativeAuth.IsAvailable) return;
+        try
+        {
+            var clientVersion = typeof(MainLayout).Assembly
+                .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+                .OfType<System.Reflection.AssemblyInformationalVersionAttribute>()
+                .FirstOrDefault()?.InformationalVersion?.Split('+')[0];
+            if (string.IsNullOrEmpty(clientVersion) || clientVersion == "dev") return;
+            // Cache buster: the response carries no cache headers, so an HTTP cache could
+            // otherwise hold onto it heuristically (same lesson as api/system/capabilities).
+            var dto = await Http.GetFromJsonAsync<VersionResponseDto>(
+                $"api/system/version?nocache={DateTime.UtcNow.Ticks}");
+            var serverVersion = dto?.Version?.Split('+')[0];
+            _updateAvailable = !string.IsNullOrEmpty(serverVersion) && serverVersion != clientVersion;
+        }
+        catch { /* offline/error: no update hint, app keeps running normally */ }
+    }
+
+    private bool _updateReloading;
+    private IJSObjectReference? _updateModule;
+
+    /// <summary>
+    /// One-click update: waits (spinner visible) until the NEW service worker has loaded its
+    /// assets and taken control, then reloads exactly once - the previous immediate reload still
+    /// ran under the old worker and therefore needed two clicks.
+    /// </summary>
+    private async Task ReloadForUpdateAsync()
+    {
+        _updateReloading = true;
+        StateHasChanged();
+        try
+        {
+            _updateModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./Shared/MainLayout.razor.js");
+            await _updateModule.InvokeVoidAsync("reloadForUpdate", 120000);
+        }
+        catch
+        {
+            // Module not available (stale index.html or similar): fall back to the old way.
+            Nav.NavigateTo(Nav.Uri, forceLoad: true);
+        }
+    }
+
+    private async Task UpdateAppBadgeAsync()
+    {
+        try
+        {
+            var sessions = await State.GetSessionsAsync();
+            var now = DateTime.Now;
+            // Remaining today = not yet done; mirrors Index.razor's IsDone
+            // semantics (done = IsCompleted || EndTime <= now).
+            var count = sessions.Count(s => s.StartTime.Date == DateTime.Today
+                                            && !s.IsCompleted
+                                            && s.EndTime > now);
+            await JS.InvokeVoidAsync("setAppBadge", count);
+        }
+        catch { /* best-effort badge update, ignore */ }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _searchHotkeyRef = DotNetObjectReference.Create(this);
+
+            // Ctrl+K/Cmd+K hotkey: a document-wide keydown listener (index.html).
+            // Best effort: a stale cached index.html without the helper must not crash the
+            // shell - then search is simply only available via the sidebar button.
+            try
+            {
+                await JS.InvokeVoidAsync("initGlobalSearchHotkey", _searchHotkeyRef);
+            }
+            catch { /* Hotkey not available, ignore */ }
+
+            // Real visibilitychange event for the update check: the previous poll comparison
+            // could miss the transition (iOS freezes the JS before a tick sees the hidden
+            // state) - which is why the toast previously only appeared after a PWA restart.
+            // Pointless in the native app shell (see CheckForClientUpdateAsync) - don't even
+            // register it there.
+            if (!NativeAuth.IsAvailable)
+            {
+                try
+                {
+                    _updateModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./Shared/MainLayout.razor.js");
+                    _visibilityHandle = await _updateModule.InvokeAsync<IJSObjectReference>(
+                        "registerVisibilityCallback", _searchHotkeyRef);
+                }
+                catch { /* Module not available - falls back to the clock ticker's 60s cadence */ }
+            }
+        }
+    }
+
+    /// <summary>Called by the visibilitychange listener (MainLayout.razor.js) as soon as the page
+    /// becomes visible again - triggers an immediate update check instead of waiting for the minute cadence.</summary>
+    [JSInvokable]
+    public async Task OnPageBecameVisible()
+    {
+        if (_updateAvailable) return;
+        _updateCheckCounter = 0;
+        await CheckForClientUpdateAsync();
+        if (_updateAvailable) await InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public void ToggleGlobalSearch()
+    {
+        _searchOpen = !_searchOpen;
+        StateHasChanged();
+    }
+
+    private void CloseSearch() => _searchOpen = false;
+
+    private void ToggleFab() => _fabOpen = !_fabOpen;
+
+    private void OpenSearchFromFab()
+    {
+        _fabOpen = false;
+        _searchOpen = true;
+    }
+
+    private void OpenLangFromFab()
+    {
+        _fabOpen = false;
+        _langPopupOpen = true;
+    }
+
+    private void OpenDeviceManagerFromFab()
+    {
+        _fabOpen = false;
+        _deviceManagerOpen = true;
+    }
+
+    private void CloseDeviceManager() => _deviceManagerOpen = false;
+
+    private void OpenPasskeyManagerFromFab()
+    {
+        _fabOpen = false;
+        _passkeyManagerOpen = true;
+    }
+
+    private void ClosePasskeyManager() => _passkeyManagerOpen = false;
+
+    private void CloseFab()
+    {
+        _fabOpen = false;
+        _langPopupOpen = false;
+    }
+
+    private async Task SetLanguageAsync(string lang)
+    {
+        _lang = lang;
+        _langPopupOpen = false;
+        await I18nText.SetCurrentLanguageAsync(lang);
+        // Keep <html lang> in sync - on Chromium browsers this controls the format of native
+        // form controls (especially the calendar time picker, AM/PM vs. 24h), see Program.cs.
+        try { await JS.InvokeVoidAsync("setDocumentLanguage", lang); } catch { /* best effort */ }
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        UpdateCurrentPage(e.Location);
+        // Normal client navigation resets a triggered ErrorBoundary fallback so an error on ONE
+        // page doesn't permanently block every following page (the 401 race the boundary is
+        // primarily meant for leaves the app via a forceLoad reload anyway).
+        _errorBoundary?.Recover();
+        InvokeAsync(async () =>
+        {
+            StateHasChanged();
+            try { await JS.InvokeVoidAsync("scrollElementToTop", "main-scroll"); } catch { /* best-effort, ignore */ }
+        });
+    }
+
+    private void UpdateCurrentPage(string uri)
+    {
+        if (uri.Contains("/focus")) _currentPage = "page-focus";
+        else if (uri.Contains("/calendar")) _currentPage = "page-calendar";
+        else if (uri.Contains("/notes")) _currentPage = "page-notes";
+        else if (uri.Contains("/planner")) _currentPage = "page-planner";
+        else if (uri.Contains("/auswertung")) _currentPage = "page-auswertung";
+        else if (uri.Contains("/setup")) _currentPage = "page-setup";
+        else _currentPage = "page-dashboard";
+    }
+
+    private async Task CheckActive()
+    {
+        var active = await State.GetActiveSessionAsync();
+        _hasActive = active != null;
+    }
+
+    public void Dispose()
+    {
+        _clockTimer?.Dispose();
+        if (_visibilityHandle != null)
+        {
+            try { _ = _visibilityHandle.InvokeVoidAsync("dispose"); } catch { /* connection may already be gone */ }
+        }
+        _searchHotkeyRef?.Dispose();
+        Nav.LocationChanged -= OnLocationChanged;
+        State.OnSessionsChanged -= OnSessionsChanged;
+        State.OnPendingWritesChanged -= OnPendingWritesChanged;
+        TokenStore.OnSessionInvalidated -= OnSessionInvalidated;
+    }
+}

@@ -1,0 +1,19 @@
+{
+  "PageTitleTag": "StudyLife — Progress",
+  "Heading": "Studiju progress",
+  "SubHeading": "Kopīgots, tikai lasāms brīža stāvoklis — atjaunojas automātiski.",
+  "EctsLabel": "Iegūtie ECTS",
+  "EctsFormat": "{0} / {1} ECTS",
+  "AverageGradeLabel": "Vidējā atzīme",
+  "NoGradeYet": "Vēl nav atzīmju",
+  "CoursesCompletedFormat": "Pabeigti {0} no {1} kursiem",
+  "ActiveCoursesHeading": "Aktīvie kursi",
+  "NoActiveCourses": "Pašlaik nav aktīvu kursu.",
+  "TopicProgressFormat": "{0}% no tēmām",
+  "InvalidLinkHeading": "Saite nav pieejama",
+  "InvalidLinkMessage": "Šī progresa saite ir nederīga, beigusies vai īpašnieks to ir atspējojis.",
+  "TemporaryErrorHeading": "Īslaicīgi nav pieejams",
+  "TemporaryErrorMessage": "Ielādējot šo lapu, kaut kas nogāja greizi. Lūdzu, mēģiniet vēlreiz pēc brīža.",
+  "GeneratedAtFormat": "Pēdējoreiz atjaunināts: {0}",
+  "PoweredByLabel": "Kopīgots, izmantojot StudyLife"
+}

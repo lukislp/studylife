@@ -1,0 +1,18 @@
+{
+  "Heading": "Wochenplan",
+  "Subtitle": "Eine druckbare Übersicht deiner geplanten Lernsessions dieser Woche — ausdrucken und an die Wand hängen.",
+  "BackLink": "← Zurück zum Kalender",
+  "ExportButton": "🖨 Wochenplan drucken",
+  "WeekRangeFormat": "Woche: {0} – {1}",
+  "GeneratedOnFormat": "Erstellt am {0}",
+  "SummaryHeading": "Zusammenfassung",
+  "PlannedHoursLabel": "Geplante Stunden diese Woche",
+  "WeeklyGoalLabel": "Wochenziel",
+  "WeeklyGoalFormat": "{0}–{1} h",
+  "SessionCountLabel": "Geplante Sessions",
+  "NoSessions": "Für diesen Tag sind keine Sessions geplant.",
+  "TableTime": "Zeit",
+  "TableCourse": "Kurs",
+  "TableTopic": "Thema",
+  "FooterNote": "Automatisch erstellt von StudyLife."
+}

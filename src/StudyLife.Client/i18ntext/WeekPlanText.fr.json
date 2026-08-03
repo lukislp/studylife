@@ -1,0 +1,18 @@
+{
+  "Heading": "Plan hebdomadaire",
+  "Subtitle": "Un aperçu imprimable de tes sessions d'étude prévues cette semaine — imprime-le et affiche-le au mur.",
+  "BackLink": "← Retour au calendrier",
+  "ExportButton": "🖨 Imprimer le plan hebdomadaire",
+  "WeekRangeFormat": "Semaine : {0} – {1}",
+  "GeneratedOnFormat": "Généré le {0}",
+  "SummaryHeading": "Résumé",
+  "PlannedHoursLabel": "Heures prévues cette semaine",
+  "WeeklyGoalLabel": "Objectif hebdomadaire",
+  "WeeklyGoalFormat": "{0}–{1} h",
+  "SessionCountLabel": "Sessions prévues",
+  "NoSessions": "Aucune session prévue pour ce jour.",
+  "TableTime": "Heure",
+  "TableCourse": "Cours",
+  "TableTopic": "Sujet",
+  "FooterNote": "Généré automatiquement par StudyLife."
+}

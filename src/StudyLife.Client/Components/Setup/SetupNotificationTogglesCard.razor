@@ -1,0 +1,177 @@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    <p class="ss-desc">@Desc</p>
+
+    <div class="toggle-row">
+        <label class="toggle">
+            <input type="checkbox" checked="@SessionRemindersEnabled" @onchange="e => SessionRemindersEnabledChanged.InvokeAsync((bool)(e.Value ?? false))" />
+            <span class="toggle-track"></span>
+        </label>
+        <span>@SessionRemindersLabel</span>
+    </div>
+
+    <div class="toggle-row">
+        <label class="toggle">
+            <input type="checkbox" checked="@CourseGoalRemindersEnabled" @onchange="e => CourseGoalRemindersEnabledChanged.InvokeAsync((bool)(e.Value ?? false))" />
+            <span class="toggle-track"></span>
+        </label>
+        <span>@CourseGoalRemindersLabel</span>
+    </div>
+
+    <div class="toggle-row">
+        <label class="toggle">
+            <input type="checkbox" checked="@InactivityRemindersEnabled" @onchange="e => InactivityRemindersEnabledChanged.InvokeAsync((bool)(e.Value ?? false))" />
+            <span class="toggle-track"></span>
+        </label>
+        <span>@InactivityRemindersLabel</span>
+    </div>
+
+    <div class="toggle-row">
+        <label class="toggle">
+            <input type="checkbox" checked="@AchievementNotificationsEnabled" @onchange="e => AchievementNotificationsEnabledChanged.InvokeAsync((bool)(e.Value ?? false))" />
+            <span class="toggle-track"></span>
+        </label>
+        <span>@AchievementNotificationsLabel</span>
+    </div>
+
+    <div class="toggle-row">
+        <label class="toggle">
+            <input type="checkbox" checked="@WeeklyReportEnabled" @onchange="e => WeeklyReportEnabledChanged.InvokeAsync((bool)(e.Value ?? false))" />
+            <span class="toggle-track"></span>
+        </label>
+        <span>@WeeklyReportLabel</span>
+    </div>
+
+    <div class="toggle-row">
+        <label class="toggle">
+            <input type="checkbox" checked="@DailyMotivationEnabled" @onchange="e => DailyMotivationEnabledChanged.InvokeAsync((bool)(e.Value ?? false))" />
+            <span class="toggle-track"></span>
+        </label>
+        <span>@DailyMotivationLabel</span>
+    </div>
+
+    <div class="toggle-row">
+        <label class="toggle">
+            <input type="checkbox" checked="@PerCourseInactivityRemindersEnabled" @onchange="e => PerCourseInactivityRemindersEnabledChanged.InvokeAsync((bool)(e.Value ?? false))" />
+            <span class="toggle-track"></span>
+        </label>
+        <span>@PerCourseInactivityRemindersLabel</span>
+    </div>
+
+    <div class="toggle-row">
+        <label class="toggle">
+            <input type="checkbox" checked="@StreakRiskRemindersEnabled" @onchange="e => StreakRiskRemindersEnabledChanged.InvokeAsync((bool)(e.Value ?? false))" />
+            <span class="toggle-track"></span>
+        </label>
+        <span>@StreakRiskRemindersLabel</span>
+    </div>
+
+    <div class="toggle-row">
+        <label class="toggle">
+            <input type="checkbox" checked="@WeeklyGoalNudgeEnabled" @onchange="e => WeeklyGoalNudgeEnabledChanged.InvokeAsync((bool)(e.Value ?? false))" />
+            <span class="toggle-track"></span>
+        </label>
+        <span>@WeeklyGoalNudgeLabel</span>
+    </div>
+
+    <div class="toggle-row">
+        <label class="toggle">
+            <input type="checkbox" checked="@CourseAlmostDoneRemindersEnabled" @onchange="e => CourseAlmostDoneRemindersEnabledChanged.InvokeAsync((bool)(e.Value ?? false))" />
+            <span class="toggle-track"></span>
+        </label>
+        <span>@CourseAlmostDoneRemindersLabel</span>
+    </div>
+
+    <div class="toggle-row">
+        <label class="toggle">
+            <input type="checkbox" checked="@BestStudyTimeRemindersEnabled" @onchange="e => BestStudyTimeRemindersEnabledChanged.InvokeAsync((bool)(e.Value ?? false))" />
+            <span class="toggle-track"></span>
+        </label>
+        <span>@BestStudyTimeRemindersLabel</span>
+    </div>
+
+    <div class="toggle-row">
+        <label class="toggle">
+            <input type="checkbox" checked="@ComebackNudgeEnabled" @onchange="e => ComebackNudgeEnabledChanged.InvokeAsync((bool)(e.Value ?? false))" />
+            <span class="toggle-track"></span>
+        </label>
+        <span>@ComebackNudgeLabel</span>
+    </div>
+
+    <div class="toggle-row">
+        <label class="toggle">
+            <input type="checkbox" checked="@NewRecordNotificationsEnabled" @onchange="e => NewRecordNotificationsEnabledChanged.InvokeAsync((bool)(e.Value ?? false))" />
+            <span class="toggle-track"></span>
+        </label>
+        <span>@NewRecordNotificationsLabel</span>
+    </div>
+
+    <div class="toggle-row">
+        <label class="toggle">
+            <input type="checkbox" checked="@MonthlyReportEnabled" @onchange="e => MonthlyReportEnabledChanged.InvokeAsync((bool)(e.Value ?? false))" />
+            <span class="toggle-track"></span>
+        </label>
+        <span>@MonthlyReportLabel</span>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string Desc { get; set; } = "";
+
+    [Parameter] public string SessionRemindersLabel { get; set; } = "";
+    [Parameter] public bool SessionRemindersEnabled { get; set; }
+    [Parameter] public EventCallback<bool> SessionRemindersEnabledChanged { get; set; }
+
+    [Parameter] public string CourseGoalRemindersLabel { get; set; } = "";
+    [Parameter] public bool CourseGoalRemindersEnabled { get; set; }
+    [Parameter] public EventCallback<bool> CourseGoalRemindersEnabledChanged { get; set; }
+
+    [Parameter] public string InactivityRemindersLabel { get; set; } = "";
+    [Parameter] public bool InactivityRemindersEnabled { get; set; }
+    [Parameter] public EventCallback<bool> InactivityRemindersEnabledChanged { get; set; }
+
+    [Parameter] public string AchievementNotificationsLabel { get; set; } = "";
+    [Parameter] public bool AchievementNotificationsEnabled { get; set; }
+    [Parameter] public EventCallback<bool> AchievementNotificationsEnabledChanged { get; set; }
+
+    [Parameter] public string WeeklyReportLabel { get; set; } = "";
+    [Parameter] public bool WeeklyReportEnabled { get; set; }
+    [Parameter] public EventCallback<bool> WeeklyReportEnabledChanged { get; set; }
+
+    [Parameter] public string DailyMotivationLabel { get; set; } = "";
+    [Parameter] public bool DailyMotivationEnabled { get; set; }
+    [Parameter] public EventCallback<bool> DailyMotivationEnabledChanged { get; set; }
+
+    [Parameter] public string PerCourseInactivityRemindersLabel { get; set; } = "";
+    [Parameter] public bool PerCourseInactivityRemindersEnabled { get; set; }
+    [Parameter] public EventCallback<bool> PerCourseInactivityRemindersEnabledChanged { get; set; }
+
+    [Parameter] public string StreakRiskRemindersLabel { get; set; } = "";
+    [Parameter] public bool StreakRiskRemindersEnabled { get; set; }
+    [Parameter] public EventCallback<bool> StreakRiskRemindersEnabledChanged { get; set; }
+
+    [Parameter] public string WeeklyGoalNudgeLabel { get; set; } = "";
+    [Parameter] public bool WeeklyGoalNudgeEnabled { get; set; }
+    [Parameter] public EventCallback<bool> WeeklyGoalNudgeEnabledChanged { get; set; }
+
+    [Parameter] public string CourseAlmostDoneRemindersLabel { get; set; } = "";
+    [Parameter] public bool CourseAlmostDoneRemindersEnabled { get; set; }
+    [Parameter] public EventCallback<bool> CourseAlmostDoneRemindersEnabledChanged { get; set; }
+
+    [Parameter] public string BestStudyTimeRemindersLabel { get; set; } = "";
+    [Parameter] public bool BestStudyTimeRemindersEnabled { get; set; }
+    [Parameter] public EventCallback<bool> BestStudyTimeRemindersEnabledChanged { get; set; }
+
+    [Parameter] public string ComebackNudgeLabel { get; set; } = "";
+    [Parameter] public bool ComebackNudgeEnabled { get; set; }
+    [Parameter] public EventCallback<bool> ComebackNudgeEnabledChanged { get; set; }
+
+    [Parameter] public string NewRecordNotificationsLabel { get; set; } = "";
+    [Parameter] public bool NewRecordNotificationsEnabled { get; set; }
+    [Parameter] public EventCallback<bool> NewRecordNotificationsEnabledChanged { get; set; }
+
+    [Parameter] public string MonthlyReportLabel { get; set; } = "";
+    [Parameter] public bool MonthlyReportEnabled { get; set; }
+    [Parameter] public EventCallback<bool> MonthlyReportEnabledChanged { get; set; }
+}

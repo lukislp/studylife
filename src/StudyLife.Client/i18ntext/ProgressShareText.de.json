@@ -1,0 +1,19 @@
+{
+  "PageTitleTag": "StudyLife — Fortschritt",
+  "Heading": "Studienfortschritt",
+  "SubHeading": "Ein geteilter, schreibgeschützter Überblick — wird automatisch aktualisiert.",
+  "EctsLabel": "Erreichte ECTS",
+  "EctsFormat": "{0} / {1} ECTS",
+  "AverageGradeLabel": "Notenschnitt",
+  "NoGradeYet": "Noch keine Noten",
+  "CoursesCompletedFormat": "{0} von {1} Kursen abgeschlossen",
+  "ActiveCoursesHeading": "Aktive Kurse",
+  "NoActiveCourses": "Gerade keine aktiven Kurse.",
+  "TopicProgressFormat": "{0}% der Themen",
+  "InvalidLinkHeading": "Link nicht verfügbar",
+  "InvalidLinkMessage": "Dieser Fortschritts-Link ist ungültig, abgelaufen oder wurde vom Besitzer deaktiviert.",
+  "TemporaryErrorHeading": "Vorübergehend nicht verfügbar",
+  "TemporaryErrorMessage": "Beim Laden dieser Seite ist etwas schiefgelaufen. Bitte versuche es gleich noch einmal.",
+  "GeneratedAtFormat": "Zuletzt aktualisiert: {0}",
+  "PoweredByLabel": "Geteilt über StudyLife"
+}

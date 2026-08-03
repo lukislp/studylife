@@ -1,0 +1,50 @@
+<div class="ambient-control">
+    <button class="btn-timer ambient-toggle @(SoundType != "off" ? "active" : "")" @onclick="() => OnTogglePopover.InvokeAsync()" title="@AmbientSoundTitle">
+        @(SoundType == "off" ? "🔈" : "🔊")
+    </button>
+    @if (IsOpen)
+    {
+        <div class="ambient-popover">
+            <div class="ambient-popover__label">@AmbientSoundTitle</div>
+            <div class="ambient-options">
+                <button type="button" class="ambient-option @(SoundType == "off" ? "active" : "")" @onclick="@(() => SelectType("off"))">@OffLabel</button>
+                <button type="button" class="ambient-option @(SoundType == "white" ? "active" : "")" @onclick="@(() => SelectType("white"))">@WhiteNoiseLabel</button>
+                <button type="button" class="ambient-option @(SoundType == "brown" ? "active" : "")" @onclick="@(() => SelectType("brown"))">@BrownNoiseLabel</button>
+                <button type="button" class="ambient-option @(SoundType == "rain" ? "active" : "")" @onclick="@(() => SelectType("rain"))">@RainLabel</button>
+                <button type="button" class="ambient-option @(SoundType == "ocean" ? "active" : "")" @onclick="@(() => SelectType("ocean"))">@OceanLabel</button>
+                <button type="button" class="ambient-option @(SoundType == "tone" ? "active" : "")" @onclick="@(() => SelectType("tone"))">@ToneLabel</button>
+            </div>
+            <label class="ambient-volume">
+                <span>@VolumeLabel</span>
+                <input type="range" min="0" max="1" step="0.05" value="@Volume.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                       disabled="@(SoundType == "off")" @oninput="OnVolumeInput" />
+            </label>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public string SoundType { get; set; } = "off";
+    [Parameter] public double Volume { get; set; } = 0.3;
+    [Parameter] public string AmbientSoundTitle { get; set; } = "";
+    [Parameter] public string OffLabel { get; set; } = "";
+    [Parameter] public string WhiteNoiseLabel { get; set; } = "";
+    [Parameter] public string BrownNoiseLabel { get; set; } = "";
+    [Parameter] public string RainLabel { get; set; } = "";
+    [Parameter] public string OceanLabel { get; set; } = "";
+    [Parameter] public string ToneLabel { get; set; } = "";
+    [Parameter] public string VolumeLabel { get; set; } = "";
+    [Parameter] public EventCallback OnTogglePopover { get; set; }
+    [Parameter] public EventCallback<string> OnSelectType { get; set; }
+    [Parameter] public EventCallback<double> OnVolumeChanged { get; set; }
+
+    private Task SelectType(string type) => OnSelectType.InvokeAsync(type);
+
+    private Task OnVolumeInput(ChangeEventArgs e)
+    {
+        if (double.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v))
+            return OnVolumeChanged.InvokeAsync(v);
+        return Task.CompletedTask;
+    }
+}

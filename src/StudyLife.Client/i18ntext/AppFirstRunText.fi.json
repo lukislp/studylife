@@ -1,0 +1,10 @@
+{
+  "Description": "Mihin StudyLife-palvelimeen tämän sovelluksen tulisi muodostaa yhteys?",
+  "ServerUrlLabel": "Palvelimen URL-osoite",
+  "CheckingConnection": "Tarkistetaan yhteyttä…",
+  "UseAnyway": "Käytä silti",
+  "Connect": "Yhdistä",
+  "InvalidUrl": "Tämä ei ole kelvollinen URL-osoite.",
+  "UnexpectedResponse": "Palvelin vastasi, mutta odottamattomasti (HTTP {0}). Napauta uudelleen käyttääksesi sitä silti.",
+  "ServerUnreachable": "Palvelin ei ole tavoitettavissa. Napauta uudelleen käyttääksesi osoitetta silti."
+}

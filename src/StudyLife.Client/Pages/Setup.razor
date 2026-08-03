@@ -1,0 +1,799 @@
+@page "/setup"
+@using StudyLife.Client.Models
+@using StudyLife.Client.Services
+@using StudyLife.Shared
+@inject AppStateService State
+@inject NotificationService NotificationSvc
+@inject HttpClient Http
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+<PageTitle>@T.PageTitleTag</PageTitle>
+
+<div class="setup-page">
+    <div class="setup-header">
+        <h1>@T.PageHeading</h1>
+        <p>@T.PageSubtitle</p>
+    </div>
+
+    <div class="setup-sections">
+        <!-- Programme: switcher between the built-in programme and user-created ones,
+             plus the entry point for creating a new programme (AddStudyProgramModal). -->
+        <div class="setup-section">
+            <div class="ss-label">@T.ProgrammeLabel</div>
+            <div class="programme-row">
+                <select class="select programme-select" value="@(_settings.ActiveStudyProgramId?.ToString() ?? "")"
+                        @onchange="OnProgrammeChanged">
+                    @foreach (var program in _programs)
+                    {
+                        @* Completed programmes deliberately remain selectable (to look back at
+                           their history in Dashboard/Stats) - they're only marked with a checkmark suffix. *@
+                        <option value="@(program.Id?.ToString() ?? "")">@program.Name@(program.IsCompleted ? $" {T.ProgramCompletedSuffix}" : "")</option>
+                    }
+                </select>
+                <button type="button" class="btn-secondary btn-add-programme" @onclick="() => _showAddProgramModal = true">
+                    + @T.AddProgramButton
+                </button>
+            </div>
+            @* Manual completion flag: only for user-created programmes (the built-in one has
+               no DB row). NEVER set automatically - purely a user click. *@
+            @if (ActiveProgram is { Id: not null } activeProgram)
+            {
+                <div class="programme-completed-row">
+                    @if (activeProgram.IsCompleted)
+                    {
+                        <span class="programme-completed-badge">@T.ProgramCompletedSuffix</span>
+                    }
+                    <button type="button" class="btn-secondary btn-programme-completed" @onclick="ToggleProgramCompleted">
+                        @(activeProgram.IsCompleted ? T.UnmarkProgramCompletedButton : T.MarkProgramCompletedButton)
+                    </button>
+                    @if (activeProgram.IsCompleted)
+                    {
+                        <span class="programme-completed-hint">@T.ProgramCompletedHint</span>
+                    }
+                    <button type="button" class="btn-danger btn-delete-programme" title="@T.DeleteProgramButton" @onclick="() => _confirmingDeleteProgram = true">
+                        🗑 @T.DeleteProgramButton
+                    </button>
+                </div>
+            }
+        </div>
+
+        @if (_confirmingDeleteProgram)
+        {
+            <div class="modal-overlay" @onclick="CancelDeleteProgram">
+                <div class="modal" @onclick:stopPropagation="true">
+                    <div class="modal-header">
+                        <h3>@T.DeleteProgramButton</h3>
+                        <button class="modal-close" @onclick="CancelDeleteProgram">✕</button>
+                    </div>
+                    <div class="modal-body">
+                        <p>@T.ConfirmDeleteProgramQuestion</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" @onclick="CancelDeleteProgram">@T.ConfirmDeleteProgramCancel</button>
+                        <button type="button" class="btn-danger" @onclick="ConfirmDeleteProgram">@T.ConfirmDeleteProgramYes</button>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Theme -->
+        <SetupThemeCard Label="@T.ThemeLabel" Theme="@_settings.Theme"
+                        SystemText="@T.ThemeSystem" LightText="@T.ThemeLight" DarkText="@T.ThemeDark"
+                        OnThemeSelected="SetTheme" />
+
+        <!-- Accent color: separate from the theme above, but stored server-side the same way -->
+        <SetupAccentColorCard Label="@T.AccentColorLabel" AccentColor="@_settings.AccentColor"
+                              CoralName="@T.AccentCoral" BlueName="@T.AccentBlue" GreenName="@T.AccentGreen"
+                              PurpleName="@T.AccentPurple" RedName="@T.AccentRed" TealName="@T.AccentTeal"
+                              AmberName="@T.AccentAmber"
+                              OnAccentSelected="SetAccentColor" />
+
+        <!-- Course selection -->
+        <div class="setup-section">
+            <div class="ss-label">@T.ActiveCoursesLabel</div>
+            <p class="ss-desc">@T.CourseSelectionDesc</p>
+            <div class="course-grid">
+                @foreach (var semester in _allCourses.GroupBy(c => c.Semester).OrderBy(g => g.Key))
+                {
+                    <div class="semester-header">@string.Format(T.SemesterLabel, semester.Key)</div>
+                    @foreach (var group in semester.GroupBy(c => c.Group ?? "").OrderBy(g => g.Key == "" ? 0 : 1).ThenBy(g => g.Key))
+                    {
+                        @if (!string.IsNullOrEmpty(group.Key))
+                        {
+                            <div class="course-group-header">@group.Key</div>
+                        }
+                        @foreach (var course in group)
+                        {
+                            var c = course;
+                            var completed = _settings.CompletedCourseIds.Contains(c.Id);
+                            var selected = !completed && _settings.SelectedCourseIds.Contains(c.Id);
+                            _goals.TryGetValue(c.Id, out var g);
+                            var completedTopics = ParseCompletedTopics(g);
+                            <SetupCourseCard Course="c"
+                                             Completed="completed"
+                                             Selected="selected"
+                                             CompletedTopics="completedTopics"
+                                             Grade="g?.Grade"
+                                             Tag="@(g?.Tag)"
+                                             CompletionNote="@(g?.CompletionNote)"
+                                             TargetDateValue="@(GetTargetDateValue(c.Id))"
+                                             GradeLabel="@T.GradeLabel"
+                                             TopicsProgressFormat="@T.TopicsProgressLabel"
+                                             TagPlaceholder="@T.CourseTagPlaceholder"
+                                             ResourcesLabel="@T.CourseResourcesLabel"
+                                             OnCardClick="@(() => CycleCourse(c.Id))"
+                                             OnTopicToggle="@(topic => ToggleTopic(c.Id, c.Name, topic))"
+                                             OnTargetDateChanged="@(value => SetTargetDate(c.Id, c.Name, value))"
+                                             OnTagChanged="@(value => SetTag(c.Id, c.Name, value))"
+                                             OnResourcesClick="@(() => OpenResources(c.Id, c.Name))" />
+                        }
+                    }
+                }
+            </div>
+        </div>
+
+        <!-- Auto-switch -->
+        <SetupAutoSwitchCard Label="@T.AutoSwitchLabel" Desc="@T.AutoSwitchDesc"
+                             EnabledText="@T.Enabled" DisabledText="@T.Disabled"
+                             MinutesBeforeLabel="@T.SwitchMinutesBeforeLabel"
+                             @bind-AutoSwitchFocus="_settings.AutoSwitchFocus"
+                             @bind-MinutesBefore="_settings.AutoSwitchMinutesBefore" />
+
+        <!-- Motivational style -->
+        <SetupMotivationalStyleCard Label="@T.MotivationalStyleLabel"
+                                     SelectedKey="@_settings.MotivationalStyle"
+                                     OnStyleSelected="@(key => _settings.MotivationalStyle = key)" />
+
+        <!-- Reminder thresholds -->
+        <SetupReminderSettings Label="@T.RemindersLabel" Desc="@T.RemindersDesc"
+                               SessionReminderMinutesLabel="@T.SessionReminderMinutesLabel"
+                               CourseGoalReminderDaysLabel="@T.CourseGoalReminderDaysLabel"
+                               InactivityThresholdDaysLabel="@T.InactivityThresholdDaysLabel"
+                               @bind-SessionReminderMinutes="_settings.SessionReminderMinutes"
+                               @bind-CourseGoalReminderDays="_settings.CourseGoalReminderDays"
+                               @bind-InactivityThresholdDays="_settings.InactivityThresholdDays" />
+
+        <!-- Per-category notification toggles -->
+        <SetupNotificationTogglesCard Label="@T.NotificationTogglesLabel" Desc="@T.NotificationTogglesDesc"
+                                      SessionRemindersLabel="@T.SessionRemindersToggleLabel"
+                                      CourseGoalRemindersLabel="@T.CourseGoalRemindersToggleLabel"
+                                      InactivityRemindersLabel="@T.InactivityRemindersToggleLabel"
+                                      AchievementNotificationsLabel="@T.AchievementNotificationsToggleLabel"
+                                      WeeklyReportLabel="@T.WeeklyReportToggleLabel"
+                                      DailyMotivationLabel="@T.DailyMotivationToggleLabel"
+                                      PerCourseInactivityRemindersLabel="@T.PerCourseInactivityRemindersToggleLabel"
+                                      StreakRiskRemindersLabel="@T.StreakRiskRemindersToggleLabel"
+                                      WeeklyGoalNudgeLabel="@T.WeeklyGoalNudgeToggleLabel"
+                                      CourseAlmostDoneRemindersLabel="@T.CourseAlmostDoneRemindersToggleLabel"
+                                      BestStudyTimeRemindersLabel="@T.BestStudyTimeRemindersToggleLabel"
+                                      ComebackNudgeLabel="@T.ComebackNudgeToggleLabel"
+                                      NewRecordNotificationsLabel="@T.NewRecordNotificationsToggleLabel"
+                                      MonthlyReportLabel="@T.MonthlyReportToggleLabel"
+                                      @bind-SessionRemindersEnabled="_settings.SessionRemindersEnabled"
+                                      @bind-CourseGoalRemindersEnabled="_settings.CourseGoalRemindersEnabled"
+                                      @bind-InactivityRemindersEnabled="_settings.InactivityRemindersEnabled"
+                                      @bind-AchievementNotificationsEnabled="_settings.AchievementNotificationsEnabled"
+                                      @bind-WeeklyReportEnabled="_settings.WeeklyReportEnabled"
+                                      @bind-DailyMotivationEnabled="_settings.DailyMotivationEnabled"
+                                      @bind-PerCourseInactivityRemindersEnabled="_settings.PerCourseInactivityRemindersEnabled"
+                                      @bind-StreakRiskRemindersEnabled="_settings.StreakRiskRemindersEnabled"
+                                      @bind-WeeklyGoalNudgeEnabled="_settings.WeeklyGoalNudgeEnabled"
+                                      @bind-CourseAlmostDoneRemindersEnabled="_settings.CourseAlmostDoneRemindersEnabled"
+                                      @bind-BestStudyTimeRemindersEnabled="_settings.BestStudyTimeRemindersEnabled"
+                                      @bind-ComebackNudgeEnabled="_settings.ComebackNudgeEnabled"
+                                      @bind-NewRecordNotificationsEnabled="_settings.NewRecordNotificationsEnabled"
+                                      @bind-MonthlyReportEnabled="_settings.MonthlyReportEnabled" />
+
+        <!-- Study window (used by the exam planner / weekly plan assistant) -->
+        <SetupStudyWindowCard Label="@T.StudyWindowLabel" Desc="@T.StudyWindowDesc"
+                              FromLabel="@T.StudyWindowFromLabel" ToLabel="@T.StudyWindowToLabel" DaysLabel="@T.StudyWindowDaysLabel"
+                              @bind-StartHour="_settings.StudyWindowStartHour"
+                              @bind-EndHour="_settings.StudyWindowEndHour"
+                              SelectedDays="ParsedStudyDays"
+                              OnDayToggle="ToggleStudyDay" />
+
+        <!-- Weekly study-hour goal (replaces the previously hardcoded 25-30h range in the
+             quota bar and the forecast/graduation-goal pace math) -->
+        <SetupWeeklyGoalCard Label="@T.WeeklyGoalLabel" Desc="@T.WeeklyGoalDesc"
+                             MinLabel="@T.WeeklyGoalMinLabel" MaxLabel="@T.WeeklyGoalMaxLabel"
+                             @bind-MinHours="_settings.WeeklyGoalMinHours"
+                             @bind-MaxHours="_settings.WeeklyGoalMaxHours" />
+
+        <!-- Monthly study-hour goal, independently configurable from the weekly goal -->
+        <SetupMonthlyGoalCard Label="@T.MonthlyGoalLabel" Desc="@T.MonthlyGoalDesc"
+                              MinLabel="@T.MonthlyGoalMinLabel" MaxLabel="@T.MonthlyGoalMaxLabel"
+                              @bind-MinHours="_settings.MonthlyGoalMinHours"
+                              @bind-MaxHours="_settings.MonthlyGoalMaxHours" />
+
+        <!-- Graduation goal (target date drives the required-hours card on the dashboard) -->
+        <SetupGraduationGoalCard Label="@T.GraduationGoalLabel" Desc="@T.GraduationGoalDesc"
+                                 DateLabel="@T.GraduationGoalDateLabel"
+                                 @bind-TargetDate="_settings.TargetGraduationDate" />
+
+        <!-- Custom timer modes (shown next to the built-in modes on the Focus page) -->
+        <SetupTimerModesCard Label="@T.TimerModesLabel" Desc="@T.TimerModesDesc"
+                             NamePlaceholder="@T.TimerModeNamePlaceholder"
+                             FocusLabel="@T.TimerModeFocusLabel" BreakLabel="@T.TimerModeBreakLabel"
+                             RoundsLabel="@T.TimerModeRoundsLabel" AddButtonText="@T.TimerModeAddButton"
+                             Modes="_customModes"
+                             OnAdd="AddCustomMode" OnDelete="DeleteCustomMode" />
+
+        <div class="setup-actions">
+            <button class="btn-primary btn-save @(_saved ? "saved" : "")" @onclick="Save">
+                @(_saved ? T.SavedButton : T.SaveSettingsButton)
+            </button>
+        </div>
+
+        <!-- Notifications -->
+        <SetupNotificationsCard Label="@T.NotificationsLabel" NotifStatus="@_notifStatus"
+                                ActiveMessage="@T.NotifActiveMessage" BlockedMessage="@T.NotifBlockedMessage"
+                                IosMessage="@((MarkupString)T.NotifIosMessage)" UnsupportedMessage="@T.NotifUnsupportedMessage"
+                                DefaultMessage="@T.NotifDefaultMessage"
+                                AllowNotificationsButtonText="@T.AllowNotificationsButton"
+                                SendTestNotificationButtonText="@T.SendTestNotificationButton"
+                                SentText="@T.Sent" TestSent="_testSent"
+                                ResubscribeButtonText="@T.NotifResubscribeButton" ResubscribeDoneText="@T.Sent"
+                                Resubscribing="_resubscribing" ResubscribeDone="_resubscribeDone"
+                                OnEnableNotifications="EnableNotifications" OnSendTest="SendTestNotification"
+                                OnResubscribe="ResubscribeNotifications" />
+
+        <!-- Calendar subscription -->
+        <SetupCalendarSubscriptionCard Label="@T.CalendarSubscriptionHeading" Desc="@T.CalendarSubscriptionDesc"
+                                       IcsUrl="@_icsUrl" CopyText="@T.Copy" CopiedText="@T.Copied"
+                                       IcsCopied="_icsCopied" OnCopyClick="CopyIcsUrl"
+                                       RegenerateButtonText="@T.CalendarRegenerateButton"
+                                       RegenerateConfirmTitle="@T.CalendarRegenerateConfirmTitle"
+                                       RegenerateConfirmWarning="@T.CalendarRegenerateConfirmWarning"
+                                       RegenerateConfirmCancel="@T.CalendarRegenerateConfirmCancel"
+                                       RegenerateConfirmYes="@T.CalendarRegenerateConfirmYes"
+                                       RegenerateSuccessText="@T.CalendarRegenerateSuccess"
+                                       Regenerating="_icsRegenerating" RegenerateSuccess="_icsRegenerateSuccess"
+                                       OnRegenerateConfirmed="RegenerateCalendarToken" />
+
+        <!-- Read-only progress link (parents/mentor/academic advisor): self-contained
+             component modeled after SetupRestoreCard (own SetupText instance + own
+             HttpClient), see SetupProgressShareCard. -->
+        <SetupProgressShareCard />
+
+        <!-- Home Assistant: long-lived per-user API key (phase 3) - self-contained component
+             modeled after SetupProgressShareCard (own SetupText instance + own
+             HTTP calls), see SetupHomeAssistantCard. -->
+        <SetupHomeAssistantCard />
+
+        @if (_rawBackupSupported)
+        {
+            <!-- Backup & export. DownloadDatabaseButtonText/PasswordPlaceholder/-Hint only apply to
+                 the raw .db (owner-only) - the card hides them itself when IsOwner=false.
+                 On Postgres (api/system/capabilities: rawBackupSupported=false), both the
+                 backup AND restore card disappear entirely - backups run externally there (e.g. R2),
+                 so the JSON export is deliberately no longer offered either. -->
+            <SetupBackupCard IsOwner="_isOwner" Label="@T.BackupHeading" Desc="@T.BackupDesc"
+                             DownloadDatabaseButtonText="@T.BackupDownloadDatabaseButton"
+                             ExportJsonButtonText="@T.BackupExportJsonButton"
+                             PasswordPlaceholder="@T.BackupPasswordPlaceholder"
+                             PasswordHint="@T.BackupPasswordHint"
+                             EncryptedDownloadErrorText="@T.BackupEncryptedDownloadError" />
+
+            @if (_isOwner)
+            {
+                <!-- Restore from a downloaded .db backup (staged, applied on next server restart).
+                     Self-contained card (own SetupText table + HTTP calls), see SetupRestoreCard.
+                     Entirely owner-only (BackupController.IsOwnerAsync) - unlike the download,
+                     there's no meaningful partial functionality here for other users. -->
+                <SetupRestoreCard />
+            }
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(_appVersion))
+    {
+        <!-- If the client version RUNNING in the browser (cached WASM bundle, service
+             worker) differs from the server version, it becomes visible here - this is the
+             diagnostic tool for "feature is deployed but still behaves like the old one". -->
+        <div class="setup-version">
+            v@_appVersion
+            @if (_clientVersionMismatch)
+            {
+                <span style="color:var(--warning, #e6a23c)"> · UI v@_clientVersion</span>
+            }
+        </div>
+    }
+
+    <!-- Add study programme modal -->
+    @if (_showAddProgramModal)
+    {
+        <AddStudyProgramModal OnClose="() => _showAddProgramModal = false"
+                              OnCreated="OnProgramCreated" />
+    }
+
+    <!-- Completion note modal -->
+    @if (_showCompletionModal && _completionGoal != null)
+    {
+        <SetupCompletionModal CourseName="@_completionGoal.CourseName"
+                              TitleFormat="@T.CourseCompletedTitle"
+                              GradeOptionalLabel="@T.GradeOptionalLabel"
+                              GradePlaceholder="@T.GradePlaceholder"
+                              CompletionNoteLabel="@T.CompletionNoteLabel"
+                              CompletionNotePlaceholder="@T.CompletionNotePlaceholder"
+                              SkipButtonText="@T.SkipButton"
+                              SaveButtonText="@T.SaveButton"
+                              @bind-GradeDraft="_completionGradeDraft"
+                              @bind-NoteDraft="_completionNoteDraft"
+                              OnSkip="CloseCompletionModal"
+                              OnSave="SaveCompletionNote" />
+    }
+
+    <!-- Course resources (links): self-contained component, see CourseResourcesModal -->
+    @if (_resourcesCourseId.HasValue)
+    {
+        <CourseResourcesModal CourseId="_resourcesCourseId.Value" CourseName="_resourcesCourseName"
+                              OnClose="() => _resourcesCourseId = null" />
+    }
+</div>
+
+@code {
+    private UserSettings _settings = new();
+    private List<CourseDto> _allCourses = new();
+    private Dictionary<int, CourseGoalDto> _goals = new();
+    private bool _saved;
+    private string _notifStatus = "default";
+    private bool _testSent;
+    private bool _resubscribing;
+    private bool _resubscribeDone;
+
+    private bool _showCompletionModal;
+    private CourseGoalDto? _completionGoal;
+    private string _completionNoteDraft = "";
+    private decimal? _completionGradeDraft;
+
+    // Course resources modal: null = closed. Its own component loads/manages its
+    // resource list itself, see CourseResourcesModal.
+    private int? _resourcesCourseId;
+    private string _resourcesCourseName = "";
+
+    // Build version number (api/system/version, unauthenticated) - just an unobtrusive line
+    // at the bottom of the page, deliberately not an app-wide footer (would permanently take up
+    // space on mobile).
+    private string? _appVersion;
+
+    private string _icsUrl = "";
+    private bool _icsCopied;
+    // Manual "regenerate now" for the permanent calendar token (SetupCalendarSubscriptionCard).
+    private bool _icsRegenerating;
+    private bool _icsRegenerateSuccess;
+
+    // Programme switcher: built-in programme (Id null) + user-created ones from the DB.
+    private List<StudyProgramSummaryDto> _programs = new();
+    private bool _showAddProgramModal;
+    // Two-step confirmation before deleting a programme - same pattern as
+    // Notes.razor._confirmingDelete, no native confirm() dialog.
+    private bool _confirmingDeleteProgram;
+
+    /// <summary>The currently active (= selected in the switcher) programme; null while the list is loading.</summary>
+    private StudyProgramSummaryDto? ActiveProgram =>
+        _programs.FirstOrDefault(p => p.Id == _settings.ActiveStudyProgramId);
+
+    // Parsed working copy of _settings.CustomTimerModes; every change is serialized back
+    // immediately, but only saved via the Save button (deferred, like study window & co).
+    private List<TimerMode> _customModes = new();
+
+    private I18nText.SetupText T = new();
+
+    // Only the first registered user (owner of the installation) may use the raw
+    // backup/restore endpoints (BackupController.IsOwnerAsync) - hides the
+    // corresponding UI for all other users instead of letting them hit a 403.
+    private bool _isOwner;
+
+    // Version of the client bundle actually RUNNING (CI sets -p:Version globally, including
+    // for StudyLife.Client) - if it differs from the server version, the browser is still
+    // running an old build cached by the service worker. Compared without the "+sha" suffix.
+    private string? _clientVersion;
+    private bool _clientVersionMismatch;
+
+    private void DetectClientVersion()
+    {
+        try
+        {
+            _clientVersion = typeof(Setup).Assembly
+                .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+                .OfType<System.Reflection.AssemblyInformationalVersionAttribute>()
+                .FirstOrDefault()?.InformationalVersion?.Split('+')[0];
+            var serverBase = _appVersion?.Split('+')[0];
+            _clientVersionMismatch = _clientVersion != null && serverBase != null && _clientVersion != serverBase;
+        }
+        catch { /* diagnostic display is purely cosmetic */ }
+    }
+
+    // Fail-open (default true): if the server doesn't respond (offline/older version without the
+    // capabilities endpoint), the backup and restore cards stay visible as before.
+    private bool _rawBackupSupported = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isOwner = await State.GetIsOwnerAsync();
+        try
+        {
+            // Deliberately JsonDocument instead of GetFromJsonAsync<T>: the native app (MAUI,
+            // separate repo) links the client with IL trimming - reflection deserialization into a
+            // type only used here can be optimized away there and would end up as an exception in
+            // the catch, which would make the fail-open show the cards incorrectly.
+            // Cache-buster query: servers before 1.22 answered this path via the SPA
+            // fallback with 200+index.html WITHOUT cache headers - HTTP caches (especially the
+            // native app's NSURLCache, which survives reinstalls) were allowed to cache that
+            // heuristically and then permanently served HTML instead of JSON. A fresh query URL
+            // reliably bypasses any such stale entry on every HTTP stack.
+            using var capsResponse = await Http.GetAsync(
+                $"api/system/capabilities?nocache={DateTime.UtcNow.Ticks}");
+            if (capsResponse.IsSuccessStatusCode)
+            {
+                using var caps = System.Text.Json.JsonDocument.Parse(
+                    await capsResponse.Content.ReadAsStringAsync());
+                _rawBackupSupported = caps.RootElement.GetProperty("rawBackupSupported").GetBoolean();
+            }
+        }
+        catch { /* fail-open, see above */ }
+        _settings = await State.FetchSettingsFromServerAsync();
+        _customModes = CustomTimerModes.Parse(_settings.CustomTimerModes);
+        _allCourses = await State.GetCoursesAsync();
+        await LoadProgramsAsync();
+        _notifStatus = await NotificationSvc.GetPermissionStatusAsync();
+        string? calendarToken = null;
+        try
+        {
+            // Session-authenticated fetch (replaces the former bootstrap-key endpoint,
+            // which was removed together with the global API key).
+            var tokenDto = await Http.GetFromJsonAsync<CalendarTokenResponseDto>("api/system/calendar-token");
+            calendarToken = tokenDto?.CalendarToken;
+        }
+        catch { /* offline: subscription URL stays without a token, card shows the base URL */ }
+        // ?calendarToken= on the subscription URL: a dedicated, PERMANENT token per user
+        // (AuthUserEntity.CalendarToken). Calendar clients can't set custom headers and
+        // can't go through a login - so the token never rotates, the URL stays valid until
+        // it's manually regenerated via the card's button.
+        // Http.BaseAddress instead of Nav.BaseUri: identical in the browser, but in the native
+        // app Nav.BaseUri is the virtual WebView host (app://0.0.0.1/) - a subscription URL built
+        // with that couldn't be fetched by any calendar client in the world.
+        _icsUrl = $"{Http.BaseAddress}api/sessions/ics";
+        if (!string.IsNullOrEmpty(calendarToken)) _icsUrl += $"?calendarToken={calendarToken}";
+        T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
+        try
+        {
+            // Cache buster like the update check in MainLayout - the response carries no
+            // cache headers and could otherwise be served heuristically from the HTTP cache.
+            var versionDto = await Http.GetFromJsonAsync<VersionResponseDto>(
+                $"api/system/version?nocache={DateTime.UtcNow.Ticks}");
+            _appVersion = versionDto?.Version;
+        }
+        catch { /* offline/network error: version line simply stays empty */ }
+        DetectClientVersion();
+        await LoadGoals();
+    }
+
+    private async Task LoadProgramsAsync()
+    {
+        try
+        {
+            _programs = await State.GetJsonCachedAsync<List<StudyProgramSummaryDto>>("api/studyprograms") ?? new();
+        }
+        catch { /* offline: fallback below */ }
+        // Defensive: the switcher needs at least the built-in programme.
+        if (_programs.Count == 0)
+            _programs = new() { new StudyProgramSummaryDto { Id = null, Name = _settings.DefaultProgramme, IsBuiltIn = true } };
+    }
+
+    private async Task OnProgrammeChanged(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString();
+        _settings.ActiveStudyProgramId = int.TryParse(raw, out var id) ? id : null;
+        _confirmingDeleteProgram = false;
+        // Save immediately (like SetTheme) so the switch takes effect without the Save button.
+        await State.SaveSettingsAsync(_settings);
+        _allCourses = await State.GetCoursesAsync();
+    }
+
+    private async Task OnProgramCreated(StudyProgramSummaryDto created)
+    {
+        _showAddProgramModal = false;
+        await LoadProgramsAsync();
+        // Friendlier UX: activate the just-created programme right away.
+        _settings.ActiveStudyProgramId = created.Id;
+        await State.SaveSettingsAsync(_settings);
+        _allCourses = await State.GetCoursesAsync();
+    }
+
+    // Toggle the manual completion flag of the active user-created programme.
+    // Deliberately NO automation (not even at 100% ECTS) and no lock: completed
+    // programmes remain perfectly normally selectable, so their history can be looked back at later.
+    private async Task ToggleProgramCompleted()
+    {
+        if (ActiveProgram is not { Id: int id } program) return;
+        var response = await Http.PutAsJsonAsync($"api/studyprograms/{id}/completed",
+            new SetStudyProgramCompletedDto { IsCompleted = !program.IsCompleted });
+        if (response.IsSuccessStatusCode)
+        {
+            var updated = await response.Content.ReadFromJsonAsync<StudyProgramSummaryDto>();
+            if (updated != null) program.IsCompleted = updated.IsCompleted;
+        }
+    }
+
+    private void CancelDeleteProgram() => _confirmingDeleteProgram = false;
+
+    // Deletes the active user-created programme server-side (including groups/courses,
+    // see StudyProgramsController.Delete) and then switches back to the built-in
+    // programme - the server has already reset ActiveStudyProgramId itself if the
+    // deleted programme was active, but the client still needs to reflect that locally.
+    private async Task ConfirmDeleteProgram()
+    {
+        _confirmingDeleteProgram = false;
+        if (ActiveProgram is not { Id: int id }) return;
+
+        var response = await Http.DeleteAsync($"api/studyprograms/{id}");
+        if (!response.IsSuccessStatusCode) return;
+
+        // Like OnProgrammeChanged: save immediately and trigger OnSettingsChanged so
+        // other components (e.g. Dashboard) don't keep referencing a just-deleted programme.
+        _settings.ActiveStudyProgramId = null;
+        await State.SaveSettingsAsync(_settings);
+        await LoadProgramsAsync();
+        _allCourses = await State.GetCoursesAsync();
+    }
+
+    private async Task SetTheme(string theme)
+    {
+        _settings.Theme = theme;
+        await JS.InvokeVoidAsync("applyTheme", theme);
+        await State.SaveSettingsAsync(_settings);
+    }
+
+    // Unlike SetTheme, no separate JS interop call here: AppStateService.SaveSettingsAsync
+    // applies the accent color itself (centrally, which is also why it takes effect during the 30s cross-client poll).
+    private async Task SetAccentColor(string accentColor)
+    {
+        _settings.AccentColor = accentColor;
+        await State.SaveSettingsAsync(_settings);
+    }
+
+    private async Task CopyIcsUrl()
+    {
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", _icsUrl);
+        _icsCopied = true;
+        StateHasChanged();
+        await Task.Delay(2000);
+        _icsCopied = false;
+        StateHasChanged();
+    }
+
+    // Manual "regenerate now" for the permanent calendar token - only visible as part of the
+    // ICS subscription URL. Immediately breaks every existing calendar subscription for this user.
+    private async Task RegenerateCalendarToken()
+    {
+        _icsRegenerating = true;
+        StateHasChanged();
+        try
+        {
+            var response = await Http.PostAsync("api/system/regenerate-calendar-token", null);
+            if (!response.IsSuccessStatusCode) return;
+            var dto = await response.Content.ReadFromJsonAsync<RegenerateCalendarTokenResponseDto>();
+            if (string.IsNullOrEmpty(dto?.CalendarToken)) return;
+            _icsUrl = $"{Nav.BaseUri}api/sessions/ics?calendarToken={dto.CalendarToken}";
+            _icsRegenerateSuccess = true;
+            StateHasChanged();
+            await Task.Delay(2000);
+            _icsRegenerateSuccess = false;
+        }
+        finally
+        {
+            _icsRegenerating = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadGoals()
+    {
+        var goals = await State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals") ?? new();
+        _goals = goals.ToDictionary(g => g.CourseId);
+    }
+
+    private string GetTargetDateValue(int courseId) =>
+        _goals.TryGetValue(courseId, out var g) && g.TargetDate.HasValue
+            ? g.TargetDate.Value.ToString("yyyy-MM-dd")
+            : "";
+
+    private async Task SetTargetDate(int courseId, string courseName, string value)
+    {
+        var targetDate = DateTime.TryParse(value, out var d) ? d : (DateTime?)null;
+        var goal = _goals.TryGetValue(courseId, out var existing)
+            ? existing
+            : new CourseGoalDto { CourseId = courseId, CourseName = courseName };
+        goal.CourseName = courseName;
+        goal.TargetDate = targetDate;
+        await PutCourseGoalAsync(goal);
+    }
+
+    /// <summary>
+    /// PUTs a course goal with an offline fallback: on a network error, the state is enqueued
+    /// into AppStateService's write queue (the last state wins per course — the
+    /// endpoint is an idempotent full upsert) and applied locally as an optimistic update.
+    /// </summary>
+    private async Task PutCourseGoalAsync(CourseGoalDto goal)
+    {
+        try
+        {
+            var response = await Http.PutAsJsonAsync($"api/coursegoals/{goal.CourseId}", goal);
+            if (response.IsSuccessStatusCode)
+            {
+                var updated = await response.Content.ReadFromJsonAsync<CourseGoalDto>();
+                if (updated != null) _goals[updated.CourseId] = updated;
+            }
+        }
+        catch
+        {
+            await State.EnqueueCourseGoalSaveAsync(goal);
+            _goals[goal.CourseId] = goal;
+        }
+    }
+
+    private async Task SetTag(int courseId, string courseName, string value)
+    {
+        var tag = value;
+        var goal = _goals.TryGetValue(courseId, out var existing)
+            ? existing
+            : new CourseGoalDto { CourseId = courseId, CourseName = courseName };
+        goal.CourseName = courseName;
+        goal.Tag = tag;
+        await PutCourseGoalAsync(goal);
+    }
+
+    private HashSet<int> ParsedStudyDays => string.IsNullOrWhiteSpace(_settings.StudyDays)
+        ? new HashSet<int> { 0, 1, 2, 3, 4, 5, 6 }
+        : _settings.StudyDays.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToHashSet();
+
+    private void ToggleStudyDay(int dayOfWeek)
+    {
+        var days = ParsedStudyDays;
+        if (!days.Remove(dayOfWeek)) days.Add(dayOfWeek);
+        if (days.Count == 0) return; // at least one day must remain active
+        _settings.StudyDays = string.Join(",", days.OrderBy(d => d));
+    }
+
+    private static HashSet<string> ParseCompletedTopics(CourseGoalDto? g) =>
+        g == null || string.IsNullOrWhiteSpace(g.CompletedTopics)
+            ? new HashSet<string>()
+            : g.CompletedTopics.Split(',', StringSplitOptions.RemoveEmptyEntries).ToHashSet();
+
+    private async Task ToggleTopic(int courseId, string courseName, string topic)
+    {
+        var goal = _goals.TryGetValue(courseId, out var existing)
+            ? existing
+            : new CourseGoalDto { CourseId = courseId, CourseName = courseName };
+        var topics = ParseCompletedTopics(goal);
+        if (!topics.Remove(topic)) topics.Add(topic);
+        goal.CourseName = courseName;
+        goal.CompletedTopics = string.Join(",", topics);
+        await PutCourseGoalAsync(goal);
+    }
+
+    private void OpenCompletionModal(int courseId, string courseName)
+    {
+        _completionGoal = _goals.TryGetValue(courseId, out var g)
+            ? g
+            : new CourseGoalDto { CourseId = courseId, CourseName = courseName };
+        _completionNoteDraft = _completionGoal.CompletionNote ?? "";
+        _completionGradeDraft = _completionGoal.Grade;
+        _showCompletionModal = true;
+    }
+
+    private void CloseCompletionModal() => _showCompletionModal = false;
+
+    private void OpenResources(int courseId, string courseName)
+    {
+        _resourcesCourseId = courseId;
+        _resourcesCourseName = courseName;
+    }
+
+    private async Task SaveCompletionNote()
+    {
+        if (_completionGoal == null) return;
+        _completionGoal.CompletionNote = _completionNoteDraft;
+        _completionGoal.Grade = _completionGradeDraft;
+        _completionGoal.CompletedAt = DateTime.Now;
+        await PutCourseGoalAsync(_completionGoal);
+        _showCompletionModal = false;
+    }
+
+    private async Task CycleCourse(int id)
+    {
+        var isSelected = _settings.SelectedCourseIds.Contains(id);
+        var isCompleted = _settings.CompletedCourseIds.Contains(id);
+
+        if (!isSelected && !isCompleted)
+        {
+            // inactive → active
+            _settings.SelectedCourseIds.Add(id);
+        }
+        else if (isSelected)
+        {
+            // active → completed
+            _settings.SelectedCourseIds.Remove(id);
+            _settings.CompletedCourseIds.Add(id);
+            await State.SaveSettingsAsync(_settings);
+            var course = _allCourses.First(c => c.Id == id);
+            OpenCompletionModal(id, course.Name);
+            return;
+        }
+        else
+        {
+            // completed → inactive
+            _settings.CompletedCourseIds.Remove(id);
+        }
+
+        await State.SaveSettingsAsync(_settings);
+    }
+
+    private async Task EnableNotifications()
+    {
+        // InitializeAsync includes the permission request + push subscription
+        // Must be triggered by a button click (browser security rule)
+        await NotificationSvc.InitializeAsync();
+        _notifStatus = await NotificationSvc.GetPermissionStatusAsync();
+    }
+
+    private async Task SendTestNotification()
+    {
+        await NotificationSvc.SendTestNotificationAsync();
+        _testSent = true;
+        StateHasChanged();
+        await Task.Delay(2500);
+        _testSent = false;
+        StateHasChanged();
+    }
+
+    // Unsubscribes this device's push subscription and immediately resubscribes - no repeated
+    // permission dialog needed (the permission already exists). Necessary e.g. after the
+    // server's VAPID key has changed: the browser's subscribePush() would otherwise keep
+    // returning the old, now-dead subscription instead of creating a new one against the current key.
+    private async Task ResubscribeNotifications()
+    {
+        _resubscribing = true;
+        StateHasChanged();
+        var ok = await NotificationSvc.ResubscribeAsync();
+        _resubscribing = false;
+        if (ok)
+        {
+            _resubscribeDone = true;
+            StateHasChanged();
+            await Task.Delay(2500);
+            _resubscribeDone = false;
+        }
+        StateHasChanged();
+    }
+
+    private void AddCustomMode(TimerMode draft)
+    {
+        draft.Id = CustomTimerModes.NextId(_customModes);
+        _customModes.Add(draft);
+        _settings.CustomTimerModes = CustomTimerModes.Serialize(_customModes);
+        // Re-parsing normalizes the display defaults (emoji/description) of the new entry
+        _customModes = CustomTimerModes.Parse(_settings.CustomTimerModes);
+    }
+
+    private void DeleteCustomMode(int id)
+    {
+        // Old sessions may keep referencing the deleted Id - the Focus page
+        // selects modes via a modulo index, never via a strict Id lookup.
+        _customModes.RemoveAll(m => m.Id == id);
+        _settings.CustomTimerModes = CustomTimerModes.Serialize(_customModes);
+    }
+
+    private async Task Save()
+    {
+        await State.SaveSettingsAsync(_settings);
+        _saved = true;
+        StateHasChanged();
+        await Task.Delay(2000);
+        _saved = false;
+        StateHasChanged();
+    }
+}

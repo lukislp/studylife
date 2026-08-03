@@ -1,0 +1,116 @@
+@page "/shared/{Token}"
+@layout PublicLayout
+@using StudyLife.Shared
+@inject HttpClient Http
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+@* Public, read-only progress view (see ProgressController.GetShared) - no login, no API key,
+   its own PublicLayout without navigation (see there). Shows EXCLUSIVELY the compact snapshot
+   from ProgressShareDto: total/earned ECTS, grade average, active courses with topic progress -
+   no notes, session details, or settings. Invalid/missing/deactivated token -> server returns
+   404, the page then shows the InvalidLink view. Every OTHER error (5xx, timeout, network
+   outage) shows the TemporaryError view instead - otherwise a temporary server problem would
+   incorrectly look like a permanently invalid link, especially for parents/mentors without
+   technical context. *@
+
+<PageTitle>@T.PageTitleTag</PageTitle>
+
+<div class="progress-share-page">
+    @if (_loading)
+    {
+        <div class="progress-share-card">
+            <p class="ss-desc">…</p>
+        </div>
+    }
+    else if (_temporaryError)
+    {
+        <div class="progress-share-card">
+            <h1>@T.TemporaryErrorHeading</h1>
+            <p class="ss-desc">@T.TemporaryErrorMessage</p>
+        </div>
+    }
+    else if (_data == null)
+    {
+        <div class="progress-share-card">
+            <h1>@T.InvalidLinkHeading</h1>
+            <p class="ss-desc">@T.InvalidLinkMessage</p>
+        </div>
+    }
+    else
+    {
+        <div class="progress-share-card">
+            <h1>@T.Heading</h1>
+            <p class="ss-desc">@T.SubHeading</p>
+
+            <div class="progress-share-stats">
+                <div class="progress-share-stat">
+                    <div class="progress-share-stat-value">@_data.EarnedEcts</div>
+                    <div class="progress-share-stat-label">@string.Format(T.EctsFormat ?? "", _data.EarnedEcts, _data.TotalEcts)</div>
+                </div>
+                <div class="progress-share-stat">
+                    <div class="progress-share-stat-value">@(_data.AverageGrade.HasValue ? _data.AverageGrade.Value.ToString("0.00") : "—")</div>
+                    <div class="progress-share-stat-label">@(_data.AverageGrade.HasValue ? T.AverageGradeLabel : T.NoGradeYet)</div>
+                </div>
+            </div>
+
+            <div class="progress-share-bar-track">
+                <div class="progress-share-bar-fill" style="width:@(BarPercent)%"></div>
+            </div>
+            <p class="ss-desc">@string.Format(T.CoursesCompletedFormat ?? "", _data.CoursesCompletedCount, _data.CoursesTotalCount)</p>
+
+            <h2 class="progress-share-subheading">@T.ActiveCoursesHeading</h2>
+            @if (_data.ActiveCourses.Count == 0)
+            {
+                <p class="ss-desc">@T.NoActiveCourses</p>
+            }
+            else
+            {
+                <div class="progress-share-course-list">
+                    @foreach (var c in _data.ActiveCourses)
+                    {
+                        <div class="progress-share-course" style="--course-color:@c.Color">
+                            <span class="progress-share-course-icon">@c.Icon</span>
+                            <div class="progress-share-course-info">
+                                <div class="progress-share-course-name">@c.Name</div>
+                                <div class="progress-share-course-track">
+                                    <div class="progress-share-course-fill" style="width:@(c.TopicProgressPercent)%"></div>
+                                </div>
+                            </div>
+                            <span class="progress-share-course-percent">@string.Format(T.TopicProgressFormat ?? "", c.TopicProgressPercent)</span>
+                        </div>
+                    }
+                </div>
+            }
+
+            <p class="progress-share-footer">@string.Format(T.GeneratedAtFormat ?? "", _data.GeneratedAt.ToLocalTime().ToString("g")) · @T.PoweredByLabel</p>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Token { get; set; } = "";
+
+    private I18nText.ProgressShareText T = new();
+    private ProgressShareDto? _data;
+    private bool _loading = true;
+    private bool _temporaryError;
+
+    private int BarPercent => _data == null || _data.TotalEcts <= 0
+        ? 0
+        : (int)Math.Round(Math.Min(100.0, _data.EarnedEcts * 100.0 / _data.TotalEcts));
+
+    protected override async Task OnInitializedAsync()
+    {
+        T = await I18nText.GetTextTableAsync<I18nText.ProgressShareText>(this);
+        try
+        {
+            var response = await Http.GetAsync($"api/progress/shared/{Uri.EscapeDataString(Token)}");
+            if (response.IsSuccessStatusCode)
+                _data = await response.Content.ReadFromJsonAsync<ProgressShareDto>();
+            else if (response.StatusCode != System.Net.HttpStatusCode.NotFound)
+                _temporaryError = true;
+        }
+        catch { _temporaryError = true; /* network error/timeout, not "link invalid" */ }
+        finally { _loading = false; }
+    }
+}

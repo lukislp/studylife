@@ -1,0 +1,19 @@
+{
+  "PageTitleTag": "StudyLife — Прогрес",
+  "Heading": "Навчальний прогрес",
+  "SubHeading": "Спільний знімок лише для перегляду — оновлюється автоматично.",
+  "EctsLabel": "Отримано ECTS",
+  "EctsFormat": "{0} / {1} ECTS",
+  "AverageGradeLabel": "Середній бал",
+  "NoGradeYet": "Оцінок ще немає",
+  "CoursesCompletedFormat": "Завершено {0} з {1} курсів",
+  "ActiveCoursesHeading": "Активні курси",
+  "NoActiveCourses": "Наразі немає активних курсів.",
+  "TopicProgressFormat": "{0}% тем",
+  "InvalidLinkHeading": "Посилання недоступне",
+  "InvalidLinkMessage": "Це посилання на прогрес недійсне, застаріле або вимкнене власником.",
+  "TemporaryErrorHeading": "Тимчасово недоступно",
+  "TemporaryErrorMessage": "Під час завантаження цієї сторінки щось пішло не так. Будь ласка, спробуйте ще раз за мить.",
+  "GeneratedAtFormat": "Востаннє оновлено: {0}",
+  "PoweredByLabel": "Поширено через StudyLife"
+}

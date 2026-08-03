@@ -1,0 +1,19 @@
+{
+  "PageTitleTag": "StudyLife — Fremskridt",
+  "Heading": "Studiefremskridt",
+  "SubHeading": "Et delt, skrivebeskyttet øjebliksbillede — opdateres automatisk.",
+  "EctsLabel": "Optjente ECTS",
+  "EctsFormat": "{0} / {1} ECTS",
+  "AverageGradeLabel": "Gennemsnitskarakter",
+  "NoGradeYet": "Endnu ingen karakterer",
+  "CoursesCompletedFormat": "{0} af {1} fag gennemført",
+  "ActiveCoursesHeading": "Aktive fag",
+  "NoActiveCourses": "Ingen aktive fag lige nu.",
+  "TopicProgressFormat": "{0} % af emnerne",
+  "InvalidLinkHeading": "Link ikke tilgængeligt",
+  "InvalidLinkMessage": "Dette fremskridtslink er ugyldigt, udløbet, eller er blevet deaktiveret af ejeren.",
+  "TemporaryErrorHeading": "Midlertidigt utilgængelig",
+  "TemporaryErrorMessage": "Der opstod en fejl ved indlæsning af denne side. Prøv venligst igen om lidt.",
+  "GeneratedAtFormat": "Sidst opdateret: {0}",
+  "PoweredByLabel": "Delt via StudyLife"
+}

@@ -1,0 +1,18 @@
+{
+  "Heading": "Týdenní plán",
+  "Subtitle": "Přehled tvých plánovaných studijních seancí tento týden k tisku — vytiskni si ho a pověs na zeď.",
+  "BackLink": "← Zpět na kalendář",
+  "ExportButton": "🖨 Vytisknout týdenní plán",
+  "WeekRangeFormat": "Týden: {0} – {1}",
+  "GeneratedOnFormat": "Vytvořeno {0}",
+  "SummaryHeading": "Souhrn",
+  "PlannedHoursLabel": "Plánované hodiny tento týden",
+  "WeeklyGoalLabel": "Týdenní cíl",
+  "WeeklyGoalFormat": "{0}–{1} h",
+  "SessionCountLabel": "Plánované seance",
+  "NoSessions": "Na tento den nejsou naplánované žádné seance.",
+  "TableTime": "Čas",
+  "TableCourse": "Předmět",
+  "TableTopic": "Téma",
+  "FooterNote": "Automaticky vytvořeno aplikací StudyLife."
+}

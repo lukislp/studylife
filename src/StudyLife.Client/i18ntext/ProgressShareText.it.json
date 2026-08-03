@@ -1,0 +1,19 @@
+{
+  "PageTitleTag": "StudyLife — Progressi",
+  "Heading": "Progressi negli studi",
+  "SubHeading": "Un'istantanea condivisa di sola lettura — aggiornata automaticamente.",
+  "EctsLabel": "ECTS conseguiti",
+  "EctsFormat": "{0} / {1} ECTS",
+  "AverageGradeLabel": "Media voti",
+  "NoGradeYet": "Ancora nessun voto",
+  "CoursesCompletedFormat": "{0} corsi completati su {1}",
+  "ActiveCoursesHeading": "Corsi attivi",
+  "NoActiveCourses": "Nessun corso attivo al momento.",
+  "TopicProgressFormat": "{0}% degli argomenti",
+  "InvalidLinkHeading": "Link non disponibile",
+  "InvalidLinkMessage": "Questo link dei progressi non è valido, è scaduto o è stato disattivato dal proprietario.",
+  "TemporaryErrorHeading": "Temporaneamente non disponibile",
+  "TemporaryErrorMessage": "Si è verificato un errore durante il caricamento di questa pagina. Riprova tra un momento.",
+  "GeneratedAtFormat": "Ultimo aggiornamento: {0}",
+  "PoweredByLabel": "Condiviso tramite StudyLife"
+}

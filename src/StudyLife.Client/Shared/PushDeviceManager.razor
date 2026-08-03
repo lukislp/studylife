@@ -1,0 +1,218 @@
+@using StudyLife.Client.Services
+@using StudyLife.Shared
+@inject HttpClient Http
+@inject NotificationService Notifications
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+@* Device management for push subscriptions, opened via the third FAB action button
+   (MainLayout.razor). Shows registered browsers/devices (rough detection from the User-Agent
+   stored at subscribe time) with "registered X days ago" and allows removing individual
+   subscriptions - two-step confirmation as a second, stacked modal (same technique as
+   SetupRestoreCard), not via confirm() or an inline button.
+   Endpoint/P256dh/Auth never leave the server - "this device" is recognized via a client-side
+   SHA256 hash of its own endpoint, computed identically on both sides (NotificationService.
+   GetCurrentEndpointHashAsync), not via the plaintext endpoint. *@
+
+@if (Open)
+{
+    <div class="modal-overlay" @onclick="CloseAsync">
+        <div class="modal pdm-modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>@T.PushDevicesTitle</h3>
+                <button type="button" class="modal-close" @onclick="CloseAsync">✕</button>
+            </div>
+            <div class="modal-body">
+                @if (_loading)
+                {
+                    <p class="ss-desc">@T.PushDevicesLoading</p>
+                }
+                else if (_error != null)
+                {
+                    <p class="ss-desc" style="color:var(--danger, #e74c3c)">@_error</p>
+                }
+                else if (_devices.Count == 0)
+                {
+                    <p class="ss-desc">@T.PushDevicesEmpty</p>
+                }
+                else
+                {
+                    <div class="pdm-list">
+                        @foreach (var device in _devices)
+                        {
+                            var d = device;
+                            <div class="pdm-row">
+                                <div class="pdm-row-main">
+                                    <div class="pdm-row-label">
+                                        <span>@FriendlyLabel(d.UserAgent)</span>
+                                        @if (_currentEndpointHash != null && d.EndpointHash == _currentEndpointHash)
+                                        {
+                                            <span class="pdm-badge">@T.PushDevicesThisDevice</span>
+                                        }
+                                    </div>
+                                    <div class="pdm-row-meta">@RegisteredLabel(d.CreatedAt)</div>
+                                </div>
+                                <button type="button" class="btn-danger" @onclick="() => _confirmDeleteDevice = d">
+                                    @T.PushDevicesUnsubscribe
+                                </button>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@if (_confirmDeleteDevice != null)
+{
+    <div class="modal-overlay" @onclick="() => _confirmDeleteDevice = null">
+        <div class="modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>@T.PushDevicesConfirmTitle</h3>
+                <button type="button" class="modal-close" @onclick="() => _confirmDeleteDevice = null">✕</button>
+            </div>
+            <div class="modal-body">
+                <p>⚠️ @string.Format(T.PushDevicesConfirmWarning ?? "", FriendlyLabel(_confirmDeleteDevice.UserAgent))</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" @onclick="() => _confirmDeleteDevice = null" disabled="@_deleting">
+                    @T.PushDevicesConfirmCancel
+                </button>
+                <button type="button" class="btn-danger" @onclick="ConfirmDeleteAsync" disabled="@_deleting">
+                    @(_deleting ? "…" : T.PushDevicesConfirmYes)
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private I18nText.MainLayoutText T = new();
+    private bool _wasOpen;
+    private bool _loading;
+    private string? _error;
+    private string? _currentEndpointHash;
+    private bool _deleting;
+    private readonly List<PushSubscriptionListItemDto> _devices = new();
+    private PushSubscriptionListItemDto? _confirmDeleteDevice;
+
+    protected override async Task OnInitializedAsync()
+    {
+        T = await I18nText.GetTextTableAsync<I18nText.MainLayoutText>(this);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Open && !_wasOpen)
+        {
+            _confirmDeleteDevice = null;
+            await LoadAsync();
+        }
+        _wasOpen = Open;
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _error = null;
+        StateHasChanged();
+        try
+        {
+            var devices = await Http.GetFromJsonAsync<List<PushSubscriptionListItemDto>>("api/push/subscriptions");
+            _devices.Clear();
+            if (devices != null) _devices.AddRange(devices);
+
+            // Best effort: without granted permission or if push isn't supported,
+            // _currentEndpointHash stays null - then simply no device gets marked.
+            _currentEndpointHash = await Notifications.GetCurrentEndpointHashAsync();
+        }
+        catch
+        {
+            _error = T.PushDevicesLoadError;
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_confirmDeleteDevice == null) return;
+        _deleting = true;
+        try
+        {
+            var response = await Http.DeleteAsync($"api/push/subscriptions/{_confirmDeleteDevice.Id}");
+            if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                // If this hits the device's own subscription, the local browser subscription must
+                // also go - otherwise a later subscribePush() call would keep returning the same
+                // (now only browser-known) subscription instead of creating a new one.
+                if (_currentEndpointHash != null && _confirmDeleteDevice.EndpointHash == _currentEndpointHash)
+                    await Notifications.UnsubscribeLocalAsync();
+
+                _devices.RemoveAll(d => d.Id == _confirmDeleteDevice.Id);
+            }
+            _confirmDeleteDevice = null;
+        }
+        catch
+        {
+            _error = T.PushDevicesLoadError;
+            _confirmDeleteDevice = null;
+        }
+        finally
+        {
+            _deleting = false;
+        }
+    }
+
+    private async Task CloseAsync()
+    {
+        _confirmDeleteDevice = null;
+        await OnClose.InvokeAsync();
+    }
+
+    private string RegisteredLabel(DateTime? createdAt)
+    {
+        if (createdAt == null) return T.PushDevicesRegisteredUnknown ?? "";
+        var days = Math.Max(0, (int)(DateTime.UtcNow - createdAt.Value).TotalDays);
+        return days == 0
+            ? T.PushDevicesRegisteredToday ?? ""
+            : string.Format(T.PushDevicesRegisteredDaysAgo ?? "", days);
+    }
+
+    // Deliberately no full User-Agent parsing library (see task description) - simple
+    // substring checks are enough for a rough "which device is this" display. Order
+    // matters: Edge/Chrome contain "Safari/" resp. "Chrome/" in their own UA string.
+    private string FriendlyLabel(string? userAgent)
+    {
+        if (string.IsNullOrWhiteSpace(userAgent)) return T.PushDevicesUnknownDevice ?? "";
+
+        // APNs devices from the native app store a plain display name instead of a browser UA
+        // (e.g. "Alex's iPhone", see PushController.SubscribeApns) - real browser UAs, by
+        // contrast, always start with "Mozilla/".
+        if (!userAgent.StartsWith("Mozilla/", StringComparison.Ordinal)) return userAgent;
+
+        string? browser = null;
+        if (userAgent.Contains("Edg/")) browser = "Edge";
+        else if (userAgent.Contains("Chrome/")) browser = "Chrome";
+        else if (userAgent.Contains("Firefox/")) browser = "Firefox";
+        else if (userAgent.Contains("Safari/")) browser = "Safari";
+
+        string? os = null;
+        if (userAgent.Contains("Windows")) os = "Windows";
+        else if (userAgent.Contains("Android")) os = "Android";
+        else if (userAgent.Contains("iPhone") || userAgent.Contains("iPad")) os = "iOS";
+        else if (userAgent.Contains("Mac OS")) os = "Mac";
+        else if (userAgent.Contains("Linux")) os = "Linux";
+
+        if (browser != null && os != null) return $"{browser} · {os}";
+        if (browser != null) return browser;
+        if (os != null) return os;
+        return T.PushDevicesUnknownDevice ?? "";
+    }
+}

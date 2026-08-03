@@ -1,0 +1,18 @@
+{
+  "Heading": "Pjan Ġimgħa",
+  "Subtitle": "Ħarsa ġenerali stampabbli tas-sessjonijiet ta' studju ppjanati din il-ġimgħa — ipprintjaha u waħħalha mal-ħajt.",
+  "BackLink": "← Lura għall-Kalendarju",
+  "ExportButton": "🖨 Ipprintja l-pjan tal-ġimgħa",
+  "WeekRangeFormat": "Ġimgħa: {0} – {1}",
+  "GeneratedOnFormat": "Iġġenerat fi {0}",
+  "SummaryHeading": "Sommarju",
+  "PlannedHoursLabel": "Sigħat ippjanati din il-ġimgħa",
+  "WeeklyGoalLabel": "Mira ġimgħa",
+  "WeeklyGoalFormat": "{0}–{1} h",
+  "SessionCountLabel": "Sessjonijiet ippjanati",
+  "NoSessions": "L-ebda sessjoni ppjanata għal dan il-jum.",
+  "TableTime": "Ħin",
+  "TableCourse": "Kors",
+  "TableTopic": "Suġġett",
+  "FooterNote": "Iġġenerat awtomatikament minn StudyLife."
+}

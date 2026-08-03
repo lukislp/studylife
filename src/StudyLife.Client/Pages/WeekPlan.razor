@@ -1,0 +1,76 @@
+@page "/weekplan"
+@using StudyLife.Client.Services
+@using StudyLife.Shared
+@inject AppStateService State
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+@inject IJSRuntime JS
+
+<PageTitle>StudyLife — @T.Heading</PageTitle>
+
+<div class="setup-page report-page">
+    <div class="setup-header no-print">
+        <h1>@T.Heading</h1>
+        <p>@T.Subtitle</p>
+        <div class="report-actions">
+            <a class="btn-secondary" href="/calendar">@T.BackLink</a>
+            <button class="btn-primary" @onclick="Print">@T.ExportButton</button>
+        </div>
+    </div>
+
+    @if (_loaded)
+    {
+        <div class="report-doc">
+            <div class="report-doc-head">
+                <h1 class="report-title">@T.Heading</h1>
+                <div class="report-meta">@string.Format(T.WeekRangeFormat ?? "", _weekStart.ToString("dd.MM.yyyy"), _weekEnd.ToString("dd.MM.yyyy"))</div>
+                <div class="report-meta">@string.Format(T.GeneratedOnFormat ?? "", _generatedAt.ToString("dd.MM.yyyy HH:mm"))</div>
+            </div>
+
+            <div class="report-section">
+                <h2>@T.SummaryHeading</h2>
+                <table class="report-table report-summary-table">
+                    <tbody>
+                        <tr><th>@T.PlannedHoursLabel</th><td>@_plannedHoursLabel</td></tr>
+                        <tr><th>@T.WeeklyGoalLabel</th><td>@string.Format(T.WeeklyGoalFormat ?? "", _weeklyGoalMin, _weeklyGoalMax)</td></tr>
+                        <tr><th>@T.SessionCountLabel</th><td>@_totalSessions</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            @foreach (var group in _dayGroups)
+            {
+                <div class="report-section">
+                    <h2>@group.DayLabel</h2>
+                    @if (group.Sessions.Count == 0)
+                    {
+                        <p>@T.NoSessions</p>
+                    }
+                    else
+                    {
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th>@T.TableTime</th>
+                                    <th>@T.TableCourse</th>
+                                    <th>@T.TableTopic</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var s in group.Sessions)
+                                {
+                                    <tr>
+                                        <td>@s.StartTime.ToString("HH:mm")–@s.EndTime.ToString("HH:mm")</td>
+                                        <td>@IconFor(s.CourseId) @s.CourseName</td>
+                                        <td>@(string.IsNullOrWhiteSpace(s.Topic) ? "–" : s.Topic)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            }
+
+            <div class="report-footer">@T.FooterNote</div>
+        </div>
+    }
+</div>

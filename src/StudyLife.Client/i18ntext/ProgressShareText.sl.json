@@ -1,0 +1,19 @@
+{
+  "PageTitleTag": "StudyLife — Napredek",
+  "Heading": "Študijski napredek",
+  "SubHeading": "Deljen posnetek samo za branje — samodejno posodobljen.",
+  "EctsLabel": "Pridobljeni ECTS",
+  "EctsFormat": "{0} / {1} ECTS",
+  "AverageGradeLabel": "Povprečna ocena",
+  "NoGradeYet": "Še ni ocen",
+  "CoursesCompletedFormat": "Zaključenih {0} od {1} predmetov",
+  "ActiveCoursesHeading": "Aktivni predmeti",
+  "NoActiveCourses": "Trenutno ni aktivnih predmetov.",
+  "TopicProgressFormat": "{0} % tem",
+  "InvalidLinkHeading": "Povezava ni na voljo",
+  "InvalidLinkMessage": "Ta povezava napredka je neveljavna, potekla ali jo je lastnik onemogočil.",
+  "TemporaryErrorHeading": "Začasno nedosegljivo",
+  "TemporaryErrorMessage": "Pri nalaganju te strani je prišlo do napake. Poskusite znova čez trenutek.",
+  "GeneratedAtFormat": "Nazadnje posodobljeno: {0}",
+  "PoweredByLabel": "Deljeno prek StudyLife"
+}

@@ -1,0 +1,84 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using StudyLife.Server.Data;
+using StudyLife.Shared;
+
+namespace StudyLife.Server.Controllers;
+
+/// <summary>
+/// CRUD for the course resource collection (setup page, CourseResourcesModal.razor).
+/// Deliberately no PUT/update - delete + recreate is enough for the manageable number of
+/// entries per course.
+/// </summary>
+[ApiController]
+[Route("api/courseresources")]
+public class CourseResourcesController : ControllerBase
+{
+    private readonly StudyLifeDb _db;
+
+    public CourseResourcesController(StudyLifeDb db) => _db = db;
+
+    [HttpGet]
+    public async Task<IEnumerable<CourseResourceDto>> GetByCourse([FromQuery] int courseId) =>
+        await _db.CourseResources.AsNoTracking()
+            .Where(r => r.CourseId == courseId)
+            .OrderBy(r => r.CreatedAt)
+            .Select(r => ToDto(r))
+            .ToListAsync();
+
+    [HttpPost]
+    public async Task<ActionResult<CourseResourceDto>> Create(CourseResourceDto dto)
+    {
+        var error = Validate(dto);
+        if (error != null) return BadRequest(error);
+
+        var entity = new CourseResourceEntity
+        {
+            CourseId = dto.CourseId,
+            Title = dto.Title.Trim(),
+            Url = dto.Url.Trim(),
+            CreatedAt = DateTime.UtcNow,
+        };
+        _db.CourseResources.Add(entity);
+        await _db.SaveChangesAsync();
+        return ToDto(entity);
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var entity = await _db.CourseResources.FindAsync(id);
+        if (entity == null) return NotFound();
+        _db.CourseResources.Remove(entity);
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    private static string? Validate(CourseResourceDto dto)
+    {
+        if (dto.CourseId <= 0) return "CourseId must be greater than 0.";
+        if (string.IsNullOrWhiteSpace(dto.Title)) return "Title must not be empty.";
+        // Server-side counterpart to the maxlength attributes in CourseResourcesModal.razor -
+        // those are purely client-side and trivially bypassable via a direct API call.
+        if (dto.Title.Trim().Length > 120) return "Title must be at most 120 characters long.";
+        if (dto.Url.Trim().Length > 2048) return "Url must be at most 2048 characters long.";
+        // Only a plausibility check (absolute http/https URL) - no reachability check, see the task description.
+        if (!Uri.TryCreate(dto.Url.Trim(), UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            return "Url must be a valid http(s) address.";
+        }
+        return null;
+    }
+
+    // internal instead of private: reused by BackupController (JSON export), same pattern
+    // as SessionsController.ToDto.
+    internal static CourseResourceDto ToDto(CourseResourceEntity e) => new()
+    {
+        Id = e.Id,
+        CourseId = e.CourseId,
+        Title = e.Title,
+        Url = e.Url,
+        CreatedAt = e.CreatedAt,
+    };
+}

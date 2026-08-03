@@ -1,0 +1,38 @@
+# HPA for the worker (CPU-based, the only metric type without an additional metrics adapter
+# - no custom-metrics setup for this learning project). Prerequisite: the worker no longer
+# determines its user partition from the Worker__ReplicaCount value frozen at pod startup,
+# but live via the Kubernetes API (Worker__ReplicaCountSource=Kubernetes,
+# KubernetesWorkerReplicaCountProvider in BackgroundTaskService.cs) - without that, scaling
+# would orphan user partitions (see the comment there). minReplicas=1 instead of
+# the previous fixed 2, because "scaling down" only becomes visible with a real lower bound
+# - this costs the cross-node redundancy from k8s/05-worker.yaml at very low load,
+# which is a deliberate tradeoff here (reminder/report processing can tolerate a short
+# delay if a pod happens to fail before a new one scales up). maxReplicas=4 as a
+# Pi-appropriate upper bound (4x 300m CPU limit from k8s/05-worker.yaml = 1200m, well under the
+# total budget of both nodes).
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: studylife-worker
+  namespace: studylife-scale
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: studylife-worker
+  minReplicas: 1
+  maxReplicas: 4
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    # Noticeably more cautious scale-down than the aggressive default behavior (default: immediately,
+    # up to 100% per 15s) - the worker shouldn't immediately shrink again after every brief load-spike
+    # end, that would cause constant flapping on an already tight Pi budget.
+    # Scale-up stays at the aggressive default (react quickly when load arrives).
+    scaleDown:
+      stabilizationWindowSeconds: 300

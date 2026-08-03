@@ -1,0 +1,62 @@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    @if (Weeks.Count == 0)
+    {
+        <div style="color:var(--text3);font-size:0.875rem">@EmptyText</div>
+    }
+    else
+    {
+        <div class="grouped-chart-wrap">
+            <div class="grouped-chart">
+                @foreach (var w in Weeks)
+                {
+                    <div class="grouped-col">
+                        <div class="grouped-bars">
+                            <div class="grouped-bar-track" title="@NotesTooltip(w)">
+                                <div class="grouped-bar-fill" style="height: @w.NotesPercentLabel%; background: @NotesColor"></div>
+                            </div>
+                            <div class="grouped-bar-track" title="@HoursTooltip(w)">
+                                <div class="grouped-bar-fill" style="height: @w.HoursPercentLabel%; background: @HoursColor"></div>
+                            </div>
+                        </div>
+                        <div class="grouped-label">@w.Label</div>
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="donut-legend" style="margin-top:0.75rem">
+            <div class="donut-legend-row">
+                <span class="donut-swatch" style="background:@NotesColor"></span>
+                <span class="donut-legend-name">@NotesLabel</span>
+            </div>
+            <div class="donut-legend-row">
+                <span class="donut-swatch" style="background:@HoursColor"></span>
+                <span class="donut-legend-name">@HoursLabel</span>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    public record WeekPair(string Label, double NotesCount, double NotesPercent, double Hours, double HoursPercent)
+    {
+        public string HoursLabelText => $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
+        public string NotesPercentLabel => Math.Clamp(NotesPercent, 0, 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+        public string HoursPercentLabel => Math.Clamp(HoursPercent, 0, 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    // Fixed two-series palette rather than a course color: --accent already means "study hours"
+    // everywhere else on this page (mini-bar-fill, csr-bar-fill, ...), so hours keeps --accent
+    // here too; notes gets a distinct, unused hue from the course-catalog palette for contrast.
+    private const string NotesColor = "#0984E3";
+    private const string HoursColor = "var(--accent)";
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public List<WeekPair> Weeks { get; set; } = new();
+    [Parameter] public string NotesLabel { get; set; } = "";
+    [Parameter] public string HoursLabel { get; set; } = "";
+    [Parameter] public string EmptyText { get; set; } = "";
+
+    private string NotesTooltip(WeekPair w) => $"{w.Label} · {NotesLabel}: {(int)w.NotesCount}";
+    private string HoursTooltip(WeekPair w) => $"{w.Label} · {HoursLabel}: {w.HoursLabelText}";
+}

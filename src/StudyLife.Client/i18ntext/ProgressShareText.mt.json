@@ -1,0 +1,19 @@
+{
+  "PageTitleTag": "StudyLife — Progress",
+  "Heading": "Progress fl-Istudji",
+  "SubHeading": "Stampa kondiviża li tinqara biss — tiġi aġġornata awtomatikament.",
+  "EctsLabel": "ECTS miksuba",
+  "EctsFormat": "{0} / {1} ECTS",
+  "AverageGradeLabel": "Marka medja",
+  "NoGradeYet": "Għad m'hemm ebda marki",
+  "CoursesCompletedFormat": "{0} minn {1} korsijiet lesti",
+  "ActiveCoursesHeading": "Korsijiet attivi",
+  "NoActiveCourses": "Bħalissa m'hemm ebda korsijiet attivi.",
+  "TopicProgressFormat": "{0}% tas-suġġetti",
+  "InvalidLinkHeading": "Il-link mhux disponibbli",
+  "InvalidLinkMessage": "Dan il-link tal-progress mhux validu, skada, jew ġie diżattivat mis-sid tiegħu.",
+  "TemporaryErrorHeading": "Mhux disponibbli temporanjament",
+  "TemporaryErrorMessage": "Xi ħaġa marret ħażin waqt li tgħabbi din il-paġna. Jekk jogħġbok erġa' pprova wara ftit.",
+  "GeneratedAtFormat": "Aġġornat l-aħħar: {0}",
+  "PoweredByLabel": "Kondiviż permezz ta' StudyLife"
+}

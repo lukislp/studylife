@@ -1,0 +1,32 @@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    <div class="style-grid">
+        @foreach (var style in Styles)
+        {
+            var s = style;
+            <div class="style-card @(SelectedKey == s.Key ? "selected" : "")"
+                 @onclick="() => OnStyleSelected.InvokeAsync(s.Key)">
+                <div class="sc-emoji">@s.Emoji</div>
+                <div class="sc-name">@s.Name</div>
+                <div class="sc-desc">@s.Desc</div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    public record StyleOption(string Key, string Emoji, string Name, string Desc);
+
+    public static readonly List<StyleOption> DefaultStyles = new()
+    {
+        new("claude", "✦", "Claude", "Thoughtful, precise motivation. The kind that makes you think."),
+        new("zen", "◌", "Zen", "Calm and grounding. Quiet encouragement."),
+        new("intense", "⚡", "Intense", "No excuses. Pure drive. Built for sprints."),
+        new("hype", "🔥", "Hype", "Energy, enthusiasm, and high-fives. Loud motivation."),
+    };
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public List<StyleOption> Styles { get; set; } = DefaultStyles;
+    [Parameter] public string SelectedKey { get; set; } = "";
+    [Parameter] public EventCallback<string> OnStyleSelected { get; set; }
+}

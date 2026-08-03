@@ -1,0 +1,16 @@
+# Daily base backup in addition to continuous WAL archiving (see k8s/02-postgres.yaml,
+# commented out there until the R2 secret exists). Do NOT apply as long as
+# spec.backup.barmanObjectStore is still commented out in the cluster manifest - CNPG would
+# otherwise log a failing backup attempt every day without an object storage target
+# configured. Order: create the R2 secret -> uncomment the backup block in 02-postgres.yaml
+# -> apply this manifest.
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: studylife-pg-daily
+  namespace: studylife-scale
+spec:
+  schedule: "0 0 3 * * *" # daily at 03:00 (CNPG uses a 6-field cron format with seconds)
+  backupOwnerReference: self
+  cluster:
+    name: studylife-pg

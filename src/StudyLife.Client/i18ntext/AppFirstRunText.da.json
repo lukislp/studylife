@@ -1,0 +1,10 @@
+{
+  "Description": "Hvilken StudyLife-server skal appen oprette forbindelse til?",
+  "ServerUrlLabel": "Server-URL",
+  "CheckingConnection": "Kontrollerer forbindelse…",
+  "UseAnyway": "Brug alligevel",
+  "Connect": "Forbind",
+  "InvalidUrl": "Det er ikke en gyldig URL.",
+  "UnexpectedResponse": "Serveren svarede, men uventet (HTTP {0}). Tryk igen for at bruge den alligevel.",
+  "ServerUnreachable": "Serveren kan ikke nås. Tryk igen for at bruge URL'en alligevel."
+}

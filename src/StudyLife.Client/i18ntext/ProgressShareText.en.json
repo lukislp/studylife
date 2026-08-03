@@ -1,0 +1,19 @@
+{
+  "PageTitleTag": "StudyLife — Progress",
+  "Heading": "Study Progress",
+  "SubHeading": "A shared read-only snapshot — updated automatically.",
+  "EctsLabel": "ECTS earned",
+  "EctsFormat": "{0} / {1} ECTS",
+  "AverageGradeLabel": "Average grade",
+  "NoGradeYet": "No grades yet",
+  "CoursesCompletedFormat": "{0} of {1} courses completed",
+  "ActiveCoursesHeading": "Active courses",
+  "NoActiveCourses": "No active courses right now.",
+  "TopicProgressFormat": "{0}% of topics",
+  "InvalidLinkHeading": "Link not available",
+  "InvalidLinkMessage": "This progress link is invalid, expired, or has been disabled by its owner.",
+  "TemporaryErrorHeading": "Temporarily unavailable",
+  "TemporaryErrorMessage": "Something went wrong loading this page. Please try again in a moment.",
+  "GeneratedAtFormat": "Last updated: {0}",
+  "PoweredByLabel": "Shared via StudyLife"
+}

@@ -1,0 +1,41 @@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    @* Same scatter look as hours-vs-grade (StatsHoursGradeScatterCard), just with ECTS credits
+       earned instead of grade on the Y axis - courses in progress sit at y=0 (nothing "earned" yet). *@
+    <div class="scatter-wrap">
+        <div class="scatter-y-axis">
+            <span>@MaxEctsLabel</span>
+            <span>0</span>
+        </div>
+        <div class="scatter-main">
+            <div class="scatter-plot">
+                @foreach (var p in Points)
+                {
+                    <div class="scatter-dot"
+                         style="left: @(p.XPercentLabel)%; bottom: @(p.YPercentLabel)%; background: @p.Color"
+                         title="@($"{p.Icon} {p.Name}: {p.HoursLabel} · {string.Format(EctsFormat, p.EctsEarned)}")"></div>
+                }
+            </div>
+            <div class="scatter-x-axis">
+                <span>0h</span>
+                <span>@MaxHoursLabel</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    public record ScatterPoint(string Name, string Icon, string Color, double Hours, int EctsEarned, double XPercent, double YPercent)
+    {
+        public string HoursLabel => $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
+        // Formatted with invariant culture so CSS percentage values never get a decimal comma (cf. _donutGradient).
+        public string XPercentLabel => XPercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+        public string YPercentLabel => YPercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string EctsFormat { get; set; } = "";
+    [Parameter] public string MaxHoursLabel { get; set; } = "";
+    [Parameter] public string MaxEctsLabel { get; set; } = "";
+    [Parameter] public List<ScatterPoint> Points { get; set; } = new();
+}

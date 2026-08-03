@@ -1,0 +1,68 @@
+@* Regenerate button + two-step confirmation modal for the permanent calendar token
+   (same .modal-overlay/.modal/.modal-footer pattern as SetupRestoreCard/SetupApiKeyCard):
+   immediately breaks any existing calendar subscription, hence no native confirm(). The HTTP
+   call lives in Setup.razor (OnRegenerateConfirmed), this card is pure display/modal UI. *@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    <p class="ss-desc">@Desc</p>
+    <div class="field-row">
+        <input class="input" readonly value="@IcsUrl" />
+        <button class="btn-secondary" @onclick="() => OnCopyClick.InvokeAsync()" style="flex-shrink:0">
+            @(IcsCopied ? $"✓ {CopiedText}" : CopyText)
+        </button>
+        <button class="btn-danger" @onclick="() => _confirming = true" style="flex-shrink:0">
+            @(RegenerateSuccess ? $"✓ {RegenerateSuccessText}" : RegenerateButtonText)
+        </button>
+    </div>
+</div>
+
+@if (_confirming)
+{
+    <div class="modal-overlay" @onclick="() => _confirming = false">
+        <div class="modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>@RegenerateConfirmTitle</h3>
+                <button type="button" class="modal-close" @onclick="() => _confirming = false">✕</button>
+            </div>
+            <div class="modal-body">
+                <p>⚠️ @RegenerateConfirmWarning</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" @onclick="() => _confirming = false" disabled="@Regenerating">
+                    @RegenerateConfirmCancel
+                </button>
+                <button type="button" class="btn-danger" @onclick="ConfirmRegenerate" disabled="@Regenerating">
+                    @(Regenerating ? "…" : RegenerateConfirmYes)
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string Desc { get; set; } = "";
+    [Parameter] public string IcsUrl { get; set; } = "";
+    [Parameter] public string CopyText { get; set; } = "";
+    [Parameter] public string CopiedText { get; set; } = "";
+    [Parameter] public bool IcsCopied { get; set; }
+    [Parameter] public EventCallback OnCopyClick { get; set; }
+
+    [Parameter] public string RegenerateButtonText { get; set; } = "";
+    [Parameter] public string RegenerateConfirmTitle { get; set; } = "";
+    [Parameter] public string RegenerateConfirmWarning { get; set; } = "";
+    [Parameter] public string RegenerateConfirmCancel { get; set; } = "";
+    [Parameter] public string RegenerateConfirmYes { get; set; } = "";
+    [Parameter] public string RegenerateSuccessText { get; set; } = "";
+    [Parameter] public bool Regenerating { get; set; }
+    [Parameter] public bool RegenerateSuccess { get; set; }
+    [Parameter] public EventCallback OnRegenerateConfirmed { get; set; }
+
+    private bool _confirming;
+
+    private async Task ConfirmRegenerate()
+    {
+        _confirming = false;
+        await OnRegenerateConfirmed.InvokeAsync();
+    }
+}

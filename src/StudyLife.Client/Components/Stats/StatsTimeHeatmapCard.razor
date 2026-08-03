@@ -1,0 +1,109 @@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    @if (!HasData)
+    {
+        <div style="color:var(--text3);font-size:0.875rem">@EmptyText</div>
+    }
+    else
+    {
+        <div class="time-heatmap-wrap">
+            <div class="time-heatmap">
+                <div class="time-heatmap-row time-heatmap-hours-row">
+                    <span class="time-heatmap-weekday-label"></span>
+                    @for (var h = 0; h < 24; h++)
+                    {
+                        <span class="time-heatmap-hour">@(h % HourLabelStep == 0 ? h.ToString() : "")</span>
+                    }
+                </div>
+                @foreach (var row in Rows)
+                {
+                    <div class="time-heatmap-row">
+                        <span class="time-heatmap-weekday-label">@(row.Count > 0 ? row[0].WeekdayLabel : "")</span>
+                        @foreach (var cell in row)
+                        {
+                            var c = cell;
+                            <button type="button" class="time-heatmap-cell level-@c.Level @(_selectedCell == c ? "selected" : "")"
+                                    title="@CellTitle(c)" @onclick="() => ToggleCell(c)"></button>
+                        }
+                    </div>
+                }
+            </div>
+            <div class="heatmap-legend">
+                <span>@LessText</span>
+                <div class="time-heatmap-cell level-0"></div>
+                <div class="time-heatmap-cell level-1"></div>
+                <div class="time-heatmap-cell level-2"></div>
+                <div class="time-heatmap-cell level-3"></div>
+                <div class="time-heatmap-cell level-4"></div>
+                <span>@MoreText</span>
+            </div>
+        </div>
+
+        @if (_selectedCell != null)
+        {
+            <!-- Deliberately OUTSIDE .time-heatmap-wrap (horizontal scrollbar): inside it, the
+                 panel would render outside the visible area depending on scroll position -
+                 same lesson as the detail panel of the date heatmap (StatsHeatmapCard). -->
+            <div class="heatmap-detail">
+                <div class="heatmap-detail-head">
+                    <span class="heatmap-detail-date">@_selectedCell.WeekdayLabel, @($"{_selectedCell.Hour:00}:00–{(_selectedCell.Hour + 1) % 24:00}:00")</span>
+                    <button type="button" class="heatmap-detail-close" @onclick="() => _selectedCell = null">✕</button>
+                </div>
+                @if (_selectedCell.Courses.Count == 0)
+                {
+                    <div class="heatmap-detail-empty">@NoSessionText</div>
+                }
+                else
+                {
+                    <div class="heatmap-detail-summary">@_selectedCell.HoursLabel(NoSessionText) · @string.Format(SessionCountFormat ?? "", _selectedCell.SessionCount)</div>
+                    <div class="heatmap-detail-courses">
+                        @foreach (var course in _selectedCell.Courses)
+                        {
+                            <div class="heatmap-detail-course-row">
+                                <span class="heatmap-detail-swatch" style="background:@course.Color"></span>
+                                <span class="heatmap-detail-course-name">@course.Name</span>
+                                <span class="heatmap-detail-course-hours">@course.HoursLabel</span>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    public record TimeHeatCell(string WeekdayLabel, int Hour, double Hours, int Level, int SessionCount, List<StatsHeatmapCard.CourseHours> Courses)
+    {
+        public string HoursLabel(string noSessionText) => Hours <= 0 ? noSessionText : $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
+    }
+
+    // Column headers get crowded at 24 individual labels (mirrors the sparse-labeling trick
+    // StatsHeatmapCard uses for its month row) - only every 3rd hour gets a printed number.
+    private const int HourLabelStep = 3;
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public List<List<TimeHeatCell>> Rows { get; set; } = new();
+    [Parameter] public string NoSessionText { get; set; } = "";
+    [Parameter] public string LessText { get; set; } = "";
+    [Parameter] public string MoreText { get; set; } = "";
+    [Parameter] public string TooltipFormat { get; set; } = "";
+    [Parameter] public string SessionCountFormat { get; set; } = "";
+    [Parameter] public string EmptyText { get; set; } = "";
+
+    private bool HasData => Rows.Any(row => row.Any(c => c.Hours > 0));
+
+    private TimeHeatCell? _selectedCell;
+
+    // Reference instead of value equality is sufficient here (a List<> in the record breaks
+    // record equality down to reference equality anyway): Rows is built exactly once per page
+    // load, so object identity stays stable across all click interactions - same reasoning
+    // as StatsHeatmapCard._selectedDay.
+    private void ToggleCell(TimeHeatCell cell) => _selectedCell = _selectedCell == cell ? null : cell;
+
+    // Built as a plain method rather than inline in the markup for the same Razor-parser reason
+    // as StatsRhythmCard.BarTitle - and guarded against a not-yet-loaded TooltipFormat the same
+    // way every other string.Format(T.Something, ...) call in this codebase is guarded.
+    private string CellTitle(TimeHeatCell cell) =>
+        string.Format(TooltipFormat ?? "", cell.WeekdayLabel, cell.Hour, cell.HoursLabel(NoSessionText));
+}

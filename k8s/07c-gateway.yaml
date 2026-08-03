@@ -1,0 +1,226 @@
+# NGINX Gateway Fabric (Gateway API) - successor to ingress-nginx (archived by the Kubernetes
+# project in 2026, see docs/SCALING.md). Installation of the controller/CRD manifests:
+# k8s/06c-nginx-gateway-fabric.md. Parallel operation: this gateway gets its OWN MetalLB IP,
+# ingress-nginx (192.168.1.240) stays untouched until the NPM cutover.
+#
+# Two listeners per service instead of one: NPM internally ALWAYS connects via SNI=X.home.lan,
+# but passes the public Host header through 1:1. A listener with hostname=X.home.lan would
+# IGNORE HTTPRoute hostnames outside that name (Gateway API spec: only the intersection of
+# listener and route hostname binds) - the public Host header would end up at the 404 default
+# backend. The second listener per service shares the TLS secret with the first; NGINX picks
+# the certificate via SNI (always X.home.lan), but the server block via the Host header -
+# exactly the behavior of the previous two-host ingress rules.
+#
+# cert-manager (gateway-shim, --enable-gateway-api) generates a Certificate in the
+# nginx-gateway namespace from the cluster-issuer annotation for each referenced secret - the
+# existing same-named secrets in studylife-scale/monitoring (for the old ingress objects)
+# remain unaffected by this.
+apiVersion: gateway.nginx.org/v1alpha2
+kind: NginxProxy
+metadata:
+  name: studylife-gateway-config
+  namespace: nginx-gateway
+spec:
+  kubernetes:
+    deployment:
+      # Autoscaling instead of fixed replicas: NginxProxy has its OWN autoscaling field, which
+      # NGF's provisioner deployment controller translates directly into an HPA object it manages
+      # itself - no external HPA needed that would compete with the controller over
+      # .spec.replicas (the controller continuously keeps this field in sync with the CRD; an
+      # additional HPA would create the same field-ownership conflict that originally existed
+      # for studylife-web/-worker before spec.replicas was removed). minReplicas: 2 keeps the
+      # soft anti-affinity below meaningful (1 replica would have nothing to spread).
+      autoscaling:
+        enable: true
+        minReplicas: 2
+        maxReplicas: 4
+        targetCPUUtilizationPercentage: 70
+        behavior:
+          scaleDown:
+            stabilizationWindowSeconds: 300 # same anti-flapping rule as for the web/worker HPA
+      container:
+        resources:
+          requests: { cpu: 50m, memory: 90Mi }
+          limits: { cpu: 200m, memory: 200Mi }
+      pod:
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 100
+                podAffinityTerm:
+                  labelSelector:
+                    matchLabels:
+                      app.kubernetes.io/name: studylife-gateway-nginx
+                  topologyKey: kubernetes.io/hostname
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: studylife-gateway
+  namespace: nginx-gateway
+  annotations:
+    cert-manager.io/cluster-issuer: studylife-internal-ca-issuer
+spec:
+  gatewayClassName: nginx
+  infrastructure:
+    parametersRef:
+      group: gateway.nginx.org
+      kind: NginxProxy
+      name: studylife-gateway-config
+  listeners:
+    - name: studylife-heim
+      hostname: studylife.home.lan
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - { kind: Secret, name: studylife-tls }
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels: { kubernetes.io/metadata.name: studylife-scale }
+    - name: studylife-public
+      hostname: studylife.example.com
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - { kind: Secret, name: studylife-tls }
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels: { kubernetes.io/metadata.name: studylife-scale }
+    - name: uptimekuma-heim
+      hostname: uptimekuma.home.lan
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - { kind: Secret, name: uptime-kuma-tls }
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels: { kubernetes.io/metadata.name: studylife-scale }
+    - name: uptimekuma-public
+      hostname: uptimekuma.example.com
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - { kind: Secret, name: uptime-kuma-tls }
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels: { kubernetes.io/metadata.name: studylife-scale }
+    - name: grafana-heim
+      hostname: grafana.home.lan
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - { kind: Secret, name: grafana-tls }
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels: { kubernetes.io/metadata.name: monitoring }
+    - name: grafana-public
+      hostname: grafana.example.com
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - { kind: Secret, name: grafana-tls }
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels: { kubernetes.io/metadata.name: monitoring }
+    - name: studylife-download-heim
+      hostname: studylife-download.home.lan
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - { kind: Secret, name: studylife-download-tls }
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels: { kubernetes.io/metadata.name: studylife-scale }
+    - name: studylife-download-public
+      hostname: studylife-download.example.com
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - { kind: Secret, name: studylife-download-tls }
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels: { kubernetes.io/metadata.name: studylife-scale }
+    - name: piwatch-heim
+      hostname: piwatch.home.lan
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - { kind: Secret, name: piwatch-tls }
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels: { kubernetes.io/metadata.name: monitoring }
+    - name: piwatch-public
+      hostname: piwatch.example.com
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - { kind: Secret, name: piwatch-tls }
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels: { kubernetes.io/metadata.name: monitoring }
+    - name: homelab-hub-heim
+      hostname: linkdashboard.home.lan
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - { kind: Secret, name: homelab-hub-tls }
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels: { kubernetes.io/metadata.name: homelab-hub }
+    - name: homelab-hub-public
+      hostname: linkdashboard.example.com
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - { kind: Secret, name: homelab-hub-tls }
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels: { kubernetes.io/metadata.name: homelab-hub }

@@ -1,0 +1,36 @@
+# Connection pooler in front of Postgres - relevant because otherwise, as the web replica count
+# grows, every pod would open its own Npgsql connection pool against CNPG's max_connections.
+# CNPG automatically creates a Service with the same name as this Pooler object (NO "-rw"
+# suffix, unlike the cluster itself - verified live: "studylife-pg-pooler", not
+# "studylife-pg-pooler-rw"), 2 PgBouncer instances for its own redundancy. Transaction pooling
+# mode (instead of session) - a connection is only bound to a client for the duration of ONE
+# transaction, then released immediately.
+#
+# IMPORTANT GOTCHA (to be verified empirically, see docs/SCALING.md): PgBouncer in transaction
+# mode doesn't support server-side prepared-statement caching across connection boundaries -
+# Npgsql needs "Max Auto Prepare=0" in the connection string for this
+# (k8s/01-config-and-secret.yaml), otherwise "prepared statement already exists" errors threaten.
+apiVersion: postgresql.cnpg.io/v1
+kind: Pooler
+metadata:
+  name: studylife-pg-pooler
+  namespace: studylife-scale
+spec:
+  cluster:
+    name: studylife-pg
+  # 1 instead of 2 instances - lean profile for the real 2-node Pi cluster (docs/SCALING.md,
+  # "resource-saving profile"). A purely stateless proxy, rescheduled within seconds on node
+  # failure - the 2nd instance here was just a resource buffer, not a real HA gain.
+  instances: 1
+  type: rw
+  pgbouncer:
+    poolMode: transaction
+  # The only deployment in the cluster without requests/limits (found live) - PgBouncer is a
+  # lean, pure proxy, values roughly analogous to Redis (k8s/03-redis.yaml), if anything lighter.
+  template:
+    spec:
+      containers:
+        - name: pgbouncer
+          resources:
+            requests: { cpu: 25m, memory: 32Mi }
+            limits: { cpu: 100m, memory: 64Mi }

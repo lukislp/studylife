@@ -1,0 +1,26 @@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    <div class="goal-history-row">
+        @foreach (var w in Weeks)
+        {
+            <span class="goal-dot @(w.Met ? "met" : "missed")" title="@w.Tooltip"></span>
+        }
+    </div>
+    @if (Weeks.Count > 0)
+    {
+        <div class="goal-history-summary">@string.Format(SummaryFormat, Weeks.Count(w => w.Met), Weeks.Count)</div>
+    }
+</div>
+
+@code {
+    public record WeekMarker(DateTime WeekStart, bool Met, double Hours)
+    {
+        public string Label => WeekStart.ToString("dd.MM.");
+        public string HoursLabel => $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
+        public string Tooltip => $"{Label}: {HoursLabel}";
+    }
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string SummaryFormat { get; set; } = "";
+    [Parameter] public List<WeekMarker> Weeks { get; set; } = new();
+}

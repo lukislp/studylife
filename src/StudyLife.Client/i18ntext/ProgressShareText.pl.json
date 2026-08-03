@@ -1,0 +1,19 @@
+{
+  "PageTitleTag": "StudyLife — Postępy",
+  "Heading": "Postępy w nauce",
+  "SubHeading": "Udostępniony podgląd tylko do odczytu — aktualizowany automatycznie.",
+  "EctsLabel": "Zdobyte ECTS",
+  "EctsFormat": "{0} / {1} ECTS",
+  "AverageGradeLabel": "Średnia ocen",
+  "NoGradeYet": "Brak ocen",
+  "CoursesCompletedFormat": "Ukończono {0} z {1} kursów",
+  "ActiveCoursesHeading": "Aktywne kursy",
+  "NoActiveCourses": "Obecnie brak aktywnych kursów.",
+  "TopicProgressFormat": "{0}% tematów",
+  "InvalidLinkHeading": "Link niedostępny",
+  "InvalidLinkMessage": "Ten link postępów jest nieprawidłowy, wygasł lub został wyłączony przez właściciela.",
+  "TemporaryErrorHeading": "Chwilowo niedostępne",
+  "TemporaryErrorMessage": "Podczas ładowania tej strony coś poszło nie tak. Spróbuj ponownie za chwilę.",
+  "GeneratedAtFormat": "Ostatnia aktualizacja: {0}",
+  "PoweredByLabel": "Udostępniono przez StudyLife"
+}

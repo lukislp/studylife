@@ -1,0 +1,19 @@
+{
+  "PageTitleTag": "StudyLife — Framsteg",
+  "Heading": "Studieframsteg",
+  "SubHeading": "En delad skrivskyddad ögonblicksbild — uppdateras automatiskt.",
+  "EctsLabel": "Intjänade ECTS",
+  "EctsFormat": "{0} / {1} ECTS",
+  "AverageGradeLabel": "Betygsgenomsnitt",
+  "NoGradeYet": "Inga betyg än",
+  "CoursesCompletedFormat": "{0} av {1} kurser avslutade",
+  "ActiveCoursesHeading": "Aktiva kurser",
+  "NoActiveCourses": "Inga aktiva kurser just nu.",
+  "TopicProgressFormat": "{0}% av ämnena",
+  "InvalidLinkHeading": "Länken är inte tillgänglig",
+  "InvalidLinkMessage": "Den här framstegslänken är ogiltig, har gått ut eller har inaktiverats av ägaren.",
+  "TemporaryErrorHeading": "Tillfälligt otillgänglig",
+  "TemporaryErrorMessage": "Något gick fel när sidan laddades. Försök igen om en liten stund.",
+  "GeneratedAtFormat": "Senast uppdaterad: {0}",
+  "PoweredByLabel": "Delat via StudyLife"
+}

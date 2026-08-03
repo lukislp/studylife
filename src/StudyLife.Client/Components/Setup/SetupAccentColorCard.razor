@@ -1,0 +1,55 @@
+@* Curated accent color selection, separate from the dark/light theme switch next to it. Same
+   "row of swatches, click to select, one marked active" interaction as the
+   color picker in AddStudyProgramModal (.apm-swatch) - its own .accent-swatch class because
+   the selection sits a bit larger/more prominent here (its own card instead of part of a
+   course form). The hex values here are only for the preview - the values actually applied
+   live centrally in the --accent/--accent2 presets in base.css (see wwwroot/js/accent.js). *@
+
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    <div class="accent-swatches">
+        @foreach (var preset in Presets)
+        {
+            var key = preset.Key;
+            <button type="button"
+                    class="accent-swatch @(AccentColor == key ? "selected" : "")"
+                    style="background:@preset.Hex" title="@preset.Name"
+                    @onclick="() => OnAccentSelected.InvokeAsync(key)">
+                @if (AccentColor == key)
+                {
+                    <span class="accent-swatch-check">✓</span>
+                }
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string AccentColor { get; set; } = "coral";
+    [Parameter] public EventCallback<string> OnAccentSelected { get; set; }
+
+    /// <summary>Names of the presets (for each swatch's title tooltip, i18n).</summary>
+    [Parameter] public string CoralName { get; set; } = "";
+    [Parameter] public string BlueName { get; set; } = "";
+    [Parameter] public string GreenName { get; set; } = "";
+    [Parameter] public string PurpleName { get; set; } = "";
+    [Parameter] public string RedName { get; set; } = "";
+    [Parameter] public string TealName { get; set; } = "";
+    [Parameter] public string AmberName { get; set; } = "";
+
+    private sealed record Preset(string Key, string Hex, string Name);
+
+    // Same hex values as the --accent presets in base.css (there also with the
+    // --accent2 derivations per theme) - duplicated here only for the swatch preview.
+    private IEnumerable<Preset> Presets => new[]
+    {
+        new Preset("coral", "#CC785C", CoralName),
+        new Preset("blue", "#4C86E0", BlueName),
+        new Preset("green", "#3C8F40", GreenName),
+        new Preset("purple", "#7B5EEA", PurpleName),
+        new Preset("red", "#E5484D", RedName),
+        new Preset("teal", "#178783", TealName),
+        new Preset("amber", "#A66E10", AmberName),
+    };
+}

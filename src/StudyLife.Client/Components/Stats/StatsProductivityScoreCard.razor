@@ -1,0 +1,40 @@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    <div class="rhythm-subtitle">@Description</div>
+    @if (Weeks.Any(w => w.HasData))
+    {
+        <div class="mini-bar-chart productivity-chart">
+            @foreach (var w in Weeks)
+            {
+                <div class="mini-bar-col" title="@(w.HasData ? $"{w.Label}: {w.PercentLabel}" : $"{w.Label}: {NoDataText}")">
+                    <div class="mini-bar-value">@(w.HasData ? w.PercentLabel : "–")</div>
+                    <div class="mini-bar-track">
+                        @if (w.HasData)
+                        {
+                            <div class="mini-bar-fill" style="height: @(w.Percent)%"></div>
+                        }
+                    </div>
+                    <div class="mini-bar-label">@w.Label</div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div style="color:var(--text3);font-size:0.875rem">@EmptyText</div>
+    }
+</div>
+
+@code {
+    public record WeekPoint(string Label, double? Percent)
+    {
+        public bool HasData => Percent.HasValue;
+        public string PercentLabel => Percent.HasValue ? $"{Math.Round(Percent.Value)}%" : "";
+    }
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string Description { get; set; } = "";
+    [Parameter] public string NoDataText { get; set; } = "";
+    [Parameter] public string EmptyText { get; set; } = "";
+    [Parameter] public List<WeekPoint> Weeks { get; set; } = new();
+}

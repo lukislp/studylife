@@ -1,0 +1,55 @@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    @if (Rows.Count == 0)
+    {
+        <div style="color:var(--text3);font-size:0.875rem">@EmptyText</div>
+    }
+    else
+    {
+        @foreach (var row in Rows)
+        {
+            <div class="balance-row" style="--c: @row.Color">
+                <div class="balance-head">
+                    <span class="csr-icon">@row.Icon</span>
+                    <span class="csr-name balance-name">@row.Name</span>
+                    <span class="balance-delta @row.DeltaCssClass" title="@DeltaTooltip">@row.DeltaArrow @row.DeltaLabel</span>
+                </div>
+                <div class="balance-track">
+                    <div class="balance-actual-fill" style="width: @row.ActualPercentLabel%"></div>
+                    <div class="balance-target-marker" style="left: @row.TargetPercentLabel%"></div>
+                </div>
+                <div class="balance-meta">
+                    <span>@TargetLabel: @row.TargetPercentText%</span>
+                    <span>@ActualLabel: @row.ActualPercentText%</span>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    public record BalanceRow(string Name, string Icon, string Color, double TargetPercent, double ActualPercent)
+    {
+        public double DeltaPercent => ActualPercent - TargetPercent;
+        public string TargetPercentText => TargetPercent.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
+        public string ActualPercentText => ActualPercent.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
+        // Invariant + clamped to the track's 0-100 bounds, same reasoning as _donutGradient/
+        // ScatterPoint elsewhere in this codebase.
+        public string TargetPercentLabel => Math.Clamp(TargetPercent, 0, 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+        public string ActualPercentLabel => Math.Clamp(ActualPercent, 0, 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+        // +/-2 percentage points counts as "balanced" - tighter than the 5% relative-change
+        // threshold used for the per-course trend arrows (StatsCourseListCard.TrendArrow),
+        // since this is already an absolute percentage-point delta between two shares that
+        // sum to ~100% rather than a relative week-over-week change.
+        public string DeltaArrow => DeltaPercent switch { > 2 => "↑", < -2 => "↓", _ => "→" };
+        public string DeltaCssClass => DeltaPercent switch { > 2 => "balance-delta-over", < -2 => "balance-delta-under", _ => "balance-delta-flat" };
+        public string DeltaLabel => $"{(DeltaPercent >= 0 ? "+" : "")}{DeltaPercent.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)}%";
+    }
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public List<BalanceRow> Rows { get; set; } = new();
+    [Parameter] public string TargetLabel { get; set; } = "";
+    [Parameter] public string ActualLabel { get; set; } = "";
+    [Parameter] public string DeltaTooltip { get; set; } = "";
+    [Parameter] public string EmptyText { get; set; } = "";
+}

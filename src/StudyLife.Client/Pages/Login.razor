@@ -1,0 +1,259 @@
+@page "/login"
+@layout PublicLayout
+@using System.Text
+@using System.Text.Json.Nodes
+@using StudyLife.Shared
+@inject HttpClient Http
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@inject SessionTokenStore TokenStore
+@inject INativeAppAuth NativeAuth
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+@* Passkey login (phase 2). Deliberately uses PublicLayout (no app navigation) and the same
+   progress-share card styles as SharedProgress - no separate stylesheet needed, index.html
+   must not be touched. No username field: login/begin returns the CredentialIds for
+   ALL users, the browser itself picks the passkey from the OS store. *@
+
+<PageTitle>@T.LoginPageTitle</PageTitle>
+
+<div class="progress-share-page">
+    <div class="progress-share-card">
+        <h1>@T.LoginHeading</h1>
+        <p class="ss-desc">@T.LoginIntro</p>
+        @if (_error != null)
+        {
+            <p class="ss-desc" style="color:var(--danger, #e74c3c)">@_error</p>
+        }
+        <div style="display:flex; flex-direction:column; gap:0.75rem; margin-top:1.25rem;">
+            <button type="button" class="btn-primary" @onclick="SignInAsync" disabled="@_busy">
+                @(_busy ? T.LoginWorking : T.LoginButton)
+            </button>
+            <a href="@("/register" + _app.LinkQuery)" class="btn-secondary" style="text-align:center;">@T.GoToRegisterLink</a>
+            <a href="@("/link" + _app.LinkQuery)" class="btn-secondary" style="text-align:center;">@T.GoToLinkDeviceLink</a>
+
+            @* Emergency access: one-time codes from settings (passkey management). Deliberately
+               low-key below the main paths; the input field only appears after a click. *@
+            @if (!_recoveryOpen)
+            {
+                <button type="button" class="btn-secondary" style="font-size:0.85rem" @onclick="() => _recoveryOpen = true">
+                    @T.RecoveryLoginLink
+                </button>
+            }
+            else
+            {
+                <input class="input" style="text-align:center;letter-spacing:0.08em" placeholder="XXXX-XXXX-XXXX"
+                       autocapitalize="characters" spellcheck="false"
+                       @bind="_recoveryCode" @bind:event="oninput"
+                       @onkeyup="@(e => { if (e.Key == "Enter") _ = RecoverySignInAsync(); })" />
+                <button type="button" class="btn-primary" @onclick="RecoverySignInAsync"
+                        disabled="@(_busy || string.IsNullOrWhiteSpace(_recoveryCode))">
+                    @T.RecoveryLoginButton
+                </button>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private I18nText.AuthText T = new();
+    private bool _busy;
+    private string? _error;
+    private IJSObjectReference? _module;
+
+    // App return path (?app=1): this page is currently running in the system browser of a
+    // native app shell (studylife-app repo). The token is then handed back to the app via
+    // redirect instead of being stored in the browser (details in AppReturnContext) - nothing
+    // changes for the normal web flow.
+    private AppReturnContext _app = AppReturnContext.FromUri(new Uri("https://unused.invalid/"));
+
+    protected override async Task OnInitializedAsync()
+    {
+        _app = AppReturnContext.FromUri(Nav.ToAbsoluteUri(Nav.Uri));
+        T = await I18nText.GetTextTableAsync<I18nText.AuthText>(this);
+    }
+
+    private async Task SignInAsync()
+    {
+        // Native app shell without in-app passkeys (free signing tier): WebAuthn doesn't exist
+        // in the WebView - the whole ceremony runs through the system browser (INativeAppAuth).
+        // With in-app passkeys (paid profile), the normal flow below continues instead, only
+        // the WebAuthn call itself goes to the native dialog. Always false on the web.
+        if (NativeAuth.IsAvailable && !NativeAuth.SupportsInAppPasskeys)
+        {
+            await NativeSignInAsync();
+            return;
+        }
+
+        _busy = true;
+        _error = null;
+        try
+        {
+            if (!NativeAuth.SupportsInAppPasskeys)
+            {
+                _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/Login.razor.js");
+                if (!await _module.InvokeAsync<bool>("isPasskeySupported"))
+                {
+                    _error = T.NotSupported;
+                    return;
+                }
+            }
+
+            var begin = await Http.PostAsync("api/auth/login/begin", null);
+            if (!begin.IsSuccessStatusCode)
+            {
+                // 400 = "no passkey registered yet" (see AuthController.LoginBegin) -
+                // in that case registering instead of logging in is the right path.
+                _error = begin.StatusCode == System.Net.HttpStatusCode.BadRequest
+                    ? T.LoginNoPasskeys
+                    : T.LoginFailed;
+                return;
+            }
+            var options = await begin.Content.ReadFromJsonAsync<PasskeyBeginResponseDto>();
+            if (options == null) { _error = T.LoginFailed; return; }
+
+            var assertionJson = NativeAuth.SupportsInAppPasskeys
+                ? await NativeAuth.GetPasskeyAssertionAsync(options.OptionsJson)
+                : await _module!.InvokeAsync<string>("getPasskeyAssertion", options.OptionsJson);
+            if (assertionJson == null) { _error = T.LoginFailed; return; } // native dialog cancelled
+            var body = new JsonObject
+            {
+                ["optionsId"] = options.OptionsId,
+                ["response"] = JsonNode.Parse(assertionJson),
+            };
+            var complete = await Http.PostAsync("api/auth/login/complete",
+                new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json"));
+            if (!complete.IsSuccessStatusCode)
+            {
+                // "pending_approval" = the signature was cryptographically valid, but this
+                // passkey was created via register/begin-additional and is still waiting for
+                // approval from an already logged-in device (see AuthController.
+                // LoginComplete/PasskeyDeviceManager) - a dedicated, understandable message
+                // instead of the generic "login failed".
+                if (complete.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    try
+                    {
+                        var errorBody = await complete.Content.ReadFromJsonAsync<JsonObject>();
+                        if (errorBody?["error"]?.GetValue<string>() == "pending_approval")
+                        {
+                            _error = T.LoginPendingApproval;
+                            return;
+                        }
+                    }
+                    catch (System.Text.Json.JsonException) { /* no JSON body, generic case below */ }
+                }
+                _error = T.LoginFailed;
+                return;
+            }
+
+            var result = await complete.Content.ReadFromJsonAsync<PasskeyCompleteResponseDto>();
+            if (result?.Token is not { Length: > 0 } token) { _error = T.LoginFailed; return; }
+
+            if (_app.IsActive)
+            {
+                // This browser session belongs to the native app: hand the token back
+                // (custom scheme or loopback), deliberately NOT stored here. Goes through the
+                // PKCE handoff when the app sent a code_challenge (see AppReturnContext).
+                Nav.NavigateTo(await _app.BuildTokenReturnRedirectAsync(Http, token), forceLoad: true);
+                return;
+            }
+
+            await TokenStore.SetTokenAsync(token);
+            // forceLoad: full restart of the WASM app so AppStateService & co. don't keep
+            // showing cached data from another (previously resolved) account.
+            Nav.NavigateTo("/", forceLoad: true);
+        }
+        catch (JSException)
+        {
+            // User cancelled the passkey dialog or the authenticator declined.
+            _error = T.LoginFailed;
+        }
+        catch (HttpRequestException)
+        {
+            _error = T.LoginFailed;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private bool _recoveryOpen;
+    private string _recoveryCode = "";
+
+    /// <summary>
+    /// Emergency login with a one-time code (POST api/auth/recovery/login). Same token handling
+    /// as the passkey success path; afterwards DELIBERATELY to /setup instead of "/" - that's
+    /// where passkey management lives, the next step is always "add a new passkey".
+    /// </summary>
+    private async Task RecoverySignInAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_recoveryCode)) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/auth/recovery/login",
+                new RecoveryLoginRequestDto { Code = _recoveryCode });
+            if (!response.IsSuccessStatusCode)
+            {
+                _error = response.StatusCode == System.Net.HttpStatusCode.TooManyRequests
+                    ? T.RecoveryLoginThrottled
+                    : T.RecoveryLoginFailed;
+                return;
+            }
+            var result = await response.Content.ReadFromJsonAsync<PasskeyCompleteResponseDto>();
+            if (result?.Token is not { Length: > 0 } token) { _error = T.RecoveryLoginFailed; return; }
+
+            if (_app.IsActive)
+            {
+                Nav.NavigateTo(await _app.BuildTokenReturnRedirectAsync(Http, token), forceLoad: true);
+                return;
+            }
+            await TokenStore.SetTokenAsync(token);
+            Nav.NavigateTo("/setup", forceLoad: true);
+        }
+        catch (HttpRequestException)
+        {
+            _error = T.RecoveryLoginFailed;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task NativeSignInAsync()
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            var token = await NativeAuth.AuthenticateAsync("login");
+            if (token is { Length: > 0 })
+            {
+                await TokenStore.SetTokenAsync(token);
+                // forceLoad for the same reason as in the web flow: full restart so no
+                // cached data from another account lives on.
+                Nav.NavigateTo("/", forceLoad: true);
+                return;
+            }
+            _error = T.LoginFailed; // cancelled or failed - same message as on the web
+        }
+        catch (Exception ex)
+        {
+            // Not catching here used to mean: an exception runs unhandled into the Blazor
+            // renderer, which only shows the generic "unhandled error" banner WITHOUT
+            // logging anywhere - diagnosis was blind. Explicit flush like in
+            // AppleInAppPasskeys.LogDiag, visible via "devicectl device process launch --console".
+            Console.WriteLine($"[NativeSignInAsync] Error: {ex}");
+            Console.Out.Flush();
+            _error = T.LoginFailed;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

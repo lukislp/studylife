@@ -1,0 +1,18 @@
+{
+  "Heading": "Savaitės planas",
+  "Subtitle": "Spausdinimui tinkama tavo šios savaitės planuojamų mokymosi sesijų apžvalga — atsispausdink ir prisikabink prie sienos.",
+  "BackLink": "← Atgal į kalendorių",
+  "ExportButton": "🖨 Spausdinti savaitės planą",
+  "WeekRangeFormat": "Savaitė: {0} – {1}",
+  "GeneratedOnFormat": "Sukurta {0}",
+  "SummaryHeading": "Santrauka",
+  "PlannedHoursLabel": "Šios savaitės planuojamos valandos",
+  "WeeklyGoalLabel": "Savaitės tikslas",
+  "WeeklyGoalFormat": "{0}–{1} h",
+  "SessionCountLabel": "Suplanuotos sesijos",
+  "NoSessions": "Šiai dienai sesijų neplanuota.",
+  "TableTime": "Laikas",
+  "TableCourse": "Kursas",
+  "TableTopic": "Tema",
+  "FooterNote": "Automatiškai sukurta StudyLife."
+}

@@ -1,0 +1,32 @@
+# HPA for web (CPU-based, the same metric choice as for the worker in k8s/05c-worker-hpa.yaml -
+# no custom-metrics adapter for this learning project). Unlike the worker, web needs NO special
+# handling for user partitioning - every web pod answers arbitrary incoming requests
+# statelessly, there are no "orphaned partitions" when scaling. minReplicas=1 (instead of the
+# previous fixed 2) for the same reason as the worker: "scaling down" only becomes visible with
+# a real lower bound. maxReplicas=4 as a Pi-appropriate upper bound (4x the 500m CPU limit from
+# k8s/04-web.yaml = 2000m).
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: studylife-web
+  namespace: studylife-scale
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: studylife-web
+  minReplicas: 1
+  maxReplicas: 4
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    # Same trade-off as for the worker: cautious scale-down (5-minute stabilization window
+    # instead of immediate), so a brief drop in a load spike doesn't immediately trigger
+    # shrinking (flapping). Scale-up stays on the aggressive default behavior.
+    scaleDown:
+      stabilizationWindowSeconds: 300

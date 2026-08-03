@@ -1,0 +1,37 @@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    <div class="stats-grid">
+        <div class="stat-item">
+            <div class="stat-val">@TotalHoursLabel</div>
+            <div class="stat-key">@HoursStudiedLabel</div>
+            <div class="stat-delta @(MonthCompUp ? "delta-up" : "delta-down")" title="@VsLastMonthTitle">@(MonthCompUp ? "▲" : "▼") @MonthCompDeltaLabel</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-val">@TotalSessions</div>
+            <div class="stat-key">@SessionsLabel</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-val">@CourseCount</div>
+            <div class="stat-key">@CoursesLabel</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-val">@AverageGradeLabel</div>
+            <div class="stat-key">@AvgGradeLabel</div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string TotalHoursLabel { get; set; } = "";
+    [Parameter] public string HoursStudiedLabel { get; set; } = "";
+    [Parameter] public bool MonthCompUp { get; set; }
+    [Parameter] public string MonthCompDeltaLabel { get; set; } = "";
+    [Parameter] public string VsLastMonthTitle { get; set; } = "";
+    [Parameter] public int TotalSessions { get; set; }
+    [Parameter] public string SessionsLabel { get; set; } = "";
+    [Parameter] public int CourseCount { get; set; }
+    [Parameter] public string CoursesLabel { get; set; } = "";
+    [Parameter] public string AverageGradeLabel { get; set; } = "";
+    [Parameter] public string AvgGradeLabel { get; set; } = "";
+}

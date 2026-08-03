@@ -1,0 +1,19 @@
+{
+  "PageTitleTag": "StudyLife — Edistyminen",
+  "Heading": "Opintojen edistyminen",
+  "SubHeading": "Jaettu, vain luku -tilassa oleva tilannekuva — päivittyy automaattisesti.",
+  "EctsLabel": "Kerätyt ECTS",
+  "EctsFormat": "{0} / {1} ECTS",
+  "AverageGradeLabel": "Keskiarvo",
+  "NoGradeYet": "Ei vielä arvosanoja",
+  "CoursesCompletedFormat": "{0}/{1} kurssia suoritettu",
+  "ActiveCoursesHeading": "Aktiiviset kurssit",
+  "NoActiveCourses": "Ei aktiivisia kursseja juuri nyt.",
+  "TopicProgressFormat": "{0} % aiheista",
+  "InvalidLinkHeading": "Linkki ei ole käytettävissä",
+  "InvalidLinkMessage": "Tämä edistymislinkki on virheellinen, vanhentunut tai omistaja on poistanut sen käytöstä.",
+  "TemporaryErrorHeading": "Tilapäisesti pois käytöstä",
+  "TemporaryErrorMessage": "Tämän sivun lataamisessa tapahtui virhe. Yritä hetken kuluttua uudelleen.",
+  "GeneratedAtFormat": "Viimeksi päivitetty: {0}",
+  "PoweredByLabel": "Jaettu StudyLifen kautta"
+}

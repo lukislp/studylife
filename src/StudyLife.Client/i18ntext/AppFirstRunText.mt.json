@@ -1,0 +1,10 @@
+{
+  "Description": "Ma' liema server StudyLife għandha tikkonnettja din l-app?",
+  "ServerUrlLabel": "URL tas-server",
+  "CheckingConnection": "Qed niċċekkjaw il-konnessjoni…",
+  "UseAnyway": "Uża xorta waħda",
+  "Connect": "Għaqqad",
+  "InvalidUrl": "Dan mhux URL validu.",
+  "UnexpectedResponse": "Is-server wieġeb, iżda b'mod mhux mistenni (HTTP {0}). Mess mill-ġdid biex tużah xorta waħda.",
+  "ServerUnreachable": "Ma jista' jintlaħaq is-server. Mess mill-ġdid biex tuża l-URL xorta waħda."
+}

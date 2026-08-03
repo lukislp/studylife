@@ -1,0 +1,38 @@
+<div class="dash-card card-best-record">
+    <div class="card-label">@Label</div>
+    <div class="best-record-grid">
+        <div class="best-record-item">
+            <div class="best-record-key">@DayLabel</div>
+            <div class="best-record-val">@BestDayHours</div>
+            <div class="best-record-sub">@BestDayDate</div>
+            @if (BestDayIsNew)
+            {
+                <div class="best-record-new">@NewRecordText</div>
+            }
+        </div>
+        <div class="best-record-item">
+            <div class="best-record-key">@WeekLabel</div>
+            <div class="best-record-val">@BestWeekHours</div>
+            <div class="best-record-sub">@BestWeekRange</div>
+            @if (BestWeekIsNew)
+            {
+                <div class="best-record-new">@NewRecordText</div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string DayLabel { get; set; } = "";
+    [Parameter] public string BestDayHours { get; set; } = "";
+    [Parameter] public string BestDayDate { get; set; } = "";
+    /// <summary>Today already reaches/exceeds the all-time record for a day.</summary>
+    [Parameter] public bool BestDayIsNew { get; set; }
+    [Parameter] public string WeekLabel { get; set; } = "";
+    [Parameter] public string BestWeekHours { get; set; } = "";
+    [Parameter] public string BestWeekRange { get; set; } = "";
+    /// <summary>The current week already reaches/exceeds the all-time record for a week.</summary>
+    [Parameter] public bool BestWeekIsNew { get; set; }
+    [Parameter] public string NewRecordText { get; set; } = "";
+}

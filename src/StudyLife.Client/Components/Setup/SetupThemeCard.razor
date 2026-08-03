@@ -1,0 +1,17 @@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    <div class="theme-switch">
+        <button class="theme-opt @(Theme == "system" ? "active" : "")" @onclick='() => OnThemeSelected.InvokeAsync("system")'>@SystemText</button>
+        <button class="theme-opt @(Theme == "light" ? "active" : "")" @onclick='() => OnThemeSelected.InvokeAsync("light")'>@LightText</button>
+        <button class="theme-opt @(Theme == "dark" ? "active" : "")" @onclick='() => OnThemeSelected.InvokeAsync("dark")'>@DarkText</button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string Theme { get; set; } = "";
+    [Parameter] public string SystemText { get; set; } = "";
+    [Parameter] public string LightText { get; set; } = "";
+    [Parameter] public string DarkText { get; set; } = "";
+    [Parameter] public EventCallback<string> OnThemeSelected { get; set; }
+}

@@ -1,0 +1,30 @@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    <div class="rhythm-subtitle">@Subtitle</div>
+    @* Deliberately a sorted ranking instead of Mon-Sun order: the weekday bar chart
+       (StatsRhythmCard) and the time-of-day heatmap already show the pattern, so here the
+       answer to "which day is most productive?" sits directly at position 1. *@
+    <div class="ranking-list">
+        @foreach (var (r, idx) in Ranked.Select((r, i) => (r, i)))
+        {
+            <div class="ranking-row" title="@($"{r.Label}: {r.HoursLabel}")">
+                <span class="ranking-pos @(idx == 0 && r.Hours > 0 ? "top" : "")">@(idx + 1).</span>
+                <span class="ranking-label">@r.Label</span>
+                <div class="ranking-track">
+                    <div class="ranking-fill @(idx == 0 && r.Hours > 0 ? "peak" : "")" style="width: @r.Percent.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)%"></div>
+                </div>
+                <span class="ranking-hours">@r.HoursLabel</span>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    // Takes the same BarPoints as StatsRhythmCard (BuildWeekdayAndTimeOfDay aggregate) and
+    // just re-sorts them - no own aggregation logic.
+    private List<StatsRhythmCard.BarPoint> Ranked => WeekdayHours.OrderByDescending(b => b.Hours).ToList();
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string Subtitle { get; set; } = "";
+    [Parameter] public List<StatsRhythmCard.BarPoint> WeekdayHours { get; set; } = new();
+}

@@ -1,0 +1,202 @@
+/* Buttons */
+.btn-primary {
+    background: var(--accent);
+    color: white;
+    border-radius: 8px;
+    padding: 0.6rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: var(--transition);
+    display: inline-block;
+}
+.btn-primary:hover { opacity: 0.9; color: white; }
+.btn-primary.saved { background: #00B894; }
+
+.btn-secondary {
+    background: var(--bg3);
+    color: var(--text2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.6rem 1.25rem;
+    font-size: 0.875rem;
+    transition: var(--transition);
+}
+.btn-secondary:hover { color: var(--text); border-color: var(--border2); }
+
+.btn-danger {
+    background: transparent;
+    color: #E17055;
+    border: 1px solid rgba(225,112,85,0.3);
+    border-radius: 8px;
+    padding: 0.6rem 1.25rem;
+    font-size: 0.875rem;
+    transition: var(--transition);
+}
+.btn-danger:hover { background: rgba(225,112,85,0.1); }
+
+.btn-focus {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    font-size: 0.825rem;
+    font-weight: 500;
+    margin-top: 0.5rem;
+    transition: var(--transition);
+}
+.btn-focus:hover { opacity: 0.9; color: white; }
+
+/* Form elements */
+.field { display: flex; flex-direction: column; gap: 0.4rem; min-width: 0; }
+.field label { font-size: 0.8rem; color: var(--text2); }
+.field-row { display: flex; gap: 0.75rem; }
+.field-repeat { flex-direction: row; align-items: flex-start; flex-wrap: wrap; gap: 0.6rem; }
+.checkbox-label { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; color: var(--text2); cursor: pointer; }
+.field-row > .field { flex: 1 1 0; min-width: 0; }
+.repeat-options { display: flex; flex-direction: column; gap: 0.6rem; width: 100%; }
+.weekday-picker { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.weekday-chip {
+    padding: 0.35rem 0.65rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--text2);
+    cursor: pointer;
+    font-size: 0.78rem;
+    transition: var(--transition);
+}
+.weekday-chip:hover { border-color: var(--accent); }
+.weekday-chip.selected { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.input {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.6rem 0.875rem;
+    font-family: var(--font);
+    font-size: 0.875rem;
+    color: var(--text);
+    outline: none;
+    transition: var(--transition);
+    width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+}
+.input:focus { border-color: var(--accent); }
+.input-sm { width: 80px; }
+
+/* iOS Safari sizes date/time inputs from the native widget's intrinsic width as
+   long as their native -webkit-appearance is active - author width/min-width/
+   max-width (and the earlier -webkit-min-logical-width attempt) are simply not
+   honored, so the control still overflowed narrow flex children (e.g. Planner's
+   exam-date field). Dropping the native appearance turns them into normal
+   boxes that obey the .input width:100%/border-box chain. */
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"],
+input[type="month"],
+input[type="week"] {
+    -webkit-appearance: none;
+    appearance: none;
+    min-width: 0;
+    max-width: 100%;
+}
+
+/* With appearance:none iOS centers the value text and collapses the inner shadow
+   div to zero height when the input is empty (e.g. unset Setup course goal). */
+input::-webkit-date-and-time-value {
+    text-align: inherit;
+    min-height: 1.2em;
+}
+
+.select {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.6rem 0.875rem;
+    font-family: var(--font);
+    font-size: 0.875rem;
+    color: var(--text);
+    outline: none;
+    transition: var(--transition);
+    width: 100%;
+    cursor: pointer;
+}
+.select:focus { border-color: var(--accent); }
+
+/* Modal */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.modal {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 16px;
+    width: 440px;
+    max-width: 92vw;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+}
+.modal-header h3 { font-size: 1rem; font-weight: 500; }
+.modal-close { color: var(--text3); font-size: 1rem; width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; background: var(--bg3); }
+.modal-close:hover { color: var(--text); }
+
+.modal-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+.modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; gap: 0.5rem; justify-content: flex-end; }
+
+/* Device management (PushDeviceManager, FAB bell) - somewhat wider than the standard .modal
+   (440px) so label + "X days ago" + button don't wrap. The list itself scrolls instead of
+   letting the modal grow arbitrarily tall when many devices are registered. */
+.pdm-modal { width: 520px; }
+.pdm-list { display: flex; flex-direction: column; gap: 0.6rem; max-height: 50vh; overflow-y: auto; }
+.pdm-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.75rem 0.9rem;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+.pdm-row-main { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+.pdm-row-label { display: flex; align-items: center; gap: 0.5rem; font-weight: 500; color: var(--text); }
+.pdm-row-meta { font-size: 0.8rem; color: var(--text3); }
+.pdm-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    border-radius: 999px;
+    padding: 0.1rem 0.5rem;
+}
+/* An additional passkey still awaiting approval (PasskeyDeviceManager) - amber instead of the
+   accent color, so a new/unknown entry stands out visually right away instead of looking like a
+   normal, already-approved device. */
+.pdm-row-pending { border-color: color-mix(in srgb, #E1A93C 40%, var(--border)); }
+.pdm-pending-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #E1A93C;
+    background: color-mix(in srgb, #E1A93C 15%, transparent);
+    border-radius: 999px;
+    padding: 0.1rem 0.5rem;
+}
+

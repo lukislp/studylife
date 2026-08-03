@@ -1,0 +1,33 @@
+<div class="cal-header" @ontouchstart="OnHeaderTouchStart" @ontouchend="OnHeaderTouchEnd">
+    <button class="btn-nav" @onclick="OnPrevWeek">‹</button>
+    <h2>@WeekLabel</h2>
+    <button class="btn-nav" @onclick="OnNextWeek">›</button>
+    <div class="cal-view-switch">
+        <button class="cal-view-opt @(ViewMode == "week" ? "active" : "")" @onclick='() => OnViewModeChanged.InvokeAsync("week")'>@WeekViewText</button>
+        <button class="cal-view-opt @(ViewMode == "day" ? "active" : "")" @onclick='() => OnViewModeChanged.InvokeAsync("day")'>@DayViewText</button>
+    </div>
+    <button class="btn-today" @onclick="OnToday">@TodayText</button>
+    <button class="btn-today no-print" @onclick="OnPrint">🖨️ @ExportWeekButtonText</button>
+    @if (PrintUnsupported)
+    {
+        <span class="no-print print-unsupported-hint">@PrintUnsupportedHintText</span>
+    }
+</div>
+
+@code {
+    [Parameter] public string WeekLabel { get; set; } = "";
+    [Parameter] public string TodayText { get; set; } = "";
+    [Parameter] public string ExportWeekButtonText { get; set; } = "";
+    [Parameter] public bool PrintUnsupported { get; set; }
+    [Parameter] public string PrintUnsupportedHintText { get; set; } = "";
+    [Parameter] public string ViewMode { get; set; } = "week";
+    [Parameter] public string WeekViewText { get; set; } = "";
+    [Parameter] public string DayViewText { get; set; } = "";
+    [Parameter] public EventCallback<string> OnViewModeChanged { get; set; }
+    [Parameter] public EventCallback OnPrevWeek { get; set; }
+    [Parameter] public EventCallback OnNextWeek { get; set; }
+    [Parameter] public EventCallback OnToday { get; set; }
+    [Parameter] public EventCallback OnPrint { get; set; }
+    [Parameter] public EventCallback<TouchEventArgs> OnHeaderTouchStart { get; set; }
+    [Parameter] public EventCallback<TouchEventArgs> OnHeaderTouchEnd { get; set; }
+}

@@ -1,0 +1,52 @@
+<div class="modal-footer">
+    @if (ConfirmingDelete && HasRecurrenceGroup)
+    {
+        <div class="confirm-row" style="flex-wrap:wrap">
+            <span class="confirm-text">@SeriesDeleteQuestionText</span>
+            <button class="btn-secondary" @onclick="OnDeleteThisOnly" @onclick:stopPropagation="true">@DeleteThisOnlyText</button>
+            <button class="btn-danger" @onclick="OnDeleteFromDate" @onclick:stopPropagation="true">@DeleteThisAndFollowingText</button>
+            <button class="btn-danger" @onclick="OnDeleteEntireSeries" @onclick:stopPropagation="true">@DeleteEntireSeriesText</button>
+            <button class="btn-secondary" @onclick="OnCancelDelete" @onclick:stopPropagation="true">@ConfirmDeleteCancelText</button>
+        </div>
+    }
+    else if (ConfirmingDelete)
+    {
+        <div class="confirm-row">
+            <span class="confirm-text">@ConfirmDeleteQuestionText</span>
+            <button class="btn-secondary" @onclick="OnCancelDelete" @onclick:stopPropagation="true">@ConfirmDeleteCancelText</button>
+            <button class="btn-danger" @onclick="OnDeleteThisOnly" @onclick:stopPropagation="true">@ConfirmDeleteYesText</button>
+        </div>
+    }
+    else
+    {
+        @if (IsEditingExisting)
+        {
+            <button class="btn-danger" @onclick="OnRequestDelete" @onclick:stopPropagation="true">@DeleteText</button>
+        }
+        <button class="btn-secondary" @onclick="OnClose">@CancelText</button>
+        <button class="btn-primary" @onclick="OnSave">@SaveText</button>
+    }
+</div>
+
+@code {
+    [Parameter] public bool ConfirmingDelete { get; set; }
+    [Parameter] public bool HasRecurrenceGroup { get; set; }
+    [Parameter] public bool IsEditingExisting { get; set; }
+    [Parameter] public string SeriesDeleteQuestionText { get; set; } = "";
+    [Parameter] public string DeleteThisOnlyText { get; set; } = "";
+    [Parameter] public string DeleteThisAndFollowingText { get; set; } = "";
+    [Parameter] public string DeleteEntireSeriesText { get; set; } = "";
+    [Parameter] public string ConfirmDeleteCancelText { get; set; } = "";
+    [Parameter] public string ConfirmDeleteQuestionText { get; set; } = "";
+    [Parameter] public string ConfirmDeleteYesText { get; set; } = "";
+    [Parameter] public string DeleteText { get; set; } = "";
+    [Parameter] public string CancelText { get; set; } = "";
+    [Parameter] public string SaveText { get; set; } = "";
+    [Parameter] public EventCallback OnRequestDelete { get; set; }
+    [Parameter] public EventCallback OnCancelDelete { get; set; }
+    [Parameter] public EventCallback OnDeleteThisOnly { get; set; }
+    [Parameter] public EventCallback OnDeleteFromDate { get; set; }
+    [Parameter] public EventCallback OnDeleteEntireSeries { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSave { get; set; }
+}

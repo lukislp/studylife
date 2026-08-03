@@ -1,0 +1,129 @@
+@using StudyLife.Shared
+
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    @if (Rows.Count == 0)
+    {
+        <div style="color:var(--text3);font-size:0.875rem">@EmptyText</div>
+    }
+    @foreach (var row in Rows)
+    {
+        <div class="course-stat-row" style="--c: @row.Course.Color">
+            <div class="csr-head">
+                <span class="csr-icon">@row.Course.Icon</span>
+                <span class="csr-name">@row.Course.Name</span>
+                @* Right-hand group in its own wrapper (instead of margin-left:auto on .csr-badge as
+                   in the sibling cards), so the ECTS ring still sits on the right even without a badge/grade. *@
+                <span class="csr-right">
+                    @if (row.IsCompleted)
+                    {
+                        <span class="csr-badge">@CompletedBadgeText</span>
+                    }
+                    @if (row.Grade.HasValue)
+                    {
+                        <span class="cc-grade-pill">@string.Format(GradeFormat, row.GradeLabel)</span>
+                    }
+                    <span class="csr-ects-ring"
+                          style="background: conic-gradient(var(--c) 0% @row.RingPercentLabel%, var(--bg3) @row.RingPercentLabel% 100%)"
+                          title="@string.Format(EctsRingFormat, row.EctsEarned, row.Course.Ects)">
+                        <span class="csr-ects-ring-hole">@row.Course.Ects</span>
+                    </span>
+                </span>
+            </div>
+            <div class="csr-bar-track">
+                <div class="csr-bar-fill" style="width: @row.BarPercent%"></div>
+            </div>
+            <div class="csr-meta">
+                <span>@row.HoursLabel</span>
+                <span>@row.SessionCount Session@(row.SessionCount == 1 ? "" : "s")</span>
+                @if (row.TrendArrow != null)
+                {
+                    <span class="@row.TrendCssClass" title="@TrendTooltip">@row.TrendArrow @row.TrendLabel</span>
+                }
+                @if (row.DaysRemaining.HasValue)
+                {
+                    <span class="@(row.DaysRemaining < 0 ? "csr-overdue" : "")">
+                        @(row.DaysRemaining >= 0 ? string.Format(DueInDaysFormat, row.DaysRemaining) : string.Format(OverdueByDaysFormat, -row.DaysRemaining.Value))
+                    </span>
+                }
+                @if (row.SparkPercents.Count > 0)
+                {
+                    @* Deliberately tiny and axis-less: a pure at-a-glance rhythm of the course,
+                       the full weekly chart lives further up (course comparison). *@
+                    <span class="csr-spark" title="@SparkTooltip">
+                        @foreach (var p in row.SparkPercents)
+                        {
+                            <span class="csr-spark-bar" style="height: @p.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)%"></span>
+                        }
+                    </span>
+                }
+            </div>
+            @if (!string.IsNullOrWhiteSpace(row.CompletionNote))
+            {
+                <div class="csr-note">"@row.CompletionNote"</div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    public record CourseStatRow(
+        CourseDto Course,
+        double Hours,
+        int SessionCount,
+        bool IsCompleted,
+        int? DaysRemaining,
+        string? CompletionNote,
+        decimal? Grade,
+        double BarPercent,
+        // Null when there isn't enough history to compare (< 1h logged 30-60 days ago) - see
+        // Stats.razor's BuildCourseTrends for the actual windowed hour computation.
+        double? TrendPercent = null,
+        // Mini sparkline: weekly hours of the last 12 weeks, normalized per course to its own
+        // maximum (0-100). Empty = no sessions in the window, sparkline is omitted.
+        List<double>? Spark = null,
+        // ECTS ring: course ECTS are all-or-nothing - for ongoing courses, the
+        // topic progress (setup checklist) fills the ring as an intermediate state, otherwise 0/100.
+        double RingPercent = 0,
+        int EctsEarned = 0)
+    {
+        public List<double> SparkPercents => Spark ?? new();
+        // Formatted invariantly so the conic-gradient never gets a decimal comma (cf. _donutGradient).
+        public string RingPercentLabel => RingPercent.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
+
+        public string HoursLabel => $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
+        public string GradeLabel => Grade.HasValue
+            ? Grade.Value.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ',')
+            : "";
+
+        // +/-5% counts as "flat" so tiny noise doesn't flash an arrow either way.
+        public string? TrendArrow => TrendPercent switch
+        {
+            null => null,
+            > 5 => "↑",
+            < -5 => "↓",
+            _ => "→",
+        };
+        public string? TrendLabel => TrendPercent.HasValue
+            ? $"{(TrendPercent.Value >= 0 ? "+" : "")}{Math.Round(TrendPercent.Value)}%"
+            : null;
+        public string TrendCssClass => TrendPercent switch
+        {
+            null => "",
+            > 5 => "csr-trend csr-trend-up",
+            < -5 => "csr-trend csr-trend-down",
+            _ => "csr-trend csr-trend-flat",
+        };
+    }
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public List<CourseStatRow> Rows { get; set; } = new();
+    [Parameter] public string EmptyText { get; set; } = "";
+    [Parameter] public string CompletedBadgeText { get; set; } = "";
+    [Parameter] public string GradeFormat { get; set; } = "";
+    [Parameter] public string DueInDaysFormat { get; set; } = "";
+    [Parameter] public string OverdueByDaysFormat { get; set; } = "";
+    [Parameter] public string TrendTooltip { get; set; } = "";
+    [Parameter] public string SparkTooltip { get; set; } = "";
+    [Parameter] public string EctsRingFormat { get; set; } = "";
+}

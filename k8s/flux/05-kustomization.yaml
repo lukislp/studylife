@@ -1,0 +1,20 @@
+# Applies EXCLUSIVELY k8s/flux/deploy/ (see there) to the cluster - explicitly NOT the
+# rest of k8s/, which continues to contain placeholders and is only resolved via
+# bootstrap-cluster.ps1 (see docs/SCALING.md, scoping decision). prune: true is unproblematic here,
+# since the scope of effect is limited exactly to the two deployments/the one service from
+# k8s/flux/deploy/ (Flux's inventory tracking only concerns what THIS Kustomization
+# itself has applied).
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: studylife-deploy
+  namespace: flux-system
+spec:
+  interval: 5m
+  sourceRef:
+    kind: GitRepository
+    name: studylife
+  path: ./k8s/flux/deploy
+  prune: true
+  wait: true
+  timeout: 3m

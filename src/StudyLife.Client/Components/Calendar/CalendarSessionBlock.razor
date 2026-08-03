@@ -1,0 +1,20 @@
+@using StudyLife.Client.Models
+
+<div class="cal-session" style="top:@(Top)px;height:@(Height)px;--c:@Session.CourseColor"
+     @onclick:stopPropagation="true"
+     @onclick="OnClick">
+    <div class="cs-name">@Session.CourseName</div>
+    @if (!string.IsNullOrEmpty(Session.Topic))
+    {
+        <div class="cs-topic">@Session.Topic</div>
+    }
+    <div class="cs-time">@Session.StartTime.ToString("HH:mm")</div>
+</div>
+
+@code {
+    [Parameter] public StudySession Session { get; set; } = new();
+    [Parameter] public EventCallback OnClick { get; set; }
+
+    private int Top => Session.StartTime.Hour * 60 + Session.StartTime.Minute;
+    private double Height => Math.Max(30, (Session.EndTime - Session.StartTime).TotalMinutes);
+}

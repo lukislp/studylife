@@ -1,0 +1,31 @@
+<div class="dash-card card-month-comparison">
+    <div class="card-label">@Label</div>
+    <div class="quota-row">
+        <div class="quota-hours">
+            <span class="stat-val">@CurrentLabel</span>
+        </div>
+    </div>
+    <div class="quota-legend">
+        <span>@VsLastMonthText</span>
+        <span class="stat-delta @(VsLastMonthUp ? "delta-up" : "delta-down")">@(VsLastMonthUp ? "▲" : "▼") @VsLastMonthLabel</span>
+    </div>
+    @if (HasYearData)
+    {
+        <div class="quota-legend">
+            <span>@VsLastYearText</span>
+            <span class="stat-delta @(VsLastYearUp ? "delta-up" : "delta-down")">@(VsLastYearUp ? "▲" : "▼") @VsLastYearLabel</span>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string CurrentLabel { get; set; } = "";
+    [Parameter] public string VsLastMonthText { get; set; } = "";
+    [Parameter] public string VsLastMonthLabel { get; set; } = "";
+    [Parameter] public bool VsLastMonthUp { get; set; }
+    [Parameter] public bool HasYearData { get; set; }
+    [Parameter] public string VsLastYearText { get; set; } = "";
+    [Parameter] public string VsLastYearLabel { get; set; } = "";
+    [Parameter] public bool VsLastYearUp { get; set; }
+}

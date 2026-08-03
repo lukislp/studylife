@@ -1,0 +1,29 @@
+@using StudyLife.Shared
+
+<div class="dash-card card-note-preview">
+    <div class="card-label">@Label</div>
+    @if (Note != null)
+    {
+        <div class="note-preview">
+            <div class="note-preview-title">@(string.IsNullOrWhiteSpace(Note.Title) ? UntitledText : Note.Title)</div>
+            <div class="note-preview-excerpt">@Excerpt</div>
+            <div class="note-preview-meta">@(CourseName != null ? $"{CourseName} · " : "")@Note.UpdatedAt.ToString("dd.MM.yyyy HH:mm")</div>
+        </div>
+        <a href="/notes" class="btn-focus">@GoToNotesText</a>
+    }
+    else
+    {
+        <div class="empty-state">@EmptyText<br /><a href="/notes">@WriteFirstNoteText</a></div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public NoteDto? Note { get; set; }
+    [Parameter] public string Excerpt { get; set; } = "";
+    [Parameter] public string? CourseName { get; set; }
+    [Parameter] public string UntitledText { get; set; } = "";
+    [Parameter] public string GoToNotesText { get; set; } = "";
+    [Parameter] public string EmptyText { get; set; } = "";
+    [Parameter] public string WriteFirstNoteText { get; set; } = "";
+}

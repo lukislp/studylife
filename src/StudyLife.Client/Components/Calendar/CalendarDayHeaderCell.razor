@@ -1,0 +1,11 @@
+<div class="cal-day-header-cell @(IsToday ? "today" : "") @(IsPast ? "past" : "")">
+    <div class="day-name">@Date.ToString("ddd")</div>
+    <div class="day-num @(IsToday ? "today-dot" : "")">@Date.Day</div>
+</div>
+
+@code {
+    [Parameter] public DateTime Date { get; set; }
+
+    private bool IsToday => Date.Date == DateTime.Today;
+    private bool IsPast => Date.Date < DateTime.Today;
+}

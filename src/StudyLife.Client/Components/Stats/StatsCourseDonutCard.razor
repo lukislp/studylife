@@ -1,0 +1,118 @@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    @if (Slices.Count == 0)
+    {
+        <div style="color:var(--text3);font-size:0.875rem">@EmptyText</div>
+    }
+    else
+    {
+        <div class="donut-wrap">
+            <div class="donut-chart" style="background: @Gradient">
+                <div class="donut-hole">
+                    <div class="donut-total">@((int)TotalHours)h</div>
+                    <div class="donut-total-label">@TotalLabel</div>
+                </div>
+            </div>
+            <div class="donut-legend">
+                @foreach (var s in Slices)
+                {
+                    var slice = s;
+                    <button type="button" class="donut-legend-row @(_selected == slice ? "selected" : "")" @onclick="() => ToggleSlice(slice)">
+                        <span class="donut-swatch" style="background:@slice.Color"></span>
+                        <span class="donut-legend-name">@slice.Name</span>
+                        <span class="donut-legend-val">@slice.Percent.ToString("0.#")% · @((int)slice.Hours)h</span>
+                    </button>
+                }
+            </div>
+        </div>
+
+        @if (_selected == null)
+        {
+            <div class="donut-click-hint">@ClickHintText</div>
+        }
+        else
+        {
+            <!-- Course drilldown: same detail-panel look (.heatmap-detail) as the two heatmap
+                 cards, just with a monthly mini-chart + session history instead of a course list. -->
+            <div class="heatmap-detail donut-detail">
+                <div class="heatmap-detail-head">
+                    <span class="heatmap-detail-date"><span class="donut-swatch" style="background:@_selected.Color"></span> @_selected.Name</span>
+                    <button type="button" class="heatmap-detail-close" @onclick="() => _selected = null">✕</button>
+                </div>
+                <div class="heatmap-detail-summary">@_selected.HoursLabel · @string.Format(SessionCountFormat ?? "", _selected.SessionCount)</div>
+                <div class="mini-bar-chart donut-detail-chart">
+                    @foreach (var m in _selected.Months)
+                    {
+                        <div class="mini-bar-col" title="@($"{m.Label}: {m.HoursLabel}")">
+                            <div class="mini-bar-track">
+                                <div class="mini-bar-fill" style="height: @m.Percent%; background:@_selected.Color"></div>
+                            </div>
+                            <div class="mini-bar-label">@m.Label</div>
+                        </div>
+                    }
+                </div>
+                <div class="donut-detail-sessions-label">@RecentSessionsText</div>
+                <div class="donut-detail-sessions">
+                    @foreach (var e in _selected.RecentSessions)
+                    {
+                        <div class="donut-detail-session-row">
+                            <span class="donut-detail-session-date">@e.Start.ToString("dd.MM.yyyy HH:mm")</span>
+                            <span class="donut-detail-session-duration">@e.DurationLabel</span>
+                            @if (!string.IsNullOrWhiteSpace(e.Topic))
+                            {
+                                <span class="donut-detail-session-topic">@e.Topic</span>
+                            }
+                        </div>
+                    }
+                </div>
+                @if (_selected.SessionCount > _selected.RecentSessions.Count)
+                {
+                    <div class="donut-detail-more">@string.Format(MoreSessionsFormat ?? "", _selected.SessionCount - _selected.RecentSessions.Count)</div>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    public record MonthHours(string Label, double Hours, double Percent)
+    {
+        public string HoursLabel => $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
+    }
+
+    public record SessionEntry(DateTime Start, DateTime End, string? Topic)
+    {
+        public string DurationLabel
+        {
+            get
+            {
+                var minutes = (int)(End - Start).TotalMinutes;
+                return $"{minutes / 60}h {minutes % 60:00}m";
+            }
+        }
+    }
+
+    public record DonutSlice(string Name, string Color, double Hours, double Percent,
+        int SessionCount, List<MonthHours> Months, List<SessionEntry> RecentSessions)
+    {
+        public string HoursLabel => $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
+    }
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public List<DonutSlice> Slices { get; set; } = new();
+    [Parameter] public string Gradient { get; set; } = "";
+    [Parameter] public double TotalHours { get; set; }
+    [Parameter] public string TotalLabel { get; set; } = "";
+    [Parameter] public string EmptyText { get; set; } = "";
+    [Parameter] public string SessionCountFormat { get; set; } = "";
+    [Parameter] public string ClickHintText { get; set; } = "";
+    [Parameter] public string RecentSessionsText { get; set; } = "";
+    [Parameter] public string MoreSessionsFormat { get; set; } = "";
+
+    private DonutSlice? _selected;
+
+    // Reference equality is sufficient: Slices is built exactly once per page load, so
+    // object identity stays stable across all clicks - same reasoning as
+    // StatsTimeHeatmapCard.ToggleCell / StatsHeatmapCard._selectedDay.
+    private void ToggleSlice(DonutSlice slice) => _selected = _selected == slice ? null : slice;
+}

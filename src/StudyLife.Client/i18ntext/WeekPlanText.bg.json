@@ -1,0 +1,18 @@
+{
+  "Heading": "Седмичен план",
+  "Subtitle": "Разпечатваем преглед на планираните учебни сесии за тази седмица — разпечатай го и го закачи на стената.",
+  "BackLink": "← Обратно към календара",
+  "ExportButton": "🖨 Отпечатай седмичния план",
+  "WeekRangeFormat": "Седмица: {0} – {1}",
+  "GeneratedOnFormat": "Създаден на {0}",
+  "SummaryHeading": "Обобщение",
+  "PlannedHoursLabel": "Планирани часове тази седмица",
+  "WeeklyGoalLabel": "Седмична цел",
+  "WeeklyGoalFormat": "{0}–{1} h",
+  "SessionCountLabel": "Планирани сесии",
+  "NoSessions": "За този ден няма планирани сесии.",
+  "TableTime": "Час",
+  "TableCourse": "Курс",
+  "TableTopic": "Тема",
+  "FooterNote": "Автоматично създаден от StudyLife."
+}

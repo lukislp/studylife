@@ -1,0 +1,18 @@
+{
+  "Heading": "Plan săptămânal",
+  "Subtitle": "O prezentare generală printabilă a sesiunilor de studiu planificate pentru săptămâna aceasta — tipărește-o și lipește-o pe perete.",
+  "BackLink": "← Înapoi la calendar",
+  "ExportButton": "🖨 Tipărește planul săptămânal",
+  "WeekRangeFormat": "Săptămâna: {0} – {1}",
+  "GeneratedOnFormat": "Generat la {0}",
+  "SummaryHeading": "Rezumat",
+  "PlannedHoursLabel": "Ore planificate săptămâna aceasta",
+  "WeeklyGoalLabel": "Obiectiv săptămânal",
+  "WeeklyGoalFormat": "{0}–{1} h",
+  "SessionCountLabel": "Sesiuni planificate",
+  "NoSessions": "Nu există sesiuni planificate pentru această zi.",
+  "TableTime": "Ora",
+  "TableCourse": "Curs",
+  "TableTopic": "Temă",
+  "FooterNote": "Generat automat de StudyLife."
+}

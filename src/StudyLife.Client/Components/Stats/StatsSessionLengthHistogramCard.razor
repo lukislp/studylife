@@ -1,0 +1,31 @@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    @if (Buckets.Any(b => b.Count > 0))
+    {
+        <div class="mini-bar-chart session-length-chart">
+            @foreach (var b in Buckets)
+            {
+                <div class="mini-bar-col" title="@(b.Count == 1 ? b.Label : $"{b.Label}: {string.Format(CountFormat, b.Count)}")">
+                    <div class="mini-bar-value">@b.Count</div>
+                    <div class="mini-bar-track">
+                        <div class="mini-bar-fill" style="height: @b.Percent%"></div>
+                    </div>
+                    <div class="mini-bar-label">@b.Label</div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div style="color:var(--text3);font-size:0.875rem">@EmptyText</div>
+    }
+</div>
+
+@code {
+    public record LengthBucket(string Label, int Count, double Percent);
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string CountFormat { get; set; } = "";
+    [Parameter] public string EmptyText { get; set; } = "";
+    [Parameter] public List<LengthBucket> Buckets { get; set; } = new();
+}

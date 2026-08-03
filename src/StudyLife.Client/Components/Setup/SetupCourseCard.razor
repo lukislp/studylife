@@ -1,0 +1,93 @@
+@using StudyLife.Shared
+
+<div class="course-card @StateClass" style="--c: @Course.Color" @onclick="() => OnCardClick.InvokeAsync()">
+    <div class="cc-head">
+        <div class="cc-icon">@Course.Icon</div>
+        <div class="cc-info">
+            <div class="cc-code">@Course.Code · @Course.Ects ECTS</div>
+            <div class="cc-name">@Course.Name</div>
+        </div>
+        @if (Completed && Grade.HasValue)
+        {
+            <span class="cc-grade-pill">@GradeLabel @FormatGrade(Grade)</span>
+        }
+        @if (!string.IsNullOrWhiteSpace(Tag))
+        {
+            <span class="cc-tag-pill">@Tag</span>
+        }
+        <div class="cc-check">
+            @if (Completed) { <span class="cc-done">✓</span> }
+            else if (Selected) { <span>✓</span> }
+        </div>
+        <button type="button" class="cc-resources-btn" title="@ResourcesLabel" @onclick:stopPropagation="true"
+                @onclick="() => OnResourcesClick.InvokeAsync()">
+            🔗
+        </button>
+    </div>
+    <div class="cc-topics">
+        @foreach (var topic in Course.Topics)
+        {
+            var t = topic;
+            var isDone = CompletedTopics.Contains(t);
+            @if (Selected || Completed)
+            {
+                <span class="topic-pill clickable @(isDone ? "done" : "")" @onclick:stopPropagation="true"
+                      @onclick="() => OnTopicToggle.InvokeAsync(t)">@(isDone ? "✓ " : "")@t</span>
+            }
+            else
+            {
+                <span class="topic-pill">@t</span>
+            }
+        }
+        @if (Selected || Completed)
+        {
+            <span class="cc-topics-progress">@string.Format(TopicsProgressFormat, DoneTopicsCount, Course.Topics.Count)</span>
+        }
+    </div>
+    @if (Selected || Completed)
+    {
+        <div class="cc-goal" @onclick:stopPropagation="true">
+            <span class="cc-goal-icon">🎯</span>
+            <input type="date" class="cc-goal-input" value="@TargetDateValue"
+                   @onchange='e => OnTargetDateChanged.InvokeAsync(e.Value?.ToString() ?? "")' />
+        </div>
+        <div class="cc-goal" @onclick:stopPropagation="true">
+            <span class="cc-goal-icon">🏷️</span>
+            <input type="text" class="input input-sm" maxlength="24" placeholder="@TagPlaceholder"
+                   value="@(Tag ?? "")"
+                   @onchange='e => OnTagChanged.InvokeAsync(e.Value?.ToString() ?? "")' />
+        </div>
+        @if (Completed && !string.IsNullOrWhiteSpace(CompletionNote))
+        {
+            <div class="cc-completion-note">"@CompletionNote"</div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public CourseDto Course { get; set; } = new();
+    [Parameter] public bool Completed { get; set; }
+    [Parameter] public bool Selected { get; set; }
+    [Parameter] public HashSet<string> CompletedTopics { get; set; } = new();
+    [Parameter] public decimal? Grade { get; set; }
+    [Parameter] public string? Tag { get; set; }
+    [Parameter] public string? CompletionNote { get; set; }
+    [Parameter] public string TargetDateValue { get; set; } = "";
+    [Parameter] public string GradeLabel { get; set; } = "";
+    [Parameter] public string TopicsProgressFormat { get; set; } = "";
+    [Parameter] public string TagPlaceholder { get; set; } = "";
+    [Parameter] public string ResourcesLabel { get; set; } = "";
+    [Parameter] public EventCallback OnCardClick { get; set; }
+    [Parameter] public EventCallback<string> OnTopicToggle { get; set; }
+    [Parameter] public EventCallback<string> OnTargetDateChanged { get; set; }
+    [Parameter] public EventCallback<string> OnTagChanged { get; set; }
+    [Parameter] public EventCallback OnResourcesClick { get; set; }
+
+    private string StateClass => Completed ? "completed" : Selected ? "selected" : "";
+    private int DoneTopicsCount => Course.Topics.Count(t => CompletedTopics.Contains(t));
+
+    private static string FormatGrade(decimal? grade) =>
+        grade.HasValue
+            ? grade.Value.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ',')
+            : "";
+}

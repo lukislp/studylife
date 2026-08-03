@@ -1,0 +1,127 @@
+/* Public progress page (Pages/SharedProgress.razor, Shared/PublicLayout.razor) -
+   its own lean stylesheet file instead of reusing setup.css/dashboard.css: the page runs
+   under its own layout without a sidebar and should stay independent of changes to the
+   app-internal card/dashboard styles. Uses the same theme variables as the rest of the app
+   (--bg/--bg2/--bg3/--text/--text2/--text3/--accent/--border/--radius from base.css). */
+
+.public-shell {
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+}
+
+.progress-share-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 3rem 1.25rem;
+}
+
+.progress-share-card {
+    width: 100%;
+    max-width: 560px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+}
+
+.progress-share-card h1 {
+    font-size: 1.5rem;
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.4rem;
+}
+
+.progress-share-subheading {
+    font-size: 1rem;
+    font-weight: 500;
+    margin: 1.75rem 0 0.75rem;
+}
+
+.progress-share-stats {
+    display: flex;
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+}
+
+.progress-share-stat { flex: 1 1 0; min-width: 0; }
+
+.progress-share-stat-value {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.progress-share-stat-label {
+    font-size: 0.8rem;
+    color: var(--text2);
+    margin-top: 0.2rem;
+}
+
+.progress-share-bar-track {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--bg3);
+    overflow: hidden;
+}
+
+.progress-share-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 999px;
+    transition: width 0.3s ease;
+}
+
+.progress-share-course-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.progress-share-course {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.progress-share-course-icon { font-size: 1.25rem; flex-shrink: 0; }
+
+.progress-share-course-info { flex: 1 1 0; min-width: 0; }
+
+.progress-share-course-name {
+    font-size: 0.875rem;
+    margin-bottom: 0.3rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.progress-share-course-track {
+    height: 5px;
+    border-radius: 999px;
+    background: var(--bg3);
+    overflow: hidden;
+}
+
+.progress-share-course-fill {
+    height: 100%;
+    background: var(--course-color, var(--accent));
+    border-radius: 999px;
+}
+
+.progress-share-course-percent {
+    font-size: 0.75rem;
+    color: var(--text2);
+    flex-shrink: 0;
+    width: 2.75rem;
+    text-align: right;
+}
+
+.progress-share-footer {
+    margin-top: 2rem;
+    font-size: 0.75rem;
+    color: var(--text3);
+    text-align: center;
+}

@@ -1,0 +1,388 @@
+@using StudyLife.Shared
+@inject HttpClient Http
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+@* Modal for creating a complete custom study program:
+   name + elective groups (with ECTS quota, same semantics as CourseCatalog.GroupEctsQuotas)
+   + courses per semester. Everything lives as local draft state and is only sent as
+   ONE POST /api/studyprograms on submit. Overlay/shell follows the established modal pattern
+   (shared.css: .modal-overlay/.modal), the content gets its own .apm-* styles (setup.css). *@
+
+<div class="modal-overlay" @onclick="() => OnClose.InvokeAsync()">
+    <div class="modal program-modal" @onclick:stopPropagation="true">
+        <div class="modal-header">
+            <h3>@T.ProgramModalTitle</h3>
+            <button type="button" class="modal-close" @onclick="() => OnClose.InvokeAsync()">✕</button>
+        </div>
+        <div class="modal-body program-modal-body">
+
+            <!-- Programme name -->
+            <div class="field">
+                <label>@T.ProgramNameLabel</label>
+                <input class="input" maxlength="100" placeholder="@T.ProgramNamePlaceholder"
+                       @bind="_name" @bind:event="oninput" />
+                @if (_nameError)
+                {
+                    <div class="apm-error">@T.ProgramErrorNameRequired</div>
+                }
+            </div>
+
+            <!-- Elective groups -->
+            <div class="apm-section">
+                <div class="apm-section-title">@T.ProgramGroupsLabel</div>
+                <p class="apm-section-desc">@T.ProgramGroupsDesc</p>
+                @if (_groups.Count > 0)
+                {
+                    <div class="apm-group-list">
+                        @foreach (var group in _groups)
+                        {
+                            var g = group;
+                            <div class="apm-group-row">
+                                <span class="apm-group-name">@g.Name</span>
+                                <span class="apm-group-quota">@g.EctsQuota ECTS</span>
+                                <button type="button" class="cm-delete" @onclick="() => RemoveGroup(g)">✕</button>
+                            </div>
+                        }
+                    </div>
+                }
+                <div class="apm-add-group">
+                    <input class="input" maxlength="100" placeholder="@T.ProgramGroupNamePlaceholder"
+                           @bind="_newGroupName" @bind:event="oninput" />
+                    <div class="field apm-quota-field">
+                        <label>@T.ProgramGroupQuotaLabel</label>
+                        <input class="input" type="number" min="1" max="300" @bind="_newGroupQuota" />
+                    </div>
+                    <button type="button" class="btn-secondary" disabled="@string.IsNullOrWhiteSpace(_newGroupName)"
+                            @onclick="AddGroup">@T.ProgramAddGroupButton</button>
+                </div>
+                @if (_groupError != null)
+                {
+                    <div class="apm-error">@_groupError</div>
+                }
+            </div>
+
+            <!-- Semesters & courses -->
+            <div class="apm-section">
+                <div class="apm-section-title">@T.ProgramSemestersLabel</div>
+                @for (var i = 0; i < _semesters.Count; i++)
+                {
+                    var semIndex = i;
+                    var sem = _semesters[semIndex];
+                    <div class="apm-semester">
+                        <div class="apm-semester-head">
+                            <span class="apm-semester-title">@string.Format(T.SemesterLabel ?? "", semIndex + 1)</span>
+                            @if (_semesters.Count > 1)
+                            {
+                                <button type="button" class="cm-delete" title="@T.ProgramRemoveSemesterTitle"
+                                        @onclick="() => RemoveSemester(semIndex)">✕</button>
+                            }
+                        </div>
+
+                        @if (sem.Courses.Count > 0)
+                        {
+                            <div class="apm-course-list">
+                                @foreach (var course in sem.Courses)
+                                {
+                                    var c = course;
+                                    <div class="apm-course-row" style="--c: @c.Color">
+                                        <span class="apm-course-dot"></span>
+                                        <span class="apm-course-icon">@c.Icon</span>
+                                        <span class="apm-course-name">@c.Name</span>
+                                        <span class="apm-course-meta">
+                                            @(string.IsNullOrWhiteSpace(c.Code) ? "" : $"{c.Code} · ")@c.Ects ECTS
+                                        </span>
+                                        @if (!string.IsNullOrEmpty(c.Group))
+                                        {
+                                            <span class="apm-course-group-pill">@c.Group</span>
+                                        }
+                                        <button type="button" class="cm-delete" @onclick="() => RemoveCourse(sem, c)">✕</button>
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        <div class="apm-course-form">
+                            <div class="apm-course-form-row">
+                                <input class="input" maxlength="120" placeholder="@T.ProgramCourseNamePlaceholder"
+                                       @bind="sem.Form.Name" @bind:event="oninput" />
+                                <input class="input apm-input-code" maxlength="20" placeholder="@T.ProgramCourseCodePlaceholder"
+                                       @bind="sem.Form.Code" />
+                            </div>
+                            <div class="apm-course-form-row">
+                                <div class="field apm-input-ects">
+                                    <label>@T.ProgramCourseEctsLabel</label>
+                                    <input class="input" type="number" min="1" max="60" @bind="sem.Form.Ects" />
+                                </div>
+                                <div class="field apm-icon-field">
+                                    <label>@T.ProgramCourseIconLabel</label>
+                                    <div class="apm-icon-picker">
+                                        @foreach (var icon in IconPalette)
+                                        {
+                                            var ic = icon;
+                                            <button type="button"
+                                                    class="apm-icon-btn @(sem.Form.Icon == ic ? "selected" : "")"
+                                                    title="@ic" @onclick="() => sem.Form.Icon = ic">@ic</button>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="field apm-color-field">
+                                    <label>@T.ProgramCourseColorLabel</label>
+                                    <div class="apm-color-swatches">
+                                        @foreach (var color in ColorPalette)
+                                        {
+                                            var col = color;
+                                            <button type="button"
+                                                    class="apm-swatch @(sem.Form.Color == col ? "selected" : "")"
+                                                    style="background:@col" @onclick="() => sem.Form.Color = col"></button>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="apm-course-form-row">
+                                @if (_groups.Count > 0)
+                                {
+                                    <div class="field apm-input-group">
+                                        <label>@T.ProgramCourseGroupLabel</label>
+                                        <select class="select" @bind="sem.Form.Group">
+                                            <option value="">@T.ProgramCourseNoGroupOption</option>
+                                            @foreach (var group in _groups)
+                                            {
+                                                <option value="@group.Name">@group.Name</option>
+                                            }
+                                        </select>
+                                    </div>
+                                }
+                                <input class="input" maxlength="300" placeholder="@T.ProgramCourseTopicsPlaceholder"
+                                       @bind="sem.Form.Topics" />
+                            </div>
+                            <div class="apm-course-form-actions">
+                                <button type="button" class="btn-secondary" disabled="@string.IsNullOrWhiteSpace(sem.Form.Name)"
+                                        @onclick="() => AddCourse(sem)">+ @T.ProgramAddCourseButton</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+                <button type="button" class="btn-secondary apm-add-semester" @onclick="AddSemester">+ @T.ProgramAddSemesterButton</button>
+                @if (_coursesError)
+                {
+                    <div class="apm-error">@T.ProgramErrorNoCourses</div>
+                }
+            </div>
+
+            <!-- Summary -->
+            <div class="apm-summary">@string.Format(T.ProgramSummaryLabel ?? "", TotalCourseCount, TotalCreditableEcts)</div>
+            @if (_submitError)
+            {
+                <div class="apm-error">@T.ProgramErrorCreateFailed</div>
+            }
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" @onclick="() => OnClose.InvokeAsync()">@T.ProgramCancelButton</button>
+            <button type="button" class="btn-primary" disabled="@_busy" @onclick="Submit">@T.ProgramCreateButton</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public EventCallback OnClose { get; set; }
+    /// <summary>Fires after a successful POST with the created study program - the parent activates it and reloads the list.</summary>
+    [Parameter] public EventCallback<StudyProgramSummaryDto> OnCreated { get; set; }
+
+    // Same color palette used by the built-in catalog - keeps custom courses
+    // visually consistent with the rest of the app.
+    private static readonly string[] ColorPalette =
+    {
+        "#6C5CE7", "#A29BFE", "#0984E3", "#00CEC9", "#00B894", "#55EFC4",
+        "#FDCB6E", "#E17055", "#D63031", "#E84393", "#FD79A8",
+    };
+
+    // Curated emoji selection instead of free-text input - modeled after the icons used in
+    // the built-in CourseCatalog, extended with generic study-subject symbols. Covers the
+    // common subject areas (math/sciences, programming/tech, business,
+    // humanities/law, art, languages, health, engineering, miscellaneous).
+    private static readonly string[] IconPalette =
+    {
+        "📚", "📖", "✏", "🧮", "∫", "∑", "🔬", "🧪", "⚗", "🌍",
+        "🏛", "⚖", "💬", "🐍", "💾", "🖥", "🤖", "🔍", "🔒", "⚙",
+        "🔧", "🏗", "🚀", "📊", "📈", "💼", "🤝", "🎨", "🖌", "🎮",
+        "🧠", "🩺",
+    };
+
+    private sealed class GroupDraft
+    {
+        public string Name = "";
+        public int EctsQuota = 10;
+    }
+
+    private sealed class CourseDraft
+    {
+        public string Name = "";
+        public string Code = "";
+        public string Color = "#6C5CE7";
+        public string Icon = "📚";
+        public int Ects = 5;
+        public string Group = "";
+        public string Topics = "";
+    }
+
+    private sealed class SemesterDraft
+    {
+        public List<CourseDraft> Courses { get; } = new();
+        public CourseDraft Form { get; set; } = new();
+    }
+
+    private string _name = "";
+    private readonly List<GroupDraft> _groups = new();
+    private readonly List<SemesterDraft> _semesters = new() { new SemesterDraft() };
+
+    private string _newGroupName = "";
+    private int _newGroupQuota = 10;
+
+    private bool _nameError;
+    private string? _groupError;
+    private bool _coursesError;
+    private bool _submitError;
+    private bool _busy;
+
+    private I18nText.SetupText T = new();
+
+    private int TotalCourseCount => _semesters.Sum(s => s.Courses.Count);
+
+    // Creditable total ECTS of the draft - same semantics as CourseCatalog.CalcTotalEcts
+    // with an explicit quota dictionary: mandatory modules in full, elective groups up to the quota.
+    private int TotalCreditableEcts
+    {
+        get
+        {
+            var all = _semesters.SelectMany(s => s.Courses).ToList();
+            var ungrouped = all.Where(c => string.IsNullOrEmpty(c.Group)).Sum(c => c.Ects);
+            var grouped = all
+                .Where(c => !string.IsNullOrEmpty(c.Group))
+                .GroupBy(c => c.Group)
+                .Sum(g =>
+                {
+                    var quota = _groups.FirstOrDefault(x => x.Name == g.Key)?.EctsQuota;
+                    return quota ?? g.Sum(c => c.Ects);
+                });
+            return ungrouped + grouped;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
+    }
+
+    private void AddGroup()
+    {
+        _groupError = null;
+        var name = _newGroupName.Trim();
+        if (name.Length == 0 || _newGroupQuota < 1)
+        {
+            _groupError = T.ProgramErrorGroupInvalid ?? "";
+            return;
+        }
+        if (_groups.Any(g => string.Equals(g.Name, name, StringComparison.OrdinalIgnoreCase)))
+        {
+            _groupError = T.ProgramErrorDuplicateGroup ?? "";
+            return;
+        }
+        _groups.Add(new GroupDraft { Name = name, EctsQuota = Math.Clamp(_newGroupQuota, 1, 300) });
+        _newGroupName = "";
+        _newGroupQuota = 10;
+    }
+
+    private void RemoveGroup(GroupDraft group)
+    {
+        _groups.Remove(group);
+        // Courses pointing to the removed group become mandatory modules again.
+        foreach (var course in _semesters.SelectMany(s => s.Courses).Where(c => c.Group == group.Name))
+            course.Group = "";
+        foreach (var sem in _semesters.Where(s => s.Form.Group == group.Name))
+            sem.Form.Group = "";
+    }
+
+    private void AddSemester() => _semesters.Add(new SemesterDraft());
+
+    private void RemoveSemester(int index)
+    {
+        if (_semesters.Count <= 1) return;
+        _semesters.RemoveAt(index);
+    }
+
+    private void AddCourse(SemesterDraft sem)
+    {
+        var form = sem.Form;
+        var name = form.Name.Trim();
+        if (name.Length == 0) return;
+        sem.Courses.Add(new CourseDraft
+        {
+            Name = name,
+            Code = form.Code.Trim(),
+            Color = form.Color,
+            Icon = string.IsNullOrWhiteSpace(form.Icon) ? "📚" : form.Icon.Trim(),
+            Ects = Math.Clamp(form.Ects, 1, 60),
+            Group = form.Group,
+            Topics = form.Topics.Trim(),
+        });
+        _coursesError = false;
+        // Keep color/ECTS/group for the next course - typical input series
+        // (several courses of the same group) then only need name/code.
+        sem.Form = new CourseDraft { Color = form.Color, Ects = form.Ects, Group = form.Group };
+    }
+
+    private void RemoveCourse(SemesterDraft sem, CourseDraft course) => sem.Courses.Remove(course);
+
+    private async Task Submit()
+    {
+        _nameError = string.IsNullOrWhiteSpace(_name);
+        _coursesError = TotalCourseCount == 0;
+        _submitError = false;
+        if (_nameError || _coursesError) return;
+
+        var request = new CreateStudyProgramRequestDto
+        {
+            Name = _name.Trim(),
+            Groups = _groups.Select(g => new CreateStudyProgramGroupDto { Name = g.Name, EctsQuota = g.EctsQuota }).ToList(),
+            Courses = _semesters
+                .SelectMany((sem, index) => sem.Courses.Select(c => new CreateStudyProgramCourseDto
+                {
+                    Semester = index + 1,
+                    Name = c.Name,
+                    Code = c.Code,
+                    Color = c.Color,
+                    Icon = c.Icon,
+                    Ects = c.Ects,
+                    Group = string.IsNullOrEmpty(c.Group) ? null : c.Group,
+                    Topics = c.Topics
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .ToList(),
+                }))
+                .ToList(),
+        };
+
+        _busy = true;
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/studyprograms", request);
+            if (response.IsSuccessStatusCode)
+            {
+                var created = await response.Content.ReadFromJsonAsync<StudyProgramSummaryDto>();
+                if (created != null)
+                {
+                    await OnCreated.InvokeAsync(created);
+                    return;
+                }
+            }
+            _submitError = true;
+        }
+        catch
+        {
+            _submitError = true;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

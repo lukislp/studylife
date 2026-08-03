@@ -1,0 +1,73 @@
+/* === Planner Page === */
+.planner-page { max-width: 720px; }
+
+.planner-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; }
+.planner-tab {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.6rem 1rem;
+    font-size: 0.875rem;
+    font-family: var(--font);
+    color: var(--text2);
+    cursor: pointer;
+    transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+.planner-tab:hover { color: var(--text); }
+.planner-tab.active { background: var(--accent); border-color: var(--accent); color: white; }
+
+.planner-section { display: flex; flex-direction: column; gap: 1rem; }
+.planner-intro { color: var(--text2); font-size: 0.875rem; line-height: 1.6; margin: 0; }
+
+.planner-form { display: flex; flex-direction: column; gap: 0.9rem; }
+
+.planner-topics-hint {
+    font-size: 0.8rem;
+    color: var(--text2);
+    background: var(--bg3);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+}
+.planner-topics-hint.done { color: #00b894; }
+
+.planner-course-hints { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+.planner-proposal { display: flex; flex-direction: column; gap: 0.9rem; }
+.planner-proposal-list { display: flex; flex-direction: column; gap: 2px; max-height: 420px; overflow-y: auto; }
+
+.planner-proposal-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.55rem 0.6rem;
+    border-radius: 8px;
+    border-left: 3px solid var(--c, var(--accent));
+    background: var(--bg3);
+}
+.ppr-date { font-size: 0.75rem; color: var(--text3); font-family: var(--font-mono); width: 4.5rem; flex-shrink: 0; }
+.ppr-time { font-size: 0.8rem; color: var(--text2); font-family: var(--font-mono); width: 5.5rem; flex-shrink: 0; }
+.ppr-course { font-size: 0.8rem; font-weight: 500; flex-shrink: 0; }
+.ppr-topic { font-size: 0.8rem; color: var(--text2); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ppr-remove {
+    background: none;
+    border: none;
+    color: var(--text3);
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0.2rem 0.4rem;
+    flex-shrink: 0;
+}
+.ppr-remove:hover { color: var(--danger, #e74c3c); }
+
+.planner-success {
+    font-size: 0.875rem;
+    color: #00b894;
+    background: color-mix(in srgb, #00b894 12%, transparent);
+    border-radius: 8px;
+    padding: 0.6rem 0.9rem;
+}
+
+@media (max-width: 700px) {
+    .ppr-course { display: none; }
+}
+

@@ -1,0 +1,135 @@
+
+/* === Notes Page === */
+.notes-wide { max-width: 1100px; }
+
+.notes-cols {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.notes-list-section { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+.notes-filter-row { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.75rem; }
+
+/* Fixed scroll viewport for <Virtualize>: without a scrollable ancestor of bounded height,
+   virtualization would render every row. max-height only kicks in for long lists;
+   short lists keep flowing naturally without a scrollbar. */
+.notes-list-scroll {
+    max-height: 70vh;
+    overflow-y: auto;
+    min-width: 0;
+}
+
+.note-row {
+    padding: 0.75rem 0.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background var(--transition);
+    min-width: 0;
+}
+
+.note-row:hover { background: var(--bg3); }
+
+.note-row--active {
+    background: var(--bg3);
+    border-color: var(--border2);
+}
+
+.note-row__title {
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 0.3rem;
+}
+
+.note-linked-badge { font-size: 0.75rem; cursor: default; opacity: 0.8; }
+
+.note-row__meta {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.25rem;
+    flex-wrap: wrap;
+}
+
+.note-row__preview {
+    font-size: 0.75rem;
+    color: var(--text3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.notes-editor-section { min-width: 0; }
+
+.note-textarea {
+    min-height: 320px;
+    resize: vertical;
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    line-height: 1.7;
+}
+
+@media (max-width: 900px) {
+    .notes-cols { grid-template-columns: 1fr; }
+    .notes-wide { max-width: 100%; }
+    /* Stacked layout: keep the list more compact so the editor below it stays reachable. */
+    .notes-list-scroll { max-height: 40vh; }
+}
+
+
+.note-confirm-delete { display: flex; align-items: center; gap: 0.5rem; }
+.note-confirm-delete__question { font-size: 0.8rem; color: var(--text2); }
+
+/* Search-match highlighting in the note list's title/preview (see HighlightMatches in Notes.razor). */
+.note-highlight {
+    background: color-mix(in srgb, var(--accent) 35%, transparent);
+    color: inherit;
+    border-radius: 3px;
+    padding: 0 1px;
+}
+
+/* === Notes PDF export (print view, same pattern as Report.razor) === */
+.notes-print-toolbar {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    max-width: 800px;
+    margin: 0 auto 1rem;
+    padding: 1rem 1.5rem 0;
+}
+
+.notes-print-doc {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 1.5rem 2rem;
+}
+
+.notes-print-head { margin-bottom: 1.5rem; }
+.notes-print-meta { color: var(--text3); font-size: 0.875rem; }
+
+.notes-print-group { margin-bottom: 1.5rem; }
+.notes-print-group h2 {
+    font-size: 1rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.3rem;
+    margin-bottom: 0.75rem;
+}
+
+.notes-print-card {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border2);
+}
+
+.notes-print-card-title { font-weight: 600; }
+.notes-print-card-meta { color: var(--text3); font-size: 0.75rem; margin-bottom: 0.3rem; }
+.notes-print-card-content {
+    font-size: 0.875rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}

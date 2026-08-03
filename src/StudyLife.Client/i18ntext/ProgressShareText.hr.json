@@ -1,0 +1,19 @@
+{
+  "PageTitleTag": "StudyLife — Napredak",
+  "Heading": "Studijski napredak",
+  "SubHeading": "Zajednički pregled samo za čitanje — automatski se ažurira.",
+  "EctsLabel": "Ostvareni ECTS",
+  "EctsFormat": "{0} / {1} ECTS",
+  "AverageGradeLabel": "Prosjek ocjena",
+  "NoGradeYet": "Još nema ocjena",
+  "CoursesCompletedFormat": "{0} od {1} kolegija završeno",
+  "ActiveCoursesHeading": "Aktivni kolegiji",
+  "NoActiveCourses": "Trenutno nema aktivnih kolegija.",
+  "TopicProgressFormat": "{0}% tema",
+  "InvalidLinkHeading": "Poveznica nije dostupna",
+  "InvalidLinkMessage": "Ova poveznica napretka nije valjana, istekla je ili ju je vlasnik onemogućio.",
+  "TemporaryErrorHeading": "Privremeno nedostupno",
+  "TemporaryErrorMessage": "Nešto je pošlo po zlu prilikom učitavanja ove stranice. Pokušajte ponovno za trenutak.",
+  "GeneratedAtFormat": "Zadnje ažurirano: {0}",
+  "PoweredByLabel": "Podijeljeno putem StudyLife"
+}

@@ -1,0 +1,29 @@
+@using StudyLife.Client.Models
+
+<div class="cal-day @(IsToday ? "today" : "") @(IsPast ? "past" : "")">
+    <div class="day-body" @onclick="(e) => OnDayClick.InvokeAsync(e)" style="position:relative;height:1440px;cursor:pointer">
+        @if (IsToday)
+        {
+            var nowTop = DateTime.Now.Hour * 60 + DateTime.Now.Minute;
+            if (nowTop >= 0 && nowTop <= 1440)
+            {
+                <div class="cal-now-line" style="top:@(nowTop)px"></div>
+            }
+        }
+        @foreach (var session in Sessions)
+        {
+            var s = session;
+            <CalendarSessionBlock Session="s" OnClick="@(() => OnSessionClick.InvokeAsync(s))" />
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public DateTime Date { get; set; }
+    [Parameter] public List<StudySession> Sessions { get; set; } = new();
+    [Parameter] public EventCallback<MouseEventArgs> OnDayClick { get; set; }
+    [Parameter] public EventCallback<StudySession> OnSessionClick { get; set; }
+
+    private bool IsToday => Date.Date == DateTime.Today;
+    private bool IsPast => Date.Date < DateTime.Today;
+}

@@ -1,0 +1,43 @@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    @if (Metrics.Count == 0)
+    {
+        <div style="color:var(--text3);font-size:0.875rem">@EmptyText</div>
+    }
+    else
+    {
+        <div class="semcomp-legend">
+            <span class="semcomp-legend-item"><span class="semcomp-swatch current"></span>@CurrentLabel</span>
+            <span class="semcomp-legend-item"><span class="semcomp-swatch previous"></span>@PreviousLabel</span>
+        </div>
+        @foreach (var m in Metrics)
+        {
+            <div class="semcomp-metric">
+                <div class="semcomp-metric-label">@m.Label</div>
+                <div class="semcomp-row">
+                    <div class="semcomp-track"><div class="semcomp-fill current" style="width: @m.CurrentPercentLabel%"></div></div>
+                    <span class="semcomp-val">@m.CurrentValueLabel</span>
+                </div>
+                <div class="semcomp-row">
+                    <div class="semcomp-track"><div class="semcomp-fill previous" style="width: @m.PreviousPercentLabel%"></div></div>
+                    <span class="semcomp-val">@m.PreviousValueLabel</span>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    public record MetricRow(string Label, string CurrentValueLabel, double CurrentPercent, string PreviousValueLabel, double PreviousPercent)
+    {
+        // Formatted with invariant culture so CSS percentage values never get a decimal comma (cf. _donutGradient).
+        public string CurrentPercentLabel => CurrentPercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+        public string PreviousPercentLabel => PreviousPercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string CurrentLabel { get; set; } = "";
+    [Parameter] public string PreviousLabel { get; set; } = "";
+    [Parameter] public string EmptyText { get; set; } = "";
+    [Parameter] public List<MetricRow> Metrics { get; set; } = new();
+}

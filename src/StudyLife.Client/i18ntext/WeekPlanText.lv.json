@@ -1,0 +1,18 @@
+{
+  "Heading": "Nedēļas plāns",
+  "Subtitle": "Izdrukājams pārskats par šīs nedēļas plānotajām mācību sesijām — izdrukā to un piestiprini pie sienas.",
+  "BackLink": "← Atpakaļ uz kalendāru",
+  "ExportButton": "🖨 Drukāt nedēļas plānu",
+  "WeekRangeFormat": "Nedēļa: {0} – {1}",
+  "GeneratedOnFormat": "Izveidots {0}",
+  "SummaryHeading": "Kopsavilkums",
+  "PlannedHoursLabel": "Šīs nedēļas plānotās stundas",
+  "WeeklyGoalLabel": "Nedēļas mērķis",
+  "WeeklyGoalFormat": "{0}–{1} h",
+  "SessionCountLabel": "Plānotās sesijas",
+  "NoSessions": "Šai dienai nav plānotu sesiju.",
+  "TableTime": "Laiks",
+  "TableCourse": "Kurss",
+  "TableTopic": "Tēma",
+  "FooterNote": "Automātiski izveidojis StudyLife."
+}

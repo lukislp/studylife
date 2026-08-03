@@ -1,0 +1,47 @@
+{
+  "name": "StudyLife",
+  "short_name": "StudyLife",
+  "description": "Deine persönliche Lern-App",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0e0e0f",
+  "theme_color": "#0e0e0f",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Fokus starten",
+      "short_name": "Fokus",
+      "description": "Direkt in den Fokus-Timer springen",
+      "url": "/focus",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Neue Notiz",
+      "short_name": "Notiz",
+      "description": "Sofort eine neue Notiz anlegen",
+      "url": "/notes?new=1",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Kalender",
+      "short_name": "Kalender",
+      "description": "Zur Wochenansicht",
+      "url": "/calendar",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

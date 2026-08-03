@@ -1,0 +1,141 @@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    @if (DistinctCourses.Count > 0)
+    {
+        <div class="heatmap-filter-chips">
+            <button type="button" class="heatmap-chip @(_filterCourse == null ? "active" : "")" @onclick="() => _filterCourse = null">@AllCoursesText</button>
+            @foreach (var course in DistinctCourses)
+            {
+                <button type="button" class="heatmap-chip @(_filterCourse == course.Name ? "active" : "")"
+                        style="--chip-c: @course.Color" @onclick="() => ToggleFilter(course.Name)">
+                    <span class="heatmap-chip-swatch" style="background:@course.Color"></span>@course.Name
+                </button>
+            }
+        </div>
+    }
+    <div class="heatmap-wrap" id="heatmap-scroll">
+        <div class="heatmap-months">
+            @foreach (var label in MonthLabels)
+            {
+                <span class="heatmap-month">@label</span>
+            }
+        </div>
+        <div class="heatmap">
+            @foreach (var week in Weeks)
+            {
+                <div class="heatmap-week">
+                    @foreach (var day in week)
+                    {
+                        @if (day.Level < 0)
+                        {
+                            <div class="heatmap-day future"></div>
+                        }
+                        else
+                        {
+                            <button type="button" class="heatmap-day level-@EffectiveLevel(day) @(_selectedDay == day ? "selected" : "")"
+                                    title="@day.Date.ToString("dd.MM.yyyy"): @HoursLabelFor(EffectiveHours(day))"
+                                    @onclick="() => ToggleDay(day)"></button>
+                        }
+                    }
+                </div>
+            }
+        </div>
+        <div class="heatmap-legend">
+            <span>@LessText</span>
+            <div class="heatmap-day level-0"></div>
+            <div class="heatmap-day level-1"></div>
+            <div class="heatmap-day level-2"></div>
+            <div class="heatmap-day level-3"></div>
+            <div class="heatmap-day level-4"></div>
+            <span>@MoreText</span>
+        </div>
+    </div>
+
+    @if (_selectedDay != null)
+    {
+        <!-- Deliberately OUTSIDE .heatmap-wrap (the horizontally scrollable grid that
+             auto-scrolls all the way to the right on load): inside it, the panel would render
+             at the left edge of the ~53-week-wide content - exactly where it was just
+             scrolled away from, and would be invisible despite correct data. -->
+        <div class="heatmap-detail">
+            <div class="heatmap-detail-head">
+                <span class="heatmap-detail-date">@_selectedDay.Date.ToString("dddd, dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture)</span>
+                <button type="button" class="heatmap-detail-close" @onclick="() => _selectedDay = null">✕</button>
+            </div>
+            @if (_selectedDay.Courses.Count == 0)
+            {
+                <div class="heatmap-detail-empty">@NoSessionText</div>
+            }
+            else
+            {
+                <div class="heatmap-detail-summary">@_selectedDay.HoursLabel(NoSessionText) · @string.Format(SessionCountFormat ?? "", _selectedDay.SessionCount)</div>
+                <div class="heatmap-detail-courses">
+                    @foreach (var course in _selectedDay.Courses)
+                    {
+                        <div class="heatmap-detail-course-row">
+                            <span class="heatmap-detail-swatch" style="background:@course.Color"></span>
+                            <span class="heatmap-detail-course-name">@course.Name</span>
+                            <span class="heatmap-detail-course-hours">@course.HoursLabel</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    public record CourseHours(string Name, string Color, double Hours)
+    {
+        public string HoursLabel => $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
+    }
+
+    public record HeatDay(DateTime Date, double Hours, int Level, int SessionCount, List<CourseHours> Courses)
+    {
+        public string HoursLabel(string noSessionText) => Hours <= 0 ? noSessionText : $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
+    }
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public List<List<HeatDay>> Weeks { get; set; } = new();
+    [Parameter] public List<string> MonthLabels { get; set; } = new();
+    [Parameter] public string NoSessionText { get; set; } = "";
+    [Parameter] public string LessText { get; set; } = "";
+    [Parameter] public string MoreText { get; set; } = "";
+    [Parameter] public string SessionCountFormat { get; set; } = "";
+    [Parameter] public string AllCoursesText { get; set; } = "";
+
+    private HeatDay? _selectedDay;
+    private string? _filterCourse;
+
+    // Distinct courses that appear anywhere in the heatmap's data, derived straight from the
+    // per-day Courses lists already embedded in Weeks - no extra parameter/pipeline needed.
+    // Keyed by name (CourseHours carries no CourseId) since names are effectively unique here.
+    private List<(string Name, string Color)> DistinctCourses =>
+        Weeks.SelectMany(w => w)
+            .SelectMany(d => d.Courses)
+            .GroupBy(c => c.Name)
+            .Select(g => (Name: g.Key, Color: g.First().Color))
+            .OrderBy(c => c.Name, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
+
+    private void ToggleDay(HeatDay day) => _selectedDay = _selectedDay == day ? null : day;
+
+    private void ToggleFilter(string courseName) => _filterCourse = _filterCourse == courseName ? null : courseName;
+
+    // Bug found live: filtering by course only dimmed non-matching days via CSS opacity, but
+    // every day's level-@day.Level class still reflected TOTAL hours across ALL courses - for
+    // someone whose recurring session is basically always the same course, virtually every day
+    // matches and nothing visibly changes ("everything is still shown" regardless of filter).
+    // Recomputed here instead, straight from the per-day Courses breakdown already embedded in
+    // Weeks (BuildHeatmap, Stats.Charts.razor.cs) - no server/data changes needed. Same bucket
+    // thresholds as BuildHeatmap, so a filtered day looks exactly as intense as an unfiltered day
+    // would if that course were the day's only session.
+    private double EffectiveHours(HeatDay day) =>
+        _filterCourse == null ? day.Hours : day.Courses.Where(c => c.Name == _filterCourse).Sum(c => c.Hours);
+
+    private static int LevelFor(double hours) => hours <= 0 ? 0 : hours < 1 ? 1 : hours < 2 ? 2 : hours < 4 ? 3 : 4;
+
+    private int EffectiveLevel(HeatDay day) => _filterCourse == null ? day.Level : LevelFor(EffectiveHours(day));
+
+    private string HoursLabelFor(double hours) => hours <= 0 ? NoSessionText : $"{(int)hours}h {(int)((hours - (int)hours) * 60)}m";
+}

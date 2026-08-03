@@ -1,0 +1,44 @@
+@inject NavigationManager Nav
+
+<div class="dash-card card-mini-donut">
+    <div class="card-label">@Label</div>
+    @if (Slices.Count == 0)
+    {
+        <div class="empty-state">@EmptyText</div>
+    }
+    else
+    {
+        <div class="donut-wrap donut-wrap-sm">
+            <div class="donut-chart donut-chart-sm donut-chart-clickable" style="background: @Gradient" @onclick="GoToStats" title="@StatsLinkHint">
+                <div class="donut-hole">
+                    <div class="donut-total">@((int)TotalHours)h</div>
+                </div>
+            </div>
+            <div class="donut-legend">
+                @foreach (var s in Slices)
+                {
+                    <div class="donut-legend-row clickable" @onclick="GoToStats" title="@StatsLinkHint">
+                        <span class="donut-swatch" style="background:@s.Color"></span>
+                        <span class="donut-legend-name">@s.Name</span>
+                        <span class="donut-legend-val">@s.Percent.ToString("0.#")%</span>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    public record DonutSlice(string Name, string Color, double Hours, double Percent);
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public List<DonutSlice> Slices { get; set; } = new();
+    [Parameter] public string Gradient { get; set; } = "";
+    [Parameter] public double TotalHours { get; set; }
+    [Parameter] public string EmptyText { get; set; } = "";
+    /// <summary>Tooltip on donut/legend rows that link to the Stats page (deep link without
+    /// course preselection - StatsHeatmapCard's course filter is pure client state with no query-string support).</summary>
+    [Parameter] public string StatsLinkHint { get; set; } = "";
+
+    private void GoToStats() => Nav.NavigateTo("/auswertung");
+}

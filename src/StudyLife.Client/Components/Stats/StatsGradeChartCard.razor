@@ -1,0 +1,27 @@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    <div class="mini-bar-chart grade-chart">
+        @foreach (var p in Points)
+        {
+            <div class="mini-bar-col" title="@p.Label: @(string.Format(TooltipFormat, p.GradeLabel, p.CourseCount))">
+                <div class="mini-bar-value">@p.GradeLabel</div>
+                <div class="mini-bar-track">
+                    @* Inverted scale: 1.0 (best grade) fills the bar, 5.0 stays near zero. *@
+                    <div class="mini-bar-fill" style="height: @p.BarPercent%"></div>
+                </div>
+                <div class="mini-bar-label">@p.Label</div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    public record GradePoint(string Label, decimal AvgGrade, int CourseCount, double BarPercent)
+    {
+        public string GradeLabel => AvgGrade.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ',');
+    }
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string TooltipFormat { get; set; } = "";
+    [Parameter] public List<GradePoint> Points { get; set; } = new();
+}

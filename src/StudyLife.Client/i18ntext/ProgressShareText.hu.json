@@ -1,0 +1,19 @@
+{
+  "PageTitleTag": "StudyLife — Előrehaladás",
+  "Heading": "Tanulmányi előrehaladás",
+  "SubHeading": "Megosztott, csak olvasható pillanatkép — automatikusan frissül.",
+  "EctsLabel": "Megszerzett ECTS",
+  "EctsFormat": "{0} / {1} ECTS",
+  "AverageGradeLabel": "Átlag",
+  "NoGradeYet": "Még nincs jegy",
+  "CoursesCompletedFormat": "{0}/{1} tantárgy teljesítve",
+  "ActiveCoursesHeading": "Aktív tantárgyak",
+  "NoActiveCourses": "Jelenleg nincs aktív tantárgy.",
+  "TopicProgressFormat": "A témák {0}%-a",
+  "InvalidLinkHeading": "A link nem érhető el",
+  "InvalidLinkMessage": "Ez az előrehaladás-link érvénytelen, lejárt, vagy a tulajdonosa letiltotta.",
+  "TemporaryErrorHeading": "Átmenetileg nem elérhető",
+  "TemporaryErrorMessage": "Hiba történt az oldal betöltése közben. Kérjük, próbáld újra egy pillanat múlva.",
+  "GeneratedAtFormat": "Utolsó frissítés: {0}",
+  "PoweredByLabel": "Megosztva a StudyLife-on keresztül"
+}

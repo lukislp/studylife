@@ -1,0 +1,474 @@
+@page "/planner"
+@using StudyLife.Client.Models
+@using StudyLife.Client.Services
+@using StudyLife.Shared
+@inject AppStateService State
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+@inject HttpClient Http
+@implements IDisposable
+
+<PageTitle>StudyLife — Planner</PageTitle>
+
+<div class="setup-page planner-page">
+    <div class="planner-tabs">
+        <button class="planner-tab @(_activeTab == "exam" ? "active" : "")" @onclick='() => _activeTab = "exam"'>🎯 @T.TabExamPlanner</button>
+        <button class="planner-tab @(_activeTab == "week" ? "active" : "")" @onclick='() => _activeTab = "week"'>📅 @T.TabWeeklyPlan</button>
+    </div>
+
+    @if (_activeTab == "exam")
+    {
+        <div class="planner-section">
+            <p class="planner-intro">@T.ExamPlannerIntro</p>
+
+            @if (_courses.Count == 0)
+            {
+                <div class="empty-state">@T.NoActiveCourses</div>
+            }
+            else
+            {
+                <div class="planner-form dash-card">
+                    <div class="field-row">
+                        <div class="field">
+                            <label>@T.FieldCourse</label>
+                            <select class="select" @bind="_examCourseId" @bind:after="OnExamCourseChanged">
+                                @foreach (var c in _courses)
+                                {
+                                    <option value="@c.Id">@c.Icon @c.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>@T.FieldExamDate</label>
+                            <input type="date" class="input" @bind="_examDate" min="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")" />
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field">
+                            <label>@T.FieldSessionLength</label>
+                            <select class="select" @bind="_examSessionLengthMinutes">
+                                <option value="45">45 @T.MinutesSuffix</option>
+                                <option value="60">60 @T.MinutesSuffix</option>
+                                <option value="90">90 @T.MinutesSuffix</option>
+                                <option value="120">120 @T.MinutesSuffix</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>@T.FieldTotalHours</label>
+                            <input type="number" class="input" min="1" max="200" step="0.5" @bind="_examTotalHours" />
+                        </div>
+                    </div>
+                    @if (_examCourseTotalTopics > 0)
+                    {
+                        <div class="planner-topics-hint @(_examOpenTopics.Count == 0 ? "done" : "")">
+                            @(_examOpenTopics.Count > 0 ? string.Format(T.OpenTopicsCount ?? "", _examOpenTopics.Count, _examCourseTotalTopics) : T.NoOpenTopics)
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(_examError))
+                    {
+                        <div style="color:var(--danger,#e74c3c);font-size:0.875rem">⚠️ @_examError</div>
+                    }
+                    <button class="btn-primary" @onclick="GenerateExamPlan">✦ @T.GenerateProposalButton</button>
+                </div>
+
+                @if (_examProposals.Count > 0)
+                {
+                    <div class="planner-proposal dash-card">
+                        <div class="card-label">@string.Format(T.ProposalHeading ?? "", _examProposals.Count, ExamProposalHours.ToString("0.0"))</div>
+                        <div class="planner-proposal-list">
+                            @foreach (var p in _examProposals)
+                            {
+                                var prop = p;
+                                <div class="planner-proposal-row" style="--c:@prop.CourseColor">
+                                    <div class="ppr-date">@prop.Start.ToString("ddd, dd.MM.")</div>
+                                    <div class="ppr-time">@prop.Start.ToString("HH:mm")–@prop.End.ToString("HH:mm")</div>
+                                    <div class="ppr-topic">@prop.Topic</div>
+                                    <button class="ppr-remove" title="@T.RemoveProposalTitle" @onclick="() => _examProposals.Remove(prop)">✕</button>
+                                </div>
+                            }
+                        </div>
+                        <button class="btn-primary" @onclick="AcceptExamPlan">@T.AcceptExamPlanButton</button>
+                    </div>
+                }
+                else if (_examGenerated)
+                {
+                    <div class="empty-state">@T.ProposalEmpty</div>
+                }
+                @if (!string.IsNullOrEmpty(_examAcceptedMessage))
+                {
+                    <div class="planner-success">✓ @_examAcceptedMessage</div>
+                }
+            }
+        </div>
+    }
+    else
+    {
+        <div class="planner-section">
+            <p class="planner-intro">@T.WeekPlanIntro</p>
+
+            <div class="planner-form dash-card">
+                <div class="quota-legend">@string.Format(T.CurrentWeekHours ?? "", _weekAlreadyHours.ToString("0.0"), WeekMin, WeekMax)</div>
+                <div class="field">
+                    <label>@T.FieldSessionLength</label>
+                    <select class="select" @bind="_weekSessionLengthMinutes">
+                        <option value="45">45 @T.MinutesSuffix</option>
+                        <option value="60">60 @T.MinutesSuffix</option>
+                        <option value="90">90 @T.MinutesSuffix</option>
+                        <option value="120">120 @T.MinutesSuffix</option>
+                    </select>
+                </div>
+                @if (_weekRemainingHours <= 0)
+                {
+                    <div class="planner-topics-hint done">@T.AlreadyOnTrack</div>
+                }
+                else
+                {
+                    <div class="planner-topics-hint">@string.Format(T.RemainingHoursLabel ?? "", _weekRemainingHours.ToString("0.0"))</div>
+                    <button class="btn-primary" @onclick="GenerateWeekPlan">✦ @T.GenerateWeekPlanButton</button>
+                }
+            </div>
+
+            @if (_weekCourseHints.Count > 0)
+            {
+                <div class="planner-course-hints">
+                    @foreach (var h in _weekCourseHints)
+                    {
+                        <div class="course-pill" style="--c: @h.Color">
+                            <span class="cp-icon">@h.Icon</span>
+                            <span class="cp-name">@h.Name</span>
+                            <span class="pill-tag">@h.Hint</span>
+                        </div>
+                    }
+                </div>
+            }
+
+            @if (_weekProposals.Count > 0)
+            {
+                <div class="planner-proposal dash-card">
+                    <div class="card-label">@string.Format(T.WeekPlanHeading ?? "", _weekProposals.Count, WeekProposalHours.ToString("0.0"))</div>
+                    <div class="planner-proposal-list">
+                        @foreach (var p in _weekProposals)
+                        {
+                            var prop = p;
+                            <div class="planner-proposal-row" style="--c:@prop.CourseColor">
+                                <div class="ppr-date">@prop.Start.ToString("ddd, dd.MM.")</div>
+                                <div class="ppr-time">@prop.Start.ToString("HH:mm")–@prop.End.ToString("HH:mm")</div>
+                                <div class="ppr-course">@prop.CourseName</div>
+                                <div class="ppr-topic">@prop.Topic</div>
+                                <button class="ppr-remove" title="@T.RemoveProposalTitle" @onclick="() => _weekProposals.Remove(prop)">✕</button>
+                            </div>
+                        }
+                    </div>
+                    <button class="btn-primary" @onclick="AcceptWeekPlan">@T.AcceptWeekPlanButton</button>
+                </div>
+            }
+            else if (_weekGenerated)
+            {
+                <div class="empty-state">@T.WeekPlanEmpty</div>
+            }
+            @if (!string.IsNullOrEmpty(_weekAcceptedMessage))
+            {
+                <div class="planner-success">✓ @_weekAcceptedMessage</div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private const int NeglectHistoryDays = 180;
+
+    // Weekly goal from settings (the same WeeklyGoal values as the dashboard quota,
+    // reports, and Home Assistant) instead of the former fixed 25-30h. Falls back to the
+    // old defaults if the values are 0/inconsistent (fresh install).
+    private int WeekMin => _settings.WeeklyGoalMinHours > 0 ? _settings.WeeklyGoalMinHours : 25;
+    private int WeekMax => Math.Max(WeekMin, _settings.WeeklyGoalMaxHours > 0 ? _settings.WeeklyGoalMaxHours : 30);
+
+    private I18nText.PlannerText T = new();
+    private string _activeTab = "exam";
+    private UserSettings _settings = new();
+    private List<CourseDto> _courses = new();
+    private List<CourseGoalDto> _goals = new();
+    private List<StudySession> _sessions = new();
+    private List<StudySessionDto> _history = new();
+
+    // Exam planner
+    private int _examCourseId;
+    private DateTime _examDate = DateTime.Today.AddDays(30);
+    private int _examSessionLengthMinutes = 90;
+    private double _examTotalHours = 6;
+    private List<string> _examOpenTopics = new();
+    private int _examCourseTotalTopics;
+    private List<PlanProposal> _examProposals = new();
+    private bool _examGenerated;
+    private string? _examError;
+    private string? _examAcceptedMessage;
+    private double ExamProposalHours => _examProposals.Sum(p => (p.End - p.Start).TotalHours);
+
+    // Weekly plan
+    private int _weekSessionLengthMinutes = 90;
+    private double _weekAlreadyHours;
+    private double _weekRemainingHours;
+    private List<PlanProposal> _weekProposals = new();
+    private bool _weekGenerated;
+    private string? _weekAcceptedMessage;
+    private List<(string Name, string Icon, string Color, string Hint)> _weekCourseHints = new();
+    private double WeekProposalHours => _weekProposals.Sum(p => (p.End - p.Start).TotalHours);
+
+    protected override async Task OnInitializedAsync()
+    {
+        T = await I18nText.GetTextTableAsync<I18nText.PlannerText>(this);
+        State.OnChange += OnStateChanged;
+
+        _settings = await State.GetSettingsAsync();
+        var allCourses = await State.GetCoursesAsync();
+        _courses = allCourses
+            .Where(c => _settings.SelectedCourseIds.Contains(c.Id) && !_settings.CompletedCourseIds.Contains(c.Id))
+            .ToList();
+        _sessions = await State.GetSessionsAsync();
+        _goals = await State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals") ?? new();
+        _history = await State.GetJsonCachedAsync<List<StudySessionDto>>($"api/sessions/history?days={NeglectHistoryDays}&onlyCompleted=false") ?? new();
+
+        if (_courses.Count > 0)
+        {
+            _examCourseId = _courses[0].Id;
+            OnExamCourseChanged();
+        }
+        RecalcWeekHours();
+    }
+
+    private void OnStateChanged() => InvokeAsync(async () =>
+    {
+        _sessions = await State.GetSessionsAsync();
+        RecalcWeekHours();
+        StateHasChanged();
+    });
+
+    public void Dispose() => State.OnChange -= OnStateChanged;
+
+    private List<string> GetOpenTopics(CourseDto course)
+    {
+        var goal = _goals.FirstOrDefault(g => g.CourseId == course.Id);
+        var completed = goal == null || string.IsNullOrWhiteSpace(goal.CompletedTopics)
+            ? new HashSet<string>()
+            : goal.CompletedTopics.Split(',', StringSplitOptions.RemoveEmptyEntries).ToHashSet();
+        return course.Topics.Where(t => !completed.Contains(t)).ToList();
+    }
+
+    private void OnExamCourseChanged()
+    {
+        var course = _courses.FirstOrDefault(c => c.Id == _examCourseId);
+        _examProposals.Clear();
+        _examGenerated = false;
+        _examAcceptedMessage = null;
+        _examError = null;
+        if (course == null)
+        {
+            _examOpenTopics = new();
+            _examCourseTotalTopics = 0;
+            return;
+        }
+
+        _examCourseTotalTopics = course.Topics.Count;
+        _examOpenTopics = GetOpenTopics(course);
+
+        var goal = _goals.FirstOrDefault(g => g.CourseId == _examCourseId);
+        _examDate = goal?.TargetDate.HasValue == true && goal.TargetDate!.Value.Date > DateTime.Today
+            ? goal.TargetDate.Value.Date
+            : DateTime.Today.AddDays(30);
+        _examTotalHours = Math.Max(1.5, _examOpenTopics.Count * 1.5);
+    }
+
+    private async Task GenerateExamPlan()
+    {
+        _examError = null;
+        _examAcceptedMessage = null;
+        if (_examDate.Date <= DateTime.Today)
+        {
+            _examError = T.ExamDateInPastError;
+            return;
+        }
+
+        var course = _courses.FirstOrDefault(c => c.Id == _examCourseId);
+        if (course == null) return;
+
+        _settings = await State.GetSettingsAsync();
+        _sessions = await State.GetSessionsAsync();
+        var sessionLength = TimeSpan.FromMinutes(_examSessionLengthMinutes);
+        var totalMinutesNeeded = (int)Math.Round(_examTotalHours * 60);
+        var sessionsNeeded = Math.Max(1, (int)Math.Ceiling(totalMinutesNeeded / (double)_examSessionLengthMinutes));
+
+        var fromDate = DateTime.Now;
+        var toDate = _examDate.Date.AddDays(-1);
+        var daysAvailable = Math.Max(1, (toDate.Date - fromDate.Date).Days + 1);
+        var maxSlotsPerDay = Math.Clamp((int)Math.Ceiling(sessionsNeeded / (double)daysAvailable), 1, 3);
+
+        var busy = _sessions.Select(s => (s.StartTime, s.EndTime));
+        var allowedDays = StudyPlanner.ParseStudyDays(_settings.StudyDays);
+        var slots = StudyPlanner.FindFreeSlots(fromDate, toDate, busy, sessionLength, maxSlotsPerDay, sessionsNeeded,
+            _settings.StudyWindowStartHour, _settings.StudyWindowEndHour, allowedDays);
+
+        var proposals = new List<PlanProposal>();
+        for (var i = 0; i < slots.Count; i++)
+        {
+            var topic = _examOpenTopics.Count > 0 ? _examOpenTopics[i % _examOpenTopics.Count] : T.ReviewTopicFallback;
+            proposals.Add(new PlanProposal
+            {
+                CourseId = course.Id,
+                CourseName = course.Name,
+                CourseColor = course.Color,
+                Topic = topic,
+                Start = slots[i].Start,
+                End = slots[i].End,
+            });
+        }
+        _examProposals = proposals;
+        _examGenerated = true;
+    }
+
+    private async Task AcceptExamPlan()
+    {
+        var count = _examProposals.Count;
+        foreach (var p in _examProposals.ToList())
+        {
+            await State.SaveSessionAsync(new StudySession
+            {
+                CourseId = p.CourseId,
+                CourseName = p.CourseName,
+                CourseColor = p.CourseColor,
+                StartTime = p.Start,
+                EndTime = p.End,
+                Topic = p.Topic,
+                TimerModeId = new Random().Next(1, DefaultData.TimerModes.Count + 1),
+            });
+        }
+        _sessions = await State.GetSessionsAsync();
+        _examProposals.Clear();
+        _examGenerated = false;
+        _examAcceptedMessage = string.Format(T.ExamPlanAccepted ?? "", count);
+        RecalcWeekHours();
+    }
+
+    private static DateTime CurrentWeekStart()
+    {
+        var today = DateTime.Today;
+        var dowOffset = ((int)today.DayOfWeek + 6) % 7; // Montag = 0
+        return today.AddDays(-dowOffset);
+    }
+
+    private void RecalcWeekHours()
+    {
+        var weekStart = CurrentWeekStart();
+        var weekEnd = weekStart.AddDays(7);
+        _weekAlreadyHours = _sessions
+            .Where(s => s.StartTime >= weekStart && s.StartTime < weekEnd)
+            .Sum(s => s.Duration.TotalHours);
+        _weekRemainingHours = Math.Max(0, WeekMax - _weekAlreadyHours);
+    }
+
+    private async Task GenerateWeekPlan()
+    {
+        _weekAcceptedMessage = null;
+        _weekProposals.Clear();
+        _weekCourseHints.Clear();
+        _weekGenerated = true;
+        if (_weekRemainingHours <= 0 || _courses.Count == 0) return;
+
+        _settings = await State.GetSettingsAsync();
+        _sessions = await State.GetSessionsAsync();
+        var today = DateTime.Today;
+        var weekStart = CurrentWeekStart();
+        var weekEnd = weekStart.AddDays(6); // Sonntag
+
+        var sessionLength = TimeSpan.FromMinutes(_weekSessionLengthMinutes);
+        var totalSessions = Math.Max(1, (int)Math.Ceiling(_weekRemainingHours * 60 / _weekSessionLengthMinutes));
+
+        var completedHistory = _history.Where(s => s.IsCompleted || s.EndTime <= DateTime.Now).ToList();
+        var lastStudiedByCourse = completedHistory
+            .GroupBy(s => s.CourseId)
+            .ToDictionary(g => g.Key, g => g.Max(s => s.StartTime));
+
+        var weights = new Dictionary<int, double>();
+        var hints = new Dictionary<int, string>();
+        foreach (var c in _courses)
+        {
+            var lastStudied = lastStudiedByCourse.TryGetValue(c.Id, out var d) ? (DateTime?)d : null;
+            var daysSince = lastStudied.HasValue ? (today - lastStudied.Value.Date).Days : NeglectHistoryDays;
+            var neglectScore = Math.Min(60, daysSince);
+
+            var goal = _goals.FirstOrDefault(g => g.CourseId == c.Id);
+            var examBonus = 0.0;
+            string? hint = null;
+            if (goal?.TargetDate is DateTime td)
+            {
+                var daysUntil = (td.Date - today).Days;
+                if (daysUntil >= 0 && daysUntil <= 30)
+                {
+                    examBonus = 30 - daysUntil;
+                    hint = string.Format(T.ExamInDays ?? "", daysUntil);
+                }
+            }
+            hint ??= lastStudied.HasValue ? string.Format(T.LastStudiedDaysAgo ?? "", daysSince) : T.NeverStudied;
+
+            weights[c.Id] = neglectScore + examBonus + 1;
+            hints[c.Id] = hint;
+        }
+
+        var picks = StudyPlanner.WeightedRoundRobin(weights, totalSessions);
+        var weekBusy = _sessions.Select(s => (s.StartTime, s.EndTime));
+        var weekAllowedDays = StudyPlanner.ParseStudyDays(_settings.StudyDays);
+        var slots = StudyPlanner.FindFreeSlots(DateTime.Now, weekEnd, weekBusy, sessionLength, maxSlotsPerDay: 3, maxTotalSlots: totalSessions,
+            dayStartHour: _settings.StudyWindowStartHour, dayEndHour: _settings.StudyWindowEndHour, allowedDays: weekAllowedDays);
+
+        var count = Math.Min(picks.Count, slots.Count);
+        var topicIndex = new Dictionary<int, int>();
+        var proposals = new List<PlanProposal>();
+        for (var i = 0; i < count; i++)
+        {
+            var courseId = picks[i];
+            var course = _courses.First(c => c.Id == courseId);
+            var openTopics = GetOpenTopics(course);
+            var idx = topicIndex.TryGetValue(courseId, out var v) ? v : 0;
+            topicIndex[courseId] = idx + 1;
+            var topic = openTopics.Count > 0 ? openTopics[idx % openTopics.Count] : T.ReviewTopicFallback;
+
+            proposals.Add(new PlanProposal
+            {
+                CourseId = courseId,
+                CourseName = course.Name,
+                CourseColor = course.Color,
+                Topic = topic,
+                Start = slots[i].Start,
+                End = slots[i].End,
+            });
+        }
+
+        _weekProposals = proposals.OrderBy(p => p.Start).ToList();
+        _weekCourseHints = hints
+            .Where(h => proposals.Any(p => p.CourseId == h.Key))
+            .Select(h => (_courses.First(c => c.Id == h.Key).Name, _courses.First(c => c.Id == h.Key).Icon, _courses.First(c => c.Id == h.Key).Color, h.Value))
+            .ToList();
+    }
+
+    private async Task AcceptWeekPlan()
+    {
+        var count = _weekProposals.Count;
+        foreach (var p in _weekProposals.ToList())
+        {
+            await State.SaveSessionAsync(new StudySession
+            {
+                CourseId = p.CourseId,
+                CourseName = p.CourseName,
+                CourseColor = p.CourseColor,
+                StartTime = p.Start,
+                EndTime = p.End,
+                Topic = p.Topic,
+                TimerModeId = new Random().Next(1, DefaultData.TimerModes.Count + 1),
+            });
+        }
+        _sessions = await State.GetSessionsAsync();
+        _weekProposals.Clear();
+        _weekCourseHints.Clear();
+        _weekGenerated = false;
+        _weekAcceptedMessage = string.Format(T.WeekPlanAccepted ?? "", count);
+        RecalcWeekHours();
+    }
+}

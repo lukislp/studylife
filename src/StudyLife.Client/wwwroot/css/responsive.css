@@ -1,0 +1,98 @@
+/* === Mobile responsive === */
+@media (max-width: 768px) {
+    :root { --sidebar-w: 0px; }
+
+    /* Two-column field rows (date/select pairs in Calendar, Setup, Planner) stack
+       to a single column - keeps date/datetime inputs from being squeezed into a
+       half-width column narrower than their native rendered width on mobile. */
+    .field-row { flex-direction: column; }
+
+    .sidebar {
+        width: 100%;
+        height: auto;
+        top: auto;
+        bottom: 0;
+        flex-direction: row;
+        padding: 0;
+        border-right: none;
+        border-top: 1px solid var(--border);
+        z-index: 200;
+    }
+
+    .brand { display: none; }
+    .sidebar-foot { display: none; }
+
+    /* Float above the 64px-tall bottom tab bar instead of overlapping it. */
+    .fab-dial {
+        right: 12px;
+        bottom: calc(64px + 0.75rem);
+    }
+
+    .nav-links {
+        flex-direction: row;
+        width: 100%;
+        padding: 0;
+        gap: 0;
+    }
+
+    .nav-item {
+        flex: 1;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        border-radius: 0;
+        padding: 0.75rem 0.5rem;
+        gap: 0.25rem;
+        font-size: 0.65rem;
+    }
+
+    .nav-icon { font-size: 1.25rem; }
+    .nav-badge { position: absolute; top: 8px; right: calc(50% - 16px); }
+
+    .main-content {
+        margin-left: 0;
+        height: calc(100vh - 64px);
+        margin-bottom: 0;
+        padding-bottom: 1rem;
+        overflow-y: auto;
+    }
+
+    .app-shell.page-calendar .main-content {
+        height: calc(100vh - 64px);
+    }
+
+    .dashboard { padding: 1.25rem 1rem; }
+    .dash-grid { grid-template-columns: 1fr; }
+    .card-today, .card-next, .card-stats, .card-courses { grid-column: 1; grid-row: auto; }
+
+    .calendar-page { padding: 1rem 0 1rem 1rem; }
+    .cal-import-row { padding-right: 1rem; }
+    /* The import-review row's course dropdown no longer fits next to title/time on
+       narrow viewports - wrap instead of clipping it sideways. */
+    .import-review-row { flex-wrap: wrap; }
+    .import-review-row .select { width: 100%; flex: 1 1 100%; }
+    /* The week/day switcher is added as an extra header element: on
+       narrow viewports the header row is allowed to wrap instead of overflowing. */
+    .cal-header { padding-right: 1rem; flex-wrap: wrap; gap: 0.5rem; }
+    .cal-inner { min-width: 560px; }
+    .cal-day-header-cell,
+    .cal-day { min-width: 80px; }
+
+    .focus-page { padding: 0.5rem 1rem 1rem; gap: 0.75rem; justify-content: flex-start; padding-top: 1.25rem; }
+    .mode-switcher { gap: 0.35rem; }
+    .mode-opt { padding: 0.3rem 0.5rem; font-size: 0.72rem; }
+    .mo-time { display: none; }
+
+    .setup-page { padding: 1.25rem 1rem; }
+    .course-grid { grid-template-columns: 1fr; }
+    .style-grid { grid-template-columns: 1fr 1fr; }
+
+    .page-focus .main-content {
+        height: calc(100vh - 64px);
+        overflow-y: auto;
+    }
+}
+
+/* === Focus page full-screen override === */
+.page-focus .main-content { overflow: hidden; }
+

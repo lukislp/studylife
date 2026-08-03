@@ -1,0 +1,18 @@
+{
+  "Heading": "Weekly Plan",
+  "Subtitle": "A printable overview of this week's planned study sessions — print it and stick it on the wall.",
+  "BackLink": "← Back to Calendar",
+  "ExportButton": "🖨 Print week plan",
+  "WeekRangeFormat": "Week: {0} – {1}",
+  "GeneratedOnFormat": "Generated on {0}",
+  "SummaryHeading": "Summary",
+  "PlannedHoursLabel": "Planned hours this week",
+  "WeeklyGoalLabel": "Weekly goal",
+  "WeeklyGoalFormat": "{0}–{1} h",
+  "SessionCountLabel": "Planned sessions",
+  "NoSessions": "No sessions planned for this day.",
+  "TableTime": "Time",
+  "TableCourse": "Course",
+  "TableTopic": "Topic",
+  "FooterNote": "Generated automatically by StudyLife."
+}

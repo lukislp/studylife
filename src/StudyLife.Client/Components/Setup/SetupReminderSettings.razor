@@ -1,0 +1,151 @@
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    <p class="ss-desc">@Desc</p>
+
+    <!-- Session Reminder Minutes -->
+    <div class="field" style="margin-bottom:0.75rem">
+        <label>@SessionReminderMinutesLabel</label>
+        <div class="weekday-picker">
+            @foreach (var value in SessionReminderPresets)
+            {
+                var v = value;
+                var isSelected = ParsedSessionMinutes.Contains(v);
+                <button type="button" class="weekday-chip @(isSelected ? "selected" : "")"
+                        @onclick="() => OnSessionMinuteToggle(v)">
+                    @GetSessionMinuteLabel(v)
+                </button>
+            }
+        </div>
+        @if (UnrecognizedSessionValues.Count > 0)
+        {
+            <div class="reminder-custom-note">@string.Format(T.ReminderCustomValuesLabel ?? "", string.Join(", ", UnrecognizedSessionValues.OrderByDescending(x => x)))</div>
+        }
+    </div>
+
+    <!-- Course Goal Reminder Days -->
+    <div class="field" style="margin-bottom:0.75rem">
+        <label>@CourseGoalReminderDaysLabel</label>
+        <div class="weekday-picker">
+            @foreach (var value in CourseGoalPresets)
+            {
+                var v = value;
+                var isSelected = ParsedCourseGoalDays.Contains(v);
+                <button type="button" class="weekday-chip @(isSelected ? "selected" : "")"
+                        @onclick="() => OnCourseGoalDayToggle(v)">
+                    @GetCourseGoalDayLabel(v)
+                </button>
+            }
+        </div>
+        @if (UnrecognizedCourseGoalValues.Count > 0)
+        {
+            <div class="reminder-custom-note">@string.Format(T.ReminderCustomValuesLabel ?? "", string.Join(", ", UnrecognizedCourseGoalValues.OrderByDescending(x => x)))</div>
+        }
+    </div>
+
+    <!-- Inactivity Threshold Days -->
+    <div class="field">
+        <label>@InactivityThresholdDaysLabel</label>
+        <input class="input input-sm" type="number" value="@InactivityThresholdDays"
+               @onchange="e => InactivityThresholdDaysChanged.InvokeAsync(int.TryParse(e.Value?.ToString(), out var v) ? v : InactivityThresholdDays)"
+               min="1" max="30" />
+    </div>
+</div>
+
+@code {
+    private static readonly int[] SessionReminderPresets = [60, 30, 15, 10, 5, 3, 2, 1];
+    private static readonly int[] CourseGoalPresets = [30, 14, 7, 3, 1, 0];
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string Desc { get; set; } = "";
+    [Parameter] public string SessionReminderMinutesLabel { get; set; } = "";
+    [Parameter] public string CourseGoalReminderDaysLabel { get; set; } = "";
+    [Parameter] public string InactivityThresholdDaysLabel { get; set; } = "";
+    [Parameter] public string SessionReminderMinutes { get; set; } = "";
+    [Parameter] public EventCallback<string> SessionReminderMinutesChanged { get; set; }
+    [Parameter] public string CourseGoalReminderDays { get; set; } = "";
+    [Parameter] public EventCallback<string> CourseGoalReminderDaysChanged { get; set; }
+    [Parameter] public int InactivityThresholdDays { get; set; }
+    [Parameter] public EventCallback<int> InactivityThresholdDaysChanged { get; set; }
+
+    private HashSet<int> ParsedSessionMinutes = new();
+    private HashSet<int> UnrecognizedSessionValues = new();
+    private HashSet<int> ParsedCourseGoalDays = new();
+    private HashSet<int> UnrecognizedCourseGoalValues = new();
+    private I18nText.SetupText T = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
+    }
+
+    protected override void OnParametersSet()
+    {
+        ParsedSessionMinutes = ParseValues(SessionReminderMinutes, SessionReminderPresets, out var unrecognizedSession);
+        UnrecognizedSessionValues = unrecognizedSession;
+
+        ParsedCourseGoalDays = ParseValues(CourseGoalReminderDays, CourseGoalPresets, out var unrecognizedCourseGoal);
+        UnrecognizedCourseGoalValues = unrecognizedCourseGoal;
+    }
+
+    private HashSet<int> ParseValues(string? raw, int[] presets, out HashSet<int> unrecognized)
+    {
+        unrecognized = new();
+        var parsed = new HashSet<int>();
+
+        if (string.IsNullOrWhiteSpace(raw))
+            return parsed;
+
+        var values = raw.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .Select(s => int.TryParse(s, out var v) ? v : (int?)null)
+            .Where(v => v.HasValue)
+            .Select(v => v!.Value)
+            .ToList();
+
+        foreach (var val in values)
+        {
+            if (presets.Contains(val))
+                parsed.Add(val);
+            else
+                unrecognized.Add(val);
+        }
+
+        return parsed;
+    }
+
+    private async Task OnSessionMinuteToggle(int value)
+    {
+        if (ParsedSessionMinutes.Contains(value))
+            ParsedSessionMinutes.Remove(value);
+        else
+            ParsedSessionMinutes.Add(value);
+
+        var serialized = SerializeWithUnrecognized(ParsedSessionMinutes, UnrecognizedSessionValues);
+        await SessionReminderMinutesChanged.InvokeAsync(serialized);
+    }
+
+    private async Task OnCourseGoalDayToggle(int value)
+    {
+        if (ParsedCourseGoalDays.Contains(value))
+            ParsedCourseGoalDays.Remove(value);
+        else
+            ParsedCourseGoalDays.Add(value);
+
+        var serialized = SerializeWithUnrecognized(ParsedCourseGoalDays, UnrecognizedCourseGoalValues);
+        await CourseGoalReminderDaysChanged.InvokeAsync(serialized);
+    }
+
+    private string SerializeWithUnrecognized(HashSet<int> recognized, HashSet<int> unrecognized)
+    {
+        var all = new List<int>(recognized);
+        all.AddRange(unrecognized);
+        all.Sort((a, b) => b.CompareTo(a)); // Sort descending
+        return string.Join(",", all);
+    }
+
+    private string GetSessionMinuteLabel(int minutes) => string.Format(T.ReminderMinutesFormat ?? "", minutes);
+
+    private string GetCourseGoalDayLabel(int days) =>
+        days == 0 ? (T.ReminderTodayLabel ?? "") : string.Format(T.ReminderDaysFormat ?? "", days);
+}

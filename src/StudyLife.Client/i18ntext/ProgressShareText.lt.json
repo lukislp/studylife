@@ -1,0 +1,19 @@
+{
+  "PageTitleTag": "StudyLife — Pažanga",
+  "Heading": "Studijų pažanga",
+  "SubHeading": "Bendrinama, tik skaitymui skirta akimirka — atnaujinama automatiškai.",
+  "EctsLabel": "Surinkti ECTS",
+  "EctsFormat": "{0} / {1} ECTS",
+  "AverageGradeLabel": "Vidurkis",
+  "NoGradeYet": "Kol kas nėra pažymių",
+  "CoursesCompletedFormat": "Baigta {0} iš {1} kursų",
+  "ActiveCoursesHeading": "Aktyvūs kursai",
+  "NoActiveCourses": "Šiuo metu aktyvių kursų nėra.",
+  "TopicProgressFormat": "{0}% temų",
+  "InvalidLinkHeading": "Nuoroda nepasiekiama",
+  "InvalidLinkMessage": "Ši pažangos nuoroda negalioja, baigėsi jos galiojimas arba ją išjungė savininkas.",
+  "TemporaryErrorHeading": "Laikinai nepasiekiama",
+  "TemporaryErrorMessage": "Įkeliant šį puslapį kažkas nutiko. Bandykite dar kartą po akimirkos.",
+  "GeneratedAtFormat": "Paskutinį kartą atnaujinta: {0}",
+  "PoweredByLabel": "Bendrinama per StudyLife"
+}

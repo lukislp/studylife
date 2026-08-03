@@ -1,0 +1,10 @@
+{
+  "Description": "À quel serveur StudyLife cette application doit-elle se connecter ?",
+  "ServerUrlLabel": "URL du serveur",
+  "CheckingConnection": "Vérification de la connexion…",
+  "UseAnyway": "Utiliser quand même",
+  "Connect": "Connecter",
+  "InvalidUrl": "Ce n'est pas une URL valide.",
+  "UnexpectedResponse": "Le serveur a répondu, mais de façon inattendue (HTTP {0}). Appuyez à nouveau pour l'utiliser quand même.",
+  "ServerUnreachable": "Le serveur est inaccessible. Appuyez à nouveau pour utiliser cette URL quand même."
+}

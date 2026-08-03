@@ -1,0 +1,18 @@
+{
+  "Heading": "Viikkosuunnitelma",
+  "Subtitle": "Tulostettava yhteenveto tämän viikon suunnitelluista opiskelusessioista — tulosta ja liimaa seinälle.",
+  "BackLink": "← Takaisin kalenteriin",
+  "ExportButton": "🖨 Tulosta viikkosuunnitelma",
+  "WeekRangeFormat": "Viikko: {0} – {1}",
+  "GeneratedOnFormat": "Luotu {0}",
+  "SummaryHeading": "Yhteenveto",
+  "PlannedHoursLabel": "Tämän viikon suunnitellut tunnit",
+  "WeeklyGoalLabel": "Viikkotavoite",
+  "WeeklyGoalFormat": "{0}–{1} h",
+  "SessionCountLabel": "Suunnitellut sessiot",
+  "NoSessions": "Tälle päivälle ei ole suunniteltu sessioita.",
+  "TableTime": "Aika",
+  "TableCourse": "Kurssi",
+  "TableTopic": "Aihe",
+  "FooterNote": "StudyLifen automaattisesti luoma."
+}

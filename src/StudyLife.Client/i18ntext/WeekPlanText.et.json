@@ -1,0 +1,18 @@
+{
+  "Heading": "Nädalaplaan",
+  "Subtitle": "Prinditav ülevaade selle nädala planeeritud õppesessioonidest — prindi see välja ja riputa seinale.",
+  "BackLink": "← Tagasi kalendri juurde",
+  "ExportButton": "🖨 Prindi nädalaplaan",
+  "WeekRangeFormat": "Nädal: {0} – {1}",
+  "GeneratedOnFormat": "Loodud {0}",
+  "SummaryHeading": "Kokkuvõte",
+  "PlannedHoursLabel": "Selle nädala plaanitud tunnid",
+  "WeeklyGoalLabel": "Nädalaeesmärk",
+  "WeeklyGoalFormat": "{0}–{1} h",
+  "SessionCountLabel": "Plaanitud sessioonid",
+  "NoSessions": "Sellele päevale pole sessioone plaanitud.",
+  "TableTime": "Aeg",
+  "TableCourse": "Kursus",
+  "TableTopic": "Teema",
+  "FooterNote": "Automaatselt loodud StudyLife'i poolt."
+}

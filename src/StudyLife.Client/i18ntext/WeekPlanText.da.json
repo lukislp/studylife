@@ -1,0 +1,18 @@
+{
+  "Heading": "Ugeplan",
+  "Subtitle": "Et printvenligt overblik over dine planlagte studiesessioner denne uge — print det ud og hæng det op.",
+  "BackLink": "← Tilbage til kalenderen",
+  "ExportButton": "🖨 Print ugeplan",
+  "WeekRangeFormat": "Uge: {0} – {1}",
+  "GeneratedOnFormat": "Genereret den {0}",
+  "SummaryHeading": "Oversigt",
+  "PlannedHoursLabel": "Planlagte timer denne uge",
+  "WeeklyGoalLabel": "Ugentligt mål",
+  "WeeklyGoalFormat": "{0}–{1} h",
+  "SessionCountLabel": "Planlagte sessioner",
+  "NoSessions": "Ingen sessioner planlagt til denne dag.",
+  "TableTime": "Tid",
+  "TableCourse": "Fag",
+  "TableTopic": "Emne",
+  "FooterNote": "Genereret automatisk af StudyLife."
+}

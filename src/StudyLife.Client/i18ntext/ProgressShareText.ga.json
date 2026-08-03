@@ -1,0 +1,19 @@
+{
+  "PageTitleTag": "StudyLife — Dul chun cinn",
+  "Heading": "Dul chun cinn staidéir",
+  "SubHeading": "Pictiúr comhroinnte atá inléite amháin — nuashonraithe go huathoibríoch.",
+  "EctsLabel": "ECTS gnóthaithe",
+  "EctsFormat": "{0} / {1} ECTS",
+  "AverageGradeLabel": "Meángrád",
+  "NoGradeYet": "Gan grád fós",
+  "CoursesCompletedFormat": "{0} as {1} chúrsa críochnaithe",
+  "ActiveCoursesHeading": "Cúrsaí gníomhacha",
+  "NoActiveCourses": "Níl aon chúrsaí gníomhacha faoi láthair.",
+  "TopicProgressFormat": "{0}% de na hábhair",
+  "InvalidLinkHeading": "Nasc nach bhfuil ar fáil",
+  "InvalidLinkMessage": "Tá an nasc dul chun cinn seo neamhbhailí, imithe in éag, nó díchumasaithe ag a úinéir.",
+  "TemporaryErrorHeading": "Neamhinfhaighte go sealadach",
+  "TemporaryErrorMessage": "Chuaigh rud éigin mícheart agus an leathanach seo á lódáil. Bain triail eile as i gceann nóiméid.",
+  "GeneratedAtFormat": "Nuashonraithe go deireanach: {0}",
+  "PoweredByLabel": "Comhroinnte trí StudyLife"
+}

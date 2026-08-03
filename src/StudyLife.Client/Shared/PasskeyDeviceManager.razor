@@ -1,0 +1,557 @@
+@using System.Text
+@using System.Text.Json.Nodes
+@using StudyLife.Shared
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+@inject SessionTokenStore TokenStore
+@inject INativeFileExport NativeFiles
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+@* Passkey management, opened via the fourth FAB action button (MainLayout.razor) - same
+   modal structure as PushDeviceManager. Shows the LOGGED-IN user's passkeys (the server
+   filters via the session, GET api/auth/credentials) with rename/remove, plus "add a new
+   passkey" (the session-required register/begin-additional path) and the
+   "lost device" logout. Without a valid session (401) the modal shows a message with a link
+   to the login page instead of an empty list. *@
+
+@if (Open)
+{
+    <div class="modal-overlay" @onclick="CloseAsync">
+        <div class="modal pdm-modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>@T.PasskeysTitle</h3>
+                <button type="button" class="modal-close" @onclick="CloseAsync">✕</button>
+            </div>
+            <div class="modal-body">
+                @if (_loading)
+                {
+                    <p class="ss-desc">@T.PasskeysLoading</p>
+                }
+                else if (_notLoggedIn)
+                {
+                    <p class="ss-desc">@T.PasskeysNotLoggedIn</p>
+                    <a href="/login" class="btn-primary" style="text-align:center;">@T.PasskeysGoToLogin</a>
+                }
+                else if (_error != null)
+                {
+                    <p class="ss-desc" style="color:var(--danger, #e74c3c)">@_error</p>
+                }
+                else
+                {
+                    @if (_info != null)
+                    {
+                        <p class="ss-desc">@_info</p>
+                    }
+                    @if (_devices.Count == 0)
+                    {
+                        <p class="ss-desc">@T.PasskeysEmpty</p>
+                    }
+                    else
+                    {
+                        <div class="pdm-list">
+                            @foreach (var device in _devices)
+                            {
+                                var d = device;
+                                <div class="pdm-row @(d.Pending ? "pdm-row-pending" : "")">
+                                    <div class="pdm-row-main">
+                                        @if (_editingId == d.Id)
+                                        {
+                                            <input class="input" type="text" maxlength="100" @bind="_editLabel" @bind:event="oninput" />
+                                            <div style="display:flex; gap:0.4rem; margin-top:0.3rem;">
+                                                <button type="button" class="btn-primary" @onclick="() => SaveLabelAsync(d)" disabled="@_working">@T.PasskeysSave</button>
+                                                <button type="button" class="btn-secondary" @onclick="() => _editingId = null" disabled="@_working">@T.PasskeysCancel</button>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="pdm-row-label">
+                                                <span>@LabelFor(d)</span>
+                                                @if (d.Pending)
+                                                {
+                                                    <span class="pdm-pending-badge">@T.PasskeysPendingBadge</span>
+                                                }
+                                            </div>
+                                            @if (d.Pending)
+                                            {
+                                                <div class="pdm-row-meta">@T.PasskeysPendingExplanation</div>
+                                            }
+                                            else
+                                            {
+                                                <div class="pdm-row-meta">@string.Format(T.PasskeysCreatedFormat ?? "", d.CreatedAt.ToLocalTime().ToString("d")) · @LastUsedLabel(d)</div>
+                                            }
+                                        }
+                                    </div>
+                                    @if (_editingId != d.Id && d.Pending)
+                                    {
+                                        <div style="display:flex; gap:0.4rem; flex-shrink:0;">
+                                            <button type="button" class="btn-primary" @onclick="() => ApproveAsync(d)" disabled="@_working">@T.PasskeysApprove</button>
+                                            <button type="button" class="btn-danger" @onclick="() => _confirmDeleteDevice = d">@T.PasskeysReject</button>
+                                        </div>
+                                    }
+                                    else if (_editingId != d.Id)
+                                    {
+                                        <div style="display:flex; gap:0.4rem; flex-shrink:0;">
+                                            <button type="button" class="btn-secondary" @onclick="() => StartEdit(d)">@T.PasskeysRename</button>
+                                            <button type="button" class="btn-danger" @onclick="() => _confirmDeleteDevice = d">@T.PasskeysRemove</button>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                    @if (_linkCode != null)
+                    {
+                        <div class="setup-section" style="margin-bottom:0.75rem;">
+                            <p class="ss-desc">@T.LinkNewDeviceInstructions</p>
+                            <p style="font-size:1.4rem; font-weight:600; letter-spacing:0.05em; text-align:center; margin:0.5rem 0;">@_linkCode</p>
+                            <p class="ss-desc" style="text-align:center;">@string.Format(T.LinkNewDeviceExpiresFormat ?? "", _linkCodeExpiresInMinutes)</p>
+                            <button type="button" class="btn-secondary" @onclick="FinishLinkDeviceAsync">@T.LinkNewDeviceDone</button>
+                        </div>
+                    }
+                    <button type="button" class="btn-primary" @onclick="AddPasskeyAsync" disabled="@_working">
+                        @(_working ? "…" : T.PasskeysAdd)
+                    </button>
+                    <button type="button" class="btn-secondary" @onclick="StartLinkDeviceAsync" disabled="@_working">
+                        @T.LinkNewDeviceButton
+                    </button>
+
+                    @* Recovery codes: shown once after generation (only hashes stored on the
+                       server), status below; generation goes through the confirmation modal
+                       below because doing so invalidates any existing codes. *@
+                    @if (_recoveryCodes != null)
+                    {
+                        <div class="setup-section" style="margin-bottom:0.75rem;">
+                            <p class="ss-desc">⚠️ @T.RecoveryCodesOnceHint</p>
+                            <p style="font-family:monospace; text-align:center; line-height:1.8; letter-spacing:0.06em; margin:0.5rem 0;">
+                                @foreach (var recoveryCode in _recoveryCodes)
+                                {
+                                    @recoveryCode<br />
+                                }
+                            </p>
+                            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                                <button type="button" class="btn-secondary" style="flex:1" @onclick="CopyRecoveryCodesAsync">
+                                    @(_recoveryCopied ? T.RecoveryCodesCopied : T.RecoveryCodesCopy)
+                                </button>
+                                <button type="button" class="btn-secondary" style="flex:1" @onclick="DownloadRecoveryCodesAsync">
+                                    @T.RecoveryCodesDownload
+                                </button>
+                                <button type="button" class="btn-secondary" style="flex:1" @onclick="() => _recoveryCodes = null">
+                                    @T.RecoveryCodesDone
+                                </button>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn-secondary" @onclick="() => _confirmRecovery = true" disabled="@_working">
+                            @T.RecoveryCodesButton
+                        </button>
+                        @if (_recoveryStatus is { TotalCount: > 0 })
+                        {
+                            <p class="ss-desc" style="text-align:center; margin:0;">
+                                @string.Format(T.RecoveryCodesStatusFormat ?? "", _recoveryStatus.UnusedCount, _recoveryStatus.TotalCount)
+                            </p>
+                        }
+                    }
+
+                    <button type="button" class="btn-secondary" @onclick="LogoutAsync" disabled="@_working">
+                        @T.PasskeysLogout
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@if (_confirmRecovery)
+{
+    <div class="modal-overlay" @onclick="() => _confirmRecovery = false">
+        <div class="modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>@T.RecoveryCodesConfirmTitle</h3>
+                <button type="button" class="modal-close" @onclick="() => _confirmRecovery = false">✕</button>
+            </div>
+            <div class="modal-body">
+                <p>⚠️ @T.RecoveryCodesConfirmWarning</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" @onclick="() => _confirmRecovery = false" disabled="@_working">
+                    @T.PasskeysCancel
+                </button>
+                <button type="button" class="btn-primary" @onclick="GenerateRecoveryCodesAsync" disabled="@_working">
+                    @(_working ? "…" : T.RecoveryCodesButton)
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_confirmDeleteDevice != null)
+{
+    <div class="modal-overlay" @onclick="() => _confirmDeleteDevice = null">
+        <div class="modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>@T.PasskeysConfirmTitle</h3>
+                <button type="button" class="modal-close" @onclick="() => _confirmDeleteDevice = null">✕</button>
+            </div>
+            <div class="modal-body">
+                <p>⚠️ @string.Format(T.PasskeysConfirmWarning ?? "", LabelFor(_confirmDeleteDevice))</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" @onclick="() => _confirmDeleteDevice = null" disabled="@_working">
+                    @T.PasskeysCancel
+                </button>
+                <button type="button" class="btn-danger" @onclick="ConfirmDeleteAsync" disabled="@_working">
+                    @(_working ? "…" : T.PasskeysRemove)
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private I18nText.AuthText T = new();
+    private bool _wasOpen;
+    private bool _loading;
+    private bool _notLoggedIn;
+    private bool _working;
+    private string? _error;
+    private string? _info;
+    private int? _editingId;
+    private string _editLabel = "";
+    private readonly List<PasskeyListItemDto> _devices = new();
+    private PasskeyListItemDto? _confirmDeleteDevice;
+    private IJSObjectReference? _module;
+    private IJSObjectReference? _downloadModule;
+    private string? _linkCode;
+    private int _linkCodeExpiresInMinutes;
+    private List<string>? _recoveryCodes;
+    private RecoveryStatusDto? _recoveryStatus;
+    private bool _confirmRecovery;
+    private bool _recoveryCopied;
+
+    /// <summary>Generates 8 fresh one-time codes (invalidates any existing ones, see modal) and
+    /// shows the plaintext codes EXACTLY ONCE - the server only stores hashes.</summary>
+    private async Task GenerateRecoveryCodesAsync()
+    {
+        _working = true;
+        _recoveryCopied = false;
+        try
+        {
+            var response = await Http.PostAsync("api/auth/recovery/generate", null);
+            response.EnsureSuccessStatusCode();
+            var dto = await response.Content.ReadFromJsonAsync<RecoveryCodesResponseDto>();
+            _recoveryCodes = dto?.Codes;
+            _confirmRecovery = false;
+            await LoadRecoveryStatusAsync();
+        }
+        catch { _error = T.PasskeysActionFailed; }
+        finally { _working = false; }
+    }
+
+    private async Task LoadRecoveryStatusAsync()
+    {
+        try { _recoveryStatus = await Http.GetFromJsonAsync<RecoveryStatusDto>("api/auth/recovery/status"); }
+        catch { /* status is purely supplementary info */ }
+    }
+
+    private async Task CopyRecoveryCodesAsync()
+    {
+        if (_recoveryCodes == null) return;
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", string.Join("\n", _recoveryCodes));
+            _recoveryCopied = true;
+        }
+        catch { /* Clipboard not available (e.g. http) - codes stay visible to copy by hand */ }
+    }
+
+    /// <summary>
+    /// Save codes as a text file: native app via the system share/save sheet
+    /// (INativeFileExport - there's no download manager in the WebView), browser/PWA via
+    /// the established blob download (same JS module as the backup download).
+    /// </summary>
+    private async Task DownloadRecoveryCodesAsync()
+    {
+        if (_recoveryCodes == null) return;
+        var content = $"StudyLife — {T.RecoveryCodesOnceHint}\n\n{string.Join("\n", _recoveryCodes)}\n";
+        const string fileName = "studylife-recovery-codes.txt";
+        try
+        {
+            if (NativeFiles.IsAvailable)
+            {
+                await NativeFiles.SaveTextAsync(fileName, content);
+                return;
+            }
+            // Separate module field: _module belongs to the WebAuthn module (Login.razor.js) -
+            // a shared ??= could end up grabbing the wrong module depending on call order.
+            _downloadModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Setup/SetupBackupCard.razor.js");
+            await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(content));
+            using var streamRef = new DotNetStreamReference(stream);
+            await _downloadModule.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+        }
+        catch { _error = T.PasskeysActionFailed; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        T = await I18nText.GetTextTableAsync<I18nText.AuthText>(this);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Open && !_wasOpen)
+        {
+            _confirmDeleteDevice = null;
+            _editingId = null;
+            _info = null;
+            _linkCode = null;
+            _recoveryCodes = null;
+            _confirmRecovery = false;
+            await LoadAsync();
+            await LoadRecoveryStatusAsync();
+        }
+        _wasOpen = Open;
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _error = null;
+        _notLoggedIn = false;
+        StateHasChanged();
+        try
+        {
+            var response = await Http.GetAsync("api/auth/credentials");
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                // No (valid) session on this device - SessionHandler deliberately doesn't
+                // discard the token for /api/auth paths, so this case ends up here instead
+                // of an automatic redirect.
+                _notLoggedIn = true;
+                return;
+            }
+            response.EnsureSuccessStatusCode();
+            var devices = await response.Content.ReadFromJsonAsync<List<PasskeyListItemDto>>();
+            _devices.Clear();
+            if (devices != null) _devices.AddRange(devices);
+        }
+        catch
+        {
+            _error = T.PasskeysLoadError;
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void StartEdit(PasskeyListItemDto d)
+    {
+        _editingId = d.Id;
+        _editLabel = d.DeviceLabel ?? "";
+    }
+
+    private async Task SaveLabelAsync(PasskeyListItemDto d)
+    {
+        _working = true;
+        try
+        {
+            var response = await Http.PutAsJsonAsync($"api/auth/credentials/{d.Id}/label",
+                new PasskeyRenameRequestDto { Label = _editLabel.Trim() });
+            if (response.IsSuccessStatusCode)
+            {
+                d.DeviceLabel = string.IsNullOrWhiteSpace(_editLabel) ? null : _editLabel.Trim();
+                _editingId = null;
+            }
+            else
+            {
+                _error = T.PasskeysActionFailed;
+            }
+        }
+        catch
+        {
+            _error = T.PasskeysActionFailed;
+        }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_confirmDeleteDevice == null) return;
+        _working = true;
+        try
+        {
+            var response = await Http.DeleteAsync($"api/auth/credentials/{_confirmDeleteDevice.Id}");
+            if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _devices.RemoveAll(d => d.Id == _confirmDeleteDevice.Id);
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            {
+                // Blocked server-side: removing the last passkey of an account would lock the user out.
+                _error = T.PasskeysLastBlocked;
+            }
+            else
+            {
+                _error = T.PasskeysActionFailed;
+            }
+            _confirmDeleteDevice = null;
+        }
+        catch
+        {
+            _error = T.PasskeysActionFailed;
+            _confirmDeleteDevice = null;
+        }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    private async Task AddPasskeyAsync()
+    {
+        _working = true;
+        _error = null;
+        _info = null;
+        try
+        {
+            _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/Login.razor.js");
+            var begin = await Http.PostAsync("api/auth/register/begin-additional", null);
+            if (!begin.IsSuccessStatusCode) { _error = T.PasskeysActionFailed; return; }
+            var options = await begin.Content.ReadFromJsonAsync<PasskeyBeginResponseDto>();
+            if (options == null) { _error = T.PasskeysActionFailed; return; }
+
+            var attestationJson = await _module.InvokeAsync<string>("createPasskey", options.OptionsJson);
+            var body = new JsonObject
+            {
+                ["optionsId"] = options.OptionsId,
+                ["response"] = JsonNode.Parse(attestationJson),
+            };
+            var complete = await Http.PostAsync("api/auth/register/complete",
+                new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json"));
+            if (!complete.IsSuccessStatusCode) { _error = T.PasskeysActionFailed; return; }
+            // New additional passkeys are ALWAYS "pending" at first (see AuthController.RegisterComplete) -
+            // even from this same, already-logged-in device, so that a stolen/reused session
+            // token alone is never enough to permanently plant one's own credential. A separate
+            // approval (below in the list, "Approve") is therefore always an additional,
+            // deliberate step.
+            _info = T.PasskeysAddedPendingInfo;
+            await LoadAsync();
+        }
+        catch (JSException)
+        {
+            // User cancelled the passkey dialog - no error banner needed.
+        }
+        catch
+        {
+            _error = T.PasskeysActionFailed;
+        }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    /// <summary>
+    /// Generates a short-lived link code for a NEW, not-yet-logged-in device
+    /// (api/auth/link/begin) - an alternative to AddPasskeyAsync when the browser-dependent
+    /// WebAuthn cross-device/hybrid transport isn't available/discoverable. The other device
+    /// enters the code on /link, registers its OWN local passkey there, and ends up
+    /// (just like with AddPasskeyAsync) as PENDING in this list - FinishLinkDeviceAsync therefore
+    /// reloads it as soon as the user closes the code dialog.
+    /// </summary>
+    private async Task StartLinkDeviceAsync()
+    {
+        _working = true;
+        _error = null;
+        _info = null;
+        try
+        {
+            var response = await Http.PostAsync("api/auth/link/begin", null);
+            if (!response.IsSuccessStatusCode) { _error = T.PasskeysActionFailed; return; }
+            var dto = await response.Content.ReadFromJsonAsync<DeviceLinkCodeResponseDto>();
+            if (dto == null) { _error = T.PasskeysActionFailed; return; }
+            _linkCode = dto.Code;
+            _linkCodeExpiresInMinutes = Math.Max(1, dto.ExpiresInSeconds / 60);
+        }
+        catch
+        {
+            _error = T.PasskeysActionFailed;
+        }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    private async Task FinishLinkDeviceAsync()
+    {
+        _linkCode = null;
+        await LoadAsync();
+    }
+
+    private async Task ApproveAsync(PasskeyListItemDto d)
+    {
+        _working = true;
+        _error = null;
+        try
+        {
+            var response = await Http.PostAsync($"api/auth/credentials/{d.Id}/approve", null);
+            if (response.IsSuccessStatusCode) await LoadAsync();
+            else _error = T.PasskeysActionFailed;
+        }
+        catch
+        {
+            _error = T.PasskeysActionFailed;
+        }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    private async Task LogoutAsync()
+    {
+        _working = true;
+        try
+        {
+            await Http.PostAsync("api/auth/logout", null);
+        }
+        catch
+        {
+            // Log out locally even on a network error - the server session then just
+            // expires normally via ExpiresAt.
+        }
+        finally
+        {
+            _working = false;
+        }
+        await TokenStore.ClearAsync();
+        Nav.NavigateTo("/login", forceLoad: true);
+    }
+
+    private async Task CloseAsync()
+    {
+        _confirmDeleteDevice = null;
+        await OnClose.InvokeAsync();
+    }
+
+    private string LabelFor(PasskeyListItemDto d) =>
+        string.IsNullOrWhiteSpace(d.DeviceLabel)
+            ? string.Format(T.PasskeysUnnamedFormat ?? "", _devices.IndexOf(d) + 1)
+            : d.DeviceLabel!;
+
+    private string LastUsedLabel(PasskeyListItemDto d) =>
+        d.LastUsedAt is { } lastUsed
+            ? string.Format(T.PasskeysLastUsedFormat ?? "", lastUsed.ToLocalTime().ToString("d"))
+            : T.PasskeysNeverUsed ?? "";
+}

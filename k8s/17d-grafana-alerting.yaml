@@ -1,0 +1,348 @@
+# Grafana-native alerting instead of a separate Alertmanager - Grafana is already here, file
+# provisioning works exactly like for the dashboards (ConfigMap, no manual UI click needed for
+# rules/routing), no additional cluster component needed.
+#
+# THE TELEGRAM CONTACT POINT ITSELF is deliberately NOT provisioned here (unlike originally
+# attempted) - Grafana's file provisioning has a real bug/limitation: the "$VARIABLE"
+# substitution for secrets in provisioning YAML incorrectly converts purely numeric values
+# (Telegram chat IDs are ALWAYS numeric) into a number during the internal JSON roundtrip, even
+# though the YAML field is quoted ("cannot unmarshal number into Go struct field Config.chatid
+# of type string") - reproduced live multiple times, even with realistic multi-digit IDs, not
+# just with "0". A broken contact point makes Grafana crash IMMEDIATELY on startup
+# (CrashLoopBackOff), so this is not a cosmetic problem.
+#
+# INSTEAD: set up the Telegram contact point AND the default notification policy manually once
+# in the Grafana UI (exactly like the initial Uptime Kuma setup, see k8s/09-uptime-kuma.yaml) -
+# two steps:
+#   1. Alerting -> Contact points -> New contact point -> Integration "Telegram" -> enter Bot
+#      Token + Chat ID -> use the name "telegram" EXACTLY. Create the bot via @BotFather
+#      (provides the token), determine your own chat ID e.g. via @userinfobot.
+#   2. Alerting -> Notification policies -> Default policy -> Edit -> switch "Default contact
+#      point" to "telegram" -> Save.
+# Found live (2nd bug in the same area): a provisioned notification-policies.yaml that
+# references "telegram" also makes Grafana crash on startup, AS LONG AS the contact point
+# doesn't exist yet ("receiver 'telegram' does not exist") - so routing deliberately also
+# remains a manual step instead of file provisioning, until the contact point exists.
+#
+# All alert rules exclusively use metrics already verified live from the existing dashboards
+# (k8s/17b/17c) - no newly invented thresholds without basis. They already fire now (visible
+# under Alerting -> Alert rules), only the notification is still missing.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-alerting
+  namespace: monitoring
+data:
+  rules.yaml: |
+    apiVersion: 1
+    groups:
+      - orgId: 1
+        name: studylife-critical
+        folder: StudyLife Alerts
+        interval: 1m
+        rules:
+          - uid: alert-web-down
+            title: "Web-App nicht erreichbar"
+            condition: C
+            for: 2m
+            data:
+              - refId: A
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: prometheus
+                model: { refId: A, expr: 'min(kube_deployment_status_replicas_available{namespace="studylife-scale",deployment="studylife-web"}) or vector(0)' }
+              - refId: B
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: B, type: reduce, expression: A, reducer: last }
+              - refId: C
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: C, type: threshold, expression: B, conditions: [{ evaluator: { type: lt, params: [1] } }] }
+            labels: { severity: critical }
+            annotations: { summary: "Alle studylife-web-Pods sind down - die App ist für Nutzer nicht erreichbar." }
+          - uid: alert-worker-down
+            title: "Worker nicht aktiv (Reminder/Report-Tick läuft nicht)"
+            condition: C
+            for: 2m
+            data:
+              - refId: A
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: prometheus
+                model: { refId: A, expr: 'min(kube_deployment_status_replicas_available{namespace="studylife-scale",deployment="studylife-worker"}) or vector(0)' }
+              - refId: B
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: B, type: reduce, expression: A, reducer: last }
+              - refId: C
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: C, type: threshold, expression: B, conditions: [{ evaluator: { type: lt, params: [1] } }] }
+            labels: { severity: warning }
+            annotations: { summary: "Kein studylife-worker-Pod läuft - Reminder/Report-Erstellung findet nicht statt." }
+          - uid: alert-cnpg-degraded
+            title: "Datenbank-Cluster degradiert (weniger als 2 von 3 CNPG-Instanzen online)"
+            condition: C
+            for: 3m
+            data:
+              - refId: A
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: prometheus
+                model: { refId: A, expr: 'count(up{job="cnpg"} == 1) or vector(0)' }
+              - refId: B
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: B, type: reduce, expression: A, reducer: last }
+              - refId: C
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: C, type: threshold, expression: B, conditions: [{ evaluator: { type: lt, params: [2] } }] }
+            labels: { severity: critical }
+            annotations: { summary: "Weniger als 2 CNPG-Instanzen online - bei einem weiteren Ausfall droht Downtime." }
+          - uid: alert-redis-degraded
+            title: "Redis-Cluster degradiert (weniger als 5 von 6 Knoten online)"
+            condition: C
+            for: 3m
+            data:
+              - refId: A
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: prometheus
+                model: { refId: A, expr: 'count(up{job="redis"} == 1) or vector(0)' }
+              - refId: B
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: B, type: reduce, expression: A, reducer: last }
+              - refId: C
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: C, type: threshold, expression: B, conditions: [{ evaluator: { type: lt, params: [5] } }] }
+            labels: { severity: warning }
+            annotations: { summary: "Weniger als 5 Redis-Knoten online - Cache-Redundanz eingeschränkt." }
+          - uid: alert-ingress-down
+            title: "Keine NGINX-Gateway-Fabric-Datenebene online"
+            condition: C
+            for: 2m
+            data:
+              - refId: A
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: prometheus
+                # component=studylife-gateway-nginx is the actual data plane (serves traffic) -
+                # component=nginx-gateway is only the control plane, whose failure doesn't
+                # immediately interrupt existing connections, see k8s/14-prometheus.yaml.
+                model: { refId: A, expr: 'count(up{job="nginx-gateway-fabric",component="studylife-gateway-nginx"} == 1) or vector(0)' }
+              - refId: B
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: B, type: reduce, expression: A, reducer: last }
+              - refId: C
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: C, type: threshold, expression: B, conditions: [{ evaluator: { type: lt, params: [1] } }] }
+            labels: { severity: critical }
+            annotations: { summary: "Keine NGINX-Gateway-Fabric-Datenebene erreichbar - der komplette Cluster ist von außen nicht erreichbar." }
+          - uid: alert-npm-down
+            title: "NPM (externer Reverse-Proxy) auf mindestens einem Pi down"
+            condition: C
+            for: 2m
+            data:
+              - refId: A
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: prometheus
+                model: { refId: A, expr: 'count(nginx_up == 1) or vector(0)' }
+              - refId: B
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: B, type: reduce, expression: A, reducer: last }
+              - refId: C
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: C, type: threshold, expression: B, conditions: [{ evaluator: { type: lt, params: [2] } }] }
+            labels: { severity: warning }
+            annotations: { summary: "NPM läuft nicht mehr auf beiden Pis - die HA-Redundanz des externen Reverse-Proxys ist weg." }
+          - uid: alert-flux-errors
+            title: "Flux-Reconcile-Fehler anhaltend"
+            condition: C
+            for: 10m
+            data:
+              - refId: A
+                relativeTimeRange: { from: 600, to: 0 }
+                datasourceUid: prometheus
+                model: { refId: A, expr: 'sum(rate(controller_runtime_reconcile_total{result="error"}[10m])) or vector(0)' }
+              - refId: B
+                relativeTimeRange: { from: 600, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: B, type: reduce, expression: A, reducer: last }
+              - refId: C
+                relativeTimeRange: { from: 600, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: C, type: threshold, expression: B, conditions: [{ evaluator: { type: gt, params: [0] } }] }
+            labels: { severity: warning }
+            annotations: { summary: "Flux meldet seit mindestens 10 Minuten anhaltend Reconcile-Fehler - GitOps-Auto-Deploy funktioniert möglicherweise nicht." }
+          # certmanager_certificate_expiration_timestamp_seconds (new cert-manager scrape job,
+          # k8s/14-prometheus.yaml) - without this alert, a silent certificate expiry would make
+          # several services (studylife-web, Grafana, Uptime Kuma, piwatch, ...) unreachable all
+          # at once before anyone notices. 7-day lead time, since cert-manager itself only
+          # attempts renewal 30 days before expiry (renewBefore default) - less than 7 days of
+          # remaining lifetime means: automatic renewal is already overdue and hasn't
+          # succeeded (yet).
+          - uid: alert-cert-expiring
+            title: "Zertifikat läuft in weniger als 7 Tagen ab"
+            condition: C
+            for: 15m
+            data:
+              - refId: A
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: prometheus
+                model: { refId: A, expr: '(min(certmanager_certificate_expiration_timestamp_seconds) - time()) / 86400' }
+              - refId: B
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: B, type: reduce, expression: A, reducer: last }
+              - refId: C
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: C, type: threshold, expression: B, conditions: [{ evaluator: { type: lt, params: [7] } }] }
+            labels: { severity: warning }
+            annotations: { summary: "Mindestens ein cert-manager-Zertifikat läuft in weniger als 7 Tagen ab - die automatische Erneuerung (30 Tage vorher) haette schon laengst greifen sollen." }
+          # From here on: 7 new rules from the previously unused CNPG exporter metrics +
+          # Redis/node disk/piwatch. NOT added: a "no successful backup for X hours" alert -
+          # verified live, cnpg_collector_last_available_backup_timestamp is permanently stuck
+          # at 0 for us (presumably a limitation of the classic barmanObjectStore path, see the
+          # Barman Cloud deprecation note above, not of the newer plugin backup path) and
+          # cnpg_collector_last_failed_backup_timestamp shows a long-superseded one-off failure
+          # (~16h old), even though the actual ScheduledBackup has long since run cleanly again
+          # according to "kubectl get backup" - an alert on this metric would fire incorrectly
+          # and permanently from day 1. Until a more reliable metric exists, backup success
+          # remains a manual/quarterly check (see "Postgres backups to Cloudflare R2").
+          - uid: alert-cnpg-replication-lag
+            title: "Postgres-Replication-Lag zu hoch"
+            condition: C
+            for: 3m
+            data:
+              - refId: A
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: prometheus
+                model: { refId: A, expr: 'max(cnpg_pg_replication_lag) or vector(0)' }
+              - refId: B
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: B, type: reduce, expression: A, reducer: last }
+              - refId: C
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: C, type: threshold, expression: B, conditions: [{ evaluator: { type: gt, params: [60] } }] }
+            labels: { severity: warning }
+            annotations: { summary: "Mindestens eine CNPG-Replica haengt mehr als 60 Sekunden hinter dem Primary - bei einem Failover droht in dem Umfang Datenverlust." }
+          - uid: alert-cnpg-wal-archive-failed
+            title: "Postgres WAL-Archivierung schlaegt gerade fehl"
+            condition: C
+            for: 2m
+            data:
+              - refId: A
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: prometheus
+                model: { refId: A, expr: 'min(cnpg_pg_stat_archiver_seconds_since_last_failure)' }
+              - refId: B
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: B, type: reduce, expression: A, reducer: last }
+              - refId: C
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: C, type: threshold, expression: B, conditions: [{ evaluator: { type: lt, params: [300] } }] }
+            labels: { severity: critical }
+            annotations: { summary: "Ein WAL-Segment konnte in den letzten 5 Minuten nicht archiviert werden - ohne Fix droht ein wachsender Rueckstand und im Extremfall ein volles Storage-Volume." }
+          - uid: alert-cnpg-xid-wraparound
+            title: "Postgres Transaction-ID-Wraparound-Risiko"
+            condition: C
+            for: 10m
+            data:
+              - refId: A
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: prometheus
+                model: { refId: A, expr: 'max(cnpg_pg_database_xid_age) or vector(0)' }
+              - refId: B
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: B, type: reduce, expression: A, reducer: last }
+              - refId: C
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: C, type: threshold, expression: B, conditions: [{ evaluator: { type: gt, params: [150000000] } }] }
+            labels: { severity: warning }
+            annotations: { summary: "Mindestens eine Datenbank naehert sich dem Transaction-ID-Wraparound (autovacuum_freeze_max_age-Default liegt bei 200 Mio.) - Autovacuum pruefen, sonst droht ein DB-weiter Schreibstopp." }
+          - uid: alert-cnpg-manual-intervention
+            title: "Postgres braucht manuellen Eingriff (Switchover/Fencing)"
+            condition: C
+            for: 1m
+            data:
+              - refId: A
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: prometheus
+                model: { refId: A, expr: '(max(cnpg_collector_manual_switchover_required) or vector(0)) + (max(cnpg_collector_fencing_on) or vector(0))' }
+              - refId: B
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: B, type: reduce, expression: A, reducer: last }
+              - refId: C
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: C, type: threshold, expression: B, conditions: [{ evaluator: { type: gt, params: [0] } }] }
+            labels: { severity: critical }
+            annotations: { summary: "CNPG meldet einen manuellen Switchover-Bedarf oder eine gefencte Instanz - der Operator kann das Problem nicht mehr automatisch loesen." }
+          - uid: alert-redis-memory-pressure
+            title: "Redis-Speicher nahe maxmemory"
+            condition: C
+            for: 5m
+            data:
+              - refId: A
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: prometheus
+                model: { refId: A, expr: '(max(redis_memory_used_bytes) / 100663296) * 100 or vector(0)' }
+              - refId: B
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: B, type: reduce, expression: A, reducer: last }
+              - refId: C
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: C, type: threshold, expression: B, conditions: [{ evaluator: { type: gt, params: [85] } }] }
+            labels: { severity: warning }
+            annotations: { summary: "Mindestens ein Redis-Knoten nutzt ueber 85% seines maxmemory-Limits (96MB) - Eviction unter allkeys-lru laeuft, Cache-Trefferquote koennte sinken." }
+          - uid: alert-node-disk-low
+            title: "Wenig Speicherplatz auf mindestens einem Pi"
+            condition: C
+            for: 10m
+            data:
+              - refId: A
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: prometheus
+                model: { refId: A, expr: 'min((node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100)' }
+              - refId: B
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: B, type: reduce, expression: A, reducer: last }
+              - refId: C
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: C, type: threshold, expression: B, conditions: [{ evaluator: { type: lt, params: [15] } }] }
+            labels: { severity: warning }
+            annotations: { summary: "Mindestens ein Pi hat weniger als 15% freien Speicherplatz auf der SD-Karte/dem Root-Dateisystem." }
+          - uid: alert-piwatch-down
+            title: "piwatch nicht erreichbar"
+            condition: C
+            for: 2m
+            data:
+              - refId: A
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: prometheus
+                model: { refId: A, expr: 'min(kube_deployment_status_replicas_available{namespace="monitoring",deployment="piwatch"}) or vector(0)' }
+              - refId: B
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: B, type: reduce, expression: A, reducer: last }
+              - refId: C
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: C, type: threshold, expression: B, conditions: [{ evaluator: { type: lt, params: [1] } }] }
+            labels: { severity: warning }
+            annotations: { summary: "Kein piwatch-Pod laeuft mehr - das K8s-Live-Dashboard ist nicht erreichbar (Uptime Kuma/Grafana/Postgres/Redis selbst sind davon unabhaengig)." }

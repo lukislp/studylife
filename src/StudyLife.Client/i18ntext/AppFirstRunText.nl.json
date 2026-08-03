@@ -1,0 +1,10 @@
+{
+  "Description": "Met welke StudyLife-server moet deze app verbinding maken?",
+  "ServerUrlLabel": "Server-URL",
+  "CheckingConnection": "Verbinding controleren…",
+  "UseAnyway": "Toch gebruiken",
+  "Connect": "Verbinden",
+  "InvalidUrl": "Dat is geen geldige URL.",
+  "UnexpectedResponse": "De server heeft gereageerd, maar onverwacht (HTTP {0}). Tik nogmaals om hem toch te gebruiken.",
+  "ServerUnreachable": "Server niet bereikbaar. Tik nogmaals om de URL toch te gebruiken."
+}

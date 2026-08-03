@@ -1,0 +1,45 @@
+@using StudyLife.Client.Models
+
+<div class="dash-card card-today">
+    <div class="card-label">@Label</div>
+    @if (Sessions.Any())
+    {
+        @foreach (var s in Sessions)
+        {
+            <div class="session-row @(IsDone(s) ? "done" : IsActive(s) ? "active" : "upcoming")" style="--c: @s.CourseColor">
+                <div class="sr-dot"></div>
+                <div class="sr-info">
+                    <div class="sr-time">
+                        @s.StartTime.ToString("HH:mm") – @s.EndTime.ToString("HH:mm")
+                        @if (s.RecurrenceGroupId != null)
+                        {
+                            <span class="sr-recurring" title="@RecurringHint">🔁</span>
+                        }
+                    </div>
+                    <div class="sr-name">@s.CourseName</div>
+                    @if (!string.IsNullOrEmpty(s.Topic))
+                    {
+                        <div class="sr-topic">@s.Topic</div>
+                    }
+                </div>
+                <div class="sr-status">@(IsDone(s) ? "✓" : IsActive(s) ? "▶" : "")</div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="empty-state">@EmptyText<br /><a href="/calendar">@AddLinkText</a></div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public List<StudySession> Sessions { get; set; } = new();
+    [Parameter] public string RecurringHint { get; set; } = "";
+    [Parameter] public string EmptyText { get; set; } = "";
+    [Parameter] public string AddLinkText { get; set; } = "";
+
+    private bool IsActive(StudySession s) => s.StartTime <= DateTime.Now && s.EndTime >= DateTime.Now;
+
+    private bool IsDone(StudySession s) => s.IsCompleted || s.EndTime <= DateTime.Now;
+}

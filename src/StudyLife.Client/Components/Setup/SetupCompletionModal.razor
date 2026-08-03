@@ -1,0 +1,44 @@
+<div class="modal-overlay" @onclick="() => OnSkip.InvokeAsync()">
+    <div class="modal" @onclick:stopPropagation="true">
+        <div class="modal-header">
+            <h3>@string.Format(TitleFormat, CourseName)</h3>
+            <button class="modal-close" @onclick="() => OnSkip.InvokeAsync()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="field">
+                <label>@GradeOptionalLabel</label>
+                <input type="number" class="input input-sm" step="0.1" min="1" max="5"
+                       placeholder="@GradePlaceholder" value="@GradeDraft"
+                       @onchange="e => GradeDraftChanged.InvokeAsync(decimal.TryParse(e.Value?.ToString(), out var v) ? v : (decimal?)null)" />
+            </div>
+            <div class="field">
+                <label>@CompletionNoteLabel</label>
+                <textarea class="input note-textarea"
+                          placeholder="@CompletionNotePlaceholder"
+                          value="@NoteDraft"
+                          @oninput='e => NoteDraftChanged.InvokeAsync(e.Value?.ToString() ?? "")'></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" @onclick="() => OnSkip.InvokeAsync()">@SkipButtonText</button>
+            <button class="btn-primary" @onclick="() => OnSave.InvokeAsync()">@SaveButtonText</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string CourseName { get; set; } = "";
+    [Parameter] public string TitleFormat { get; set; } = "";
+    [Parameter] public string GradeOptionalLabel { get; set; } = "";
+    [Parameter] public string GradePlaceholder { get; set; } = "";
+    [Parameter] public string CompletionNoteLabel { get; set; } = "";
+    [Parameter] public string CompletionNotePlaceholder { get; set; } = "";
+    [Parameter] public string SkipButtonText { get; set; } = "";
+    [Parameter] public string SaveButtonText { get; set; } = "";
+    [Parameter] public decimal? GradeDraft { get; set; }
+    [Parameter] public EventCallback<decimal?> GradeDraftChanged { get; set; }
+    [Parameter] public string NoteDraft { get; set; } = "";
+    [Parameter] public EventCallback<string> NoteDraftChanged { get; set; }
+    [Parameter] public EventCallback OnSkip { get; set; }
+    [Parameter] public EventCallback OnSave { get; set; }
+}

@@ -1,0 +1,18 @@
+{
+  "Heading": "План на неделю",
+  "Subtitle": "Пригодный для печати обзор запланированных на эту неделю учебных сессий — распечатай и повесь на стену.",
+  "BackLink": "← Назад к календарю",
+  "ExportButton": "🖨 Распечатать план на неделю",
+  "WeekRangeFormat": "Неделя: {0} – {1}",
+  "GeneratedOnFormat": "Создано {0}",
+  "SummaryHeading": "Сводка",
+  "PlannedHoursLabel": "Запланированные часы на этой неделе",
+  "WeeklyGoalLabel": "Недельная цель",
+  "WeeklyGoalFormat": "{0}–{1} h",
+  "SessionCountLabel": "Запланированные сессии",
+  "NoSessions": "На этот день сессии не запланированы.",
+  "TableTime": "Время",
+  "TableCourse": "Курс",
+  "TableTopic": "Тема",
+  "FooterNote": "Автоматически создано StudyLife."
+}

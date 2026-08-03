@@ -1,0 +1,18 @@
+{
+  "Heading": "Veckoplan",
+  "Subtitle": "En utskriftsvänlig översikt över dina planerade studiepass den här veckan — skriv ut den och sätt upp den på väggen.",
+  "BackLink": "← Tillbaka till kalendern",
+  "ExportButton": "🖨 Skriv ut veckoplan",
+  "WeekRangeFormat": "Vecka: {0} – {1}",
+  "GeneratedOnFormat": "Skapad {0}",
+  "SummaryHeading": "Sammanfattning",
+  "PlannedHoursLabel": "Planerade timmar den här veckan",
+  "WeeklyGoalLabel": "Veckomål",
+  "WeeklyGoalFormat": "{0}–{1} h",
+  "SessionCountLabel": "Planerade pass",
+  "NoSessions": "Inga pass planerade för den här dagen.",
+  "TableTime": "Tid",
+  "TableCourse": "Kurs",
+  "TableTopic": "Ämne",
+  "FooterNote": "Genererad automatiskt av StudyLife."
+}

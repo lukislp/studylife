@@ -1,0 +1,10 @@
+{
+  "Description": "S katerim strežnikom StudyLife naj se poveže ta aplikacija?",
+  "ServerUrlLabel": "URL naslov strežnika",
+  "CheckingConnection": "Preverjanje povezave…",
+  "UseAnyway": "Vseeno uporabi",
+  "Connect": "Poveži",
+  "InvalidUrl": "To ni veljaven URL.",
+  "UnexpectedResponse": "Strežnik je odgovoril, vendar nepričakovano (HTTP {0}). Dotaknite se znova, da ga vseeno uporabite.",
+  "ServerUnreachable": "Strežnik ni dosegljiv. Dotaknite se znova, da vseeno uporabite ta URL."
+}

@@ -1,0 +1,26 @@
+<div class="dash-card card-neglect">
+    <div class="card-label">@Label</div>
+    @if (Course != null)
+    {
+        <div class="next-course" style="--c: @Course.Color">
+            <div class="nc-icon">@Course.Icon</div>
+            <div class="nc-info">
+                <div class="nc-name">@Course.Name</div>
+                <div class="nc-time">@Hint</div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">@EmptyText</div>
+    }
+</div>
+
+@code {
+    public record NeglectedCourse(string Name, string Icon, string Color);
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public NeglectedCourse? Course { get; set; }
+    [Parameter] public string Hint { get; set; } = "";
+    [Parameter] public string EmptyText { get; set; } = "";
+}

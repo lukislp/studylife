@@ -1,0 +1,86 @@
+/* === Print (Calendar week export) === */
+@media print {
+    .sidebar,
+    .fab-dial,
+    .cal-filter-row,
+    .no-print,
+    #blazor-error-ui {
+        display: none !important;
+    }
+
+    .main-content,
+    .app-shell.page-calendar .main-content,
+    .cal-outer,
+    .cal-inner {
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    .calendar-page { overflow: visible; }
+
+    .cal-header h2 {
+        display: block;
+        flex: none;
+    }
+
+    .cal-scroll-body { overflow: visible !important; }
+}
+
+/* === Print (Study Report export, Report.razor) === */
+@media print {
+    /* :has() is now widely supported (Chrome/Firefox/Safari/Edge) - this keeps the
+       height:auto/overflow:visible rule scoped to the report without MainLayout.razor
+       needing its own "page-report" shell class for it (see UpdateCurrentPage there, which
+       doesn't know the route - deliberately left untouched, other agents are working on it in parallel). */
+    .main-content:has(.report-page),
+    .report-page {
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    /* Black on white instead of the dark-theme variables - otherwise light text on paper
+       would be practically unreadable as soon as the browser omits background colors when printing. */
+    .report-page,
+    .report-page * {
+        color: #000 !important;
+        background: transparent !important;
+    }
+
+    /* Without this, body { background: var(--bg) } stays active (see base.css) - in dark mode
+       that's nearly black, and since .report-page is set to transparent above, that dark
+       body background shows through: black text on nearly-black paper = looks like a
+       blank black sheet. In light mode --bg happens to be light enough that it went unnoticed. */
+    body:has(.report-page) { background: #fff !important; }
+
+    .report-doc {
+        border: none;
+        padding: 0;
+        max-width: none;
+    }
+
+    .report-section { break-inside: avoid; page-break-inside: avoid; }
+    .report-table tr { break-inside: avoid; }
+}
+
+/* === Print (Notes PDF export, Notes.razor) === */
+@media print {
+    /* Same :has() technique as for the report: Notes.razor stays a normal page in
+       MainLayout.razor without that having to be touched for this. */
+    .main-content:has(.notes-print-doc) {
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    /* Black on white instead of dark-theme variables - see the report rule above. */
+    .notes-print-doc,
+    .notes-print-doc * {
+        color: #000 !important;
+        background: transparent !important;
+    }
+
+    /* Same blank-black-sheet bug in dark mode as for the report above - same fix. */
+    body:has(.notes-print-doc) { background: #fff !important; }
+
+    /* A single note shouldn't split across a page boundary in the middle of its text. */
+    .notes-print-card { break-inside: avoid; page-break-inside: avoid; }
+}

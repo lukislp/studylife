@@ -1,0 +1,10 @@
+{
+  "Description": "Ke kterému serveru StudyLife se má tato aplikace připojit?",
+  "ServerUrlLabel": "URL adresa serveru",
+  "CheckingConnection": "Kontrola připojení…",
+  "UseAnyway": "Přesto použít",
+  "Connect": "Připojit",
+  "InvalidUrl": "To není platná URL adresa.",
+  "UnexpectedResponse": "Server odpověděl, ale neočekávaně (HTTP {0}). Klepněte znovu pro potvrzení.",
+  "ServerUnreachable": "Server je nedostupný. Klepněte znovu pro použití této adresy URL i tak."
+}

@@ -1,0 +1,19 @@
+{
+  "PageTitleTag": "StudyLife — Edenemine",
+  "Heading": "Õpingute edenemine",
+  "SubHeading": "Jagatud, ainult vaatamiseks mõeldud hetkeseis — uueneb automaatselt.",
+  "EctsLabel": "Kogutud ECTS",
+  "EctsFormat": "{0} / {1} ECTS",
+  "AverageGradeLabel": "Keskmine hinne",
+  "NoGradeYet": "Hindeid veel pole",
+  "CoursesCompletedFormat": "{0} kursust {1}-st lõpetatud",
+  "ActiveCoursesHeading": "Aktiivsed kursused",
+  "NoActiveCourses": "Hetkel aktiivseid kursusi pole.",
+  "TopicProgressFormat": "{0}% teemadest",
+  "InvalidLinkHeading": "Link pole saadaval",
+  "InvalidLinkMessage": "See edenemise link on kehtetu, aegunud või omaniku poolt keelatud.",
+  "TemporaryErrorHeading": "Ajutiselt pole saadaval",
+  "TemporaryErrorMessage": "Selle lehe laadimisel läks midagi valesti. Palun proovi natukese aja pärast uuesti.",
+  "GeneratedAtFormat": "Viimati uuendatud: {0}",
+  "PoweredByLabel": "Jagatud StudyLife'i kaudu"
+}

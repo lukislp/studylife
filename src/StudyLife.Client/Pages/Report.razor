@@ -1,0 +1,108 @@
+@page "/report"
+@using StudyLife.Client.Components.Stats
+@using StudyLife.Client.Services
+@using StudyLife.Shared
+@inject AppStateService State
+@inject HttpClient Http
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+@inject IJSRuntime JS
+
+<PageTitle>StudyLife — @T.Report</PageTitle>
+
+<div class="setup-page report-page">
+    <div class="setup-header no-print">
+        <h1>@T.Report</h1>
+        <p>@T.Subtitle</p>
+        <div class="report-actions">
+            <a class="btn-secondary" href="/auswertung">@T.BackLink</a>
+            <button class="btn-primary" @onclick="Print">@T.ExportButton</button>
+        </div>
+    </div>
+
+    @if (_loaded)
+    {
+        <div class="report-doc">
+            <div class="report-doc-head">
+                <h1 class="report-title">@T.Report</h1>
+                @if (!string.IsNullOrWhiteSpace(_programmeName))
+                {
+                    <div class="report-meta">@_programmeName</div>
+                }
+                <div class="report-meta">@string.Format(T.GeneratedOnFormat ?? "", _generatedAt.ToString("dd.MM.yyyy HH:mm"))</div>
+                <div class="report-meta">
+                    @if (_periodStart.HasValue && _periodEnd.HasValue)
+                    {
+                        @string.Format(T.PeriodFormat ?? "", _periodStart.Value.ToString("dd.MM.yyyy"), _periodEnd.Value.ToString("dd.MM.yyyy"))
+                    }
+                    else
+                    {
+                        @T.PeriodEmpty
+                    }
+                </div>
+            </div>
+
+            <div class="report-section">
+                <h2>@T.SummaryHeading</h2>
+                <table class="report-table report-summary-table">
+                    <tbody>
+                        <tr><th>@T.TotalHoursLabel</th><td>@_totalHoursLabel</td></tr>
+                        <tr><th>@T.TotalSessionsLabel</th><td>@_totalSessions</td></tr>
+                        <tr><th>@T.CoursesStudiedLabel</th><td>@_courseRows.Count</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="report-section">
+                <h2>@T.EctsHeading</h2>
+                <table class="report-table report-summary-table">
+                    <tbody>
+                        <tr><th>@T.TableEcts</th><td>@string.Format(T.EctsProgressFormat ?? "", _ectsEarned, _ectsTotal, _ectsPercent.ToString("0"))</td></tr>
+                        <tr><th>@T.AverageGradeLabel</th><td>@(_averageGradeLabel ?? T.AverageGradeEmpty)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="report-section">
+                <h2>@T.CourseBreakdownHeading</h2>
+                @if (_courseRows.Count == 0)
+                {
+                    <p>@T.NoCourses</p>
+                }
+                else
+                {
+                    <div class="report-table-wrap">
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th>@T.TableCourse</th>
+                                    <th>@T.TableSemester</th>
+                                    <th>@T.TableEcts</th>
+                                    <th>@T.TableHours</th>
+                                    <th>@T.TableSessions</th>
+                                    <th>@T.TableGrade</th>
+                                    <th>@T.TableStatus</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in _courseRows)
+                                {
+                                    <tr>
+                                        <td>@row.Course.Icon @row.Course.Name</td>
+                                        <td>@row.Course.Semester</td>
+                                        <td>@row.Course.Ects</td>
+                                        <td>@row.HoursLabel</td>
+                                        <td>@row.SessionCount</td>
+                                        <td>@(row.Grade.HasValue ? row.GradeLabel : "–")</td>
+                                        <td>@StatusFor(row)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+
+            <div class="report-footer">@T.FooterNote</div>
+        </div>
+    }
+</div>

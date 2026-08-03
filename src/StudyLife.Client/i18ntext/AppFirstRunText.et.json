@@ -1,0 +1,10 @@
+{
+  "Description": "Millise StudyLife serveriga peaks see rakendus ühenduse looma?",
+  "ServerUrlLabel": "Serveri URL",
+  "CheckingConnection": "Kontrollime ühendust…",
+  "UseAnyway": "Kasuta ikkagi",
+  "Connect": "Ühenda",
+  "InvalidUrl": "See ei ole kehtiv URL.",
+  "UnexpectedResponse": "Server vastas, kuid ootamatult (HTTP {0}). Puuduta uuesti, et seda ikkagi kasutada.",
+  "ServerUnreachable": "Server ei ole kättesaadav. Puuduta uuesti, et URL ikkagi kasutusele võtta."
+}

@@ -1,0 +1,235 @@
+@inject HttpClient Http
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+@* Restore counterpart to SetupBackupCard: uploads a previously downloaded .db backup
+   (POST /api/backup/restore). A destructive action from the user's perspective (replaces
+   ALL data on the next server restart), hence the two-step confirmation via the established
+   modal pattern (.modal-overlay/.modal/.modal-footer, same as the program deletion confirmation
+   in Setup.razor) instead of a native confirm(). Self-contained component modeled after
+   AddStudyProgramModal: its own SetupText table + its own HttpClient, Setup.razor just wires
+   it in. The server only applies the restore on the next restart - so the card also shows the
+   pending state (GET /api/backup/restore/status) after a page reload. *@
+
+@* On Postgres (api/system/capabilities: rawBackupSupported=false), Setup.razor doesn't wire
+   the card in at all - raw restore is server-side 501 there, backups run externally. *@
+<div class="setup-section">
+    <div class="ss-label">@T.RestoreHeading</div>
+    <p class="ss-desc">@T.RestoreDesc</p>
+
+    @if (_pending)
+    {
+        <p class="ss-desc" style="color:var(--warning, #e6a23c);font-weight:600">⚠️ @T.RestorePendingBanner</p>
+        @if (_staged)
+        {
+            <p class="ss-desc">@T.RestoreStagedMessage</p>
+        }
+        @if (_restarting)
+        {
+            <p class="ss-desc">@T.RestoreRestartingMessage</p>
+        }
+        else
+        {
+            <div class="toggle-row" style="gap:0.75rem;flex-wrap:wrap">
+                <button type="button" class="btn-danger" @onclick="RestartNow">@T.RestoreRestartNowButton</button>
+                <button type="button" class="btn-secondary" @onclick="CancelStaged">@T.RestoreCancelStagedButton</button>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="toggle-row" style="gap:0.75rem;flex-wrap:wrap;align-items:center">
+            <InputFile OnChange="OnFileSelected" accept=".db" disabled="@_uploading" />
+            <button type="button" class="btn-danger" disabled="@(_selectedFile == null || _uploading)"
+                    @onclick="() => _confirming = true">
+                @T.RestoreUploadButton
+            </button>
+        </div>
+    }
+
+    @if (_error != null)
+    {
+        <p class="ss-desc" style="color:var(--danger, #e74c3c)">@_error</p>
+    }
+</div>
+
+@if (_confirming && _selectedFile != null)
+{
+    <div class="modal-overlay" @onclick="CloseConfirmModal">
+        <div class="modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>@T.RestoreConfirmTitle</h3>
+                <button type="button" class="modal-close" @onclick="CloseConfirmModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <p>⚠️ @string.Format(T.RestoreConfirmWarning ?? "", _selectedFile.Name)</p>
+                @* Reactive second step: the password field only appears after the server has
+                   reported this upload as encrypted via encrypted:true - most restores are
+                   unencrypted and never need to see it. *@
+                @if (_needsPassword)
+                {
+                    <p class="ss-desc" style="color:var(--warning, #e6a23c)">@T.RestoreEncryptedPrompt</p>
+                    <input class="input" type="password" placeholder="@T.RestorePasswordPlaceholder"
+                           @bind="_password" @bind:event="oninput" disabled="@_uploading" />
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" @onclick="CloseConfirmModal" disabled="@_uploading">
+                    @T.RestoreConfirmCancel
+                </button>
+                <button type="button" class="btn-danger" @onclick="ConfirmRestore" disabled="@_uploading">
+                    @(_uploading ? "…" : (_needsPassword ? T.RestoreUnlockButton : T.RestoreConfirmYes))
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private I18nText.SetupText T = new();
+
+    private IBrowserFile? _selectedFile;
+    private bool _confirming;
+    private bool _uploading;
+    private bool _pending;    // Server has a restore staged (visible even after reload)
+    private bool _staged;     // Staging happened in THIS session → show detailed instructions
+    private bool _restarting;
+    private string? _error;
+
+    // Encrypted backups (SetupBackupCard download with password): the server only detects
+    // this on upload (magic header) and reports it via encrypted:true in the 400 response -
+    // hence reactive instead of showing a password field upfront that most people never need.
+    private bool _needsPassword;
+    private string _password = "";
+
+    // 512 MB, matching the endpoint's RequestSizeLimit.
+    private const long MaxUploadBytes = 512L * 1024 * 1024;
+
+    protected override async Task OnInitializedAsync()
+    {
+        T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
+        try
+        {
+            var status = await Http.GetFromJsonAsync<RestoreStatusResponse>("api/backup/restore/status");
+            _pending = status?.Pending ?? false;
+        }
+        catch { /* offline/error: card still works, just without the pending banner */ }
+    }
+
+    private void OnFileSelected(InputFileChangeEventArgs e)
+    {
+        _selectedFile = e.File;
+        _error = null;
+        _needsPassword = false;
+        _password = "";
+    }
+
+    private void CloseConfirmModal()
+    {
+        _confirming = false;
+        _needsPassword = false;
+        _password = "";
+    }
+
+    private async Task ConfirmRestore()
+    {
+        if (_selectedFile == null) return;
+        _uploading = true;
+        _error = null;
+        try
+        {
+            using var content = new MultipartFormDataContent();
+            var fileContent = new StreamContent(_selectedFile.OpenReadStream(MaxUploadBytes));
+            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+            content.Add(fileContent, "file", _selectedFile.Name);
+            if (!string.IsNullOrEmpty(_password))
+                content.Add(new StringContent(_password), "password");
+
+            var response = await Http.PostAsync("api/backup/restore", content);
+            if (response.IsSuccessStatusCode)
+            {
+                _pending = true;
+                _staged = true;
+                _confirming = false;
+                _selectedFile = null;
+                _needsPassword = false;
+                _password = "";
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest
+                     && await TryReadEncryptedFlag(response))
+            {
+                // Server detected the magic header: either this is the first attempt without
+                // a password, or the password just entered was wrong. Modal stays open -
+                // reactive second step instead of showing the generic error message.
+                var hadPassword = !string.IsNullOrEmpty(_password);
+                _needsPassword = true;
+                _error = hadPassword ? T.RestoreErrorWrongPassword : null;
+            }
+            else
+            {
+                // 400 without encrypted:true = validation rejected (not SQLite / corrupt / wrong schema).
+                _confirming = false;
+                _error = T.RestoreErrorInvalidFile;
+            }
+        }
+        catch
+        {
+            _confirming = false;
+            _error = T.RestoreErrorUploadFailed;
+        }
+        finally
+        {
+            _uploading = false;
+        }
+    }
+
+    private static async Task<bool> TryReadEncryptedFlag(HttpResponseMessage response)
+    {
+        try
+        {
+            var body = await response.Content.ReadFromJsonAsync<RestoreErrorResponse>();
+            return body?.Encrypted == true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private async Task CancelStaged()
+    {
+        try
+        {
+            var response = await Http.PostAsync("api/backup/restore/cancel", null);
+            if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _pending = false;
+                _staged = false;
+                _error = null;
+            }
+        }
+        catch
+        {
+            _error = T.RestoreErrorUploadFailed;
+        }
+    }
+
+    private async Task RestartNow()
+    {
+        try
+        {
+            var response = await Http.PostAsync("api/backup/restore/restart", null);
+            if (response.IsSuccessStatusCode)
+            {
+                _restarting = true;
+            }
+        }
+        catch
+        {
+            // Server may already be gone - show the same message, the reload sorts out the rest.
+            _restarting = true;
+        }
+    }
+
+    private sealed record RestoreStatusResponse(bool Pending, DateTime? StagedAt);
+    private sealed record RestoreErrorResponse(string? Error, bool Encrypted);
+}

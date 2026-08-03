@@ -1,0 +1,42 @@
+## .NET
+obj/
+bin/
+*.user
+*.suo
+.vs/
+.vscode/
+
+## Environment
+.env
+!.env.example
+
+## SQLite
+*.db
+*.db-shm
+*.db-wal
+
+## Server runtime data (DB, weekly backup dumps, auto-generated VAPID keypair) - never tracked,
+## the *.db rules above already caught the DB itself, this additionally covers app_data/backups/
+## and app_data/vapid-keys.json regardless of extension.
+app_data/
+
+## Test coverage
+TestResults/
+coverage-report/
+
+## Docker
+*.tar
+
+## dotnet publish output (generated locally for the K8s image build, see docs/SCALING.md)
+publish/
+
+## Python (Home Assistant custom component)
+__pycache__/
+*.pyc
+
+## OS
+.DS_Store
+Thumbs.db
+
+# Local environment
+.env

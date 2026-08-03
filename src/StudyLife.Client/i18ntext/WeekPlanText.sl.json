@@ -1,0 +1,18 @@
+{
+  "Heading": "Tedenski načrt",
+  "Subtitle": "Za tisk primeren pregled tvojih načrtovanih učnih sej ta teden — natisni ga in obesi na steno.",
+  "BackLink": "← Nazaj na koledar",
+  "ExportButton": "🖨 Natisni tedenski načrt",
+  "WeekRangeFormat": "Teden: {0} – {1}",
+  "GeneratedOnFormat": "Ustvarjeno {0}",
+  "SummaryHeading": "Povzetek",
+  "PlannedHoursLabel": "Načrtovane ure ta teden",
+  "WeeklyGoalLabel": "Tedenski cilj",
+  "WeeklyGoalFormat": "{0}–{1} h",
+  "SessionCountLabel": "Načrtovane seje",
+  "NoSessions": "Za ta dan ni načrtovanih sej.",
+  "TableTime": "Čas",
+  "TableCourse": "Predmet",
+  "TableTopic": "Tema",
+  "FooterNote": "Samodejno ustvaril StudyLife."
+}

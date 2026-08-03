@@ -1,0 +1,19 @@
+{
+  "PageTitleTag": "StudyLife — Πρόοδος",
+  "Heading": "Ακαδημαϊκή πρόοδος",
+  "SubHeading": "Ένα κοινόχρηστο στιγμιότυπο μόνο για ανάγνωση — ενημερώνεται αυτόματα.",
+  "EctsLabel": "Κερδισμένα ECTS",
+  "EctsFormat": "{0} / {1} ECTS",
+  "AverageGradeLabel": "Μέσος όρος βαθμολογίας",
+  "NoGradeYet": "Δεν υπάρχουν ακόμη βαθμοί",
+  "CoursesCompletedFormat": "{0} από {1} μαθήματα ολοκληρώθηκαν",
+  "ActiveCoursesHeading": "Ενεργά μαθήματα",
+  "NoActiveCourses": "Δεν υπάρχουν ενεργά μαθήματα αυτή τη στιγμή.",
+  "TopicProgressFormat": "{0}% των θεμάτων",
+  "InvalidLinkHeading": "Ο σύνδεσμος δεν είναι διαθέσιμος",
+  "InvalidLinkMessage": "Αυτός ο σύνδεσμος προόδου είναι άκυρος, έχει λήξει ή έχει απενεργοποιηθεί από τον κάτοχό του.",
+  "TemporaryErrorHeading": "Προσωρινά μη διαθέσιμο",
+  "TemporaryErrorMessage": "Κάτι πήγε στραβά κατά τη φόρτωση αυτής της σελίδας. Δοκιμάστε ξανά σε λίγο.",
+  "GeneratedAtFormat": "Τελευταία ενημέρωση: {0}",
+  "PoweredByLabel": "Κοινή χρήση μέσω StudyLife"
+}

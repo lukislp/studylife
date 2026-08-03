@@ -1,0 +1,10 @@
+{
+  "Description": "Ar kuru StudyLife serveri šai lietotnei jāsavienojas?",
+  "ServerUrlLabel": "Servera URL",
+  "CheckingConnection": "Notiek savienojuma pārbaude…",
+  "UseAnyway": "Tomēr izmantot",
+  "Connect": "Savienot",
+  "InvalidUrl": "Tas nav derīgs URL.",
+  "UnexpectedResponse": "Serveris atbildēja, bet negaidīti (HTTP {0}). Pieskarieties vēlreiz, lai to tomēr izmantotu.",
+  "ServerUnreachable": "Serveris nav pieejams. Pieskarieties vēlreiz, lai tomēr izmantotu šo URL."
+}

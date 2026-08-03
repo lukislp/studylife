@@ -1,0 +1,62 @@
+@using StudyLife.Client.Services
+@using StudyLife.Client.Models
+@inject AppStateService State
+@inject NavigationManager Nav
+
+<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>Not found</PageTitle>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <p role="alert">Sorry, there's nothing at this address.</p>
+        </LayoutView>
+    </NotFound>
+</Router>
+
+@code {
+    private System.Threading.Timer? _watchTimer;
+
+    protected override void OnInitialized()
+    {
+        _watchTimer = new System.Threading.Timer(async _ => await CheckAutoFocus(), null, 5000, 30000);
+    }
+
+    private async Task CheckAutoFocus()
+    {
+        try
+        {
+            var settings = await State.GetSettingsAsync();
+            if (!settings.AutoSwitchFocus) return;
+
+            var active = await State.GetActiveSessionAsync();
+            if (active != null)
+            {
+                var currentUri = Nav.Uri;
+                if (!currentUri.Contains("/focus"))
+                    await InvokeAsync(() => Nav.NavigateTo("/focus"));
+                return;
+            }
+
+            var upcoming = await State.GetUpcomingSessionAsync();
+            if (upcoming != null)
+            {
+                var minutesUntil = (upcoming.StartTime - DateTime.Now).TotalMinutes;
+                if (minutesUntil <= settings.AutoSwitchMinutesBefore && minutesUntil >= 0)
+                {
+                    var currentUri = Nav.Uri;
+                    if (!currentUri.Contains("/focus"))
+                        await InvokeAsync(() => Nav.NavigateTo("/focus"));
+                }
+            }
+        }
+        catch { }
+    }
+
+    public void Dispose()
+    {
+        _watchTimer?.Dispose();
+    }
+}

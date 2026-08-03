@@ -1,0 +1,15 @@
+@using StudyLife.Client.Models
+
+<div class="focus-course" style="--c: @Session.CourseColor">
+    <span class="fc-icon">◉</span>
+    <span class="fc-name">@Session.CourseName</span>
+    @if (!string.IsNullOrEmpty(Session.Topic))
+    {
+        <span class="fc-sep">·</span>
+        <span class="fc-topic">@Session.Topic</span>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public StudySession Session { get; set; } = null!;
+}

@@ -1,0 +1,35 @@
+@using StudyLife.Shared
+
+<div class="cal-filter-row">
+    <input class="input" type="text" placeholder="@SearchPlaceholder" value="@SearchQuery"
+           @oninput="e => SearchQueryChanged.InvokeAsync(e.Value?.ToString() ?? string.Empty)" />
+    @if (Courses.Count > 0)
+    {
+        <div class="cal-filter-pills">
+            @foreach (var c in Courses)
+            {
+                var course = c;
+                var hidden = HiddenCourseIds.Contains(course.Id);
+                var tag = Goals.FirstOrDefault(g => g.CourseId == course.Id)?.Tag;
+                <button class="course-pill cal-filter-pill @(hidden ? "dimmed" : "")" style="--c: @course.Color" @onclick="() => OnToggleCourseFilter.InvokeAsync(course.Id)">
+                    <span class="cp-icon">@course.Icon</span>
+                    <span class="cp-name">@course.Code</span>
+                    @if (!string.IsNullOrWhiteSpace(tag))
+                    {
+                        <span class="pill-tag">@tag</span>
+                    }
+                </button>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string SearchQuery { get; set; } = "";
+    [Parameter] public EventCallback<string> SearchQueryChanged { get; set; }
+    [Parameter] public string SearchPlaceholder { get; set; } = "";
+    [Parameter] public List<CourseDto> Courses { get; set; } = new();
+    [Parameter] public HashSet<int> HiddenCourseIds { get; set; } = new();
+    [Parameter] public List<CourseGoalDto> Goals { get; set; } = new();
+    [Parameter] public EventCallback<int> OnToggleCourseFilter { get; set; }
+}

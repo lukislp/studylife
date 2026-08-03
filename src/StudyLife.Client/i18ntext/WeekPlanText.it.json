@@ -1,0 +1,18 @@
+{
+  "Heading": "Piano settimanale",
+  "Subtitle": "Una panoramica stampabile delle tue sessioni di studio pianificate per questa settimana — stampala e attaccala al muro.",
+  "BackLink": "← Torna al calendario",
+  "ExportButton": "🖨 Stampa piano settimanale",
+  "WeekRangeFormat": "Settimana: {0} – {1}",
+  "GeneratedOnFormat": "Generato il {0}",
+  "SummaryHeading": "Riepilogo",
+  "PlannedHoursLabel": "Ore pianificate questa settimana",
+  "WeeklyGoalLabel": "Obiettivo settimanale",
+  "WeeklyGoalFormat": "{0}–{1} h",
+  "SessionCountLabel": "Sessioni pianificate",
+  "NoSessions": "Nessuna sessione pianificata per questo giorno.",
+  "TableTime": "Ora",
+  "TableCourse": "Corso",
+  "TableTopic": "Argomento",
+  "FooterNote": "Generato automaticamente da StudyLife."
+}

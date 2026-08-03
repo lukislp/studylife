@@ -1,0 +1,16 @@
+<div class="timer-controls">
+    <button class="btn-timer btn-reset" @onclick="() => OnReset.InvokeAsync()" title="@ResetTitle">↺</button>
+    <button class="btn-timer btn-playpause @(IsRunning ? "running" : "")" @onclick="() => OnToggle.InvokeAsync()">
+        @(IsRunning ? "⏸" : "▶")
+    </button>
+    <button class="btn-timer btn-skip" @onclick="() => OnNext.InvokeAsync()" title="@SkipTitle">⇄</button>
+</div>
+
+@code {
+    [Parameter] public bool IsRunning { get; set; }
+    [Parameter] public string ResetTitle { get; set; } = "";
+    [Parameter] public string SkipTitle { get; set; } = "";
+    [Parameter] public EventCallback OnReset { get; set; }
+    [Parameter] public EventCallback OnToggle { get; set; }
+    [Parameter] public EventCallback OnNext { get; set; }
+}

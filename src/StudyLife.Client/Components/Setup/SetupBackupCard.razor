@@ -1,0 +1,119 @@
+@inject HttpClient Http
+@inject IJSRuntime JS
+@implements IDisposable
+
+@* Since phase 3, all downloads go through the Blazor HttpClient + blob download
+   (SetupBackupCard.razor.js) instead of native <a download> links: the /api gate now
+   requires a session token OR a per-user API key, and the browser client only holds the
+   session token - the SessionHandler attaches that automatically to HttpClient requests, but
+   not to native browser navigation. The former ?apiKey= query parameter (global key from
+   the bootstrap endpoint) no longer exists for the browser.
+
+   Optional password field for the encrypted variant: empty = unencrypted GET
+   download. As soon as a password is entered, the download button switches to
+   POST api/backup/database/encrypted (the password belongs in the body, not in a URL -
+   browser history/logs). *@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    <p class="ss-desc">@Desc</p>
+
+    @if (IsOwner)
+    {
+        <!-- Only the owner (first registered user) may download the raw .db
+             (BackupController.IsOwnerAsync - it contains ALL users' data). On
+             Postgres, Setup.razor doesn't wire the whole card in at all. -->
+        <div class="toggle-row" style="gap:0.5rem;flex-wrap:wrap;align-items:center">
+            <input class="input input-sm" type="password" placeholder="@PasswordPlaceholder"
+                   @bind="_password" @bind:event="oninput" />
+        </div>
+        <p class="ss-desc" style="font-size:0.85em">@PasswordHint</p>
+    }
+
+    <div class="toggle-row" style="gap:0.75rem;flex-wrap:wrap">
+        @if (IsOwner)
+        {
+            <button type="button" class="btn-secondary" @onclick="DownloadDatabase" disabled="@_downloading">
+                @(_downloading ? "…" : DownloadDatabaseButtonText)
+            </button>
+        }
+        <button type="button" class="btn-secondary" @onclick="DownloadExport" disabled="@_downloading">
+            @(_downloading ? "…" : ExportJsonButtonText)
+        </button>
+    </div>
+
+    @if (_error != null)
+    {
+        <p class="ss-desc" style="color:var(--danger, #e74c3c)">@_error</p>
+    }
+</div>
+
+@code {
+    /// <summary>Only the first registered user (owner of the installation) sees the
+    /// raw .db download - it contains ALL users' data (see
+    /// BackupController.IsOwnerAsync). The JSON export remains visible to every user.</summary>
+    [Parameter] public bool IsOwner { get; set; }
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string Desc { get; set; } = "";
+    [Parameter] public string DownloadDatabaseButtonText { get; set; } = "";
+    [Parameter] public string ExportJsonButtonText { get; set; } = "";
+    [Parameter] public string PasswordPlaceholder { get; set; } = "";
+    [Parameter] public string PasswordHint { get; set; } = "";
+    [Parameter] public string EncryptedDownloadErrorText { get; set; } = "";
+
+    private string _password = "";
+    private bool _downloading;
+    private string? _error;
+    private IJSObjectReference? _module;
+
+    // With a password: encrypted POST download; without: normal GET of the SQLite file.
+    private Task DownloadDatabase() =>
+        string.IsNullOrEmpty(_password)
+            ? DownloadViaHttpAsync(() => Http.GetAsync("api/backup/database"),
+                $"studylife-backup-{DateTime.UtcNow:yyyyMMdd}.db")
+            : DownloadViaHttpAsync(() => Http.PostAsJsonAsync("api/backup/database/encrypted", new { password = _password }),
+                $"studylife-backup-{DateTime.UtcNow:yyyyMMdd}.db.enc");
+
+    private Task DownloadExport() =>
+        DownloadViaHttpAsync(() => Http.GetAsync("api/backup/export"),
+            $"studylife-export-{DateTime.UtcNow:yyyyMMdd}.json");
+
+    private async Task DownloadViaHttpAsync(Func<Task<HttpResponseMessage>> send, string fallbackFileName)
+    {
+        if (_downloading) return;
+        _error = null;
+        _downloading = true;
+        try
+        {
+            var response = await send();
+            if (!response.IsSuccessStatusCode)
+            {
+                _error = EncryptedDownloadErrorText;
+                return;
+            }
+
+            _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Setup/SetupBackupCard.razor.js");
+            var fileName = response.Content.Headers.ContentDisposition?.FileNameStar
+                           ?? response.Content.Headers.ContentDisposition?.FileName
+                           ?? fallbackFileName;
+            await using var stream = await response.Content.ReadAsStreamAsync();
+            using var streamRef = new DotNetStreamReference(stream);
+            await _module.InvokeVoidAsync("downloadFileFromStream", fileName.Trim('"'), streamRef);
+        }
+        catch
+        {
+            _error = EncryptedDownloadErrorText;
+        }
+        finally
+        {
+            _downloading = false;
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_module != null)
+        {
+            try { _ = _module.DisposeAsync(); } catch { /* best-effort, component is unmounting */ }
+        }
+    }
+}

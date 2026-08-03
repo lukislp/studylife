@@ -1,0 +1,33 @@
+@using StudyLife.Client.Models
+
+@if (CurrentMode != null)
+{
+    <div class="mode-badge">
+        <span class="mb-emoji">@CurrentMode.Emoji</span>
+        <span class="mb-name">@CurrentMode.Name</span>
+    </div>
+}
+
+<div class="timer-display @(IsBreak ? "is-break" : "is-focus")">
+    <div class="timer-phase">@(IsBreak ? PhaseBreakLabel : PhaseFocusLabel)</div>
+    <div class="timer-clock">@FormattedTime</div>
+    <div class="timer-round">
+        @if (CurrentMode != null)
+        {
+            @for (int i = 1; i <= CurrentMode.Rounds; i++)
+            {
+                var round = i;
+                <span class="round-dot @(round == CurrentRound ? "active" : round < CurrentRound ? "done" : "")"></span>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public TimerMode? CurrentMode { get; set; }
+    [Parameter] public bool IsBreak { get; set; }
+    [Parameter] public string FormattedTime { get; set; } = "";
+    [Parameter] public int CurrentRound { get; set; }
+    [Parameter] public string PhaseBreakLabel { get; set; } = "";
+    [Parameter] public string PhaseFocusLabel { get; set; } = "";
+}

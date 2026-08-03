@@ -1,0 +1,169 @@
+# Backend TLS for the ingress-nginx -> studylife-web (Kestrel) hop: leaf certificate from the
+# same cluster-internal CA as the external ingress certificate (k8s/07b-cert-manager-issuers.yaml),
+# so ingress-nginx no longer talks to the pod over plaintext HTTP. The DNS name is the internal
+# service DNS name (no hostname placeholder needed, purely cluster-internal). No custom
+# duration/renewBefore value - inherits the same cert-manager defaults as the studylife-tls
+# certificate auto-generated from the ingress annotation (90 days, renewed 30 days beforehand).
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: studylife-web-backend-tls
+  namespace: studylife-scale
+spec:
+  secretName: studylife-web-backend-tls
+  dnsNames:
+    - studylife-web.studylife-scale.svc.cluster.local
+    - studylife-web
+  issuerRef:
+    name: studylife-internal-ca-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+# Stateless web instances - Worker:Enabled=false (the 30s reminder/report tick runs ONLY in the
+# separate worker deployment, see 05-worker.yaml, otherwise multiple replicas would produce
+# duplicate push notifications). imagePullPolicy: Never + image loaded locally into the node's
+# containerd via "ctr images import": Docker Desktop's "kind" Kubernetes has an image store
+# separate from the Docker daemon, so a locally built image is NOT automatically known to the
+# cluster AND the built-in registry mirror proxy blocks (500) pulls from a local ad-hoc registry
+# under host.docker.internal - the import detour via a node debug pod is the reliable approach.
+# Exact procedure in docs/SCALING.md.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: studylife-web
+  namespace: studylife-scale
+spec:
+  # DELIBERATELY no more "replicas:" field (see the identical comment in k8s/05-worker.yaml) -
+  # now autoscaled (CPU-based) via k8s/04c-web-hpa.yaml. minReplicas: 1 (no longer a fixed 2, see
+  # the HPA file for the trade-off) - the same decision as for the worker: "scaling down" only
+  # becomes visible/testable with a real lower bound. This costs the previous guarantee of
+  # "always 1 replica per node" under very low load (see the affinity comment below), a
+  # deliberately accepted trade-off.
+  selector:
+    matchLabels: {app: studylife-web}
+  template:
+    metadata:
+      labels: {app: studylife-web}
+    spec:
+      # Soft (preferred) instead of hard (required) anti-affinity: spreads replicas across
+      # different nodes when several are available, but does NOT block on a single-node cluster
+      # (like this Docker Desktop test setup) - required would leave pods 2+ Pending forever
+      # there, since no second node exists to fall back to.
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels: {app: studylife-web}
+                topologyKey: kubernetes.io/hostname
+      # runAsUser MUST be numeric (discovered live): the Dockerfile sets "USER app" (a name, not
+      # a number) - with runAsNonRoot:true the kubelet cannot verify without a numeric UID that
+      # the container process is really non-root ("cannot verify user is non-root"), and rejects
+      # the container outright (CreateContainerConfigError). 1654 is the actual UID of "app" in
+      # the aspnet base image (confirmed via "kubectl exec ... -- id").
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1654
+        seccompProfile: {type: RuntimeDefault}
+      # unlike the worker (see k8s/05-worker.yaml, KubernetesWorkerReplicaCountProvider),
+      # studylife-web needs no Kubernetes API access whatsoever - token automount explicitly off.
+      automountServiceAccountToken: false
+      containers:
+        - name: studylife
+          image: registry.example.com/studylife/server:1.35.0 # {"$imagepolicy": "flux-system:studylife-server"}
+          imagePullPolicy: Never
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: ["ALL"]}
+          envFrom:
+            - configMapRef: {name: studylife-config}
+            - secretRef: {name: studylife-secrets}
+          env:
+            - name: Worker__Enabled
+              value: "false"
+            # Additional HTTPS listener (Program.cs) for the ingress-nginx -> Kestrel hop -
+            # additive to the existing HTTP port 8080, which the probes below keep using.
+            - name: WebBackendTls__CertPath
+              value: /etc/studylife-web-backend-tls/tls.crt
+            - name: WebBackendTls__KeyPath
+              value: /etc/studylife-web-backend-tls/tls.key
+            # APNs channel (ApnsSender) for the native app shell - free signing never registers
+            # a device (no aps-environment entitlement), so this config alone does not enable
+            # sending without a paid-signed app (docs/PLAN-paid-umschaltung.md). Apns__KeyId/
+            # TeamId/BundleId are plain identifiers, not secrets - the actual secret is the
+            # volume-mounted .p8 file (Apns__KeyPath).
+            - name: Apns__KeyPath
+              value: /secrets/apns/apns-key.p8
+            - name: Apns__KeyId
+              value: "9L4T424GJM"
+            - name: Apns__TeamId
+              value: "GAP8W46W8A"
+            - name: Apns__BundleId
+              value: app.studylife.mobile
+            # true as long as installation only happens via devicectl/development profile (aps-
+            # environment: development) - only switch to false once a real distribution profile
+            # (TestFlight/App Store) is used (otherwise Apple rejects the tokens).
+            - name: Apns__UseSandbox
+              value: "true"
+            # For the AASA endpoint (GET /.well-known/apple-app-site-association, Program.cs) -
+            # enables the app's native in-app passkey dialog once it carries the Associated
+            # Domains entitlement.
+            - name: Apple__TeamId
+              value: "GAP8W46W8A"
+          ports:
+            - containerPort: 8080
+            - containerPort: 8443
+          # Without requests/limits the scheduler cannot bin-pack sensibly, and a runaway pod
+          # (e.g. GC pressure under load) could starve neighbors on the same Pi - limit set as a
+          # rough 2x buffer over observed demand.
+          resources:
+            requests: {cpu: 100m, memory: 150Mi}
+            limits: {cpu: 500m, memory: 300Mi}
+          readinessProbe:
+            httpGet: {path: /, port: 8080}
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /, port: 8080}
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          volumeMounts:
+            - name: web-backend-tls
+              mountPath: /etc/studylife-web-backend-tls
+              readOnly: true
+            # This secret is NOT managed by Flux (deliberately kept out of k8s/flux/deploy/
+            # resources:, see the comment there) - created manually once, see
+            # docs/PLAN-paid-umschaltung.md step C for the kubectl-create-secret command.
+            - name: apns-key
+              mountPath: /secrets/apns
+              readOnly: true
+      volumes:
+        - name: web-backend-tls
+          secret: {secretName: studylife-web-backend-tls}
+        - name: apns-key
+          secret: {secretName: studylife-apns}
+---
+# type: ClusterIP instead of LoadBalancer - TLS termination and the stable external address are
+# now handled by the ingress controller in front (k8s/07-ingress.yaml + MetalLB, see
+# k8s/06-metallb-config.yaml), no longer by this service directly. It used to be LoadBalancer
+# because Docker Desktop Kubernetes exposes LoadBalancer services directly on localhost - for TLS
+# and a "clustered" ingress controller (multiple replicas behind ONE external IP), a real ingress
+# is the right approach, see docs/SCALING.md.
+apiVersion: v1
+kind: Service
+metadata:
+  name: studylife-web
+  namespace: studylife-scale
+spec:
+  type: ClusterIP
+  selector: {app: studylife-web}
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+    # HTTPS port for the ingress (k8s/07-ingress.yaml, backend-protocol: HTTPS) - port 80/8080
+    # stays around for probes/debugging, see the comment on the Deployment above.
+    - name: https
+      port: 443
+      targetPort: 8443

@@ -1,0 +1,48 @@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    @if (Points.Count == 0)
+    {
+        <div style="color:var(--text3);font-size:0.875rem">@EmptyText</div>
+    }
+    else
+    {
+        <div class="ectsplan-legend">
+            <span class="ectsplan-legend-item"><span class="ectsplan-legend-fill"></span>@ActualLabel</span>
+            <span class="ectsplan-legend-item"><span class="ectsplan-legend-marker"></span>@TargetLabel</span>
+        </div>
+        <div class="timeline-chart-wrap">
+            <div class="timeline-chart ectsplan-chart">
+                @foreach (var p in Points)
+                {
+                    <div class="timeline-col ectsplan-col" title="@ColumnTitle(p)">
+                        <div class="timeline-track">
+                            @if (p.ActualPercent.HasValue)
+                            {
+                                <div class="timeline-fill" style="height: @p.ActualPercent.Value%"></div>
+                            }
+                            <div class="ectsplan-target-marker" style="bottom: @p.TargetPercent%"></div>
+                        </div>
+                        <div class="timeline-label">@p.Label</div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    // ActualEcts/ActualPercent are null for months after today - there's only the
+    // target marker there, no misleading empty actual bar.
+    public record PlanPoint(string Label, int? ActualEcts, double? ActualPercent, int TargetEcts, double TargetPercent);
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string ActualLabel { get; set; } = "";
+    [Parameter] public string TargetLabel { get; set; } = "";
+    [Parameter] public string TooltipFormat { get; set; } = "";
+    [Parameter] public string EmptyText { get; set; } = "";
+    [Parameter] public List<PlanPoint> Points { get; set; } = new();
+
+    // ?? "" guard like every string.Format over i18n values (i18n text is still null/empty during pre-init render).
+    private string ColumnTitle(PlanPoint p) =>
+        $"{p.Label}: {string.Format(TooltipFormat ?? "", p.ActualEcts?.ToString() ?? "–", p.TargetEcts)}";
+}

@@ -1,0 +1,181 @@
+@page "/register"
+@layout PublicLayout
+@using System.Text
+@using System.Text.Json.Nodes
+@using StudyLife.Shared
+@inject HttpClient Http
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@inject SessionTokenStore TokenStore
+@inject INativeAppAuth NativeAuth
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+@* Passkey registration (phase 2), same layout/style pattern as Login.razor. The very first
+   registration "claims" the existing phase-1 user server-side, including all existing data
+   (AuthController.RegisterComplete); every subsequent one creates a new, empty account - here
+   on the client both are the same flow. Imports the login page's collocated JS module
+   (./Pages/Login.razor.js) instead of duplicating the WebAuthn conversion. *@
+
+<PageTitle>@T.RegisterPageTitle</PageTitle>
+
+<div class="progress-share-page">
+    <div class="progress-share-card">
+        <h1>@T.RegisterHeading</h1>
+        <p class="ss-desc">@T.RegisterIntro</p>
+        @if (_error != null)
+        {
+            <p class="ss-desc" style="color:var(--danger, #e74c3c)">@_error</p>
+        }
+        <div style="display:flex; flex-direction:column; gap:0.75rem; margin-top:1.25rem;">
+            <label class="ss-label" for="register-name">@T.DisplayNameLabel</label>
+            <input id="register-name" class="input" type="text" maxlength="100"
+                   placeholder="@T.DisplayNamePlaceholder" @bind="_displayName" @bind:event="oninput" />
+            <label class="ss-label" for="register-setup-secret">@T.SetupSecretLabel</label>
+            <input id="register-setup-secret" class="input" type="text" maxlength="20"
+                   placeholder="@T.SetupSecretPlaceholder" @bind="_setupSecret" @bind:event="oninput" />
+            <p class="ss-desc" style="font-size:0.8rem; margin-top:-0.5rem;">@T.SetupSecretHint</p>
+            <button type="button" class="btn-primary" @onclick="RegisterAsync"
+                    disabled="@(_busy || string.IsNullOrWhiteSpace(_displayName))">
+                @(_busy ? T.LoginWorking : T.RegisterButton)
+            </button>
+            <a href="@("/login" + _app.LinkQuery)" class="btn-secondary" style="text-align:center;">@T.GoToLoginLink</a>
+            <a href="@("/link" + _app.LinkQuery)" class="btn-secondary" style="text-align:center;">@T.GoToLinkDeviceLink</a>
+        </div>
+        @* iOS PWA hint: Safari clears localStorage of "normal" website tabs after 7 days of
+           inactivity, but not for installed home-screen apps - without installation, the
+           90-day session on iOS would therefore be practically worthless. *@
+        <p class="ss-desc" style="margin-top:1.5rem; font-size:0.8rem; color:var(--text3);">@T.InstallHint</p>
+    </div>
+</div>
+
+@code {
+    private I18nText.AuthText T = new();
+    private string _displayName = "";
+    private string _setupSecret = "";
+    private bool _busy;
+    private string? _error;
+    private IJSObjectReference? _module;
+
+    // App return path (?app=1) as in Login.razor: the page runs in the native app's system
+    // browser. Name/setup secret then arrive pre-filled via URL fragment (fragments never end
+    // up in server logs), the token goes back via redirect (details in AppReturnContext).
+    private AppReturnContext _app = AppReturnContext.FromUri(new Uri("https://unused.invalid/"));
+
+    protected override async Task OnInitializedAsync()
+    {
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
+        _app = AppReturnContext.FromUri(uri);
+        if (_app.IsActive && uri.Fragment is { Length: > 1 } fragment)
+        {
+            foreach (var pair in fragment.TrimStart('#').Split('&'))
+            {
+                var kv = pair.Split('=', 2);
+                if (kv.Length != 2) continue;
+                if (kv[0] == "name") _displayName = Uri.UnescapeDataString(kv[1]);
+                else if (kv[0] == "secret") _setupSecret = Uri.UnescapeDataString(kv[1]);
+            }
+        }
+        T = await I18nText.GetTextTableAsync<I18nText.AuthText>(this);
+    }
+
+    private async Task RegisterAsync()
+    {
+        var displayName = _displayName.Trim();
+        if (displayName.Length == 0) return;
+
+        // Native app shell without in-app passkeys (free signing): ceremony runs via the
+        // system browser, inputs travel along as a fragment (see the _app comment above).
+        // With in-app passkeys the normal flow below runs, only the WebAuthn call goes
+        // to the native dialog. Always false on the web.
+        if (NativeAuth.IsAvailable && !NativeAuth.SupportsInAppPasskeys)
+        {
+            await NativeRegisterAsync(displayName);
+            return;
+        }
+
+        _busy = true;
+        _error = null;
+        try
+        {
+            if (!NativeAuth.SupportsInAppPasskeys)
+            {
+                _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/Login.razor.js");
+                if (!await _module.InvokeAsync<bool>("isPasskeySupported"))
+                {
+                    _error = T.NotSupported;
+                    return;
+                }
+            }
+
+            var begin = await Http.PostAsJsonAsync("api/auth/register/begin",
+                new PasskeyRegisterBeginRequestDto { DisplayName = displayName, SetupSecret = _setupSecret.Trim() });
+            if (begin.StatusCode == System.Net.HttpStatusCode.Unauthorized) { _error = T.SetupSecretInvalid; return; }
+            if (!begin.IsSuccessStatusCode) { _error = T.RegisterFailed; return; }
+            var options = await begin.Content.ReadFromJsonAsync<PasskeyBeginResponseDto>();
+            if (options == null) { _error = T.RegisterFailed; return; }
+
+            var attestationJson = NativeAuth.SupportsInAppPasskeys
+                ? await NativeAuth.CreatePasskeyAsync(options.OptionsJson)
+                : await _module!.InvokeAsync<string>("createPasskey", options.OptionsJson);
+            if (attestationJson == null) { _error = T.RegisterFailed; return; } // native dialog cancelled
+            var body = new JsonObject
+            {
+                ["optionsId"] = options.OptionsId,
+                ["response"] = JsonNode.Parse(attestationJson),
+            };
+            var complete = await Http.PostAsync("api/auth/register/complete",
+                new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json"));
+            if (!complete.IsSuccessStatusCode) { _error = T.RegisterFailed; return; }
+
+            var result = await complete.Content.ReadFromJsonAsync<PasskeyCompleteResponseDto>();
+            if (result?.Token is not { Length: > 0 } token) { _error = T.RegisterFailed; return; }
+
+            if (_app.IsActive)
+            {
+                // Hand the token back to the native app instead of storing it in this browser
+                // session (same pattern as Login.razor, PKCE handoff when supported).
+                Nav.NavigateTo(await _app.BuildTokenReturnRedirectAsync(Http, token), forceLoad: true);
+                return;
+            }
+
+            await TokenStore.SetTokenAsync(token);
+            // Registration issues a session directly (see AuthController) - no second passkey
+            // dialog. forceLoad for the same reason as in Login.
+            Nav.NavigateTo("/", forceLoad: true);
+        }
+        catch (JSException)
+        {
+            _error = T.RegisterFailed;
+        }
+        catch (HttpRequestException)
+        {
+            _error = T.RegisterFailed;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task NativeRegisterAsync(string displayName)
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            var start = $"register#name={Uri.EscapeDataString(displayName)}&secret={Uri.EscapeDataString(_setupSecret.Trim())}";
+            var token = await NativeAuth.AuthenticateAsync(start);
+            if (token is { Length: > 0 })
+            {
+                await TokenStore.SetTokenAsync(token);
+                Nav.NavigateTo("/", forceLoad: true);
+                return;
+            }
+            _error = T.RegisterFailed;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

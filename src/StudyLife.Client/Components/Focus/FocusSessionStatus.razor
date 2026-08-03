@@ -1,0 +1,36 @@
+@using StudyLife.Client.Models
+
+@if (UpcomingSession == null)
+{
+    <div class="focus-empty">
+        <div class="fe-title">@NoSessionTitle</div>
+        <div class="fe-sub">@PlanSessionPrompt</div>
+        <a href="/calendar" class="btn-primary">@OpenCalendarText</a>
+    </div>
+}
+else
+{
+    <div class="focus-upcoming">
+        <div class="fu-label">@string.Format(UpNextInFormat, TimeUntil(UpcomingSession.StartTime))</div>
+        <div class="fu-name">@UpcomingSession.CourseName</div>
+        <div class="fu-time">@UpcomingSession.StartTime.ToString("HH:mm") – @UpcomingSession.EndTime.ToString("HH:mm")</div>
+        <p class="focus-motivation-text">@MotivationText</p>
+    </div>
+}
+
+@code {
+    [Parameter] public StudySession? UpcomingSession { get; set; }
+    [Parameter] public string NoSessionTitle { get; set; } = "";
+    [Parameter] public string PlanSessionPrompt { get; set; } = "";
+    [Parameter] public string OpenCalendarText { get; set; } = "";
+    [Parameter] public string UpNextInFormat { get; set; } = "";
+    [Parameter] public string MotivationText { get; set; } = "";
+
+    private string TimeUntil(DateTime dt)
+    {
+        var diff = dt - DateTime.Now;
+        if (diff.TotalMinutes < 1) return "less than a minute";
+        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes} minutes";
+        return $"{(int)diff.TotalHours}h {diff.Minutes}m";
+    }
+}

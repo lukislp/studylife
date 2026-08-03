@@ -1,0 +1,19 @@
+{
+  "PageTitleTag": "StudyLife — Progres",
+  "Heading": "Progres academic",
+  "SubHeading": "O imagine partajată, doar pentru vizualizare — actualizată automat.",
+  "EctsLabel": "ECTS obținute",
+  "EctsFormat": "{0} / {1} ECTS",
+  "AverageGradeLabel": "Medie generală",
+  "NoGradeYet": "Încă nu există note",
+  "CoursesCompletedFormat": "{0} din {1} cursuri finalizate",
+  "ActiveCoursesHeading": "Cursuri active",
+  "NoActiveCourses": "Momentan niciun curs activ.",
+  "TopicProgressFormat": "{0}% din subiecte",
+  "InvalidLinkHeading": "Linkul nu este disponibil",
+  "InvalidLinkMessage": "Acest link de progres este invalid, a expirat sau a fost dezactivat de proprietar.",
+  "TemporaryErrorHeading": "Temporar indisponibil",
+  "TemporaryErrorMessage": "Ceva nu a funcționat la încărcarea acestei pagini. Te rugăm să încerci din nou peste puțin timp.",
+  "GeneratedAtFormat": "Ultima actualizare: {0}",
+  "PoweredByLabel": "Partajat prin StudyLife"
+}

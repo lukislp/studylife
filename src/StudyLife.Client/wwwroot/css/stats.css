@@ -1,0 +1,418 @@
+/* Year in review / Wrapped */
+.wrapped-trigger-btn {
+    display: inline-block;
+    margin-top: 1rem;
+    background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045);
+    color: white;
+    border: none;
+    border-radius: 999px;
+    padding: 0.7rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: 0 4px 16px rgba(131, 58, 180, 0.35);
+}
+.wrapped-trigger-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(131, 58, 180, 0.45); }
+
+.report-export-link { display: inline-block; margin-top: 1rem; margin-left: 0.75rem; }
+
+/* Full-screen year-in-review (Wrapped.razor) - a single column of scrollable gradient "slides",
+   the same visual language as the earlier modal prototype (.wrapped-slide/-grad-*), just without
+   the modal's size constraint: the page itself scrolls, no more fixed max-height/width. */
+.wrapped-page { max-width: 560px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+.wrapped-page-header { text-align: center; margin-bottom: 1.5rem; }
+.wrapped-back-link { display: inline-block; color: var(--text3); font-size: 0.8rem; text-decoration: none; margin-bottom: 0.75rem; }
+.wrapped-back-link:hover { color: var(--text); }
+.wrapped-page-header h1 { font-size: 1.5rem; margin: 0 0 0.35rem; }
+.wrapped-period { color: var(--text3); font-size: 0.8rem; font-family: var(--font-mono); }
+
+.wrapped-slides { display: flex; flex-direction: column; gap: 1rem; }
+
+.wrapped-slide {
+    border-radius: 20px;
+    padding: 2.5rem 1.5rem;
+    color: white;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    min-height: 180px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+.wrapped-slide-label { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.85; }
+.wrapped-slide-icon { font-size: 2rem; }
+.wrapped-slide-value { font-size: 2.25rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.1; }
+.wrapped-slide-value-total { font-size: 1.25rem; font-weight: 500; opacity: 0.75; }
+.wrapped-slide-sub { font-size: 0.9rem; opacity: 0.9; }
+
+.wrapped-grad-1 { background: linear-gradient(135deg, #f857a6, #ff5858); }
+.wrapped-grad-2 { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+.wrapped-grad-3 { background: linear-gradient(135deg, #43e97b, #38f9d7); }
+.wrapped-grad-4 { background: linear-gradient(135deg, #fa709a, #fee140); }
+.wrapped-grad-5 { background: linear-gradient(135deg, #6a11cb, #2575fc); }
+.wrapped-grad-6 { background: linear-gradient(135deg, #833ab4, #fd1d1d); }
+
+.course-stat-row { padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
+.course-stat-row:last-child { border-bottom: none; }
+.csr-head { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+.csr-icon { font-size: 1rem; }
+.csr-name { font-size: 0.875rem; font-weight: 500; }
+.csr-badge { margin-left: auto; font-size: 0.7rem; color: #55efc4; }
+.csr-bar-track { position: relative; height: 6px; background: var(--bg3); border-radius: 3px; margin-bottom: 0.5rem; overflow: hidden; }
+.csr-bar-fill { height: 100%; border-radius: 3px; background: var(--c); transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+.csr-meta { display: flex; gap: 1rem; font-size: 0.75rem; color: var(--text2); flex-wrap: wrap; }
+.csr-overdue { color: #e17055; }
+.csr-trend { font-family: var(--font-mono); cursor: default; }
+.csr-trend-up { color: #55efc4; }
+.csr-trend-down { color: #e17055; }
+.csr-trend-flat { color: var(--text3); }
+.csr-note { margin-top: 0.4rem; font-size: 0.75rem; font-style: italic; color: var(--text3); }
+
+/* Study heatmap */
+.heatmap-filter-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.6rem; }
+.heatmap-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    border-radius: 999px;
+    padding: 0.25rem 0.65rem;
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+.heatmap-chip:hover { border-color: var(--border2); color: var(--text); }
+.heatmap-chip.active { border-color: var(--chip-c, var(--accent)); color: var(--text); background: color-mix(in srgb, var(--chip-c, var(--accent)) 16%, var(--bg3)); }
+.heatmap-chip-swatch { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.heatmap-wrap { overflow-x: auto; padding-bottom: 0.25rem; }
+.heatmap-months { display: flex; gap: 3px; margin-bottom: 0.25rem; margin-left: 1px; width: max-content; }
+.heatmap-month { width: 10px; flex-shrink: 0; font-size: 0.62rem; color: var(--text3); overflow: visible; white-space: nowrap; }
+.heatmap { display: flex; gap: 3px; width: max-content; }
+.heatmap-week { display: flex; flex-direction: column; gap: 3px; }
+.heatmap-day {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    background: var(--bg3);
+    border: none;
+    padding: 0;
+}
+.heatmap-day.future { background: transparent; }
+.heatmap-day.level-0 { background: var(--bg3); }
+.heatmap-day.level-1 { background: color-mix(in srgb, var(--accent) 25%, var(--bg3)); }
+.heatmap-day.level-2 { background: color-mix(in srgb, var(--accent) 50%, var(--bg3)); }
+.heatmap-day.level-3 { background: color-mix(in srgb, var(--accent) 75%, var(--bg3)); }
+.heatmap-day.level-4 { background: var(--accent); }
+/* Only actual day cells are <button> (the legend stays <div>) - interaction styles
+   are therefore scoped to the element type instead of the shared class. */
+button.heatmap-day { cursor: pointer; transition: var(--transition); }
+button.heatmap-day:hover { outline: 1px solid var(--border2); outline-offset: 1px; }
+button.heatmap-day.selected { outline: 2px solid var(--accent); outline-offset: 1px; }
+.heatmap-legend { display: flex; align-items: center; gap: 4px; margin-top: 0.5rem; font-size: 0.68rem; color: var(--text3); }
+
+.heatmap-detail {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: var(--bg3);
+    border-radius: 8px;
+    width: max-content;
+    min-width: 220px;
+    max-width: 100%;
+}
+.heatmap-detail-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.4rem; }
+.heatmap-detail-date { font-size: 0.8rem; font-weight: 500; text-transform: capitalize; }
+.heatmap-detail-close { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 0.85rem; line-height: 1; padding: 0.15rem; }
+.heatmap-detail-close:hover { color: var(--text); }
+.heatmap-detail-empty { font-size: 0.78rem; color: var(--text3); }
+.heatmap-detail-summary { font-size: 0.75rem; color: var(--text2); margin-bottom: 0.5rem; }
+.heatmap-detail-courses { display: flex; flex-direction: column; gap: 0.3rem; }
+.heatmap-detail-course-row { display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; }
+.heatmap-detail-swatch { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.heatmap-detail-course-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.heatmap-detail-course-hours { color: var(--text3); flex-shrink: 0; }
+
+/* Course-time donut chart */
+.donut-wrap { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+.donut-chart { width: 140px; height: 140px; border-radius: 50%; position: relative; flex-shrink: 0; }
+.donut-hole {
+    position: absolute;
+    inset: 18px;
+    background: var(--bg2);
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.donut-total { font-size: 1.1rem; font-weight: 500; font-family: var(--font-mono); }
+.donut-total-label { font-size: 0.65rem; color: var(--text3); }
+.donut-legend { display: flex; flex-direction: column; gap: 0.4rem; flex: 1 1 200px; min-width: 180px; }
+.donut-legend-row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; }
+.donut-swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.donut-legend-name { flex: 1; color: var(--text); }
+.donut-legend-val { color: var(--text3); font-family: var(--font-mono); font-size: 0.72rem; }
+
+/* Course drilldown in the donut: legend rows are buttons, clicking opens a detail panel
+   (same .heatmap-detail panel look as for the two heatmaps) with a monthly mini chart
+   and the course's most recent sessions. */
+button.donut-legend-row {
+    background: none;
+    border: none;
+    padding: 0.15rem 0;
+    width: 100%;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: var(--transition);
+}
+button.donut-legend-row:hover .donut-legend-name,
+button.donut-legend-row.selected .donut-legend-name { color: var(--accent); }
+.donut-click-hint { margin-top: 0.6rem; font-size: 0.72rem; color: var(--text3); }
+.donut-detail { width: 100%; }
+.donut-detail-chart { height: 60px; margin: 0.5rem 0 0.75rem; }
+.donut-detail-sessions-label { font-size: 0.7rem; color: var(--text2); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.35rem; }
+.donut-detail-sessions { display: flex; flex-direction: column; gap: 0.3rem; }
+.donut-detail-session-row { display: flex; align-items: baseline; gap: 0.6rem; font-size: 0.75rem; }
+.donut-detail-session-date { font-family: var(--font-mono); color: var(--text2); flex-shrink: 0; }
+.donut-detail-session-duration { font-family: var(--font-mono); color: var(--text3); flex-shrink: 0; }
+.donut-detail-session-topic { color: var(--text3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.donut-detail-more { margin-top: 0.4rem; font-size: 0.72rem; color: var(--text3); }
+
+/* Time-of-day heatmap (weekday x hour) - reuses the level-0..4 accent color scale from
+   .heatmap-day above so the two heatmaps read as the same visual language, just with its
+   own class names since the grid shape (fixed 7x24, row labels) differs from the scrolling
+   week-columns layout above. */
+.time-heatmap-wrap { overflow-x: auto; padding-bottom: 0.25rem; }
+.time-heatmap { display: flex; flex-direction: column; gap: 3px; width: max-content; }
+.time-heatmap-row { display: flex; align-items: center; gap: 3px; }
+.time-heatmap-hours-row { margin-bottom: 0.15rem; }
+.time-heatmap-weekday-label { width: 26px; flex-shrink: 0; font-size: 0.62rem; color: var(--text3); font-family: var(--font-mono); }
+.time-heatmap-hour { width: 14px; flex-shrink: 0; font-size: 0.6rem; color: var(--text3); text-align: center; font-family: var(--font-mono); }
+.time-heatmap-cell {
+    width: 14px;
+    height: 14px;
+    border-radius: 2px;
+    background: var(--bg3);
+    flex-shrink: 0;
+    border: none;
+    padding: 0;
+    transition: var(--transition);
+}
+.time-heatmap-cell.level-0 { background: var(--bg3); }
+.time-heatmap-cell.level-1 { background: color-mix(in srgb, var(--accent) 25%, var(--bg3)); }
+.time-heatmap-cell.level-2 { background: color-mix(in srgb, var(--accent) 50%, var(--bg3)); }
+.time-heatmap-cell.level-3 { background: color-mix(in srgb, var(--accent) 75%, var(--bg3)); }
+.time-heatmap-cell.level-4 { background: var(--accent); }
+/* Only actual cells are <button> (the legend stays <div>) - interaction styles are therefore
+   scoped to the element type, same convention as button.heatmap-day above. */
+button.time-heatmap-cell { cursor: pointer; }
+button.time-heatmap-cell:hover { outline: 1px solid var(--border2); outline-offset: 1px; }
+button.time-heatmap-cell.selected { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Weekday / time-of-day mini bar charts */
+.rhythm-grid { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+.rhythm-col { flex: 1 1 220px; min-width: 200px; }
+.rhythm-subtitle { font-size: 0.75rem; color: var(--text3); margin-bottom: 0.5rem; }
+.mini-bar-chart { display: flex; align-items: flex-end; gap: 0.4rem; height: 80px; }
+.mini-bar-col { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 0.3rem; height: 100%; }
+.mini-bar-track { position: relative; flex: 1 1 auto; width: 100%; max-width: 22px; display: flex; align-items: flex-end; background: var(--bg3); border-radius: 3px; overflow: visible; }
+.mini-bar-fill { width: 100%; background: var(--accent); border-radius: 3px; min-height: 2px; transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.mini-bar-fill.peak { background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 70%, white), var(--accent)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 60%, transparent); }
+.mini-bar-peak-star { position: absolute; top: -1.05rem; left: 50%; transform: translateX(-50%); font-size: 0.68rem; color: var(--accent); line-height: 1; }
+.mini-bar-label { font-size: 0.62rem; color: var(--text3); font-family: var(--font-mono); }
+
+/* Grade trend per semester (reuses .mini-bar-* chart, inverted grade scale) */
+.grade-chart { height: 100px; }
+.mini-bar-value { font-size: 0.62rem; color: var(--text2); font-family: var(--font-mono); }
+
+/* Hours-vs-grade scatter plot ("Does studying more pay off?", inverted grade scale like .grade-chart) */
+.scatter-wrap { display: flex; gap: 0.5rem; }
+.scatter-y-axis { display: flex; flex-direction: column; justify-content: space-between; padding-bottom: 1.2rem; font-size: 0.62rem; color: var(--text3); font-family: var(--font-mono); }
+.scatter-main { flex: 1 1 auto; display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
+.scatter-plot { position: relative; height: 180px; background: var(--bg3); border-radius: 6px; }
+.scatter-dot { position: absolute; width: 10px; height: 10px; border-radius: 50%; transform: translate(-50%, 50%); }
+.scatter-x-axis { display: flex; justify-content: space-between; font-size: 0.62rem; color: var(--text3); font-family: var(--font-mono); }
+
+/* Stacked monthly-per-course chart */
+.stacked-chart { display: flex; align-items: flex-end; gap: 1rem; }
+.stacked-col { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; flex: 1 1 0; }
+.stacked-track {
+    width: 100%;
+    max-width: 34px;
+    height: 100px;
+    display: flex;
+    flex-direction: column-reverse;
+    background: var(--bg3);
+    border-radius: 4px;
+    overflow: hidden;
+}
+.stacked-seg { width: 100%; }
+.stacked-label { font-size: 0.65rem; color: var(--text3); font-family: var(--font-mono); }
+
+/* ECTS cumulative timeline (step chart, reuses mini-bar-* look via its own track/fill pair
+   so columns can be pinned to a fixed width and scroll horizontally instead of squeezing
+   arbitrarily many completed-goal points into the card width) */
+.timeline-chart-wrap { overflow-x: auto; padding-bottom: 0.25rem; }
+.timeline-chart { display: flex; align-items: flex-end; gap: 0.4rem; height: 110px; width: max-content; min-width: 100%; }
+/* Wide enough for the full "dd.MM.yy" label below (~46px at 0.6rem monospace) - each column
+   reserves its own label space so consecutive dates can't visually overlap. The chart already
+   scrolls horizontally (.timeline-chart-wrap), same established pattern as the heatmap. */
+.timeline-col { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; height: 100%; width: 54px; flex-shrink: 0; }
+.timeline-track { position: relative; flex: 1 1 auto; width: 100%; max-width: 22px; display: flex; align-items: flex-end; background: var(--bg3); border-radius: 3px; }
+.timeline-fill { width: 100%; background: var(--accent); border-radius: 3px; min-height: 2px; transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.timeline-label { font-size: 0.6rem; color: var(--text3); font-family: var(--font-mono); white-space: nowrap; }
+
+/* ECTS actual-vs-target (monthly columns up to the desired completion date): actual as .timeline-fill,
+   target as a thin cross marker in the track (same marker idea as .balance-target-marker,
+   just horizontal on a vertical column). Scrolls horizontally like .timeline-chart-wrap. */
+.ectsplan-col { width: 44px; }
+.ectsplan-target-marker { position: absolute; left: -2px; right: -2px; height: 2px; background: var(--text); border-radius: 1px; }
+.ectsplan-legend { display: flex; gap: 1rem; font-size: 0.72rem; color: var(--text2); margin-bottom: 0.5rem; }
+.ectsplan-legend-item { display: inline-flex; align-items: center; gap: 0.35rem; }
+.ectsplan-legend-fill { width: 10px; height: 10px; border-radius: 2px; background: var(--accent); }
+.ectsplan-legend-marker { width: 10px; height: 2px; background: var(--text); border-radius: 1px; }
+
+/* Study-programme comparison: deliberately the same row look as the per-course list (.csr-*),
+   just with the accent color instead of the course color and an "active" badge for the currently selected programme. */
+.csr-badge.program-active-badge { color: var(--accent); }
+
+/* Session follow-through (productivity) weekly trend - reuses .mini-bar-* chart like .grade-chart.
+   12 weekly columns don't fit a phone-width card at .mini-bar-col's default shrink-to-fit sizing
+   (flex-shrink never goes below the "dd.MM." label's intrinsic width, so the row overflowed the
+   card on mobile instead of scrolling) - fixed-width, non-shrinking columns + overflow-x here
+   mirror the .timeline-chart-wrap pattern above. */
+.productivity-chart { height: 100px; overflow-x: auto; padding-bottom: 0.25rem; }
+.productivity-chart .mini-bar-col { flex: 0 0 34px; }
+
+/* Weekly study-frequency trend (early-warning bar chart, distinct from the goal dot-strip below) - same 12-column overflow fix as .productivity-chart above. */
+.inactivity-chart { height: 80px; overflow-x: auto; padding-bottom: 0.25rem; }
+.inactivity-chart .mini-bar-col { flex: 0 0 34px; }
+
+/* Session length histogram - reuses .mini-bar-* chart with a count label like .grade-chart */
+.session-length-chart { height: 100px; }
+
+/* Weekly goal history strip (last N weeks, met/missed dot row) */
+.goal-history-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
+.goal-dot { display: inline-block; width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--border2); background: transparent; transition: var(--transition); cursor: default; }
+.goal-dot.met { background: var(--accent); border-color: var(--accent); }
+.goal-history-summary { font-size: 0.8rem; color: var(--text2); }
+
+/* Grouped (multi-series) bar chart: one cluster per week, one bar per series within the
+   cluster. Used by the course-comparison chart (one bar per course) and the notes-vs-hours
+   correlation chart (fixed two-bar cluster) - same visual language as .stacked-chart above,
+   just side-by-side instead of stacked, since both need per-series color coding. Horizontally
+   scrollable like .timeline-chart-wrap/.heatmap-wrap since 12 weeks rarely fit a narrow card. */
+.grouped-chart-wrap { overflow-x: auto; padding-bottom: 0.25rem; }
+.grouped-chart { display: flex; align-items: flex-end; gap: 0.7rem; width: max-content; min-width: 100%; }
+.grouped-col { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; flex-shrink: 0; }
+.grouped-bars { display: flex; align-items: flex-end; gap: 2px; height: 120px; }
+.grouped-bar-track { width: 8px; height: 100%; display: flex; align-items: flex-end; background: var(--bg3); border-radius: 2px; overflow: hidden; }
+.grouped-bar-fill { width: 100%; border-radius: 2px; min-height: 2px; transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.grouped-label { font-size: 0.6rem; color: var(--text3); font-family: var(--font-mono); white-space: nowrap; }
+
+/* Course balance: ECTS-weighted target time-share vs. actual time-share per active course.
+   A single track shows the actual share as a filled bar with the target share overlaid as a
+   thin marker line, so over-/under-investment reads directly off one bar instead of needing
+   two separate bars to compare by eye. */
+.balance-row { padding: 0.6rem 0; border-bottom: 1px solid var(--border); }
+.balance-row:last-child { border-bottom: none; }
+.balance-head { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+.balance-name { flex: 1; }
+.balance-delta { font-family: var(--font-mono); font-size: 0.75rem; cursor: default; }
+.balance-delta-over { color: #55efc4; }
+.balance-delta-under { color: #e17055; }
+.balance-delta-flat { color: var(--text3); }
+.balance-track { position: relative; height: 8px; background: var(--bg3); border-radius: 4px; margin-bottom: 0.4rem; overflow: visible; }
+.balance-actual-fill { height: 100%; border-radius: 4px; background: var(--c); transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+.balance-target-marker { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--text); border-radius: 1px; }
+.balance-meta { display: flex; gap: 1rem; font-size: 0.72rem; color: var(--text2); font-family: var(--font-mono); }
+
+/* Individual grades over time (StatsGradeTimelineCard) - reuses the .timeline-* scroll columns
+   from the ECTS timeline plus .mini-bar-value from the semester grade chart; only the height is
+   its own, because the grade value is additionally shown above the column. */
+.grade-timeline-chart { height: 120px; }
+
+/* Weekday ranking: same underlying data as the weekday bar chart (StatsRhythmCard),
+   just as a sorted horizontal ranking list - rank 1 on top instead of Mon-Sun order. */
+.ranking-list { display: flex; flex-direction: column; gap: 0.45rem; margin-top: 0.6rem; }
+.ranking-row { display: flex; align-items: center; gap: 0.6rem; }
+.ranking-pos { width: 1.2rem; flex-shrink: 0; text-align: right; font-size: 0.72rem; color: var(--text3); font-family: var(--font-mono); }
+.ranking-pos.top { color: var(--accent); }
+.ranking-label { width: 2.2rem; flex-shrink: 0; font-size: 0.75rem; color: var(--text2); font-family: var(--font-mono); }
+.ranking-track { flex: 1 1 auto; height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
+.ranking-fill { height: 100%; border-radius: 4px; background: color-mix(in srgb, var(--accent) 65%, var(--bg3)); min-width: 2px; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.ranking-fill.peak { background: var(--accent); }
+.ranking-hours { width: 4.6rem; flex-shrink: 0; text-align: right; font-size: 0.72rem; color: var(--text3); font-family: var(--font-mono); }
+
+/* Semester comparison: current semester (accent) directly above the average of earlier semesters
+   (gray) per metric - two thin bars share one scale per metric. */
+.semcomp-legend { display: flex; gap: 1rem; font-size: 0.72rem; color: var(--text2); margin-bottom: 0.75rem; }
+.semcomp-legend-item { display: inline-flex; align-items: center; gap: 0.35rem; }
+.semcomp-swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.semcomp-swatch.current, .semcomp-fill.current { background: var(--accent); }
+.semcomp-swatch.previous, .semcomp-fill.previous { background: color-mix(in srgb, var(--text3) 55%, var(--bg3)); }
+.semcomp-metric { padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
+.semcomp-metric:last-child { border-bottom: none; }
+.semcomp-metric-label { font-size: 0.75rem; color: var(--text2); margin-bottom: 0.4rem; }
+.semcomp-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.3rem; }
+.semcomp-row:last-child { margin-bottom: 0; }
+.semcomp-track { flex: 1 1 auto; height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
+.semcomp-fill { height: 100%; border-radius: 4px; min-width: 2px; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.semcomp-val { width: 4.6rem; flex-shrink: 0; text-align: right; font-size: 0.72rem; color: var(--text3); font-family: var(--font-mono); }
+
+/* Course list: right-hand header group (badge/grade/ECTS ring) + mini sparkline in the meta row.
+   The ring is a miniature of the dashboard's daily ring (conic-gradient, hole with value) in the course color;
+   the sparkline deliberately has no axes/labels (a pure at-a-glance indicator). */
+.csr-right { margin-left: auto; display: inline-flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+/* .csr-badge carries margin-left:auto over from its sibling cards - neutralize it in the wrapper. */
+.csr-right .csr-badge { margin-left: 0; }
+.csr-ects-ring { width: 26px; height: 26px; border-radius: 50%; position: relative; flex-shrink: 0; display: inline-block; }
+.csr-ects-ring-hole {
+    position: absolute;
+    inset: 4px;
+    background: var(--bg2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.58rem;
+    font-family: var(--font-mono);
+    color: var(--text2);
+}
+.csr-spark { margin-left: auto; display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; cursor: default; }
+.csr-spark-bar { width: 3px; min-height: 1px; border-radius: 1px; background: color-mix(in srgb, var(--c) 75%, var(--bg3)); }
+
+/* === Study Report (printable, Report.razor) === */
+.report-actions { display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
+.report-doc {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    max-width: 720px;
+}
+.report-doc-head { margin-bottom: 1.75rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+.report-title { font-size: 1.4rem; font-weight: 500; margin-bottom: 0.35rem; }
+.report-meta { font-size: 0.8rem; color: var(--text2); }
+.report-section { margin-bottom: 1.75rem; }
+.report-section h2 { font-size: 0.95rem; font-weight: 500; margin-bottom: 0.75rem; }
+.report-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.report-table th, .report-table td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); }
+.report-table thead th { color: var(--text2); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+/* The course breakdown has 7 columns and used to run past the card edge on phone width instead of
+   scrolling (width:100% above doesn't force the columns to shrink) - same
+   overflow-x pattern as .timeline-chart-wrap etc.; .report-table stays as wide as its content
+   needs, min-width:100% fills the card when there's enough room. */
+.report-table-wrap { overflow-x: auto; padding-bottom: 0.25rem; }
+.report-table-wrap .report-table { width: auto; min-width: 100%; }
+.report-table-wrap .report-table th, .report-table-wrap .report-table td { white-space: nowrap; }
+.report-summary-table th { width: 55%; color: var(--text2); font-weight: 400; }
+.report-footer { font-size: 0.75rem; color: var(--text3); text-align: center; margin-top: 1.5rem; }
+

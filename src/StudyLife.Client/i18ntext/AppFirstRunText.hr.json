@@ -1,0 +1,10 @@
+{
+  "Description": "S kojim StudyLife poslužiteljem bi se ova aplikacija trebala povezati?",
+  "ServerUrlLabel": "URL poslužitelja",
+  "CheckingConnection": "Provjera veze…",
+  "UseAnyway": "Ipak koristi",
+  "Connect": "Poveži",
+  "InvalidUrl": "To nije valjani URL.",
+  "UnexpectedResponse": "Poslužitelj je odgovorio, ali neočekivano (HTTP {0}). Dodirnite ponovno da biste ga ipak koristili.",
+  "ServerUnreachable": "Poslužitelj nije dostupan. Dodirnite ponovno da biste ipak koristili ovaj URL."
+}

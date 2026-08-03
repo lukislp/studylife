@@ -1,0 +1,608 @@
+@page "/notes"
+@using System.Net
+@using System.Text
+@using StudyLife.Client.Models
+@using StudyLife.Client.Services
+@using StudyLife.Shared
+@inject HttpClient Http
+@inject AppStateService State
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@implements IDisposable
+
+<PageTitle>@T.PageTitle</PageTitle>
+
+@if (_printView)
+{
+    <!-- Print view as a PDF substitute: no PDF library, print.css + window.print() via the
+         printPage() interop already present in index.html - same technique as Report.razor. -->
+    <div class="notes-print-toolbar no-print">
+        <button class="btn-secondary" @onclick="ClosePrintView">@T.PrintBackButton</button>
+        <button class="btn-primary" @onclick="PrintNow">@T.PrintNowButton</button>
+    </div>
+    <div class="notes-print-doc">
+        <div class="notes-print-head">
+            <h1>@T.ExportPdfLabel</h1>
+            <div class="notes-print-meta">@string.Format(T.PrintGeneratedOnFormat ?? "", DateTime.Now.ToString("dd.MM.yyyy HH:mm"))</div>
+        </div>
+        @if (PrintGroups.Count == 0)
+        {
+            <p>@T.NoMatchingNotes</p>
+        }
+        @foreach (var group in PrintGroups)
+        {
+            <div class="notes-print-group">
+                <h2>@(group.Course != null ? $"{group.Course.Icon} {group.Course.Name}" : T.NoCourse)</h2>
+                @foreach (var n in group.Notes)
+                {
+                    <div class="notes-print-card">
+                        <div class="notes-print-card-title">@(string.IsNullOrWhiteSpace(n.Title) ? (T.Untitled ?? "") : n.Title)</div>
+                        <div class="notes-print-card-meta">@n.UpdatedAt.ToString("dd.MM.yyyy HH:mm")</div>
+                        <div class="notes-print-card-content">@n.Content</div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="setup-page notes-wide">
+        <div class="setup-header" style="display:flex;align-items:flex-start;justify-content:space-between">
+            <div>
+                <h1>@T.PageHeading</h1>
+                <p>@T.Subtitle</p>
+            </div>
+            <div style="display:flex;gap:0.5rem">
+                <button class="btn-secondary" @onclick="OpenExportModal">@T.ExportPdfLabel</button>
+                <button class="btn-primary" @onclick="NewNote">@T.NewNoteButton</button>
+            </div>
+        </div>
+
+        <div class="notes-cols">
+            <!-- Note list -->
+            <div class="setup-section notes-list-section">
+                <div class="ss-label">@T.AllNotes</div>
+                <div class="notes-filter-row">
+                    <input class="input" type="text" placeholder="@T.SearchPlaceholder" @bind="_searchQuery" @bind:event="oninput" @bind:after="OnSearchQueryChanged" />
+                    <select class="select" @bind="_filterCourseId">
+                        <option value="0">@T.AllCoursesOption</option>
+                        @foreach (var c in _courses)
+                        {
+                            <option value="@c.Id">@c.Icon @c.Name</option>
+                        }
+                    </select>
+                </div>
+                @if (_notes.Count == 0 && _selectedNote == null)
+                {
+                    <div style="color:var(--text3);font-size:0.875rem;padding:0.5rem 0">
+                        @T.NoNotesYet
+                    </div>
+                }
+                else if (FilteredNotes.Count == 0)
+                {
+                    <div style="color:var(--text3);font-size:0.875rem;padding:0.5rem 0">
+                        @T.NoMatchingNotes
+                    </div>
+                }
+                <div class="notes-list-scroll">
+                    <Virtualize Items="FilteredNotes" Context="note" ItemSize="84">
+                        @{
+                            var n = note;
+                            var isActive = _selectedNote?.Id == n.Id;
+                        }
+                        <div class="note-row @(isActive ? "note-row--active" : "")" @onclick="() => SelectNote(n)">
+                            <div class="note-row__title">@GetHighlightedTitle(n)</div>
+                            <div class="note-row__meta">
+                                @if (n.CourseId.HasValue)
+                                {
+                                    var course = _courses.FirstOrDefault(c => c.Id == n.CourseId);
+                                    if (course != null)
+                                    {
+                                        <span class="topic-pill" style="--c:@course.Color;background:color-mix(in srgb,var(--c) 12%,transparent);color:var(--c)">@course.Icon @course.Code</span>
+                                    }
+                                }
+                                <span style="color:var(--text3);font-size:0.75rem">@FormatDate(n.UpdatedAt)</span>
+                                @if (n.SessionId.HasValue)
+                                {
+                                    <span class="note-linked-badge" title="@T.LinkedToSessionHint">🔗</span>
+                                }
+                            </div>
+                            <div class="note-row__preview">@GetHighlightedPreview(n)</div>
+                        </div>
+                    </Virtualize>
+                </div>
+            </div>
+
+            <!-- Editor -->
+            @if (_selectedNote != null)
+            {
+                <div class="setup-section notes-editor-section">
+                    <div class="ss-label" style="display:flex;justify-content:space-between;align-items:center">
+                        <span>
+                            @(_selectedNote.Id == 0 ? T.NewNoteHeader : T.Edit)
+                            @if (_selectedNote.SessionId.HasValue)
+                            {
+                                <span class="note-linked-badge" title="@T.LinkedToSessionHint">🔗</span>
+                            }
+                        </span>
+                        <div style="display:flex;gap:0.75rem;align-items:center">
+                            @if (_saving)
+                            {
+                                <span style="color:var(--accent);font-size:0.75rem">@T.Saved</span>
+                            }
+                            @if (_confirmingDelete)
+                            {
+                                <div class="note-confirm-delete">
+                                    <span class="note-confirm-delete__question">@T.ConfirmDeleteNoteQuestion</span>
+                                    <button class="btn-secondary" style="font-size:0.8rem;padding:0.3rem 0.75rem;border-radius:6px" @onclick="CancelDeleteNote">@T.ConfirmDeleteCancel</button>
+                                    <button class="btn-danger" style="font-size:0.8rem;padding:0.3rem 0.75rem;border-radius:6px" @onclick="ConfirmDeleteNote">@T.ConfirmDeleteYes</button>
+                                </div>
+                            }
+                            else
+                            {
+                                <button class="btn-danger" style="font-size:0.8rem;padding:0.3rem 0.75rem;border-radius:6px" @onclick="DeleteNote">@T.Delete</button>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="field" style="margin-bottom:0.75rem">
+                        <label style="font-size:0.75rem;color:var(--text2);margin-bottom:0.3rem;display:block">@T.TitleLabel</label>
+                        <input class="input"
+                               type="text"
+                               placeholder="@T.NoteTitlePlaceholder"
+                               @bind="_editTitle"
+                               @bind:event="oninput"
+                               @bind:after="ScheduleSave" />
+                    </div>
+
+                    <div class="field" style="margin-bottom:0.75rem">
+                        <label style="font-size:0.75rem;color:var(--text2);margin-bottom:0.3rem;display:block">@T.CourseLabel</label>
+                        <select @bind="_editCourseId" class="select">
+                            <option value="0">@T.NoCourse</option>
+                            @foreach (var c in _courses)
+                            {
+                                <option value="@c.Id">@c.Icon @c.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label style="font-size:0.75rem;color:var(--text2);margin-bottom:0.3rem;display:block">@T.ContentLabel</label>
+                        <textarea class="input note-textarea"
+                                  placeholder="@T.ContentPlaceholder"
+                                  @bind="_editContent"
+                                  @bind:event="oninput"
+                                  @bind:after="ScheduleSave"></textarea>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="setup-section" style="display:flex;align-items:center;justify-content:center;min-height:200px;color:var(--text3)">
+                    <div style="text-align:center">
+                        <div style="font-size:2rem;color:var(--accent);opacity:0.3;margin-bottom:0.5rem">◪</div>
+                        <div style="font-size:0.875rem">@T.SelectNotePrompt</div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (_showExportModal)
+        {
+            <div class="modal-overlay" @onclick="CloseExportModal">
+                <div class="modal" @onclick:stopPropagation="true">
+                    <div class="modal-header">
+                        <h3>@T.ExportPdfLabel</h3>
+                        <button type="button" class="modal-close" @onclick="CloseExportModal">✕</button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="ss-desc">@T.ExportPdfModalDesc</p>
+                        <div class="field">
+                            <label style="font-size:0.75rem;color:var(--text2);margin-bottom:0.3rem;display:block">@T.CourseLabel</label>
+                            <select class="select" @bind="_exportCourseId">
+                                <option value="0">@T.AllCoursesOption</option>
+                                @foreach (var c in _courses)
+                                {
+                                    <option value="@c.Id">@c.Icon @c.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div style="font-size:0.8rem;color:var(--text3)">
+                            @string.Format(T.ExportSelectionCount ?? "", PrintCandidateNotes.Count)
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" @onclick="CloseExportModal">@T.ConfirmDeleteCancel</button>
+                        <button type="button" class="btn-primary" @onclick="StartPrintPreview">@T.ExportPreviewButton</button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<NoteDto> _notes = new();
+    private List<CourseDto> _courses = new();
+    private NoteDto? _selectedNote;
+
+    private string _editTitle = "";
+    private string _editContent = "";
+    private int _editCourseId = 0;
+    private bool _saving;
+    private bool _confirmingDelete;
+    private System.Threading.Timer? _debounce;
+    private System.Threading.Timer? _searchDebounce;
+    private I18nText.NotesText T = new();
+    private string _searchQuery = "";
+    private int _filterCourseId = 0;
+    private List<NoteDto>? _searchResults; // null = no active search, otherwise server FTS hits
+
+    // Empty search: normal _notes list as before. Non-empty search: server FTS result
+    // (relevance-sorted), the course filter stays layered on top client-side in both cases.
+    // Active-programme scope: general notes (no CourseId) always stay visible,
+    // course-bound ones only if the course belongs to the active programme (_allProgramCourseIds).
+    private List<NoteDto> FilteredNotes =>
+        (string.IsNullOrWhiteSpace(_searchQuery) ? _notes : _searchResults ?? new List<NoteDto>())
+        .Where(n => !n.CourseId.HasValue || _allProgramCourseIds.Contains(n.CourseId.Value))
+        .Where(n => _filterCourseId == 0 || n.CourseId == _filterCourseId)
+        .ToList();
+
+    private HashSet<int> _allProgramCourseIds = new();
+
+    private bool _showExportModal;
+    private bool _printView;
+    private int _exportCourseId = 0;
+
+    // Candidates for the PDF export: same programme scope as FilteredNotes, additionally
+    // narrowable via the course filter in the modal. Notes with neither a title NOR content would be an
+    // empty entry in the document and are therefore skipped.
+    private List<NoteDto> PrintCandidateNotes =>
+        _notes
+            .Where(n => !n.CourseId.HasValue || _allProgramCourseIds.Contains(n.CourseId.Value))
+            .Where(n => _exportCourseId == 0 || n.CourseId == _exportCourseId)
+            .Where(n => !string.IsNullOrWhiteSpace(n.Title) || !string.IsNullOrWhiteSpace(n.Content))
+            .ToList();
+
+    // Grouped by course for the print view (general notes without a course first, then
+    // the courses alphabetically) - reads much better as a document than a flat list.
+    private List<(CourseDto? Course, List<NoteDto> Notes)> PrintGroups =>
+        PrintCandidateNotes
+            .GroupBy(n => n.CourseId)
+            .Select(g => (
+                Course: g.Key.HasValue ? _courses.FirstOrDefault(c => c.Id == g.Key.Value) : null,
+                Notes: g.OrderByDescending(n => n.UpdatedAt).ToList()))
+            .OrderBy(g => g.Course == null ? 0 : 1)
+            .ThenBy(g => g.Course?.Name ?? "")
+            .ToList();
+
+    private void OpenExportModal()
+    {
+        _exportCourseId = _filterCourseId;
+        _showExportModal = true;
+    }
+
+    private void CloseExportModal() => _showExportModal = false;
+
+    private void StartPrintPreview()
+    {
+        _showExportModal = false;
+        _printView = true;
+    }
+
+    private void ClosePrintView() => _printView = false;
+
+    private async Task PrintNow()
+    {
+        // printPage() already lives in index.html (best-effort window.print() wrapper, see
+        // Report.razor.cs) - no new JS interop needed.
+        try { await JS.InvokeVoidAsync("printPage"); } catch { /* best-effort, ignore */ }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var settings = await State.GetSettingsAsync();
+        var allCourses = await State.GetCoursesAsync();
+        _allProgramCourseIds = allCourses.Select(c => c.Id).ToHashSet();
+        _courses = allCourses
+            .Where(c => settings.SelectedCourseIds.Contains(c.Id) || settings.CompletedCourseIds.Contains(c.Id))
+            .ToList();
+        await LoadNotes();
+        T = await I18nText.GetTextTableAsync<I18nText.NotesText>(this);
+
+        // PWA app-icon shortcut ("New note") links here with ?new=1 to jump straight into a fresh note.
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
+        if (System.Web.HttpUtility.ParseQueryString(uri.Query)["new"] == "1")
+        {
+            NewNote();
+        }
+    }
+
+    private const string NotesReadCacheKey = "studylife-cache-notes";
+
+    private async Task LoadNotes()
+    {
+        try
+        {
+            _notes = await Http.GetFromJsonAsync<List<NoteDto>>("api/notes") ?? new();
+            await State.StoreReadCacheAsync(NotesReadCacheKey, _notes);
+        }
+        catch
+        {
+            // Offline cold start: last successful server state instead of an empty list
+            // (same rule as in AppStateService: read the cache ONLY on the error path).
+            _notes = await State.LoadReadCacheAsync<List<NoteDto>>(NotesReadCacheKey) ?? new();
+        }
+    }
+
+    private void NewNote()
+    {
+        _selectedNote = new NoteDto { Id = 0, Title = "", Content = "", CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
+        _editTitle = "";
+        _editContent = "";
+        _editCourseId = 0;
+        _confirmingDelete = false;
+    }
+
+    private void SelectNote(NoteDto note)
+    {
+        _selectedNote = note;
+        _editTitle = note.Title;
+        _editContent = note.Content;
+        _editCourseId = note.CourseId ?? 0;
+        _confirmingDelete = false;
+    }
+
+    private void OnSearchQueryChanged()
+    {
+        _searchDebounce?.Dispose();
+        _searchDebounce = null;
+
+        if (string.IsNullOrWhiteSpace(_searchQuery))
+        {
+            // Search cleared: immediately show the normal list again, no server round trip.
+            _searchResults = null;
+            return;
+        }
+
+        // Immediate local interim result (substring filter like before) so the list
+        // doesn't briefly go empty while waiting for the debounced FTS result from the server.
+        _searchResults = _notes
+            .Where(n => n.Title.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)
+                || n.Content.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        _searchDebounce = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(RunServerSearch);
+        }, null, TimeSpan.FromMilliseconds(300), Timeout.InfiniteTimeSpan);
+    }
+
+    private async Task RunServerSearch()
+    {
+        var query = _searchQuery;
+        if (string.IsNullOrWhiteSpace(query)) return;
+        try
+        {
+            var results = await Http.GetFromJsonAsync<List<NoteDto>>($"api/notes/search?q={Uri.EscapeDataString(query)}") ?? new();
+            // Discard the response if the user has meanwhile kept typing/cleared the search.
+            if (query == _searchQuery)
+            {
+                _searchResults = results;
+                StateHasChanged();
+            }
+        }
+        catch
+        {
+            // Offline/error: the local interim result (see above) simply stays as-is.
+        }
+    }
+
+    private void ScheduleSave()
+    {
+        _debounce?.Dispose();
+        _debounce = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(SaveCurrent);
+        }, null, TimeSpan.FromMilliseconds(800), Timeout.InfiniteTimeSpan);
+    }
+
+    private async Task SaveCurrent()
+    {
+        if (_selectedNote == null) return;
+        _selectedNote.Title = _editTitle;
+        _selectedNote.Content = _editContent;
+        _selectedNote.CourseId = _editCourseId == 0 ? null : _editCourseId;
+
+        // Offline (network exception): enqueue the note into AppStateService's write queue
+        // (replayed on the next poll) instead of silently losing it.
+        // New notes get a NEGATIVE temp id, so further offline edits/deletes of
+        // the same note stay correlatable (replay strips it → POST).
+        if (_selectedNote.Id == 0)
+        {
+            try
+            {
+                var created = await Http.PostAsJsonAsync("api/notes", _selectedNote);
+                if (created.IsSuccessStatusCode)
+                {
+                    var dto = await created.Content.ReadFromJsonAsync<NoteDto>();
+                    if (dto != null)
+                    {
+                        _selectedNote = dto;
+                        _notes.Insert(0, dto);
+                    }
+                }
+            }
+            catch
+            {
+                _selectedNote.Id = -(int)(DateTime.UtcNow.Ticks / TimeSpan.TicksPerMillisecond % int.MaxValue);
+                _selectedNote.CreatedAt = DateTime.Now;
+                _selectedNote.UpdatedAt = DateTime.Now;
+                await State.EnqueueNoteSaveAsync(_selectedNote);
+                _notes.Insert(0, _selectedNote);
+            }
+        }
+        else
+        {
+            try { await Http.PutAsJsonAsync($"api/notes/{_selectedNote.Id}", _selectedNote); }
+            catch { await State.EnqueueNoteSaveAsync(_selectedNote); }
+            var existing = _notes.FirstOrDefault(n => n.Id == _selectedNote.Id);
+            if (existing != null)
+            {
+                existing.Title = _selectedNote.Title;
+                existing.Content = _selectedNote.Content;
+                existing.CourseId = _selectedNote.CourseId;
+                existing.UpdatedAt = DateTime.Now;
+            }
+        }
+
+        _saving = true;
+        await InvokeAsync(StateHasChanged);
+        await Task.Delay(2000);
+        _saving = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void DeleteNote()
+    {
+        if (_selectedNote == null) return;
+
+        if (_selectedNote.Id == 0)
+        {
+            _selectedNote = null;
+            _confirmingDelete = false;
+            return;
+        }
+
+        _confirmingDelete = true;
+    }
+
+    private void CancelDeleteNote()
+    {
+        _confirmingDelete = false;
+    }
+
+    private async Task ConfirmDeleteNote()
+    {
+        if (_selectedNote == null) return;
+        // Offline: enqueue the delete (with a negative temp id, the queue just discards the
+        // enqueued save — the server doesn't know about the note yet anyway).
+        if (_selectedNote.Id < 0)
+        {
+            await State.EnqueueNoteDeleteAsync(_selectedNote.Id);
+        }
+        else
+        {
+            try { await Http.DeleteAsync($"api/notes/{_selectedNote.Id}"); }
+            catch { await State.EnqueueNoteDeleteAsync(_selectedNote.Id); }
+        }
+        _notes.RemoveAll(n => n.Id == _selectedNote.Id);
+        _searchResults?.RemoveAll(n => n.Id == _selectedNote.Id);
+        _selectedNote = null;
+        _confirmingDelete = false;
+    }
+
+    private string FormatDate(DateTime dt)
+    {
+        var diff = DateTime.Now - dt;
+        if (diff.TotalMinutes < 1) return T.JustNow;
+        if (diff.TotalHours < 1) return string.Format(T.MinAgo, (int)diff.TotalMinutes);
+        if (diff.TotalDays < 1) return string.Format(T.HourAgo, (int)diff.TotalHours);
+        if (diff.TotalDays < 7) return string.Format(T.DayAgo, (int)diff.TotalDays);
+        return dt.ToString("dd.MM.yyyy");
+    }
+
+    // Note title with an optional highlight of search matches (only with an active search).
+    // The Untitled fallback is never searched/highlighted, since it isn't user content.
+    private MarkupString GetHighlightedTitle(NoteDto n)
+    {
+        if (string.IsNullOrEmpty(n.Title))
+        {
+            return new MarkupString(WebUtility.HtmlEncode(T.Untitled ?? ""));
+        }
+        if (string.IsNullOrWhiteSpace(_searchQuery))
+        {
+            return new MarkupString(WebUtility.HtmlEncode(n.Title));
+        }
+        return HighlightMatches(n.Title, _searchQuery, "", "");
+    }
+
+    // Preview excerpt of the note content. Without an active search: simply the first 80 characters
+    // (as before). With an active search: the excerpt is centered around the first match, so
+    // matches beyond the first 80 characters are still visible, and all matches within the
+    // excerpt are highlighted.
+    private MarkupString GetHighlightedPreview(NoteDto n)
+    {
+        const int maxLen = 80;
+        var content = n.Content;
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return new MarkupString(WebUtility.HtmlEncode(T.NoContent ?? ""));
+        }
+
+        var oneline = content.Replace('\n', ' ').Trim();
+        var query = _searchQuery;
+
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            var plain = oneline.Length > maxLen ? oneline[..maxLen] + "…" : oneline;
+            return new MarkupString(WebUtility.HtmlEncode(plain));
+        }
+
+        var matchIndex = oneline.IndexOf(query, StringComparison.OrdinalIgnoreCase);
+        if (matchIndex < 0 || oneline.Length <= maxLen)
+        {
+            var plain = oneline.Length > maxLen ? oneline[..maxLen] + "…" : oneline;
+            return HighlightMatches(plain, query, "", "");
+        }
+
+        // Center the excerpt around the first match (match at roughly one third from the start).
+        var start = Math.Max(0, matchIndex - maxLen / 3);
+        if (start + maxLen > oneline.Length) start = Math.Max(0, oneline.Length - maxLen);
+        var length = Math.Min(maxLen, oneline.Length - start);
+        var excerpt = oneline.Substring(start, length);
+        var prefix = start > 0 ? "…" : "";
+        var suffix = start + length < oneline.Length ? "…" : "";
+
+        return HighlightMatches(excerpt, query, prefix, suffix);
+    }
+
+    // Builds a MarkupString with <mark>-highlighted matches of `query` in `text` (substring,
+    // case-insensitive). Security-critical: EVERY non-match segment (including prefix/suffix)
+    // is encoded via WebUtility.HtmlEncode before going into the MarkupString - only the
+    // <mark> wrapper tags themselves are raw markup. This way, note content containing &lt;, &gt;, or &
+    // can neither break the markup nor be executed as HTML/script (XSS protection).
+    private static MarkupString HighlightMatches(string text, string query, string prefix, string suffix)
+    {
+        var sb = new StringBuilder();
+        sb.Append(WebUtility.HtmlEncode(prefix));
+
+        var pos = 0;
+        while (pos < text.Length)
+        {
+            var idx = text.IndexOf(query, pos, StringComparison.OrdinalIgnoreCase);
+            if (idx < 0)
+            {
+                sb.Append(WebUtility.HtmlEncode(text[pos..]));
+                break;
+            }
+
+            sb.Append(WebUtility.HtmlEncode(text[pos..idx]));
+            sb.Append("<mark class=\"note-highlight\">");
+            sb.Append(WebUtility.HtmlEncode(text.Substring(idx, query.Length)));
+            sb.Append("</mark>");
+            pos = idx + query.Length;
+        }
+
+        sb.Append(WebUtility.HtmlEncode(suffix));
+        return new MarkupString(sb.ToString());
+    }
+
+    public void Dispose()
+    {
+        _debounce?.Dispose();
+        _searchDebounce?.Dispose();
+    }
+}

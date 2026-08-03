@@ -1,0 +1,338 @@
+@page "/calendar"
+@using StudyLife.Client.Models
+@using StudyLife.Client.Services
+@using StudyLife.Shared
+@inject AppStateService State
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+@inject IJSRuntime JS
+@inject HttpClient Http
+@implements IDisposable
+
+<PageTitle>StudyLife — Calendar</PageTitle>
+
+<div class="calendar-page">
+    <CalendarHeader WeekLabel="@_weekLabel"
+                    TodayText="@T.Today"
+                    ExportWeekButtonText="@T.ExportWeekButton"
+                    PrintUnsupported="_printUnsupported"
+                    PrintUnsupportedHintText="@T.PrintUnsupportedHint"
+                    ViewMode="@_viewMode"
+                    WeekViewText="@T.WeekViewLabel"
+                    DayViewText="@T.DayViewLabel"
+                    OnViewModeChanged="SetViewMode"
+                    OnPrevWeek="Prev"
+                    OnNextWeek="Next"
+                    OnToday="GoToday"
+                    OnPrint="PrintWeek"
+                    OnHeaderTouchStart="OnHeaderTouchStart"
+                    OnHeaderTouchEnd="OnHeaderTouchEnd" />
+
+    <div class="cal-import-row no-print">
+        <button type="button" class="btn-secondary" @onclick="OpenImportModal">📥 @T.ImportIcsButton</button>
+        <button type="button" class="btn-secondary" @onclick="OpenTemplatesModal">📑 @T.TemplatesButton</button>
+        <a class="btn-secondary" href="/weekplan">🖨️ @T.WeekPlanLinkButton</a>
+    </div>
+
+    <CalendarFilterRow SearchQuery="@_searchQuery"
+                        SearchQueryChanged="@(v => _searchQuery = v)"
+                        SearchPlaceholder="@T.SearchSessionsPlaceholder"
+                        Courses="_courses"
+                        HiddenCourseIds="_hiddenCourseIds"
+                        Goals="_goals"
+                        OnToggleCourseFilter="ToggleCourseFilter" />
+
+    <!-- Outer: horizontal scroll only -->
+    <div class="cal-outer" id="cal-outer">
+        <!-- Inner: fixed minimum width, header + body rigidly together.
+             In day view (.cal-day-mode) the minimum width is dropped:
+             one column fills the full viewport width, no horizontal scroll. -->
+        <div class="cal-inner @(_viewMode == "day" ? "cal-day-mode" : "")">
+            <!-- Day-Header-Row (sticky top) -->
+            <div class="cal-header-row">
+                <div class="cal-hours-spacer"></div>
+                @foreach (var day in VisibleDays)
+                {
+                    var dayRef = day;
+                    <CalendarDayHeaderCell Date="dayRef" />
+                }
+            </div>
+
+            <!-- Scrollable body (vertical only) -->
+            <div class="cal-scroll-body">
+                <div class="cal-grid">
+                    <!-- Hour labels -->
+                    <div class="cal-hours">
+                        @for (int h = 0; h <= 23; h++)
+                        {
+                            <div class="hour-label" style="top: @(h * 60)px">@h.ToString("00"):00</div>
+                        }
+                    </div>
+
+                    <!-- Day columns (day view: only _currentDay, full width) -->
+                    @foreach (var day in VisibleDays)
+                    {
+                        var dayRef = day;
+                        <CalendarDayColumn Date="dayRef"
+                                           Sessions="SessionsForDay(dayRef)"
+                                           OnDayClick="@(e => OnDayClick(dayRef, e))"
+                                           OnSessionClick="@(s => EditSession(s))" />
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Session modal -->
+@if (_showModal)
+{
+    <div class="modal-overlay" @onclick="CloseModal">
+        <div class="modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>@(_editSession?.Id > 0 ? T.EditSession : T.NewSession)</h3>
+                <button class="modal-close" @onclick="CloseModal">✕</button>
+            </div>
+            <div class="modal-body" @onclick="() => _confirmingDelete = false">
+                @if (!string.IsNullOrEmpty(_formError))
+                {
+                    <div style="color:var(--danger,#e74c3c);margin-bottom:0.75rem;font-size:0.875rem">⚠️ @_formError</div>
+                }
+                @if (!string.IsNullOrEmpty(_formWarning))
+                {
+                    <div class="warning-banner">⚠️ @_formWarning</div>
+                }
+                @if ((_editSession == null || _editSession.Id == 0) && _templates.Count > 0)
+                {
+                    <div class="field">
+                        <label>@T.FromTemplateLabel</label>
+                        <select @bind="_selectedTemplateId" @bind:after="ApplyTemplate" class="select">
+                            <option value="0">@T.FromTemplateNoneOption</option>
+                            @foreach (var t in _templates)
+                            {
+                                <option value="@t.Id">@t.Name</option>
+                            }
+                        </select>
+                    </div>
+                }
+                <div class="field">
+                    <label>@T.Course</label>
+                    <select @bind="_formCourseId" @bind:after="OnFormFieldChanged" class="select">
+                        @foreach (var c in _courses)
+                        {
+                            <option value="@c.Id">@c.Icon @c.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="field">
+                    <label>@T.TopicOptional</label>
+                    <input type="text" @bind="_formTopic" @bind:after="OnFormFieldChanged" class="input" placeholder="@T.TopicPlaceholder" />
+                </div>
+                <div class="field-row">
+                    <div class="field">
+                        <label>@T.Start</label>
+                        <input type="datetime-local" @bind="_formStart" @bind:after="OnFormFieldChanged" class="input" min="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+                    </div>
+                    <div class="field">
+                        <label>@T.End</label>
+                        <input type="datetime-local" @bind="_formEnd" @bind:after="OnFormFieldChanged" class="input" min="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+                    </div>
+                </div>
+                <div class="field field-save-template">
+                    @if (!_showSaveAsTemplateForm)
+                    {
+                        <button type="button" class="btn-secondary btn-sm" @onclick="ToggleSaveAsTemplateForm">💾 @T.SaveAsTemplateButton</button>
+                    }
+                    else
+                    {
+                        <div class="save-template-form">
+                            <input type="text" @bind="_newTemplateName" class="input" placeholder="@T.TemplateNamePlaceholder" />
+                            <button type="button" class="btn-primary btn-sm" @onclick="ConfirmSaveAsTemplateAsync">@T.Save</button>
+                            <button type="button" class="btn-secondary btn-sm" @onclick="ToggleSaveAsTemplateForm">@T.Cancel</button>
+                        </div>
+                        @if (!string.IsNullOrEmpty(_templateFormError))
+                        {
+                            <div style="color:var(--danger,#e74c3c);font-size:0.8rem;margin-top:0.35rem">⚠️ @_templateFormError</div>
+                        }
+                    }
+                </div>
+                @if (_editSession == null || _editSession.Id == 0)
+                {
+                    <CalendarRepeatOptions RepeatWeekly="_formRepeatWeekly"
+                                           RepeatWeeklyChanged="@(v => _formRepeatWeekly = v)"
+                                           RepeatIntervalWeeks="_formRepeatIntervalWeeks"
+                                           RepeatIntervalWeeksChanged="@(v => _formRepeatIntervalWeeks = v)"
+                                           RepeatUntil="_formRepeatUntil"
+                                           RepeatUntilChanged="@(v => _formRepeatUntil = v)"
+                                           FormStart="_formStart"
+                                           RepeatWeekdays="_formRepeatWeekdays"
+                                           OnToggleWeekday="ToggleRepeatWeekday"
+                                           RepeatWeeklyUntilLabel="@T.RepeatWeeklyUntil"
+                                           RepeatIntervalLabel="@T.RepeatIntervalLabel"
+                                           RepeatIntervalWeeklyLabel="@T.RepeatIntervalWeekly"
+                                           RepeatIntervalBiweeklyLabel="@T.RepeatIntervalBiweekly"
+                                           RepeatIntervalEveryNWeeksFormat="@T.RepeatIntervalEveryNWeeks"
+                                           RepeatUntilLabel="@T.RepeatUntilLabel"
+                                           RepeatWeekdaysLabel="@T.RepeatWeekdaysLabel" />
+                }
+            </div>
+            <CalendarModalFooter ConfirmingDelete="_confirmingDelete"
+                                 HasRecurrenceGroup="_editSession?.RecurrenceGroupId != null"
+                                 IsEditingExisting="_editSession?.Id > 0"
+                                 SeriesDeleteQuestionText="@T.SeriesDeleteQuestion"
+                                 DeleteThisOnlyText="@T.DeleteThisOnly"
+                                 DeleteThisAndFollowingText="@T.DeleteThisAndFollowing"
+                                 DeleteEntireSeriesText="@T.DeleteEntireSeries"
+                                 ConfirmDeleteCancelText="@T.ConfirmDeleteCancel"
+                                 ConfirmDeleteQuestionText="@T.ConfirmDeleteQuestion"
+                                 ConfirmDeleteYesText="@T.ConfirmDeleteYes"
+                                 DeleteText="@T.Delete"
+                                 CancelText="@T.Cancel"
+                                 SaveText="@T.Save"
+                                 OnRequestDelete="@(() => _confirmingDelete = true)"
+                                 OnCancelDelete="@(() => _confirmingDelete = false)"
+                                 OnDeleteThisOnly="DeleteSession"
+                                 OnDeleteFromDate="@(() => DeleteSeries(_editSession!.StartTime))"
+                                 OnDeleteEntireSeries="@(() => DeleteSeries(null))"
+                                 OnClose="CloseModal"
+                                 OnSave="SaveSession" />
+        </div>
+    </div>
+}
+
+<!-- ICS import modal: upload -> review (course assignment per event) -> summary -->
+@if (_showImportModal)
+{
+    <div class="modal-overlay" @onclick="CloseImportModal">
+        <div class="modal modal-wide" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>@T.ImportIcsTitle</h3>
+                <button class="modal-close" @onclick="CloseImportModal">✕</button>
+            </div>
+            <div class="modal-body">
+                @if (_importStep == "upload")
+                {
+                    <p class="ss-desc">@T.ImportIcsDescription</p>
+                    <InputFile OnChange="OnImportFileSelected" accept=".ics" disabled="@_importBusy" />
+                    @if (_importError != null)
+                    {
+                        <div style="color:var(--danger,#e74c3c);font-size:0.875rem">⚠️ @_importError</div>
+                    }
+                }
+                else if (_importStep == "review")
+                {
+                    <p class="ss-desc">@string.Format(T.ImportReviewCount ?? "", _importCandidates.Count(c => c.Selected), _importCandidates.Count)</p>
+                    <div class="import-review-list">
+                        @foreach (var candidate in _importCandidates)
+                        {
+                            var c = candidate;
+                            <div class="import-review-row">
+                                <input type="checkbox" @bind="c.Selected" />
+                                <div class="import-review-info">
+                                    <div class="import-review-title">@(string.IsNullOrWhiteSpace(c.Event.Title) ? T.ImportUntitledEvent : c.Event.Title)</div>
+                                    <div class="import-review-time">@c.Event.StartTime.ToString("ddd, dd.MM.yyyy HH:mm") – @c.Event.EndTime.ToString("HH:mm")</div>
+                                    @if (c.Event.HasUnexpandedRecurrence)
+                                    {
+                                        <div class="import-review-warning">⚠️ @T.ImportRecurrenceWarning</div>
+                                    }
+                                </div>
+                                <select class="select" @bind="c.CourseId" disabled="@(!c.Selected)">
+                                    @foreach (var course in _courses)
+                                    {
+                                        <option value="@course.Id">@course.Icon @course.Name</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+                    </div>
+                }
+                else if (_importStep == "done")
+                {
+                    <p class="ss-desc">✅ @_importSummary</p>
+                }
+            </div>
+            <div class="modal-footer">
+                @if (_importStep == "upload")
+                {
+                    <button type="button" class="btn-secondary" @onclick="CloseImportModal">@T.Cancel</button>
+                    <button type="button" class="btn-primary" disabled="@(_importFile == null || _importBusy)" @onclick="ParseImportFile">
+                        @(_importBusy ? "…" : T.ImportParseButton)
+                    </button>
+                }
+                else if (_importStep == "review")
+                {
+                    <button type="button" class="btn-secondary" @onclick="CloseImportModal">@T.Cancel</button>
+                    <button type="button" class="btn-primary" disabled="@(_importBusy || !_importCandidates.Any(c => c.Selected))" @onclick="ConfirmImport">
+                        @(_importBusy ? "…" : T.ImportConfirmButton)
+                    </button>
+                }
+                else
+                {
+                    <button type="button" class="btn-primary" @onclick="CloseImportModal">@T.ImportDoneCloseButton</button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Template management: list + delete. Creation happens via "Save as template" in the session modal. -->
+@if (_showTemplatesModal)
+{
+    <div class="modal-overlay" @onclick="CloseTemplatesModal">
+        <div class="modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>@T.TemplatesModalTitle</h3>
+                <button class="modal-close" @onclick="CloseTemplatesModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <p class="ss-desc">@T.TemplatesModalDescription</p>
+                @if (_templates.Count == 0)
+                {
+                    <p class="ss-desc">@T.TemplatesEmptyHint</p>
+                }
+                else
+                {
+                    <div class="template-list">
+                        @foreach (var t in _templates)
+                        {
+                            var template = t;
+                            var course = _courses.FirstOrDefault(c => c.Id == template.CourseId);
+                            <div class="template-row">
+                                <div class="template-info">
+                                    <div class="template-title">@(course?.Icon ?? "📚") @template.Name</div>
+                                    <div class="template-meta">
+                                        @template.CourseName · @string.Format(T.TemplateMinutesFormat ?? "", template.DurationMinutes)
+                                        @if (template.DefaultWeekday.HasValue && template.DefaultStartTime.HasValue)
+                                        {
+                                            <text> · @WeekdayShortLabel(template.DefaultWeekday.Value) @template.DefaultStartTime.Value.ToString("hh\\:mm")</text>
+                                        }
+                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(template.Topic))
+                                    {
+                                        <div class="template-meta">@template.Topic</div>
+                                    }
+                                </div>
+                                @if (_confirmingDeleteTemplateId == template.Id)
+                                {
+                                    <div class="template-actions">
+                                        <span>@T.TemplateDeleteConfirmQuestion</span>
+                                        <button type="button" class="btn-primary btn-sm" @onclick="() => DeleteTemplateAsync(template.Id)">@T.ConfirmDeleteYes</button>
+                                        <button type="button" class="btn-secondary btn-sm" @onclick="() => _confirmingDeleteTemplateId = null">@T.ConfirmDeleteCancel</button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="template-actions">
+                                        <button type="button" class="btn-secondary btn-sm" @onclick="() => _confirmingDeleteTemplateId = template.Id">@T.Delete</button>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-primary" @onclick="CloseTemplatesModal">@T.TemplatesCloseButton</button>
+            </div>
+        </div>
+    </div>
+}

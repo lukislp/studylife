@@ -1,0 +1,18 @@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    <p class="ss-desc">@Desc</p>
+    <div class="field">
+        <label>@DateLabel</label>
+        <input class="input input-sm" type="date" value="@(TargetDate?.ToString("yyyy-MM-dd"))"
+               @onchange="e => TargetDateChanged.InvokeAsync(DateTime.TryParse(e.Value?.ToString(), out var d) ? d.Date : (DateTime?)null)" />
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string Desc { get; set; } = "";
+    [Parameter] public string DateLabel { get; set; } = "";
+    // Null = feature off: a cleared date field yields an empty string, TryParse fails → null.
+    [Parameter] public DateTime? TargetDate { get; set; }
+    [Parameter] public EventCallback<DateTime?> TargetDateChanged { get; set; }
+}

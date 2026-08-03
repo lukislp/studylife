@@ -1,0 +1,27 @@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    <p class="ss-desc">@Desc</p>
+    <div class="field-row">
+        <div class="field">
+            <label>@MinLabel</label>
+            <input class="input input-sm" type="number" value="@MinHours" min="1" max="400"
+                   @onchange="e => MinHoursChanged.InvokeAsync(int.TryParse(e.Value?.ToString(), out var v) ? v : MinHours)" />
+        </div>
+        <div class="field">
+            <label>@MaxLabel</label>
+            <input class="input input-sm" type="number" value="@MaxHours" min="1" max="400"
+                   @onchange="e => MaxHoursChanged.InvokeAsync(int.TryParse(e.Value?.ToString(), out var v) ? v : MaxHours)" />
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string Desc { get; set; } = "";
+    [Parameter] public string MinLabel { get; set; } = "";
+    [Parameter] public string MaxLabel { get; set; } = "";
+    [Parameter] public int MinHours { get; set; }
+    [Parameter] public EventCallback<int> MinHoursChanged { get; set; }
+    [Parameter] public int MaxHours { get; set; }
+    [Parameter] public EventCallback<int> MaxHoursChanged { get; set; }
+}

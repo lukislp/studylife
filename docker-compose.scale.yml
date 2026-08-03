@@ -1,0 +1,107 @@
+# Horizontally scalable test setup (Postgres + Redis + multiple server replicas + load balancer +
+# a standalone worker) - NOT the Pi production setup (which stays on the unchanged docker-compose.yml,
+# SQLite, everything in a single process). Details/background: docs/SCALING.md.
+#
+# Prerequisite before "docker compose -f docker-compose.scale.yml up": build the server image locally.
+# The existing src/StudyLife.Server/Dockerfile only copies finished binaries from publish/<arch>
+# (that's how the real CI builds it too, see .gitlab-ci.yml) - so publish first, then build:
+#
+#   dotnet publish src/StudyLife.Server/StudyLife.Server.csproj -c Release --runtime linux-x64 \
+#     --no-self-contained -o publish/amd64
+#   docker build -f src/StudyLife.Server/Dockerfile -t studylife-server:scale-local .
+#
+# (linux-arm64/publish/arm64 instead of amd64 on Apple Silicon/ARM hosts.)
+#
+# Start up and scale to 5 server replicas:
+#   docker compose -f docker-compose.scale.yml up -d --scale server=5
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: studylife
+      POSTGRES_USER: studylife
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-studylife-scale-dev}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U studylife -d studylife"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - studylife-scale-net
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - studylife-scale-net
+
+  # Stateless web instances (Worker:Enabled=false - the 30s reminder/report tick runs ONLY in
+  # the separate worker service below, otherwise multiple replicas would send duplicate push
+  # notifications, see docs/SCALING.md). NO container_name (required for
+  # --scale) and NO port publishing to the outside - reachable exclusively via the lb service.
+  server:
+    image: studylife-server:scale-local
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      Database__Provider: Postgres
+      Database__ConnectionString: Host=postgres;Port=5432;Database=studylife;Username=studylife;Password=${POSTGRES_PASSWORD:-studylife-scale-dev}
+      Cache__Provider: Redis
+      Cache__ConnectionString: redis:6379
+      Worker__Enabled: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - studylife-scale-net
+
+  # Exactly ONE replica, runs BackgroundTaskService (push reminders/reports/maintenance) - no
+  # distributed locking has been built, more than 1 replica here would send duplicate push messages
+  # (see docs/SCALING.md, a deliberate scope cut).
+  worker:
+    image: studylife-server:scale-local
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      Database__Provider: Postgres
+      Database__ConnectionString: Host=postgres;Port=5432;Database=studylife;Username=studylife;Password=${POSTGRES_PASSWORD:-studylife-scale-dev}
+      Cache__Provider: Redis
+      Cache__ConnectionString: redis:6379
+      Worker__Enabled: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - studylife-scale-net
+
+  # Load balancer in front of the server replicas - see nginx-scale/nginx.conf for the dynamic
+  # DNS resolution that actually lets --scale server=N reach all N replicas.
+  lb:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./nginx-scale/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "${SCALE_PORT:-8090}:80"
+    depends_on:
+      - server
+    networks:
+      - studylife-scale-net
+
+networks:
+  studylife-scale-net:
+    driver: bridge

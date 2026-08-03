@@ -1,0 +1,43 @@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    @if (Points.Count >= 2)
+    {
+        @* Individual grades chronologically by completion date - unlike the per-semester grade
+           trend (StatsGradeChartCard, avg per catalog semester), each bar shows ONE grade at its
+           actual date. Same scrolling-columns pattern as the ECTS timeline. *@
+        <div class="timeline-chart-wrap">
+            <div class="timeline-chart grade-timeline-chart">
+                @foreach (var p in Points)
+                {
+                    <div class="timeline-col" title="@($"{p.DateLabel} · {p.CourseName}: {string.Format(GradeFormat, p.GradeLabel)}")">
+                        <div class="mini-bar-value">@p.GradeLabel</div>
+                        <div class="timeline-track">
+                            @* Inverted scale like .grade-chart: 1.0 (best grade) fills the bar. *@
+                            <div class="timeline-fill" style="height: @p.BarPercentLabel%; background: @p.Color"></div>
+                        </div>
+                        <div class="timeline-label">@p.DateLabel</div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div style="color:var(--text3);font-size:0.875rem">@EmptyText</div>
+    }
+</div>
+
+@code {
+    public record GradePoint(DateTime Date, string CourseName, string Color, decimal Grade, double BarPercent)
+    {
+        public string DateLabel => Date.ToString("dd.MM.yy");
+        public string GradeLabel => Grade.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ',');
+        // Formatted invariantly so CSS percent values never get a decimal comma (cf. _donutGradient).
+        public string BarPercentLabel => BarPercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string GradeFormat { get; set; } = "";
+    [Parameter] public string EmptyText { get; set; } = "";
+    [Parameter] public List<GradePoint> Points { get; set; } = new();
+}

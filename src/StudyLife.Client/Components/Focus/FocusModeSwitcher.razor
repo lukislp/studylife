@@ -1,0 +1,20 @@
+@using StudyLife.Client.Models
+
+<div class="mode-switcher">
+    @foreach (var mode in Modes)
+    {
+        var m = mode;
+        <button class="mode-opt @(CurrentModeId == m.Id ? "active" : "")"
+                @onclick="() => OnSelectMode.InvokeAsync(m)" style="--mg1: @m.GradientFrom; --mg2: @m.GradientTo">
+            <span class="mo-emoji">@m.Emoji</span>
+            <span class="mo-name">@m.Name</span>
+            <span class="mo-time">@m.FocusMinutes'</span>
+        </button>
+    }
+</div>
+
+@code {
+    [Parameter] public List<TimerMode> Modes { get; set; } = new();
+    [Parameter] public int? CurrentModeId { get; set; }
+    [Parameter] public EventCallback<TimerMode> OnSelectMode { get; set; }
+}

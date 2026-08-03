@@ -1,0 +1,19 @@
+{
+  "PageTitleTag": "StudyLife — Pokrok",
+  "Heading": "Študijný pokrok",
+  "SubHeading": "Zdieľaný náhľad len na čítanie — aktualizuje sa automaticky.",
+  "EctsLabel": "Získané ECTS",
+  "EctsFormat": "{0} / {1} ECTS",
+  "AverageGradeLabel": "Priemerná známka",
+  "NoGradeYet": "Zatiaľ žiadne známky",
+  "CoursesCompletedFormat": "Dokončených {0} z {1} predmetov",
+  "ActiveCoursesHeading": "Aktívne kurzy",
+  "NoActiveCourses": "Momentálne žiadne aktívne kurzy.",
+  "TopicProgressFormat": "{0} % tém",
+  "InvalidLinkHeading": "Odkaz nie je dostupný",
+  "InvalidLinkMessage": "Tento odkaz na pokrok je neplatný, vypršal, alebo ho vlastník deaktivoval.",
+  "TemporaryErrorHeading": "Dočasne nedostupné",
+  "TemporaryErrorMessage": "Pri načítaní tejto stránky sa niečo pokazilo. Skúste to prosím o chvíľu znova.",
+  "GeneratedAtFormat": "Naposledy aktualizované: {0}",
+  "PoweredByLabel": "Zdieľané cez StudyLife"
+}

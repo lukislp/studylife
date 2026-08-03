@@ -1,0 +1,122 @@
+@page "/auswertung"
+@using StudyLife.Client.Models
+@using StudyLife.Client.Services
+@using StudyLife.Shared
+@inject AppStateService State
+@inject HttpClient Http
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+@inject IJSRuntime JS
+
+<PageTitle>StudyLife — @T.Stats</PageTitle>
+
+<div class="setup-page">
+    <div class="setup-header">
+        <h1>@T.Stats</h1>
+        <p>@T.Subtitle</p>
+        <a class="wrapped-trigger-btn" href="/wrapped">🎉 @T.WrappedButton</a>
+        <ReportExportLink />
+    </div>
+
+    <div class="setup-sections">
+        <StatsSummaryCard Label="@T.Total" TotalHoursLabel="@_totalHoursLabel" HoursStudiedLabel="@T.HoursStudied"
+            MonthCompUp="@_monthCompUp" MonthCompDeltaLabel="@_monthCompDeltaLabel" VsLastMonthTitle="@T.VsLastMonth"
+            TotalSessions="@_totalSessions" SessionsLabel="@T.Sessions"
+            CourseCount="@_courseRows.Count" CoursesLabel="@T.Courses"
+            AverageGradeLabel="@_averageGradeLabel" AvgGradeLabel="@T.AvgGrade" />
+
+        <StatsProgressCard Label="@T.StudyProgress" EctsEarned="@_ectsEarned" EctsTotal="@_ectsTotal" EctsPercent="@_ectsPercent"
+            PercentCompletedSuffix="@T.PercentCompleted" ForecastLabel="@T.ForecastLabel"
+            ForecastText="@(_forecastAlreadyDone ? T.ForecastAlreadyDone : _forecastAvailable ? string.Format(T.ForecastCompletionText, _forecastDateLabel) : T.ForecastNotEnoughData)" />
+
+        <StatsEctsTimelineCard Label="@T.EctsTimeline" Points="@_ectsTimelinePoints"
+            TooltipFormat="@T.EctsTimelineTooltip" EmptyText="@T.EctsTimelineEmpty" />
+
+        <StatsEctsPlanCard Label="@T.EctsPlan" Points="@_ectsPlanPoints"
+            ActualLabel="@T.CourseBalanceActualLabel" TargetLabel="@T.CourseBalanceTargetLabel"
+            TooltipFormat="@T.EctsPlanTooltipFormat" EmptyText="@T.EctsPlanEmpty" />
+
+        @if (_programComparisonRows.Count > 0)
+        {
+            <StatsProgramComparisonCard Label="@T.ProgramComparison" Rows="@_programComparisonRows"
+                ActiveBadgeText="@T.ProgramComparisonActiveBadge" CompletedBadgeText="@T.CompletedBadge"
+                SessionCountFormat="@T.SessionCountFormat" GradeFormat="@T.GradeFormat"
+                EctsFormat="@T.ProgramComparisonEctsFormat" />
+        }
+
+        <StatsSemesterComparisonCard Label="@T.SemesterComparison" CurrentLabel="@_semesterComparisonCurrentLabel"
+            PreviousLabel="@T.SemesterComparisonPreviousLabel" EmptyText="@T.SemesterComparisonEmpty"
+            Metrics="@_semesterComparisonMetrics" />
+
+        <StatsHeatmapCard Label="@T.StudyHeatmap" Weeks="@_heatmapWeeks" MonthLabels="@_heatmapMonthLabels"
+            NoSessionText="@T.NoSession" LessText="@T.Less" MoreText="@T.More" SessionCountFormat="@T.SessionCountFormat"
+            AllCoursesText="@T.HeatmapFilterAll" />
+
+        <StatsGoalHistoryCard Label="@T.GoalHistory" Weeks="@_goalHistoryWeeks" SummaryFormat="@T.GoalHistorySummaryFormat" />
+
+        <StatsInactivityTrendCard Label="@T.InactivityTrend" Weeks="@_inactivityWeeks" Subtitle="@T.InactivityTrendSubtitle" />
+
+        <StatsCourseDonutCard Label="@T.TimeByCourse" Slices="@_donutSlices" Gradient="@_donutGradient"
+            TotalHours="@_donutTotalHours" TotalLabel="@T.DonutTotalLabel" EmptyText="@T.NoSessionsLast12Months"
+            SessionCountFormat="@T.SessionCountFormat" ClickHintText="@T.DonutClickHint"
+            RecentSessionsText="@T.DonutDetailRecentSessions" MoreSessionsFormat="@T.DonutDetailMoreFormat" />
+
+        <StatsCourseBalanceCard Label="@T.CourseBalance" Rows="@_courseBalanceRows"
+            TargetLabel="@T.CourseBalanceTargetLabel" ActualLabel="@T.CourseBalanceActualLabel"
+            DeltaTooltip="@T.CourseBalanceDeltaTooltip" EmptyText="@T.CourseBalanceEmpty" />
+
+        <StatsRhythmCard Label="@T.StudyRhythm" ByWeekdayLabel="@T.ByWeekday" ByTimeOfDayLabel="@T.ByTimeOfDay"
+            WeekdayHours="@_weekdayHours" TimeOfDayHours="@_timeOfDayHours" PeakLabel="@T.RhythmPeakLabel" />
+
+        <StatsWeekdayRankingCard Label="@T.WeekdayRanking" Subtitle="@T.WeekdayRankingSubtitle"
+            WeekdayHours="@_weekdayHours" />
+
+        <StatsTimeHeatmapCard Label="@T.TimeHeatmap" Rows="@_timeHeatmapRows" NoSessionText="@T.NoSession"
+            LessText="@T.Less" MoreText="@T.More" TooltipFormat="@T.TimeHeatmapTooltipFormat" EmptyText="@T.TimeHeatmapEmpty"
+            SessionCountFormat="@T.SessionCountFormat" />
+
+        <StatsSessionLengthHistogramCard Label="@T.SessionLengthHistogram" Buckets="@_sessionLengthBuckets"
+            CountFormat="@T.SessionCountFormat" EmptyText="@T.NoStudySessionsYet" />
+
+        <StatsMonthlyBreakdownCard Label="@T.MonthlyBreakdown" Stacks="@_monthlyStacks" Legend="@_monthlyLegend"
+            EmptyText="@T.NoSessionsThisPeriod" />
+
+        <StatsCourseComparisonChartCard Label="@T.CourseComparison" Weeks="@_courseComparisonWeeks"
+            Legend="@_courseComparisonLegend" EmptyText="@T.CourseComparisonEmpty" />
+
+        <StatsProductivityScoreCard Label="@T.ProductivityScore" Weeks="@_productivityWeeks"
+            Description="@T.ProductivityDescription" NoDataText="@T.ProductivityNoData" EmptyText="@T.ProductivityEmpty" />
+
+        <StatsNotesCorrelationCard Label="@T.NotesCorrelation" Weeks="@_notesCorrelationWeeks"
+            NotesLabel="@T.NotesCorrelationNotesLabel" HoursLabel="@T.NotesCorrelationHoursLabel"
+            EmptyText="@T.NotesCorrelationEmpty" />
+
+        <StatsGradeDistributionCard Label="@T.GradeDistribution" Buckets="@_gradeDistribution"
+            CountFormat="@T.GradeDistributionCourseFormat" EmptyText="@T.GradeDistributionEmpty" />
+
+        @if (_gradePoints.Count >= 2)
+        {
+            <StatsGradeChartCard Label="@T.GradeHistory" TooltipFormat="@T.GradeHistoryTooltip" Points="@_gradePoints" />
+        }
+
+        <StatsGradeTimelineCard Label="@T.GradeTimeline" GradeFormat="@T.GradeFormat"
+            EmptyText="@T.GradeTimelineEmpty" Points="@_gradeTimelinePoints" />
+
+        @if (_scatterPoints.Count >= 3)
+        {
+            <StatsHoursGradeScatterCard Label="@T.HoursGradeScatter" GradeFormat="@T.GradeFormat"
+                MaxHoursLabel="@_scatterMaxHoursLabel" Points="@_scatterPoints" />
+        }
+
+        @if (_hoursEctsPoints.Count >= 3)
+        {
+            <StatsHoursEctsScatterCard Label="@T.HoursEctsScatter" EctsFormat="@T.HoursEctsEarnedFormat"
+                MaxHoursLabel="@_hoursEctsMaxHoursLabel" MaxEctsLabel="@_hoursEctsMaxEctsLabel" Points="@_hoursEctsPoints" />
+        }
+
+        <StatsCourseListCard Label="@T.ByCourse" Rows="@_courseRows" EmptyText="@T.NoStudySessionsYet"
+            CompletedBadgeText="@T.CompletedBadge" GradeFormat="@T.GradeFormat"
+            DueInDaysFormat="@T.DueInDays" OverdueByDaysFormat="@T.OverdueByDays" TrendTooltip="@T.TrendTooltip"
+            SparkTooltip="@T.CourseSparkTooltip" EctsRingFormat="@T.CourseEctsRingFormat" />
+    </div>
+</div>
+

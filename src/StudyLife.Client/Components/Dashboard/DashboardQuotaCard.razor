@@ -1,0 +1,47 @@
+@using Microsoft.AspNetCore.Components
+
+<div class="dash-card @Data.CardClass @(Data.Warning ? "quota-warn" : "")">
+    <div class="card-label">@Data.Label</div>
+    <div class="quota-row">
+        <div class="quota-hours">
+            <span class="stat-val">@Data.HoursValue</span>
+            <span class="quota-target">@Data.TargetSuffix</span>
+        </div>
+        <div class="quota-badge @(Data.Warning ? "badge-warn" : "badge-ok")">
+            @(Data.Warning ? BelowTargetText : OnTrackText)
+        </div>
+    </div>
+    <div class="quota-bar-track">
+        <div class="quota-bar-fill @(Data.Warning ? "fill-warn" : "fill-ok")" style="width: @Data.Percent%"></div>
+        <div class="quota-bar-min" style="left: @Data.MinPercent%"></div>
+    </div>
+    <div class="quota-legend">
+        <span>@Data.ZeroLabel</span>
+        <span>@Data.TargetLegend</span>
+    </div>
+    @if (Data.Warning && Data.Hint.HasValue)
+    {
+        <div class="quota-hint">
+            @Data.Hint.Value <a href="/calendar">@PlanNowLinkText</a>
+        </div>
+    }
+</div>
+
+@code {
+    public record QuotaCardData(
+        string CardClass,
+        string Label,
+        string HoursValue,
+        string TargetSuffix,
+        bool Warning,
+        double Percent,
+        double MinPercent,
+        string ZeroLabel,
+        string TargetLegend,
+        MarkupString? Hint);
+
+    [Parameter] public QuotaCardData Data { get; set; } = new("", "", "", "", false, 0, 0, "", "", null);
+    [Parameter] public string OnTrackText { get; set; } = "";
+    [Parameter] public string BelowTargetText { get; set; } = "";
+    [Parameter] public string PlanNowLinkText { get; set; } = "";
+}

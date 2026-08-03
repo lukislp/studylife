@@ -1,0 +1,35 @@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    @if (Points.Count >= 2)
+    {
+        <div class="timeline-chart-wrap">
+            <div class="timeline-chart">
+                @foreach (var p in Points)
+                {
+                    <div class="timeline-col" title="@($"{p.DateLabel}: {string.Format(TooltipFormat, p.CumulativeEcts)}")">
+                        <div class="timeline-track">
+                            <div class="timeline-fill" style="height: @p.Percent%"></div>
+                        </div>
+                        <div class="timeline-label">@p.DateLabel</div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div style="color:var(--text3);font-size:0.875rem">@EmptyText</div>
+    }
+</div>
+
+@code {
+    public record TimelinePoint(DateTime Date, int CumulativeEcts, double Percent)
+    {
+        public string DateLabel => Date.ToString("dd.MM.yy");
+    }
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string TooltipFormat { get; set; } = "";
+    [Parameter] public string EmptyText { get; set; } = "";
+    [Parameter] public List<TimelinePoint> Points { get; set; } = new();
+}

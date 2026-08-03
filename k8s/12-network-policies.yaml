@@ -1,0 +1,387 @@
+# By default, every pod in Kubernetes can reach every other pod in the same cluster - these
+# policies restrict that to the actually necessary minimum for the studylife-scale namespace.
+# IMPORTANT LIMITATION: NetworkPolicy objects are accepted by EVERY CNI, but only enforced by
+# some - whether Docker Desktop's Kubernetes CNI does so is documented empirically in
+# docs/SCALING.md (positive + negative test). On a real multi-node cluster with Calico/Cilium,
+# these same manifests actually take effect.
+#
+# Default-deny ingress as a baseline: no pod in the namespace may accept incoming traffic
+# unless explicitly allowed below. Egress deliberately stays open (no default-deny egress) -
+# otherwise EVERY external dependency (Cloudflare R2 for backups, possibly external APIs) would
+# have to be allowlisted individually, which would be more complexity than benefit for this
+# learning project.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: studylife-scale
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress"]
+---
+# Critical, otherwise all name resolution breaks for ALL pods (easy to overlook with
+# default-deny) - this is an egress policy, not a contradiction of "no default-deny egress"
+# above: it only ALLOWS explicitly, forbids nothing additionally, since without egress policies
+# on a pod everything stays allowed for egress anyway. Documented explicitly here nonetheless,
+# because DNS is the one thing that must never be forgotten in a future tightening
+# (default-deny egress).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: studylife-scale
+spec:
+  podSelector: {}
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: kube-system } }
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+    # Egress otherwise unrestricted (no deny), this policy just adds an explicit DNS allowance -
+    # becomes relevant if this is ever switched to default-deny egress later.
+    - {}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-web
+  namespace: studylife-scale
+spec:
+  podSelector: { matchLabels: { app: studylife-web } }
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        # Uptime Kuma (itself in studylife-scale, not the gateway) also checks studylife-web
+        # DIRECTLY internally (see the k8s/09-uptime-kuma.yaml comment) - found live: without
+        # this allowance the "StudyLife Web (internal)" monitor hangs permanently in
+        # PENDING/timeout, even though the same check works perfectly over the public URL. The
+        # actual external reachability is handled via allow-nginx-gateway-to-web further below.
+        - podSelector: { matchLabels: { app: uptime-kuma } }
+      ports:
+        - { protocol: TCP, port: 8080 }
+        # Additional HTTPS listener (Kestrel, see k8s/04-web.yaml/Program.cs) - 8080 stays open
+        # for probes/Uptime Kuma.
+        - { protocol: TCP, port: 8443 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-app-to-postgres
+  namespace: studylife-scale
+spec:
+  podSelector: { matchLabels: { cnpg.io/cluster: studylife-pg } }
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app: studylife-web } }
+        - podSelector: { matchLabels: { app: studylife-worker } }
+        - podSelector: { matchLabels: { cnpg.io/poolerName: studylife-pg-pooler } }
+        # Uptime Kuma needs this for a pure TCP reachability monitor (no real DB login needed,
+        # just "is the port reachable?") - analogous to allow-ingress-to-web above.
+        - podSelector: { matchLabels: { app: uptime-kuma } }
+      ports:
+        - { protocol: TCP, port: 5432 }
+---
+# Bug found live (real hardware 2-node setup, not the original test cluster): without this
+# rule, a NEWLY joining replica (the CNPG "join" pod) cannot reach the primary via the *-rw
+# service ("connection refused"), because neither allow-app-to-postgres nor any other rule
+# allows pod-to-pod traffic BETWEEN the CNPG cluster members themselves (streaming replication).
+# This was never noticed in the original test cluster, because the replication connections
+# there already existed BEFORE the NetworkPolicies were applied, and existing TCP connections
+# aren't cut off by a new NetworkPolicy - only a complete fresh bootstrap (NetworkPolicies
+# active from the start) exposed the gap.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-postgres-replication
+  namespace: studylife-scale
+spec:
+  podSelector: { matchLabels: { cnpg.io/cluster: studylife-pg } }
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { cnpg.io/cluster: studylife-pg } }
+      ports:
+        - { protocol: TCP, port: 5432 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-app-to-pooler
+  namespace: studylife-scale
+spec:
+  podSelector: { matchLabels: { cnpg.io/poolerName: studylife-pg-pooler } }
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app: studylife-web } }
+        - podSelector: { matchLabels: { app: studylife-worker } }
+      ports:
+        - { protocol: TCP, port: 5432 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-app-and-self-to-redis
+  namespace: studylife-scale
+spec:
+  podSelector: { matchLabels: { app: redis-cluster } }
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app: studylife-web } }
+        - podSelector: { matchLabels: { app: studylife-worker } }
+        - podSelector: { matchLabels: { app: redis-cluster } } # cluster bus between the nodes
+        # Uptime Kuma needs this for a pure TCP reachability monitor (no Redis login needed,
+        # just "is the port reachable?") - analogous to allow-ingress-to-web above.
+        - podSelector: { matchLabels: { app: uptime-kuma } }
+      ports:
+        - { protocol: TCP, port: 6379 }
+        - { protocol: TCP, port: 16379 }
+        - { protocol: TCP, port: 6380 } # TLS client port (app<->Redis), see k8s/03-redis.yaml
+---
+# Prometheus (monitoring namespace, no default-deny there) must be able to reach the metrics
+# ports of CNPG and the redis_exporter sidecar despite the default-deny here - otherwise
+# Prometheus shows these targets as DOWN even though the exporter itself works. Two separate
+# policy objects instead of one shared podSelector, because multiple matchExpressions in ONE
+# podSelector are AND-combined (no OR) - a pod would otherwise incorrectly have to satisfy BOTH
+# label conditions simultaneously.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-monitoring-to-cnpg
+  namespace: studylife-scale
+spec:
+  podSelector: { matchLabels: { cnpg.io/cluster: studylife-pg } }
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+      ports:
+        - { protocol: TCP, port: 9187 }
+---
+# Bug found live: the default-deny ingress above also blocked the CNPG OPERATOR itself (runs
+# in the separate cnpg-system namespace, not studylife-scale) - it needs access to the instance
+# manager status port 8000 of every Postgres instance to determine cluster state. Without this
+# rule, "kubectl get cluster" incorrectly showed "Instance Status Extraction Error", even though
+# Postgres itself was running fine - the operator just could no longer check on it. Found live
+# via the operator logs ("dial tcp ...:8000: i/o timeout").
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-cnpg-operator-to-instances
+  namespace: studylife-scale
+spec:
+  podSelector: { matchLabels: { cnpg.io/cluster: studylife-pg } }
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: cnpg-system } }
+      ports:
+        - { protocol: TCP, port: 8000 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-monitoring-to-redis-exporter
+  namespace: studylife-scale
+spec:
+  podSelector: { matchLabels: { app: redis-cluster } }
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+      ports:
+        - { protocol: TCP, port: 9121 }
+---
+# monitoring namespace: the same default-deny ingress strategy as above, but so far COMPLETELY
+# unprotected - in particular piwatch (k8s/13-monitoring-namespace.yaml ff.) has cluster-wide
+# read access to pods/nodes/events/logs via ClusterRole AND is reachable via two external
+# hostnames. Without these policies, a compromised piwatch pod would have unrestricted network
+# access to the entire cluster network. Egress deliberately stays open (same trade-off as
+# above) - Prometheus' platform-wide scraping (CoreDNS, MetalLB, Flux, NGINX Gateway Fabric,
+# cert-manager, CNPG/Redis in studylife-scale) would otherwise need a complete egress allowlist
+# per scrape job.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: monitoring
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress"]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-grafana
+  namespace: monitoring
+spec:
+  podSelector: { matchLabels: { app: grafana } }
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app: prometheus } } # Prometheus' own "grafana" scrape job
+        # Uptime Kuma (studylife-scale) may also check Grafana internally, analogous to
+        # studylife-web (see allow-ingress-to-web above) - harmless if no monitor exists for it (yet).
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: studylife-scale } }
+          podSelector: { matchLabels: { app: uptime-kuma } }
+      ports:
+        - { protocol: TCP, port: 3000 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-prometheus
+  namespace: monitoring
+spec:
+  podSelector: { matchLabels: { app: prometheus } }
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app: grafana } } # datasource queries
+        - podSelector: { matchLabels: { app: prometheus } } # its own scrape job on itself
+      ports:
+        - { protocol: TCP, port: 9090 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-kube-state-metrics
+  namespace: monitoring
+spec:
+  podSelector: { matchLabels: { app: kube-state-metrics } }
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app: prometheus } }
+      ports:
+        - { protocol: TCP, port: 8080 }
+---
+# node-exporter runs with hostNetwork:true (needs access to the host's /proc, /sys) - its "pod
+# IP" is thus the node IP itself. Whether the respective CNI enforces NetworkPolicies for
+# hostNetwork pods at all is implementation-dependent (often NOT, since the traffic never goes
+# through the pod network namespace bridge) - this rule doesn't hurt regardless and documents
+# the intent in case a future CNI handles this differently.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-node-exporter
+  namespace: monitoring
+spec:
+  podSelector: { matchLabels: { app: node-exporter } }
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app: prometheus } }
+      ports:
+        - { protocol: TCP, port: 9100 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-piwatch
+  namespace: monitoring
+spec:
+  podSelector: { matchLabels: { app: piwatch } }
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: studylife-scale } }
+          podSelector: { matchLabels: { app: uptime-kuma } }
+      ports:
+        - { protocol: TCP, port: 8000 }
+---
+# The piwatch deployment queries each node-agent pod for its hardware metrics (see the piwatch
+# repo, PIWATCH_AGENT_SERVICE) - without this rule, the dashboard would stay empty for all Pi
+# hardware panels, even though both piwatch and the node-agent itself keep showing "Running".
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-piwatch-node-agent
+  namespace: monitoring
+spec:
+  podSelector: { matchLabels: { app: piwatch-node-agent } }
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app: piwatch } }
+      ports:
+        - { protocol: TCP, port: 9101 }
+---
+# NGINX Gateway Fabric (see k8s/06c-nginx-gateway-fabric.md) - ingress-nginx has since been
+# decommissioned (see docs/SCALING.md "Migration to NGINX Gateway Fabric completed"), that was
+# the last remaining reference to it in this file. The source is the nginx-gateway namespace,
+# where NGF provisions the NGINX data plane per gateway.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-nginx-gateway-to-web
+  namespace: studylife-scale
+spec:
+  podSelector: { matchLabels: { app: studylife-web } }
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: nginx-gateway } }
+      ports:
+        - { protocol: TCP, port: 8080 }
+        - { protocol: TCP, port: 8443 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-nginx-gateway-to-download
+  namespace: studylife-scale
+spec:
+  podSelector: { matchLabels: { app: studylife-download } }
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: nginx-gateway } }
+      ports:
+        - { protocol: TCP, port: 8443 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-nginx-gateway-to-uptime-kuma
+  namespace: studylife-scale
+spec:
+  podSelector: { matchLabels: { app: uptime-kuma } }
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: nginx-gateway } }
+      ports:
+        - { protocol: TCP, port: 3001 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-nginx-gateway-to-grafana
+  namespace: monitoring
+spec:
+  podSelector: { matchLabels: { app: grafana } }
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: nginx-gateway } }
+      ports:
+        - { protocol: TCP, port: 3000 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-nginx-gateway-to-piwatch
+  namespace: monitoring
+spec:
+  podSelector: { matchLabels: { app: piwatch } }
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: nginx-gateway } }
+      ports:
+        - { protocol: TCP, port: 8000 }

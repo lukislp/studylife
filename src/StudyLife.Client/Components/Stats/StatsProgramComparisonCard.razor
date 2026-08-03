@@ -1,0 +1,48 @@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    @foreach (var r in Rows)
+    {
+        <div class="course-stat-row">
+            <div class="csr-head">
+                <span class="csr-name">@r.Name</span>
+                @if (r.IsActive)
+                {
+                    <span class="csr-badge program-active-badge">@ActiveBadgeText</span>
+                }
+                else if (r.IsCompleted)
+                {
+                    <span class="csr-badge">@CompletedBadgeText</span>
+                }
+            </div>
+            <div class="csr-bar-track">
+                <div class="csr-bar-fill" style="--c: var(--accent); width: @r.BarPercent%"></div>
+            </div>
+            <div class="csr-meta">
+                <span>@r.HoursLabel · @string.Format(SessionCountFormat ?? "", r.SessionCount)</span>
+                <span>@string.Format(EctsFormat ?? "", r.EctsEarned, r.EctsTotal)</span>
+                @if (r.GradeLabel != null)
+                {
+                    <span>@string.Format(GradeFormat ?? "", r.GradeLabel)</span>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    // BarPercent: hours relative to the program with the most hours (filled in via `with`
+    // once all rows are loaded - see Stats.Programs.razor.cs).
+    public record ProgramRow(string Name, bool IsActive, bool IsCompleted, double Hours, int SessionCount,
+        int EctsEarned, int EctsTotal, string? GradeLabel, double BarPercent)
+    {
+        public string HoursLabel => $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
+    }
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string ActiveBadgeText { get; set; } = "";
+    [Parameter] public string CompletedBadgeText { get; set; } = "";
+    [Parameter] public string SessionCountFormat { get; set; } = "";
+    [Parameter] public string GradeFormat { get; set; } = "";
+    [Parameter] public string EctsFormat { get; set; } = "";
+    [Parameter] public List<ProgramRow> Rows { get; set; } = new();
+}

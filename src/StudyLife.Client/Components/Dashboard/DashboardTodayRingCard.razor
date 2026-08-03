@@ -1,0 +1,36 @@
+<div class="dash-card card-today-focus">
+    <div class="card-label">@Label</div>
+    <div class="today-focus-row">
+        <div class="today-ring-block">
+            <div class="today-ring @(Exceeded ? "today-ring-exceeded" : "")" style="background: conic-gradient(@(Exceeded ? "#fdcb6e" : "var(--accent)") 0% @RingPercent.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)%, var(--bg3) @RingPercent.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)% 100%)">
+                <div class="today-ring-hole">
+                    <div class="today-ring-val">@HoursLabel @if (Exceeded) { <span class="today-ring-badge" title="@ExceededHint">🏆</span> }</div>
+                    <div class="today-ring-target">@TargetLabel</div>
+                </div>
+            </div>
+        </div>
+        <div class="streak-strip">
+            @foreach (var d in StreakStrip)
+            {
+                <div class="streak-day @(d.Studied ? "studied" : "") @(d.IsToday ? "is-today" : "")" title="@d.Label">
+                    <div class="streak-dot"></div>
+                    <div class="streak-label">@d.Label</div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    public record DayDot(string Label, bool Studied, bool IsToday);
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public double RingPercent { get; set; }
+    [Parameter] public string HoursLabel { get; set; } = "";
+    [Parameter] public string TargetLabel { get; set; } = "";
+    [Parameter] public List<DayDot> StreakStrip { get; set; } = new();
+    /// <summary>Today's workload has already reached/exceeded the daily goal - switches the ring
+    /// and number color to gold, as a visually distinct state versus "still studying".</summary>
+    [Parameter] public bool Exceeded { get; set; }
+    [Parameter] public string ExceededHint { get; set; } = "";
+}

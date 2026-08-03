@@ -1,0 +1,25 @@
+<div class="dash-card card-productivity-hint">
+    <div class="card-label">@Label</div>
+    <div class="empty-state">@InsightText</div>
+    @if (Planned)
+    {
+        <div><span class="quota-badge badge-ok">@StatusText</span></div>
+    }
+    else if (ShowPlanLink)
+    {
+        <div class="quota-hint">@StatusText <a href="/calendar">@PlanLinkText</a></div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    /// <summary>Fully formatted insight, e.g. "You study most productively in the morning (9am-12pm)."</summary>
+    [Parameter] public string InsightText { get; set; } = "";
+    /// <summary>A session already falls within the most productive time window today (confirming state).</summary>
+    [Parameter] public bool Planned { get; set; }
+    /// <summary>Fully formatted status line (planned/suggestion); null in the neutral state with no call to action.</summary>
+    [Parameter] public string? StatusText { get; set; }
+    /// <summary>Shows the plan link to the calendar (suggestion state).</summary>
+    [Parameter] public bool ShowPlanLink { get; set; }
+    [Parameter] public string PlanLinkText { get; set; } = "";
+}

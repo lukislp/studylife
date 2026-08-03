@@ -1,0 +1,18 @@
+{
+  "Heading": "Tjedni plan",
+  "Subtitle": "Pregled tvojih planiranih sesija učenja ovaj tjedan pogodan za ispis — isprintaj ga i zalijepi na zid.",
+  "BackLink": "← Natrag na kalendar",
+  "ExportButton": "🖨 Ispiši tjedni plan",
+  "WeekRangeFormat": "Tjedan: {0} – {1}",
+  "GeneratedOnFormat": "Generirano {0}",
+  "SummaryHeading": "Sažetak",
+  "PlannedHoursLabel": "Planirani sati ovaj tjedan",
+  "WeeklyGoalLabel": "Tjedni cilj",
+  "WeeklyGoalFormat": "{0}–{1} h",
+  "SessionCountLabel": "Planirane sesije",
+  "NoSessions": "Za ovaj dan nema planiranih sesija.",
+  "TableTime": "Vrijeme",
+  "TableCourse": "Kolegij",
+  "TableTopic": "Tema",
+  "FooterNote": "Automatski generirano putem StudyLifea."
+}

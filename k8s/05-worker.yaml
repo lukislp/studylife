@@ -1,0 +1,99 @@
+# Real work partitioning across multiple replicas instead of just a redundant sweep: each replica
+# now only sweeps its own user partition (AuthUserId % ReplicaCount == Shard). The shard is
+# claimed dynamically at runtime via Redis (IWorkerShardClaim/RedisWorkerShardClaim in
+# BackgroundTaskService.cs), NOT derived from the pod name - hence a plain Deployment instead of
+# a StatefulSet, no stable ordinals needed. This makes the partitioning work identically on any
+# platform (AWS ECS, multiple VPS, ...) as long as Redis is reachable - see docs/SCALING.md.
+# Worker__ReplicaCountSource=Kubernetes lets the actual shard size be queried LIVE via the
+# Kubernetes API (KubernetesWorkerReplicaCountProvider, RBAC in k8s/05b-worker-rbac.yaml) instead
+# of relying on a static value frozen at pod startup - a prerequisite for the HPA in
+# k8s/05c-worker-hpa.yaml, which automatically changes the replica count based on CPU load (see
+# the IWorkerReplicaCountProvider.cs comment for the rationale). Worker__ReplicaCount remains as
+# a FALLBACK value in case the Kubernetes API is ever unreachable. TryClaimReminderAsync (a
+# unique index on SentReminders(AuthUserId, Key)) additionally remains as a safety net in case
+# partition boundaries briefly overlap (e.g. during a rolling update or an HPA scaling event).
+# No Service needed - the worker doesn't answer any incoming requests, only the healthcheck port
+# is open (unused, but handy for a `kubectl port-forward` while debugging).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: studylife-worker
+  namespace: studylife-scale
+spec:
+  # DELIBERATELY no "replicas:" field here - on every Flux reconcile (server-side apply) this
+  # would reset whatever replica count the HPA (k8s/05c-worker-hpa.yaml) had just set and compete
+  # with it for ownership of this field (SSA field-ownership conflict). Without this field,
+  # Kubernetes automatically creates 1 replica on initial creation, then the HPA takes over fully.
+  selector:
+    matchLabels: {app: studylife-worker}
+  template:
+    metadata:
+      labels: {app: studylife-worker}
+    spec:
+      serviceAccountName: studylife-worker
+      # Soft (preferred), not hard - see the k8s/04-web.yaml comment: works identically on 1 node
+      # (fallback: co-location instead of Pending) and on N nodes (real spreading).
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels: {app: studylife-worker}
+                topologyKey: kubernetes.io/hostname
+      # see the k8s/04-web.yaml comment: runAsUser MUST be numeric, otherwise CreateContainerConfigError.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1654
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: studylife
+          image: registry.example.com/studylife/server:1.35.0 # {"$imagepolicy": "flux-system:studylife-server"}
+          imagePullPolicy: Never
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: ["ALL"]}
+          envFrom:
+            - configMapRef: {name: studylife-config}
+            - secretRef: {name: studylife-secrets}
+          env:
+            - name: Worker__Enabled
+              value: "true"
+            - name: Worker__ReplicaCountSource
+              value: "Kubernetes"
+            - name: Worker__ReplicaCount
+              value: "1" # fallback only, in case the Kubernetes API is ever unreachable
+            # APNs channel (ApnsSender) - identical config to k8s/04-web.yaml, see the comment
+            # there. The worker sends most push notifications (30s tick), so it's just as
+            # necessary here as in the web pod (which e.g. sends new personal-best pushes
+            # immediately, SessionsController.SendNewRecordPushAsync).
+            - name: Apns__KeyPath
+              value: /secrets/apns/apns-key.p8
+            - name: Apns__KeyId
+              value: "9L4T424GJM"
+            - name: Apns__TeamId
+              value: "GAP8W46W8A"
+            - name: Apns__BundleId
+              value: app.studylife.mobile
+            - name: Apns__UseSandbox
+              value: "true"
+          ports:
+            - containerPort: 8080
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {cpu: 300m, memory: 256Mi}
+          readinessProbe:
+            httpGet: {path: /, port: 8080}
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /, port: 8080}
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          volumeMounts:
+            - name: apns-key
+              mountPath: /secrets/apns
+              readOnly: true
+      volumes:
+        - name: apns-key
+          secret: {secretName: studylife-apns}

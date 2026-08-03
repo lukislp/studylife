@@ -1,0 +1,19 @@
+{
+  "PageTitleTag": "StudyLife — Напредък",
+  "Heading": "Учебен напредък",
+  "SubHeading": "Споделен изглед само за преглед — обновява се автоматично.",
+  "EctsLabel": "Придобити ECTS",
+  "EctsFormat": "{0} / {1} ECTS",
+  "AverageGradeLabel": "Среден успех",
+  "NoGradeYet": "Все още няма оценки",
+  "CoursesCompletedFormat": "{0} от {1} завършени курса",
+  "ActiveCoursesHeading": "Активни курсове",
+  "NoActiveCourses": "В момента няма активни курсове.",
+  "TopicProgressFormat": "{0}% от темите",
+  "InvalidLinkHeading": "Линкът не е наличен",
+  "InvalidLinkMessage": "Този линк за напредъка е невалиден, изтекъл или деактивиран от собственика си.",
+  "TemporaryErrorHeading": "Временно недостъпно",
+  "TemporaryErrorMessage": "Нещо се обърка при зареждането на тази страница. Моля, опитайте отново след малко.",
+  "GeneratedAtFormat": "Последно обновено: {0}",
+  "PoweredByLabel": "Споделено чрез StudyLife"
+}

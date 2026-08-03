@@ -1,0 +1,33 @@
+{
+  "branches": ["master"],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/changelog",
+      {
+        "changelogFile": "CHANGELOG.md"
+      }
+    ],
+    [
+      "@semantic-release/gitlab",
+      {
+        "gitlabUrl": "https://git.example.com",
+        "gitlabApiPathPrefix": "/api/v4",
+        "assets": [
+          {
+            "path": "publish/server.zip",
+            "label": "Server — Linux x64"
+          }
+        ]
+      }
+    ],
+    [
+      "@semantic-release/git",
+      {
+        "assets": ["CHANGELOG.md"],
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }
+    ]
+  ]
+}

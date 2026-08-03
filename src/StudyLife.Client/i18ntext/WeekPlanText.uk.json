@@ -1,0 +1,18 @@
+{
+  "Heading": "Тижневий план",
+  "Subtitle": "Придатний для друку огляд запланованих на цей тиждень навчальних сесій — роздрукуй і повісь на стіну.",
+  "BackLink": "← Назад до календаря",
+  "ExportButton": "🖨 Роздрукувати тижневий план",
+  "WeekRangeFormat": "Тиждень: {0} – {1}",
+  "GeneratedOnFormat": "Створено {0}",
+  "SummaryHeading": "Підсумок",
+  "PlannedHoursLabel": "Заплановані години цього тижня",
+  "WeeklyGoalLabel": "Тижнева ціль",
+  "WeeklyGoalFormat": "{0}–{1} h",
+  "SessionCountLabel": "Заплановані сесії",
+  "NoSessions": "На цей день сесій не заплановано.",
+  "TableTime": "Час",
+  "TableCourse": "Курс",
+  "TableTopic": "Тема",
+  "FooterNote": "Автоматично створено StudyLife."
+}

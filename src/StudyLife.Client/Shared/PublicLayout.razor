@@ -1,0 +1,10 @@
+@inherits LayoutComponentBase
+
+@* Its own, deliberately minimalistic layout WITHOUT sidebar/navigation for publicly (no
+   login required) reachable pages such as /shared/{token} (SharedProgress.razor) - MainLayout
+   would show the full app navigation (calendar, focus, notes, planner, setup, ...) and thereby
+   suggest the anonymous viewer has access to more than the shared snapshot. Deliberately no
+   State/service injection here: the page needs nothing beyond its own fetched data. *@
+<div class="public-shell">
+    @Body
+</div>

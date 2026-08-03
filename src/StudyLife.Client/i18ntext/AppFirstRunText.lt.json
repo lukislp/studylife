@@ -1,0 +1,10 @@
+{
+  "Description": "Su kuriuo StudyLife serveriu turėtų jungtis ši programėlė?",
+  "ServerUrlLabel": "Serverio URL",
+  "CheckingConnection": "Tikrinamas ryšys…",
+  "UseAnyway": "Vis tiek naudoti",
+  "Connect": "Prijungti",
+  "InvalidUrl": "Tai nėra galiojantis URL.",
+  "UnexpectedResponse": "Serveris atsakė, bet netikėtai (HTTP {0}). Palieskite dar kartą, kad vis tiek jį naudotumėte.",
+  "ServerUnreachable": "Serveris nepasiekiamas. Palieskite dar kartą, kad vis tiek naudotumėte šį URL."
+}

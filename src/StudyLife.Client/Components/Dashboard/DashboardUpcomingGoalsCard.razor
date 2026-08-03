@@ -1,0 +1,41 @@
+<div class="dash-card card-exams">
+    <div class="card-label">@Label</div>
+    @if (Goals.Any())
+    {
+        @foreach (var g in Goals)
+        {
+            <div class="exam-row @UrgencyClass(g)">
+                <div class="exam-name">@g.CourseName</div>
+                <div class="exam-date">
+                    @g.TargetDate!.Value.ToString("dd.MM.yyyy")
+                    <span class="exam-days">
+                        @(g.DaysRemaining >= 0 ? string.Format(InDaysFormat, g.DaysRemaining) : string.Format(OverdueByDaysFormat, -g.DaysRemaining))
+                    </span>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="empty-state">@EmptyText<br /><a href="/setup">@SetAGoalText</a></div>
+    }
+</div>
+
+@code {
+    public record UpcomingGoal(string CourseName, DateTime? TargetDate)
+    {
+        public int DaysRemaining => (TargetDate!.Value.Date - DateTime.Today).Days;
+    }
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public List<UpcomingGoal> Goals { get; set; } = new();
+    [Parameter] public string InDaysFormat { get; set; } = "";
+    [Parameter] public string OverdueByDaysFormat { get; set; } = "";
+    [Parameter] public string EmptyText { get; set; } = "";
+    [Parameter] public string SetAGoalText { get; set; } = "";
+
+    // Urgency tiers: overdue or due within 3 days -> "urgent" (red), due within 7 days -> "soon"
+    // (amber), otherwise the existing neutral styling.
+    private static string UrgencyClass(UpcomingGoal g) =>
+        g.DaysRemaining <= 3 ? "urgent" : g.DaysRemaining <= 7 ? "soon" : "";
+}

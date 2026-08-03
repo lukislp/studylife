@@ -1,0 +1,76 @@
+@using StudyLife.Client.Models
+
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    <p class="ss-desc">@Desc</p>
+
+    @if (Modes.Count > 0)
+    {
+        <div class="custom-mode-list">
+            @foreach (var mode in Modes)
+            {
+                var m = mode;
+                <div class="custom-mode-row">
+                    <span class="cm-emoji">@m.Emoji</span>
+                    <span class="cm-name">@m.Name</span>
+                    <span class="cm-meta">@m.FocusMinutes' / @m.BreakMinutes' × @m.Rounds</span>
+                    <button type="button" class="cm-delete" @onclick="() => OnDelete.InvokeAsync(m.Id)">✕</button>
+                </div>
+            }
+        </div>
+    }
+
+    <div class="field" style="margin-bottom:0.75rem">
+        <input class="input input-sm" maxlength="24" placeholder="@NamePlaceholder" @bind="_name" @bind:event="oninput" />
+    </div>
+    <div class="field-row" style="margin-bottom:0.75rem">
+        <div class="field">
+            <label>@FocusLabel</label>
+            <input class="input input-sm" type="number" min="5" max="180" @bind="_focusMinutes" />
+        </div>
+        <div class="field">
+            <label>@BreakLabel</label>
+            <input class="input input-sm" type="number" min="0" max="60" @bind="_breakMinutes" />
+        </div>
+        <div class="field">
+            <label>@RoundsLabel</label>
+            <input class="input input-sm" type="number" min="1" max="10" @bind="_rounds" />
+        </div>
+    </div>
+    <button type="button" class="btn-secondary" disabled="@string.IsNullOrWhiteSpace(_name)" @onclick="Add">@AddButtonText</button>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string Desc { get; set; } = "";
+    [Parameter] public string NamePlaceholder { get; set; } = "";
+    [Parameter] public string FocusLabel { get; set; } = "";
+    [Parameter] public string BreakLabel { get; set; } = "";
+    [Parameter] public string RoundsLabel { get; set; } = "";
+    [Parameter] public string AddButtonText { get; set; } = "";
+    [Parameter] public List<TimerMode> Modes { get; set; } = new();
+    /// <summary>New mode without an ID - the parent assigns the ID and serializes (deferred save-button flow).</summary>
+    [Parameter] public EventCallback<TimerMode> OnAdd { get; set; }
+    [Parameter] public EventCallback<int> OnDelete { get; set; }
+
+    private string _name = "";
+    private int _focusMinutes = 25;
+    private int _breakMinutes = 5;
+    private int _rounds = 4;
+
+    private async Task Add()
+    {
+        var name = _name.Trim();
+        if (name.Length == 0) return;
+        if (name.Length > 24) name = name[..24];
+        var mode = new TimerMode
+        {
+            Name = name,
+            FocusMinutes = Math.Clamp(_focusMinutes, 5, 180),
+            BreakMinutes = Math.Clamp(_breakMinutes, 0, 60),
+            Rounds = Math.Clamp(_rounds, 1, 10),
+        };
+        _name = "";
+        await OnAdd.InvokeAsync(mode);
+    }
+}

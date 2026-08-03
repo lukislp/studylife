@@ -1,0 +1,67 @@
+@page "/wrapped"
+@using StudyLife.Client.Services
+@using StudyLife.Shared
+@inject AppStateService State
+@inject HttpClient Http
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+<PageTitle>StudyLife — @T.PageTitle</PageTitle>
+
+<div class="wrapped-page">
+    <div class="wrapped-page-header">
+        <a class="wrapped-back-link" href="/auswertung">← @T.BackLink</a>
+        <h1>@T.HeaderTitle</h1>
+        <p class="wrapped-period">@string.Format(T.PeriodFormat ?? "", _periodStart.ToString("dd.MM.yyyy"), _periodEnd.ToString("dd.MM.yyyy"))</p>
+    </div>
+
+    <div class="wrapped-slides">
+        <div class="wrapped-slide wrapped-grad-1">
+            <div class="wrapped-slide-label">@T.HoursLabel</div>
+            <div class="wrapped-slide-value">@_totalHoursLabel</div>
+        </div>
+
+        <div class="wrapped-slide wrapped-grad-2">
+            <div class="wrapped-slide-label">@T.SessionsLabel</div>
+            <div class="wrapped-slide-value">@_totalSessions</div>
+        </div>
+
+        <div class="wrapped-slide wrapped-grad-3">
+            <div class="wrapped-slide-label">@T.StreakLabel</div>
+            <div class="wrapped-slide-value">@_longestStreak</div>
+            <div class="wrapped-slide-sub">@T.StreakUnit</div>
+        </div>
+
+        @if (_topCourse != null)
+        {
+            <div class="wrapped-slide" style="background: linear-gradient(135deg, @(_topCourse.Color), #1a1a2e)">
+                <div class="wrapped-slide-label">@T.TopCourseLabel</div>
+                <div class="wrapped-slide-icon">@_topCourse.Icon</div>
+                <div class="wrapped-slide-value">@_topCourse.Name</div>
+                <div class="wrapped-slide-sub">@FormatHours(_topCourse.Hours)</div>
+            </div>
+        }
+
+        <div class="wrapped-slide wrapped-grad-4">
+            <div class="wrapped-slide-label">@T.AchievementsLabel</div>
+            <div class="wrapped-slide-value">@_achievementsUnlocked<span class="wrapped-slide-value-total">/@_achievementsTotal</span></div>
+            <div class="wrapped-slide-sub">@T.AchievementsSub</div>
+        </div>
+
+        @if (_busiestWeekday != null)
+        {
+            <div class="wrapped-slide wrapped-grad-5">
+                <div class="wrapped-slide-label">@T.BusiestDayLabel</div>
+                <div class="wrapped-slide-value">@_busiestWeekday.Label</div>
+                <div class="wrapped-slide-sub">@FormatHours(_busiestWeekday.Hours)</div>
+            </div>
+        }
+
+        @if (_earlyBirdHours > 0 || _nightOwlHours > 0)
+        {
+            <div class="wrapped-slide wrapped-grad-6">
+                <div class="wrapped-slide-label">@T.ChronotypeLabel</div>
+                <div class="wrapped-slide-value">@ChronotypeText</div>
+            </div>
+        }
+    </div>
+</div>

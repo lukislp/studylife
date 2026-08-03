@@ -1,0 +1,88 @@
+@using StudyLife.Client.Models
+@implements IDisposable
+
+<div class="dash-card card-next">
+    <div class="card-label">@(ActiveSession != null ? NowLabel : UpNextLabel)</div>
+    @if (ActiveSession != null)
+    {
+        <div class="next-course" style="--c: @ActiveSession.CourseColor">
+            <div class="nc-icon">◉</div>
+            <div class="nc-info">
+                <div class="nc-name">@ActiveSession.CourseName</div>
+                <div class="nc-time">@string.Format(UntilTimeFormat, ActiveSession.EndTime.ToString("HH:mm"))</div>
+                @if (!string.IsNullOrEmpty(ActiveSession.Topic)) { <div class="nc-topic">@ActiveSession.Topic</div> }
+            </div>
+        </div>
+        <a href="/focus" class="btn-focus">@EnterFocusText</a>
+    }
+    else if (UpcomingSession != null)
+    {
+        <div class="next-course" style="--c: @UpcomingSession.CourseColor">
+            <div class="nc-icon">◷</div>
+            <div class="nc-info">
+                <div class="nc-name">@UpcomingSession.CourseName</div>
+                <div class="nc-time">@string.Format(StartsAtFormat, UpcomingSession.StartTime.ToString("HH:mm"), TimeUntil(UpcomingSession.StartTime))</div>
+                @if (!string.IsNullOrEmpty(UpcomingSession.Topic)) { <div class="nc-topic">@UpcomingSession.Topic</div> }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">@AllClearForNowText<br /><a href="/calendar">@PlanASessionText</a></div>
+    }
+</div>
+
+@code {
+    [Parameter] public StudySession? ActiveSession { get; set; }
+    [Parameter] public StudySession? UpcomingSession { get; set; }
+    [Parameter] public string NowLabel { get; set; } = "";
+    [Parameter] public string UpNextLabel { get; set; } = "";
+    [Parameter] public string UntilTimeFormat { get; set; } = "";
+    [Parameter] public string StartsAtFormat { get; set; } = "";
+    [Parameter] public string EnterFocusText { get; set; } = "";
+    [Parameter] public string AllClearForNowText { get; set; } = "";
+    [Parameter] public string PlanASessionText { get; set; } = "";
+
+    // Ticks the "until"/"starts in" labels live (without a full Index.razor data reload), so the
+    // countdown doesn't visibly freeze until the next OnSessionsChanged/OnSettingsChanged refresh.
+    // 30s cadence is frequent enough to feel "live" for a minute-granularity countdown, cheap enough
+    // to not matter. Self-contained to this component - disposed with it, no AppStateService involved.
+    private PeriodicTimer? _ticker;
+    private CancellationTokenSource? _tickerCts;
+
+    protected override void OnInitialized()
+    {
+        _tickerCts = new CancellationTokenSource();
+        _ticker = new PeriodicTimer(TimeSpan.FromSeconds(30));
+        _ = RunTickerAsync(_ticker, _tickerCts.Token);
+    }
+
+    private async Task RunTickerAsync(PeriodicTimer timer, CancellationToken token)
+    {
+        try
+        {
+            while (await timer.WaitForNextTickAsync(token))
+            {
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected on Dispose - component is going away, nothing to do.
+        }
+    }
+
+    private string TimeUntil(DateTime dt)
+    {
+        var diff = dt - DateTime.Now;
+        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes}m";
+        return $"{(int)diff.TotalHours}h {diff.Minutes}m";
+    }
+
+    public void Dispose()
+    {
+        _tickerCts?.Cancel();
+        _tickerCts?.Dispose();
+        _ticker?.Dispose();
+    }
+}

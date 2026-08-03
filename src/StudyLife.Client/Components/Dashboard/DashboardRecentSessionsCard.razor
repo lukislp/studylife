@@ -1,0 +1,32 @@
+@using StudyLife.Client.Models
+
+<div class="dash-card card-recent">
+    <div class="card-label">@Label</div>
+    @if (Sessions.Any())
+    {
+        @foreach (var s in Sessions)
+        {
+            <div class="session-row done" style="--c: @s.CourseColor">
+                <div class="sr-dot"></div>
+                <div class="sr-info">
+                    <div class="sr-name">@s.CourseName</div>
+                    @if (!string.IsNullOrEmpty(s.Topic))
+                    {
+                        <div class="sr-topic">@s.Topic</div>
+                    }
+                </div>
+                <div class="sr-status">@s.StartTime.ToString("dd.MM.")</div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="empty-state">@EmptyText</div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public List<StudySession> Sessions { get; set; } = new();
+    [Parameter] public string EmptyText { get; set; } = "";
+}

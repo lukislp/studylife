@@ -1,0 +1,192 @@
+@using StudyLife.Shared
+@inject HttpClient Http
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+@* Course resource collection (lecture slides URL, course website, book link, ...), opened via
+   the 🔗 button on SetupCourseCard. Self-contained component modeled after SetupRestoreCard/
+   PushDeviceManager: its own SetupText table + its own HttpClient, Setup.razor just wires it
+   in. Two-step delete confirmation as a second, stacked modal (same technique as
+   PushDeviceManager), not via confirm(). CourseId works identically for built-in and
+   custom courses - see CourseResourceEntity in StudyLifeDb.cs. *@
+
+<div class="modal-overlay" @onclick="() => OnClose.InvokeAsync()">
+    <div class="modal cr-modal" @onclick:stopPropagation="true">
+        <div class="modal-header">
+            <h3>@string.Format(T.CourseResourcesModalTitleFormat ?? "", CourseName)</h3>
+            <button type="button" class="modal-close" @onclick="() => OnClose.InvokeAsync()">✕</button>
+        </div>
+        <div class="modal-body">
+            @if (_error != null)
+            {
+                <p class="ss-desc" style="color:var(--danger, #e74c3c)">@_error</p>
+            }
+            @if (!_loading && _resources.Count == 0)
+            {
+                <p class="ss-desc">@T.CourseResourcesEmpty</p>
+            }
+            else if (_resources.Count > 0)
+            {
+                <div class="cr-list">
+                    @foreach (var resource in _resources)
+                    {
+                        var r = resource;
+                        <div class="cr-row">
+                            <a class="cr-row-link" href="@r.Url" target="_blank" rel="noopener noreferrer">@r.Title</a>
+                            <button type="button" class="btn-danger cr-row-delete" title="@T.CourseResourcesDeleteButton"
+                                    @onclick="() => _confirmDelete = r">
+                                🗑
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+
+            <div class="cr-add-form">
+                <input class="input" placeholder="@T.CourseResourcesTitlePlaceholder" maxlength="120"
+                       @bind="_newTitle" @bind:event="oninput" disabled="@_saving" />
+                <input class="input" placeholder="@T.CourseResourcesUrlPlaceholder" maxlength="2048"
+                       @bind="_newUrl" @bind:event="oninput" disabled="@_saving" />
+                <button type="button" class="btn-secondary" disabled="@_saving" @onclick="AddResource">
+                    @T.CourseResourcesAddButton
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (_confirmDelete != null)
+{
+    <div class="modal-overlay" @onclick="() => _confirmDelete = null">
+        <div class="modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>@T.CourseResourcesConfirmTitle</h3>
+                <button type="button" class="modal-close" @onclick="() => _confirmDelete = null">✕</button>
+            </div>
+            <div class="modal-body">
+                <p>⚠️ @string.Format(T.CourseResourcesConfirmWarning ?? "", _confirmDelete.Title)</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" @onclick="() => _confirmDelete = null" disabled="@_deleting">
+                    @T.CourseResourcesConfirmCancel
+                </button>
+                <button type="button" class="btn-danger" @onclick="ConfirmDelete" disabled="@_deleting">
+                    @(_deleting ? "…" : T.CourseResourcesConfirmYes)
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public int CourseId { get; set; }
+    [Parameter] public string CourseName { get; set; } = "";
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private I18nText.SetupText T = new();
+    private readonly List<CourseResourceDto> _resources = new();
+    private bool _loading = true;
+    private bool _saving;
+    private bool _deleting;
+    private string? _error;
+    private string _newTitle = "";
+    private string _newUrl = "";
+    private CourseResourceDto? _confirmDelete;
+
+    protected override async Task OnInitializedAsync()
+    {
+        T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _error = null;
+        StateHasChanged();
+        try
+        {
+            var list = await Http.GetFromJsonAsync<List<CourseResourceDto>>($"api/courseresources?courseId={CourseId}");
+            _resources.Clear();
+            if (list != null) _resources.AddRange(list);
+        }
+        catch
+        {
+            _error = T.CourseResourcesLoadError;
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task AddResource()
+    {
+        if (string.IsNullOrWhiteSpace(_newTitle))
+        {
+            _error = T.CourseResourcesErrorTitleRequired;
+            return;
+        }
+        // Rough client-side pre-check; the actual validation is done by the server (400 on invalid URL).
+        if (!Uri.TryCreate(_newUrl.Trim(), UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            _error = T.CourseResourcesErrorInvalidUrl;
+            return;
+        }
+
+        _saving = true;
+        _error = null;
+        StateHasChanged();
+        try
+        {
+            var dto = new CourseResourceDto { CourseId = CourseId, Title = _newTitle.Trim(), Url = _newUrl.Trim() };
+            var response = await Http.PostAsJsonAsync("api/courseresources", dto);
+            if (response.IsSuccessStatusCode)
+            {
+                var created = await response.Content.ReadFromJsonAsync<CourseResourceDto>();
+                if (created != null) _resources.Add(created);
+                _newTitle = "";
+                _newUrl = "";
+            }
+            else
+            {
+                _error = T.CourseResourcesErrorInvalidUrl;
+            }
+        }
+        catch
+        {
+            _error = T.CourseResourcesSaveError;
+        }
+        finally
+        {
+            _saving = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (_confirmDelete == null) return;
+        var target = _confirmDelete;
+        _deleting = true;
+        try
+        {
+            var response = await Http.DeleteAsync($"api/courseresources/{target.Id}");
+            if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _resources.RemoveAll(r => r.Id == target.Id);
+            }
+            _confirmDelete = null;
+        }
+        catch
+        {
+            _error = T.CourseResourcesSaveError;
+            _confirmDelete = null;
+        }
+        finally
+        {
+            _deleting = false;
+        }
+    }
+}

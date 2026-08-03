@@ -1,0 +1,18 @@
+{
+  "Heading": "Heti terv",
+  "Subtitle": "Nyomtatható áttekintés az e heti tervezett tanulási munkameneteidről — nyomtasd ki, és ragaszd fel a falra.",
+  "BackLink": "← Vissza a naptárhoz",
+  "ExportButton": "🖨 Heti terv nyomtatása",
+  "WeekRangeFormat": "Hét: {0} – {1}",
+  "GeneratedOnFormat": "Létrehozva: {0}",
+  "SummaryHeading": "Összefoglaló",
+  "PlannedHoursLabel": "Ezen a héten tervezett órák",
+  "WeeklyGoalLabel": "Heti cél",
+  "WeeklyGoalFormat": "{0}–{1} h",
+  "SessionCountLabel": "Tervezett munkamenetek",
+  "NoSessions": "Erre a napra nincs tervezett munkamenet.",
+  "TableTime": "Időpont",
+  "TableCourse": "Kurzus",
+  "TableTopic": "Téma",
+  "FooterNote": "Automatikusan létrehozva a StudyLife által."
+}

@@ -1,0 +1,176 @@
+# HTTPRoutes for the NGF gateway (k8s/07c-gateway.yaml) - the Gateway API equivalent of the
+# previous ingress objects (k8s/07-ingress.yaml, k8s/09-uptime-kuma.yaml, k8s/17-grafana.yaml;
+# piwatch lives in the piwatch repo). Unlike there, the REAL hostnames live in Git here:
+# HTTPRoute is a new resource type with no bootstrap-cluster.ps1 placeholder substitution, and
+# the piwatch repo already commits its hostnames the same way.
+#
+# BackendTLSPolicy replaces the backend-protocol=HTTPS annotation for the encrypted
+# gateway -> pod hop. Unlike ingress-nginx (proxy-ssl-verify off), the Gateway API mandatorily
+# VERIFIES the backend hop - CA reference to the ca.crt in the respective *-backend-tls secret
+# (supplied by cert-manager when issuing), hostname = service DNS name (SAN of the backend
+# certificate, see the Certificate objects in k8s/04-web.yaml/09/17).
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: studylife-web
+  namespace: studylife-scale
+spec:
+  parentRefs:
+    - name: studylife-gateway
+      namespace: nginx-gateway
+  hostnames:
+    - studylife.home.lan
+    - studylife.example.com
+  rules:
+    - backendRefs:
+        - name: studylife-web
+          port: 443
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: BackendTLSPolicy
+metadata:
+  name: studylife-web-backend-tls
+  namespace: studylife-scale
+spec:
+  targetRefs:
+    - group: ""
+      kind: Service
+      name: studylife-web
+  validation:
+    caCertificateRefs:
+      - group: ""
+        kind: Secret
+        name: studylife-web-backend-tls
+    hostname: studylife-web.studylife-scale.svc.cluster.local
+---
+# Identical rate limit to the previous ingress-nginx annotations (limit-rps=20,
+# burst-multiplier=10, rejection with 503): noDelay corresponds to ingress-nginx's "nodelay" -
+# without it, the parallel .dll/.wasm requests of the Blazor startup would be artificially
+# throttled to 20 req/s instead of being served immediately.
+apiVersion: gateway.nginx.org/v1alpha1
+kind: RateLimitPolicy
+metadata:
+  name: studylife-web-rate-limit
+  namespace: studylife-scale
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: studylife-web
+  rateLimit:
+    local:
+      rules:
+        - zoneSize: 10m
+          key: "$binary_remote_addr"
+          rate: 20r/s
+          burst: 200
+          noDelay: true
+    rejectCode: 503
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: uptime-kuma
+  namespace: studylife-scale
+spec:
+  parentRefs:
+    - name: studylife-gateway
+      namespace: nginx-gateway
+  hostnames:
+    - uptimekuma.home.lan
+    - uptimekuma.example.com
+  rules:
+    - backendRefs:
+        - name: uptime-kuma
+          port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: BackendTLSPolicy
+metadata:
+  name: uptime-kuma-backend-tls
+  namespace: studylife-scale
+spec:
+  targetRefs:
+    - group: ""
+      kind: Service
+      name: uptime-kuma
+  validation:
+    caCertificateRefs:
+      - group: ""
+        kind: Secret
+        name: uptime-kuma-backend-tls
+    hostname: uptime-kuma.studylife-scale.svc.cluster.local
+---
+apiVersion: gateway.nginx.org/v1alpha1
+kind: RateLimitPolicy
+metadata:
+  name: uptime-kuma-rate-limit
+  namespace: studylife-scale
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: uptime-kuma
+  rateLimit:
+    local:
+      rules:
+        - zoneSize: 10m
+          key: "$binary_remote_addr"
+          rate: 20r/s
+          burst: 200
+          noDelay: true
+    rejectCode: 503
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  parentRefs:
+    - name: studylife-gateway
+      namespace: nginx-gateway
+  hostnames:
+    - grafana.home.lan
+    - grafana.example.com
+  rules:
+    - backendRefs:
+        - name: grafana
+          port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: BackendTLSPolicy
+metadata:
+  name: grafana-backend-tls
+  namespace: monitoring
+spec:
+  targetRefs:
+    - group: ""
+      kind: Service
+      name: grafana
+  validation:
+    caCertificateRefs:
+      - group: ""
+        kind: Secret
+        name: grafana-backend-tls
+    hostname: grafana.monitoring.svc.cluster.local
+---
+apiVersion: gateway.nginx.org/v1alpha1
+kind: RateLimitPolicy
+metadata:
+  name: grafana-rate-limit
+  namespace: monitoring
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: grafana
+  rateLimit:
+    local:
+      rules:
+        - zoneSize: 10m
+          key: "$binary_remote_addr"
+          rate: 20r/s
+          burst: 200
+          noDelay: true
+    rejectCode: 503

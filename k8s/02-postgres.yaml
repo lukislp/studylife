@@ -1,0 +1,74 @@
+# A real HA cluster via the CloudNativePG operator (1 primary + 2 replicas, streaming
+# replication, automatic failover) instead of a single pod - this is the standard approach for
+# Postgres HA in Kubernetes, comparable to what RDS Multi-AZ does internally. For this data
+# volume, deliberately NO sharding (Citus/CockroachDB would be overkill here) - see
+# docs/SCALING.md. Operator installation is a one-time, cluster-wide step outside this
+# namespace (see docs/SCALING.md for the exact command), only the Cluster resource itself lives
+# here. For a real cloud cluster, a managed database belongs here (AWS RDS, Cloud SQL, Azure
+# Database for PostgreSQL) instead of a self-managed instance INSIDE the cluster.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: studylife-pg
+  namespace: studylife-scale
+spec:
+  # 3 instances (1 primary + 2 standby) - analyzed on real hardware: the nodes are asymmetric
+  # (pinode01 4GB, pinode02 8GB, see docs/SCALING.md), together ~12GB instead of the originally
+  # assumed 8GB, considerably more buffer than the initial lean profile assumed. Full 3-way HA
+  # re-enabled.
+  instances: 3
+  storage:
+    size: 1Gi
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { cpu: 500m, memory: 512Mi }
+  postgresql:
+    parameters:
+      # Standard rule of thumb ~25% of the instance limit - the untuned default is calibrated
+      # for a "normal" server, not for a Pi's resource budget.
+      shared_buffers: "128MB"
+  # CNPG enables pod anti-affinity between its own instances by default itself
+  # (enablePodAntiAffinity: true, podAntiAffinityType: preferred) - set explicitly here anyway
+  # instead of relying on the default, for documentation purposes and as protection against
+  # future CNPG version changes. "preferred" instead of "required": works identically on a
+  # single-node test cluster (co-location instead of Pending forever) and on a real multi-node
+  # cluster (real spreading) - see the k8s/04-web.yaml comment for the same logic.
+  affinity:
+    enablePodAntiAffinity: true
+    podAntiAffinityType: preferred
+    topologyKey: kubernetes.io/hostname
+  # Metrics endpoint (port 9187) TLS-encrypted - CNPG generates the server certificate itself
+  # (the same internal CA mechanism as for Postgres client connections), no manual
+  # certificate/cert-manager object needed. Prometheus scrape config switched accordingly to
+  # scheme: https + insecure_skip_verify (k8s/14-prometheus.yaml). According to the CNPG docs,
+  # changing this option triggers a rollout of all instances.
+  monitoring:
+    tls:
+      enabled: true
+  bootstrap:
+    initdb:
+      database: studylife
+      owner: studylife
+      secret:
+        name: studylife-pg-app-secret
+  # CNPG automatically creates "studylife-pg-rw" (always the current primary, even after a
+  # failover), "studylife-pg-ro" (replicas, currently unused - the app deliberately doesn't
+  # route by read/write, see docs/SCALING.md), and "studylife-pg-r" (any instance) from this.
+  #
+  # Continuous WAL archiving + daily base backups to Cloudflare R2 (S3-compatible) - in
+  # addition to the replica redundancy above, this also protects against data
+  # corruption/accidental DELETE (replicas only protect against node failure, not against a
+  # faulty write that gets replicated to all replicas immediately). The "r2-backup-credentials"
+  # secret + the "studylifebackup" bucket exist, hence active. retentionPolicy "7d" - CNPG's own
+  # operator automatically deletes backups/WALs beyond this window (confirmed against the
+  # installed CNPG 1.24 CRD schema, no additional CronJob needed).
+  backup:
+    barmanObjectStore:
+      destinationPath: "s3://studylifebackup/"
+      endpointURL: "https://44ffca74c2d2f27b33389c8f54f95edf.r2.cloudflarestorage.com"
+      s3Credentials:
+        accessKeyId: { name: r2-backup-credentials, key: ACCESS_KEY_ID }
+        secretAccessKey: { name: r2-backup-credentials, key: ACCESS_SECRET_KEY }
+      wal: { compression: gzip }
+      data: { compression: gzip }
+    retentionPolicy: "7d"

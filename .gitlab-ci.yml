@@ -1,0 +1,353 @@
+stages:
+  - test
+  - build
+  - version
+  - publish
+  - docker
+  - release
+
+variables:
+  DOTNET_VERSION: "10.0"
+  CONFIGURATION: "Release"
+  REGISTRY_URL: "registry.example.com"
+  IMAGE_SERVER: "$REGISTRY_URL/studylife/server"
+  NUGET_PACKAGES: "$CI_PROJECT_DIR/.nuget/packages"
+
+.dotnet-cache: &dotnet-cache
+  cache:
+    key: "nuget-$CI_COMMIT_REF_SLUG"
+    paths:
+      - .nuget/packages/
+    policy: pull-push
+
+# Security scanning
+#
+# Secret Detection is included below because it works cleanly on this instance: this GitLab is
+# plain Community Edition (self-hosted, confirmed via /help), and the secret_detection job is a
+# plain CI job (gitleaks-based analyzer, no Ultimate license needed to *run* it) - it produces a
+# downloadable gl-secret-detection-report.json artifact even without the Security Dashboard/MR
+# widget UI, which is EE-only and not present on CE regardless of version.
+#
+# GitLab's SAST and Dependency-Scanning templates are intentionally NOT included:
+#  - CE has no Security Dashboard/Vulnerability Report UI at all (EE-only code), so results
+#    would only ever be raw JSON artifacts here - same ceiling as Secret Detection but with much
+#    less confidence they'd even run cleanly, for the reasons below.
+#  - Dependency-Scanning's analyzer has historically required an Ultimate license at *execution*
+#    time (not just for the UI), so on this non-Ultimate self-hosted instance it's liable to
+#    no-op, warn, or error rather than scan. test:security below (dotnet list package
+#    --vulnerable) already covers NuGet advisory scanning natively, with no such risk.
+#  - GitLab's default SAST analyzer (Semgrep-based) has thin/uncertain C#-specific rule coverage,
+#    and neither this nor runner network access to registry.gitlab.com for the analyzer image
+#    can be verified without triggering a real pipeline run.
+#  Revisit both if this instance is ever upgraded to GitLab EE/Ultimate.
+#
+# Container scanning: trivy:server below scans docker:server's freshly pushed image. The
+# original "skip for now" reason (pure home network, no internet exposure) no longer applies -
+# studylife-web has since also become reachable via NPM/MetalLB on a public domain
+# (example.com), exactly the condition the old comment named as the trigger to add it.
+# exit-code 0 (informational, does NOT block the pipeline) instead of a hard gate: most findings
+# would be CVEs in the Microsoft base image itself anyway, fixable only by a base image update -
+# no pipeline failure should unexpectedly block a release over that.
+include:
+  - template: Jobs/Secret-Detection.gitlab-ci.yml
+
+secret_detection:
+  stage: test
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+# Tests
+test:unit:
+  stage: test
+  image: mcr.microsoft.com/dotnet/sdk:10.0
+  <<: *dotnet-cache
+  script:
+    # StudyLife.Server.Tests -> StudyLife.Server -> StudyLife.Client (Blazor WASM), so this needs
+    # the wasm-tools workload restored first, same as the build job below.
+    - dotnet workload restore StudyLife.sln
+    - dotnet test tests/StudyLife.Shared.Tests/StudyLife.Shared.Tests.csproj --configuration $CONFIGURATION --logger "junit;LogFilePath=TestResults/shared-tests-junit.xml"
+    - dotnet test tests/StudyLife.Server.Tests/StudyLife.Server.Tests.csproj --configuration $CONFIGURATION --logger "junit;LogFilePath=TestResults/server-tests-junit.xml"
+  artifacts:
+    when: always
+    expire_in: 1 week
+    reports:
+      junit:
+        - tests/StudyLife.Shared.Tests/TestResults/shared-tests-junit.xml
+        - tests/StudyLife.Server.Tests/TestResults/server-tests-junit.xml
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+test:i18n:
+  stage: test
+  image: mcr.microsoft.com/dotnet/sdk:10.0
+  before_script:
+    - apt-get update -qq && apt-get install -y python3
+  script:
+    - python3 tools/check-i18n.py
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+test:lint:
+  stage: test
+  image: mcr.microsoft.com/dotnet/sdk:10.0
+  <<: *dotnet-cache
+  script:
+    - dotnet workload restore StudyLife.sln
+    # Planner.razor / StudyPlanner.cs / PlannerController.cs are off-limits for reformatting per
+    # project convention, so they're excluded rather than left to accumulate drift silently.
+    - dotnet format StudyLife.sln --verify-no-changes --verbosity diagnostic --exclude src/StudyLife.Client/Pages/Planner.razor src/StudyLife.Shared/StudyPlanner.cs src/StudyLife.Server/Controllers/PlannerController.cs
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+test:security:
+  stage: test
+  image: mcr.microsoft.com/dotnet/sdk:10.0
+  <<: *dotnet-cache
+  script:
+    - dotnet workload restore StudyLife.sln
+    - dotnet restore StudyLife.sln
+    - |
+      dotnet list StudyLife.sln package --vulnerable --include-transitive | tee nuget-vulnerabilities.txt
+      if grep -q "has the following vulnerable packages" nuget-vulnerabilities.txt; then
+        echo "NuGet advisory findings detected - see nuget-vulnerabilities.txt artifact for details."
+        if grep -qE "^\s*>\s+\S+.*\s+(High|Critical)\s+http" nuget-vulnerabilities.txt; then
+          echo "High or Critical severity vulnerability found among the findings above."
+          exit 1
+        fi
+      else
+        echo "No known vulnerable NuGet packages found."
+      fi
+  artifacts:
+    when: always
+    expire_in: 1 week
+    paths:
+      - nuget-vulnerabilities.txt
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+# Scaling artifacts (feature/scalable-architecture, see docs/SCALING.md) - purely validating,
+# no real cluster/registry access needed, NO deployment. Builds no separate image: the
+# existing docker:server image works unchanged for SQLite/Postgres, memory/Redis,
+# single-/multi-worker (all runtime configuration, no build difference).
+test:k8s-manifests:
+  stage: test
+  # kubeconform validates purely offline against bundled OpenAPI schemas, needs no
+  # cluster connection (unlike "kubectl apply --dry-run=client", which needs API discovery
+  # against a real server despite --validate=false and therefore fails in CI without a cluster).
+  # -ignore-missing-schemas skips the CloudNativePG cluster CRD (no bundled schema for it)
+  # instead of treating it as an error - the remaining 9 standard K8s objects still get
+  # genuinely validated against their schema.
+  # entrypoint: [""] overrides the image's own ENTRYPOINT ["/kubeconform"] - otherwise the
+  # container passes GitLab's "sh -c '<script>'" call through as ARGUMENTS to /kubeconform,
+  # which then interprets "sh" itself as the file to validate ("sh - failed validation: lstat sh:
+  # no such file or directory"). The binary sits at /kubeconform in root, NOT on PATH - hence
+  # the full path in the script. Reproduced locally and verified with this exact invocation.
+  image:
+    name: ghcr.io/yannh/kubeconform:latest-alpine
+    entrypoint: [""]
+  script:
+    - /kubeconform -summary -ignore-missing-schemas k8s/
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+test:compose-scale:
+  stage: test
+  image: docker:26
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: "unix:///var/run/docker.sock"
+  script:
+    # Pure syntax/interpolation check (no startup) - catches broken YAML or wrong
+    # variable references before someone tests "docker compose up" by hand.
+    - docker compose -f docker-compose.scale.yml config > /dev/null
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+# Build
+build:
+  stage: build
+  image: mcr.microsoft.com/dotnet/sdk:10.0
+  <<: *dotnet-cache
+  script:
+    - dotnet workload restore StudyLife.sln
+    - dotnet restore StudyLife.sln
+    - dotnet build StudyLife.sln --configuration $CONFIGURATION --no-restore
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+# Version
+# WARNING, race history: "npx semantic-release --dry-run" below is only a PREDICTION
+# based on the current git tag state, not an atomic reservation. resource_group only
+# serializes INDIVIDUAL JOBS, NOT JOB CHAINS across pipeline boundaries (GitLab semantics:
+# one job per group at a time - the order A:get-version -> B:get-version -> A:publish... is
+# allowed). Two quickly successive pipelines can therefore predict the same NEXT_VERSION, and
+# docker:server would overwrite the same tag with a different digest. This has happened live
+# exactly twice: tag "1.14.1" (SRI crashes from inconsistent framework files across two pods)
+# and tag "1.19.0" on 2026-07-18 (Flux saw "no new tag" and never rolled out; the fix back then
+# was a manual rollout restart). Protection against this is the tag collision guard in
+# docker:server: if the tag already exists in the registry, the job fails LOUDLY instead of
+# silently overwriting it - restarting the pipeline after the previous one finishes then
+# produces a fresh version. Also recommended (one-time, API-only):
+#   curl -X PUT --header "PRIVATE-TOKEN: <token>" \
+#     "https://<gitlab>/api/v4/projects/<id>/resource_groups/release-pipeline" \
+#     --data "process_mode=oldest_first"
+get-version:
+  stage: version
+  image: node:22-slim
+  needs: [build]
+  resource_group: release-pipeline
+  script:
+    - apt-get update -qq && apt-get install -y git
+    - npm install --no-save semantic-release @semantic-release/commit-analyzer @semantic-release/release-notes-generator @semantic-release/changelog @semantic-release/gitlab @semantic-release/git 2>/dev/null
+    # Sync the remote state BEFORE the dry run (same cause as in the semantic-release job):
+    # if the remote has moved on meanwhile, the dry run reports "branch is behind" and
+    # returns NO version - the earlier fallback (git describe = last tag) would then set
+    # exactly the already-used version and reliably run into the tag collision guard
+    # (happened live as a double failure after 1.24.0). An empty prediction is now a hard
+    # error: master pipelines never start on chore-only commits ([skip ci]), so an empty
+    # version always means an error state, never "nothing to do".
+    - git fetch origin master
+    - git checkout -B master origin/master
+    - |
+      NEXT_VERSION=$(npx semantic-release --dry-run --no-ci 2>/dev/null | grep -oP 'next release version is \K[0-9]+\.[0-9]+\.[0-9]+' || echo "")
+      if [ -z "$NEXT_VERSION" ]; then
+        echo "ERROR: semantic-release did not determine a next version (check the log above,"
+        echo "typically: 'branch is behind' despite the sync, or a config problem). Aborting"
+        echo "instead of falling back to the last tag (which would collide)."
+        exit 1
+      fi
+      echo "NEXT_VERSION=$NEXT_VERSION"
+      echo "NEXT_VERSION=$NEXT_VERSION" > version.env
+  artifacts:
+    reports:
+      dotenv: version.env
+    expire_in: 1 hour
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+
+# Publish
+publish:server:
+  stage: publish
+  image: mcr.microsoft.com/dotnet/sdk:10.0
+  needs: [build, get-version]
+  resource_group: release-pipeline
+  cache:
+    key: "nuget-$CI_COMMIT_REF_SLUG"
+    paths:
+      - .nuget/packages/
+    policy: pull
+  script:
+    - apt-get update -qq && apt-get install -y zip
+    - dotnet workload restore StudyLife.sln
+    # Published per-architecture (amd64/arm64 folder names match Docker's TARGETARCH, not the
+    # .NET RID) so the multi-arch Docker build can COPY the matching one instead of sharing a
+    # single RID-specific build across both platforms - see src/StudyLife.Server/Dockerfile.
+    - dotnet publish src/StudyLife.Server/StudyLife.Server.csproj --configuration $CONFIGURATION --runtime linux-x64 --no-self-contained -p:Version=$NEXT_VERSION --output publish/amd64
+    - dotnet publish src/StudyLife.Server/StudyLife.Server.csproj --configuration $CONFIGURATION --runtime linux-arm64 --no-self-contained -p:Version=$NEXT_VERSION --output publish/arm64
+    - cd publish/amd64 && zip -r ../server.zip . && cd ../..
+  artifacts:
+    paths:
+      - publish/server.zip
+      - publish/amd64/
+      - publish/arm64/
+    expire_in: 1 week
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+
+# Docker
+.docker_base: &docker_base
+  stage: docker
+  image: docker:26
+  needs: [get-version]
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: "unix:///var/run/docker.sock"
+  before_script:
+    - echo "$REGISTRY_PASSWORD" | docker login $REGISTRY_URL -u $REGISTRY_USER --password-stdin
+    - docker run --privileged --rm tonistiigi/binfmt --install all
+    - docker buildx create --use --name multiarch --driver docker-container
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+
+docker:server:
+  <<: *docker_base
+  needs: [get-version, publish:server]
+  resource_group: release-pipeline
+  script:
+    # Tag collision guard (see race comment above get-version): an already-used version tag
+    # must NEVER be silently overwritten - better to fail loudly and restart the pipeline
+    # after the previous one finishes (produces a fresh NEXT_VERSION).
+    - |
+      if docker manifest inspect "$IMAGE_SERVER:$NEXT_VERSION" >/dev/null 2>&1; then
+        echo "ERROR: registry tag $NEXT_VERSION already exists (version race with a parallel"
+        echo "pipeline). Do NOT retry this pipeline while the other one is still running;"
+        echo "afterward hit 'Retry' - get-version will then determine the next free version."
+        exit 1
+      fi
+    - docker buildx build --platform linux/amd64,linux/arm64 --push --cache-from type=registry,ref=$IMAGE_SERVER:buildcache --cache-to type=registry,ref=$IMAGE_SERVER:buildcache,mode=max --build-arg VERSION=$NEXT_VERSION -t $IMAGE_SERVER:latest -t $IMAGE_SERVER:$NEXT_VERSION -f src/StudyLife.Server/Dockerfile .
+
+trivy:server:
+  stage: docker
+  # Trivy scans directly against the remote registry (its own registry client logic, a valid
+  # Let's Encrypt cert - no TLS override needed) - no Docker socket/no "docker pull" needed. The
+  # original attempt (docker:26 image + mounted Docker socket + $HOME/.docker/config.json mount)
+  # failed live: the socket mount runs against the DAEMON host, not the job container - the path
+  # didn't exist on the Docker host, so Docker created an empty directory instead of the expected
+  # file ("read /root/.docker/config.json: is a directory").
+  #
+  # entrypoint: [""] overrides the image's own ENTRYPOINT ["trivy"] - otherwise the container
+  # passes GitLab's "sh -c '<script>'" call through as ARGUMENTS to trivy, which then interprets
+  # "sh" itself as the subcommand ("unknown command \"sh\" for \"trivy\"") - failed live, the
+  # exact same pattern as the kubeconform fix (see git history).
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  needs: [get-version, docker:server]
+  script:
+    - trivy image --username "$REGISTRY_USER" --password "$REGISTRY_PASSWORD" --severity HIGH,CRITICAL --exit-code 0 --format table $IMAGE_SERVER:$NEXT_VERSION
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+
+# Release
+semantic-release:
+  stage: release
+  image: node:22-slim
+  needs:
+    - publish:server
+    - docker:server
+  resource_group: release-pipeline
+  before_script:
+    - apt-get update -qq && apt-get install -y git
+    - npm install --global semantic-release @semantic-release/commit-analyzer @semantic-release/release-notes-generator @semantic-release/changelog @semantic-release/gitlab @semantic-release/git
+  script:
+    - git config user.email "ci@studylife"
+    - git config user.name "CI"
+    # Flux push race, third (correct) attempt: Flux's ImageUpdateAutomation pushes its
+    # chore(image) commit to master as soon as the new registry tag becomes visible - i.e.
+    # still WHILE this pipeline is running. semantic-release then does NOT fail, but exits
+    # SUCCESSFULLY with "The local branch master is behind the remote one,
+    # therefore a new version won't be published" - which is why the two earlier
+    # ||-retry versions could never kick in (live: missing tags v1.22.0/v1.23.0/v1.24.0, each
+    # added manually afterward; follow-up pipelines ran into the tag collision guard). Fix:
+    # always sync to the current remote state BEFORE the run. Lossless, the built commit is
+    # already contained in origin/master - the chore(image) commit on top doesn't bump a version.
+    # The ||-retry stays as a second safety net for a race in the remaining window between sync and push.
+    - git fetch origin master
+    - git checkout -B master origin/master
+    - |
+      npx semantic-release || {
+        echo "Retry nach Push-Race im Restfenster - Remote-Stand erneut nachziehen";
+        git fetch origin master;
+        git checkout -B master origin/master;
+        npx semantic-release;
+      }
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'

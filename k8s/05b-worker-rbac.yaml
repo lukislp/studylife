@@ -1,0 +1,37 @@
+# Dedicated ServiceAccount for the worker (instead of "default"), so the following Role applies
+# as narrowly as possible to only the worker, not to every other pod in the namespace. Needs ONLY
+# "get" on the scale subresource of its own deployment - that's the entire permission
+# KubernetesWorkerReplicaCountProvider (BackgroundTaskService.cs) needs for the live lookup of the
+# current replica count (a prerequisite for safe HPA autoscaling, see
+# k8s/05c-worker-hpa.yaml and the comment in IWorkerReplicaCountProvider.cs). No access to
+# the full deployment object, no write permissions.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: studylife-worker
+  namespace: studylife-scale
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: studylife-worker-read-own-scale
+  namespace: studylife-scale
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments/scale"]
+    resourceNames: ["studylife-worker"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: studylife-worker-read-own-scale
+  namespace: studylife-scale
+subjects:
+  - kind: ServiceAccount
+    name: studylife-worker
+    namespace: studylife-scale
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: studylife-worker-read-own-scale

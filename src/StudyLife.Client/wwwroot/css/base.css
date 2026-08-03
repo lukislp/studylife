@@ -1,0 +1,460 @@
+/* StudyLife — Design System */
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap');
+
+:root {
+    /* Tells the browser this page manages its own light/dark appearance - without this,
+       Android Chrome's "Auto Dark Theme" force-inverts page colors at the rendering layer
+       for any site that doesn't declare it, completely ignoring the data-theme CSS below. */
+    color-scheme: dark light;
+    --font: 'DM Sans', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+    --bg: #0e0e0f;
+    --bg2: #161618;
+    --bg3: #1e1e21;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8e6e0;
+    --text2: #9d9b93;
+    --text3: #6b6965;
+    --accent: #CC785C;
+    --accent2: #E8A87C;
+    --focus-r: #E17055;
+    --focus-b: #74B9FF;
+    --radius: 12px;
+    --sidebar-w: 200px;
+    --transition: 0.2s ease;
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        color-scheme: light;
+        --bg: #f4f2ee;
+        --bg2: #ffffff;
+        --bg3: #ebe8e2;
+        --border: rgba(0,0,0,0.06);
+        --border2: rgba(0,0,0,0.12);
+        --text: #1a1916;
+        --text2: #5a5752;
+        --text3: #9a9892;
+        --accent: #CC785C;
+        --accent2: #bf6a4d;
+    }
+}
+
+/* Manual theme override (Setup page) - higher specificity than the media query above,
+   so it wins regardless of system preference. No [data-theme] attribute = "system" (media query above applies). */
+:root[data-theme="light"] {
+    color-scheme: light;
+    --bg: #f4f2ee;
+    --bg2: #ffffff;
+    --bg3: #ebe8e2;
+    --border: rgba(0,0,0,0.06);
+    --border2: rgba(0,0,0,0.12);
+    --text: #1a1916;
+    --text2: #5a5752;
+    --text3: #9a9892;
+    --accent: #CC785C;
+    --accent2: #bf6a4d;
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0e0e0f;
+    --bg2: #161618;
+    --bg3: #1e1e21;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8e6e0;
+    --text2: #9d9b93;
+    --text3: #6b6965;
+    --accent: #CC785C;
+    --accent2: #E8A87C;
+}
+
+/* Curated accent colors (Setup page, separate from the dark/light theme above) - pure
+   CSS custom-property overrides; every derivation of --accent (color-mix(...) etc. in the
+   feature CSS files) picks up a new value automatically without further changes.
+   "coral" is the original default tone from the blocks above and therefore needs no
+   own [data-accent]. --accent stays (as with the default) theme-invariant, only --accent2
+   (hover/secondary tone) shifts lighter (dark) resp. darker (light) per theme - exactly
+   the same logic as accent2 above. Applied via wwwroot/js/accent.js (AppStateService). */
+:root[data-accent="blue"] { --accent: #4C86E0; --accent2: #92B5EC; }
+:root[data-accent="green"] { --accent: #3C8F40; --accent2: #60BC65; }
+:root[data-accent="purple"] { --accent: #7B5EEA; --accent2: #B6A6F3; }
+:root[data-accent="red"] { --accent: #E5484D; --accent2: #EF8F92; }
+:root[data-accent="teal"] { --accent: #178783; --accent2: #23CDC7; }
+:root[data-accent="amber"] { --accent: #A66E10; --accent2: #E99E1E; }
+
+@media (prefers-color-scheme: light) {
+    :root[data-accent="blue"] { --accent2: #2261C3; }
+    :root[data-accent="green"] { --accent2: #275D29; }
+    :root[data-accent="purple"] { --accent2: #471FE2; }
+    :root[data-accent="red"] { --accent2: #C91D22; }
+    :root[data-accent="teal"] { --accent2: #0D4A48; }
+    :root[data-accent="amber"] { --accent2: #65430A; }
+}
+
+:root[data-theme="light"][data-accent="blue"] { --accent2: #2261C3; }
+:root[data-theme="light"][data-accent="green"] { --accent2: #275D29; }
+:root[data-theme="light"][data-accent="purple"] { --accent2: #471FE2; }
+:root[data-theme="light"][data-accent="red"] { --accent2: #C91D22; }
+:root[data-theme="light"][data-accent="teal"] { --accent2: #0D4A48; }
+:root[data-theme="light"][data-accent="amber"] { --accent2: #65430A; }
+
+:root[data-theme="dark"][data-accent="blue"] { --accent2: #92B5EC; }
+:root[data-theme="dark"][data-accent="green"] { --accent2: #60BC65; }
+:root[data-theme="dark"][data-accent="purple"] { --accent2: #B6A6F3; }
+:root[data-theme="dark"][data-accent="red"] { --accent2: #EF8F92; }
+:root[data-theme="dark"][data-accent="teal"] { --accent2: #23CDC7; }
+:root[data-theme="dark"][data-accent="amber"] { --accent2: #E99E1E; }
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+html { font-size: 15px; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { opacity: 0.8; }
+button { font-family: var(--font); cursor: pointer; border: none; background: none; }
+
+/* Standard Blazor error banner (index.html) - hidden by default, the framework's own JS sets
+   display:block on an actual unhandled exception. Without this rule the div renders inline
+   (browser default display:block for a <div>) below the viewport, invisible in normal use
+   (body/html clip via overflow:hidden above) but exposed once something removes that clipping
+   - e.g. the print stylesheet below, which showed "An unhandled error has occurred" on every
+   printed page even without a real error. */
+#blazor-error-ui {
+    background: lightyellow;
+    color: #3b3a39;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}
+
+/* === App Shell === */
+.app-shell {
+    display: flex;
+    height: 100vh;
+}
+
+/* === Sidebar === */
+.sidebar {
+    width: var(--sidebar-w);
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 100;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 1.25rem;
+    margin-bottom: 2rem;
+}
+
+.brand-icon {
+    font-size: 1.3rem;
+    color: var(--accent);
+}
+
+.brand-name {
+    font-size: 1rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+}
+
+.nav-links {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    padding: 0 0.75rem;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: 8px;
+    color: var(--text2);
+    font-size: 0.875rem;
+    font-weight: 400;
+    transition: var(--transition);
+    position: relative;
+    text-decoration: none;
+}
+
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item.active { background: var(--bg3); color: var(--text); }
+.nav-icon { font-size: 1rem; opacity: 0.7; }
+.nav-badge { margin-left: auto; color: #E17055; font-size: 0.5rem; }
+
+/* Offline-sync badge (MainLayout): visible as long as writes from an offline
+   phase are still waiting to be replayed. Fixed instead of in the nav so it stays
+   visible on both desktop (sidebar) and mobile (bottom bar). */
+.pending-sync-chip {
+    position: fixed; top: 10px; right: 12px; z-index: 900;
+    display: flex; align-items: center; gap: 4px;
+    background: rgba(225, 112, 85, 0.15); color: #E17055;
+    border: 1px solid rgba(225, 112, 85, 0.4);
+    border-radius: 999px; padding: 2px 10px; font-size: 0.75rem;
+}
+.psc-icon { font-size: 0.85rem; }
+
+/* "New version available" toast (MainLayout): above the bottom bar, below modals (z-index) */
+.update-toast {
+    position: fixed; bottom: 84px; left: 50%; transform: translateX(-50%); z-index: 950;
+    display: flex; align-items: center; gap: 10px;
+    background: var(--card-bg, #1a1a1c); color: var(--fg, #e8e6e0);
+    border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px;
+    padding: 10px 14px; font-size: 0.85rem;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+}
+.update-toast .btn-primary { padding: 4px 12px; font-size: 0.8rem; }
+.ut-close { background: none; border: none; color: var(--fg-muted, #6b6965); cursor: pointer; font-size: 0.9rem; }
+.ut-spinner {
+    width: 16px; height: 16px; flex-shrink: 0; border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.2); border-top-color: #E17055;
+    animation: ut-spin 0.8s linear infinite;
+}
+@keyframes ut-spin { to { transform: rotate(360deg); } }
+
+/* "Timer running on another device" hint on the Focus page (user-scoped, purely informational) */
+.focus-remote-banner {
+    align-self: center; margin: 0 auto 4px;
+    background: rgba(255, 255, 255, 0.08); color: var(--fg-muted, #6b6965);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px; padding: 4px 14px; font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.sidebar-foot {
+    padding: 1rem 1.25rem 0;
+    border-top: 1px solid var(--border);
+}
+
+.time-display {
+    font-family: var(--font-mono);
+    font-size: 1.3rem;
+    font-weight: 300;
+    color: var(--text);
+    letter-spacing: 0.02em;
+}
+
+.date-display {
+    font-size: 0.75rem;
+    color: var(--text3);
+    margin-top: 2px;
+}
+
+.lang-flag { font-size: 1.15rem; line-height: 1; }
+
+/* Speed dial: combined floating action button at the bottom right for search + language switcher
+   (replaces the previous dedicated sidebar search entry and the top-right fixed
+   language switcher). Higher than the sidebar (z-index 100) and the lang-popup backdrop. */
+.fab-dial { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 110; display: flex; flex-direction: column; align-items: flex-end; gap: 0.6rem; }
+.fab-main {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 1.3rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    transition: var(--transition);
+}
+.fab-main:hover { filter: brightness(1.1); }
+.fab-main.open { background: var(--bg3); color: var(--text); }
+
+.fab-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 0.6rem; }
+.fab-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 1.1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    transition: var(--transition);
+}
+.fab-action:hover { border-color: var(--border2); background: var(--bg3); }
+
+/* Combined selector instead of just .fab-lang-popup: .lang-popup (position:absolute) is
+   defined further down in this file and, at equal specificity (both simple
+   class selectors), could win depending on cascade order and reset the static override
+   back to absolute - then the popup slides down out of the viewport relative to the
+   fixed-positioned .fab-dial (bug: popup opened invisibly underneath the
+   mobile bottom navbar). The combined class has higher specificity and is guaranteed to win. */
+.lang-popup.fab-lang-popup { position: static; width: 260px; margin-bottom: 0; }
+
+.lang-popup-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+}
+
+.lang-popup {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 21;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    padding: 0.4rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.15rem;
+    max-height: 320px;
+    overflow-y: auto;
+    width: 260px;
+}
+
+.lang-option {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.35rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    color: var(--text2);
+    text-align: left;
+    transition: var(--transition);
+    min-width: 0;
+}
+.lang-option:hover { background: var(--bg3); color: var(--text); }
+.lang-option.active { background: var(--accent); color: #fff; }
+.lang-option .lang-flag { font-size: 1rem; }
+.lang-option .lang-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+
+/* === Global search overlay (Ctrl+K, GlobalSearch.razor) === */
+/* Builds on .modal-overlay (shared.css, z-index 1000 - above sidebar 100/200 and
+   the fab-dial 110); the modifier only moves the box towards the top. */
+.gs-overlay {
+    align-items: flex-start;
+    padding: 12vh 1rem 1rem;
+}
+
+.gs-box {
+    width: 100%;
+    max-width: 560px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+}
+
+.gs-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    padding: 0.85rem 1rem;
+    font-family: var(--font);
+    font-size: 0.95rem;
+    color: var(--text);
+    outline: none;
+}
+.gs-input::placeholder { color: var(--text3); }
+
+.gs-results {
+    max-height: 50vh;
+    overflow-y: auto;
+    padding: 0.4rem;
+}
+
+.gs-group-header {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text3);
+    padding: 0.5rem 0.6rem 0.25rem;
+}
+
+.gs-row {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    width: 100%;
+    padding: 0.5rem 0.6rem;
+    border-radius: 6px;
+    color: var(--text2);
+    text-align: left;
+    transition: var(--transition);
+}
+.gs-row:hover,
+.gs-row.highlighted { background: var(--bg3); color: var(--text); }
+.gs-row-icon { font-size: 0.95rem; opacity: 0.75; flex-shrink: 0; }
+.gs-row-title { font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gs-row-detail {
+    margin-left: auto;
+    font-size: 0.72rem;
+    color: var(--text3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 45%;
+    flex-shrink: 0;
+}
+
+.gs-empty {
+    padding: 0.9rem 0.6rem;
+    font-size: 0.85rem;
+    color: var(--text3);
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .gs-overlay { padding: 8vh 0.75rem 1rem; }
+    .gs-box { max-width: 100%; }
+}
+
+/* === Main Content === */
+.main-content {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+/* Calendar page: cap the entire shell at 100vh, no page scroll */
+.app-shell.page-calendar {
+    height: 100vh;
+    overflow: hidden;
+}
+.app-shell.page-calendar .main-content {
+    height: 100vh;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+

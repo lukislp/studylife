@@ -1,0 +1,10 @@
+{
+  "Description": "La ce server StudyLife ar trebui să se conecteze această aplicație?",
+  "ServerUrlLabel": "URL-ul serverului",
+  "CheckingConnection": "Se verifică conexiunea…",
+  "UseAnyway": "Folosește oricum",
+  "Connect": "Conectează",
+  "InvalidUrl": "Acesta nu este un URL valid.",
+  "UnexpectedResponse": "Serverul a răspuns, dar în mod neașteptat (HTTP {0}). Atinge din nou pentru a-l folosi oricum.",
+  "ServerUnreachable": "Serverul nu poate fi contactat. Atinge din nou pentru a folosi oricum acest URL."
+}

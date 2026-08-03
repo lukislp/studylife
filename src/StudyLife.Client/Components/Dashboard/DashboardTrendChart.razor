@@ -1,0 +1,30 @@
+<div class="dash-card card-trend">
+    <div class="card-label">@Label</div>
+    <div class="trend-chart">
+        @foreach (var w in Weeks)
+        {
+            <div class="trend-bar-col" title="@w.Label: @w.HoursLabel">
+                <div class="trend-bar-track">
+                    <div class="trend-bar-fill @(w.IsCurrent ? "current" : "") @(IsPeak(w) ? "peak" : "")" style="height: @w.Percent%"></div>
+                </div>
+                <div class="trend-bar-label @(IsPeak(w) ? "peak" : "")">@(IsPeak(w) ? "★ " : "")@w.Label</div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    public record WeekTrend(string Label, double Hours, double Percent, bool IsCurrent)
+    {
+        public string HoursLabel => $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
+    }
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public List<WeekTrend> Weeks { get; set; } = new();
+
+    // Peak week within this visible 8-week window (not the same as the ALL-TIME record card - see
+    // DashboardBestRecordCard). Percent is already capped at 100 and computed as Hours/max*100 in
+    // Index.razor, so the week(s) that hit exactly 100 are the highest of the visible range. Guarded
+    // by Hours > 0 so an all-zero window (no data yet) never marks every bar as "peak".
+    private static bool IsPeak(WeekTrend w) => w.Hours > 0 && w.Percent >= 100;
+}

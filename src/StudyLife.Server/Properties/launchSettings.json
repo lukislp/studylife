@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "StudyLife.Server": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://0.0.0.0:53963;http://0.0.0.0:53964"
+    }
+  }
+}
