@@ -25,7 +25,7 @@ jobs:
   test-unit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
@@ -50,7 +50,7 @@ jobs:
   test-i18n:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
@@ -62,7 +62,7 @@ jobs:
   test-lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
@@ -80,7 +80,7 @@ jobs:
   test-security:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
@@ -115,14 +115,14 @@ jobs:
     container:
       image: ghcr.io/yannh/kubeconform:latest-alpine
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       # The binary sits at /kubeconform in the image, not on PATH.
       - run: /kubeconform -summary -ignore-missing-schemas k8s/
 
   test-compose-scale:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       # Pure syntax/interpolation check (no startup) - catches broken YAML or wrong
       # variable references before someone tests "docker compose up" by hand.
       - run: docker compose -f docker-compose.scale.yml config > /dev/null
@@ -133,7 +133,7 @@ jobs:
     needs: [test-unit, test-i18n, test-lint, test-security, test-k8s-manifests, test-compose-scale]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
@@ -168,7 +168,7 @@ jobs:
       next_version: ${{ steps.semrel.outputs.new_release_version }}
       published: ${{ steps.semrel.outputs.new_release_published }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - id: semrel
@@ -197,7 +197,7 @@ jobs:
     env:
       NEXT_VERSION: ${{ needs.get-version.outputs.next_version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
@@ -236,7 +236,7 @@ jobs:
     env:
       NEXT_VERSION: ${{ needs.get-version.outputs.next_version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
         with:
           name: publish-output
@@ -302,7 +302,7 @@ jobs:
       issues: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - uses: actions/download-artifact@v4
