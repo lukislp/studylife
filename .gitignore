@@ -6,6 +6,9 @@ bin/
 .vs/
 .vscode/
 
+## Local-only tooling
+CLAUDE.md
+
 ## Environment
 .env
 !.env.example

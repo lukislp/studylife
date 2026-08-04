@@ -1,0 +1,326 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  CONFIGURATION: Release
+  IMAGE: ghcr.io/lukislp/studylife-server
+
+permissions:
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------------
+  # Test stage — runs on every push to main AND every pull request
+  # ---------------------------------------------------------------------
+  test-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'StudyLife.sln') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+      - run: dotnet workload restore StudyLife.sln
+      - run: dotnet test tests/StudyLife.Shared.Tests/StudyLife.Shared.Tests.csproj --configuration ${{ env.CONFIGURATION }} --logger "junit;LogFilePath=TestResults/shared-tests-junit.xml"
+      - run: dotnet test tests/StudyLife.Server.Tests/StudyLife.Server.Tests.csproj --configuration ${{ env.CONFIGURATION }} --logger "junit;LogFilePath=TestResults/server-tests-junit.xml"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            tests/StudyLife.Shared.Tests/TestResults/shared-tests-junit.xml
+            tests/StudyLife.Server.Tests/TestResults/server-tests-junit.xml
+          retention-days: 7
+
+  test-i18n:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - run: python3 tools/check-i18n.py
+
+  test-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'StudyLife.sln') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+      - run: dotnet workload restore StudyLife.sln
+      # Planner.razor / StudyPlanner.cs / PlannerController.cs are off-limits for reformatting
+      # per project convention, so they're excluded rather than left to accumulate drift silently.
+      - run: dotnet format StudyLife.sln --verify-no-changes --verbosity diagnostic --exclude src/StudyLife.Client/Pages/Planner.razor src/StudyLife.Shared/StudyPlanner.cs src/StudyLife.Server/Controllers/PlannerController.cs
+
+  test-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'StudyLife.sln') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+      - run: dotnet workload restore StudyLife.sln
+      - run: dotnet restore StudyLife.sln
+      - run: |
+          dotnet list StudyLife.sln package --vulnerable --include-transitive | tee nuget-vulnerabilities.txt
+          if grep -q "has the following vulnerable packages" nuget-vulnerabilities.txt; then
+            echo "NuGet advisory findings detected - see nuget-vulnerabilities.txt artifact for details."
+            if grep -qE "^\s*>\s+\S+.*\s+(High|Critical)\s+http" nuget-vulnerabilities.txt; then
+              echo "::error::High or Critical severity vulnerability found among the findings above."
+              exit 1
+            fi
+          else
+            echo "No known vulnerable NuGet packages found."
+          fi
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-vulnerabilities
+          path: nuget-vulnerabilities.txt
+          retention-days: 7
+
+  test-k8s-manifests:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/yannh/kubeconform:latest-alpine
+    steps:
+      - uses: actions/checkout@v4
+      - run: kubeconform -summary -ignore-missing-schemas k8s/
+
+  test-compose-scale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Pure syntax/interpolation check (no startup) - catches broken YAML or wrong
+      # variable references before someone tests "docker compose up" by hand.
+      - run: docker compose -f docker-compose.scale.yml config > /dev/null
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'StudyLife.sln') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+      - run: dotnet workload restore StudyLife.sln
+      - run: dotnet restore StudyLife.sln
+      - run: dotnet build StudyLife.sln --configuration ${{ env.CONFIGURATION }} --no-restore
+
+  # ---------------------------------------------------------------------
+  # Version / publish / docker / release — push to main only
+  # ---------------------------------------------------------------------
+  get-version:
+    needs: [build]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: studylife-release-chain
+      cancel-in-progress: false
+    outputs:
+      next_version: ${{ steps.semrel.outputs.new_release_version }}
+      published: ${{ steps.semrel.outputs.new_release_published }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: semrel
+        uses: cycjimmy/semantic-release-action@b12c8f6015dc215fe37bc154d4ad456dd3833c90 # v6.0.0
+        with:
+          dry_run: true
+          extra_plugins: |
+            @semantic-release/changelog
+            @semantic-release/github
+            @semantic-release/git
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Fail if no next version determined
+        if: steps.semrel.outputs.new_release_published != 'true'
+        run: |
+          echo "::error::semantic-release did not determine a next version (no releasable commits since the last tag). Aborting instead of silently skipping."
+          exit 1
+
+  publish-server:
+    needs: [build, get-version]
+    if: github.event_name == 'push' && needs.get-version.outputs.published == 'true'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: studylife-release-chain
+      cancel-in-progress: false
+    env:
+      NEXT_VERSION: ${{ needs.get-version.outputs.next_version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'StudyLife.sln') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+      - run: dotnet workload restore StudyLife.sln
+      # Published per-architecture (amd64/arm64 folder names match Docker's TARGETARCH, not the
+      # .NET RID) so the multi-arch Docker build can COPY the matching one instead of sharing a
+      # single RID-specific build across both platforms - see src/StudyLife.Server/Dockerfile.
+      - run: dotnet publish src/StudyLife.Server/StudyLife.Server.csproj --configuration ${{ env.CONFIGURATION }} --runtime linux-x64 --no-self-contained -p:Version=${{ env.NEXT_VERSION }} --output publish/amd64
+      - run: dotnet publish src/StudyLife.Server/StudyLife.Server.csproj --configuration ${{ env.CONFIGURATION }} --runtime linux-arm64 --no-self-contained -p:Version=${{ env.NEXT_VERSION }} --output publish/arm64
+      - run: cd publish/amd64 && zip -r ../server.zip . && cd ../..
+      - uses: actions/upload-artifact@v4
+        with:
+          name: publish-output
+          path: |
+            publish/server.zip
+            publish/amd64/
+            publish/arm64/
+          retention-days: 7
+
+  docker-server:
+    needs: [get-version, publish-server]
+    if: github.event_name == 'push' && needs.get-version.outputs.published == 'true'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: studylife-release-chain
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      packages: write
+    env:
+      NEXT_VERSION: ${{ needs.get-version.outputs.next_version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: publish-output
+          path: .
+      - uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
+      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Guard against duplicate tag
+        run: |
+          if docker manifest inspect "${{ env.IMAGE }}:${{ env.NEXT_VERSION }}" >/dev/null 2>&1; then
+            echo "::error::registry tag ${{ env.NEXT_VERSION }} already exists (version race with a parallel run). Do NOT retry this run; wait for it to finish, then push again to produce a fresh version."
+            exit 1
+          fi
+      - uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: src/StudyLife.Server/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            VERSION=${{ env.NEXT_VERSION }}
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ env.NEXT_VERSION }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  trivy-server:
+    needs: [get-version, docker-server]
+    if: github.event_name == 'push' && needs.get-version.outputs.published == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    env:
+      NEXT_VERSION: ${{ needs.get-version.outputs.next_version }}
+    steps:
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE }}:${{ env.NEXT_VERSION }}
+          format: table
+          severity: HIGH,CRITICAL
+          exit-code: "0"
+
+  semantic-release:
+    needs: [publish-server, docker-server]
+    if: github.event_name == 'push' && needs.get-version.outputs.published == 'true'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: studylife-release-chain
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: publish-output
+          path: .
+      - id: semrel
+        uses: cycjimmy/semantic-release-action@b12c8f6015dc215fe37bc154d4ad456dd3833c90 # v6.0.0
+        with:
+          extra_plugins: |
+            @semantic-release/changelog
+            @semantic-release/github
+            @semantic-release/git
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+      # Retry once for the narrow window where an out-of-band push to main landed between
+      # this job's checkout and its own push (the concurrency group above already serializes
+      # overlapping runs of this workflow, so this only guards against a genuinely external push).
+      - if: steps.semrel.outcome == 'failure'
+        run: |
+          git fetch origin main
+          git checkout -B main origin/main
+      - if: steps.semrel.outcome == 'failure'
+        uses: cycjimmy/semantic-release-action@b12c8f6015dc215fe37bc154d4ad456dd3833c90 # v6.0.0
+        with:
+          extra_plugins: |
+            @semantic-release/changelog
+            @semantic-release/github
+            @semantic-release/git
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

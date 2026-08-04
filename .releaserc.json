@@ -1,5 +1,5 @@
 {
-  "branches": ["master"],
+  "branches": ["main"],
   "plugins": [
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",
@@ -10,10 +10,8 @@
       }
     ],
     [
-      "@semantic-release/gitlab",
+      "@semantic-release/github",
       {
-        "gitlabUrl": "https://git.example.com",
-        "gitlabApiPathPrefix": "/api/v4",
         "assets": [
           {
             "path": "publish/server.zip",
