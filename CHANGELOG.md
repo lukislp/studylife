@@ -1,3 +1,10 @@
+## [1.2.2](https://github.com/lukislp/studylife/compare/v1.2.1...v1.2.2) (2026-08-05)
+
+
+### Bug Fixes
+
+* surface the public live demo link in the README ([ad2129f](https://github.com/lukislp/studylife/commit/ad2129fa6d1c4cfa1d9f48501feeda5a1e2db475))
+
 ## [1.2.1](https://github.com/lukislp/studylife/compare/v1.2.0...v1.2.1) (2026-08-05)
 
 
