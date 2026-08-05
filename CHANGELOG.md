@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/lukislp/studylife/compare/v1.2.0...v1.2.1) (2026-08-05)
+
+
+### Bug Fixes
+
+* hide passkey/push management and backup cards on demo instances ([b83fcbe](https://github.com/lukislp/studylife/commit/b83fcbe6a8e7ff9095f5274586749c44d5a868bd))
+
 # [1.2.0](https://github.com/lukislp/studylife/compare/v1.1.0...v1.2.0) (2026-08-05)
 
 
