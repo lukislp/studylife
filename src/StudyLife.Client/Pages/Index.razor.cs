@@ -284,15 +284,19 @@ public partial class Index
         }
 
         // Monthly quota: absolute monthly goal (settings.MonthlyGoalMinHours/MaxHours, independently
-        // configurable from the weekly goal - see Setup.razor's monthly-goal card), prorated by how
-        // much of the month has elapsed so early-month progress doesn't look misleadingly "behind" a
-        // full month's target on day 3 - see StudyMetrics.ProrateMonthlyTarget.
+        // configurable from the weekly goal - see Setup.razor's monthly-goal card). Deliberately
+        // NOT prorated (anymore): the card previously showed the elapsed-weeks share via
+        // StudyMetrics.ProrateMonthlyTarget, which made the displayed target (e.g. "20-26 h")
+        // contradict the configured goal ("100-130 h") for most of the month and read as a bug.
+        // The full goal now applies to the label, the bar, and the warning alike - early-month
+        // progress simply shows as a small fill against the whole month's target.
         var monthStart = new DateTime(today.Year, today.Month, 1);
         var monthSessions = history.Where(s => s.StartTime.Date >= monthStart).ToList();
         var monthMinutes = monthSessions.Sum(s => (s.EndTime - s.StartTime).TotalMinutes);
         var monthHoursVal = monthMinutes / 60.0;
 
-        (_monthTargetMin, _monthTargetMax) = StudyMetrics.ProrateMonthlyTarget(settings.MonthlyGoalMinHours, settings.MonthlyGoalMaxHours, today);
+        _monthTargetMin = settings.MonthlyGoalMinHours;
+        _monthTargetMax = settings.MonthlyGoalMaxHours;
         var monthQuota = StudyMetrics.CalcQuota(monthHoursVal, _monthTargetMin, _monthTargetMax);
         _quotaPercent = monthQuota.Percent;
         _quotaMinPercent = monthQuota.MinPercent;
