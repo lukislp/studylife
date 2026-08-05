@@ -72,32 +72,32 @@ public class DatabaseRestoreServiceEdgeTests : IDisposable
     }
 
     [Fact]
-    public void ApplyPendingRestore_LiveDbLocked_ReturnsFailedAndKeepsStagingForRetry()
+    public void ApplyPendingRestore_SwapBlocked_ReturnsFailedAndKeepsStagingForRetry()
     {
-        // The documented "never throw at startup" contract: if the swap itself fails (here: the
-        // live DB is exclusively locked, as an AV scanner or a lingering handle could), the
-        // outcome is Failed with a detail, the live DB keeps its old content, and the staging
-        // file survives untouched so the NEXT restart retries the restore.
+        // The documented "never throw at startup" contract: if the swap itself fails, the
+        // outcome is Failed with a detail and the staging file survives untouched so the
+        // NEXT restart retries the restore. The failure is provoked by a DIRECTORY sitting
+        // at the live-DB path - File.Move onto a directory throws IOException on Windows
+        // AND Linux alike. (An exclusive file handle, the first version of this test, only
+        // blocks the move under Windows sharing semantics; POSIX happily replaces open
+        // files, which made the test pass locally and fail in Linux CI.)
         var livePath = PathIn("live.db");
-        CreateValidStudyLifeDb(livePath);
+        Directory.CreateDirectory(livePath); // the blocker: a directory where the DB file belongs
         var stagingPath = DatabaseRestoreService.GetStagingPath(livePath);
         CreateValidStudyLifeDb(stagingPath);
         SqliteConnection.ClearAllPools();
 
-        RestoreApplyOutcome outcome;
-        using (File.Open(livePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
-        {
-            outcome = DatabaseRestoreService.ApplyPendingRestore(livePath);
-        }
+        var outcome = DatabaseRestoreService.ApplyPendingRestore(livePath);
 
         Assert.Equal(RestoreApplyStatus.Failed, outcome.Status);
         Assert.False(string.IsNullOrWhiteSpace(outcome.Detail));
         Assert.True(File.Exists(stagingPath)); // still pending - retried on next startup
-        Assert.True(File.Exists(livePath));
 
-        // After the lock is gone, the very same retry must succeed.
+        // Once the blocker is gone, the very same retry must succeed.
+        Directory.Delete(livePath);
         var retry = DatabaseRestoreService.ApplyPendingRestore(livePath);
         Assert.Equal(RestoreApplyStatus.Applied, retry.Status);
         Assert.False(File.Exists(stagingPath));
+        Assert.True(File.Exists(livePath));
     }
 }
