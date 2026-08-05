@@ -525,6 +525,30 @@ public class AppStateService : IAsyncDisposable
         return _isOwnerCache.Value;
     }
 
+    // ── Demo mode ────────────────────────────────────────────────────────────
+    // Public demo instances (server started with DEMO_MODE=true, see the demo endpoints
+    // in AuthController): the client shows a DEMO chip, hides passkey/push management,
+    // and suppresses the backup staleness banner. Cached like _isOwnerCache - the flag
+    // can't change without a server restart, one fetch per app load is enough.
+
+    private bool? _isDemoCache;
+
+    public async Task<bool> GetIsDemoAsync()
+    {
+        if (_isDemoCache is bool cached) return cached;
+        try
+        {
+            var dto = await _http.GetFromJsonAsync<DemoInfoDto>("api/auth/demo");
+            _isDemoCache = dto?.Demo ?? false;
+        }
+        catch
+        {
+            // Older server or transient error - behave like every normal deployment.
+            _isDemoCache = false;
+        }
+        return _isDemoCache.Value;
+    }
+
     // ── Settings ─────────────────────────────────────────────────────────────
 
     public async Task<UserSettings> GetSettingsAsync()

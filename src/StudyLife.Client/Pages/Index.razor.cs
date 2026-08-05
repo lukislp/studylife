@@ -245,18 +245,22 @@ public partial class Index
         }
 
         // Backup staleness hint (manual offsite download, see field comment above) - only for
-        // the owner, see the _isOwner field comment.
+        // the owner, see the _isOwner field comment. Suppressed on public demo instances:
+        // the demo user IS the owner and never has a backup timestamp, so the banner would
+        // permanently nag every visitor about backing up throwaway seed data - and the
+        // backup endpoints are 403-blocked there anyway.
+        var isDemo = await State.GetIsDemoAsync();
         if (settings.LastBackupDownloadAt == null)
         {
             _backupNeverDownloaded = true;
             _daysSinceLastBackup = 0;
-            _showBackupStalenessHint = _isOwner;
+            _showBackupStalenessHint = _isOwner && !isDemo;
         }
         else
         {
             _backupNeverDownloaded = false;
             _daysSinceLastBackup = (today - settings.LastBackupDownloadAt.Value.Date).Days;
-            _showBackupStalenessHint = _isOwner && _daysSinceLastBackup > BackupStalenessThresholdDays;
+            _showBackupStalenessHint = _isOwner && !isDemo && _daysSinceLastBackup > BackupStalenessThresholdDays;
         }
 
         // Weekly quota (configurable target, default 25-30 h/week)

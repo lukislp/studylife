@@ -50,6 +50,15 @@
         <div class="brand">
             <span class="brand-icon">✦</span>
             <span class="brand-name">StudyLife</span>
+            @if (_demoMode)
+            {
+                <!-- Public demo instance (DEMO_MODE=true): a persistent, unobtrusive marker so
+                     visitors always know edits are local-only and reset on reload. -->
+                <span title="Read-only demo — changes reset on reload"
+                      style="font-size:0.6rem; font-weight:600; letter-spacing:0.08em; padding:0.1rem 0.35rem; border:1px solid var(--accent, #e8a87c); border-radius:4px; color:var(--accent, #e8a87c); align-self:center;">
+                    DEMO
+                </span>
+            }
         </div>
         <div class="nav-links">
             <NavLink href="/" Match="NavLinkMatch.All" class="nav-item">
@@ -254,15 +263,10 @@
             State.OnSessionsChanged += OnSessionsChanged;
             State.OnPendingWritesChanged += OnPendingWritesChanged;
             _pendingWrites = await State.GetPendingWriteCountAsync();
-            // Demo-instance detection for the speed dial (hides passkey/push management there,
-            // see the fab markup). Best-effort: any failure just means the buttons stay
-            // visible, exactly like on every normal deployment.
-            try
-            {
-                var demoInfo = await Http.GetFromJsonAsync<DemoInfoDto>("api/auth/demo");
-                _demoMode = demoInfo is { Demo: true };
-            }
-            catch { /* older server / network hiccup - treat as normal instance */ }
+            // Demo-instance detection for the DEMO chip in the sidebar brand and the speed
+            // dial (hides passkey/push management there, see the fab markup). Cached in
+            // AppStateService so Index.razor's backup-banner suppression shares the fetch.
+            _demoMode = await State.GetIsDemoAsync();
             await CheckForClientUpdateAsync();
             // Server declared the passkey session invalid via 401 (SessionHandler has already
             // discarded the token) - redirect to the login page. This is the ONLY path that
