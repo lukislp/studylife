@@ -275,6 +275,16 @@ using (var scope = app.Services.CreateScope())
     scope.ServiceProvider.GetRequiredService<VapidKeysHolder>().Keys =
         await systemSecrets.EnsureVapidKeysAsync(builder.Configuration);
 
+    // Public demo instances: wipe and re-create the demo dataset on EVERY start - the data is
+    // generated relative to "today", so restarting the container is also what keeps the demo
+    // looking current (see DemoSeeder). Deliberately after Migrate() and the VAPID resolution
+    // above (SystemSecrets stay untouched), and never reachable without DEMO_MODE=true.
+    if (string.Equals(builder.Configuration["DEMO_MODE"], "true", StringComparison.OrdinalIgnoreCase))
+    {
+        await DemoSeeder.ReseedAsync(db);
+        Console.WriteLine("[demo] DEMO_MODE active: database wiped and reseeded with demo data");
+    }
+
     // Setup secret for the very first registration (AuthController.RegisterBegin) - as long as no
     // passkey exists, re-issue it on every start, so an operator who misses it on the first
     // boot finds it again in the logs on the next restart. Once registered,
@@ -475,6 +485,17 @@ if (string.Equals(app.Configuration["DEMO_MODE"], "true", StringComparison.Ordin
 {
     app.Use(async (context, next) =>
     {
+        // /api/backup is blocked ENTIRELY (any method): its GET endpoints hand out the raw
+        // SQLite database (/api/backup/database) and a full JSON export - and the demo user,
+        // being the first AuthUser, would pass BackupController's owner check. A raw DB
+        // download would include SystemSecrets (VAPID private key) and session token hashes,
+        // so this must not rely on the non-GET rule below.
+        if (context.Request.Path.StartsWithSegments("/api/backup"))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            await context.Response.WriteAsJsonAsync(new { error = "backups are disabled on the demo instance" });
+            return;
+        }
         if (context.Request.Path.StartsWithSegments("/api")
             && !HttpMethods.IsGet(context.Request.Method)
             && !HttpMethods.IsHead(context.Request.Method)
