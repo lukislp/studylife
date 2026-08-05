@@ -1,3 +1,10 @@
+## [1.2.4](https://github.com/lukislp/studylife/compare/v1.2.3...v1.2.4) (2026-08-05)
+
+
+### Bug Fixes
+
+* use the dynamic license badge like the other repos ([0820d8d](https://github.com/lukislp/studylife/commit/0820d8d57a26611830362436949ad983c7c0daa3))
+
 ## [1.2.3](https://github.com/lukislp/studylife/compare/v1.2.2...v1.2.3) (2026-08-05)
 
 
