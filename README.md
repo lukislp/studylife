@@ -14,6 +14,8 @@ study program, with weeks of study history, a live streak, and planned sessions 
 apply locally but are never saved; the dataset reseeds itself relative to "today" on every
 container restart.
 
+![StudyLife dashboard, live demo screenshot](docs/screenshot.png)
+
 ---
 
 ## Features
