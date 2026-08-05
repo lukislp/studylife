@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/lukislp/studylife/compare/v1.2.6...v1.3.0) (2026-08-05)
+
+
+### Features
+
+* add a self-hosted test coverage badge ([b41ab73](https://github.com/lukislp/studylife/commit/b41ab73c6ebad20ce039c782f3d71c0b04fcb9ab))
+
 ## [1.2.6](https://github.com/lukislp/studylife/compare/v1.2.5...v1.2.6) (2026-08-05)
 
 
