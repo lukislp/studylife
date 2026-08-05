@@ -1,3 +1,15 @@
+# [1.2.0](https://github.com/lukislp/studylife/compare/v1.1.0...v1.2.0) (2026-08-05)
+
+
+### Bug Fixes
+
+* block the entire /api/backup path on demo instances ([e9cc293](https://github.com/lukislp/studylife/commit/e9cc293b4d5c8ef5fc8127d65423a219b25bd18d))
+
+
+### Features
+
+* seed a realistic demo dataset on every DEMO_MODE startup ([773a424](https://github.com/lukislp/studylife/commit/773a4245edf03e43354c7fad1b5f32c56517bcfe))
+
 # [1.1.0](https://github.com/lukislp/studylife/compare/v1.0.2...v1.1.0) (2026-08-05)
 
 
