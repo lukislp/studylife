@@ -95,6 +95,154 @@ public class BackgroundTaskServiceDailyMotivationToggleDisabledTests : IClassFix
     }
 }
 
+/// <summary>
+/// Memo catch-up after a restart: the SentReminder key for today already exists in the DB (e.g.
+/// written by the previous process), the in-memory memo of the fresh service instance is empty -
+/// the DB key must win and NO second push/row may be produced. Time-adaptive like the sibling
+/// classes: before 8 am the morning gate returns first, and the pre-seeded row simply stays -
+/// the assertion (exactly one row) holds in both windows.
+/// </summary>
+public class BackgroundTaskServiceDailyMotivationMemoCatchUpTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+    private readonly BackgroundTaskService _service;
+
+    public BackgroundTaskServiceDailyMotivationMemoCatchUpTests(CustomWebApplicationFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient();
+        _service = BackgroundTaskServiceTestFactory.Create(factory);
+    }
+
+    [Fact]
+    public async Task ExistingDbKey_FreshServiceInstance_DoesNotSendAgain()
+    {
+        await BackgroundTaskTestSettings.PutAsync(_client, s => s.DailyMotivationEnabled = true);
+        await _client.PostAsJsonAsync("/api/push/subscribe",
+            new PushSubscribeRequest($"https://push.example.com/{Guid.NewGuid():N}", "p256dh-key-value", "auth-key-value"));
+        await _factory.WithDbAsync(async db =>
+        {
+            db.SentReminders.Add(new SentReminderEntity
+            {
+                Key = $"dailymotivation:{DateTime.Now:yyyyMMdd}",
+                SentAt = DateTime.Now,
+            });
+            await db.SaveChangesAsync();
+        });
+
+        // Twice: the first call catches the memo up from the DB key, the second returns via the
+        // memo without a DB query - both must leave exactly the pre-seeded row.
+        await _factory.WithDbAsync(db => _service.RunDailyMotivationAsync(db, () => db.PushSubscriptions.ToListAsync()));
+        await _factory.WithDbAsync(db => _service.RunDailyMotivationAsync(db, () => db.PushSubscriptions.ToListAsync()));
+
+        Assert.Single(await _factory.WithDbAsync(db =>
+            db.SentReminders.AsNoTracking().Where(r => r.Key.StartsWith("dailymotivation:")).ToListAsync()));
+    }
+}
+
+/// <summary>
+/// The claim-lost path of RunDailyMotivationAsync: a competing worker commits the same key
+/// between the AnyAsync check and TryClaimReminderAsync. The race is provoked deterministically
+/// via the getSubscriptions callback, which runs exactly in that window - the losing side must
+/// not send and must leave the competitor's row as the only one. Before 8 am the callback never
+/// runs (morning gate), so no row exists at all - both outcomes are asserted time-adaptively.
+/// </summary>
+public class BackgroundTaskServiceDailyMotivationClaimLostTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+    private readonly BackgroundTaskService _service;
+
+    public BackgroundTaskServiceDailyMotivationClaimLostTests(CustomWebApplicationFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient();
+        _service = BackgroundTaskServiceTestFactory.Create(factory);
+    }
+
+    [Fact]
+    public async Task CompetingClaimBetweenCheckAndInsert_LoserDoesNotSend()
+    {
+        await BackgroundTaskTestSettings.PutAsync(_client, s => s.DailyMotivationEnabled = true);
+        var beforeHour = DateTime.Now.Hour;
+
+        var callbackRan = false;
+        await _factory.WithDbAsync(db => _service.RunDailyMotivationAsync(db, async () =>
+        {
+            callbackRan = true;
+            // Competitor commits the claim first (separate scope = separate DbContext).
+            await _factory.WithDbAsync(async competitor =>
+            {
+                competitor.SentReminders.Add(new SentReminderEntity
+                {
+                    Key = $"dailymotivation:{DateTime.Now:yyyyMMdd}",
+                    SentAt = DateTime.Now,
+                });
+                await competitor.SaveChangesAsync();
+            });
+            return new List<PushSubscriptionEntity>
+            {
+                new() { Endpoint = "https://push.example.com/claim-race", P256dh = "p", Auth = "a" },
+            };
+        }));
+
+        var rows = await _factory.WithDbAsync(db =>
+            db.SentReminders.AsNoTracking().Where(r => r.Key.StartsWith("dailymotivation:")).ToListAsync());
+        if (beforeHour >= 8 && DateTime.Now.Hour >= 8)
+        {
+            Assert.True(callbackRan);
+            Assert.Single(rows); // exactly the competitor's row - the loser added nothing
+        }
+        else
+        {
+            Assert.Empty(rows); // morning gate closed - the callback (and the race) never ran
+        }
+    }
+}
+
+/// <summary>
+/// Expired-subscription cleanup in RunDailyMotivationAsync: 410 from the APNs stub must remove
+/// the subscription and persist that removal. Time-adaptive: before 8 am nothing runs and the
+/// subscription must survive.
+/// </summary>
+public class BackgroundTaskServiceDailyMotivationExpiredSubscriptionTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+
+    public BackgroundTaskServiceDailyMotivationExpiredSubscriptionTests(CustomWebApplicationFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient();
+    }
+
+    [Fact]
+    public async Task ExpiredApnsToken_RemovesSubscription_MotivationStaysClaimed()
+    {
+        await BackgroundTaskTestSettings.PutAsync(_client, s => s.DailyMotivationEnabled = true);
+        await ApnsSubscriptionSeeder.SeedAsync(_factory, "tok-motivation-expired");
+        var service = BackgroundTaskServiceTestFactory.Create(_factory, ApnsStubSender.Create(System.Net.HttpStatusCode.Gone));
+        var beforeHour = DateTime.Now.Hour;
+
+        await _factory.WithDbAsync(db => service.RunDailyMotivationAsync(db, () => db.PushSubscriptions.ToListAsync()));
+
+        var rows = await _factory.WithDbAsync(db =>
+            db.SentReminders.AsNoTracking().Where(r => r.Key.StartsWith("dailymotivation:")).ToListAsync());
+        var subs = await _factory.WithDbAsync(db => db.PushSubscriptions.AsNoTracking().ToListAsync());
+        if (beforeHour >= 8 && DateTime.Now.Hour >= 8)
+        {
+            Assert.Single(rows);
+            Assert.Empty(subs); // expired token removed and removal persisted
+        }
+        else
+        {
+            Assert.Empty(rows);
+            Assert.Single(subs); // gate closed - nothing sent, nothing removed
+        }
+    }
+}
+
 /// <summary>PickDailyMotivationQuote is deliberately deterministic (date -> quote), so the selection is testable without a clock seam.</summary>
 public class BackgroundTaskServiceDailyMotivationQuotePickTests
 {

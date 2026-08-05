@@ -174,3 +174,114 @@ public class CalcEctsEarnedTests
         Assert.Equal(5, earned);
     }
 }
+
+/// <summary>
+/// The program-aware CalcEctsEarned overload that takes an explicit quota dictionary
+/// (used for custom study programs, where quotas come from CourseGroupEntity rows instead
+/// of the static GroupEctsQuotas).
+/// </summary>
+public class CalcEctsEarnedWithQuotaDictionaryTests
+{
+    private static CourseDto Ungrouped(int id, int ects) => new() { Id = id, Ects = ects };
+
+    private static CourseDto Grouped(int id, string group, int ects) =>
+        new() { Id = id, Group = group, Ects = ects };
+
+    [Fact]
+    public void CompletedGroupExceedingItsQuota_IsCappedAtTheDictionaryQuota()
+    {
+        var courses = new[]
+        {
+            Grouped(1, "Electives", 5),
+            Grouped(2, "Electives", 5),
+            Grouped(3, "Electives", 5), // 15 raw ECTS completed, quota caps at 10
+        };
+        var quotas = new Dictionary<string, int> { ["Electives"] = 10 };
+
+        var earned = CourseCatalog.CalcEctsEarned(courses, new[] { 1, 2, 3 }, quotas);
+
+        Assert.Equal(10, earned);
+    }
+
+    [Fact]
+    public void CompletedGroupBelowItsQuota_CountsTheRawSum()
+    {
+        var courses = new[] { Grouped(1, "Electives", 5), Grouped(2, "Electives", 5) };
+        var quotas = new Dictionary<string, int> { ["Electives"] = 20 };
+
+        var earned = CourseCatalog.CalcEctsEarned(courses, new[] { 1 }, quotas);
+
+        Assert.Equal(5, earned); // min(5 earned, 20 quota)
+    }
+
+    [Fact]
+    public void GroupWithoutAQuotaEntry_CountsInFull_NoCap()
+    {
+        // Documented contract: "Groups without a quota entry count in full."
+        var courses = new[] { Grouped(1, "Unquoted Group", 6), Grouped(2, "Unquoted Group", 6) };
+
+        var earned = CourseCatalog.CalcEctsEarned(courses, new[] { 1, 2 }, new Dictionary<string, int>());
+
+        Assert.Equal(12, earned);
+    }
+
+    [Fact]
+    public void MixedUngroupedAndMultipleGroups_EachGroupCappedIndependently()
+    {
+        var courses = new[]
+        {
+            Ungrouped(1, 5),
+            Grouped(2, "A", 5),
+            Grouped(3, "A", 5), // group A: 10 raw, capped to 5
+            Grouped(4, "B", 5), // group B: 5 raw, quota 10 -> counts 5
+        };
+        var quotas = new Dictionary<string, int> { ["A"] = 5, ["B"] = 10 };
+
+        var earned = CourseCatalog.CalcEctsEarned(courses, new[] { 1, 2, 3, 4 }, quotas);
+
+        Assert.Equal(5 + 5 + 5, earned);
+    }
+
+    [Fact]
+    public void UncompletedGroupedCourses_DoNotContributeTowardsTheQuota()
+    {
+        var courses = new[] { Grouped(1, "A", 5), Grouped(2, "A", 5) };
+        var quotas = new Dictionary<string, int> { ["A"] = 10 };
+
+        var earned = CourseCatalog.CalcEctsEarned(courses, Array.Empty<int>(), quotas);
+
+        Assert.Equal(0, earned);
+    }
+}
+
+/// <summary>
+/// The program-aware CalcTotalEcts overload with an explicit quota dictionary - the
+/// counterpart of the earned calculation above.
+/// </summary>
+public class CalcTotalEctsWithQuotaDictionaryTests
+{
+    private static CourseDto Grouped(int id, string group, int ects) =>
+        new() { Id = id, Group = group, Ects = ects };
+
+    [Fact]
+    public void GroupWithQuota_ContributesTheQuotaNotTheRawSum()
+    {
+        var courses = new[]
+        {
+            new CourseDto { Id = 1, Ects = 5 },
+            Grouped(2, "Electives", 5),
+            Grouped(3, "Electives", 5),
+        };
+        var quotas = new Dictionary<string, int> { ["Electives"] = 8 };
+
+        Assert.Equal(5 + 8, CourseCatalog.CalcTotalEcts(courses, quotas));
+    }
+
+    [Fact]
+    public void GroupWithoutQuotaEntry_ContributesItsFullSum()
+    {
+        var courses = new[] { Grouped(1, "Unquoted", 6), Grouped(2, "Unquoted", 4) };
+
+        Assert.Equal(10, CourseCatalog.CalcTotalEcts(courses, new Dictionary<string, int>()));
+    }
+}

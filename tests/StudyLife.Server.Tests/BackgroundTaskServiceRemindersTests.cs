@@ -567,6 +567,195 @@ public class BackgroundTaskServicePerCourseInactivityToggleDisabledTests : IClas
     }
 }
 
+/// <summary>
+/// The named title arms of the session reminder switch (60 -> "in 1 Stunde", 30 -> "in 30
+/// Minuten", 1 -> "in 1 Minute") - all previous tests used other thresholds and therefore only
+/// hit the default arm. Three sessions at staggered distances drive all three arms in a single
+/// run: the nearest due threshold decides the title, the further ones are only marked as sent.
+/// </summary>
+public class BackgroundTaskServiceSessionReminderTitleArmsTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+    private readonly BackgroundTaskService _service;
+
+    public BackgroundTaskServiceSessionReminderTitleArmsTests(CustomWebApplicationFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient();
+        _service = BackgroundTaskServiceTestFactory.Create(factory);
+    }
+
+    private async Task<int> CreateSessionAsync(int courseId, DateTime start)
+    {
+        var response = await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
+        {
+            CourseId = courseId,
+            CourseName = "Title Arm Course",
+            CourseColor = "#6C5CE7",
+            StartTime = start,
+            EndTime = start.AddHours(1),
+            IsCompleted = false,
+            TimerModeId = 1,
+        });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        return (await response.Content.ReadFromJsonAsync<StudySessionDto>())!.Id;
+    }
+
+    [Fact]
+    public async Task NearestDueThreshold_60_30_And1_EachProducesItsOwnReminderKey()
+    {
+        await BackgroundTaskTestSettings.PutAsync(_client, s =>
+        {
+            s.SessionRemindersEnabled = true;
+            s.SessionReminderMinutes = "60,30,1";
+        });
+        await _client.PostAsJsonAsync("/api/push/subscribe",
+            new PushSubscribeRequest($"https://push.example.com/{Guid.NewGuid():N}", "p256dh-key-value", "auth-key-value"));
+
+        var s60 = await CreateSessionAsync(501, DateTime.Now.AddMinutes(50)); // only the 60 threshold is due
+        var s30 = await CreateSessionAsync(502, DateTime.Now.AddMinutes(25)); // 30 is nearest, 60 marked silently
+        var s1 = await CreateSessionAsync(503, DateTime.Now.AddSeconds(40)); // 1 is nearest, 30+60 marked silently
+
+        await _factory.WithDbAsync(db => _service.RunPushNotificationsAsync(db, () => db.PushSubscriptions.ToListAsync()));
+
+        var sent = await _factory.WithDbAsync(db => db.SentReminders.AsNoTracking()
+            .Where(r => r.Key.Contains(":reminder")).Select(r => r.Key).ToListAsync());
+        Assert.Contains($"{s60}:reminder60", sent);
+        Assert.Contains($"{s30}:reminder30", sent);
+        Assert.Contains($"{s30}:reminder60", sent);
+        Assert.Contains($"{s1}:reminder1", sent);
+        Assert.Contains($"{s1}:reminder30", sent);
+        Assert.Contains($"{s1}:reminder60", sent);
+        // The 60-min session must NOT have been marked for the closer thresholds yet.
+        Assert.DoesNotContain($"{s60}:reminder30", sent);
+        Assert.DoesNotContain($"{s60}:reminder1", sent);
+    }
+}
+
+/// <summary>
+/// Expired-subscription cleanup in RunCourseGoalReminderCheckAsync: an APNs token that Apple
+/// reports as unregistered (410) must remove the subscription, while the goal reminder is still
+/// recorded. Own factory: the goal reminder key has no date component, sibling classes would
+/// interfere.
+/// </summary>
+public class BackgroundTaskServiceCourseGoalExpiredSubscriptionTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+
+    public BackgroundTaskServiceCourseGoalExpiredSubscriptionTests(CustomWebApplicationFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient();
+    }
+
+    [Fact]
+    public async Task DueGoal_ExpiredApnsToken_RemovesSubscription_ButRecordsReminder()
+    {
+        await BackgroundTaskTestSettings.PutAsync(_client, s =>
+        {
+            s.CourseGoalRemindersEnabled = true;
+            s.CourseGoalReminderDays = "0";
+        });
+        var goalResponse = await _client.PutAsJsonAsync("/api/coursegoals/701", new CourseGoalDto
+        {
+            CourseId = 701,
+            CourseName = "Expired Sub Goal",
+            TargetDate = DateTime.Today,
+            CompletedTopics = "",
+        });
+        Assert.Equal(HttpStatusCode.OK, goalResponse.StatusCode);
+        await ApnsSubscriptionSeeder.SeedAsync(_factory, "tok-goal-expired");
+        var service = BackgroundTaskServiceTestFactory.Create(_factory, ApnsStubSender.Create(HttpStatusCode.Gone));
+
+        await _factory.WithDbAsync(db => service.RunCourseGoalReminderCheckAsync(db, () => db.PushSubscriptions.ToListAsync()));
+
+        Assert.Single(await _factory.WithDbAsync(db =>
+            db.SentReminders.AsNoTracking().Where(r => r.Key == "coursegoal:701:reminder0d").ToListAsync()));
+        Assert.Empty(await _factory.WithDbAsync(db => db.PushSubscriptions.AsNoTracking().ToListAsync()));
+    }
+}
+
+/// <summary>
+/// Expired-subscription cleanup in RunInactivityReminderCheckAsync (own factory as with the
+/// other inactivity classes - the check scans the whole sessions sample).
+/// </summary>
+public class BackgroundTaskServiceInactivityExpiredSubscriptionTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+
+    public BackgroundTaskServiceInactivityExpiredSubscriptionTests(CustomWebApplicationFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient();
+    }
+
+    [Fact]
+    public async Task NeverStudied_ExpiredApnsToken_RemovesSubscription_ButRecordsReminder()
+    {
+        await BackgroundTaskTestSettings.PutAsync(_client, s => s.InactivityRemindersEnabled = true);
+        await ApnsSubscriptionSeeder.SeedAsync(_factory, "tok-inactivity-expired");
+        var service = BackgroundTaskServiceTestFactory.Create(_factory, ApnsStubSender.Create(HttpStatusCode.Gone));
+
+        await _factory.WithDbAsync(db => service.RunInactivityReminderCheckAsync(db, () => db.PushSubscriptions.ToListAsync()));
+
+        Assert.Single(await _factory.WithDbAsync(db =>
+            db.SentReminders.AsNoTracking().Where(r => r.Key.StartsWith("inactivity:")).ToListAsync()));
+        Assert.Empty(await _factory.WithDbAsync(db => db.PushSubscriptions.AsNoTracking().ToListAsync()));
+    }
+}
+
+/// <summary>
+/// Expired-subscription cleanup in RunPerCourseInactivityCheckAsync (own factory, same
+/// whole-sample reasoning as the other per-course classes).
+/// </summary>
+public class BackgroundTaskServicePerCourseInactivityExpiredSubscriptionTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+
+    public BackgroundTaskServicePerCourseInactivityExpiredSubscriptionTests(CustomWebApplicationFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient();
+    }
+
+    private async Task PostSessionAsync(int courseId, string name, DateTime start) =>
+        await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
+        {
+            CourseId = courseId,
+            CourseName = name,
+            CourseColor = "#6C5CE7",
+            StartTime = start,
+            EndTime = start.AddHours(1),
+            IsCompleted = true,
+            TimerModeId = 1,
+        });
+
+    [Fact]
+    public async Task NeglectedCourse_ExpiredApnsToken_RemovesSubscription_ButRecordsReminder()
+    {
+        await BackgroundTaskTestSettings.PutAsync(_client, s =>
+        {
+            s.PerCourseInactivityRemindersEnabled = true;
+            s.InactivityThresholdDays = 5;
+            s.SelectedCourseIds = new List<int> { 901, 902 };
+        });
+        await PostSessionAsync(901, "Aktiv", DateTime.Now.AddDays(-1));
+        await PostSessionAsync(902, "Vernachlaessigt", DateTime.Now.AddDays(-12));
+        await ApnsSubscriptionSeeder.SeedAsync(_factory, "tok-percourse-expired");
+        var service = BackgroundTaskServiceTestFactory.Create(_factory, ApnsStubSender.Create(HttpStatusCode.Gone));
+
+        await _factory.WithDbAsync(db => service.RunPerCourseInactivityCheckAsync(db, () => db.PushSubscriptions.ToListAsync()));
+
+        Assert.Single(await _factory.WithDbAsync(db =>
+            db.SentReminders.AsNoTracking().Where(r => r.Key.StartsWith("courseinactivity:902:")).ToListAsync()));
+        Assert.Empty(await _factory.WithDbAsync(db => db.PushSubscriptions.AsNoTracking().ToListAsync()));
+    }
+}
+
 /// <summary>BuildSessionReminderBody: pure text extension, see BackgroundTaskService.Reminders.cs.</summary>
 public class BackgroundTaskServiceSessionReminderResourceLinkTests
 {

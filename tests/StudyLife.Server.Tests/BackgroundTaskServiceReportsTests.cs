@@ -167,6 +167,94 @@ public class BackgroundTaskServiceAchievementToggleDisabledTests : IClassFixture
 }
 
 /// <summary>
+/// The custom-study-program branch of RunAchievementCheckAsync: with an active study program,
+/// the ECTS totals come from StudyProgramCatalog (custom courses/quotas) instead of the built-in
+/// catalog - observable because "all courses done" is reachable with a single completed custom
+/// course, which would be impossible against the built-in catalog's total.
+/// </summary>
+public class BackgroundTaskServiceAchievementCustomProgramTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+    private readonly BackgroundTaskService _service;
+
+    public BackgroundTaskServiceAchievementCustomProgramTests(CustomWebApplicationFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient();
+        _service = BackgroundTaskServiceTestFactory.Create(factory);
+    }
+
+    [Fact]
+    public async Task ActiveStudyProgram_AllCustomCoursesCompleted_FiresAllCoursesAchievement()
+    {
+        // Program with exactly one 5-ECTS mandatory course - completing it means 5/5 ECTS.
+        var customCourseId = await _factory.WithDbAsync(async db =>
+        {
+            var program = new StudyProgramEntity { Name = "Mini Program", CreatedAt = DateTime.UtcNow };
+            db.StudyPrograms.Add(program);
+            await db.SaveChangesAsync();
+            var course = new CustomCourseEntity { StudyProgramId = program.Id, Name = "Einziger Kurs", Ects = 5 };
+            db.CustomCourses.Add(course);
+            await db.SaveChangesAsync();
+            return (ProgramId: program.Id, CourseId: course.Id);
+        });
+        await BackgroundTaskTestSettings.PutAsync(_client, s =>
+        {
+            s.AchievementNotificationsEnabled = true;
+            s.ActiveStudyProgramId = customCourseId.ProgramId;
+            // DTO ids of custom courses are shifted by the catalog offset (see StudyProgramCatalog).
+            s.CompletedCourseIds = new List<int> { StudyProgramCatalog.CustomCourseIdOffset + customCourseId.CourseId };
+        });
+        await _client.PostAsJsonAsync("/api/push/subscribe",
+            new PushSubscribeRequest($"https://push.example.com/{Guid.NewGuid():N}", "p256dh-key-value", "auth-key-value"));
+
+        await _factory.WithDbAsync(db => _service.RunAchievementCheckAsync(db, () => db.PushSubscriptions.ToListAsync()));
+
+        var sentKeys = await _factory.WithDbAsync(db => db.SentReminders.AsNoTracking()
+            .Where(r => r.Key.StartsWith("achievement:")).Select(r => r.Key).ToListAsync());
+        // Proves the custom catalog was used: against the built-in catalog a single completed
+        // course id could never reach the full ECTS total.
+        Assert.Contains("achievement:allcourses", sentKeys);
+        Assert.Contains("achievement:courses:1", sentKeys);
+    }
+}
+
+/// <summary>
+/// Expired-subscription cleanup in RunAchievementCheckAsync: a 410 from the APNs stub must
+/// remove the subscription and persist the removal, while the achievement stays claimed.
+/// </summary>
+public class BackgroundTaskServiceAchievementExpiredSubscriptionTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+
+    public BackgroundTaskServiceAchievementExpiredSubscriptionTests(CustomWebApplicationFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient();
+    }
+
+    [Fact]
+    public async Task EarnedAchievement_ExpiredApnsToken_RemovesSubscription_AchievementStaysClaimed()
+    {
+        await BackgroundTaskTestSettings.PutAsync(_client, s =>
+        {
+            s.AchievementNotificationsEnabled = true;
+            s.CompletedCourseIds = new List<int> { 5 }; // built-in course -> "first course done"
+        });
+        await ApnsSubscriptionSeeder.SeedAsync(_factory, "tok-achievement-expired");
+        var service = BackgroundTaskServiceTestFactory.Create(_factory, ApnsStubSender.Create(System.Net.HttpStatusCode.Gone));
+
+        await _factory.WithDbAsync(db => service.RunAchievementCheckAsync(db, () => db.PushSubscriptions.ToListAsync()));
+
+        Assert.Single(await _factory.WithDbAsync(db =>
+            db.SentReminders.AsNoTracking().Where(r => r.Key == "achievement:courses:1").ToListAsync()));
+        Assert.Empty(await _factory.WithDbAsync(db => db.PushSubscriptions.AsNoTracking().ToListAsync()));
+    }
+}
+
+/// <summary>
 /// RunWeeklyReportAsync is hard-gated on "Sunday from 6 PM server time" (DateTime.Now, no
 /// injectable clock available - see the report for the deliberate decision not to
 /// introduce a new test seam into production logic for this). The tests therefore adjust

@@ -53,6 +53,10 @@ jobs:
       # down into misleading territory. Uploaded as an artifact and downloaded by the
       # semantic-release job below, which commits it to .github/badges/ on release - cheaper
       # than re-running the whole test+coverage pipeline there just for one small JSON file.
+      # EF Core migrations (StudyLife.Server.Migrations.*) are excluded as generated code:
+      # the Designer model snapshots alone are ~21k coverable lines of machine-written
+      # boilerplate that dwarf the ~4.3k lines of hand-written code and would pin the
+      # number to ~80% forever regardless of how well the real code is tested.
       - run: dotnet tool install -g dotnet-reportgenerator-globaltool
       - run: >
           reportgenerator
@@ -60,6 +64,7 @@ jobs:
           -targetdir:coverage-summary
           -reporttypes:JsonSummary
           -assemblyfilters:"-StudyLife.Client"
+          -classfilters:"-StudyLife.Server.Migrations.*"
       - run: python3 scripts/generate_coverage_badge.py coverage-summary/Summary.json coverage-badge.json
       - uses: actions/upload-artifact@v7
         with:

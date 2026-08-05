@@ -247,6 +247,38 @@ public class LiveActivityPushWorkerTests : IClassFixture<CustomWebApplicationFac
     }
 
     [Fact]
+    public async Task RunLiveActivityPushAsync_MidSessionBreakEnds_AdvancesToNextFocusRound()
+    {
+        // Break of round 1 (of 4) ends -> next FOCUS phase begins, round counter advances to 2.
+        // Complements FocusPhaseEnds (focus -> break) and LastRoundCompletes (final break ->
+        // end): the middle state-machine arm "non-final break -> focus" was previously untested.
+        await SeedTimerStateAsync(e =>
+        {
+            e.IsRunning = true;
+            e.IsBreak = true;
+            e.CurrentRound = 1;
+            e.TimerModeId = 1;
+            e.PhaseEndsAt = DateTime.Now.AddSeconds(-2);
+            e.LiveActivityPushToken = "tok-break-to-focus";
+        });
+        var (service, handler) = CreateService();
+
+        await _factory.WithDbAsync(db => service.RunLiveActivityPushAsync(db));
+
+        var request = Assert.Single(handler.Requests);
+        Assert.Contains("\"event\":\"update\"", request.Body);
+        Assert.Contains("\"isBreak\":false", request.Body);
+        Assert.Contains("\"round\":2", request.Body);
+
+        var stored = await _factory.WithDbAsync(async db => await db.TimerState.AsNoTracking().FirstOrDefaultAsync());
+        Assert.NotNull(stored);
+        Assert.False(stored!.IsBreak);
+        Assert.Equal(2, stored.CurrentRound);
+        Assert.True(stored.IsRunning);
+        Assert.True(stored.PhaseEndsAt > DateTime.Now); // advanced into the new focus phase
+    }
+
+    [Fact]
     public async Task RunLiveActivityPushAsync_LastRoundCompletes_SendsEndAndStopsRunning()
     {
         // Last break (round 4 of 4) ends -> session complete, no 5th focus block.

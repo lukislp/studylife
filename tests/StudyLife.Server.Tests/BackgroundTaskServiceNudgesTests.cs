@@ -655,3 +655,306 @@ public class BackgroundTaskServiceBestStudyTimeAlreadyStudiedTodayTests : IClass
         Assert.Empty(await db.SentReminders.AsNoTracking().Where(r => r.Key.StartsWith("beststudytime:")).ToListAsync());
     }
 }
+
+/// <summary>
+/// Expired-subscription (410 Gone) handling of RunCourseAlmostDoneCheckAsync: the only nudge in
+/// BackgroundTaskService.Nudges.cs without any wall-clock gate, so the removal branch
+/// (result.Expired -> Remove + trailing SaveChanges) is fully deterministically testable.
+/// GoneEndpoint + FakePushKeys (see BackgroundTaskServiceTestHelpers.cs) drive the REAL
+/// WebPush send path into the 410 branch - a placeholder key would already fail during payload
+/// encryption and never reach the HTTP roundtrip.
+/// </summary>
+public class BackgroundTaskServiceCourseAlmostDoneExpiredSubscriptionTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+    private readonly BackgroundTaskService _service;
+
+    public BackgroundTaskServiceCourseAlmostDoneExpiredSubscriptionTests(CustomWebApplicationFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient();
+        _service = BackgroundTaskServiceTestFactory.Create(factory);
+    }
+
+    [Fact]
+    public async Task ExpiredSubscription_IsRemoved_AndReminderStillRecorded()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<StudyLifeDb>();
+
+        var program = new StudyProgramEntity { Name = "AlmostDoneGoneProgram", CreatedAt = DateTime.UtcNow };
+        db.StudyPrograms.Add(program);
+        await db.SaveChangesAsync();
+        var course = new CustomCourseEntity
+        {
+            StudyProgramId = program.Id,
+            Semester = 1,
+            Name = "AlmostDoneGoneCourse",
+            Code = "ADG-1",
+            Color = "#6C5CE7",
+            Icon = "📘",
+            Ects = 5,
+            Topics = string.Join(",", Enumerable.Range(1, 10).Select(i => $"T{i}")),
+        };
+        db.CustomCourses.Add(course);
+        await db.SaveChangesAsync();
+        var courseDtoId = StudyProgramCatalog.CustomCourseIdOffset + course.Id;
+
+        // 9 of 10 topics done (90%, inside [85, 100)) and NO session ever for this course -
+        // "never studied" counts as maximally stale (daysSince = int.MaxValue >= 7).
+        db.CourseGoals.Add(new CourseGoalEntity
+        {
+            CourseId = courseDtoId,
+            CourseName = "AlmostDoneGoneCourse",
+            CompletedTopics = string.Join(",", Enumerable.Range(1, 9).Select(i => $"T{i}")),
+        });
+        await db.SaveChangesAsync();
+
+        await BackgroundTaskTestSettings.PutAsync(_client, s =>
+        {
+            s.CourseAlmostDoneRemindersEnabled = true;
+            s.ActiveStudyProgramId = program.Id;
+            s.SelectedCourseIds = new List<int> { courseDtoId };
+        });
+
+        using var gone = new GoneEndpoint();
+        var (p256dh, auth) = FakePushKeys.Generate();
+        var subscribeResponse = await _client.PostAsJsonAsync("/api/push/subscribe", new PushSubscribeRequest(gone.Url, p256dh, auth));
+        subscribeResponse.EnsureSuccessStatusCode();
+
+        await _service.RunCourseAlmostDoneCheckAsync(db, () => db.PushSubscriptions.ToListAsync());
+
+        // Reminder claimed AND the revoked subscription is gone from the DB - proves the
+        // Expired branch of the inner send loop plus the trailing SaveChangesAsync ran.
+        Assert.Single(await db.SentReminders.AsNoTracking().Where(r => r.Key.StartsWith($"coursealmostdone:{courseDtoId}:")).ToListAsync());
+        Assert.Empty(await db.PushSubscriptions.AsNoTracking().Where(s => s.Endpoint == gone.Url).ToListAsync());
+    }
+}
+
+/// <summary>
+/// Expired-subscription (410) handling of RunStreakRiskCheckAsync. Clock-gated on
+/// "hour >= Clamp(StudyWindowEndHour-1, 18, 22)" via DateTime.Now (no injectable clock, see
+/// BackgroundTaskServiceStreakRiskTriggerTests) - the expected outcome is therefore computed
+/// from the wall clock before AND after the run; if the gate state flips mid-test
+/// (18:00/midnight boundary), only the invariant "reminder recorded &lt;=&gt; expired
+/// subscription removed" is asserted instead of a fixed outcome.
+/// </summary>
+public class BackgroundTaskServiceStreakRiskExpiredSubscriptionTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+    private readonly BackgroundTaskService _service;
+
+    public BackgroundTaskServiceStreakRiskExpiredSubscriptionTests(CustomWebApplicationFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient();
+        _service = BackgroundTaskServiceTestFactory.Create(factory);
+    }
+
+    [Fact]
+    public async Task ExpiredSubscription_IsRemoved_WhenLateHourGateOpen()
+    {
+        await BackgroundTaskTestSettings.PutAsync(_client, s =>
+        {
+            s.StreakRiskRemindersEnabled = true;
+            s.StudyWindowStartHour = 6;
+            s.StudyWindowEndHour = 19; // threshold Clamp(18, 18, 22) = 18, lowest reachable gate
+        });
+        using var gone = new GoneEndpoint();
+        var (p256dh, auth) = FakePushKeys.Generate();
+        await _client.PostAsJsonAsync("/api/push/subscribe", new PushSubscribeRequest(gone.Url, p256dh, auth));
+
+        for (var daysAgo = 3; daysAgo >= 1; daysAgo--)
+        {
+            var start = DateTime.Now.Date.AddDays(-daysAgo).AddHours(10);
+            await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
+            {
+                CourseId = 531,
+                CourseName = "StreakGone",
+                CourseColor = "#6C5CE7",
+                StartTime = start,
+                EndTime = start.AddHours(1),
+                IsCompleted = true,
+                TimerModeId = 1,
+            });
+        }
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<StudyLifeDb>();
+        var before = DateTime.Now;
+        await _service.RunStreakRiskCheckAsync(db, () => db.PushSubscriptions.ToListAsync());
+        var after = DateTime.Now;
+
+        var sentRows = await db.SentReminders.AsNoTracking().Where(r => r.Key.StartsWith("streakrisk:")).ToListAsync();
+        var subRows = await db.PushSubscriptions.AsNoTracking().Where(s => s.Endpoint == gone.Url).ToListAsync();
+        if (before.Hour >= 18 && after.Hour >= 18 && before.Date == after.Date)
+        {
+            Assert.Single(sentRows);
+            Assert.Empty(subRows);
+        }
+        else if (before.Hour < 18 && after.Hour < 18)
+        {
+            Assert.Empty(sentRows);
+            Assert.Single(subRows);
+        }
+        else
+        {
+            Assert.True((sentRows.Count == 1 && subRows.Count == 0) || (sentRows.Count == 0 && subRows.Count == 1),
+                "fired => subscription removed, not fired => subscription kept");
+        }
+    }
+}
+
+/// <summary>
+/// Full send path of RunWeeklyGoalNudgeCheckAsync including the expired-subscription (410)
+/// branch. Clock-gated on "Thursday or later" (ISO weekday >= 4) via DateTime.Now - same
+/// adaptive assertion pattern as BackgroundTaskServiceWeeklyGoalNudgeTriggerTests, extended by
+/// the before/after guard for a midnight boundary mid-test.
+/// </summary>
+public class BackgroundTaskServiceWeeklyGoalNudgeExpiredSubscriptionTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+    private readonly BackgroundTaskService _service;
+
+    public BackgroundTaskServiceWeeklyGoalNudgeExpiredSubscriptionTests(CustomWebApplicationFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient();
+        _service = BackgroundTaskServiceTestFactory.Create(factory);
+    }
+
+    private static int IsoDayOfWeek(DateTime t) => ((int)t.DayOfWeek + 6) % 7 + 1;
+
+    [Fact]
+    public async Task FirePath_RemovesExpiredSubscription_WhenThursdayGateOpen()
+    {
+        await BackgroundTaskTestSettings.PutAsync(_client, s =>
+        {
+            s.WeeklyGoalNudgeEnabled = true;
+            s.WeeklyGoalMinHours = 20;
+            s.WeeklyGoalMaxHours = 25;
+        });
+        using var gone = new GoneEndpoint();
+        var (p256dh, auth) = FakePushKeys.Generate();
+        await _client.PostAsJsonAsync("/api/push/subscribe", new PushSubscribeRequest(gone.Url, p256dh, auth));
+        // No sessions this week -> 0h studied, always far below 50% of the prorated 20h path
+        // (from Thursday 00:00 on, the elapsed fraction is >= 3/7, i.e. expectedSoFar >= 8.5h).
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<StudyLifeDb>();
+        var before = DateTime.Now;
+        await _service.RunWeeklyGoalNudgeCheckAsync(db, () => db.PushSubscriptions.ToListAsync());
+        var after = DateTime.Now;
+
+        var sentRows = await db.SentReminders.AsNoTracking().Where(r => r.Key.StartsWith("weeklygoalnudge:")).ToListAsync();
+        var subRows = await db.PushSubscriptions.AsNoTracking().Where(s => s.Endpoint == gone.Url).ToListAsync();
+        if (IsoDayOfWeek(before) >= 4 && IsoDayOfWeek(after) >= 4)
+        {
+            Assert.Single(sentRows);
+            Assert.Empty(subRows);
+        }
+        else if (IsoDayOfWeek(before) < 4 && IsoDayOfWeek(after) < 4)
+        {
+            Assert.Empty(sentRows);
+            Assert.Single(subRows);
+        }
+        else
+        {
+            Assert.True((sentRows.Count == 1 && subRows.Count == 0) || (sentRows.Count == 0 && subRows.Count == 1),
+                "fired => subscription removed, not fired => subscription kept");
+        }
+    }
+}
+
+/// <summary>
+/// Full send path of RunBestStudyTimeCheckAsync including the expired-subscription (410)
+/// branch. The "close to the best bucket" window depends on DateTime.Now (no injectable
+/// clock), but unlike BackgroundTaskServiceBestStudyTimeTriggerTests the historical sessions
+/// are NOT fixed to the current bucket: the seed bucket is chosen so the current time falls
+/// into the send window whenever such a bucket exists at all (15 min before to 30 min after a
+/// 2h bucket start covers even-hour minutes 0-30 and odd-hour minutes 45-59, except 23:45+
+/// where the "next" bucket 24 doesn't exist) - maximizing the wall-clock range in which the
+/// actual send path runs.
+/// </summary>
+public class BackgroundTaskServiceBestStudyTimeExpiredSubscriptionTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+    private readonly BackgroundTaskService _service;
+
+    public BackgroundTaskServiceBestStudyTimeExpiredSubscriptionTests(CustomWebApplicationFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient();
+        _service = BackgroundTaskServiceTestFactory.Create(factory);
+    }
+
+    /// <summary>Bucket start hour (0, 2, ..., 22) whose send window contains t, or null.</summary>
+    private static int? BucketInWindow(DateTime t)
+    {
+        var nowMinutes = t.Hour * 60 + t.Minute;
+        for (var bucketStartHour = 0; bucketStartHour <= 22; bucketStartHour += 2)
+        {
+            var minutesUntilBucket = bucketStartHour * 60 - nowMinutes;
+            if (minutesUntilBucket is <= 15 and >= -30) return bucketStartHour;
+        }
+        return null;
+    }
+
+    [Fact]
+    public async Task FirePath_RemovesExpiredSubscription_WhenInsideBucketWindow()
+    {
+        await BackgroundTaskTestSettings.PutAsync(_client, s => s.BestStudyTimeRemindersEnabled = true);
+        using var gone = new GoneEndpoint();
+        var (p256dh, auth) = FakePushKeys.Generate();
+        await _client.PostAsJsonAsync("/api/push/subscribe", new PushSubscribeRequest(gone.Url, p256dh, auth));
+
+        var seedNow = DateTime.Now;
+        // If the current time is inside some bucket's window, seed exactly that bucket so the
+        // check fires; otherwise fall back to the current bucket (assertions then expect "no send").
+        var bucketStartHour = BucketInWindow(seedNow) ?? seedNow.Hour / 2 * 2;
+        for (var daysAgo = 1; daysAgo <= 10; daysAgo++)
+        {
+            var start = seedNow.Date.AddDays(-daysAgo).AddHours(bucketStartHour).AddMinutes(15);
+            await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
+            {
+                CourseId = 532,
+                CourseName = "BestTimeGone",
+                CourseColor = "#6C5CE7",
+                StartTime = start,
+                EndTime = start.AddHours(1),
+                IsCompleted = true,
+                TimerModeId = 1,
+            });
+        }
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<StudyLifeDb>();
+        var before = DateTime.Now;
+        await _service.RunBestStudyTimeCheckAsync(db, () => db.PushSubscriptions.ToListAsync());
+        var after = DateTime.Now;
+
+        bool InSeededWindow(DateTime t) => bucketStartHour * 60 - (t.Hour * 60 + t.Minute) is <= 15 and >= -30;
+
+        var sentRows = await db.SentReminders.AsNoTracking().Where(r => r.Key.StartsWith("beststudytime:")).ToListAsync();
+        var subRows = await db.PushSubscriptions.AsNoTracking().Where(s => s.Endpoint == gone.Url).ToListAsync();
+        if (InSeededWindow(before) && InSeededWindow(after) && before.Date == after.Date)
+        {
+            Assert.Single(sentRows);
+            Assert.Empty(subRows);
+        }
+        else if (!InSeededWindow(before) && !InSeededWindow(after))
+        {
+            Assert.Empty(sentRows);
+            Assert.Single(subRows);
+        }
+        else
+        {
+            Assert.True((sentRows.Count == 1 && subRows.Count == 0) || (sentRows.Count == 0 && subRows.Count == 1),
+                "fired => subscription removed, not fired => subscription kept");
+        }
+    }
+}

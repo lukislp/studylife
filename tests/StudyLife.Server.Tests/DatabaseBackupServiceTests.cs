@@ -150,6 +150,43 @@ public class DatabaseBackupServiceTests : IDisposable
     }
 
     [Fact]
+    public void CreatePreRestoreBackup_PrunesOwnPrefixOnly_NeverTouchesWeeklyDumps()
+    {
+        using (var db = new StudyLifeDb(Options(_dbPath), new TestCurrentUserAccessor()))
+        {
+            db.Database.EnsureCreated();
+        }
+
+        var backupDir = Path.Combine(_contentRoot, "app_data", "backups");
+        Directory.CreateDirectory(backupDir);
+
+        // Three stale prerestore backups plus one weekly dump: retention must only ever
+        // count/delete within the prerestore- prefix (the whole point of the separate prefix).
+        foreach (var stamp in new[] { "20200101-010101", "20200102-010101", "20200103-010101" })
+            File.WriteAllText(Path.Combine(backupDir, $"prerestore-{stamp}.db"), "dummy");
+        File.WriteAllText(Path.Combine(backupDir, "studylife-20200101.db"), "weekly dummy");
+
+        var service = new DatabaseBackupService(_dbPath, _contentRoot);
+        var returnedPath = service.CreatePreRestoreBackup(keep: 2);
+
+        Assert.True(File.Exists(returnedPath));
+        Assert.StartsWith("prerestore-", Path.GetFileName(returnedPath));
+
+        var remaining = Directory.GetFiles(backupDir, "prerestore-*.db")
+            .Select(Path.GetFileName)
+            .OrderByDescending(f => f)
+            .ToList();
+
+        // keep: 2 = the fresh real backup (newest timestamp) + the newest dummy survive.
+        Assert.Equal(2, remaining.Count);
+        Assert.Equal(Path.GetFileName(returnedPath), remaining[0]);
+        Assert.Equal("prerestore-20200103-010101.db", remaining[1]);
+
+        // The weekly dump with its own prefix is untouched.
+        Assert.True(File.Exists(Path.Combine(backupDir, "studylife-20200101.db")));
+    }
+
+    [Fact]
     public void CreateWeeklyBackup_FewerFilesThanKeep_DeletesNothing()
     {
         using (var db = new StudyLifeDb(Options(_dbPath), new TestCurrentUserAccessor()))

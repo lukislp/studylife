@@ -294,3 +294,64 @@ public class ProgressControllerMultiUserTests : IClassFixture<CustomWebApplicati
         Assert.Empty(alexDto.ActiveCourses);
     }
 }
+
+/// <summary>
+/// GetShared with an ACTIVE CUSTOM STUDY PROGRAM (settings.ActiveStudyProgramId set): the
+/// course list/group quotas must come from StudyProgramCatalog (the user's own program
+/// tables) instead of the built-in CourseCatalog. Own class/factory: the other progress
+/// tests above rely on the built-in catalog and never reset ActiveStudyProgramId.
+/// </summary>
+public class ProgressControllerStudyProgramShareTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _anonymousClient;
+
+    public ProgressControllerStudyProgramShareTests(CustomWebApplicationFactory factory)
+    {
+        _factory = factory;
+        _anonymousClient = ApiKeyTestHelpers.CreateClientWithKey(factory, null);
+    }
+
+    [Fact]
+    public async Task GetShared_WithActiveCustomStudyProgram_UsesProgramCatalogInsteadOfBuiltIn()
+    {
+        var programId = await _factory.WithDbAsync(async db =>
+        {
+            var program = new StudyProgramEntity
+            {
+                AuthUserId = 1, // seeded test user
+                Name = "Custom Test Program",
+                CreatedAt = DateTime.UtcNow,
+            };
+            db.StudyPrograms.Add(program);
+            await db.SaveChangesAsync();
+
+            var entity = await db.Settings.FirstOrDefaultAsync();
+            if (entity == null)
+            {
+                entity = new UserSettingsEntity();
+                db.Settings.Add(entity);
+            }
+            entity.ProgressShareEnabled = true;
+            entity.ProgressShareToken = "program-share-token";
+            entity.ActiveStudyProgramId = program.Id;
+            entity.SelectedCourseIds = "";
+            entity.CompletedCourseIds = "";
+            await db.SaveChangesAsync();
+            return program.Id;
+        });
+
+        var response = await _anonymousClient.GetAsync("/api/progress/shared/program-share-token");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var dto = await response.Content.ReadFromJsonAsync<ProgressShareDto>();
+        Assert.NotNull(dto);
+        // An empty custom program has no courses at all - completely different shape than the
+        // built-in catalog (which always carries its full fixed course list).
+        Assert.Equal(0, dto!.TotalEcts);
+        Assert.Equal(0, dto.EarnedEcts);
+        Assert.Equal(0, dto.CoursesTotalCount);
+        Assert.Empty(dto.ActiveCourses);
+        Assert.True(programId > 0);
+    }
+}

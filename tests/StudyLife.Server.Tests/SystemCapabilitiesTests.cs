@@ -88,6 +88,25 @@ public class SystemCapabilitiesTests : IClassFixture<CustomWebApplicationFactory
     }
 
     [Fact]
+    public async Task Version_IsPubliclyReachable_AndReturnsNonEmptyVersion()
+    {
+        // GET /api/system/version is one of the few explicit gate exceptions in Program.cs
+        // (pure build metadata for the setup page, no user context) - reachable without any
+        // session token or API key.
+        using var raw = _factory.CreateClient();
+        raw.DefaultRequestHeaders.Clear();
+
+        var response = await raw.GetAsync("/api/system/version");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var dto = await response.Content.ReadFromJsonAsync<StudyLife.Shared.VersionResponseDto>();
+        Assert.NotNull(dto);
+        // Locally/in CI without -p:Version the InformationalVersion attribute still exists
+        // (SDK default) - the contract is only "never null/empty" ("dev" fallback otherwise).
+        Assert.False(string.IsNullOrEmpty(dto!.Version));
+    }
+
+    [Fact]
     public async Task Capabilities_RequiresSession()
     {
         // Deliberately behind the /api session gate (the querying setup cards only exist

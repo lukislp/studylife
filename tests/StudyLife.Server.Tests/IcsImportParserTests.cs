@@ -151,4 +151,89 @@ public class IcsImportParserTests
         var events = IcsImportParser.Parse("");
         Assert.Empty(events);
     }
+
+    [Fact]
+    public void Parse_ResolvableTzid_ConvertsViaThatZoneToServerLocalTime()
+    {
+        var ics = "BEGIN:VCALENDAR\r\n"
+            + "BEGIN:VEVENT\r\n"
+            + "DTSTART;TZID=Europe/Berlin:20260115T090000\r\n"
+            + "DTEND;TZID=Europe/Berlin:20260115T103000\r\n"
+            + "SUMMARY:Vorlesung mit Zeitzone\r\n"
+            + "END:VEVENT\r\n"
+            + "END:VCALENDAR\r\n";
+
+        var events = IcsImportParser.Parse(ics);
+
+        // Expected value computed the same way the parser documents it (TZID -> UTC ->
+        // server-local), so the assertion is independent of the machine's own timezone.
+        var berlin = TimeZoneInfo.FindSystemTimeZoneById("Europe/Berlin");
+        var expectedStart = TimeZoneInfo.ConvertTimeToUtc(new DateTime(2026, 1, 15, 9, 0, 0), berlin).ToLocalTime();
+        var expectedEnd = TimeZoneInfo.ConvertTimeToUtc(new DateTime(2026, 1, 15, 10, 30, 0), berlin).ToLocalTime();
+
+        var e = Assert.Single(events);
+        Assert.Equal(expectedStart, e.StartTime);
+        Assert.Equal(expectedEnd, e.EndTime);
+    }
+
+    [Fact]
+    public void Parse_UnknownTzid_DegradesSilentlyToFloatingTime()
+    {
+        // Documented best-effort behavior: an unresolvable TZID must not throw or skip the
+        // event - the timestamp is taken as naive local ("floating") time instead.
+        var ics = "BEGIN:VCALENDAR\r\n"
+            + "BEGIN:VEVENT\r\n"
+            + "DTSTART;TZID=Imaginary/Nowhere:20260115T090000\r\n"
+            + "DTEND;TZID=Imaginary/Nowhere:20260115T103000\r\n"
+            + "SUMMARY:Unbekannte Zeitzone\r\n"
+            + "END:VEVENT\r\n"
+            + "END:VCALENDAR\r\n";
+
+        var events = IcsImportParser.Parse(ics);
+
+        var e = Assert.Single(events);
+        Assert.Equal(new DateTime(2026, 1, 15, 9, 0, 0), e.StartTime);
+        Assert.Equal(new DateTime(2026, 1, 15, 10, 30, 0), e.EndTime);
+    }
+
+    [Fact]
+    public void Parse_UnparseableDtStartTimestamp_SkipsTheEvent()
+    {
+        // "T" present but the time digits are garbage -> TryParseExact fails -> event dropped,
+        // the following intact event must still come through.
+        var ics = "BEGIN:VCALENDAR\r\n"
+            + "BEGIN:VEVENT\r\n"
+            + "DTSTART:20260115T996100\r\n"
+            + "SUMMARY:Kaputter Zeitstempel\r\n"
+            + "END:VEVENT\r\n"
+            + "BEGIN:VEVENT\r\n"
+            + "DTSTART:20260116T100000\r\n"
+            + "DTEND:20260116T110000\r\n"
+            + "SUMMARY:Intaktes Event\r\n"
+            + "END:VEVENT\r\n"
+            + "END:VCALENDAR\r\n";
+
+        var events = IcsImportParser.Parse(ics);
+
+        var e = Assert.Single(events);
+        Assert.Equal("Intaktes Event", e.Title);
+    }
+
+    [Fact]
+    public void Parse_UnparseableDtEnd_FallsBackToOneHourDuration()
+    {
+        var ics = "BEGIN:VCALENDAR\r\n"
+            + "BEGIN:VEVENT\r\n"
+            + "DTSTART:20260116T100000\r\n"
+            + "DTEND:garbage\r\n"
+            + "SUMMARY:Ende kaputt\r\n"
+            + "END:VEVENT\r\n"
+            + "END:VCALENDAR\r\n";
+
+        var events = IcsImportParser.Parse(ics);
+
+        var e = Assert.Single(events);
+        Assert.Equal(new DateTime(2026, 1, 16, 10, 0, 0), e.StartTime);
+        Assert.Equal(new DateTime(2026, 1, 16, 11, 0, 0), e.EndTime);
+    }
 }
