@@ -36,8 +36,8 @@ jobs:
           restore-keys: |
             nuget-${{ runner.os }}-
       - run: dotnet workload restore StudyLife.sln
-      - run: dotnet test tests/StudyLife.Shared.Tests/StudyLife.Shared.Tests.csproj --configuration ${{ env.CONFIGURATION }} --logger "junit;LogFilePath=TestResults/shared-tests-junit.xml"
-      - run: dotnet test tests/StudyLife.Server.Tests/StudyLife.Server.Tests.csproj --configuration ${{ env.CONFIGURATION }} --logger "junit;LogFilePath=TestResults/server-tests-junit.xml"
+      - run: dotnet test tests/StudyLife.Shared.Tests/StudyLife.Shared.Tests.csproj --configuration ${{ env.CONFIGURATION }} --logger "junit;LogFilePath=TestResults/shared-tests-junit.xml" --collect:"XPlat Code Coverage"
+      - run: dotnet test tests/StudyLife.Server.Tests/StudyLife.Server.Tests.csproj --configuration ${{ env.CONFIGURATION }} --logger "junit;LogFilePath=TestResults/server-tests-junit.xml" --collect:"XPlat Code Coverage"
       - if: always()
         uses: actions/upload-artifact@v7
         with:
@@ -45,6 +45,26 @@ jobs:
           path: |
             tests/StudyLife.Shared.Tests/TestResults/shared-tests-junit.xml
             tests/StudyLife.Server.Tests/TestResults/server-tests-junit.xml
+          retention-days: 7
+      # Coverage badge (self-hosted, no external service): merges both projects' cobertura
+      # reports, scoped to StudyLife.Server/StudyLife.Shared - StudyLife.Client (Blazor UI
+      # markup, no unit-test practice here, verified manually per CLAUDE.md instead) is
+      # deliberately excluded, otherwise its 0% would drag an otherwise well-tested number
+      # down into misleading territory. Uploaded as an artifact and downloaded by the
+      # semantic-release job below, which commits it to .github/badges/ on release - cheaper
+      # than re-running the whole test+coverage pipeline there just for one small JSON file.
+      - run: dotnet tool install -g dotnet-reportgenerator-globaltool
+      - run: >
+          reportgenerator
+          -reports:"tests/**/TestResults/**/coverage.cobertura.xml"
+          -targetdir:coverage-summary
+          -reporttypes:JsonSummary
+          -assemblyfilters:"-StudyLife.Client"
+      - run: python3 scripts/generate_coverage_badge.py coverage-summary/Summary.json coverage-badge.json
+      - uses: actions/upload-artifact@v7
+        with:
+          name: coverage-badge
+          path: coverage-badge.json
           retention-days: 7
 
   test-i18n:
@@ -309,6 +329,11 @@ jobs:
         with:
           name: publish-output
           path: publish
+      - uses: actions/download-artifact@v8
+        with:
+          name: coverage-badge
+          path: coverage-artifact
+      - run: mkdir -p .github/badges && mv coverage-artifact/coverage-badge.json .github/badges/coverage.json
       - id: semrel
         uses: cycjimmy/semantic-release-action@b12c8f6015dc215fe37bc154d4ad456dd3833c90 # v6.0.0
         with:
