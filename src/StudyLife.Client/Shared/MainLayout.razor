@@ -118,12 +118,18 @@
                 <button class="fab-action" title="@CurrentLanguage.Name" @onclick="OpenLangFromFab">
                     <span class="lang-flag">@CurrentLanguage.Flag</span>
                 </button>
-                <button class="fab-action" title="@T.PushDevicesLabel" @onclick="OpenDeviceManagerFromFab">
-                    <span>🔔</span>
-                </button>
-                <button class="fab-action" title="@T.PasskeysLabel" @onclick="OpenPasskeyManagerFromFab">
-                    <span>🔑</span>
-                </button>
+                @* Hidden on public demo instances: push subscription and passkey/device-link
+                   management are all POSTs, which the demo write-block rejects with 403 - the
+                   dialogs would only ever show errors there. Search + language stay. *@
+                @if (!_demoMode)
+                {
+                    <button class="fab-action" title="@T.PushDevicesLabel" @onclick="OpenDeviceManagerFromFab">
+                        <span>🔔</span>
+                    </button>
+                    <button class="fab-action" title="@T.PasskeysLabel" @onclick="OpenPasskeyManagerFromFab">
+                        <span>🔑</span>
+                    </button>
+                }
             </div>
         }
         <button class="fab-main @(_fabOpen || _langPopupOpen ? "open" : "")" @onclick="ToggleFab" @onclick:stopPropagation="true">
@@ -177,6 +183,7 @@
     private DotNetObjectReference<MainLayout>? _searchHotkeyRef;
     private ErrorBoundary? _errorBoundary;
     private bool _authenticated;
+    private bool _demoMode;
 
     private record Language(string Code, string Flag, string Name);
 
@@ -247,6 +254,15 @@
             State.OnSessionsChanged += OnSessionsChanged;
             State.OnPendingWritesChanged += OnPendingWritesChanged;
             _pendingWrites = await State.GetPendingWriteCountAsync();
+            // Demo-instance detection for the speed dial (hides passkey/push management there,
+            // see the fab markup). Best-effort: any failure just means the buttons stay
+            // visible, exactly like on every normal deployment.
+            try
+            {
+                var demoInfo = await Http.GetFromJsonAsync<DemoInfoDto>("api/auth/demo");
+                _demoMode = demoInfo is { Demo: true };
+            }
+            catch { /* older server / network hiccup - treat as normal instance */ }
             await CheckForClientUpdateAsync();
             // Server declared the passkey session invalid via 401 (SessionHandler has already
             // discarded the token) - redirect to the login page. This is the ONLY path that

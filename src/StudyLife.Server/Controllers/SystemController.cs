@@ -25,6 +25,7 @@ public class SystemController : ControllerBase
     private readonly bool _rawBackupSupported;
 
     public SystemController(StudyLifeDb db,
+        IConfiguration config,
         Services.DatabaseBackupService? backupService = null,
         Services.DatabaseRestoreService? restoreService = null)
     {
@@ -32,7 +33,12 @@ public class SystemController : ControllerBase
         // Same derivation as BackupController.IsRawBackupAvailable: both services are
         // only registered in SQLite mode (Program.cs) - on Postgres the external backup
         // path (e.g. R2) takes over, and the raw endpoints report 501.
-        _rawBackupSupported = backupService is not null && restoreService is not null;
+        // Demo instances additionally report false regardless of provider: the demo
+        // middleware 403s the whole /api/backup path (raw DB downloads would leak
+        // SystemSecrets), and rawBackupSupported=false is exactly the existing signal the
+        // setup page already uses to hide the backup/restore cards - no client change needed.
+        _rawBackupSupported = backupService is not null && restoreService is not null
+            && !string.Equals(config["DEMO_MODE"], "true", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
