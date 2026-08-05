@@ -36,18 +36,23 @@ public static class DemoSeeder
         var now = DateTime.Now;
 
         // ── Wipe all user data (order: dependents first, then users) ─────────────
-        await db.Sessions.ExecuteDeleteAsync();
-        await db.Notes.ExecuteDeleteAsync();
-        await db.CourseGoals.ExecuteDeleteAsync();
-        await db.TimerState.ExecuteDeleteAsync();
-        await db.Settings.ExecuteDeleteAsync();
-        await db.PushSubscriptions.ExecuteDeleteAsync();
-        await db.SentReminders.ExecuteDeleteAsync();
-        await db.SessionTemplates.ExecuteDeleteAsync();
-        await db.CourseResources.ExecuteDeleteAsync();
-        await db.CustomCourses.ExecuteDeleteAsync();
-        await db.CourseGroups.ExecuteDeleteAsync();
-        await db.StudyPrograms.ExecuteDeleteAsync();
+        // IgnoreQueryFilters is essential on every multi-tenant table: this runs from the
+        // Program.cs startup block with no HTTP context and no BeginBackgroundScope, so the
+        // global AuthUserId query filters would resolve to user 0 and silently delete
+        // NOTHING - every demo restart would then orphan the previous dataset and stack a
+        // fresh one on top instead of wiping (caught by DemoSeederTests' reseed assertions).
+        await db.Sessions.IgnoreQueryFilters().ExecuteDeleteAsync();
+        await db.Notes.IgnoreQueryFilters().ExecuteDeleteAsync();
+        await db.CourseGoals.IgnoreQueryFilters().ExecuteDeleteAsync();
+        await db.TimerState.IgnoreQueryFilters().ExecuteDeleteAsync();
+        await db.Settings.IgnoreQueryFilters().ExecuteDeleteAsync();
+        await db.PushSubscriptions.IgnoreQueryFilters().ExecuteDeleteAsync();
+        await db.SentReminders.IgnoreQueryFilters().ExecuteDeleteAsync();
+        await db.SessionTemplates.IgnoreQueryFilters().ExecuteDeleteAsync();
+        await db.CourseResources.IgnoreQueryFilters().ExecuteDeleteAsync();
+        await db.CustomCourses.IgnoreQueryFilters().ExecuteDeleteAsync();
+        await db.CourseGroups.IgnoreQueryFilters().ExecuteDeleteAsync();
+        await db.StudyPrograms.IgnoreQueryFilters().ExecuteDeleteAsync();
         await db.AuthSessions.ExecuteDeleteAsync();
         await db.PasskeyCredentials.ExecuteDeleteAsync();
         await db.RecoveryCodes.ExecuteDeleteAsync();
