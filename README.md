@@ -7,6 +7,13 @@
 
 > Personal study organization - calendar, focus timer, and learning goals in one modern Blazor WebAssembly app. Multi-user capable with passkey login, designed to run on your own home network.
 
+**[Live demo](https://studylife-demo.lktec.org)** — read-only, running the actual
+`ghcr.io/lukislp/studylife-server:latest` image published by this repo's own CI/CD pipeline
+(`DEMO_MODE=true`): signs you in automatically as a demo student mid-way through the built-in
+study program, with weeks of study history, a live streak, and planned sessions ahead. Edits
+apply locally but are never saved; the dataset reseeds itself relative to "today" on every
+container restart.
+
 ---
 
 ## Features
