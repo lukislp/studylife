@@ -1,3 +1,10 @@
+## [1.2.5](https://github.com/lukislp/studylife/compare/v1.2.4...v1.2.5) (2026-08-05)
+
+
+### Bug Fixes
+
+* add a dashboard screenshot to the README ([d7467a7](https://github.com/lukislp/studylife/commit/d7467a765779a4e5400759ae43b0eaadcde0b7b9))
+
 ## [1.2.4](https://github.com/lukislp/studylife/compare/v1.2.3...v1.2.4) (2026-08-05)
 
 
