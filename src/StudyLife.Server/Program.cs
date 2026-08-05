@@ -462,6 +462,34 @@ app.UseRouting();
 // API key itself. Partition/limit rationale is at AddRateLimiter above.
 app.UseRateLimiter();
 
+// Public demo instances (DEMO_MODE=true): reject every mutating /api request with 403 before
+// it reaches any controller - one middleware covers all of them, no per-endpoint auditing.
+// The single exception is POST /api/auth/demo-login (the demo auto-sign-in,
+// AuthController.DemoLogin); notably this also blocks passkey registration/login POSTs, so
+// nobody can create themselves an account on a public demo. The client's offline write queue
+// already treats a server rejection as "done, drop it" (only network errors are retried), so
+// blocked writes act as local-only edits that a reload resets - no queue buildup. The
+// middleware is only registered at all when the flag is set: a normal deployment runs a
+// byte-identical pipeline.
+if (string.Equals(app.Configuration["DEMO_MODE"], "true", StringComparison.OrdinalIgnoreCase))
+{
+    app.Use(async (context, next) =>
+    {
+        if (context.Request.Path.StartsWithSegments("/api")
+            && !HttpMethods.IsGet(context.Request.Method)
+            && !HttpMethods.IsHead(context.Request.Method)
+            && !HttpMethods.IsOptions(context.Request.Method)
+            && !(context.Request.Path.StartsWithSegments("/api/auth/demo-login", out var demoRemainder)
+                 && string.IsNullOrEmpty(demoRemainder.Value)))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            await context.Response.WriteAsJsonAsync(new { error = "read-only demo instance - changes aren't saved" });
+            return;
+        }
+        await next();
+    });
+}
+
 // API gate, always active (phase 3): every /api request needs EITHER a valid
 // passkey session token (X-Session-Token, phase 2 - the normal path of the browser client)
 // OR a per-user API key (X-Api-Key header or ?apiKey= query string for URL-only

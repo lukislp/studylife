@@ -12,3 +12,8 @@
 **/*.user
 **/*.suo
 **/TestResults
+# Local runtime data (SQLite DB, api-key/calendar-token/vapid-keys json): gitignored, so CI
+# images were never affected - but a locally built image from a dev checkout WOULD bake the
+# real dev database in without this line (dotnet publish copies app_data/ into the output;
+# verified empirically). Never ship it.
+**/app_data

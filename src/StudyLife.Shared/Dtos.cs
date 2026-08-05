@@ -497,6 +497,17 @@ public class PasskeyRenameRequestDto
 }
 
 /// <summary>
+/// Response of GET /api/auth/demo - lets the login page discover whether this instance is
+/// a public read-only demo (DEMO_MODE=true) and should auto-sign-in via
+/// POST /api/auth/demo-login instead of showing the passkey UI. Always demo:false on a
+/// normal deployment.
+/// </summary>
+public class DemoInfoDto
+{
+    public bool Demo { get; set; }
+}
+
+/// <summary>
 /// Response of GET /api/auth/account-info - client info about one's own account that isn't
 /// a setting (hence its own DTO instead of a field on UserSettingsDto, which would otherwise also
 /// have to go through ComputeSettingsHash, even though IsOwner isn't user-configurable).

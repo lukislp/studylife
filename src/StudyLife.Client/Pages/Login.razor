@@ -71,6 +71,37 @@
     {
         _app = AppReturnContext.FromUri(Nav.ToAbsoluteUri(Nav.Uri));
         T = await I18nText.GetTextTableAsync<I18nText.AuthText>(this);
+
+        // Public demo instance (server started with DEMO_MODE=true): skip the passkey UI
+        // entirely and sign in automatically as the demo user. On a normal deployment
+        // GET api/auth/demo returns demo:false and this block is a no-op - and any error
+        // here (older server without the endpoint, network hiccup) deliberately degrades
+        // to the normal login page rather than blocking it. Skipped for native-app return
+        // flows (?app=1): the demo targets plain browser visitors only.
+        if (!_app.IsActive)
+        {
+            try
+            {
+                var demoInfo = await Http.GetFromJsonAsync<DemoInfoDto>("api/auth/demo");
+                if (demoInfo is { Demo: true })
+                {
+                    var response = await Http.PostAsync("api/auth/demo-login", null);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var result = await response.Content.ReadFromJsonAsync<PasskeyCompleteResponseDto>();
+                        if (result?.Token is { Length: > 0 } token)
+                        {
+                            await TokenStore.SetTokenAsync(token);
+                            // Same forceLoad rationale as the passkey success path below.
+                            Nav.NavigateTo("/", forceLoad: true);
+                            return;
+                        }
+                    }
+                }
+            }
+            catch (HttpRequestException) { /* server unreachable - normal login page shows */ }
+            catch (System.Text.Json.JsonException) { /* unexpected response shape - same fallback */ }
+        }
     }
 
     private async Task SignInAsync()
