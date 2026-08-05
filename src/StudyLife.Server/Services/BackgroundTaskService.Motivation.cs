@@ -77,8 +77,8 @@ public partial class BackgroundTaskService
 
     internal async Task RunDailyMotivationAsync(StudyLifeDb db, Func<Task<List<PushSubscriptionEntity>>> getSubscriptions)
     {
-        // DateTime.Now as in all other sub-tasks ("from 8 AM" is user local time, not UTC).
-        var now = DateTime.Now;
+        // LocalNow (naive local wall clock) as in all other sub-tasks ("from 8 AM" is user local time, not UTC).
+        var now = LocalNow;
         if (now.Hour < DailyMotivationHour) return;
 
         // Opt-in: without a settings row or with the toggle off, nothing gets computed further -

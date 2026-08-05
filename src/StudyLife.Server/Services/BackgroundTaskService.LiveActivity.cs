@@ -28,7 +28,7 @@ public partial class BackgroundTaskService
 
         // Local server time as everywhere else in the timer context (TimerStateController.Get/
         // PushStateAsync in the client) - PhaseEndsAt was written in the same time base.
-        var now = DateTime.Now;
+        var now = LocalNow;
         if (now < phaseEndsAt) return;
 
         var settings = await db.Settings.FirstOrDefaultAsync();

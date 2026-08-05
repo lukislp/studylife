@@ -21,7 +21,7 @@ public partial class BackgroundTaskService
         var subscriptions = await getSubscriptions();
         if (!subscriptions.Any()) return;
 
-        var now = DateTime.Now;
+        var now = LocalNow;
 
         // Deliberately duplicates the client logic from Index.razor (BuildAchievements) - an
         // established pattern in this codebase (cf. Home Assistant integration): the server must
@@ -114,9 +114,9 @@ public partial class BackgroundTaskService
 
     internal async Task RunWeeklyReportAsync(StudyLifeDb db, Func<Task<List<PushSubscriptionEntity>>> getSubscriptions)
     {
-        // DateTime.Now as in all other sub-tasks: the container runs with TZ=Europe/Berlin,
+        // LocalNow (naive local wall clock) as in all other sub-tasks: the container runs with TZ=Europe/Berlin,
         // "Sunday from 6 PM" should be user local time, not UTC.
-        var now = DateTime.Now;
+        var now = LocalNow;
         if (now.DayOfWeek != DayOfWeek.Sunday || now.Hour < 18) return;
 
         var settings = await db.Settings.FirstOrDefaultAsync();

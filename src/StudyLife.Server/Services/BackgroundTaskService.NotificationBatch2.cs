@@ -32,7 +32,7 @@ public partial class BackgroundTaskService
         var settings = await db.Settings.FirstOrDefaultAsync();
         if (settings is not { ComebackNudgeEnabled: true }) return;
 
-        var now = DateTime.Now;
+        var now = LocalNow;
         // Gate on "late in the day" (same threshold as RunStreakRiskCheckAsync) so a same-day
         // session that simply hasn't happened yet isn't mistaken for "nothing planned today".
         var thresholdHour = Math.Clamp(settings.StudyWindowEndHour - 1, 18, 22);
@@ -87,7 +87,7 @@ public partial class BackgroundTaskService
     /// </summary>
     internal async Task RunMonthlyReportAsync(StudyLifeDb db, Func<Task<List<PushSubscriptionEntity>>> getSubscriptions)
     {
-        var now = DateTime.Now;
+        var now = LocalNow;
         if (now.Day != 1 || now.Hour < 9) return;
 
         var settings = await db.Settings.FirstOrDefaultAsync();

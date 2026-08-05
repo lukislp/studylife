@@ -84,13 +84,25 @@ public partial class BackgroundTaskService : BackgroundService
 
     private readonly ApnsSender _apnsSender;
 
+    // Clock seam for the wall-clock gates in the sub-task partials (weekly report on Sunday
+    // evenings, monthly report on the 1st, daily motivation from 8 AM, ...). Production always
+    // uses TimeProvider.System - LocalNow below is then byte-identical to the previous direct
+    // DateTime.Now calls. Only tests inject a fixed provider, so the gated bodies become
+    // deterministically reachable instead of depending on when the suite happens to run.
+    private readonly TimeProvider _time;
+
+    /// <summary>Local wall-clock "now", same naive-local semantics as DateTime.Now
+    /// (the whole app treats times as floating local time, see docs/ARCHITECTURE.md).</summary>
+    private DateTime LocalNow => _time.GetLocalNow().DateTime;
+
     public BackgroundTaskService(
         IServiceProvider services,
         VapidKeysHolder vapidKeysHolder,
         ILogger<BackgroundTaskService> logger,
         ApnsSender apnsSender,
         IWorkerShardClaim? shardClaim = null,
-        DatabaseBackupService? backupService = null)
+        DatabaseBackupService? backupService = null,
+        TimeProvider? timeProvider = null)
     {
         _services = services;
         _vapidKeys = vapidKeysHolder.Keys!; // always set - see VapidKeysHolder comment
@@ -98,6 +110,7 @@ public partial class BackgroundTaskService : BackgroundService
         _apnsSender = apnsSender;
         _backupService = backupService;
         _shardClaim = shardClaim ?? new StaticWorkerShardClaim();
+        _time = timeProvider ?? TimeProvider.System;
     }
 
     private WebPushClient GetPushClient()

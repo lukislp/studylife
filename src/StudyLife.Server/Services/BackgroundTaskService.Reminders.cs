@@ -27,7 +27,7 @@ public partial class BackgroundTaskService
         if (settings != null && !settings.SessionRemindersEnabled) return;
         var ReminderMinutes = ReminderSettings.ParseSessionReminderMinutes(settings?.SessionReminderMinutes);
 
-        var now = DateTime.Now;
+        var now = LocalNow;
 
         // Load all sessions starting within the next 61 minutes (not yet started)
         var upcomingSessions = await db.Sessions
@@ -151,7 +151,7 @@ public partial class BackgroundTaskService
         if (settings != null && !settings.CourseGoalRemindersEnabled) return;
         var ReminderDays = ReminderSettings.ParseCourseGoalReminderDays(settings?.CourseGoalReminderDays);
 
-        var today = DateTime.Now.Date;
+        var today = LocalNow.Date;
 
         var goals = await db.CourseGoals
             .Where(g => g.TargetDate != null && g.CompletedAt == null)
@@ -183,7 +183,7 @@ public partial class BackgroundTaskService
 
                 var key = $"coursegoal:{goal.CourseId}:reminder{reminderAt}d";
                 if (sentKeys.Contains(key)) continue;
-                if (!await TryClaimReminderAsync(db, key, DateTime.Now)) { sentKeys.Add(key); continue; }
+                if (!await TryClaimReminderAsync(db, key, LocalNow)) { sentKeys.Add(key); continue; }
                 sentKeys.Add(key);
 
                 var title = reminderAt switch
@@ -216,7 +216,7 @@ public partial class BackgroundTaskService
         if (settings != null && !settings.InactivityRemindersEnabled) return;
         var InactivityThresholdDays = ReminderSettings.GetInactivityThresholdDays(settings?.InactivityThresholdDays ?? 0);
 
-        var now = DateTime.Now;
+        var now = LocalNow;
         var today = now.Date;
 
         var subscriptions = await getSubscriptions();
@@ -244,7 +244,7 @@ public partial class BackgroundTaskService
         var key = $"inactivity:{today:yyyyMMdd}";
         var alreadySent = await db.SentReminders.AnyAsync(r => r.Key == key);
         if (alreadySent) return;
-        if (!await TryClaimReminderAsync(db, key, DateTime.Now)) return;
+        if (!await TryClaimReminderAsync(db, key, LocalNow)) return;
 
         var title = "Lange nichts gelernt? 📚";
         var body = $"Seit {daysSince} Tagen keine Lernsession - Zeit für eine neue Runde!";
@@ -286,7 +286,7 @@ public partial class BackgroundTaskService
             .ToList();
         if (!courseIds.Any()) return;
 
-        var now = DateTime.Now;
+        var now = LocalNow;
         var today = now.Date;
 
         var subscriptions = await getSubscriptions();

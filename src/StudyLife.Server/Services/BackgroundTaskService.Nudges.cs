@@ -32,7 +32,7 @@ public partial class BackgroundTaskService
         var settings = await db.Settings.FirstOrDefaultAsync();
         if (settings is not { StreakRiskRemindersEnabled: true }) return;
 
-        var now = DateTime.Now;
+        var now = LocalNow;
         // "Late in the day" relative to the configured study-window end instead of a fixed value:
         // one hour before StudyWindowEndHour, clamped to 6-10 PM - with the default (9 PM)
         // this yields exactly the "from 8 PM" mentioned in the feature spec.
@@ -91,7 +91,7 @@ public partial class BackgroundTaskService
         var settings = await db.Settings.FirstOrDefaultAsync();
         if (settings is not { WeeklyGoalNudgeEnabled: true }) return;
 
-        var now = DateTime.Now;
+        var now = LocalNow;
         // ISO weekday (Monday=1..Sunday=7): "Thursday or later" means isoDayOfWeek >= 4.
         var isoDayOfWeek = ((int)now.DayOfWeek + 6) % 7 + 1;
         if (isoDayOfWeek < 4) return;
@@ -170,7 +170,7 @@ public partial class BackgroundTaskService
         var subscriptions = await getSubscriptions();
         if (!subscriptions.Any()) return;
 
-        var now = DateTime.Now;
+        var now = LocalNow;
         var today = now.Date;
         var weekId = $"{System.Globalization.ISOWeek.GetYear(now)}-W{System.Globalization.ISOWeek.GetWeekOfYear(now):D2}";
 
@@ -234,7 +234,7 @@ public partial class BackgroundTaskService
         var settings = await db.Settings.FirstOrDefaultAsync();
         if (settings is not { BestStudyTimeRemindersEnabled: true }) return;
 
-        var now = DateTime.Now;
+        var now = LocalNow;
         var today = now.Date;
 
         var totalStudiedCount = await db.Sessions.CountAsync(s => s.IsCompleted || s.EndTime <= now);
