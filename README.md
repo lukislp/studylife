@@ -1,5 +1,10 @@
 # StudyLife
 
+[![CI/CD](https://github.com/lukislp/studylife/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/lukislp/studylife/actions/workflows/ci-cd.yml)
+[![Release](https://img.shields.io/github/v/release/lukislp/studylife)](https://github.com/lukislp/studylife/releases)
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](LICENSE)
+[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/)
+
 > Personal study organization - calendar, focus timer, and learning goals in one modern Blazor WebAssembly app. Multi-user capable with passkey login, designed to run on your own home network.
 
 ---
@@ -269,6 +274,8 @@ Versioning via Conventional Commits:
 ---
 
 ## License
+
+Copyright (C) 2026 Lukas Koerber
 
 [AGPL-3.0](LICENSE) - if you run a modified version of this app as a network service, you
 must make your modified source available to its users. The Home Assistant integration is
