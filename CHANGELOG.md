@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/lukislp/studylife/compare/v1.0.2...v1.1.0) (2026-08-05)
+
+
+### Features
+
+* add DEMO_MODE for public read-only demo instances ([0d6cb24](https://github.com/lukislp/studylife/commit/0d6cb248273664a71d9947cd4d4484d3b278908c))
+
 ## [1.0.2](https://github.com/lukislp/studylife/compare/v1.0.1...v1.0.2) (2026-08-05)
 
 
