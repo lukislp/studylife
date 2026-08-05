@@ -1,3 +1,17 @@
+# [1.4.0](https://github.com/lukislp/studylife/compare/v1.3.0...v1.4.0) (2026-08-05)
+
+
+### Bug Fixes
+
+* make DemoSeeder's wipe actually delete multi-tenant tables ([0c86acc](https://github.com/lukislp/studylife/commit/0c86acc5f0f6ef0167dff41ae0308b5f7de66e90))
+* make the restore-swap failure test platform-independent ([26a4d2d](https://github.com/lukislp/studylife/commit/26a4d2d4f44893822693a6697eece831467ef009))
+* show and apply the full monthly goal instead of the elapsed-weeks proration ([fef72a6](https://github.com/lukislp/studylife/commit/fef72a6afbefc7f7ffdd54bb4f17c588ce763c1a))
+
+
+### Features
+
+* raise real test coverage from 83% to 93%, exclude generated migrations from measurement ([d1dd1b9](https://github.com/lukislp/studylife/commit/d1dd1b92fe662e329c592a76dbcd9a0e8d998b2e))
+
 # [1.3.0](https://github.com/lukislp/studylife/compare/v1.2.6...v1.3.0) (2026-08-05)
 
 
