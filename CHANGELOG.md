@@ -1,3 +1,10 @@
+## [1.2.6](https://github.com/lukislp/studylife/compare/v1.2.5...v1.2.6) (2026-08-05)
+
+
+### Bug Fixes
+
+* explain the WASM boot wait on demo instances ([c09b63a](https://github.com/lukislp/studylife/commit/c09b63aab31d5e02c42df475ac7f02475768c674)), closes [#app](https://github.com/lukislp/studylife/issues/app)
+
 ## [1.2.5](https://github.com/lukislp/studylife/compare/v1.2.4...v1.2.5) (2026-08-05)
 
 
