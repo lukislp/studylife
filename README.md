@@ -161,7 +161,7 @@ container restart.
 | Login | Passkey/WebAuthn (Fido2NetLib) |
 | Database | SQLite via Entity Framework Core (default) - optionally PostgreSQL for horizontally scalable operation, see below |
 | Deployment | Docker + Watchtower (default) - optionally Kubernetes/K3s for horizontal scaling, see below |
-| CI/CD | GitLab CI with Semantic Release |
+| CI/CD | GitHub Actions with Semantic Release |
 
 ---
 
@@ -169,7 +169,6 @@ container restart.
 
 ### Prerequisites
 - Docker and Docker Compose
-- Access to the private registry `registry.example.com`
 
 ### Quick Start
 
@@ -182,10 +181,10 @@ chmod +x setup.sh
 
 The setup script:
 1. Creates `.env` from `.env.example`
-2. Interactively asks for registry credentials
-3. Logs Docker into the registry
-4. Pulls the current image
-5. Starts all services via `docker compose up -d`
+2. Pulls the public `ghcr.io/lukislp/studylife-server` image (no login needed)
+3. Starts all services via `docker compose up -d`
+
+Running your own fork on your own registry instead? Set `SERVER_IMAGE` (and, if that registry is private, `REGISTRY_URL`/`REGISTRY_USER`/`REGISTRY_PASSWORD`) in `.env` - see `.env.example`.
 
 On the very first start (no user registered yet), the server outputs a one-time setup code to the logs (`docker compose logs`) - this code is requested during the first passkey registration and protects against someone else on the same network claiming the initial registration before the actual operator. Every subsequent registration (e.g. family members) does not need this code.
 
@@ -193,10 +192,11 @@ On the very first start (no user registered yet), the server outputs a one-time 
 
 | Variable | Default | Description |
 |---|---|---|
-| `REGISTRY_URL` | `registry.example.com` | Docker registry |
-| `REGISTRY_USER` | - | Registry username |
-| `REGISTRY_PASSWORD` | - | Registry password |
 | `PORT` | `8080` | Public port |
+| `SERVER_IMAGE` | `ghcr.io/lukislp/studylife-server:latest` | Server image to pull - override only if running your own fork on your own registry |
+| `REGISTRY_URL` | - | Only needed with a private `SERVER_IMAGE`: registry to log into |
+| `REGISTRY_USER` | - | Only needed with a private `SERVER_IMAGE`: registry username |
+| `REGISTRY_PASSWORD` | - | Only needed with a private `SERVER_IMAGE`: registry password |
 
 ### Horizontally Scalable Operation (optional)
 
@@ -206,7 +206,7 @@ For more than a handful of users/higher load, the same server can also be run ag
 
 ## Automatic Updates
 
-Watchtower is integrated in `docker-compose.yml` and checks every 5 minutes whether a new image is available. As soon as the GitLab pipeline publishes a new image, the container is restarted automatically.
+Watchtower is integrated in `docker-compose.yml` and checks every 5 minutes whether a new image is available. As soon as the CI/CD pipeline publishes a new image, the container is restarted automatically.
 
 Only containers with the label `com.centurylinklabs.watchtower.enable=true` are updated.
 
@@ -260,21 +260,24 @@ For non-interactive integrations like Home Assistant, which cannot maintain a pa
 
 ## CI/CD Pipeline
 
+Runs as GitHub Actions (`.github/workflows/ci-cd.yml`) on every push to `main` and every pull request targeting it.
+
 | Stage | Job | Description |
 |---|---|---|
-| test | secret_detection | GitLab's built-in secret-detection template |
-| test | test:unit | Full `dotnet test` run (Shared + Server) |
-| test | test:i18n | `check-i18n.py` - all 26 languages, every table |
-| test | test:lint | `dotnet format --verify-no-changes` |
-| test | test:security | NuGet vulnerability scan (non-blocking, fails visibly on High/Critical) |
-| test | test:k8s-manifests | `kubeconform` schema validation of `k8s/` |
-| test | test:compose-scale | Syntax/interpolation check of `docker-compose.scale.yml` |
-| build | build | Restore and build all projects |
-| version | get-version | Semantic Release dry run |
-| publish | publish:server | dotnet publish + ZIP artifact |
-| docker | docker:server | Multi-arch Docker image in registry |
-| docker | trivy:server | Container vulnerability scan of the published image |
-| release | semantic-release | GitLab release + changelog |
+| test | `test-unit` | Full `dotnet test` run (Shared + Server), plus a self-hosted coverage badge (`.github/badges/coverage.json`) generated from the merged coverage report |
+| test | `test-i18n` | `check-i18n.py` - all 26 languages, every table |
+| test | `test-lint` | `dotnet format --verify-no-changes` |
+| test | `test-security` | NuGet vulnerability scan (non-blocking, fails visibly on High/Critical) |
+| test | `test-k8s-manifests` | `kubeconform` schema validation of `k8s/` |
+| test | `test-compose-scale` | Syntax/interpolation check of `docker-compose.scale.yml` |
+| build | `build` | Restore and build all projects (needs all test jobs to pass) |
+| version | `get-version` | Semantic Release dry run against Conventional Commits; fails the run if no releasable version is determined. Push events only |
+| publish | `publish-server` | `dotnet publish` (linux-x64 + linux-arm64) + ZIP artifact. Push to `main` only, and only if `get-version` found a releasable version |
+| docker | `docker-server` | Multi-arch (amd64/arm64) Docker image, built and pushed to the public `ghcr.io/lukislp/studylife-server` registry |
+| docker | `trivy-server` | Container vulnerability scan (Trivy) of the freshly published image, informational only (does not block the pipeline) |
+| release | `semantic-release` | Real semantic-release run: publishes the GitHub release + changelog, commits the coverage badge |
+
+`get-version` through `semantic-release` form a serialized release chain (`concurrency: studylife-release-chain`) and only run on pushes to `main`, never on pull requests.
 
 Versioning via Conventional Commits:
 - feat: minor version
