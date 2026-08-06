@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/lukislp/studylife/compare/v1.4.0...v1.5.0) (2026-08-06)
+
+
+### Features
+
+* add a TimeProvider seam to BackgroundTaskService ([aaff82f](https://github.com/lukislp/studylife/commit/aaff82f52f09328434a143796a877962140bfff8))
+
 # [1.4.0](https://github.com/lukislp/studylife/compare/v1.3.0...v1.4.0) (2026-08-05)
 
 
