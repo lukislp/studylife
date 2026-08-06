@@ -1,7 +1,7 @@
 services:
 
   server:
-    image: registry.example.com/studylife/server:latest
+    image: ${SERVER_IMAGE:-ghcr.io/lukislp/studylife-server:latest}
     container_name: studylife-server
     restart: unless-stopped
     labels:

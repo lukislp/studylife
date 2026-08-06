@@ -28,35 +28,21 @@ fi
 tr -d '\r' < .env > .env.tmp && mv .env.tmp .env
 set -a; source .env; set +a
 
-# --- Ensure registry URL -----------------------------------------------
-if [ -z "${REGISTRY_URL:-}" ]; then
-    read -rp "Registry URL (e.g. registry.example.com): " REGISTRY_URL
-    echo "REGISTRY_URL=${REGISTRY_URL}" >> .env
-fi
+# --- Optional: only log in if a private registry override is configured ---
+# The default image (ghcr.io/lukislp/studylife-server) is public - no login needed to
+# pull it. This block only runs for people who set SERVER_IMAGE to their own fork's
+# image on a private registry (see .env.example).
+if [ -n "${REGISTRY_URL:-}" ] && [ -n "${REGISTRY_USER:-}" ] && [ -n "${REGISTRY_PASSWORD:-}" ]; then
+    echo -e "${BOLD}[1/3] Logging into ${REGISTRY_URL}...${RESET}"
+    echo "${REGISTRY_PASSWORD}" | docker login "${REGISTRY_URL}" -u "${REGISTRY_USER}" --password-stdin
 
-# --- Prompt for registry credentials if not set -----------------------
-if [ -z "${REGISTRY_USER:-}" ]; then
-    read -rp "Registry username: " REGISTRY_USER
-    echo "REGISTRY_USER=${REGISTRY_USER}" >> .env
-fi
-
-if [ -z "${REGISTRY_PASSWORD:-}" ]; then
-    read -rsp "Registry password: " REGISTRY_PASSWORD
-    echo ""
-    echo "REGISTRY_PASSWORD=${REGISTRY_PASSWORD}" >> .env
-fi
-
-export REGISTRY_URL REGISTRY_USER REGISTRY_PASSWORD
-
-# --- Registry login and pull images -----------------------------------------
-echo ""
-echo -e "${BOLD}[1/3] Logging into registry and pulling images...${RESET}"
-echo "${REGISTRY_PASSWORD}" | docker login "${REGISTRY_URL}" -u "${REGISTRY_USER}" --password-stdin
-
-# Make Docker credentials available to Watchtower under /root/.docker/config.json
-if [ ! -f /root/.docker/config.json ] && [ -f ~/.docker/config.json ]; then
-    mkdir -p /root/.docker
-    cp ~/.docker/config.json /root/.docker/config.json
+    # Make Docker credentials available to Watchtower under /root/.docker/config.json
+    if [ ! -f /root/.docker/config.json ] && [ -f ~/.docker/config.json ]; then
+        mkdir -p /root/.docker
+        cp ~/.docker/config.json /root/.docker/config.json
+    fi
+else
+    echo -e "${BOLD}[1/3] Pulling public image (no registry login needed)...${RESET}"
 fi
 
 docker compose pull server
