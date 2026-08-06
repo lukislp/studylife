@@ -1,3 +1,10 @@
+## [1.5.1](https://github.com/lukislp/studylife/compare/v1.5.0...v1.5.1) (2026-08-06)
+
+
+### Bug Fixes
+
+* remove duplicate hour suffix in monthly goal warning text ([8e18c56](https://github.com/lukislp/studylife/commit/8e18c56f3634b1c2e22bfd9ac203ad60baed7411))
+
 # [1.5.0](https://github.com/lukislp/studylife/compare/v1.4.0...v1.5.0) (2026-08-06)
 
 
