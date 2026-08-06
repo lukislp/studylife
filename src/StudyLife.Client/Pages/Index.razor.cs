@@ -76,7 +76,7 @@ public partial class Index
         _quotaMinPercent,
         T.ZeroHours,
         string.Format(T.MonthTargetLegend ?? "", _monthTargetMin, _monthTargetMax),
-        _quotaWarning ? (MarkupString?)new MarkupString(string.Format(T.MonthlyGoalMissingText, $"<strong>{_quotaMissing} h</strong>")) : null);
+        _quotaWarning ? (MarkupString?)new MarkupString(string.Format(T.MonthlyGoalMissingText, $"<strong>{_quotaMissing}</strong>")) : null);
 
     private string FocusScoreStatusText => _focusScorePercent >= 100
         ? T.FocusScoreAllOnPlan ?? ""
