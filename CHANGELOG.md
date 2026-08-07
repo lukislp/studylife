@@ -1,3 +1,10 @@
+## [1.5.3](https://github.com/lukislp/studylife/compare/v1.5.2...v1.5.3) (2026-08-07)
+
+
+### Bug Fixes
+
+* remove the leftover .gitlab-ci.yml pipeline ([3667f01](https://github.com/lukislp/studylife/commit/3667f01a22c9a5f0d9690d1258ae580db838476f))
+
 ## [1.5.2](https://github.com/lukislp/studylife/compare/v1.5.1...v1.5.2) (2026-08-07)
 
 
