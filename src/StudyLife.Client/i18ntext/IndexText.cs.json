@@ -127,5 +127,17 @@
   "AnomalyHintText": "Tento týden studuješ výrazně méně než obvykle — {0} % oproti tvému průměru",
   "BackupNeverDownloadedText": "Ještě jsi nestáhl(a) žádnou zálohu — ulož si kopii mimo toto zařízení pro případ jeho ztráty.",
   "BackupStaleText": "Tvoje poslední záloha je stará {0} dní.",
-  "BackupDownloadLink": "Stáhnout zálohu →"
+  "BackupDownloadLink": "Stáhnout zálohu →",
+  "Quote1": "Neučíš se jen tak — buduješ verzi sebe sama, která bude řešit problémy, na které zatím neexistuje řešení.",
+  "Quote2": "Každý koncept, kterému dnes rozumíš, je nástroj, po kterém sáhneš ve tmě. Pokračuj.",
+  "Quote3": "Ten zmatek, který teď cítíš? To se přepojuje tvůj mozek. To je učení v akci.",
+  "Quote4": "Zvolil sis tuhle cestu. Zvlášť v těžkých dnech na té volbě záleží.",
+  "Quote5": "Inteligence se nedává. Buduje se, session po session, přesně jako tahle.",
+  "Quote6": "Model, který na sobě trénuješ, je ten nejdůležitější, na kterém kdy budeš pracovat.",
+  "Quote7": "Někde čeká problém na někoho, kdo přesně rozumí tomu, co teď studuješ.",
+  "Quote8": "Nejistota je struktura růstu. Jsi v ní. Zůstaň.",
+  "Quote9": "Tvé budoucí já bude vděčné, že jsi to právě teď nevzdal.",
+  "Quote10": "Obor potřebuje lidi, kteří přemýšlí do hloubky. Buď jedním z nich.",
+  "Quote11": "Nejsi pozadu. Stavíš ve svém vlastním rozlišení.",
+  "Quote12": "To, co teď děláš, není malé. Kumuluje se to."
 }

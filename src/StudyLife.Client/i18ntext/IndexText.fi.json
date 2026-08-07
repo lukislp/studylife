@@ -127,5 +127,17 @@
   "AnomalyHintText": "Opiskelet tällä viikolla huomattavasti vähemmän kuin yleensä — {0} % keskiarvostasi",
   "BackupNeverDownloadedText": "Et ole vielä ladannut varmuuskopiota — säilytä kopio muualla laitteen katoamisen varalta.",
   "BackupStaleText": "Viimeisimmästä varmuuskopiostasi on {0} päivää.",
-  "BackupDownloadLink": "Lataa varmuuskopio →"
+  "BackupDownloadLink": "Lataa varmuuskopio →",
+  "Quote1": "Et vain opiskele — rakennat itsestäsi version, joka ratkaisee ongelmia, joihin ei vielä ole ratkaisuja.",
+  "Quote2": "Jokainen tänään ymmärtämäsi käsite on työkalu, johon tartut pimeässä. Jatka eteenpäin.",
+  "Quote3": "Se hämmennys, jonka nyt tunnet? Se on aivosi uudelleenkytkeytymässä. Se on oppimista tapahtumassa.",
+  "Quote4": "Valitsit tämän polun. Erityisesti vaikeina päivinä sillä valinnalla on merkitystä.",
+  "Quote5": "Älykkyyttä ei anneta. Se rakennetaan, sessio kerrallaan, aivan kuten tämä.",
+  "Quote6": "Malli, jota harjoitat itsessäsi, on tärkein, jonka parissa tulet koskaan työskentelemään.",
+  "Quote7": "Jossain ongelma odottaa jotakuta, joka ymmärtää juuri sen, mitä nyt opiskelet.",
+  "Quote8": "Epävarmuus on kasvun tekstuuri. Olet sen keskellä. Pysy siinä.",
+  "Quote9": "Tuleva sinäsi on kiitollinen, ettet luovuttanut juuri tällä hetkellä.",
+  "Quote10": "Ala tarvitsee ihmisiä, jotka ajattelevat syvällisesti. Ole yksi heistä.",
+  "Quote11": "Et ole jäljessä. Rakennat omalla resoluutiollasi.",
+  "Quote12": "Se, mitä teet juuri nyt, ei ole pientä. Se kumuloituu."
 }

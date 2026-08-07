@@ -169,9 +169,21 @@ public partial class Index
         _isOwner = await State.GetIsOwnerAsync();
         var hour = DateTime.Now.Hour;
         _greeting = hour < 12 ? T.GoodMorning : hour < 17 ? T.GoodAfternoon : T.GoodEvening;
-        _motivation = DefaultData.ClaudeMotivations[new Random().Next(DefaultData.ClaudeMotivations.Count)];
+        _motivation = GetRandomMotivation();
         _insightVariant = new Random().Next(2);
         await LoadDataAsync(refreshHeavyHistory: true);
+    }
+
+    /// <summary>Localized replacement for the old hardcoded-English DefaultData.ClaudeMotivations
+    /// list - picks one of the 12 quotes from IndexText, translated per the active language.</summary>
+    private string GetRandomMotivation()
+    {
+        string[] quotes =
+        [
+            T.Quote1, T.Quote2, T.Quote3, T.Quote4, T.Quote5, T.Quote6,
+            T.Quote7, T.Quote8, T.Quote9, T.Quote10, T.Quote11, T.Quote12,
+        ];
+        return quotes[new Random().Next(quotes.Length)];
     }
 
     private async Task LoadDataAsync(bool refreshHeavyHistory)
