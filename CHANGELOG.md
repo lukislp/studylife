@@ -1,3 +1,11 @@
+## [1.5.2](https://github.com/lukislp/studylife/compare/v1.5.1...v1.5.2) (2026-08-07)
+
+
+### Bug Fixes
+
+* point docker-compose at the real public GHCR image, drop dead registry prompts ([62fc731](https://github.com/lukislp/studylife/commit/62fc731a1959a0f1c8350d4c49f9abf4fbb8d804))
+* re-trigger CI after the previous push's webhook was dropped during a GitHub Actions incident ([baaa73f](https://github.com/lukislp/studylife/commit/baaa73fa82e7820b759deb545c93aa61dbf6afcc))
+
 ## [1.5.1](https://github.com/lukislp/studylife/compare/v1.5.0...v1.5.1) (2026-08-06)
 
 
