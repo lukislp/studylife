@@ -127,5 +127,17 @@
   "AnomalyHintText": "Tá tú ag staidéar i bhfad níos lú ná mar is gnách an tseachtain seo — {0}% de do mheán",
   "BackupNeverDownloadedText": "Níor íoslódáil tú cúltaca riamh — coinnigh cóip in áit eile ar eagla go gcaillfí an gléas seo.",
   "BackupStaleText": "Rinneadh do chúltaca deireanach {0} lá ó shin.",
-  "BackupDownloadLink": "Íoslódáil cúltaca →"
+  "BackupDownloadLink": "Íoslódáil cúltaca →",
+  "Quote1": "Ní staidéar amháin atá á dhéanamh agat — tá tú ag tógáil an leagan díot féin a réiteoidh fadhbanna nach bhfuil réiteach acu fós.",
+  "Quote2": "Is uirlis é gach coincheap a thuigeann tú inniu a shínfidh tú chuige sa dorchadas. Lean ort.",
+  "Quote3": "An mearbhall sin a mhothaíonn tú anois? Sin d'inchinn ag sreangú as an nua. Sin foghlaim ag tarlú.",
+  "Quote4": "Roghnaigh tú an conair seo. Go háirithe ar na laethanta deacra, tá tábhacht leis an rogha sin.",
+  "Quote5": "Ní tugtha atá an intleacht. Tógtar í, seisiún ar sheisiún, díreach cosúil leis seo.",
+  "Quote6": "Is é an múnla a oileann tú ort féin an ceann is tábhachtaí a oibreoidh tú air riamh.",
+  "Quote7": "In áit éigin, tá fadhb ag fanacht le duine a thuigeann go díreach an rud atá á staidéar agat anois.",
+  "Quote8": "Is í an neamhchinnteacht uigeacht an fháis. Tá tú ann. Fan ann.",
+  "Quote9": "Beidh do thú féin sa todhchaí buíoch nár éirigh tú as go díreach ag an nóiméad seo.",
+  "Quote10": "Tá gá ag an réimse le daoine a smaoiníonn go domhain. Bí ar dhuine acu.",
+  "Quote11": "Níl tú chun deiridh. Tá tú ag tógáil ag do réiteach féin.",
+  "Quote12": "Ní beag an rud atá á dhéanamh agat anois. Carnann sé."
 }

@@ -11,7 +11,7 @@
 @inject HttpClient Http
 @implements IDisposable
 
-<PageTitle>StudyLife — Focus</PageTitle>
+<PageTitle>@T.FocusPageTitle</PageTitle>
 
 <div class="focus-page" style="--g1: @_gradientFrom; --g2: @_gradientTo">
     <div class="focus-bg-gradient"></div>
@@ -118,6 +118,7 @@
         // Built-in + user-defined modes (from settings) in the same switcher
         var settings = await State.GetSettingsAsync();
         _allModes = CustomTimerModes.Combined(settings.CustomTimerModes);
+        LocalizeBuiltInModeNames(_allModes);
 
         var random = new Random();
 
@@ -153,8 +154,44 @@
         Timer.OnPaused += OnTimerPaused;
         Timer.OnModeChanged += OnModeChangedFromService;
 
-        _motivationText = DefaultData.ClaudeMotivations[random.Next(DefaultData.ClaudeMotivations.Count)];
+        _motivationText = GetRandomMotivation();
         _ = ShowMotivationAfterDelay();
+    }
+
+    /// <summary>Localized replacement for the old hardcoded-English DefaultData.ClaudeMotivations
+    /// list - picks one of the 12 quotes from FocusText, translated per the active language.</summary>
+    private string GetRandomMotivation()
+    {
+        string[] quotes =
+        [
+            T.Quote1, T.Quote2, T.Quote3, T.Quote4, T.Quote5, T.Quote6,
+            T.Quote7, T.Quote8, T.Quote9, T.Quote10, T.Quote11, T.Quote12,
+        ];
+        return quotes[new Random().Next(quotes.Length)];
+    }
+
+    /// <summary>DefaultData.TimerModes/CustomTimerModes.Combined() hardcode English Name/Description
+    /// for the 9 built-in modes (keyed by the stable Style value). Overwrites them in place with the
+    /// localized FocusText strings so the switcher/timer display show the active language - genuinely
+    /// custom user-named modes (Style == "custom") are left untouched.</summary>
+    private void LocalizeBuiltInModeNames(List<TimerMode> modes)
+    {
+        foreach (var m in modes)
+        {
+            (m.Name, m.Description) = m.Style switch
+            {
+                "pomodoro" => (T.TimerModeName_pomodoro, T.TimerModeDesc_pomodoro),
+                "flow" => (T.TimerModeName_flow, T.TimerModeDesc_flow),
+                "ultradian" => (T.TimerModeName_ultradian, T.TimerModeDesc_ultradian),
+                "claude" => (T.TimerModeName_claude, T.TimerModeDesc_claude),
+                "sprint" => (T.TimerModeName_sprint, T.TimerModeDesc_sprint),
+                "micro" => (T.TimerModeName_micro, T.TimerModeDesc_micro),
+                "burst" => (T.TimerModeName_burst, T.TimerModeDesc_burst),
+                "deepdive" => (T.TimerModeName_deepdive, T.TimerModeDesc_deepdive),
+                "marathon" => (T.TimerModeName_marathon, T.TimerModeDesc_marathon),
+                _ => (m.Name, m.Description),
+            };
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -265,7 +302,7 @@
         var idx = _allModes.FindIndex(m => m.Id == _currentMode?.Id);
         var next = _allModes[(idx + 1) % _allModes.Count];
         LoadMode(next);
-        _motivationText = DefaultData.ClaudeMotivations[new Random().Next(DefaultData.ClaudeMotivations.Count)];
+        _motivationText = GetRandomMotivation();
         StateHasChanged();
     }
 
@@ -277,7 +314,7 @@
         _isRunning = isRunning;
         if (isBreak && secondsLeft == (_currentMode?.BreakMinutes ?? 5) * 60)
         {
-            _motivationText = DefaultData.ClaudeMotivations[new Random().Next(DefaultData.ClaudeMotivations.Count)];
+            _motivationText = GetRandomMotivation();
         }
         // Best-effort: async-void timer handler - an unhandled throw here would crash the app.
         try { await JS.InvokeVoidAsync("setPageTitle", $"{FormatTime(secondsLeft)} · {(isBreak ? T.PhaseBreakLabel : T.PhaseFocusLabel)}"); } catch { /* ignore */ }
@@ -316,7 +353,7 @@
             await State.SaveSessionAsync(_activeSession);
         }
         try { await JS.InvokeVoidAsync("playCompletionSound"); } catch { /* best-effort, ignore */ }
-        _motivationText = DefaultData.ClaudeMotivations[new Random().Next(DefaultData.ClaudeMotivations.Count)];
+        _motivationText = GetRandomMotivation();
 
         if (_activeSession != null)
         {

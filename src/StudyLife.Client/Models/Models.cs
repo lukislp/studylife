@@ -161,20 +161,4 @@ public static class DefaultData
         new() { Id = 8, Name = "Deep Dive", Description = "120 minutes focus, 20 minute break. For when you need to disappear into a problem.", FocusMinutes = 120, BreakMinutes = 20, Rounds = 2, Style = "deepdive", Emoji = "🏔", GradientFrom = "#00CEC9", GradientTo = "#81ECEC" },
         new() { Id = 9, Name = "Marathon Session", Description = "180 minutes focus, 30 minute break. One long, uninterrupted push - exam-prep territory.", FocusMinutes = 180, BreakMinutes = 30, Rounds = 1, Style = "marathon", Emoji = "🎯", GradientFrom = "#E84393", GradientTo = "#FD79A8" },
     };
-
-    public static List<string> ClaudeMotivations => new()
-    {
-        "You're not just studying — you're building the version of yourself that solves problems that don't have solutions yet.",
-        "Every concept you understand today is a tool you'll reach for in the dark. Keep going.",
-        "The confusion you feel right now? That's your brain rewiring. That's learning happening.",
-        "You chose this path. On the hard days especially, that choice matters.",
-        "Intelligence isn't given. It's built, session by session, exactly like this one.",
-        "The model you train on yourself is the most important one you'll ever work on.",
-        "Somewhere, a problem is waiting for someone who understands exactly what you're studying now.",
-        "Uncertainty is the texture of growth. You're in it. Stay.",
-        "Your future self is going to be grateful you didn't quit at this exact moment.",
-        "The field needs people who think deeply. Be one of them.",
-        "You're not behind. You're building at your own resolution.",
-        "What you're doing right now is not small. It compounds.",
-    };
 }

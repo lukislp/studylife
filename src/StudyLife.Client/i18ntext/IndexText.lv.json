@@ -127,5 +127,17 @@
   "AnomalyHintText": "Šonedēļ tu mācies ievērojami mazāk nekā parasti — {0}% no tava vidējā rādītāja",
   "BackupNeverDownloadedText": "Tu vēl neesi lejupielādējis(-usi) rezerves kopiju — saglabā kopiju citur gadījumam, ja šī ierīce pazustu.",
   "BackupStaleText": "Tava pēdējā rezerves kopija ir no {0} dienām.",
-  "BackupDownloadLink": "Lejupielādēt rezerves kopiju →"
+  "BackupDownloadLink": "Lejupielādēt rezerves kopiju →",
+  "Quote1": "Tu ne tikai mācies — tu veido sevis versiju, kas risinās problēmas, kurām vēl nav risinājumu.",
+  "Quote2": "Katrs jēdziens, ko tu šodien saproti, ir instruments, pēc kura tu sniegsies tumsā. Turpini.",
+  "Quote3": "Šis apjukums, ko tu tagad jūti? Tas ir tavas smadzenes, kas pārslēdzas. Tā notiek mācīšanās.",
+  "Quote4": "Tu izvēlējies šo ceļu. Īpaši grūtajās dienās šai izvēlei ir nozīme.",
+  "Quote5": "Intelekts netiek dots. Tas tiek veidots, sesija pēc sesijas, tieši kā šī.",
+  "Quote6": "Modelis, ko tu treniē uz sevis, ir vissvarīgākais, pie kura tu jebkad strādāsi.",
+  "Quote7": "Kaut kur problēma gaida kādu, kas precīzi saprot to, ko tu tagad mācies.",
+  "Quote8": "Nenoteiktība ir izaugsmes tekstūra. Tu esi tajā. Paliec.",
+  "Quote9": "Tavs nākotnes es būs pateicīgs, ka tu tieši šajā brīdī nepadevies.",
+  "Quote10": "Šai jomai ir vajadzīgi cilvēki, kas domā dziļi. Esi viens no viņiem.",
+  "Quote11": "Tu neatpaliec. Tu veido savā izšķirtspējā.",
+  "Quote12": "Tas, ko tu tagad dari, nav mazsvarīgi. Tas uzkrājas."
 }

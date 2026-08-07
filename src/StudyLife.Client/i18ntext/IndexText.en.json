@@ -127,5 +127,17 @@
   "AnomalyHintText": "Noticeably less than usual this week — {0}% vs. your average",
   "BackupNeverDownloadedText": "You've never downloaded a backup — keep an offsite copy in case this device is lost.",
   "BackupStaleText": "Your last backup download was {0} days ago.",
-  "BackupDownloadLink": "Download backup →"
+  "BackupDownloadLink": "Download backup →",
+  "Quote1": "You're not just studying — you're building the version of yourself that solves problems that don't have solutions yet.",
+  "Quote2": "Every concept you understand today is a tool you'll reach for in the dark. Keep going.",
+  "Quote3": "The confusion you feel right now? That's your brain rewiring. That's learning happening.",
+  "Quote4": "You chose this path. On the hard days especially, that choice matters.",
+  "Quote5": "Intelligence isn't given. It's built, session by session, exactly like this one.",
+  "Quote6": "The model you train on yourself is the most important one you'll ever work on.",
+  "Quote7": "Somewhere, a problem is waiting for someone who understands exactly what you're studying now.",
+  "Quote8": "Uncertainty is the texture of growth. You're in it. Stay.",
+  "Quote9": "Your future self is going to be grateful you didn't quit at this exact moment.",
+  "Quote10": "The field needs people who think deeply. Be one of them.",
+  "Quote11": "You're not behind. You're building at your own resolution.",
+  "Quote12": "What you're doing right now is not small. It compounds."
 }

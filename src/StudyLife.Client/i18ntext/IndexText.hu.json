@@ -127,5 +127,17 @@
   "AnomalyHintText": "Ezen a héten jelentősen kevesebbet tanulsz a szokásosnál — {0}% az átlagodhoz képest",
   "BackupNeverDownloadedText": "Még sosem töltöttél le biztonsági mentést — tarts egy másolatot máshol, ha elveszne ez az eszköz.",
   "BackupStaleText": "Az utolsó biztonsági mentésed {0} napja készült.",
-  "BackupDownloadLink": "Biztonsági mentés letöltése →"
+  "BackupDownloadLink": "Biztonsági mentés letöltése →",
+  "Quote1": "Nem csak tanulsz — annak a saját magadnak a verzióját építed, aki olyan problémákat old meg, amelyekre még nincs megoldás.",
+  "Quote2": "Minden fogalom, amit ma megértesz, egy eszköz, amelyért a sötétben nyúlsz majd. Folytasd.",
+  "Quote3": "Az a zavarodottság, amit most érzel? Az agyad éppen újrahuzalozódik. Ez a tanulás valósága.",
+  "Quote4": "Te választottad ezt az utat. Különösen a nehéz napokon számít ez a választás.",
+  "Quote5": "Az intelligencia nem adott. Session-ről session-re épül, pontosan úgy, mint ez is.",
+  "Quote6": "A modell, amit magadon tanítasz, a legfontosabb, amin valaha dolgozni fogsz.",
+  "Quote7": "Valahol egy probléma vár valakire, aki pontosan érti azt, amit most tanulsz.",
+  "Quote8": "A bizonytalanság a fejlődés szövete. Benne vagy. Maradj.",
+  "Quote9": "A jövőbeli éned hálás lesz, hogy pont ebben a pillanatban nem adtad fel.",
+  "Quote10": "A szakterületnek mélyen gondolkodó emberekre van szüksége. Legyél egyikük.",
+  "Quote11": "Nem vagy lemaradva. A saját felbontásodban építkezel.",
+  "Quote12": "Amit most csinálsz, nem apróság. Halmozódik."
 }
