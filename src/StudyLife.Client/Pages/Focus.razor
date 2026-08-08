@@ -34,15 +34,17 @@
     <FocusTimerDisplay CurrentMode="_currentMode" IsBreak="_isBreak" FormattedTime="@FormatTime(_secondsLeft)"
                         CurrentRound="_currentRound" PhaseBreakLabel="@T.PhaseBreakLabel" PhaseFocusLabel="@T.PhaseFocusLabel" />
 
-    <FocusTimerControls IsRunning="_isRunning" ResetTitle="@T.Reset" SkipTitle="@T.TryAnotherMode"
-                         OnReset="ResetTimer" OnToggle="ToggleTimer" OnNext="NextMode" />
+    <div class="timer-controls-row">
+        <FocusTimerControls IsRunning="_isRunning" ResetTitle="@T.Reset" SkipTitle="@T.TryAnotherMode"
+                             OnReset="ResetTimer" OnToggle="ToggleTimer" OnNext="NextMode" />
 
-    <FocusAmbientControl IsOpen="_ambientPopoverOpen" SoundType="_ambientType" Volume="_ambientVolume"
-                         AmbientSoundTitle="@T.AmbientSoundLabel" OffLabel="@T.AmbientOff"
-                         WhiteNoiseLabel="@T.AmbientWhiteNoise" BrownNoiseLabel="@T.AmbientBrownNoise"
-                         RainLabel="@T.AmbientRain" OceanLabel="@T.AmbientOcean" ToneLabel="@T.AmbientTone"
-                         VolumeLabel="@T.AmbientVolume" OnTogglePopover="ToggleAmbientPopover"
-                         OnSelectType="SelectAmbientType" OnVolumeChanged="SetAmbientVolume" />
+        <FocusAmbientControl IsOpen="_ambientPopoverOpen" SoundType="_ambientType" Volume="_ambientVolume"
+                             AmbientSoundTitle="@T.AmbientSoundLabel" OffLabel="@T.AmbientOff"
+                             WhiteNoiseLabel="@T.AmbientWhiteNoise" BrownNoiseLabel="@T.AmbientBrownNoise"
+                             RainLabel="@T.AmbientRain" OceanLabel="@T.AmbientOcean" ToneLabel="@T.AmbientTone"
+                             VolumeLabel="@T.AmbientVolume" OnTogglePopover="ToggleAmbientPopover"
+                             OnSelectType="SelectAmbientType" OnVolumeChanged="SetAmbientVolume" />
+    </div>
 
     <!-- Motivation -->
     <div class="focus-motivation @(_showMotivation ? "visible" : "")">
