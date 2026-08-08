@@ -325,8 +325,8 @@ public class DtoContractSnapshotTests : IClassFixture<CustomWebApplicationFactor
         {
             CourseId = 1,
             CourseName = "Snapshot-Test-Course",
-            StartTime = new DateTime(2026, 9, 1, 10, 0, 0),
-            EndTime = new DateTime(2026, 9, 1, 11, 0, 0),
+            StartTime = DateTime.Today.AddDays(-1).AddHours(10),
+            EndTime = DateTime.Today.AddDays(-1).AddHours(11),
             Topic = "Snapshot-Test",
             Notes = "Notiz",
             IsCompleted = true,
@@ -630,8 +630,8 @@ public class NullableFieldPresenceTests : IClassFixture<CustomWebApplicationFact
         {
             CourseId = 1,
             CourseName = "Nullable-Fields-Session-Course",
-            StartTime = new DateTime(2026, 9, 1, 10, 0, 0),
-            EndTime = new DateTime(2026, 9, 1, 11, 0, 0),
+            StartTime = DateTime.Today.AddDays(-1).AddHours(10),
+            EndTime = DateTime.Today.AddDays(-1).AddHours(11),
             Topic = null,
             Notes = null,
             RecurrenceGroupId = null,
