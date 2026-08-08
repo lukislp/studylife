@@ -71,7 +71,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: studylife
-          image: registry.example.com/studylife/server:1.35.0 # {"$imagepolicy": "flux-system:studylife-server"}
+          image: ghcr.io/lukislp/studylife-server:1.5.9 # {"$imagepolicy": "flux-system:studylife-server"}
           imagePullPolicy: Never
           securityContext:
             allowPrivilegeEscalation: false
