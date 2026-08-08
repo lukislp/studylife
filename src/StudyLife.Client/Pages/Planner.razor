@@ -189,6 +189,7 @@
     private List<CourseGoalDto> _goals = new();
     private List<StudySession> _sessions = new();
     private List<StudySessionDto> _history = new();
+    private I18nLanguageWatcher _langWatcher = null!;
 
     // Exam planner
     private int _examCourseId;
@@ -198,9 +199,11 @@
     private List<string> _examOpenTopics = new();
     private int _examCourseTotalTopics;
     private List<PlanProposal> _examProposals = new();
+    private bool _examUsedFallbackTopic; // true = every proposal's Topic came from T.ReviewTopicFallback
     private bool _examGenerated;
     private string? _examError;
     private string? _examAcceptedMessage;
+    private int? _examAcceptedCount;
     private double ExamProposalHours => _examProposals.Sum(p => (p.End - p.Start).TotalHours);
 
     // Weekly plan
@@ -208,14 +211,56 @@
     private double _weekAlreadyHours;
     private double _weekRemainingHours;
     private List<PlanProposal> _weekProposals = new();
+    private HashSet<int> _weekFallbackCourseIds = new(); // course ids whose proposals' Topic came from T.ReviewTopicFallback
     private bool _weekGenerated;
     private string? _weekAcceptedMessage;
+    private int? _weekAcceptedCount;
     private List<(string Name, string Icon, string Color, string Hint)> _weekCourseHints = new();
+    // Raw facts behind _weekCourseHints' Hint text (which of ExamInDays/LastStudiedDaysAgo/NeverStudied,
+    // and the number involved) - kept around so a live language switch can rebuild the hint TEXT
+    // without re-running the whole weighted-pick/slot-finding generator.
+    private sealed record HintFact(int CourseId, string Name, string Icon, string Color, int? ExamDaysUntil, int? DaysSinceStudied);
+    private List<HintFact> _weekHintFacts = new();
     private double WeekProposalHours => _weekProposals.Sum(p => (p.End - p.Start).TotalHours);
+
+    private string BuildHintText(HintFact f) =>
+        f.ExamDaysUntil is int daysUntil ? string.Format(T.ExamInDays ?? "", daysUntil)
+        : f.DaysSinceStudied is int daysSince ? string.Format(T.LastStudiedDaysAgo ?? "", daysSince)
+        : T.NeverStudied ?? "";
+
+    private void RefreshWeekCourseHints() =>
+        _weekCourseHints = _weekHintFacts.Select(f => (f.Name, f.Icon, f.Color, BuildHintText(f))).ToList();
+
+    /// <summary>Toolbelt.Blazor.I18nText auto-updates T's own fields and re-renders this component
+    /// when the active language changes, but text baked from T onto proposal/hint objects at plan-
+    /// generation time doesn't recompute on its own - same root cause/fix shape as Focus.razor's
+    /// RefreshLocalizedModeNames. The plan itself (which slots/topics/courses were picked) is never
+    /// regenerated here, only the localized text already baked onto it.</summary>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) return;
+
+        // _langWatcher can still be null here: OnInitializedAsync's first await doesn't complete
+        // synchronously, so Blazor renders once - firstRender=true - before the rest of
+        // OnInitializedAsync (incl. _langWatcher's assignment) has run; a later render catches up.
+        if (_langWatcher != null && await _langWatcher.CheckChangedAsync())
+        {
+            if (_examUsedFallbackTopic)
+                foreach (var p in _examProposals) p.Topic = T.ReviewTopicFallback;
+            foreach (var p in _weekProposals.Where(p => _weekFallbackCourseIds.Contains(p.CourseId)))
+                p.Topic = T.ReviewTopicFallback;
+            RefreshWeekCourseHints();
+            if (_examAcceptedCount is int examCount) _examAcceptedMessage = string.Format(T.ExamPlanAccepted ?? "", examCount);
+            if (_weekAcceptedCount is int weekCount) _weekAcceptedMessage = string.Format(T.WeekPlanAccepted ?? "", weekCount);
+            await InvokeAsync(StateHasChanged);
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
         T = await I18nText.GetTextTableAsync<I18nText.PlannerText>(this);
+        _langWatcher = new I18nLanguageWatcher(I18nText);
+        await _langWatcher.InitAsync();
         State.OnChange += OnStateChanged;
 
         _settings = await State.GetSettingsAsync();
@@ -257,8 +302,10 @@
     {
         var course = _courses.FirstOrDefault(c => c.Id == _examCourseId);
         _examProposals.Clear();
+        _examUsedFallbackTopic = false;
         _examGenerated = false;
         _examAcceptedMessage = null;
+        _examAcceptedCount = null;
         _examError = null;
         if (course == null)
         {
@@ -321,6 +368,7 @@
             });
         }
         _examProposals = proposals;
+        _examUsedFallbackTopic = _examOpenTopics.Count == 0;
         _examGenerated = true;
     }
 
@@ -342,7 +390,9 @@
         }
         _sessions = await State.GetSessionsAsync();
         _examProposals.Clear();
+        _examUsedFallbackTopic = false;
         _examGenerated = false;
+        _examAcceptedCount = count;
         _examAcceptedMessage = string.Format(T.ExamPlanAccepted ?? "", count);
         RecalcWeekHours();
     }
@@ -367,8 +417,11 @@
     private async Task GenerateWeekPlan()
     {
         _weekAcceptedMessage = null;
+        _weekAcceptedCount = null;
         _weekProposals.Clear();
         _weekCourseHints.Clear();
+        _weekHintFacts.Clear();
+        _weekFallbackCourseIds.Clear();
         _weekGenerated = true;
         if (_weekRemainingHours <= 0 || _courses.Count == 0) return;
 
@@ -387,7 +440,7 @@
             .ToDictionary(g => g.Key, g => g.Max(s => s.StartTime));
 
         var weights = new Dictionary<int, double>();
-        var hints = new Dictionary<int, string>();
+        var hintFactsByCourse = new Dictionary<int, HintFact>();
         foreach (var c in _courses)
         {
             var lastStudied = lastStudiedByCourse.TryGetValue(c.Id, out var d) ? (DateTime?)d : null;
@@ -396,20 +449,19 @@
 
             var goal = _goals.FirstOrDefault(g => g.CourseId == c.Id);
             var examBonus = 0.0;
-            string? hint = null;
+            int? examDaysUntil = null;
             if (goal?.TargetDate is DateTime td)
             {
                 var daysUntil = (td.Date - today).Days;
                 if (daysUntil >= 0 && daysUntil <= 30)
                 {
                     examBonus = 30 - daysUntil;
-                    hint = string.Format(T.ExamInDays ?? "", daysUntil);
+                    examDaysUntil = daysUntil;
                 }
             }
-            hint ??= lastStudied.HasValue ? string.Format(T.LastStudiedDaysAgo ?? "", daysSince) : T.NeverStudied;
 
             weights[c.Id] = neglectScore + examBonus + 1;
-            hints[c.Id] = hint;
+            hintFactsByCourse[c.Id] = new HintFact(c.Id, c.Name, c.Icon, c.Color, examDaysUntil, lastStudied.HasValue ? daysSince : null);
         }
 
         var picks = StudyPlanner.WeightedRoundRobin(weights, totalSessions);
@@ -421,6 +473,7 @@
         var count = Math.Min(picks.Count, slots.Count);
         var topicIndex = new Dictionary<int, int>();
         var proposals = new List<PlanProposal>();
+        var fallbackCourseIds = new HashSet<int>();
         for (var i = 0; i < count; i++)
         {
             var courseId = picks[i];
@@ -429,6 +482,7 @@
             var idx = topicIndex.TryGetValue(courseId, out var v) ? v : 0;
             topicIndex[courseId] = idx + 1;
             var topic = openTopics.Count > 0 ? openTopics[idx % openTopics.Count] : T.ReviewTopicFallback;
+            if (openTopics.Count == 0) fallbackCourseIds.Add(courseId);
 
             proposals.Add(new PlanProposal
             {
@@ -440,12 +494,11 @@
                 End = slots[i].End,
             });
         }
+        _weekFallbackCourseIds = fallbackCourseIds;
 
         _weekProposals = proposals.OrderBy(p => p.Start).ToList();
-        _weekCourseHints = hints
-            .Where(h => proposals.Any(p => p.CourseId == h.Key))
-            .Select(h => (_courses.First(c => c.Id == h.Key).Name, _courses.First(c => c.Id == h.Key).Icon, _courses.First(c => c.Id == h.Key).Color, h.Value))
-            .ToList();
+        _weekHintFacts = hintFactsByCourse.Values.Where(f => proposals.Any(p => p.CourseId == f.CourseId)).ToList();
+        RefreshWeekCourseHints();
     }
 
     private async Task AcceptWeekPlan()
@@ -467,7 +520,10 @@
         _sessions = await State.GetSessionsAsync();
         _weekProposals.Clear();
         _weekCourseHints.Clear();
+        _weekHintFacts.Clear();
+        _weekFallbackCourseIds.Clear();
         _weekGenerated = false;
+        _weekAcceptedCount = count;
         _weekAcceptedMessage = string.Format(T.WeekPlanAccepted ?? "", count);
         RecalcWeekHours();
     }

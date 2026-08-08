@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Components;
 using StudyLife.Client.Components.Dashboard;
 using StudyLife.Client.Models;
+using StudyLife.Client.Services;
 using StudyLife.Shared;
 
 namespace StudyLife.Client.Pages;
@@ -161,17 +162,46 @@ public partial class Index
     private int _topicsTotal;
     private double _topicsPercent;
 
+    private I18nLanguageWatcher _langWatcher = null!;
+
     protected override async Task OnInitializedAsync()
     {
         State.OnSessionsChanged += OnSessionsChanged;
         State.OnSettingsChanged += OnSettingsChanged;
         T = await I18nText.GetTextTableAsync<I18nText.IndexText>(this);
+        _langWatcher = new I18nLanguageWatcher(I18nText);
+        await _langWatcher.InitAsync();
         _isOwner = await State.GetIsOwnerAsync();
-        var hour = DateTime.Now.Hour;
-        _greeting = hour < 12 ? T.GoodMorning : hour < 17 ? T.GoodAfternoon : T.GoodEvening;
+        RefreshGreeting();
         _motivation = GetRandomMotivation();
         _insightVariant = new Random().Next(2);
         await LoadDataAsync(refreshHeavyHistory: true);
+    }
+
+    private void RefreshGreeting()
+    {
+        var hour = DateTime.Now.Hour;
+        _greeting = hour < 12 ? T.GoodMorning : hour < 17 ? T.GoodAfternoon : T.GoodEvening;
+    }
+
+    /// <summary>Toolbelt.Blazor.I18nText auto-updates T's own fields and re-renders this component
+    /// when the active language changes, but _greeting/_motivation were only ever copied from T
+    /// once at load time - so a live language switch (no page reload) left them stuck on whatever
+    /// language was active back then. Same root cause/fix shape as Focus.razor's
+    /// RefreshLocalizedModeNames.</summary>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) return;
+
+        // _langWatcher can still be null here: OnInitializedAsync's first await doesn't complete
+        // synchronously, so Blazor renders once - firstRender=true - before the rest of
+        // OnInitializedAsync (incl. _langWatcher's assignment) has run; a later render catches up.
+        if (_langWatcher != null && await _langWatcher.CheckChangedAsync())
+        {
+            RefreshGreeting();
+            _motivation = GetRandomMotivation();
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     /// <summary>Localized replacement for the old hardcoded-English DefaultData.ClaudeMotivations

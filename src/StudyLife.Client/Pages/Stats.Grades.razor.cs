@@ -7,6 +7,10 @@ namespace StudyLife.Client.Pages;
 public partial class Stats
 {
     private List<StatsGradeChartCard.GradePoint> _gradePoints = new();
+    // Semester number behind each _gradePoints entry's Label (T.SemesterShortFormat), parallel
+    // list in the same order, so RefreshGradePointLabels can rebuild the labels on a live
+    // language switch without re-grouping `goals`.
+    private List<int> _gradePointSemesters = new();
     private List<StatsHoursGradeScatterCard.ScatterPoint> _scatterPoints = new();
     private string _scatterMaxHoursLabel = "0h";
     private List<StatsGradeDistributionCard.GradeBucket> _gradeDistribution = new();
@@ -45,12 +49,16 @@ public partial class Stats
         // Same weighting semantics as the average grade above (Grade × Ects / sum of Ects, falling
         // back to an unweighted mean when the Ects sum is 0), just grouped per semester. Graded
         // courses without a catalog entry drop out here (no semester can be assigned).
-        _gradePoints = goals
+        var groups = goals
             .Where(g => g.Grade.HasValue)
             .Select(g => (Grade: g.Grade!.Value, Course: allCourses.FirstOrDefault(c => c.Id == g.CourseId)))
             .Where(x => x.Course != null)
             .GroupBy(x => x.Course!.Semester)
             .OrderBy(g => g.Key)
+            .ToList();
+
+        _gradePointSemesters = groups.Select(g => g.Key).ToList();
+        _gradePoints = groups
             .Select(g =>
             {
                 // Group is never empty (GroupBy) -> CalcWeightedAverageGrade never returns null here.
@@ -59,6 +67,17 @@ public partial class Stats
                 var percent = Math.Clamp((5.0 - (double)avg) / 4.0 * 100, 0, 100);
                 return new StatsGradeChartCard.GradePoint(string.Format(T.SemesterShortFormat, g.Key), avg, g.Count(), percent);
             })
+            .ToList();
+    }
+
+    /// <summary>Rebuilds each _gradePoints entry's Label (T.SemesterShortFormat) from
+    /// _gradePointSemesters + the CURRENT T, using the already-computed grade/count/percent -
+    /// avoids re-grouping `goals` on a live language switch.</summary>
+    private void RefreshGradePointLabels()
+    {
+        if (_gradePoints.Count != _gradePointSemesters.Count) return;
+        _gradePoints = _gradePoints
+            .Select((p, i) => p with { Label = string.Format(T.SemesterShortFormat ?? "", _gradePointSemesters[i]) })
             .ToList();
     }
 

@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using Microsoft.JSInterop;
 using StudyLife.Client.Components.Stats;
+using StudyLife.Client.Services;
 using StudyLife.Shared;
 
 namespace StudyLife.Client.Pages;
@@ -15,6 +16,11 @@ public partial class Stats
     private int _ectsTotal;
     private double _ectsPercent;
     private I18nText.StatsText T = new();
+    private I18nLanguageWatcher _langWatcher = null!;
+    // Active-programme course list from OnInitializedAsync, kept around so the OnAfterRenderAsync
+    // language-switch relocalization below can re-resolve course names (incl. T.CourseFallback for
+    // since-deleted courses) without re-fetching or re-running the expensive Build* pipeline.
+    private List<CourseDto> _allCourses = new();
 
     private const int HistoryDays = 371;
 
@@ -32,14 +38,37 @@ public partial class Stats
             // may not know this helper yet - then the heatmap simply starts unscrolled.
             try { await JS.InvokeVoidAsync("scrollElementToRight", "heatmap-scroll"); } catch { /* ignore */ }
         }
+
+        // Toolbelt.Blazor.I18nText auto-updates T's own fields and re-renders this component when
+        // the active language changes, but text baked from T into stored chart data at
+        // OnInitializedAsync time doesn't recompute on its own - same root cause/fix shape as
+        // Planner.razor/Index.razor.cs. Gated on !firstRender (unlike the heatmap-scroll block
+        // above, this has nothing to do with waiting for data to arrive). _langWatcher can still be
+        // null on an early render pass - same established gotcha as the heatmap-scroll comment
+        // above, just for OnInitializedAsync's own not-yet-finished state this time.
+        if (!firstRender && _langWatcher != null && await _langWatcher.CheckChangedAsync())
+        {
+            RefreshWeekdayHours();
+            RefreshTimeHeatmapRows();
+            RefreshMonthlyBreakdown();
+            RefreshHeatmapCourseNames();
+            RefreshDonutCourseNames();
+            RefreshSemesterComparisonLabels();
+            RefreshGradePointLabels();
+            RefreshCourseComparisonLabels();
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     protected override async Task OnInitializedAsync()
     {
         T = await I18nText.GetTextTableAsync<I18nText.StatsText>(this);
+        _langWatcher = new I18nLanguageWatcher(I18nText);
+        await _langWatcher.InitAsync();
         var settings = await State.GetSettingsAsync();
         var goalsUnfiltered = await State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals") ?? new();
         var allCourses = await State.GetCoursesAsync();
+        _allCourses = allCourses;
         // Active-programme scope: allCourses is already limited to the active programme
         // (AppStateService.GetCoursesAsync). `sessions` (near-term, course rows above), `history`
         // (long-term, all charts below), `goals` (grades/deadlines) and course-bound `notes` get

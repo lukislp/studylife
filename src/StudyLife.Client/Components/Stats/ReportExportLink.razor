@@ -4,14 +4,13 @@
    working on it in parallel). *@
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
-<a class="btn-secondary report-export-link" href="/report">@_label</a>
+<a class="btn-secondary report-export-link" href="/report">@T.ReportButton</a>
 
 @code {
-    private string _label = "";
+    private I18nText.ReportText T = new();
 
     protected override async Task OnInitializedAsync()
     {
-        var t = await I18nText.GetTextTableAsync<I18nText.ReportText>(this);
-        _label = t.ReportButton ?? "";
+        T = await I18nText.GetTextTableAsync<I18nText.ReportText>(this);
     }
 }

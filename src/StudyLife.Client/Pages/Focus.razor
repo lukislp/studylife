@@ -108,9 +108,13 @@
         public double? Volume { get; set; }
     }
 
+    private I18nLanguageWatcher _langWatcher = null!;
+
     protected override async Task OnInitializedAsync()
     {
         T = await I18nText.GetTextTableAsync<I18nText.FocusText>(this);
+        _langWatcher = new I18nLanguageWatcher(I18nText);
+        await _langWatcher.InitAsync();
         _activeSession = await State.GetActiveSessionAsync();
         _upcomingSession = await State.GetUpcomingSessionAsync();
         await RefreshRemoteTimerAsync();
@@ -118,7 +122,7 @@
         // Built-in + user-defined modes (from settings) in the same switcher
         var settings = await State.GetSettingsAsync();
         _allModes = CustomTimerModes.Combined(settings.CustomTimerModes);
-        LocalizeBuiltInModeNames(_allModes);
+        RefreshLocalizedModeNames();
 
         var random = new Random();
 
@@ -174,7 +178,7 @@
     /// for the 9 built-in modes (keyed by the stable Style value). Overwrites them in place with the
     /// localized FocusText strings so the switcher/timer display show the active language - genuinely
     /// custom user-named modes (Style == "custom") are left untouched.</summary>
-    private void LocalizeBuiltInModeNames(List<TimerMode> modes)
+    private void LocalizeBuiltInModeNames(IEnumerable<TimerMode> modes)
     {
         foreach (var m in modes)
         {
@@ -194,25 +198,51 @@
         }
     }
 
+    /// <summary>Toolbelt.Blazor.I18nText auto-updates T's own fields and re-renders this component
+    /// when the active language changes, but _allModes/_currentMode's Name/Description were only
+    /// ever copied from T once (at load or mode-switch time) - so a live language switch (no page
+    /// reload) left them stuck on whatever language was active back then. Re-localizes both the
+    /// switcher list and whichever mode is currently displayed/selected.</summary>
+    private void RefreshLocalizedModeNames()
+    {
+        LocalizeBuiltInModeNames(_allModes);
+        if (_currentMode != null) LocalizeBuiltInModeNames(new[] { _currentMode });
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender) return;
-
-        // Collocated JS module (Focus.razor.js) instead of a global index.html script -
-        // index.html is intentionally left untouched.
-        try
+        if (firstRender)
         {
-            _ambientModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/Focus.razor.js");
-            var prefs = await _ambientModule.InvokeAsync<AmbientPrefs?>("loadAmbientPrefs");
-            if (prefs != null)
+            // Collocated JS module (Focus.razor.js) instead of a global index.html script -
+            // index.html is intentionally left untouched.
+            try
             {
-                _ambientType = prefs.Type ?? "off";
-                _ambientVolume = prefs.Volume is > 0 and <= 1 ? prefs.Volume.Value : 0.3;
+                _ambientModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/Focus.razor.js");
+                var prefs = await _ambientModule.InvokeAsync<AmbientPrefs?>("loadAmbientPrefs");
+                if (prefs != null)
+                {
+                    _ambientType = prefs.Type ?? "off";
+                    _ambientVolume = prefs.Volume is > 0 and <= 1 ? prefs.Volume.Value : 0.3;
+                }
+                await SyncAmbientPlayback();
+                await InvokeAsync(StateHasChanged);
             }
-            await SyncAmbientPlayback();
+            catch { /* Web Audio unavailable or similar - ambient sound is purely optional */ }
+            return;
+        }
+
+        // Catches a live language switch (no page reload) one render after it happens - see
+        // RefreshLocalizedModeNames's doc comment for why this can't just be automatic.
+        // _langWatcher can still be null here: OnInitializedAsync's first await (GetTextTableAsync)
+        // doesn't complete synchronously, so Blazor renders once - firstRender=true - before the
+        // rest of OnInitializedAsync (incl. _langWatcher's assignment) has run; a later render
+        // catches up once it's set (same established gotcha as Stats.razor.cs's heatmap-scroll comment).
+        if (_langWatcher != null && await _langWatcher.CheckChangedAsync())
+        {
+            RefreshLocalizedModeNames();
+            _motivationText = GetRandomMotivation();
             await InvokeAsync(StateHasChanged);
         }
-        catch { /* Web Audio unavailable or similar - ambient sound is purely optional */ }
     }
 
     private async Task ShowMotivationAfterDelay()
