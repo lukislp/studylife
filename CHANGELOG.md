@@ -1,3 +1,11 @@
+## [1.5.6](https://github.com/lukislp/studylife/compare/v1.5.5...v1.5.6) (2026-08-08)
+
+
+### Bug Fixes
+
+* stop session-creating tests from hardcoding a date that drifts stale ([0cceedc](https://github.com/lukislp/studylife/commit/0cceedcf9e278a7733a7b00ea5d87b11dc495777))
+* stop the focus page clipping content when it grows past the viewport ([1184e1a](https://github.com/lukislp/studylife/commit/1184e1ab6570f8dc2a6043ec3a6fe80367eef584))
+
 ## [1.5.5](https://github.com/lukislp/studylife/compare/v1.5.4...v1.5.5) (2026-08-08)
 
 
