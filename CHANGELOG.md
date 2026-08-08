@@ -1,3 +1,10 @@
+## [1.5.8](https://github.com/lukislp/studylife/compare/v1.5.7...v1.5.8) (2026-08-08)
+
+
+### Bug Fixes
+
+* move the ambient-sound toggle next to the timer controls ([02e26f3](https://github.com/lukislp/studylife/commit/02e26f3e5f70835284c3a7526a969e88ce2f07c3))
+
 ## [1.5.7](https://github.com/lukislp/studylife/compare/v1.5.6...v1.5.7) (2026-08-08)
 
 
