@@ -1,20 +1,14 @@
 /* === Focus Page === */
 .focus-page {
-    height: 100%;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    /* "safe" falls back to top-aligned instead of centering when content is taller than the
-       page (a long motivational quote wrapping to 2 lines, a small window) - plain "center"
-       clips/scrolls off equal amounts from BOTH ends in that case, which used to cut the
-       mode-switcher's second row in half. The bare "center" first is a fallback for browsers
-       that don't understand "safe" yet (invalid value = declaration ignored, prior one wins). */
     justify-content: center;
-    justify-content: safe center;
     position: relative;
     gap: 1.5rem;
     padding: 2rem;
-    overflow-y: auto;
+    overflow: hidden;
 }
 
 .focus-bg-gradient {
@@ -101,6 +95,18 @@
 }
 .round-dot.active { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
 .round-dot.done { background: var(--text3); }
+
+/* Groups the timer buttons and the ambient-sound toggle into one row instead of two stacked
+   ones - saves a full row of vertical space on the focus page (deliberately non-scrolling), so
+   a two-line motivational quote has room to grow without pushing the mode switcher off-screen. */
+.timer-controls-row {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+}
 
 .timer-controls {
     display: flex;
