@@ -1,3 +1,10 @@
+## [1.5.5](https://github.com/lukislp/studylife/compare/v1.5.4...v1.5.5) (2026-08-08)
+
+
+### Bug Fixes
+
+* relocalize dashboard/focus/stats/planner/wrapped text on a live language switch ([90d871c](https://github.com/lukislp/studylife/commit/90d871c44ca51e772937eece9f7b2f5f79f9955a))
+
 ## [1.5.4](https://github.com/lukislp/studylife/compare/v1.5.3...v1.5.4) (2026-08-07)
 
 
