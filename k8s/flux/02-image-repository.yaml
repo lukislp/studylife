@@ -1,15 +1,12 @@
-# Scans the private registry for new tags for the StudyLife server image (the same image
-# for web + worker, see .gitlab-ci.yml "docker:server"). Separate from the node-side pull auth in
-# /etc/rancher/k3s/registries.yaml (containerd level, see k8s/setup-node.sh) - Flux queries the
-# registry API itself over HTTP and needs its own secret for that ("studylife-registry-
-# auth", created via kubectl with the same REGISTRY_USER/REGISTRY_PASSWORD, see docs/SCALING.md).
+# Scans GHCR for new tags of the StudyLife server image (the same image for web + worker,
+# see .github/workflows/ci-cd.yml "docker-server" job). Public package - no secretRef needed,
+# Flux can query the registry API anonymously (see docs/SCALING.md for the GitLab-era node-side
+# pull auth this replaced).
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
 metadata:
   name: studylife-server
   namespace: flux-system
 spec:
-  image: registry.example.com/studylife/server
+  image: ghcr.io/lukislp/studylife-server
   interval: 5m
-  secretRef:
-    name: studylife-registry-auth

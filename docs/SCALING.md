@@ -1498,9 +1498,18 @@ outside the machine/repo (password manager, encrypted external storage).
 
 ## GitLab Integration: Kubernetes Agent + Flux Image Automation
 
+**Migrated off GitLab entirely (2026-08).** CI/CD and the GitOps source/registry all moved to
+GitHub Actions + GHCR (`ghcr.io/lukislp/studylife-server`, public package) - `Flux`'s
+`GitRepository`/`ImageRepository` now point at `github.com/lukislp/studylife` / GHCR instead of
+the self-hosted GitLab instance, and the `agentk`/KAS setup described below is no longer in use.
+Kept in this section as historical incident documentation (the race-condition postmortem and KAS
+troubleshooting steps below are still generally useful pattern knowledge for any GitOps/CI setup,
+even though the specific GitLab plumbing they describe is gone) - see the up-to-date `k8s/flux/`
+file list further down for the CURRENT configuration.
+
 On the real Pi cluster, this replaces the previous Watchtower approach (the container polls for
-new image tags itself) with GitOps: GitLab doesn't push anything actively; instead, the cluster
-pulls new image tags itself and commits them back to the repo.
+new image tags itself) with GitOps: the CI system doesn't push anything actively; instead, the
+cluster pulls new image tags itself and commits them back to the repo.
 
 ### Race Condition Found Live: A Version Tag Assigned Twice
 
@@ -1604,13 +1613,13 @@ resource limits were reduced by hand to the ~2-3× request ratio usual here (Flu
 `k8s/flux/`:
 - `00-install.yaml` - the four controllers + their CRDs.
 - `01-git-source.yaml` (`GitRepository`) - points at this repo, needs write access.
-- `02-image-repository.yaml` (`ImageRepository`) - scans
-  `registry.example.com/studylife/server` for tags every 5 minutes.
+- `02-image-repository.yaml` (`ImageRepository`) - scans `ghcr.io/lukislp/studylife-server` for
+  tags every 5 minutes. Public GHCR package - no `secretRef` needed for this one.
 - `03-image-policy.yaml` (`ImagePolicy`) - selects the latest SemVer tag (semantic-release pushes
-  pure SemVer tags with no "v" prefix, e.g., `1.13.3` - other tags like `latest`/`buildcache` are
+  pure SemVer tags with no "v" prefix, e.g., `1.5.8` - other tags like `latest`/`buildcache` are
   not valid SemVer and are automatically ignored).
 - `04-image-update-automation.yaml` (`ImageUpdateAutomation`) - commits the new tag directly to
-  `master` (no intermediate MR step - matches the previous Watchtower behavior). The
+  `main` (no intermediate PR step - matches the previous Watchtower behavior). The
   commit-message template MUST use `.Changed.Objects`, not `.Updated.Images` - the latter was
   removed in Flux 2.9.x (occurred live on the Pi cluster: "template uses removed '.Updated'
   field").
@@ -1645,24 +1654,22 @@ resource limits were reduced by hand to the ~2-3× request ratio usual here (Flu
   `00-install.yaml` and recreates the stock `cluster-admin` binding - the cutover (specifically,
   re-deleting `cluster-reconciler-flux-system`) needs to be redone after any such re-run.
 
-**Two secrets must be created by hand BEFOREHAND** (`bootstrap-cluster.ps1 -WithFlux` checks for
-this and aborts with a clear error message if they're missing - but deliberately never creates
-them itself, since they're real credentials):
+**One secret must be created by hand BEFOREHAND** (`bootstrap-cluster.ps1 -WithFlux` checks for
+this and aborts with a clear error message if it's missing - but deliberately never creates it
+itself, since it's a real credential):
 
 ```bash
-# Git write access - Project Access Token (NOT a Deploy Token, that has no
-# write_repository scope) with role at least "Developer" and scope "write_repository"
-# create (GitLab: Project -> Settings -> Access Tokens), then:
+# Git write access - GitHub Personal Access Token (classic), scope "public_repo" is enough
+# for a public repo (create under github.com -> Settings -> Developer settings -> Personal
+# access tokens), then:
 kubectl -n flux-system create secret generic studylife-git-auth \
-  --from-literal=username=<username shown by the bot user, NOT the token name> \
+  --from-literal=username=<your GitHub username> \
   --from-literal=password=<token value>
-
-# Registry read access - same credentials as in /etc/rancher/k3s/registries.yaml
-# (REGISTRY_USER/REGISTRY_PASSWORD from setup-node.sh):
-kubectl -n flux-system create secret docker-registry studylife-registry-auth \
-  --docker-server=registry.example.com \
-  --docker-username=<user> --docker-password=<password> --docker-email=<anything>
 ```
+
+No separate registry secret is needed anymore - `ghcr.io/lukislp/studylife-server` is a public
+GHCR package, and both `ImageRepository` (scanning) and the node's containerd (pulling) can reach
+it without credentials.
 
 **As a protected branch, `master` is presumably set to "Maintainers only" for push** - but the
 access token's bot user needs push rights for the `ImageUpdateAutomation`. Either create the
