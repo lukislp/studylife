@@ -7,14 +7,35 @@ public partial class Stats
 {
     private List<List<StatsHeatmapCard.HeatDay>> _heatmapWeeks = new();
     private List<string> _heatmapMonthLabels = new();
+    // Per-date course ids behind _heatmapWeeks' day.Courses, same order (desc by hours) - lets
+    // RefreshHeatmapCourseNames rebuild T.CourseFallback names for since-deleted courses on a
+    // language switch without re-scanning `history`.
+    private Dictionary<DateTime, List<int>> _heatmapCourseIdsByDate = new();
     private List<StatsCourseDonutCard.DonutSlice> _donutSlices = new();
+    private List<int> _donutCourseIds = new(); // parallel to _donutSlices, for the same reason as above
     private string _donutGradient = "";
     private double _donutTotalHours;
     private List<StatsRhythmCard.BarPoint> _weekdayHours = new();
+    private double[] _weekdayHoursRaw = new double[7];
+    private double _weekdayMaxRaw = 1;
     private List<StatsRhythmCard.BarPoint> _timeOfDayHours = new();
     private List<List<StatsTimeHeatmapCard.TimeHeatCell>> _timeHeatmapRows = new();
+    // Raw per-(weekday,hour)-cell facts behind _timeHeatmapRows, so RefreshTimeHeatmapRows can
+    // rebuild both the weekday labels and the course-fallback names without re-scanning `history`.
+    private double[,] _timeHeatmapHoursByCell = new double[7, 24];
+    private int[,] _timeHeatmapSessionCountByCell = new int[7, 24];
+    private Dictionary<(int Weekday, int Hour), Dictionary<int, double>> _timeHeatmapCourseHoursByCell = new();
+    private double _timeHeatmapMaxCell = 1;
     private List<StatsMonthlyBreakdownCard.StackedMonth> _monthlyStacks = new();
     private List<StatsMonthlyBreakdownCard.LegendEntry> _monthlyLegend = new();
+    // Raw per-month-per-course hour facts behind _monthlyStacks/_monthlyLegend, so
+    // RefreshMonthlyBreakdown can rebuild the T.Other/T.CourseFallback labels without
+    // re-scanning `history`.
+    private List<DateTime> _monthlyMonthStarts = new();
+    private List<Dictionary<int, double>> _monthlyPerMonthCourseHours = new();
+    private List<int> _monthlyOrderedIds = new();
+    private HashSet<int> _monthlyTopIds = new();
+    private double _monthlyMaxMonthTotal = 1;
 
     private void BuildHeatmap(List<StudySessionDto> history, List<CourseDto> allCourses)
     {
@@ -24,21 +45,25 @@ public partial class Stats
             .ToDictionary(g => g.Key, g => g.Sum(s => (s.EndTime - s.StartTime).TotalHours));
         // Per-course breakdown per day for the click popover - separate from hoursByDate because
         // most days (level 0/-1) don't need it at all and we want to save the GroupBy cost.
-        var byDateAndCourse = history
+        var byDateAndCourseRaw = history
             .GroupBy(s => s.StartTime.Date)
             .ToDictionary(
                 g => g.Key,
                 g => g.GroupBy(s => s.CourseId)
-                    .Select(cg =>
-                    {
-                        var course = allCourses.FirstOrDefault(c => c.Id == cg.Key);
-                        return new StatsHeatmapCard.CourseHours(
-                            course?.Name ?? string.Format(T.CourseFallback, cg.Key),
-                            course?.Color ?? "#888888",
-                            cg.Sum(s => (s.EndTime - s.StartTime).TotalHours));
-                    })
+                    .Select(cg => (CourseId: cg.Key, Hours: cg.Sum(s => (s.EndTime - s.StartTime).TotalHours)))
                     .OrderByDescending(c => c.Hours)
                     .ToList());
+        _heatmapCourseIdsByDate = byDateAndCourseRaw.ToDictionary(kv => kv.Key, kv => kv.Value.Select(c => c.CourseId).ToList());
+        var byDateAndCourse = byDateAndCourseRaw.ToDictionary(
+            kv => kv.Key,
+            kv => kv.Value.Select(c =>
+            {
+                var course = allCourses.FirstOrDefault(x => x.Id == c.CourseId);
+                return new StatsHeatmapCard.CourseHours(
+                    course?.Name ?? string.Format(T.CourseFallback, c.CourseId),
+                    course?.Color ?? "#888888",
+                    c.Hours);
+            }).ToList());
         var sessionCountByDate = history.GroupBy(s => s.StartTime.Date).ToDictionary(g => g.Key, g => g.Count());
 
         var today = DateTime.Today;
@@ -72,6 +97,27 @@ public partial class Stats
         }
     }
 
+    /// <summary>Re-resolves the Name of every course entry in _heatmapWeeks' HeatDay.Courses lists
+    /// from _heatmapCourseIdsByDate + the current T/_allCourses - only T.CourseFallback names for
+    /// since-deleted courses actually change here, real course names are already up to date.</summary>
+    private void RefreshHeatmapCourseNames()
+    {
+        foreach (var week in _heatmapWeeks)
+        {
+            for (var i = 0; i < week.Count; i++)
+            {
+                var day = week[i];
+                if (!_heatmapCourseIdsByDate.TryGetValue(day.Date, out var ids) || ids.Count != day.Courses.Count) continue;
+                var courses = day.Courses.Select((c, idx) =>
+                {
+                    var course = _allCourses.FirstOrDefault(x => x.Id == ids[idx]);
+                    return c with { Name = course?.Name ?? string.Format(T.CourseFallback ?? "", ids[idx]) };
+                }).ToList();
+                week[i] = day with { Courses = courses };
+            }
+        }
+    }
+
     private void BuildDonut(List<StudySessionDto> history, List<CourseDto> allCourses)
     {
         var byCourse = history
@@ -86,6 +132,7 @@ public partial class Stats
         if (total <= 0)
         {
             _donutSlices = new();
+            _donutCourseIds = new();
             _donutGradient = "";
             return;
         }
@@ -127,6 +174,7 @@ public partial class Stats
                     x.Hours, x.Hours / total * 100, x.Sessions.Count, months, recent);
             })
             .ToList();
+        _donutCourseIds = byCourse.Select(x => x.CourseId).ToList();
 
         var parts = new List<string>();
         var cursor = 0.0;
@@ -140,19 +188,29 @@ public partial class Stats
         _donutGradient = "conic-gradient(" + string.Join(", ", parts) + ")";
     }
 
+    /// <summary>Re-resolves the Name of every slice in _donutSlices from _donutCourseIds + the
+    /// current T/_allCourses - only T.CourseFallback names for since-deleted courses change here.</summary>
+    private void RefreshDonutCourseNames()
+    {
+        if (_donutSlices.Count != _donutCourseIds.Count) return;
+        _donutSlices = _donutSlices.Select((slice, i) =>
+        {
+            var course = _allCourses.FirstOrDefault(c => c.Id == _donutCourseIds[i]);
+            return slice with { Name = course?.Name ?? string.Format(T.CourseFallback ?? "", _donutCourseIds[i]) };
+        }).ToList();
+    }
+
     private void BuildWeekdayAndTimeOfDay(List<StudySessionDto> history)
     {
-        var weekdayNames = new[] { T.WeekdayMon, T.WeekdayTue, T.WeekdayWed, T.WeekdayThu, T.WeekdayFri, T.WeekdaySat, T.WeekdaySun };
         var hoursByWeekday = new double[7];
         foreach (var s in history)
         {
             var idx = ((int)s.StartTime.DayOfWeek + 6) % 7; // Monday = 0
             hoursByWeekday[idx] += (s.EndTime - s.StartTime).TotalHours;
         }
-        var maxWeekday = Math.Max(1, hoursByWeekday.Max());
-        _weekdayHours = weekdayNames
-            .Select((name, i) => new StatsRhythmCard.BarPoint(name, hoursByWeekday[i], Math.Min(100, hoursByWeekday[i] / maxWeekday * 100)))
-            .ToList();
+        _weekdayHoursRaw = hoursByWeekday;
+        _weekdayMaxRaw = Math.Max(1, hoursByWeekday.Max());
+        RefreshWeekdayHours();
 
         var buckets = new (string Label, int From, int To)[]
         {
@@ -178,9 +236,19 @@ public partial class Stats
             .ToList();
     }
 
-    private void BuildTimeHeatmap(List<StudySessionDto> history, List<CourseDto> allCourses)
+    /// <summary>Rebuilds _weekdayHours from _weekdayHoursRaw/_weekdayMaxRaw + the current T - the
+    /// underlying per-weekday hour totals don't need re-scanning `history`, only the weekday NAMES
+    /// (T.WeekdayMon..Sun) are stale after a live language switch.</summary>
+    private void RefreshWeekdayHours()
     {
         var weekdayNames = new[] { T.WeekdayMon, T.WeekdayTue, T.WeekdayWed, T.WeekdayThu, T.WeekdayFri, T.WeekdaySat, T.WeekdaySun };
+        _weekdayHours = weekdayNames
+            .Select((name, i) => new StatsRhythmCard.BarPoint(name, _weekdayHoursRaw[i], Math.Min(100, _weekdayHoursRaw[i] / _weekdayMaxRaw * 100)))
+            .ToList();
+    }
+
+    private void BuildTimeHeatmap(List<StudySessionDto> history, List<CourseDto> allCourses)
+    {
         // Same "attribute the whole session to its start hour" bucketing BuildWeekdayAndTimeOfDay
         // already uses (no minute-by-minute splitting across hour boundaries) - kept consistent
         // with that sibling method rather than introducing a more precise but inconsistent approach.
@@ -211,19 +279,32 @@ public partial class Stats
         foreach (var h in hoursByCell)
             if (h > maxCell) maxCell = h;
 
+        _timeHeatmapHoursByCell = hoursByCell;
+        _timeHeatmapSessionCountByCell = sessionCountByCell;
+        _timeHeatmapCourseHoursByCell = byCellAndCourse;
+        _timeHeatmapMaxCell = maxCell;
+        RefreshTimeHeatmapRows();
+    }
+
+    /// <summary>Rebuilds _timeHeatmapRows from the raw per-cell hour/session/course facts computed
+    /// in BuildTimeHeatmap, using the CURRENT T and _allCourses - covers both the weekday labels
+    /// and any T.CourseFallback names for since-deleted courses, without re-scanning `history`.</summary>
+    private void RefreshTimeHeatmapRows()
+    {
+        var weekdayNames = new[] { T.WeekdayMon, T.WeekdayTue, T.WeekdayWed, T.WeekdayThu, T.WeekdayFri, T.WeekdaySat, T.WeekdaySun };
         _timeHeatmapRows = new();
         for (var w = 0; w < 7; w++)
         {
             var row = new List<StatsTimeHeatmapCard.TimeHeatCell>();
             for (var h = 0; h < 24; h++)
             {
-                var hours = hoursByCell[w, h];
-                var level = hours <= 0 ? 0 : hours < maxCell * 0.25 ? 1 : hours < maxCell * 0.5 ? 2 : hours < maxCell * 0.75 ? 3 : 4;
-                var courses = byCellAndCourse.TryGetValue((w, h), out var perCourse)
+                var hours = _timeHeatmapHoursByCell[w, h];
+                var level = hours <= 0 ? 0 : hours < _timeHeatmapMaxCell * 0.25 ? 1 : hours < _timeHeatmapMaxCell * 0.5 ? 2 : hours < _timeHeatmapMaxCell * 0.75 ? 3 : 4;
+                var courses = _timeHeatmapCourseHoursByCell.TryGetValue((w, h), out var perCourse)
                     ? perCourse
                         .Select(kv =>
                         {
-                            var course = allCourses.FirstOrDefault(c => c.Id == kv.Key);
+                            var course = _allCourses.FirstOrDefault(c => c.Id == kv.Key);
                             return new StatsHeatmapCard.CourseHours(
                                 course?.Name ?? string.Format(T.CourseFallback ?? "", kv.Key),
                                 course?.Color ?? "#888888",
@@ -232,7 +313,7 @@ public partial class Stats
                         .OrderByDescending(c => c.Hours)
                         .ToList()
                     : new List<StatsHeatmapCard.CourseHours>();
-                row.Add(new StatsTimeHeatmapCard.TimeHeatCell(weekdayNames[w], h, hours, level, sessionCountByCell[w, h], courses));
+                row.Add(new StatsTimeHeatmapCard.TimeHeatCell(weekdayNames[w], h, hours, level, _timeHeatmapSessionCountByCell[w, h], courses));
             }
             _timeHeatmapRows.Add(row);
         }
@@ -241,7 +322,6 @@ public partial class Stats
     private void BuildMonthlyStacks(List<StudySessionDto> history, List<CourseDto> allCourses)
     {
         const int monthCount = 6;
-        const string otherColor = "#7a7a8c";
         var today = DateTime.Today;
         var monthStarts = Enumerable.Range(0, monthCount)
             .Select(i => new DateTime(today.Year, today.Month, 1).AddMonths(-(monthCount - 1 - i)))
@@ -264,28 +344,42 @@ public partial class Stats
 
         var orderedIds = totalsByCourse.OrderByDescending(kv => kv.Value).Select(kv => kv.Key).ToList();
         var topIds = orderedIds.Take(6).ToHashSet();
-
-        string NameFor(int id) => allCourses.FirstOrDefault(c => c.Id == id)?.Name ?? string.Format(T.CourseFallback, id);
-        string ColorFor(int id) => allCourses.FirstOrDefault(c => c.Id == id)?.Color ?? "#888888";
-
-        _monthlyLegend = orderedIds.Where(id => topIds.Contains(id)).Select(id => new StatsMonthlyBreakdownCard.LegendEntry(NameFor(id), ColorFor(id))).ToList();
-        if (orderedIds.Any(id => !topIds.Contains(id)))
-            _monthlyLegend.Add(new StatsMonthlyBreakdownCard.LegendEntry(T.Other, otherColor));
-
         var maxMonthTotal = Math.Max(1, perMonthCourseHours.Select(d => d.Values.Sum()).DefaultIfEmpty(0).Max());
 
-        _monthlyStacks = monthStarts.Select((m, i) =>
+        _monthlyMonthStarts = monthStarts;
+        _monthlyPerMonthCourseHours = perMonthCourseHours;
+        _monthlyOrderedIds = orderedIds;
+        _monthlyTopIds = topIds;
+        _monthlyMaxMonthTotal = maxMonthTotal;
+        RefreshMonthlyBreakdown();
+    }
+
+    /// <summary>Rebuilds _monthlyLegend/_monthlyStacks from the raw per-month-per-course hour facts
+    /// computed in BuildMonthlyStacks, using the CURRENT T and _allCourses - covers both the
+    /// T.Other long-tail label and T.CourseFallback names for since-deleted courses, without
+    /// re-scanning `history`.</summary>
+    private void RefreshMonthlyBreakdown()
+    {
+        const string otherColor = "#7a7a8c";
+        string NameFor(int id) => _allCourses.FirstOrDefault(c => c.Id == id)?.Name ?? string.Format(T.CourseFallback ?? "", id);
+        string ColorFor(int id) => _allCourses.FirstOrDefault(c => c.Id == id)?.Color ?? "#888888";
+
+        _monthlyLegend = _monthlyOrderedIds.Where(id => _monthlyTopIds.Contains(id)).Select(id => new StatsMonthlyBreakdownCard.LegendEntry(NameFor(id), ColorFor(id))).ToList();
+        if (_monthlyOrderedIds.Any(id => !_monthlyTopIds.Contains(id)))
+            _monthlyLegend.Add(new StatsMonthlyBreakdownCard.LegendEntry(T.Other, otherColor));
+
+        _monthlyStacks = _monthlyMonthStarts.Select((m, i) =>
         {
-            var dict = perMonthCourseHours[i];
+            var dict = _monthlyPerMonthCourseHours[i];
             var segments = new List<StatsMonthlyBreakdownCard.StackSegment>();
-            foreach (var id in orderedIds.Where(id => topIds.Contains(id)))
+            foreach (var id in _monthlyOrderedIds.Where(id => _monthlyTopIds.Contains(id)))
             {
                 if (!dict.TryGetValue(id, out var hours) || hours <= 0) continue;
-                segments.Add(new StatsMonthlyBreakdownCard.StackSegment(NameFor(id), ColorFor(id), hours, hours / maxMonthTotal * 100));
+                segments.Add(new StatsMonthlyBreakdownCard.StackSegment(NameFor(id), ColorFor(id), hours, hours / _monthlyMaxMonthTotal * 100));
             }
-            var otherHours = orderedIds.Where(id => !topIds.Contains(id)).Sum(id => dict.GetValueOrDefault(id));
+            var otherHours = _monthlyOrderedIds.Where(id => !_monthlyTopIds.Contains(id)).Sum(id => dict.GetValueOrDefault(id));
             if (otherHours > 0)
-                segments.Add(new StatsMonthlyBreakdownCard.StackSegment(T.Other, otherColor, otherHours, otherHours / maxMonthTotal * 100));
+                segments.Add(new StatsMonthlyBreakdownCard.StackSegment(T.Other, otherColor, otherHours, otherHours / _monthlyMaxMonthTotal * 100));
 
             var total = dict.Values.Sum();
             return new StatsMonthlyBreakdownCard.StackedMonth(m.ToString("MMM"), segments, $"{(int)total}h {(int)((total - (int)total) * 60)}m");

@@ -26,6 +26,9 @@ public partial class Wrapped
 
     private sealed record WeekdayInfo(string Label, double Hours);
     private WeekdayInfo? _busiestWeekday;
+    private int _busiestWeekdayIdx = -1;
+
+    private I18nLanguageWatcher _langWatcher = null!;
 
     // Chronotype highlight: compares hours before 7am ("early bird") with hours from 10pm
     // ("night owl") in the recap period - the same hour boundaries as the achievement categories
@@ -49,6 +52,8 @@ public partial class Wrapped
     protected override async Task OnInitializedAsync()
     {
         T = await I18nText.GetTextTableAsync<I18nText.WrappedText>(this);
+        _langWatcher = new I18nLanguageWatcher(I18nText);
+        await _langWatcher.InitAsync();
 
         var settings = await State.GetSettingsAsync();
         var allCourses = await State.GetCoursesAsync();
@@ -91,7 +96,6 @@ public partial class Wrapped
                 byCourse.Hours);
         }
 
-        var weekdayNames = new[] { T.WeekdayMon, T.WeekdayTue, T.WeekdayWed, T.WeekdayThu, T.WeekdayFri, T.WeekdaySat, T.WeekdaySun };
         var hoursByWeekday = new double[7];
         foreach (var s in periodHistory)
             hoursByWeekday[((int)s.StartTime.DayOfWeek + 6) % 7] += (s.EndTime - s.StartTime).TotalHours;
@@ -99,12 +103,39 @@ public partial class Wrapped
         for (var i = 1; i < 7; i++)
             if (hoursByWeekday[i] > hoursByWeekday[bestWeekdayIdx]) bestWeekdayIdx = i;
         if (hoursByWeekday[bestWeekdayIdx] > 0)
-            _busiestWeekday = new WeekdayInfo(weekdayNames[bestWeekdayIdx] ?? "", hoursByWeekday[bestWeekdayIdx]);
+        {
+            _busiestWeekdayIdx = bestWeekdayIdx;
+            _busiestWeekday = new WeekdayInfo(WeekdayName(bestWeekdayIdx), hoursByWeekday[bestWeekdayIdx]);
+        }
 
         _earlyBirdHours = periodHistory.Where(s => s.StartTime.Hour < 7).Sum(s => (s.EndTime - s.StartTime).TotalHours);
         _nightOwlHours = periodHistory.Where(s => s.StartTime.Hour >= 22).Sum(s => (s.EndTime - s.StartTime).TotalHours);
 
         await BuildAchievementCountAsync(settings, activeCourseIds, allCourses, allTimeHistory);
+    }
+
+    private string WeekdayName(int idx)
+    {
+        string?[] names = [T.WeekdayMon, T.WeekdayTue, T.WeekdayWed, T.WeekdayThu, T.WeekdayFri, T.WeekdaySat, T.WeekdaySun];
+        return names[idx] ?? "";
+    }
+
+    /// <summary>_busiestWeekday.Label was copied from T once at load time, so a live language
+    /// switch (no page reload) left it stuck on whatever language was active back then - same
+    /// root cause/fix shape as Focus.razor's RefreshLocalizedModeNames. The heavy history fetch/
+    /// aggregation isn't redone, just the label for the already-known busiest weekday index.</summary>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) return;
+
+        // _langWatcher can still be null here: OnInitializedAsync's first await doesn't complete
+        // synchronously, so Blazor renders once - firstRender=true - before the rest of
+        // OnInitializedAsync (incl. _langWatcher's assignment) has run; a later render catches up.
+        if (_langWatcher != null && await _langWatcher.CheckChangedAsync() && _busiestWeekday != null && _busiestWeekdayIdx >= 0)
+        {
+            _busiestWeekday = _busiestWeekday with { Label = WeekdayName(_busiestWeekdayIdx) };
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     // Mirrors the inputs that Index.Achievements.razor.cs' BuildAchievements uses for the same 13

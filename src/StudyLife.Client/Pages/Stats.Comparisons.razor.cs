@@ -8,10 +8,28 @@ public partial class Stats
 {
     private List<StatsCourseComparisonChartCard.WeekGroup> _courseComparisonWeeks = new();
     private List<StatsCourseComparisonChartCard.LegendEntry> _courseComparisonLegend = new();
+    // Raw facts behind _courseComparisonWeeks/_courseComparisonLegend, so RefreshCourseComparisonLabels
+    // can rebuild the T.CourseFallback names without re-scanning `history`.
+    private List<int> _courseComparisonTopCourseIds = new();
+    private List<DateTime> _courseComparisonWeekStarts = new();
+    private List<Dictionary<int, double>> _courseComparisonPerWeekPerCourse = new();
+    private double _courseComparisonMaxHours = 1;
     private List<StatsNotesCorrelationCard.WeekPair> _notesCorrelationWeeks = new();
     private List<StatsCourseBalanceCard.BalanceRow> _courseBalanceRows = new();
     private List<StatsSemesterComparisonCard.MetricRow> _semesterComparisonMetrics = new();
     private string _semesterComparisonCurrentLabel = "";
+    // Raw facts behind _semesterComparisonMetrics/_semesterComparisonCurrentLabel, so
+    // RefreshSemesterComparisonLabels can rebuild the labels without re-scanning `allTimeHistory`.
+    private bool _semesterComparisonHasData;
+    private double _semesterCompCurHours;
+    private decimal? _semesterCompCurGrade;
+    private int _semesterCompCurEcts;
+    private double _semesterCompPrevHours;
+    private double? _semesterCompPrevGrade;
+    private double _semesterCompPrevEcts;
+    private int _semesterCompCurrentSemester;
+    private double _semesterCompMaxHoursScale;
+    private double _semesterCompMaxEctsScale;
 
     /// <summary>
     /// Multiple courses as a grouped bar chart (one cluster per week, one bar per course)
@@ -41,17 +59,10 @@ public partial class Stats
 
         if (topCourseIds.Count == 0)
         {
-            _courseComparisonWeeks = new();
-            _courseComparisonLegend = new();
+            _courseComparisonTopCourseIds = new();
+            RefreshCourseComparisonLabels();
             return;
         }
-
-        string NameFor(int id) => allCourses.FirstOrDefault(c => c.Id == id)?.Name ?? string.Format(T.CourseFallback ?? "", id);
-        string ColorFor(int id) => allCourses.FirstOrDefault(c => c.Id == id)?.Color ?? "#888888";
-
-        _courseComparisonLegend = topCourseIds
-            .Select(id => new StatsCourseComparisonChartCard.LegendEntry(NameFor(id), ColorFor(id)))
-            .ToList();
 
         var perWeekPerCourse = weekStarts.Select(ws =>
         {
@@ -65,11 +76,38 @@ public partial class Stats
         // so bar heights remain genuinely comparable between weeks and courses.
         var maxHours = Math.Max(1.0, perWeekPerCourse.SelectMany(d => d.Values).DefaultIfEmpty(0).Max());
 
-        _courseComparisonWeeks = weekStarts.Select((ws, i) =>
+        _courseComparisonTopCourseIds = topCourseIds;
+        _courseComparisonWeekStarts = weekStarts;
+        _courseComparisonPerWeekPerCourse = perWeekPerCourse;
+        _courseComparisonMaxHours = maxHours;
+        RefreshCourseComparisonLabels();
+    }
+
+    /// <summary>Rebuilds _courseComparisonWeeks/_courseComparisonLegend from the raw per-week-
+    /// per-course hour facts computed in BuildCourseComparison, using the CURRENT T and
+    /// _allCourses - covers T.CourseFallback names for since-deleted courses without re-scanning
+    /// `history`.</summary>
+    private void RefreshCourseComparisonLabels()
+    {
+        if (_courseComparisonTopCourseIds.Count == 0)
         {
-            var bars = topCourseIds
+            _courseComparisonWeeks = new();
+            _courseComparisonLegend = new();
+            return;
+        }
+
+        string NameFor(int id) => _allCourses.FirstOrDefault(c => c.Id == id)?.Name ?? string.Format(T.CourseFallback ?? "", id);
+        string ColorFor(int id) => _allCourses.FirstOrDefault(c => c.Id == id)?.Color ?? "#888888";
+
+        _courseComparisonLegend = _courseComparisonTopCourseIds
+            .Select(id => new StatsCourseComparisonChartCard.LegendEntry(NameFor(id), ColorFor(id)))
+            .ToList();
+
+        _courseComparisonWeeks = _courseComparisonWeekStarts.Select((ws, i) =>
+        {
+            var bars = _courseComparisonTopCourseIds
                 .Select(id => new StatsCourseComparisonChartCard.CourseBar(
-                    NameFor(id), ColorFor(id), perWeekPerCourse[i][id], Math.Min(100, perWeekPerCourse[i][id] / maxHours * 100)))
+                    NameFor(id), ColorFor(id), _courseComparisonPerWeekPerCourse[i][id], Math.Min(100, _courseComparisonPerWeekPerCourse[i][id] / _courseComparisonMaxHours * 100)))
                 .ToList();
             return new StatsCourseComparisonChartCard.WeekGroup(ws.ToString("dd.MM."), bars);
         }).ToList();
@@ -130,6 +168,7 @@ public partial class Stats
     private void BuildSemesterComparison(List<StudySessionDto> allTimeHistory, List<CourseGoalDto> goals, List<CourseDto> allCourses, UserSettings settings)
     {
         _semesterComparisonMetrics = new();
+        _semesterComparisonHasData = false;
 
         var semesterByCourse = allCourses.ToDictionary(c => c.Id, c => c.Semester);
 
@@ -179,6 +218,26 @@ public partial class Stats
         double? prevGrade = prevGrades.Count > 0 ? prevGrades.Average() : null;
         var prevEcts = previous.Average(p => (double)p.Ects);
 
+        _semesterComparisonHasData = true;
+        _semesterCompCurHours = curHours;
+        _semesterCompCurGrade = curGrade;
+        _semesterCompCurEcts = curEcts;
+        _semesterCompPrevHours = prevHours;
+        _semesterCompPrevGrade = prevGrade;
+        _semesterCompPrevEcts = prevEcts;
+        _semesterCompCurrentSemester = currentSemester;
+        _semesterCompMaxHoursScale = Math.Max(1.0, Math.Max(curHours, prevHours));
+        _semesterCompMaxEctsScale = Math.Max(1.0, Math.Max(curEcts, prevEcts));
+        RefreshSemesterComparisonLabels();
+    }
+
+    /// <summary>Rebuilds _semesterComparisonMetrics/_semesterComparisonCurrentLabel from the raw
+    /// hours/grade/ECTS facts computed in BuildSemesterComparison, using the CURRENT T - avoids
+    /// re-scanning `allTimeHistory` on a live language switch.</summary>
+    private void RefreshSemesterComparisonLabels()
+    {
+        if (!_semesterComparisonHasData) return;
+
         static string HoursLabel(double h) => $"{(int)h}h {(int)((h - (int)h) * 60)}m";
         static string GradeLabel(double? g) => g.HasValue
             ? g.Value.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ',')
@@ -187,18 +246,17 @@ public partial class Stats
         // missing grade = "–" with an empty bar instead of a misleading zero value.
         static double GradeBar(double? g) => g.HasValue ? Math.Clamp((5.0 - g.Value) / 4.0 * 100, 0, 100) : 0;
 
-        var maxHoursScale = Math.Max(1.0, Math.Max(curHours, prevHours));
-        var maxEctsScale = Math.Max(1.0, Math.Max(curEcts, prevEcts));
+        var curGrade = _semesterCompCurGrade.HasValue ? (double)_semesterCompCurGrade.Value : (double?)null;
         _semesterComparisonMetrics = new()
         {
-            new(T.SemesterCompHours ?? "", HoursLabel(curHours), curHours / maxHoursScale * 100,
-                HoursLabel(prevHours), prevHours / maxHoursScale * 100),
-            new(T.SemesterCompGrade ?? "", GradeLabel(curGrade.HasValue ? (double)curGrade.Value : null), GradeBar(curGrade.HasValue ? (double)curGrade.Value : null),
-                GradeLabel(prevGrade), GradeBar(prevGrade)),
-            new(T.SemesterCompEcts ?? "", curEcts.ToString(), curEcts / maxEctsScale * 100,
-                prevEcts.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ','), prevEcts / maxEctsScale * 100),
+            new(T.SemesterCompHours ?? "", HoursLabel(_semesterCompCurHours), _semesterCompCurHours / _semesterCompMaxHoursScale * 100,
+                HoursLabel(_semesterCompPrevHours), _semesterCompPrevHours / _semesterCompMaxHoursScale * 100),
+            new(T.SemesterCompGrade ?? "", GradeLabel(curGrade), GradeBar(curGrade),
+                GradeLabel(_semesterCompPrevGrade), GradeBar(_semesterCompPrevGrade)),
+            new(T.SemesterCompEcts ?? "", _semesterCompCurEcts.ToString(), _semesterCompCurEcts / _semesterCompMaxEctsScale * 100,
+                _semesterCompPrevEcts.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ','), _semesterCompPrevEcts / _semesterCompMaxEctsScale * 100),
         };
-        _semesterComparisonCurrentLabel = string.Format(T.SemesterComparisonCurrentFormat ?? "", currentSemester);
+        _semesterComparisonCurrentLabel = string.Format(T.SemesterComparisonCurrentFormat ?? "", _semesterCompCurrentSemester);
     }
 
     /// <summary>
