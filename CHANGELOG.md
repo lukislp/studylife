@@ -1,3 +1,10 @@
+## [1.5.7](https://github.com/lukislp/studylife/compare/v1.5.6...v1.5.7) (2026-08-08)
+
+
+### Bug Fixes
+
+* defuse the other hardcoded session date before it drifts stale too ([86447ec](https://github.com/lukislp/studylife/commit/86447ec955d0e00f7e72003754bd80d8894df274))
+
 ## [1.5.6](https://github.com/lukislp/studylife/compare/v1.5.5...v1.5.6) (2026-08-08)
 
 
