@@ -73,8 +73,8 @@ public class ApiContractCasingTests : IClassFixture<CustomWebApplicationFactory>
         {
             CourseId = 1,
             CourseName = $"CasingAuditCourse-{Guid.NewGuid():N}",
-            StartTime = new DateTime(2026, 8, 1, 10, 0, 0),
-            EndTime = new DateTime(2026, 8, 1, 11, 0, 0),
+            StartTime = DateTime.Today.AddDays(-1).AddHours(10),
+            EndTime = DateTime.Today.AddDays(-1).AddHours(11),
             Topic = "Casing-Audit",
             IsCompleted = false,
             TimerModeId = 1,
@@ -233,8 +233,8 @@ public class BackupExportCasingTests : IClassFixture<CustomWebApplicationFactory
         {
             CourseId = 999,
             CourseName = uniqueCourseName,
-            StartTime = new DateTime(2026, 8, 1, 10, 0, 0),
-            EndTime = new DateTime(2026, 8, 1, 11, 0, 0),
+            StartTime = DateTime.Today.AddDays(-1).AddHours(10),
+            EndTime = DateTime.Today.AddDays(-1).AddHours(11),
             Topic = "Export-Casing-Bug-Test",
             IsCompleted = false,
             TimerModeId = 1,

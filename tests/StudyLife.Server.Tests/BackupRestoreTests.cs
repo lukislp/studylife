@@ -26,8 +26,8 @@ public class BackupRestoreTests
     {
         CourseId = 999,
         CourseName = courseName,
-        StartTime = new DateTime(2026, 8, 1, 10, 0, 0),
-        EndTime = new DateTime(2026, 8, 1, 11, 0, 0),
+        StartTime = DateTime.Today.AddDays(-1).AddHours(10),
+        EndTime = DateTime.Today.AddDays(-1).AddHours(11),
         Topic = "Restore-Test",
         IsCompleted = false,
         TimerModeId = 1,
