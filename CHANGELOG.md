@@ -1,3 +1,10 @@
+## [1.5.9](https://github.com/lukislp/studylife/compare/v1.5.8...v1.5.9) (2026-08-08)
+
+
+### Bug Fixes
+
+* point Flux GitOps at GitHub/GHCR instead of the retired GitLab instance ([3df1a5c](https://github.com/lukislp/studylife/commit/3df1a5cdb5aef337e9fb2683d4d06e2c7bb7fb0c))
+
 ## [1.5.8](https://github.com/lukislp/studylife/compare/v1.5.7...v1.5.8) (2026-08-08)
 
 
