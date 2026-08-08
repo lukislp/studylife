@@ -1,14 +1,20 @@
 /* === Focus Page === */
 .focus-page {
-    min-height: 100vh;
+    height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
+    /* "safe" falls back to top-aligned instead of centering when content is taller than the
+       page (a long motivational quote wrapping to 2 lines, a small window) - plain "center"
+       clips/scrolls off equal amounts from BOTH ends in that case, which used to cut the
+       mode-switcher's second row in half. The bare "center" first is a fallback for browsers
+       that don't understand "safe" yet (invalid value = declaration ignored, prior one wins). */
     justify-content: center;
+    justify-content: safe center;
     position: relative;
     gap: 1.5rem;
     padding: 2rem;
-    overflow: hidden;
+    overflow-y: auto;
 }
 
 .focus-bg-gradient {
@@ -128,7 +134,7 @@
 .btn-playpause.running { color: var(--accent); border-color: var(--accent); }
 
 .focus-motivation {
-    max-width: 480px;
+    max-width: min(640px, 90vw);
     text-align: center;
     position: relative;
     z-index: 1;
