@@ -1,8 +1,8 @@
 # Selects the "newest" tag by SemVer from the tags scanned by ImageRepository. semantic-
-# release pushes plain SemVer tags without a "v" prefix (e.g. "1.13.3", see .gitlab-ci.yml NEXT_VERSION)
-# - Flux's standard SemVer policy parses exactly this format. Other existing tags ("latest",
-# "buildcache" from the Buildx cache) are not valid SemVer and are automatically ignored,
-# no extra filterTags needed.
+# release pushes plain SemVer tags without a "v" prefix (e.g. "1.5.8", see
+# .github/workflows/ci-cd.yml NEXT_VERSION) - Flux's standard SemVer policy parses exactly this
+# format. Other existing tags ("latest", "buildcache" from the Buildx cache) are not valid SemVer
+# and are automatically ignored, no extra filterTags needed.
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImagePolicy
 metadata:

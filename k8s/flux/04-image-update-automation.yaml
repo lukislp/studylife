@@ -1,16 +1,16 @@
-# Automatically commits new image tags to master (directly, no MR - a deliberate decision:
+# Automatically commits new image tags to main (directly, no PR - a deliberate decision:
 # matches the previous Watchtower behavior, no manual click per release). Patches ONLY
 # the two marker comments in k8s/04-web.yaml/05-worker.yaml (# {"$imagepolicy": ...}) -
 # NOT the rest of the k8s/ folder, which continues to contain placeholders and is only
 # resolved via bootstrap-cluster.ps1 (see docs/SCALING.md, scoping decision).
 #
 # "[skip ci]" in the commit template is MANDATORY, not a style choice - found in production: without
-# it, every plain image-tag commit (no app code changed) still triggered the entire GitLab pipeline
+# it, every plain image-tag commit (no app code changed) still triggered the entire CI pipeline
 # again (build+tests+Docker rebuild+push of the same, already published image) - pure
-# waste, since .gitlab-ci.yml has no path filters. semantic-release's own
+# waste, since ci-cd.yml has no path filters. semantic-release's own
 # "chore(release): ... [skip ci]" commits already got this right, this template only caught up
-# afterwards. Affects ONLY the GitLab CI trigger, not Flux's own reconciliation (which
-# watches the Git ref directly, independent of GitLab CI).
+# afterwards. Affects ONLY the CI trigger, not Flux's own reconciliation (which
+# watches the Git ref directly, independent of GitHub Actions).
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageUpdateAutomation
 metadata:
@@ -24,7 +24,7 @@ spec:
   git:
     checkout:
       ref:
-        branch: master
+        branch: main
     commit:
       author:
         email: flux@studylife.local
