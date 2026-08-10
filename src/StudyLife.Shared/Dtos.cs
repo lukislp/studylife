@@ -357,6 +357,28 @@ public class HaApiKeyGenerateResponseDto
 }
 
 /// <summary>
+/// Response of GET /api/settings/ai-api-key: status of the long-lived per-user API key for the
+/// studylife-ai integration - separate slot from the Home Assistant key (see
+/// AuthUserEntity.AiApiKeyHash), same "existence + timestamp only, never the plaintext" shape as
+/// HaApiKeyStatusDto.
+/// </summary>
+public class AiApiKeyStatusDto
+{
+    public bool HasKey { get; set; }
+    public DateTime? CreatedAt { get; set; }
+}
+
+/// <summary>
+/// Response of POST /api/settings/ai-api-key/generate - same one-time-plaintext shape as
+/// HaApiKeyGenerateResponseDto, for the separate studylife-ai key slot.
+/// </summary>
+public class AiApiKeyGenerateResponseDto
+{
+    public string ApiKey { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
+}
+
+/// <summary>
 /// Response of GET /api/system/calendar-token (session-authenticated via the normal
 /// /api gate): the permanent calendar token for the ICS subscription URL on the setup page - replaces
 /// the former unauthenticated bootstrap-key endpoint, which additionally delivered the (by now

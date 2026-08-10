@@ -20,9 +20,9 @@ namespace StudyLife.Server.Services;
 ///
 /// The demo user gets a CalendarToken (the ICS feed is a deliberately shown-off feature;
 /// the token only ever grants GET /api/sessions/ics - verified against the gate) but NO
-/// ApiKeyHash: API keys are meant to be completely unusable on a demo instance, and with a
-/// null hash every submitted key fails the gate with 401. Generating one is a POST and
-/// therefore blocked by the demo write-block middleware anyway.
+/// ApiKeyHash/AiApiKeyHash: API keys (either slot) are meant to be completely unusable on a
+/// demo instance, and with a null hash every submitted key fails the gate with 401.
+/// Generating one is a POST and therefore blocked by the demo write-block middleware anyway.
 /// </summary>
 public static class DemoSeeder
 {
@@ -66,6 +66,7 @@ public static class DemoSeeder
             CalendarToken = AuthSessionService.GenerateToken(),
             CalendarTokenCreatedAt = now,
             ApiKeyHash = null, // see class summary - API keys must stay unusable on the demo
+            AiApiKeyHash = null,
         };
         db.AuthUsers.Add(user);
         await db.SaveChangesAsync(); // materialize user.Id for all rows below
