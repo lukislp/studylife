@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/lukislp/studylife/compare/v1.5.9...v1.6.0) (2026-08-10)
+
+
+### Features
+
+* **server:** add dedicated studylife-ai API key slot ([f9b856a](https://github.com/lukislp/studylife/commit/f9b856a22f6ddfd658d478bda5801247a785dc48))
+
 ## [1.5.9](https://github.com/lukislp/studylife/compare/v1.5.8...v1.5.9) (2026-08-08)
 
 
