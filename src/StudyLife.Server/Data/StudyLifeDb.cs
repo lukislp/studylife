@@ -104,6 +104,9 @@ public class StudyLifeDb : DbContext
         // X-Api-Key - same primary lookup path as AuthSessions.TokenHash, hence
         // also uniquely indexed (multiple NULLs are allowed in SQLite unique indexes).
         modelBuilder.Entity<AuthUserEntity>().HasIndex(u => u.ApiKeyHash).IsUnique();
+        // Per-user API key for studylife-ai: separate slot from ApiKeyHash (see
+        // AuthUserEntity.AiApiKeyHash), same uniqueness reasoning.
+        modelBuilder.Entity<AuthUserEntity>().HasIndex(u => u.AiApiKeyHash).IsUnique();
         // Calendar feed (security fix): resolves the user analogous to the API key, instead of
         // (as before, global CalendarTokenProvider) giving every caller the same,
         // user-independent token - see AuthUserEntity.CalendarToken.
@@ -243,6 +246,16 @@ public class AuthUserEntity
     /// <summary>Timestamp of the (last) generation - only for the "key active since ..." display
     /// in the setup UI, has no expiration semantics whatsoever.</summary>
     public DateTime? ApiKeyCreatedAt { get; set; }
+    /// <summary>
+    /// SHA-256 hash of the per-user API key for the studylife-ai integration - same shape and
+    /// same reasoning as <see cref="ApiKeyHash"/> (long-lived, no rotation), but a SEPARATE
+    /// credential/slot: generating or revoking this one must not affect Home Assistant's key
+    /// and vice versa (independent blast radius if one integration's key ever leaks).
+    /// Null = no key generated, or revoked.
+    /// </summary>
+    public string? AiApiKeyHash { get; set; }
+    /// <summary>Timestamp of the (last) generation of <see cref="AiApiKeyHash"/> - display-only, same as ApiKeyCreatedAt.</summary>
+    public DateTime? AiApiKeyCreatedAt { get; set; }
     /// <summary>
     /// Permanent, per-user token for the subscribable ICS calendar feed
     /// (GET /api/sessions/ics?calendarToken=...). Unlike ApiKeyHash, stored in PLAINTEXT

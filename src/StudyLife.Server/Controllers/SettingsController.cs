@@ -238,6 +238,56 @@ public class SettingsController : ControllerBase
         return NoContent();
     }
 
+    // Same three-endpoint shape as the ha-api-key group above, for the separate studylife-ai
+    // key slot (AuthUserEntity.AiApiKeyHash) - deliberately duplicated rather than
+    // parameterized into one generic "integration key" mechanism: there are exactly two
+    // integrations today, and a real per-integration state machine (open/rotate/revoke on a
+    // shared code path) would be more indirection than the current need justifies. Revisit if
+    // a third integration shows up.
+
+    /// <summary>Status for the setup card: does an AI-integration key exist, and since when?
+    /// Same "never the plaintext" rule as GetHaApiKeyStatus.</summary>
+    [HttpGet("ai-api-key")]
+    public async Task<ActionResult<AiApiKeyStatusDto>> GetAiApiKeyStatus()
+    {
+        if (SessionUser is not int userId) return Unauthorized();
+        var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+        return new AiApiKeyStatusDto { HasKey = user.AiApiKeyHash != null, CreatedAt = user.AiApiKeyCreatedAt };
+    }
+
+    /// <summary>Generates a new long-lived per-user API key for studylife-ai (immediately
+    /// replaces any existing one in this slot only - ApiKeyHash/Home Assistant is untouched).
+    /// Same one-time-plaintext shape as GenerateHaApiKey.</summary>
+    [HttpPost("ai-api-key/generate")]
+    public async Task<ActionResult<AiApiKeyGenerateResponseDto>> GenerateAiApiKey()
+    {
+        if (SessionUser is not int userId) return Unauthorized();
+        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+
+        var key = AuthSessionService.GenerateToken();
+        user.AiApiKeyHash = AuthSessionService.HashToken(key);
+        user.AiApiKeyCreatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+        return new AiApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = user.AiApiKeyCreatedAt.Value };
+    }
+
+    /// <summary>Permanently revokes the studylife-ai API key (hash is deleted) - studylife-ai
+    /// gets 401 from the next request onward. Home Assistant's key is untouched.</summary>
+    [HttpPost("ai-api-key/revoke")]
+    public async Task<IActionResult> RevokeAiApiKey()
+    {
+        if (SessionUser is not int userId) return Unauthorized();
+        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+
+        user.AiApiKeyHash = null;
+        user.AiApiKeyCreatedAt = null;
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
     /// <summary>AuthUserId of the request, but ONLY if it came via a real validated passkey
     /// session (same pattern as AuthController.SessionAuthUserId) - API-key requests
     /// don't set the SessionItemKey and are rejected here.</summary>

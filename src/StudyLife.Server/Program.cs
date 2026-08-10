@@ -514,9 +514,11 @@ if (string.Equals(app.Configuration["DEMO_MODE"], "true", StringComparison.Ordin
 // API gate, always active (phase 3): every /api request needs EITHER a valid
 // passkey session token (X-Session-Token, phase 2 - the normal path of the browser client)
 // OR a per-user API key (X-Api-Key header or ?apiKey= query string for URL-only
-// consumers) - the latter is the long-lived key, NEVER automatically rotated, for Home Assistant
-// and similar non-interactive integrations (AuthUserEntity.ApiKeyHash, generated via the
-// setup page). The former global, monthly-rotating key (ApiKeyProvider) and its
+// consumers) - the latter is a long-lived key, NEVER automatically rotated, for non-interactive
+// integrations. Two independent slots exist per user: AuthUserEntity.ApiKeyHash (Home
+// Assistant) and AuthUserEntity.AiApiKeyHash (studylife-ai), both generated via the setup
+// page - separate slots so one integration's key leaking/rotating never affects the other.
+// The former global, monthly-rotating key (ApiKeyProvider) and its
 // unauthenticated bootstrap-key endpoint have been completely removed - the browser client
 // authenticates exclusively via its session, an API key always identifies
 // exactly ONE user (no more "first user" fallback for key requests).
@@ -617,12 +619,14 @@ app.Use(async (context, next) =>
         }
         else
         {
-            // Without a session token: per-user API key (Home Assistant & co). The hash of the
-            // submitted plaintext key is matched against AuthUsers.ApiKeyHash (unique
-            // index) - a match authenticates AND identifies the user in one
-            // step, there is no more "first user" fallback for key requests.
+            // Without a session token: per-user API key. The hash of the submitted plaintext
+            // key is matched against AuthUsers.ApiKeyHash (Home Assistant & co) OR
+            // AuthUsers.AiApiKeyHash (studylife-ai) - two separate slots (see
+            // AuthUserEntity.AiApiKeyHash) so revoking/rotating one integration's key can
+            // never affect the other, but either one authenticates AND identifies the user in
+            // one step here, there is no more "first user" fallback for key requests.
             // Deliberately NO SessionItemKey item: session-required endpoints (passkey
-            // management, ha-api-key/*) remain off-limits for pure key consumers.
+            // management, ha-api-key/*, ai-api-key/*) remain off-limits for pure key consumers.
             var provided = context.Request.Headers["X-Api-Key"].FirstOrDefault()
                 ?? context.Request.Query["apiKey"].FirstOrDefault();
             if (string.IsNullOrEmpty(provided))
@@ -632,7 +636,8 @@ app.Use(async (context, next) =>
             }
             var keyHash = AuthSessionService.HashToken(provided);
             var keyDb = context.RequestServices.GetRequiredService<StudyLifeDb>();
-            var keyOwner = await keyDb.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.ApiKeyHash == keyHash);
+            var keyOwner = await keyDb.AuthUsers.AsNoTracking()
+                .FirstOrDefaultAsync(u => u.ApiKeyHash == keyHash || u.AiApiKeyHash == keyHash);
             if (keyOwner is null)
             {
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;

@@ -262,6 +262,11 @@
              HTTP calls), see SetupHomeAssistantCard. -->
         <SetupHomeAssistantCard />
 
+        <!-- studylife-ai: separate long-lived per-user API key slot (AiApiKeyHash), same shape
+             as the Home Assistant key but independently generated/revoked - see
+             SetupAiIntegrationCard. -->
+        <SetupAiIntegrationCard />
+
         @if (_rawBackupSupported)
         {
             <!-- Backup & export. DownloadDatabaseButtonText/PasswordPlaceholder/-Hint only apply to

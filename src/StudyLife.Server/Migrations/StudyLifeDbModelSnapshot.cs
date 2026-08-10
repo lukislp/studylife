@@ -56,6 +56,12 @@ namespace StudyLife.Server.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime?>("AiApiKeyCreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AiApiKeyHash")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("ApiKeyCreatedAt")
                         .HasColumnType("TEXT");
 
@@ -76,6 +82,9 @@ namespace StudyLife.Server.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AiApiKeyHash")
+                        .IsUnique();
 
                     b.HasIndex("ApiKeyHash")
                         .IsUnique();
