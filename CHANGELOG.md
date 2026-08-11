@@ -1,3 +1,11 @@
+# [1.7.0](https://github.com/lukislp/studylife/compare/v1.6.0...v1.7.0) (2026-08-11)
+
+
+### Features
+
+* add the studylife-ai proxy (token signing, client, controller) ([97d0008](https://github.com/lukislp/studylife/commit/97d0008bfbf848d14a3d5d8189ba4fd08bce6c21))
+* register/revoke a user's AiApiKey with studylife-ai on generate/revoke ([c4de44f](https://github.com/lukislp/studylife/commit/c4de44fc903508d38998c8757b738957e1adda0d))
+
 # [1.6.0](https://github.com/lukislp/studylife/compare/v1.5.9...v1.6.0) (2026-08-10)
 
 
