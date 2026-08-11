@@ -1,3 +1,11 @@
+# [1.9.0](https://github.com/lukislp/studylife/compare/v1.8.1...v1.9.0) (2026-08-11)
+
+
+### Features
+
+* **client:** AI chat/agent modal, opened from the FAB speed dial ([941029b](https://github.com/lukislp/studylife/commit/941029b937692c72a8347e8b737896d97740c200))
+* **shared:** DTOs for the studylife-ai chat/agent proxy endpoints ([c9777e7](https://github.com/lukislp/studylife/commit/c9777e7c5a8362155dbfc0b0f6b440b6aaf96e1d))
+
 ## [1.8.1](https://github.com/lukislp/studylife/compare/v1.8.0...v1.8.1) (2026-08-11)
 
 
