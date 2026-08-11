@@ -65,6 +65,27 @@ spec:
         # for probes/Uptime Kuma.
         - { protocol: TCP, port: 8443 }
 ---
+# studylife-ai calls StudyLife's own REST API server-to-server (ingestion, /agent tools) via
+# cluster-internal Service DNS on plain HTTP, not the public https://studylife.heim.lan
+# hostname - found live: studylife-ai's container has no reason to trust StudyLife's internal
+# cert-manager CA (a private CA, not publicly trusted), so the public HTTPS hostname failed
+# with CERTIFICATE_VERIFY_FAILED. See studylife-ai's own k8s/01-config.yaml for the matching
+# STUDYLIFE_API_BASE_URL value and docs/decisions.md "M5 - Deployment design" for the full story.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-studylife-ai-to-web
+  namespace: studylife-scale
+spec:
+  podSelector: { matchLabels: { app: studylife-web } }
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: studylife-ai } }
+          podSelector: { matchLabels: { app: studylife-ai } }
+      ports:
+        - { protocol: TCP, port: 8080 }
+---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
