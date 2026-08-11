@@ -379,6 +379,76 @@ public class AiApiKeyGenerateResponseDto
 }
 
 /// <summary>
+/// Request/response shapes for POST /api/ai/chat, /api/ai/agent, /api/ai/agent/confirm - the
+/// AiProxyController passes bodies through byte-for-byte, so these must match studylife-ai's own
+/// pydantic schemas exactly (field names, including its snake_case ones - see
+/// src/studylife_ai/schemas/chat.py and agent.py in the studylife-ai repo). Multi-word fields
+/// need an explicit JsonPropertyName: no built-in naming policy converts PascalCase to
+/// snake_case, only casing (PascalCase/camelCase), so "ThreadId" would never auto-match
+/// "thread_id" without one.
+/// </summary>
+public class AiChatMessageDto
+{
+    public string Role { get; set; } = "";
+    public string Content { get; set; } = "";
+}
+
+public class AiChatRequestDto
+{
+    public List<AiChatMessageDto> Messages { get; set; } = new();
+}
+
+/// <summary>One parsed SSE `data: {...}` line from /api/ai/chat - exactly one of
+/// Delta/Sources/Error is set per event, mirroring the three event shapes documented in
+/// studylife-ai's api/chat.py.</summary>
+public class AiChatStreamEventDto
+{
+    public string? Delta { get; set; }
+    public List<AiChatSourceDto>? Sources { get; set; }
+    public string? Error { get; set; }
+}
+
+public class AiChatSourceDto
+{
+    [System.Text.Json.Serialization.JsonPropertyName("content_type")]
+    public string ContentType { get; set; } = "";
+    [System.Text.Json.Serialization.JsonPropertyName("entity_id")]
+    public int EntityId { get; set; }
+    public string Title { get; set; } = "";
+    [System.Text.Json.Serialization.JsonPropertyName("course_id")]
+    public int? CourseId { get; set; }
+}
+
+public class AiAgentRequestDto
+{
+    public string Message { get; set; } = "";
+}
+
+public class AiPendingActionDto
+{
+    public string Tool { get; set; } = "";
+    public Dictionary<string, object> Args { get; set; } = new();
+    public string Description { get; set; } = "";
+    [System.Text.Json.Serialization.JsonPropertyName("thread_id")]
+    public string ThreadId { get; set; } = "";
+}
+
+public class AiAgentResponseDto
+{
+    public string? Answer { get; set; }
+    [System.Text.Json.Serialization.JsonPropertyName("pending_actions")]
+    public List<AiPendingActionDto> PendingActions { get; set; } = new();
+}
+
+public class AiConfirmRequestDto
+{
+    [System.Text.Json.Serialization.JsonPropertyName("thread_id")]
+    public string ThreadId { get; set; } = "";
+    public string Decision { get; set; } = "";
+    public string? Message { get; set; }
+}
+
+/// <summary>
 /// Response of GET /api/system/calendar-token (session-authenticated via the normal
 /// /api gate): the permanent calendar token for the ICS subscription URL on the setup page - replaces
 /// the former unauthenticated bootstrap-key endpoint, which additionally delivered the (by now
