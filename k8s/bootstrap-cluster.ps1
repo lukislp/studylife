@@ -226,11 +226,14 @@ if ($clusterInfo -match "cluster_state:ok") {
 if ($WithFlux) {
     Write-Host ""
     Write-Host "=== [8/8] Flux (GitOps image updates) ==="
-    # Both secrets must be created by hand BEFOREHAND (real credentials, see
+    # All three secrets must be created by hand BEFOREHAND (real credentials, see
     # docs/SCALING.md) - this script deliberately never creates them itself.
-    kubectl -n flux-system get secret studylife-git-auth, studylife-registry-auth 2>$null
+    # studylife-ai-git-auth (M5, studylife-ai onboarding - see studylife-ai's own
+    # docs/decisions.md "M5 - Deployment design") is a SEPARATE PAT from studylife-git-auth,
+    # scoped to lukislp/studylife-ai only, not this repo.
+    kubectl -n flux-system get secret studylife-git-auth, studylife-registry-auth, studylife-ai-git-auth 2>$null
     if ($LASTEXITCODE -ne 0) {
-        throw "Secrets 'studylife-git-auth'/'studylife-registry-auth' are missing in namespace 'flux-system' - see docs/SCALING.md, Flux section."
+        throw "Secrets 'studylife-git-auth'/'studylife-registry-auth'/'studylife-ai-git-auth' are missing in namespace 'flux-system' - see docs/SCALING.md, Flux section."
     }
     kubectl apply -f "$K8sDir/flux/00-install.yaml"
     Wait-Deployment -Namespace "flux-system" -Name "source-controller"
@@ -238,6 +241,7 @@ if ($WithFlux) {
     Wait-Deployment -Namespace "flux-system" -Name "image-reflector-controller"
     Wait-Deployment -Namespace "flux-system" -Name "image-automation-controller"
     kubectl apply -f "$K8sDir/flux/01-git-source.yaml" -f "$K8sDir/flux/02-image-repository.yaml" -f "$K8sDir/flux/03-image-policy.yaml" -f "$K8sDir/flux/04-image-update-automation.yaml" -f "$K8sDir/flux/05-kustomization.yaml"
+    kubectl apply -f "$K8sDir/flux/06-studylife-ai-git-source.yaml" -f "$K8sDir/flux/07-studylife-ai-image-repository.yaml" -f "$K8sDir/flux/08-studylife-ai-image-policy.yaml" -f "$K8sDir/flux/09-studylife-ai-image-update-automation.yaml" -f "$K8sDir/flux/10-studylife-ai-kustomization.yaml"
 }
 
 # From here on, only informational output - none of these lines should still cause the script to

@@ -1,0 +1,33 @@
+# Same pattern as 04-image-update-automation.yaml, but sourceRef/checkout/push all target the
+# studylife-ai GitRepository (06-studylife-ai-git-source.yaml) - the commit lands in
+# studylife-ai's own repo, where its k8s/04-app.yaml marker comment
+# (# {"$imagepolicy": "flux-system:studylife-ai"}) lives, not this one.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageUpdateAutomation
+metadata:
+  name: studylife-ai
+  namespace: flux-system
+spec:
+  interval: 5m
+  sourceRef:
+    kind: GitRepository
+    name: studylife-ai
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      author:
+        email: flux@studylife.local
+        name: fluxcdbot
+      messageTemplate: |
+        chore(image): auto-update [skip ci]
+        {{ range $resource, $changes := .Changed.Objects -}}
+        - {{ $resource.Kind }} {{ $resource.Name }}
+        {{- range $_, $change := $changes }}
+            {{ $change.OldValue }} -> {{ $change.NewValue }}
+        {{- end }}
+        {{ end -}}
+  update:
+    path: ./k8s
+    strategy: Setters
