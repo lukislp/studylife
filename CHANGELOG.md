@@ -1,3 +1,10 @@
+## [1.9.1](https://github.com/lukislp/studylife/compare/v1.9.0...v1.9.1) (2026-08-11)
+
+
+### Bug Fixes
+
+* **k8s:** allow studylife-ai to reach studylife-web internally ([8cd35cd](https://github.com/lukislp/studylife/commit/8cd35cd52395e561040b59fc32917681af4052c3))
+
 # [1.9.0](https://github.com/lukislp/studylife/compare/v1.8.1...v1.9.0) (2026-08-11)
 
 
