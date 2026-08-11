@@ -16,14 +16,16 @@ public class SettingsController : ControllerBase
     private readonly IDistributedCache _cache;
     private readonly SettingsCacheVersion _settingsCacheVersion;
     private readonly ICurrentUserAccessor _currentUser;
+    private readonly AiProxyClient _aiProxyClient;
 
     public SettingsController(StudyLifeDb db, IDistributedCache cache, SettingsCacheVersion settingsCacheVersion,
-        ICurrentUserAccessor currentUser)
+        ICurrentUserAccessor currentUser, AiProxyClient aiProxyClient)
     {
         _db = db;
         _cache = cache;
         _settingsCacheVersion = settingsCacheVersion;
         _currentUser = currentUser;
+        _aiProxyClient = aiProxyClient;
     }
 
     [HttpGet]
@@ -258,9 +260,15 @@ public class SettingsController : ControllerBase
 
     /// <summary>Generates a new long-lived per-user API key for studylife-ai (immediately
     /// replaces any existing one in this slot only - ApiKeyHash/Home Assistant is untouched).
-    /// Same one-time-plaintext shape as GenerateHaApiKey.</summary>
+    /// Same one-time-plaintext shape as GenerateHaApiKey. Also registers the plaintext with
+    /// studylife-ai (AiProxyClient.RegisterKeyAsync) at this one moment it exists - see
+    /// docs/decisions.md "M4.5 Multi-user support" in the studylife-ai repo,
+    /// "Registration-on-generate": studylife-ai cannot retrieve it later, only the hash is
+    /// ever stored here. A failed registration doesn't fail key generation itself (an
+    /// studylife-ai outage shouldn't block this StudyLife-native feature) - the user just
+    /// can't use /agent or get their notes ingested until it's retried.</summary>
     [HttpPost("ai-api-key/generate")]
-    public async Task<ActionResult<AiApiKeyGenerateResponseDto>> GenerateAiApiKey()
+    public async Task<ActionResult<AiApiKeyGenerateResponseDto>> GenerateAiApiKey(CancellationToken ct)
     {
         if (SessionUser is not int userId) return Unauthorized();
         var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
@@ -270,13 +278,16 @@ public class SettingsController : ControllerBase
         user.AiApiKeyHash = AuthSessionService.HashToken(key);
         user.AiApiKeyCreatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
+        await _aiProxyClient.RegisterKeyAsync(userId, key, ct);
         return new AiApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = user.AiApiKeyCreatedAt.Value };
     }
 
     /// <summary>Permanently revokes the studylife-ai API key (hash is deleted) - studylife-ai
-    /// gets 401 from the next request onward. Home Assistant's key is untouched.</summary>
+    /// gets 401 from the next request onward. Home Assistant's key is untouched. Also tells
+    /// studylife-ai to forget its registered copy (AiProxyClient.RevokeKeyAsync) - without
+    /// this, a revoked-here key would keep working there indefinitely.</summary>
     [HttpPost("ai-api-key/revoke")]
-    public async Task<IActionResult> RevokeAiApiKey()
+    public async Task<IActionResult> RevokeAiApiKey(CancellationToken ct)
     {
         if (SessionUser is not int userId) return Unauthorized();
         var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
@@ -285,6 +296,7 @@ public class SettingsController : ControllerBase
         user.AiApiKeyHash = null;
         user.AiApiKeyCreatedAt = null;
         await _db.SaveChangesAsync();
+        await _aiProxyClient.RevokeKeyAsync(userId, ct);
         return NoContent();
     }
 
