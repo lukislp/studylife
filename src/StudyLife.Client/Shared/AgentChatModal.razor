@@ -2,6 +2,7 @@
 @using StudyLife.Shared
 @inject HttpClient Http
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
+@inject IJSRuntime JS
 
 @* AI chat/agent, opened via the fifth FAB action button (MainLayout.razor) - same modal
    structure as PasskeyDeviceManager. Two independent tabs sharing one modal: "Chat" (read-only
@@ -50,7 +51,7 @@
 
                     @if (_mode == Mode.Chat)
                     {
-                        <div class="acm-messages">
+                        <div class="acm-messages" id="acm-messages">
                             @if (_chatMessages.Count == 0)
                             {
                                 <p class="ss-desc">@T.EmptyChatHint</p>
@@ -81,7 +82,7 @@
                     }
                     else
                     {
-                        <div class="acm-messages">
+                        <div class="acm-messages" id="acm-messages">
                             @if (_agentTurns.Count == 0)
                             {
                                 <p class="ss-desc">@T.EmptyAgentHint</p>
@@ -166,9 +167,21 @@
 
     private bool HasPendingTurn => _agentTurns.Count > 0 && _agentTurns[^1] is { Answer: null, PendingActions.Count: > 0 };
 
+    private bool _pendingScroll;
+
     protected override async Task OnInitializedAsync()
     {
         T = await I18nText.GetTextTableAsync<I18nText.AgentChatText>(this);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_pendingScroll)
+        {
+            _pendingScroll = false;
+            try { await JS.InvokeVoidAsync("scrollElementToBottom", "acm-messages"); }
+            catch { /* modal may have closed mid-render, best-effort */ }
+        }
     }
 
     protected override async Task OnParametersSetAsync()
@@ -254,6 +267,7 @@
         var assistantMessage = new AiChatMessageDto { Role = "assistant", Content = "" };
         _chatMessages.Add(assistantMessage);
         _chatStreaming = true;
+        _pendingScroll = true;
         StateHasChanged();
 
         try
@@ -291,6 +305,7 @@
                 if (evt?.Delta is { Length: > 0 } delta)
                 {
                     assistantMessage.Content += delta;
+                    _pendingScroll = true;
                     StateHasChanged();
                 }
                 else if (evt?.Sources is { } sources)
@@ -323,6 +338,7 @@
         var turn = new AgentTurn { Question = text };
         _agentTurns.Add(turn);
         _agentWorking = true;
+        _pendingScroll = true;
         StateHasChanged();
 
         try
@@ -389,6 +405,7 @@
             turn.PendingActions.Clear();
             turn.Answer = dto.Answer ?? "";
         }
+        _pendingScroll = true;
     }
 
     private async Task CloseAsync() => await OnClose.InvokeAsync();
