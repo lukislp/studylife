@@ -1,3 +1,10 @@
+## [1.9.3](https://github.com/lukislp/studylife/compare/v1.9.2...v1.9.3) (2026-08-11)
+
+
+### Bug Fixes
+
+* **client:** auto-scroll AI chat/agent messages into view ([b720cf6](https://github.com/lukislp/studylife/commit/b720cf643eeb9cff02946cf58b310055abc97900))
+
 ## [1.9.2](https://github.com/lukislp/studylife/compare/v1.9.1...v1.9.2) (2026-08-11)
 
 
