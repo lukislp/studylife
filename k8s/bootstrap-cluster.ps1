@@ -226,14 +226,14 @@ if ($clusterInfo -match "cluster_state:ok") {
 if ($WithFlux) {
     Write-Host ""
     Write-Host "=== [8/8] Flux (GitOps image updates) ==="
-    # All three secrets must be created by hand BEFOREHAND (real credentials, see
+    # Both secrets must be created by hand BEFOREHAND (real credentials, see
     # docs/SCALING.md) - this script deliberately never creates them itself.
-    # studylife-ai-git-auth (M5, studylife-ai onboarding - see studylife-ai's own
-    # docs/decisions.md "M5 - Deployment design") is a SEPARATE PAT from studylife-git-auth,
-    # scoped to lukislp/studylife-ai only, not this repo.
-    kubectl -n flux-system get secret studylife-git-auth, studylife-registry-auth, studylife-ai-git-auth 2>$null
+    # studylife-git-auth is reused for the studylife-ai GitRepository too (M5, studylife-ai
+    # onboarding - see studylife-ai's own docs/decisions.md "M5 - Deployment design")
+    # [owner: user] - no separate secret needed.
+    kubectl -n flux-system get secret studylife-git-auth, studylife-registry-auth 2>$null
     if ($LASTEXITCODE -ne 0) {
-        throw "Secrets 'studylife-git-auth'/'studylife-registry-auth'/'studylife-ai-git-auth' are missing in namespace 'flux-system' - see docs/SCALING.md, Flux section."
+        throw "Secrets 'studylife-git-auth'/'studylife-registry-auth' are missing in namespace 'flux-system' - see docs/SCALING.md, Flux section."
     }
     kubectl apply -f "$K8sDir/flux/00-install.yaml"
     Wait-Deployment -Namespace "flux-system" -Name "source-controller"
