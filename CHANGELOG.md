@@ -1,3 +1,10 @@
+## [1.9.2](https://github.com/lukislp/studylife/compare/v1.9.1...v1.9.2) (2026-08-11)
+
+
+### Bug Fixes
+
+* **k8s:** allow studylife-ai to reach studylife-web on 8443, not 8080 ([376362f](https://github.com/lukislp/studylife/commit/376362f84c6ce2531d954a95df68ba870c458ae2))
+
 ## [1.9.1](https://github.com/lukislp/studylife/compare/v1.9.0...v1.9.1) (2026-08-11)
 
 
