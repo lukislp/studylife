@@ -107,6 +107,11 @@
             if (el) el.scrollTop = 0;
         }
 
+        function scrollElementToBottom(id) {
+            var el = document.getElementById(id);
+            if (el) el.scrollTop = el.scrollHeight;
+        }
+
         function scrollElementToRight(id) {
             var el = document.getElementById(id);
             if (el) el.scrollLeft = el.scrollWidth;
