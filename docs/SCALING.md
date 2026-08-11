@@ -1802,3 +1802,36 @@ in running Postgres itself. CNPG is the right call when Kubernetes is the target
 and you deliberately want to run the database in the same cluster (the learning goal of this
 branch) - for purely production requirements without this learning aspect, "managed DB outside
 the cluster" is usually the more pragmatic default choice.
+
+## Multi-Repo GitOps: Onboarding studylife-ai as a Second Flux Source
+
+`studylife-ai` (a separate Python microservice + repo, see its own `docs/decisions.md`) needed
+Flux-managed continuous deployment too, without standing up a second Flux install. Flux supports
+this natively: multiple `GitRepository` sources can coexist under the same `flux-system`
+install, each with its own `ImageRepository`/`ImagePolicy`/`ImageUpdateAutomation`/`Kustomization`
+chain - `k8s/flux/06`-`10-studylife-ai-*.yaml` mirror `01`-`05` exactly, just pointing at
+`github.com/lukislp/studylife-ai.git` and a new `studylife-ai-git-auth` PAT (scoped to that repo
+only, separate from `studylife-git-auth`) instead of this repo.
+
+**The one real constraint that shaped the split**: `06-reconciler-rbac.yaml`'s least-privilege
+`ClusterRole` only grants `kustomize-controller` permissions on `configmaps`/
+`persistentvolumeclaims`/`services`/`deployments`/`replicasets` (read-only) - explicitly NOT
+`namespaces`, `secrets`, or `networkpolicies`. That's exactly why `05-kustomization.yaml` here
+only ever applied `k8s/flux/deploy/` (a curated subset), never the whole `k8s/` folder - and the
+same RBAC boundary applies identically to a second onboarded repo, regardless of which repo it
+is. `studylife-ai`'s own `k8s/flux-deploy/kustomization.yaml` therefore also only references its
+`ConfigMap`/Qdrant/app `Deployment+PVC+Service` files - its `Namespace`/`Secret`/
+`NetworkPolicy` files stay bootstrap-only, applied once by hand, matching this repo's own split.
+No RBAC changes were needed here at all: the resource kinds studylife-ai's Flux-managed subset
+uses were already covered by the existing `ClusterRole`.
+
+**Local validation caveat found while building this**: `kubectl kustomize` (and by extension
+`kustomize build` standalone) refuses by default to resolve a `kustomization.yaml`'s `resources:`
+entries that point OUTSIDE its own directory (`../../04-web.yaml`, the same pattern this repo's
+own `k8s/flux/deploy/kustomization.yaml` already uses in production) - `security; file '...' is
+not in or below '...'`. This is a `kustomize` CLI default (`--load-restrictor
+LoadRestrictionsNone` overrides it locally for a sanity check), not a Flux behavior - Flux's
+`kustomize-controller` treats the whole Git checkout as one trust boundary and reconciles the
+existing cross-directory pattern here in production without issue, confirmed by the live
+`chore(image): auto-update` commits already in this repo's history. Worth knowing before
+assuming a local `kubectl kustomize` failure means the manifests are broken.
