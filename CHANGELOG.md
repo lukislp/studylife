@@ -1,3 +1,10 @@
+## [1.8.1](https://github.com/lukislp/studylife/compare/v1.8.0...v1.8.1) (2026-08-11)
+
+
+### Bug Fixes
+
+* **k8s:** reuse studylife-git-auth for studylife-ai instead of a new PAT ([e0ea772](https://github.com/lukislp/studylife/commit/e0ea7727306dd3572cb0d9291f30d2c81fd514c4))
+
 # [1.8.0](https://github.com/lukislp/studylife/compare/v1.7.0...v1.8.0) (2026-08-11)
 
 
