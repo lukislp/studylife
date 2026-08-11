@@ -122,21 +122,23 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
     // ---------- GET /api/sessions ----------
 
     [Fact]
-    public async Task GetAll_ReturnsSessionsWithinDefaultWindow_ExcludesOutOfWindowSessions()
+    public async Task GetAll_ReturnsSessionsRegardlessOfHowFarInThePastOrFuture()
     {
-        // Window per the controller: UtcNow-7d to UtcNow+90d.
-        var inWindow = await CreateAsync(ValidSession(courseId: 21, start: DateTime.UtcNow.AddDays(5)));
-        var beforeWindow = await CreateAsync(ValidSession(courseId: 22, start: DateTime.UtcNow.AddDays(-10)));
-        var afterWindow = await CreateAsync(ValidSession(courseId: 23, start: DateTime.UtcNow.AddDays(120)));
+        // GetAll() used to be windowed to UtcNow-7d/+90d - the calendar view fetches this once
+        // and does all week/day navigation client-side (see AppStateService.cs), so that window
+        // just hid sessions outside it rather than limiting what the client requested.
+        var nearby = await CreateAsync(ValidSession(courseId: 21, start: DateTime.UtcNow.AddDays(5)));
+        var farInPast = await CreateAsync(ValidSession(courseId: 22, start: DateTime.UtcNow.AddDays(-400)));
+        var farInFuture = await CreateAsync(ValidSession(courseId: 23, start: DateTime.UtcNow.AddDays(400)));
 
         var response = await _client.GetAsync("/api/sessions");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var sessions = await response.Content.ReadFromJsonAsync<List<StudySessionDto>>();
         Assert.NotNull(sessions);
 
-        Assert.Contains(sessions!, s => s.Id == inWindow.Id);
-        Assert.DoesNotContain(sessions!, s => s.Id == beforeWindow.Id);
-        Assert.DoesNotContain(sessions!, s => s.Id == afterWindow.Id);
+        Assert.Contains(sessions!, s => s.Id == nearby.Id);
+        Assert.Contains(sessions!, s => s.Id == farInPast.Id);
+        Assert.Contains(sessions!, s => s.Id == farInFuture.Id);
     }
 
     // ---------- GET /api/sessions/history ----------
@@ -436,9 +438,9 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
     [Fact]
     public async Task ImportIcs_ValidFileWithTwoEvents_ReturnsParsedCandidatesAndCreatesNoSessions()
     {
-        // Unique titles + dates WITHIN the GetAll time window (UtcNow +/-7/90 days) -
-        // so the "nothing was created" check below is actually meaningful
-        // (outside the window it would be trivially true, regardless of whether the endpoint wrongly creates anything).
+        // Unique titles + dates so the "nothing was created" check below is actually meaningful
+        // (a coincidental title/date clash with an existing session would make it trivially
+        // true regardless of whether the endpoint wrongly creates anything).
         var tag = Guid.NewGuid().ToString("N")[..8];
         var day1 = DateTime.UtcNow.AddDays(5);
         var day2 = DateTime.UtcNow.AddDays(6);

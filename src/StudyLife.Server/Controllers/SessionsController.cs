@@ -18,9 +18,9 @@ public class SessionsController : ControllerBase
     private readonly VapidKeys _vapidKeys;
     private readonly ICurrentUserAccessor _currentUser;
 
-    private static readonly Func<StudyLifeDb, DateTime, DateTime, IAsyncEnumerable<StudySessionDto>> _compiledGetAll =
-        EF.CompileAsyncQuery((StudyLifeDb db, DateTime from, DateTime to) =>
-            db.Sessions.AsNoTracking().Where(s => s.StartTime >= from && s.StartTime <= to).Select(s => ToDto(s)));
+    private static readonly Func<StudyLifeDb, IAsyncEnumerable<StudySessionDto>> _compiledGetAll =
+        EF.CompileAsyncQuery((StudyLifeDb db) =>
+            db.Sessions.AsNoTracking().Select(s => ToDto(s)));
 
     private static readonly Func<StudyLifeDb, DateTime, bool, DateTime, IAsyncEnumerable<StudySessionDto>> _compiledGetHistory =
         EF.CompileAsyncQuery((StudyLifeDb db, DateTime from, bool onlyCompleted, DateTime now) =>
@@ -50,10 +50,12 @@ public class SessionsController : ControllerBase
         // up within about one poll cycle.
         return _cache.GetOrSetAsync<IEnumerable<StudySessionDto>>(this, cacheKey, TimeSpan.FromSeconds(15), async () =>
         {
-            var from = DateTime.UtcNow.AddDays(-7);
-            var to = DateTime.UtcNow.AddDays(90);
+            // No date bounds - the client fetches this once and does all week/day navigation
+            // itself (see AppStateService.cs), so a server-side window here just hides sessions
+            // outside it. Was -7/+90 days originally; changed to unbounded so the calendar
+            // shows the user's full session history, not just recent/near-future ones.
             var result = new List<StudySessionDto>();
-            await foreach (var dto in _compiledGetAll(_db, from, to)) result.Add(dto);
+            await foreach (var dto in _compiledGetAll(_db)) result.Add(dto);
             return result;
         });
     }
@@ -156,10 +158,12 @@ public class SessionsController : ControllerBase
     }
 
     /// <summary>
-    /// Subscribable iCalendar feed of the same sessions as <see cref="GetAll"/>,
-    /// for Google/Apple Calendar & co. Times are written as "floating" (no TZID,
-    /// no Z suffix) because StartTime/EndTime are naive local time -
-    /// see docs/ARCHITECTURE.md for the app's timezone handling.
+    /// Subscribable iCalendar feed for Google/Apple Calendar & co. - deliberately still
+    /// windowed to -7/+90 days (unlike <see cref="GetAll"/>, which now returns full history for
+    /// the app's own calendar view): an external calendar app resyncing this feed doesn't need
+    /// years of past sessions, and keeping it bounded avoids ballooning the feed as history
+    /// grows. Times are written as "floating" (no TZID, no Z suffix) because StartTime/EndTime
+    /// are naive local time - see docs/ARCHITECTURE.md for the app's timezone handling.
     /// </summary>
     [HttpGet("ics")]
     public async Task<IActionResult> GetIcs()
