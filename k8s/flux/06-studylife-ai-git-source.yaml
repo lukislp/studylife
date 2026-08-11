@@ -2,10 +2,12 @@
 # repo) - studylife-ai is a separate repo/service, onboarded onto the same Flux install rather
 # than standing up a second one, see studylife-ai's docs/decisions.md "M5 - Deployment design".
 # Needs write access (not just read), same reasoning as 01-git-source.yaml: image-automation-
-# controller pushes commits for new image tags directly to main. The secret
-# "studylife-ai-git-auth" is NOT created here (no plaintext token in the repo) - a separate
-# GitHub PAT scoped to lukislp/studylife-ai (not the same token as studylife-git-auth, which is
-# scoped to this repo only), created via kubectl, mirroring 01-git-source.yaml's own note.
+# controller pushes commits for new image tags directly to main. Reuses the existing
+# "studylife-git-auth" secret rather than a new one [owner: user] - it's a classic GitHub PAT
+# (public_repo scope), which GitHub never scopes to a single repo anyway, so it already covers
+# lukislp/studylife-ai too. Trade-off accepted: both GitRepository sources now share one
+# credential, so rotating/revoking it affects both at once - acceptable for a personal homelab
+# setup, not something a stricter multi-tenant setup should copy without reconsidering.
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: GitRepository
 metadata:
@@ -17,4 +19,4 @@ spec:
   ref:
     branch: main
   secretRef:
-    name: studylife-ai-git-auth
+    name: studylife-git-auth

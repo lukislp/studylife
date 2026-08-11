@@ -1810,8 +1810,12 @@ Flux-managed continuous deployment too, without standing up a second Flux instal
 this natively: multiple `GitRepository` sources can coexist under the same `flux-system`
 install, each with its own `ImageRepository`/`ImagePolicy`/`ImageUpdateAutomation`/`Kustomization`
 chain - `k8s/flux/06`-`10-studylife-ai-*.yaml` mirror `01`-`05` exactly, just pointing at
-`github.com/lukislp/studylife-ai.git` and a new `studylife-ai-git-auth` PAT (scoped to that repo
-only, separate from `studylife-git-auth`) instead of this repo.
+`github.com/lukislp/studylife-ai.git` instead of this repo. It reuses the existing
+`studylife-git-auth` secret rather than a new PAT [owner: user] - a classic GitHub PAT
+(`public_repo` scope) is never scoped to a single repo by GitHub design anyway, so it already
+covered `lukislp/studylife-ai` too; the trade-off (both `GitRepository` sources now share one
+credential - rotating/revoking it affects both at once) was accepted deliberately for this
+personal homelab setup, not something a stricter multi-tenant setup should copy unexamined.
 
 **The one real constraint that shaped the split**: `06-reconciler-rbac.yaml`'s least-privilege
 `ClusterRole` only grants `kustomize-controller` permissions on `configmaps`/
