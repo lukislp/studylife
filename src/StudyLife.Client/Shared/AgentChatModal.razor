@@ -1,0 +1,395 @@
+@using System.Text.Json
+@using StudyLife.Shared
+@inject HttpClient Http
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+@* AI chat/agent, opened via the fifth FAB action button (MainLayout.razor) - same modal
+   structure as PasskeyDeviceManager. Two independent tabs sharing one modal: "Chat" (read-only
+   RAG Q&A over the user's notes, streamed token by token) and "Agent" (can also create study
+   sessions / save notes, gated behind an explicit approve/reject step per studylife-ai's
+   confirm flow). If the user has never generated their studylife-ai key, shows an inline
+   activate button instead (see studylife-ai's docs/decisions.md "Deferred frontend UX notes") -
+   the plaintext key is never displayed, matching the same decision. *@
+
+@if (Open)
+{
+    <div class="modal-overlay" @onclick="CloseAsync">
+        <div class="modal acm-modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>@T.Title</h3>
+                <button type="button" class="modal-close" @onclick="CloseAsync">✕</button>
+            </div>
+            <div class="modal-body acm-body">
+                @if (_checkingKey)
+                {
+                    <p class="ss-desc">@T.Loading</p>
+                }
+                else if (_notLoggedIn)
+                {
+                    <p class="ss-desc">@T.NotLoggedIn</p>
+                }
+                else if (!_hasKey)
+                {
+                    <div class="acm-empty">
+                        <p class="ss-desc">@T.NoKeyDescription</p>
+                        <button type="button" class="btn-primary" @onclick="ActivateAsync" disabled="@_activating">
+                            @(_activating ? "…" : T.NoKeyActivate)
+                        </button>
+                        @if (_activateError != null)
+                        {
+                            <p class="ss-desc" style="color:var(--danger, #e74c3c)">@_activateError</p>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="acm-tabs">
+                        <button type="button" class="acm-tab @(_mode == Mode.Chat ? "active" : "")" @onclick="() => _mode = Mode.Chat">@T.TabChat</button>
+                        <button type="button" class="acm-tab @(_mode == Mode.Agent ? "active" : "")" @onclick="() => _mode = Mode.Agent">@T.TabAgent</button>
+                    </div>
+
+                    @if (_mode == Mode.Chat)
+                    {
+                        <div class="acm-messages">
+                            @if (_chatMessages.Count == 0)
+                            {
+                                <p class="ss-desc">@T.EmptyChatHint</p>
+                            }
+                            @foreach (var m in _chatMessages)
+                            {
+                                <div class="acm-msg acm-msg-@m.Role">
+                                    <div class="acm-msg-bubble">@m.Content</div>
+                                </div>
+                            }
+                            @if (_chatSources.Count > 0)
+                            {
+                                <div class="acm-sources">@T.SourcesLabel: @string.Join(", ", _chatSources.Select(s => s.Title))</div>
+                            }
+                            @if (_chatError != null)
+                            {
+                                <p class="ss-desc" style="color:var(--danger, #e74c3c)">@_chatError</p>
+                            }
+                        </div>
+                        <div class="acm-input-row">
+                            <input class="input" @bind="_chatInput" @bind:event="oninput" @onkeydown="OnChatKeyDown"
+                                   placeholder="@T.InputPlaceholderChat" disabled="@_chatStreaming" />
+                            <button type="button" class="btn-primary" @onclick="SendChatAsync"
+                                    disabled="@(_chatStreaming || string.IsNullOrWhiteSpace(_chatInput))">
+                                @(_chatStreaming ? "…" : T.Send)
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="acm-messages">
+                            @if (_agentTurns.Count == 0)
+                            {
+                                <p class="ss-desc">@T.EmptyAgentHint</p>
+                            }
+                            @foreach (var turn in _agentTurns)
+                            {
+                                var t = turn;
+                                <div class="acm-msg acm-msg-user"><div class="acm-msg-bubble">@t.Question</div></div>
+                                @if (t.Answer != null)
+                                {
+                                    <div class="acm-msg acm-msg-assistant"><div class="acm-msg-bubble">@t.Answer</div></div>
+                                }
+                                else if (t.PendingActions.Count > 0)
+                                {
+                                    <div class="acm-pending">
+                                        <p class="acm-pending-title">@T.PendingActionTitle</p>
+                                        @foreach (var pa in t.PendingActions)
+                                        {
+                                            <p class="ss-desc">@pa.Description</p>
+                                        }
+                                        <div class="acm-pending-actions">
+                                            <button type="button" class="btn-secondary" @onclick='() => ConfirmAsync(t, "reject")' disabled="@_agentWorking">@T.Reject</button>
+                                            <button type="button" class="btn-primary" @onclick='() => ConfirmAsync(t, "approve")' disabled="@_agentWorking">@T.Approve</button>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            @if (_agentError != null)
+                            {
+                                <p class="ss-desc" style="color:var(--danger, #e74c3c)">@_agentError</p>
+                            }
+                        </div>
+                        <div class="acm-input-row">
+                            <input class="input" @bind="_agentInput" @bind:event="oninput" @onkeydown="OnAgentKeyDown"
+                                   placeholder="@T.InputPlaceholderAgent" disabled="@(_agentWorking || HasPendingTurn)" />
+                            <button type="button" class="btn-primary" @onclick="SendAgentAsync"
+                                    disabled="@(_agentWorking || HasPendingTurn || string.IsNullOrWhiteSpace(_agentInput))">
+                                @(_agentWorking ? "…" : T.Send)
+                            </button>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private static readonly JsonSerializerOptions JsonOpts = JsonSerializerOptions.Web;
+
+    private enum Mode { Chat, Agent }
+
+    private class AgentTurn
+    {
+        public string Question { get; init; } = "";
+        public string? Answer { get; set; }
+        public List<AiPendingActionDto> PendingActions { get; set; } = new();
+    }
+
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private I18nText.AgentChatText T = new();
+    private bool _wasOpen;
+    private bool _checkingKey;
+    private bool _notLoggedIn;
+    private bool _hasKey;
+    private bool _activating;
+    private string? _activateError;
+    private Mode _mode = Mode.Chat;
+
+    private readonly List<AiChatMessageDto> _chatMessages = new();
+    private string _chatInput = "";
+    private bool _chatStreaming;
+    private string? _chatError;
+    private readonly List<AiChatSourceDto> _chatSources = new();
+
+    private readonly List<AgentTurn> _agentTurns = new();
+    private string _agentInput = "";
+    private bool _agentWorking;
+    private string? _agentError;
+
+    private bool HasPendingTurn => _agentTurns.Count > 0 && _agentTurns[^1] is { Answer: null, PendingActions.Count: > 0 };
+
+    protected override async Task OnInitializedAsync()
+    {
+        T = await I18nText.GetTextTableAsync<I18nText.AgentChatText>(this);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Open && !_wasOpen)
+        {
+            await CheckKeyStatusAsync();
+        }
+        _wasOpen = Open;
+    }
+
+    private async Task CheckKeyStatusAsync()
+    {
+        _checkingKey = true;
+        _notLoggedIn = false;
+        StateHasChanged();
+        try
+        {
+            var response = await Http.GetAsync("api/settings/ai-api-key");
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                _notLoggedIn = true;
+                return;
+            }
+            response.EnsureSuccessStatusCode();
+            var status = await response.Content.ReadFromJsonAsync<AiApiKeyStatusDto>();
+            _hasKey = status?.HasKey ?? false;
+        }
+        catch
+        {
+            _activateError = T.ErrorGeneric;
+        }
+        finally
+        {
+            _checkingKey = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>Generates the key (this also registers it with studylife-ai automatically, see
+    /// SettingsController.GenerateAiApiKey) and discards the returned plaintext immediately -
+    /// this modal never needs or shows it, unlike the setup page's own regenerate flow.</summary>
+    private async Task ActivateAsync()
+    {
+        _activating = true;
+        _activateError = null;
+        try
+        {
+            var response = await Http.PostAsync("api/settings/ai-api-key/generate", null);
+            response.EnsureSuccessStatusCode();
+            _hasKey = true;
+        }
+        catch
+        {
+            _activateError = T.ErrorGeneric;
+        }
+        finally
+        {
+            _activating = false;
+        }
+    }
+
+    private void OnChatKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !_chatStreaming && !string.IsNullOrWhiteSpace(_chatInput))
+            _ = SendChatAsync();
+    }
+
+    private void OnAgentKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !_agentWorking && !HasPendingTurn && !string.IsNullOrWhiteSpace(_agentInput))
+            _ = SendAgentAsync();
+    }
+
+    private async Task SendChatAsync()
+    {
+        var text = _chatInput.Trim();
+        if (text.Length == 0) return;
+        _chatInput = "";
+        _chatError = null;
+        _chatSources.Clear();
+        _chatMessages.Add(new AiChatMessageDto { Role = "user", Content = text });
+        var assistantMessage = new AiChatMessageDto { Role = "assistant", Content = "" };
+        _chatMessages.Add(assistantMessage);
+        _chatStreaming = true;
+        StateHasChanged();
+
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Post, "api/ai/chat")
+            {
+                Content = JsonContent.Create(new AiChatRequestDto { Messages = _chatMessages.Where(m => m != assistantMessage).ToList() }, options: JsonOpts),
+            };
+            request.SetBrowserResponseStreamingEnabled(true);
+            var response = await Http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                _notLoggedIn = true;
+                _chatMessages.Remove(assistantMessage);
+                return;
+            }
+            if (!response.IsSuccessStatusCode)
+            {
+                _chatError = T.ErrorGeneric;
+                _chatMessages.Remove(assistantMessage);
+                return;
+            }
+
+            await using var stream = await response.Content.ReadAsStreamAsync();
+            using var reader = new StreamReader(stream);
+            string? line;
+            while ((line = await reader.ReadLineAsync()) != null)
+            {
+                if (!line.StartsWith("data: ")) continue;
+                var payload = line["data: ".Length..];
+                if (payload == "[DONE]") break;
+                AiChatStreamEventDto? evt;
+                try { evt = JsonSerializer.Deserialize<AiChatStreamEventDto>(payload, JsonOpts); }
+                catch { continue; }
+                if (evt?.Delta is { Length: > 0 } delta)
+                {
+                    assistantMessage.Content += delta;
+                    StateHasChanged();
+                }
+                else if (evt?.Sources is { } sources)
+                {
+                    _chatSources.AddRange(sources);
+                }
+                else if (evt?.Error is { } error)
+                {
+                    _chatError = error;
+                }
+            }
+        }
+        catch
+        {
+            _chatError = T.ErrorGeneric;
+        }
+        finally
+        {
+            _chatStreaming = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SendAgentAsync()
+    {
+        var text = _agentInput.Trim();
+        if (text.Length == 0) return;
+        _agentInput = "";
+        _agentError = null;
+        var turn = new AgentTurn { Question = text };
+        _agentTurns.Add(turn);
+        _agentWorking = true;
+        StateHasChanged();
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/ai/agent", new AiAgentRequestDto { Message = text }, JsonOpts);
+            await ApplyAgentResponseAsync(response, turn);
+        }
+        catch
+        {
+            _agentError = T.ErrorGeneric;
+        }
+        finally
+        {
+            _agentWorking = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ConfirmAsync(AgentTurn turn, string decision)
+    {
+        var threadId = turn.PendingActions.FirstOrDefault()?.ThreadId;
+        if (threadId == null) return;
+        _agentWorking = true;
+        _agentError = null;
+        StateHasChanged();
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/ai/agent/confirm",
+                new AiConfirmRequestDto { ThreadId = threadId, Decision = decision }, JsonOpts);
+            await ApplyAgentResponseAsync(response, turn);
+        }
+        catch
+        {
+            _agentError = T.ErrorGeneric;
+        }
+        finally
+        {
+            _agentWorking = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ApplyAgentResponseAsync(HttpResponseMessage response, AgentTurn turn)
+    {
+        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            _notLoggedIn = true;
+            return;
+        }
+        if (!response.IsSuccessStatusCode)
+        {
+            _agentError = T.ErrorGeneric;
+            turn.PendingActions.Clear();
+            return;
+        }
+        var dto = await response.Content.ReadFromJsonAsync<AiAgentResponseDto>(JsonOpts);
+        if (dto == null) { _agentError = T.ErrorGeneric; turn.PendingActions.Clear(); return; }
+        if (dto.PendingActions.Count > 0)
+        {
+            turn.PendingActions = dto.PendingActions;
+        }
+        else
+        {
+            turn.PendingActions.Clear();
+            turn.Answer = dto.Answer ?? "";
+        }
+    }
+
+    private async Task CloseAsync() => await OnClose.InvokeAsync();
+}

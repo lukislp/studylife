@@ -31,5 +31,6 @@
   "PageLoadErrorText": "Κάτι πήγε στραβά κατά τη φόρτωση αυτής της σελίδας. Δοκιμάστε ξανά.",
   "PendingSyncTooltip": "{0} αλλαγές αναμένουν συγχρονισμό",
   "UpdateAvailableText": "Διαθέσιμη νέα έκδοση",
-  "UpdateReloadButton": "Επαναφόρτωση"
+  "UpdateReloadButton": "Επαναφόρτωση",
+  "AgentChatLabel": "Βοηθός AI"
 }

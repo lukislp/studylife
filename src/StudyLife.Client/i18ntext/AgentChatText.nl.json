@@ -1,0 +1,19 @@
+{
+  "Title": "AI-assistent",
+  "Loading": "Laden…",
+  "NotLoggedIn": "Je bent nog niet ingelogd op dit apparaat.",
+  "NoKeyDescription": "Stel eenmalig AI-toegang in om chat en de assistent te gebruiken.",
+  "NoKeyActivate": "Activeren",
+  "TabChat": "Chat",
+  "TabAgent": "Agent",
+  "EmptyChatHint": "Stel een vraag over je notities, cursussen of sessies.",
+  "EmptyAgentHint": "Vraag de assistent om een sessie aan te maken, een notitie op te slaan, of een vraag te beantwoorden.",
+  "SourcesLabel": "Bronnen",
+  "InputPlaceholderChat": "Vraag iets over je notities…",
+  "InputPlaceholderAgent": "Vraag de assistent iets te doen…",
+  "Send": "Verzenden",
+  "ErrorGeneric": "Er is iets misgegaan. Probeer het opnieuw.",
+  "PendingActionTitle": "Deze actie heeft jouw bevestiging nodig",
+  "Approve": "Goedkeuren",
+  "Reject": "Afwijzen"
+}

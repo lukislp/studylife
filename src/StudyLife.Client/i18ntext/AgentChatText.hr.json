@@ -1,0 +1,19 @@
+{
+  "Title": "AI asistent",
+  "Loading": "Učitavanje…",
+  "NotLoggedIn": "Još niste prijavljeni na ovom uređaju.",
+  "NoKeyDescription": "Postavi AI pristup jednom kako bi koristio chat i asistenta.",
+  "NoKeyActivate": "Aktiviraj",
+  "TabChat": "Razgovor",
+  "TabAgent": "Agent",
+  "EmptyChatHint": "Postavi pitanje o svojim bilješkama, kolegijima ili sesijama.",
+  "EmptyAgentHint": "Zamoli asistenta da stvori sesiju, spremi bilješku ili odgovori na pitanje.",
+  "SourcesLabel": "Izvori",
+  "InputPlaceholderChat": "Pitaj o svojim bilješkama…",
+  "InputPlaceholderAgent": "Zamoli asistenta za nešto…",
+  "Send": "Pošalji",
+  "ErrorGeneric": "Nešto je pošlo po zlu. Pokušaj ponovno.",
+  "PendingActionTitle": "Ova radnja zahtijeva tvoju potvrdu",
+  "Approve": "Odobri",
+  "Reject": "Odbij"
+}

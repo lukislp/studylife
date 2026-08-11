@@ -31,5 +31,6 @@
   "PageLoadErrorText": "Hiba történt az oldal betöltése közben. Kérjük, próbáld újra.",
   "PendingSyncTooltip": "{0} változás vár szinkronizálásra",
   "UpdateAvailableText": "Új verzió érhető el",
-  "UpdateReloadButton": "Újratöltés"
+  "UpdateReloadButton": "Újratöltés",
+  "AgentChatLabel": "AI asszisztens"
 }

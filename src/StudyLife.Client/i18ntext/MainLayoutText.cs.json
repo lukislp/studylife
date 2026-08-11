@@ -31,5 +31,6 @@
   "PageLoadErrorText": "Při načítání této stránky se něco pokazilo. Zkuste to prosím znovu.",
   "PendingSyncTooltip": "{0} změn čeká na synchronizaci",
   "UpdateAvailableText": "Je k dispozici nová verze",
-  "UpdateReloadButton": "Znovu načíst"
+  "UpdateReloadButton": "Znovu načíst",
+  "AgentChatLabel": "AI asistent"
 }

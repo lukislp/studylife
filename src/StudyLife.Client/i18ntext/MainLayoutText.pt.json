@@ -31,5 +31,6 @@
   "PageLoadErrorText": "Algo correu mal ao carregar esta página. Tente novamente.",
   "PendingSyncTooltip": "{0} alterações a aguardar sincronização",
   "UpdateAvailableText": "Nova versão disponível",
-  "UpdateReloadButton": "Recarregar"
+  "UpdateReloadButton": "Recarregar",
+  "AgentChatLabel": "Assistente de IA"
 }

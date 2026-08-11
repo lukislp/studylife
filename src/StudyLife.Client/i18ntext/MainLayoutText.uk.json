@@ -31,5 +31,6 @@
   "PageLoadErrorText": "Під час завантаження цієї сторінки щось пішло не так. Будь ласка, спробуйте ще раз.",
   "PendingSyncTooltip": "{0} змін очікують синхронізації",
   "UpdateAvailableText": "Доступна нова версія",
-  "UpdateReloadButton": "Перезавантажити"
+  "UpdateReloadButton": "Перезавантажити",
+  "AgentChatLabel": "AI-асистент"
 }

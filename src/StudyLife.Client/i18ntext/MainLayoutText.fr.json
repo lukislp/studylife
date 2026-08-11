@@ -31,5 +31,6 @@
   "PageLoadErrorText": "Une erreur s'est produite lors du chargement de cette page. Veuillez réessayer.",
   "PendingSyncTooltip": "{0} modifications en attente de synchronisation",
   "UpdateAvailableText": "Nouvelle version disponible",
-  "UpdateReloadButton": "Recharger"
+  "UpdateReloadButton": "Recharger",
+  "AgentChatLabel": "Assistant IA"
 }

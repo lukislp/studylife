@@ -200,3 +200,54 @@ input::-webkit-date-and-time-value {
     padding: 0.1rem 0.5rem;
 }
 
+/* AI chat/agent (AgentChatModal, FAB) - wider than the standard .modal, same reasoning as
+   .pdm-modal (message bubbles need more room than a settings list). */
+.acm-modal { width: 480px; }
+.acm-empty { display: flex; flex-direction: column; gap: 0.75rem; align-items: center; text-align: center; padding: 1rem 0; }
+
+.acm-tabs { display: flex; gap: 0.25rem; border-bottom: 1px solid var(--border); margin: -0.5rem 0 0; }
+.acm-tab {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 0.5rem 0.9rem;
+    font-size: 0.875rem;
+    color: var(--text3);
+    cursor: pointer;
+    transition: var(--transition);
+}
+.acm-tab:hover { color: var(--text2); }
+.acm-tab.active { color: var(--text); border-bottom-color: var(--accent); }
+
+.acm-messages { display: flex; flex-direction: column; gap: 0.6rem; max-height: 45vh; overflow-y: auto; padding-right: 0.15rem; }
+.acm-msg { display: flex; }
+.acm-msg-user { justify-content: flex-end; }
+.acm-msg-assistant { justify-content: flex-start; }
+.acm-msg-bubble {
+    max-width: 82%;
+    padding: 0.6rem 0.9rem;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+}
+.acm-msg-user .acm-msg-bubble { background: var(--accent); color: white; border-bottom-right-radius: 4px; }
+.acm-msg-assistant .acm-msg-bubble { background: var(--bg3); color: var(--text); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+.acm-sources { font-size: 0.75rem; color: var(--text3); }
+
+.acm-input-row { display: flex; gap: 0.5rem; }
+.acm-input-row .input { flex: 1; }
+
+.acm-pending {
+    background: color-mix(in srgb, #E1A93C 10%, var(--bg3));
+    border: 1px solid color-mix(in srgb, #E1A93C 40%, var(--border));
+    border-radius: 10px;
+    padding: 0.75rem 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.acm-pending-title { font-weight: 500; color: var(--text); font-size: 0.875rem; margin: 0; }
+.acm-pending-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+

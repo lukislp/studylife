@@ -1,0 +1,19 @@
+{
+  "Title": "KI-Assistent",
+  "Loading": "Wird geladen…",
+  "NotLoggedIn": "Du bist auf diesem Gerät noch nicht angemeldet.",
+  "NoKeyDescription": "Richte einmalig den KI-Zugang ein, um Chat und Assistent zu nutzen.",
+  "NoKeyActivate": "Aktivieren",
+  "TabChat": "Chat",
+  "TabAgent": "Agent",
+  "EmptyChatHint": "Stell eine Frage zu deinen Notizen, Kursen oder Lernsessions.",
+  "EmptyAgentHint": "Bitte den Assistenten, eine Session anzulegen, eine Notiz zu speichern, oder eine Frage zu beantworten.",
+  "SourcesLabel": "Quellen",
+  "InputPlaceholderChat": "Frag etwas zu deinen Notizen…",
+  "InputPlaceholderAgent": "Bitte den Assistenten um etwas…",
+  "Send": "Senden",
+  "ErrorGeneric": "Etwas ist schiefgelaufen. Bitte versuch es erneut.",
+  "PendingActionTitle": "Diese Aktion braucht deine Bestätigung",
+  "Approve": "Bestätigen",
+  "Reject": "Ablehnen"
+}

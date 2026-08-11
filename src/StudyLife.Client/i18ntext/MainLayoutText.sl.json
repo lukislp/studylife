@@ -31,5 +31,6 @@
   "PageLoadErrorText": "Pri nalaganju te strani je prišlo do napake. Poskusite znova.",
   "PendingSyncTooltip": "{0} sprememb čaka na sinhronizacijo",
   "UpdateAvailableText": "Na voljo je nova različica",
-  "UpdateReloadButton": "Znova naloži"
+  "UpdateReloadButton": "Znova naloži",
+  "AgentChatLabel": "AI pomočnik"
 }

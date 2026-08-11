@@ -31,5 +31,6 @@
   "PageLoadErrorText": "Ielādējot šo lapu, kaut kas nogāja greizi. Lūdzu, mēģiniet vēlreiz.",
   "PendingSyncTooltip": "{0} izmaiņas gaida sinhronizāciju",
   "UpdateAvailableText": "Pieejama jauna versija",
-  "UpdateReloadButton": "Pārlādēt"
+  "UpdateReloadButton": "Pārlādēt",
+  "AgentChatLabel": "AI asistents"
 }

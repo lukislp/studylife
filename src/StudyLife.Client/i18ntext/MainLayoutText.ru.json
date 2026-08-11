@@ -31,5 +31,6 @@
   "PageLoadErrorText": "Что-то пошло не так при загрузке этой страницы. Пожалуйста, попробуйте ещё раз.",
   "PendingSyncTooltip": "{0} изменений ожидают синхронизации",
   "UpdateAvailableText": "Доступна новая версия",
-  "UpdateReloadButton": "Перезагрузить"
+  "UpdateReloadButton": "Перезагрузить",
+  "AgentChatLabel": "AI-ассистент"
 }

@@ -138,6 +138,9 @@
                     <button class="fab-action" title="@T.PasskeysLabel" @onclick="OpenPasskeyManagerFromFab">
                         <span>🔑</span>
                     </button>
+                    <button class="fab-action" title="@T.AgentChatLabel" @onclick="OpenAgentChatFromFab">
+                        <span>💬</span>
+                    </button>
                 }
             </div>
         }
@@ -154,6 +157,7 @@
     <GlobalSearch Open="_searchOpen" OnClose="CloseSearch" />
     <PushDeviceManager Open="_deviceManagerOpen" OnClose="CloseDeviceManager" />
     <PasskeyDeviceManager Open="_passkeyManagerOpen" OnClose="ClosePasskeyManager" />
+    <AgentChatModal Open="_agentChatOpen" OnClose="CloseAgentChat" />
 
     <main class="main-content" id="main-scroll">
         @* Catches rendering exceptions of individual pages instead of crashing the whole WASM app
@@ -189,6 +193,7 @@
     private bool _searchOpen;
     private bool _deviceManagerOpen;
     private bool _passkeyManagerOpen;
+    private bool _agentChatOpen;
     private DotNetObjectReference<MainLayout>? _searchHotkeyRef;
     private ErrorBoundary? _errorBoundary;
     private bool _authenticated;
@@ -488,6 +493,14 @@
     }
 
     private void ClosePasskeyManager() => _passkeyManagerOpen = false;
+
+    private void OpenAgentChatFromFab()
+    {
+        _fabOpen = false;
+        _agentChatOpen = true;
+    }
+
+    private void CloseAgentChat() => _agentChatOpen = false;
 
     private void CloseFab()
     {

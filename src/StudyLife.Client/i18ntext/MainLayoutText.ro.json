@@ -31,5 +31,6 @@
   "PageLoadErrorText": "Ceva nu a funcționat la încărcarea acestei pagini. Te rugăm să încerci din nou.",
   "PendingSyncTooltip": "{0} modificări așteaptă sincronizarea",
   "UpdateAvailableText": "O versiune nouă este disponibilă",
-  "UpdateReloadButton": "Reîncarcă"
+  "UpdateReloadButton": "Reîncarcă",
+  "AgentChatLabel": "Asistent AI"
 }

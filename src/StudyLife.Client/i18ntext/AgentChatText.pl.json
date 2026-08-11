@@ -1,0 +1,19 @@
+{
+  "Title": "Asystent AI",
+  "Loading": "Ładowanie…",
+  "NotLoggedIn": "Nie jesteś jeszcze zalogowany na tym urządzeniu.",
+  "NoKeyDescription": "Skonfiguruj dostęp do AI raz, aby korzystać z czatu i asystenta.",
+  "NoKeyActivate": "Aktywuj",
+  "TabChat": "Czat",
+  "TabAgent": "Agent",
+  "EmptyChatHint": "Zadaj pytanie o swoje notatki, kursy lub sesje.",
+  "EmptyAgentHint": "Poproś asystenta o utworzenie sesji, zapisanie notatki lub odpowiedź na pytanie.",
+  "SourcesLabel": "Źródła",
+  "InputPlaceholderChat": "Zapytaj o swoje notatki…",
+  "InputPlaceholderAgent": "Poproś asystenta o coś…",
+  "Send": "Wyślij",
+  "ErrorGeneric": "Coś poszło nie tak. Spróbuj ponownie.",
+  "PendingActionTitle": "Ta czynność wymaga Twojego potwierdzenia",
+  "Approve": "Zatwierdź",
+  "Reject": "Odrzuć"
+}

@@ -1,0 +1,19 @@
+{
+  "Title": "Cúntóir IA",
+  "Loading": "Ag lódáil…",
+  "NotLoggedIn": "Nílíonn tú sínithe isteach ar an ngléas seo fós.",
+  "NoKeyDescription": "Socraigh rochtain AI uair amháin chun an comhrá agus an cúntóir a úsáid.",
+  "NoKeyActivate": "Gníomhachtaigh",
+  "TabChat": "Comhrá",
+  "TabAgent": "Gníomhaire",
+  "EmptyChatHint": "Cuir ceist faoi do nótaí, do chúrsaí, nó do sheisiúin.",
+  "EmptyAgentHint": "Iarr ar an gcúntóir seisiún a chruthú, nóta a shábháil, nó ceist a fhreagairt.",
+  "SourcesLabel": "Foinsí",
+  "InputPlaceholderChat": "Fiafraigh faoi do nótaí…",
+  "InputPlaceholderAgent": "Iarr rud éigin ar an gcúntóir…",
+  "Send": "Seol",
+  "ErrorGeneric": "Tharla earráid. Bain triail eile as le do thoil.",
+  "PendingActionTitle": "Teastaíonn do dhearbhú don ghníomh seo",
+  "Approve": "Ceadaigh",
+  "Reject": "Diúltaigh"
+}

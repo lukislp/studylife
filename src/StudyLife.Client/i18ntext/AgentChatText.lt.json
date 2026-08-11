@@ -1,0 +1,19 @@
+{
+  "Title": "AI asistentas",
+  "Loading": "Kraunama…",
+  "NotLoggedIn": "Jūs dar neprisijungėte šiame įrenginyje.",
+  "NoKeyDescription": "Vieną kartą nustatykite AI prieigą, kad galėtumėte naudoti pokalbį ir asistentą.",
+  "NoKeyActivate": "Aktyvuoti",
+  "TabChat": "Pokalbis",
+  "TabAgent": "Agentas",
+  "EmptyChatHint": "Užduokite klausimą apie savo užrašus, kursus ar sesijas.",
+  "EmptyAgentHint": "Paprašykite asistento sukurti sesiją, išsaugoti užrašą arba atsakyti į klausimą.",
+  "SourcesLabel": "Šaltiniai",
+  "InputPlaceholderChat": "Paklauskite apie savo užrašus…",
+  "InputPlaceholderAgent": "Paprašykite asistento kažko…",
+  "Send": "Siųsti",
+  "ErrorGeneric": "Kažkas nutiko ne taip. Bandykite dar kartą.",
+  "PendingActionTitle": "Šiam veiksmui reikia jūsų patvirtinimo",
+  "Approve": "Patvirtinti",
+  "Reject": "Atmesti"
+}

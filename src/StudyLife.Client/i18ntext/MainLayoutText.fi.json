@@ -31,5 +31,6 @@
   "PageLoadErrorText": "Tämän sivun lataamisessa tapahtui virhe. Yritä uudelleen.",
   "PendingSyncTooltip": "{0} muutosta odottaa synkronointia",
   "UpdateAvailableText": "Uusi versio saatavilla",
-  "UpdateReloadButton": "Lataa uudelleen"
+  "UpdateReloadButton": "Lataa uudelleen",
+  "AgentChatLabel": "Tekoälyavustaja"
 }

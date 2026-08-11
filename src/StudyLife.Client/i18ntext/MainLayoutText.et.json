@@ -31,5 +31,6 @@
   "PageLoadErrorText": "Selle lehe laadimisel läks midagi valesti. Palun proovi uuesti.",
   "PendingSyncTooltip": "{0} muudatust ootab sünkroonimist",
   "UpdateAvailableText": "Uus versioon on saadaval",
-  "UpdateReloadButton": "Laadi uuesti"
+  "UpdateReloadButton": "Laadi uuesti",
+  "AgentChatLabel": "Tehisintellekti abiline"
 }

@@ -1,0 +1,19 @@
+{
+  "Title": "Assistent tal-IA",
+  "Loading": "Qed jgħabbi…",
+  "NotLoggedIn": "Għadek ma daħħaltx fuq dan l-apparat.",
+  "NoKeyDescription": "Issettja l-aċċess tal-IA darba biex tuża ċ-chat u l-assistent.",
+  "NoKeyActivate": "Attiva",
+  "TabChat": "Chat",
+  "TabAgent": "Aġent",
+  "EmptyChatHint": "Staqsi mistoqsija dwar in-noti, korsijiet, jew sessjonijiet tiegħek.",
+  "EmptyAgentHint": "Itlob lill-assistent joħloq sessjoni, isalva nota, jew iwieġeb mistoqsija.",
+  "SourcesLabel": "Sorsi",
+  "InputPlaceholderChat": "Staqsi dwar in-noti tiegħek…",
+  "InputPlaceholderAgent": "Itlob lill-assistent xi ħaġa…",
+  "Send": "Ibgħat",
+  "ErrorGeneric": "Xi ħaġa marret ħażin. Jekk jogħġbok erġa' pprova.",
+  "PendingActionTitle": "Din l-azzjoni teħtieġ il-konferma tiegħek",
+  "Approve": "Approva",
+  "Reject": "Irrifjuta"
+}

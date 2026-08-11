@@ -31,5 +31,6 @@
   "PageLoadErrorText": "Nešto je pošlo po zlu prilikom učitavanja ove stranice. Pokušajte ponovno.",
   "PendingSyncTooltip": "{0} promjena čeka sinkronizaciju",
   "UpdateAvailableText": "Dostupna je nova verzija",
-  "UpdateReloadButton": "Ponovno učitaj"
+  "UpdateReloadButton": "Ponovno učitaj",
+  "AgentChatLabel": "AI asistent"
 }

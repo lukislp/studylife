@@ -1,0 +1,19 @@
+{
+  "Title": "Asistent AI",
+  "Loading": "Se încarcă…",
+  "NotLoggedIn": "Nu ești încă autentificat pe acest dispozitiv.",
+  "NoKeyDescription": "Configurează accesul AI o singură dată pentru a folosi chatul și asistentul.",
+  "NoKeyActivate": "Activează",
+  "TabChat": "Chat",
+  "TabAgent": "Agent",
+  "EmptyChatHint": "Pune o întrebare despre notițele, cursurile sau sesiunile tale.",
+  "EmptyAgentHint": "Cere-i asistentului să creeze o sesiune, să salveze o notiță sau să răspundă la o întrebare.",
+  "SourcesLabel": "Surse",
+  "InputPlaceholderChat": "Întreabă despre notițele tale…",
+  "InputPlaceholderAgent": "Cere-i asistentului ceva…",
+  "Send": "Trimite",
+  "ErrorGeneric": "Ceva nu a mers bine. Încearcă din nou.",
+  "PendingActionTitle": "Această acțiune necesită confirmarea ta",
+  "Approve": "Aprobă",
+  "Reject": "Respinge"
+}

@@ -1,0 +1,19 @@
+{
+  "Title": "AI asszisztens",
+  "Loading": "Betöltés…",
+  "NotLoggedIn": "Ezen az eszközön még nem vagy bejelentkezve.",
+  "NoKeyDescription": "Állítsd be egyszer az AI-hozzáférést a chat és az asszisztens használatához.",
+  "NoKeyActivate": "Aktiválás",
+  "TabChat": "Csevegés",
+  "TabAgent": "Ügynök",
+  "EmptyChatHint": "Tegyél fel kérdést a jegyzeteidről, kurzusaidról vagy tanulási session-jeidről.",
+  "EmptyAgentHint": "Kérd meg az asszisztenst, hogy hozzon létre egy session-t, mentsen el egy jegyzetet, vagy válaszoljon egy kérdésre.",
+  "SourcesLabel": "Források",
+  "InputPlaceholderChat": "Kérdezz a jegyzeteidről…",
+  "InputPlaceholderAgent": "Kérj valamit az asszisztenstől…",
+  "Send": "Küldés",
+  "ErrorGeneric": "Valami hiba történt. Kérlek próbáld újra.",
+  "PendingActionTitle": "Ehhez a művelethez a jóváhagyásod szükséges",
+  "Approve": "Jóváhagyás",
+  "Reject": "Elutasítás"
+}
