@@ -66,11 +66,14 @@ spec:
         - { protocol: TCP, port: 8443 }
 ---
 # studylife-ai calls StudyLife's own REST API server-to-server (ingestion, /agent tools) via
-# cluster-internal Service DNS on plain HTTP, not the public https://studylife.heim.lan
-# hostname - found live: studylife-ai's container has no reason to trust StudyLife's internal
-# cert-manager CA (a private CA, not publicly trusted), so the public HTTPS hostname failed
-# with CERTIFICATE_VERIFY_FAILED. See studylife-ai's own k8s/01-config.yaml for the matching
-# STUDYLIFE_API_BASE_URL value and docs/decisions.md "M5 - Deployment design" for the full story.
+# cluster-internal Service DNS on port 8443 (HTTPS, trusting StudyLife's own internal
+# cert-manager CA - see studylife-ai's own k8s/06-studylife-ca.yaml), not the public
+# https://studylife.heim.lan hostname - StudyLife's UseHttpsRedirection forces HTTPS even for
+# internal traffic, so port 8080 alone isn't reachable either (found live: a bare port-8080
+# rule here produced ConnectTimeout on 8443, not a cert error - this rule was originally
+# written before the redirect discovery and only allowed 8080). See studylife-ai's own
+# k8s/01-config.yaml for the matching STUDYLIFE_API_BASE_URL value and docs/decisions.md
+# "M5 - Deployment design" for the full story.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -84,7 +87,7 @@ spec:
         - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: studylife-ai } }
           podSelector: { matchLabels: { app: studylife-ai } }
       ports:
-        - { protocol: TCP, port: 8080 }
+        - { protocol: TCP, port: 8443 }
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
