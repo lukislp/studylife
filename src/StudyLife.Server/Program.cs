@@ -193,6 +193,9 @@ builder.Services.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>();
 // APNs channel for the native app shell - permanently inactive without Apns:* configuration
 // (see the ApnsSender comment), web push/VAPID is unaffected by this.
 builder.Services.AddSingleton<ApnsSender>();
+// studylife-ai integration - permanently inactive without StudyLifeAi:* configuration
+// (see the AiProxyClient comment).
+builder.Services.AddSingleton<AiProxyClient>();
 // Raw DB backup/restore + the former file-based VAPID/setup-secret storage are bound to a
 // local single SQLite file (online backup API, PRAGMA integrity_check, file swap) -
 // deliberately NOT registered in Postgres mode (multiple pods, no guaranteed shared volume);
