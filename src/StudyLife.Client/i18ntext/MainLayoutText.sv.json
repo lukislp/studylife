@@ -31,5 +31,6 @@
   "PageLoadErrorText": "Något gick fel när sidan laddades. Försök igen.",
   "PendingSyncTooltip": "{0} ändringar väntar på synkronisering",
   "UpdateAvailableText": "Ny version tillgänglig",
-  "UpdateReloadButton": "Ladda om"
+  "UpdateReloadButton": "Ladda om",
+  "AgentChatLabel": "AI-assistent"
 }

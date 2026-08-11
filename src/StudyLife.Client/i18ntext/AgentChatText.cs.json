@@ -1,0 +1,19 @@
+{
+  "Title": "AI asistent",
+  "Loading": "Načítání…",
+  "NotLoggedIn": "Na tomto zařízení ještě nejste přihlášeni.",
+  "NoKeyDescription": "Nastavte si přístup k AI jednou, abyste mohli používat chat a asistenta.",
+  "NoKeyActivate": "Aktivovat",
+  "TabChat": "Chat",
+  "TabAgent": "Agent",
+  "EmptyChatHint": "Zeptejte se na své poznámky, kurzy nebo studijní bloky.",
+  "EmptyAgentHint": "Požádejte asistenta, aby vytvořil studijní blok, uložil poznámku nebo odpověděl na otázku.",
+  "SourcesLabel": "Zdroje",
+  "InputPlaceholderChat": "Zeptejte se na své poznámky…",
+  "InputPlaceholderAgent": "Požádejte asistenta o něco…",
+  "Send": "Odeslat",
+  "ErrorGeneric": "Něco se pokazilo. Zkuste to prosím znovu.",
+  "PendingActionTitle": "Tato akce vyžaduje vaše potvrzení",
+  "Approve": "Schválit",
+  "Reject": "Odmítnout"
+}

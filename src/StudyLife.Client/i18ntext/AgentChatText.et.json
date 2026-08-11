@@ -1,0 +1,19 @@
+{
+  "Title": "Tehisintellekti abiline",
+  "Loading": "Laadimine…",
+  "NotLoggedIn": "Sa ei ole selles seadmes veel sisse logitud.",
+  "NoKeyDescription": "Seadista tehisintellekti juurdepääs üks kord, et kasutada vestlust ja abilist.",
+  "NoKeyActivate": "Aktiveeri",
+  "TabChat": "Vestlus",
+  "TabAgent": "Agent",
+  "EmptyChatHint": "Esita küsimus oma märkmete, kursuste või õppesessioonide kohta.",
+  "EmptyAgentHint": "Palu abilisel luua õppesessioon, salvestada märkus või vastata küsimusele.",
+  "SourcesLabel": "Allikad",
+  "InputPlaceholderChat": "Küsi oma märkmete kohta…",
+  "InputPlaceholderAgent": "Palu abiliselt midagi…",
+  "Send": "Saada",
+  "ErrorGeneric": "Midagi läks valesti. Palun proovi uuesti.",
+  "PendingActionTitle": "See toiming vajab sinu kinnitust",
+  "Approve": "Kinnita",
+  "Reject": "Keeldu"
+}

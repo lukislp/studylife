@@ -31,5 +31,6 @@
   "PageLoadErrorText": "Something went wrong loading this page. Please try again.",
   "PendingSyncTooltip": "{0} changes waiting to sync",
   "UpdateAvailableText": "New version available",
-  "UpdateReloadButton": "Reload"
+  "UpdateReloadButton": "Reload",
+  "AgentChatLabel": "AI Assistant"
 }

@@ -1,0 +1,19 @@
+{
+  "Title": "AI pomočnik",
+  "Loading": "Nalaganje…",
+  "NotLoggedIn": "Na tej napravi še niste prijavljeni.",
+  "NoKeyDescription": "Enkrat nastavite dostop do AI za uporabo klepeta in pomočnika.",
+  "NoKeyActivate": "Aktiviraj",
+  "TabChat": "Klepet",
+  "TabAgent": "Agent",
+  "EmptyChatHint": "Postavite vprašanje o svojih zapiskih, predmetih ali sejah.",
+  "EmptyAgentHint": "Pomočnika prosite, naj ustvari sejo, shrani zapisek ali odgovori na vprašanje.",
+  "SourcesLabel": "Viri",
+  "InputPlaceholderChat": "Vprašajte o svojih zapiskih…",
+  "InputPlaceholderAgent": "Pomočnika prosite za nekaj…",
+  "Send": "Pošlji",
+  "ErrorGeneric": "Nekaj je šlo narobe. Poskusite znova.",
+  "PendingActionTitle": "To dejanje potrebuje vašo potrditev",
+  "Approve": "Odobri",
+  "Reject": "Zavrni"
+}

@@ -31,5 +31,6 @@
   "PageLoadErrorText": "Įkeliant šį puslapį kažkas nutiko. Bandykite dar kartą.",
   "PendingSyncTooltip": "{0} pakeitimai laukia sinchronizavimo",
   "UpdateAvailableText": "Yra nauja versija",
-  "UpdateReloadButton": "Įkelti iš naujo"
+  "UpdateReloadButton": "Įkelti iš naujo",
+  "AgentChatLabel": "AI asistentas"
 }

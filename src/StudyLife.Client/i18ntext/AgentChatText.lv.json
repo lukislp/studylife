@@ -1,0 +1,19 @@
+{
+  "Title": "AI asistents",
+  "Loading": "Ielādē…",
+  "NotLoggedIn": "Jūs vēl neesat pieteicies šajā ierīcē.",
+  "NoKeyDescription": "Vienreiz iestatiet AI piekļuvi, lai izmantotu tērzēšanu un asistentu.",
+  "NoKeyActivate": "Aktivizēt",
+  "TabChat": "Tērzēšana",
+  "TabAgent": "Aģents",
+  "EmptyChatHint": "Uzdodiet jautājumu par savām piezīmēm, kursiem vai sesijām.",
+  "EmptyAgentHint": "Palūdziet asistentam izveidot sesiju, saglabāt piezīmi vai atbildēt uz jautājumu.",
+  "SourcesLabel": "Avoti",
+  "InputPlaceholderChat": "Jautājiet par savām piezīmēm…",
+  "InputPlaceholderAgent": "Palūdziet asistentam kaut ko…",
+  "Send": "Sūtīt",
+  "ErrorGeneric": "Kaut kas nogāja greizi. Lūdzu, mēģiniet vēlreiz.",
+  "PendingActionTitle": "Šai darbībai nepieciešams jūsu apstiprinājums",
+  "Approve": "Apstiprināt",
+  "Reject": "Noraidīt"
+}

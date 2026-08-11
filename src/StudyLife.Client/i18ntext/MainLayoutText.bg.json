@@ -31,5 +31,6 @@
   "PageLoadErrorText": "Нещо се обърка при зареждането на тази страница. Моля, опитайте отново.",
   "PendingSyncTooltip": "{0} промени чакат синхронизация",
   "UpdateAvailableText": "Налична е нова версия",
-  "UpdateReloadButton": "Презареди"
+  "UpdateReloadButton": "Презареди",
+  "AgentChatLabel": "AI асистент"
 }

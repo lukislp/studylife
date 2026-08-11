@@ -1,0 +1,19 @@
+{
+  "Title": "AI-assistent",
+  "Loading": "Indlæser…",
+  "NotLoggedIn": "Du er endnu ikke logget ind på denne enhed.",
+  "NoKeyDescription": "Opsæt AI-adgang én gang for at bruge chat og assistenten.",
+  "NoKeyActivate": "Aktivér",
+  "TabChat": "Chat",
+  "TabAgent": "Agent",
+  "EmptyChatHint": "Stil et spørgsmål om dine noter, kurser eller sessioner.",
+  "EmptyAgentHint": "Bed assistenten om at oprette en session, gemme en note eller besvare et spørgsmål.",
+  "SourcesLabel": "Kilder",
+  "InputPlaceholderChat": "Spørg om dine noter…",
+  "InputPlaceholderAgent": "Bed assistenten om noget…",
+  "Send": "Send",
+  "ErrorGeneric": "Noget gik galt. Prøv igen.",
+  "PendingActionTitle": "Denne handling kræver din bekræftelse",
+  "Approve": "Godkend",
+  "Reject": "Afvis"
+}

@@ -1,0 +1,19 @@
+{
+  "Title": "AI-assistent",
+  "Loading": "Laddar…",
+  "NotLoggedIn": "Du är inte inloggad på den här enheten ännu.",
+  "NoKeyDescription": "Konfigurera AI-åtkomst en gång för att använda chatt och assistenten.",
+  "NoKeyActivate": "Aktivera",
+  "TabChat": "Chatt",
+  "TabAgent": "Agent",
+  "EmptyChatHint": "Ställ en fråga om dina anteckningar, kurser eller sessioner.",
+  "EmptyAgentHint": "Be assistenten skapa en session, spara en anteckning eller svara på en fråga.",
+  "SourcesLabel": "Källor",
+  "InputPlaceholderChat": "Fråga om dina anteckningar…",
+  "InputPlaceholderAgent": "Be assistenten om något…",
+  "Send": "Skicka",
+  "ErrorGeneric": "Något gick fel. Försök igen.",
+  "PendingActionTitle": "Den här åtgärden behöver din bekräftelse",
+  "Approve": "Godkänn",
+  "Reject": "Avvisa"
+}

@@ -31,5 +31,6 @@
   "PageLoadErrorText": "Der opstod en fejl ved indlæsning af denne side. Prøv venligst igen.",
   "PendingSyncTooltip": "{0} ændringer venter på synkronisering",
   "UpdateAvailableText": "Ny version tilgængelig",
-  "UpdateReloadButton": "Genindlæs"
+  "UpdateReloadButton": "Genindlæs",
+  "AgentChatLabel": "AI-assistent"
 }

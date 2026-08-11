@@ -1,0 +1,19 @@
+{
+  "Title": "Tekoälyavustaja",
+  "Loading": "Ladataan…",
+  "NotLoggedIn": "Et ole vielä kirjautunut sisään tällä laitteella.",
+  "NoKeyDescription": "Määritä tekoälyn käyttöoikeus kerran käyttääksesi keskustelua ja avustajaa.",
+  "NoKeyActivate": "Aktivoi",
+  "TabChat": "Keskustelu",
+  "TabAgent": "Agentti",
+  "EmptyChatHint": "Kysy jotain muistiinpanoistasi, kursseistasi tai opiskelujaksoistasi.",
+  "EmptyAgentHint": "Pyydä avustajaa luomaan opiskelujakso, tallentamaan muistiinpano tai vastaamaan kysymykseen.",
+  "SourcesLabel": "Lähteet",
+  "InputPlaceholderChat": "Kysy muistiinpanoistasi…",
+  "InputPlaceholderAgent": "Pyydä avustajaa tekemään jotain…",
+  "Send": "Lähetä",
+  "ErrorGeneric": "Jokin meni pieleen. Yritä uudelleen.",
+  "PendingActionTitle": "Tämä toiminto tarvitsee vahvistuksesi",
+  "Approve": "Hyväksy",
+  "Reject": "Hylkää"
+}

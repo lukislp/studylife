@@ -31,5 +31,6 @@
   "PageLoadErrorText": "Chuaigh rud éigin mícheart agus an leathanach seo á lódáil. Bain triail eile as.",
   "PendingSyncTooltip": "{0} athrú ag fanacht le sioncrónú",
   "UpdateAvailableText": "Leagan nua ar fáil",
-  "UpdateReloadButton": "Athlódáil"
+  "UpdateReloadButton": "Athlódáil",
+  "AgentChatLabel": "Cúntóir IA"
 }

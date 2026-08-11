@@ -1,0 +1,19 @@
+{
+  "Title": "Assistant IA",
+  "Loading": "Chargement…",
+  "NotLoggedIn": "Vous n'êtes pas encore connecté sur cet appareil.",
+  "NoKeyDescription": "Configurez l'accès IA une fois pour utiliser le chat et l'assistant.",
+  "NoKeyActivate": "Activer",
+  "TabChat": "Chat",
+  "TabAgent": "Agent",
+  "EmptyChatHint": "Posez une question sur vos notes, cours ou sessions.",
+  "EmptyAgentHint": "Demandez à l'assistant de créer une session, d'enregistrer une note ou de répondre à une question.",
+  "SourcesLabel": "Sources",
+  "InputPlaceholderChat": "Posez une question sur vos notes…",
+  "InputPlaceholderAgent": "Demandez quelque chose à l'assistant…",
+  "Send": "Envoyer",
+  "ErrorGeneric": "Une erreur s'est produite. Veuillez réessayer.",
+  "PendingActionTitle": "Cette action nécessite votre confirmation",
+  "Approve": "Approuver",
+  "Reject": "Rejeter"
+}

@@ -31,5 +31,6 @@
   "PageLoadErrorText": "Beim Laden dieser Seite ist etwas schiefgelaufen. Bitte versuche es erneut.",
   "PendingSyncTooltip": "{0} Änderungen warten auf Synchronisation",
   "UpdateAvailableText": "Neue Version verfügbar",
-  "UpdateReloadButton": "Neu laden"
+  "UpdateReloadButton": "Neu laden",
+  "AgentChatLabel": "KI-Assistent"
 }

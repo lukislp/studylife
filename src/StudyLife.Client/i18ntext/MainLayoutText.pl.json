@@ -31,5 +31,6 @@
   "PageLoadErrorText": "Podczas ładowania tej strony coś poszło nie tak. Spróbuj ponownie.",
   "PendingSyncTooltip": "{0} zmian czeka na synchronizację",
   "UpdateAvailableText": "Dostępna nowa wersja",
-  "UpdateReloadButton": "Załaduj ponownie"
+  "UpdateReloadButton": "Załaduj ponownie",
+  "AgentChatLabel": "Asystent AI"
 }

@@ -31,5 +31,6 @@
   "PageLoadErrorText": "Er is iets misgegaan bij het laden van deze pagina. Probeer het opnieuw.",
   "PendingSyncTooltip": "{0} wijzigingen wachten op synchronisatie",
   "UpdateAvailableText": "Nieuwe versie beschikbaar",
-  "UpdateReloadButton": "Opnieuw laden"
+  "UpdateReloadButton": "Opnieuw laden",
+  "AgentChatLabel": "AI-assistent"
 }

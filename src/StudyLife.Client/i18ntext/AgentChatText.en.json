@@ -1,0 +1,19 @@
+{
+  "Title": "AI Assistant",
+  "Loading": "Loading…",
+  "NotLoggedIn": "You're not signed in on this device yet.",
+  "NoKeyDescription": "Set up AI access once to use chat and the assistant.",
+  "NoKeyActivate": "Activate",
+  "TabChat": "Chat",
+  "TabAgent": "Agent",
+  "EmptyChatHint": "Ask a question about your notes, courses, or sessions.",
+  "EmptyAgentHint": "Ask the assistant to create a session, save a note, or answer a question.",
+  "SourcesLabel": "Sources",
+  "InputPlaceholderChat": "Ask about your notes…",
+  "InputPlaceholderAgent": "Ask the assistant to do something…",
+  "Send": "Send",
+  "ErrorGeneric": "Something went wrong. Please try again.",
+  "PendingActionTitle": "This action needs your confirmation",
+  "Approve": "Approve",
+  "Reject": "Reject"
+}
