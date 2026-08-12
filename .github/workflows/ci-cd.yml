@@ -248,7 +248,13 @@ jobs:
           retention-days: 7
 
   docker-server:
-    needs: [get-version, publish-server]
+    # Runs after semantic-release (not before, see that job) - so a build/push failure here
+    # never leaves an orphaned, un-tagged GHCR image blocking every future release via the
+    # duplicate-tag guard below. This repo has already hit a version-tag desync once (a
+    # published GHCR image with no matching git tag, manually backfilled); the studylife-ai
+    # sibling repo hit the same failure shape from this exact ordering (see its own
+    # docs/decisions.md "CI incident" entries) - reordering here closes the same gap.
+    needs: [get-version, publish-server, semantic-release]
     if: github.event_name == 'push' && needs.get-version.outputs.published == 'true'
     runs-on: ubuntu-latest
     concurrency:
@@ -315,7 +321,12 @@ jobs:
           exit-code: "0"
 
   semantic-release:
-    needs: [publish-server, docker-server]
+    # Runs before docker-server now (see that job's comment) - the real tag/release must exist
+    # before anything is published under that version. get-version is now listed explicitly
+    # (it wasn't before) rather than relied on transitively via docker-server/publish-server -
+    # this job's own `if:` reads needs.get-version.outputs.published, which only GitHub's
+    # documented needs-context semantics guarantee if get-version is an actual direct need.
+    needs: [get-version, publish-server]
     if: github.event_name == 'push' && needs.get-version.outputs.published == 'true'
     runs-on: ubuntu-latest
     concurrency:
