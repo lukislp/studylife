@@ -1,3 +1,10 @@
+## [1.10.2](https://github.com/lukislp/studylife/compare/v1.10.1...v1.10.2) (2026-08-12)
+
+
+### Bug Fixes
+
+* **client:** broaden the chat input placeholder beyond just "notes" ([ec4bc17](https://github.com/lukislp/studylife/commit/ec4bc177d015d4b0e4a1965c3c2a2d1a1b795e85))
+
 ## [1.10.1](https://github.com/lukislp/studylife/compare/v1.10.0...v1.10.1) (2026-08-12)
 
 
