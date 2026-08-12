@@ -167,11 +167,16 @@ data:
       # metrics available (active/reading/writing/waiting connections, total requests) -
       # stub_status doesn't provide latency/status-code breakdowns, the same limitation as for
       # the ingress-nginx job above.
+      # Targets updated 2026-08-12 (found via a firing "NPM down on both Pis" alert): both were
+      # still 192.168.1.x, a subnet neither Pi has had an interface on for a while - `kubectl get
+      # nodes -o wide` gives each Pi's actual current INTERNAL-IP (192.168.20.x), same last
+      # octet as the stale entries (.11/.95), consistent with a network renumbering that never
+      # got reflected here since these are static_configs, not auto-discovered.
       - job_name: npm
         static_configs:
-          - targets: ["192.168.1.11:9113"]
+          - targets: ["192.168.20.11:9113"]
             labels: { pi: pinode01 }
-          - targets: ["192.168.1.95:9113"]
+          - targets: ["192.168.20.95:9113"]
             labels: { pi: pinode02 }
       # From here on: additional already-running cluster components that export Prometheus
       # metrics out of the box but weren't scraped so far - verified live against each
