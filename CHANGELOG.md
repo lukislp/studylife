@@ -1,3 +1,10 @@
+# [1.10.0](https://github.com/lukislp/studylife/compare/v1.9.4...v1.10.0) (2026-08-12)
+
+
+### Features
+
+* scrape studylife-ai metrics, add its own Grafana dashboard folder ([51918fe](https://github.com/lukislp/studylife/commit/51918fecdcd984b773ca42e397e4062644c48a7f))
+
 ## [1.9.3](https://github.com/lukislp/studylife/compare/v1.9.2...v1.9.3) (2026-08-11)
 
 
