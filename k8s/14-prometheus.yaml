@@ -97,6 +97,24 @@ data:
             replacement: "${1}:9121"
           - source_labels: [__meta_kubernetes_pod_name]
             target_label: pod
+      # studylife-ai (separate repo/namespace, see its own k8s/04-app.yaml) - LLM cost/latency/
+      # token counters (studylife_ai_llm_*, hand-registered in llm/metrics.py) plus the FastAPI
+      # HTTP auto-instrumentation (http_requests_total etc.), both exposed on the app's own
+      # port 8000 at /metrics (Prometheus' default path, no __metrics_path__ override needed).
+      # Dashboard: k8s/17b-grafana-dashboards.yaml "StudyLife AI" folder.
+      - job_name: studylife-ai
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces: { names: [studylife-ai] }
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            regex: studylife-ai
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_ip]
+            target_label: __address__
+            replacement: "${1}:8000"
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
       # NGINX Gateway Fabric (see k8s/06c-nginx-gateway-fabric.md, now completely replaces the
       # decommissioned ingress-nginx): the control-plane pod (nginx-gateway:
       # nginx_gateway_fabric_*/controller_runtime_*) and the NGINX data plane provisioned per
