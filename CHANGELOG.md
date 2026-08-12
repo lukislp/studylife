@@ -1,3 +1,10 @@
+## [1.10.1](https://github.com/lukislp/studylife/compare/v1.10.0...v1.10.1) (2026-08-12)
+
+
+### Bug Fixes
+
+* **monitoring:** update stale NPM scrape targets to the Pis' real IPs ([1ff509f](https://github.com/lukislp/studylife/commit/1ff509fda0d142d69faab74235ea19b9db0036ee))
+
 # [1.10.0](https://github.com/lukislp/studylife/compare/v1.9.4...v1.10.0) (2026-08-12)
 
 
