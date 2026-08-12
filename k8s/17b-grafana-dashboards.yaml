@@ -37,6 +37,14 @@ data:
         type: file
         options:
           path: /etc/grafana/provisioning/dashboard-json/community
+      # Own folder/provider/ConfigMap, deliberately NOT filed under the "StudyLife" folder
+      # above - studylife-ai is a separate service with its own repo/release cycle, so its
+      # dashboard(s) get their own group instead of being mixed into the main platform's.
+      - name: studylife-ai
+        folder: StudyLife AI
+        type: file
+        options:
+          path: /etc/grafana/provisioning/dashboard-json/studylife-ai
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -291,5 +299,84 @@ data:
         { "id": 7, "title": "Flux-Reconcile-Fehler pro Controller", "type": "timeseries", "gridPos": { "h": 8, "w": 24, "x": 0, "y": 14 },
           "description": "Sollte dauerhaft bei 0 liegen - Anstiege zeigen, welcher Flux-Controller gerade Probleme hat (z.B. Git-Push abgelehnt, Registry nicht erreichbar).",
           "targets": [{ "expr": "sum(rate(controller_runtime_reconcile_total{result=\"error\"}[5m])) by (controller)", "legendFormat": "{{controller}}", "refId": "A" }] }
+      ]
+    }
+---
+# Separate ConfigMap (own folder, see the provider entry above) - studylife-ai's own metrics
+# (llm/metrics.py: cost/latency/tokens per call_site+model+user_id, plus the FastAPI HTTP
+# auto-instrumentation) need the "job=studylife-ai" scrape job in k8s/14-prometheus.yaml to
+# exist first, added in the same commit as this file. Metric/label names were verified
+# locally against a running instance's real /metrics output before writing these queries
+# (not guessed) - but unlike the dashboards above, NOT yet verified against a real live scrape
+# from this cluster, since the job didn't exist before this commit. Worth a spot-check in
+# Grafana after the first real scrape interval.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-studylife-ai
+  namespace: monitoring
+data:
+  studylife-ai.json: |
+    {
+      "title": "StudyLife AI",
+      "uid": "studylife-ai-overview",
+      "schemaVersion": 39,
+      "time": { "from": "now-6h", "to": "now" },
+      "description": "Kosten, Latenz und Volumen jedes LLM-Calls (RAG-Chat, Agent, Reranking, Retrieval, Ingestion, Eval) - aufschlüsselbar nach Nutzer, Aufrufstelle (call_site) und Modell. Quelle: llm/metrics.py (Prometheus-Metriken neben den strukturierten Logzeilen in llm/logging.py) plus HTTP-Auto-Instrumentierung.",
+      "panels": [
+        { "id": 1, "title": "Service erreichbar", "type": "stat", "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+          "description": "Anzahl bereiter studylife-ai-Pods, von Prometheus selbst über den Scrape-Erfolg gemessen (up-Metrik) - 0 heißt der Service antwortet nicht auf /metrics.",
+          "fieldConfig": { "defaults": { "thresholds": { "mode": "absolute", "steps": [
+            { "color": "red", "value": null }, { "color": "green", "value": 1 } ] } } },
+          "targets": [{ "expr": "count(up{job=\"studylife-ai\"} == 1) or vector(0)", "refId": "A" }] },
+        { "id": 2, "title": "Kosten/Stunde (aktuell)", "type": "stat", "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
+          "description": "Hochgerechnet aus der Kostenrate der letzten 5 Minuten.",
+          "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 4 } },
+          "targets": [{ "expr": "sum(rate(studylife_ai_llm_cost_usd_total[5m])) * 3600", "refId": "A" }] },
+        { "id": 3, "title": "Kosten letzte 24h", "type": "stat", "gridPos": { "h": 6, "w": 6, "x": 12, "y": 0 },
+          "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 4 } },
+          "targets": [{ "expr": "sum(increase(studylife_ai_llm_cost_usd_total[24h]))", "refId": "A" }] },
+        { "id": 4, "title": "Fehlerrate (HTTP 5xx)", "type": "stat", "gridPos": { "h": 6, "w": 6, "x": 18, "y": 0 },
+          "fieldConfig": { "defaults": { "unit": "percentunit", "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": null }, { "color": "yellow", "value": 0.01 }, { "color": "red", "value": 0.05 } ] } } },
+          "targets": [{ "expr": "sum(rate(http_requests_total{job=\"studylife-ai\",status=\"5xx\"}[5m])) / sum(rate(http_requests_total{job=\"studylife-ai\"}[5m])) or vector(0)", "refId": "A" }] },
+        { "id": 5, "title": "Requests/Sekunde nach Endpoint", "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+          "targets": [{ "expr": "sum by (handler) (rate(http_requests_total{job=\"studylife-ai\"}[5m]))", "legendFormat": "{{handler}}", "refId": "A" }] },
+        { "id": 6, "title": "HTTP-Latenz p95 nach Endpoint", "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+          "fieldConfig": { "defaults": { "unit": "s" } },
+          "targets": [{ "expr": "histogram_quantile(0.95, sum by (handler, le) (rate(http_request_duration_seconds_bucket{job=\"studylife-ai\"}[5m])))", "legendFormat": "{{handler}}", "refId": "A" }] },
+        { "id": 7, "title": "Kosten nach Nutzer (pro Stunde)", "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+          "description": "sum by (user_id) - beantwortet direkt \"wer hat wie viel verursacht\". user_id ist StudyLifes interne numerische Auth-User-Id (kein Klarname, s. docs/decisions.md \"Metrics dashboard\" im studylife-ai-Repo) - bei Bedarf per Grafana Value Mapping lesbar machen.",
+          "fieldConfig": { "defaults": { "unit": "currencyUSD" } },
+          "targets": [{ "expr": "sum by (user_id) (increase(studylife_ai_llm_cost_usd_total[1h]))", "legendFormat": "user {{user_id}}", "refId": "A" }] },
+        { "id": 8, "title": "Kosten nach Aufrufstelle (call_site)", "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+          "description": "chat, agent, rerank, retrieval, ingestion, eval, eval-fixture, eval-judge.",
+          "fieldConfig": { "defaults": { "unit": "currencyUSD" } },
+          "targets": [{ "expr": "sum by (call_site) (increase(studylife_ai_llm_cost_usd_total[1h]))", "legendFormat": "{{call_site}}", "refId": "A" }] },
+        { "id": 9, "title": "Kosten nach Modell", "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 22 },
+          "fieldConfig": { "defaults": { "unit": "currencyUSD" } },
+          "targets": [{ "expr": "sum by (model) (increase(studylife_ai_llm_cost_usd_total[1h]))", "legendFormat": "{{model}}", "refId": "A" }] },
+        { "id": 10, "title": "LLM-Latenz p50/p95/p99 (gesamt)", "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 22 },
+          "fieldConfig": { "defaults": { "unit": "s" } },
+          "targets": [
+            { "expr": "histogram_quantile(0.50, sum by (le) (rate(studylife_ai_llm_latency_seconds_bucket[5m])))", "legendFormat": "p50", "refId": "A" },
+            { "expr": "histogram_quantile(0.95, sum by (le) (rate(studylife_ai_llm_latency_seconds_bucket[5m])))", "legendFormat": "p95", "refId": "B" },
+            { "expr": "histogram_quantile(0.99, sum by (le) (rate(studylife_ai_llm_latency_seconds_bucket[5m])))", "legendFormat": "p99", "refId": "C" }
+          ] },
+        { "id": 11, "title": "LLM-Calls/Sekunde nach Aufrufstelle", "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 30 },
+          "targets": [{ "expr": "sum by (call_site) (rate(studylife_ai_llm_calls_total[5m]))", "legendFormat": "{{call_site}}", "refId": "A" }] },
+        { "id": 12, "title": "Erfolgs- vs. Fehlerrate (LLM-Calls)", "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 30 },
+          "fieldConfig": { "defaults": { "custom": { "stacking": { "mode": "normal" } } } },
+          "targets": [{ "expr": "sum by (status) (rate(studylife_ai_llm_calls_total[5m]))", "legendFormat": "{{status}}", "refId": "A" }] },
+        { "id": 13, "title": "Token-Verbrauch (Prompt vs. Completion)", "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 38 },
+          "targets": [
+            { "expr": "sum(rate(studylife_ai_llm_prompt_tokens_total[5m]))", "legendFormat": "prompt", "refId": "A" },
+            { "expr": "sum(rate(studylife_ai_llm_completion_tokens_total[5m]))", "legendFormat": "completion", "refId": "B" }
+          ] },
+        { "id": 14, "title": "Top-Nutzer nach Call-Volumen (24h)", "type": "table", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 38 },
+          "targets": [{ "expr": "topk(10, sum by (user_id) (increase(studylife_ai_llm_calls_total[24h])))", "format": "table", "instant": true, "refId": "A" }] },
+        { "id": 15, "title": "Fehlgeschlagene Calls nach Aufrufstelle/Modell", "type": "timeseries", "gridPos": { "h": 8, "w": 24, "x": 0, "y": 46 },
+          "description": "Nur status=\"failure\" - ein Anstieg zeigt, wo/wodurch gerade LLM-Aufrufe scheitern (Timeout, Rate-Limit, ...).",
+          "targets": [{ "expr": "sum by (call_site, model) (rate(studylife_ai_llm_calls_total{status=\"failure\"}[5m]))", "legendFormat": "{{call_site}} / {{model}}", "refId": "A" }] }
       ]
     }
