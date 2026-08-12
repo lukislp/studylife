@@ -25,11 +25,11 @@ jobs:
   test-unit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-dotnet@v6.0.0
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-      - uses: actions/cache@v6
+      - uses: actions/cache@v6.1.0
         with:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'StudyLife.sln') }}
@@ -39,7 +39,7 @@ jobs:
       - run: dotnet test tests/StudyLife.Shared.Tests/StudyLife.Shared.Tests.csproj --configuration ${{ env.CONFIGURATION }} --logger "junit;LogFilePath=TestResults/shared-tests-junit.xml" --collect:"XPlat Code Coverage"
       - run: dotnet test tests/StudyLife.Server.Tests/StudyLife.Server.Tests.csproj --configuration ${{ env.CONFIGURATION }} --logger "junit;LogFilePath=TestResults/server-tests-junit.xml" --collect:"XPlat Code Coverage"
       - if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: test-results
           path: |
@@ -66,7 +66,7 @@ jobs:
           -assemblyfilters:"-StudyLife.Client"
           -classfilters:"-StudyLife.Server.Migrations.*"
       - run: python3 scripts/generate_coverage_badge.py coverage-summary/Summary.json coverage-badge.json
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.1
         with:
           name: coverage-badge
           path: coverage-badge.json
@@ -75,11 +75,11 @@ jobs:
   test-i18n:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-dotnet@v6.0.0
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7.0.0
         with:
           python-version: "3.x"
       - run: python3 tools/check-i18n.py
@@ -87,11 +87,11 @@ jobs:
   test-lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-dotnet@v6.0.0
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-      - uses: actions/cache@v6
+      - uses: actions/cache@v6.1.0
         with:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'StudyLife.sln') }}
@@ -105,11 +105,11 @@ jobs:
   test-security:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-dotnet@v6.0.0
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-      - uses: actions/cache@v6
+      - uses: actions/cache@v6.1.0
         with:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'StudyLife.sln') }}
@@ -118,21 +118,37 @@ jobs:
       - run: dotnet workload restore StudyLife.sln
       - run: dotnet restore StudyLife.sln
       - run: |
-          dotnet list StudyLife.sln package --vulnerable --include-transitive | tee nuget-vulnerabilities.txt
-          if grep -q "has the following vulnerable packages" nuget-vulnerabilities.txt; then
-            echo "NuGet advisory findings detected - see nuget-vulnerabilities.txt artifact for details."
-            if grep -qE "^\s*>\s+\S+.*\s+(High|Critical)\s+http" nuget-vulnerabilities.txt; then
-              echo "::error::High or Critical severity vulnerability found among the findings above."
-              exit 1
-            fi
-          else
-            echo "No known vulnerable NuGet packages found."
-          fi
+          dotnet list StudyLife.sln package --vulnerable --include-transitive --format json > nuget-vulnerabilities.json
+          cat nuget-vulnerabilities.json
+          python3 -c "
+          import json, sys
+
+          def find_severities(obj):
+              if isinstance(obj, dict):
+                  if 'severity' in obj:
+                      yield obj['severity']
+                  for v in obj.values():
+                      yield from find_severities(v)
+              elif isinstance(obj, list):
+                  for item in obj:
+                      yield from find_severities(item)
+
+          data = json.load(open('nuget-vulnerabilities.json'))
+          severities = set(find_severities(data))
+          high_or_critical = {'High', 'Critical'} & severities
+          if high_or_critical:
+              print(f'::error::High or Critical severity vulnerability found: {sorted(high_or_critical)}')
+              sys.exit(1)
+          elif severities:
+              print(f'NuGet advisory findings detected (severities: {sorted(severities)}) - none High/Critical, not failing the build.')
+          else:
+              print('No known vulnerable NuGet packages found.')
+          "
       - if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: nuget-vulnerabilities
-          path: nuget-vulnerabilities.txt
+          path: nuget-vulnerabilities.json
           retention-days: 7
 
   test-k8s-manifests:
@@ -140,14 +156,14 @@ jobs:
     container:
       image: ghcr.io/yannh/kubeconform:latest-alpine
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7.0.1
       # The binary sits at /kubeconform in the image, not on PATH.
       - run: /kubeconform -summary -ignore-missing-schemas k8s/
 
   test-compose-scale:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7.0.1
       # Pure syntax/interpolation check (no startup) - catches broken YAML or wrong
       # variable references before someone tests "docker compose up" by hand.
       - run: docker compose -f docker-compose.scale.yml config > /dev/null
@@ -158,11 +174,11 @@ jobs:
     needs: [test-unit, test-i18n, test-lint, test-security, test-k8s-manifests, test-compose-scale]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-dotnet@v6.0.0
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-      - uses: actions/cache@v6
+      - uses: actions/cache@v6.1.0
         with:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'StudyLife.sln') }}
@@ -193,7 +209,7 @@ jobs:
       next_version: ${{ steps.semrel.outputs.new_release_version }}
       published: ${{ steps.semrel.outputs.new_release_published }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
       - id: semrel
@@ -221,11 +237,11 @@ jobs:
     env:
       NEXT_VERSION: ${{ needs.get-version.outputs.next_version }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-dotnet@v6.0.0
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-      - uses: actions/cache@v6
+      - uses: actions/cache@v6.1.0
         with:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'StudyLife.sln') }}
@@ -238,7 +254,7 @@ jobs:
       - run: dotnet publish src/StudyLife.Server/StudyLife.Server.csproj --configuration ${{ env.CONFIGURATION }} --runtime linux-x64 --no-self-contained -p:Version=${{ env.NEXT_VERSION }} --output publish/amd64
       - run: dotnet publish src/StudyLife.Server/StudyLife.Server.csproj --configuration ${{ env.CONFIGURATION }} --runtime linux-arm64 --no-self-contained -p:Version=${{ env.NEXT_VERSION }} --output publish/arm64
       - run: cd publish/amd64 && zip -r ../server.zip . && cd ../..
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.1
         with:
           name: publish-output
           path: |
@@ -266,8 +282,8 @@ jobs:
     env:
       NEXT_VERSION: ${{ needs.get-version.outputs.next_version }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v8
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/download-artifact@v8.0.1
         with:
           name: publish-output
           path: publish
@@ -302,6 +318,9 @@ jobs:
     needs: [get-version, docker-server]
     if: github.event_name == 'push' && needs.get-version.outputs.published == 'true'
     runs-on: ubuntu-latest
+    concurrency:
+      group: studylife-release-chain
+      cancel-in-progress: false
     permissions:
       contents: read
       packages: read
@@ -337,14 +356,14 @@ jobs:
       issues: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@v8.0.1
         with:
           name: publish-output
           path: publish
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@v8.0.1
         with:
           name: coverage-badge
           path: coverage-artifact
@@ -363,8 +382,16 @@ jobs:
       # this job's checkout and its own push (the concurrency group above already serializes
       # overlapping runs of this workflow, so this only guards against a genuinely external push).
       - if: steps.semrel.outcome == 'failure'
+        name: "Diagnose before retrying (expected: an out-of-band push landed since checkout)"
         run: |
           git fetch origin main
+          BEFORE_SHA="$(git rev-parse HEAD)"
+          AFTER_SHA="$(git rev-parse origin/main)"
+          if [ "$BEFORE_SHA" != "$AFTER_SHA" ]; then
+            echo "origin/main moved since checkout ($BEFORE_SHA -> $AFTER_SHA) - this matches the out-of-band-push race this retry is designed for."
+          else
+            echo "::warning::origin/main did NOT move since checkout - this failure is likely NOT the expected out-of-band-push race. Retrying anyway, but check the semantic-release log above for the real cause before assuming this is just a race."
+          fi
           git checkout -B main origin/main
       - if: steps.semrel.outcome == 'failure'
         uses: cycjimmy/semantic-release-action@b12c8f6015dc215fe37bc154d4ad456dd3833c90 # v6.0.0
