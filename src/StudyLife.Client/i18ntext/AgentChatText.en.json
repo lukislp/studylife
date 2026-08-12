@@ -9,7 +9,7 @@
   "EmptyChatHint": "Ask a question about your notes, courses, or sessions.",
   "EmptyAgentHint": "Ask the assistant to create a session, save a note, or answer a question.",
   "SourcesLabel": "Sources",
-  "InputPlaceholderChat": "Ask about your notes…",
+  "InputPlaceholderChat": "Ask about your notes, courses, or sessions…",
   "InputPlaceholderAgent": "Ask the assistant to do something…",
   "Send": "Send",
   "ErrorGeneric": "Something went wrong. Please try again.",
