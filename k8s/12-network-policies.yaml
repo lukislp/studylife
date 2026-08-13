@@ -89,6 +89,26 @@ spec:
       ports:
         - { protocol: TCP, port: 8443 }
 ---
+# Same reasoning and same port as allow-studylife-ai-to-web above - studylife-mcp (an MCP
+# server exposing StudyLife to Claude/other MCP clients, separate repo/namespace) calls
+# StudyLife's REST API server-to-server the identical way: cluster-internal Service DNS on
+# port 8443, trusting the same internal cert-manager CA (see studylife-mcp's own
+# k8s/03-studylife-ca.yaml and k8s/01-config.yaml's STUDYLIFE_BASE_URL).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-studylife-mcp-to-web
+  namespace: studylife-scale
+spec:
+  podSelector: { matchLabels: { app: studylife-web } }
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: studylife-mcp } }
+          podSelector: { matchLabels: { app: studylife-mcp } }
+      ports:
+        - { protocol: TCP, port: 8443 }
+---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:

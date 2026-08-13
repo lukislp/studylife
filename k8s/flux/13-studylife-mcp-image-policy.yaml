@@ -1,0 +1,13 @@
+# Same SemVer policy as 08-studylife-ai-image-policy.yaml - studylife-mcp's own
+# .releaserc.json also pushes plain SemVer tags without a "v" prefix via semantic-release.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: studylife-mcp
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: studylife-mcp
+  policy:
+    semver:
+      range: ">=0.0.0"
