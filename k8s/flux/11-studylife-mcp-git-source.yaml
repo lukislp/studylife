@@ -1,0 +1,20 @@
+# Third GitRepository source (in addition to 01-git-source.yaml watching this repo and
+# 06-studylife-ai-git-source.yaml watching studylife-ai) - studylife-mcp is a separate
+# repo/service (an MCP server exposing StudyLife to Claude/other MCP clients), onboarded onto
+# the same Flux install rather than standing up a second one, same reasoning as
+# 06-studylife-ai-git-source.yaml. Needs write access (not just read) - image-automation-
+# controller pushes commits for new image tags directly to main. Reuses the existing
+# "studylife-git-auth" secret, same trade-off already accepted for studylife-ai (a classic
+# GitHub PAT with public_repo scope, not scoped to a single repo anyway).
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: studylife-mcp
+  namespace: flux-system
+spec:
+  interval: 5m
+  url: https://github.com/lukislp/studylife-mcp.git
+  ref:
+    branch: main
+  secretRef:
+    name: studylife-git-auth
