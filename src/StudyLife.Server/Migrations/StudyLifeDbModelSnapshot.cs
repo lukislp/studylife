@@ -81,6 +81,12 @@ namespace StudyLife.Server.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("McpApiKeyCreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("McpApiKeyHash")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AiApiKeyHash")
@@ -90,6 +96,9 @@ namespace StudyLife.Server.Migrations
                         .IsUnique();
 
                     b.HasIndex("CalendarToken")
+                        .IsUnique();
+
+                    b.HasIndex("McpApiKeyHash")
                         .IsUnique();
 
                     b.ToTable("AuthUsers");

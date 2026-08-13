@@ -153,6 +153,7 @@ public class DemoSeederTests : IClassFixture<DemoSeederScenarioFixture>
         Assert.False(string.IsNullOrWhiteSpace(user.CalendarToken)); // ICS feed is a shown-off feature
         Assert.NotNull(user.CalendarTokenCreatedAt);
         Assert.Null(user.ApiKeyHash); // API keys must stay unusable on a demo instance
+        Assert.Null(user.McpApiKeyHash); // same rule for the studylife-mcp key slot
         Assert.True(user.CreatedAt < _fx.NowAfterFirstReseed, "Demo user's CreatedAt must lie in the past.");
     }
 
