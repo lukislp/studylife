@@ -1,3 +1,10 @@
+## [1.11.2](https://github.com/lukislp/studylife/compare/v1.11.1...v1.11.2) (2026-08-13)
+
+
+### Bug Fixes
+
+* **k8s:** correct every listener hostname to match the live Gateway ([a0a5952](https://github.com/lukislp/studylife/commit/a0a5952547aa12124277bcb6c0406ad9a2dee833))
+
 ## [1.11.1](https://github.com/lukislp/studylife/compare/v1.11.0...v1.11.1) (2026-08-13)
 
 
