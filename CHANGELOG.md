@@ -1,3 +1,10 @@
+## [1.10.3](https://github.com/lukislp/studylife/compare/v1.10.2...v1.10.3) (2026-08-13)
+
+
+### Bug Fixes
+
+* **monitoring:** raise Prometheus retention to 30d and PVC to 20Gi ([585a9a2](https://github.com/lukislp/studylife/commit/585a9a2c14d71d83c5238b1fa293f4493d0daa7d))
+
 ## [1.10.2](https://github.com/lukislp/studylife/compare/v1.10.1...v1.10.2) (2026-08-12)
 
 
