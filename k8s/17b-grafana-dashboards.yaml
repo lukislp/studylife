@@ -45,6 +45,13 @@ data:
         type: file
         options:
           path: /etc/grafana/provisioning/dashboard-json/studylife-ai
+      # Same reasoning as studylife-ai above - studylife-mcp is its own separate repo/release
+      # cycle too.
+      - name: studylife-mcp
+        folder: StudyLife MCP
+        type: file
+        options:
+          path: /etc/grafana/provisioning/dashboard-json/studylife-mcp
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -384,5 +391,58 @@ data:
             { "matcher": { "id": "byName", "options": "Value" }, "properties": [ { "id": "unit", "value": "currencyUSD" } ] }
           ] },
           "targets": [{ "expr": "sort_desc(sum by (user_id) (increase(studylife_ai_llm_cost_usd_total[30d])))", "format": "table", "instant": true, "refId": "A" }] }
+      ]
+    }
+---
+# Separate ConfigMap (own folder, see the provider entry above) - studylife-mcp's own metrics
+# (metrics.py: tool-call counters/duration, rate-limit-rejection counters) need the
+# "job=studylife-mcp" scrape job in k8s/14-prometheus.yaml to exist first, added in the same
+# commit as this file. Metric/label names come directly from studylife-mcp's own metrics.py
+# (audit.py's @audited decorator and rate_limit.py's RateLimitMiddleware) - not yet verified
+# against a real live scrape from this cluster, since the job didn't exist before this commit.
+# Worth a spot-check in Grafana after the first real scrape interval.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-studylife-mcp
+  namespace: monitoring
+data:
+  studylife-mcp.json: |
+    {
+      "title": "StudyLife MCP",
+      "uid": "studylife-mcp-overview",
+      "schemaVersion": 39,
+      "time": { "from": "now-6h", "to": "now" },
+      "description": "MCP-Tool-Call-Volumen, -Latenz und -Fehlerrate je Tool, plus Rate-Limit-Ablehnungen (Registrierung und Tool-Calls). Quelle: audit.py's @audited-Decorator und rate_limit.py (Prometheus-Metriken neben den strukturierten Logzeilen), siehe studylife-mcp-Repo metrics.py.",
+      "panels": [
+        { "id": 1, "title": "Service erreichbar", "type": "stat", "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+          "description": "Anzahl bereiter studylife-mcp-Pods, von Prometheus selbst über den Scrape-Erfolg gemessen (up-Metrik) - 0 heißt der Service antwortet nicht auf /metrics.",
+          "fieldConfig": { "defaults": { "thresholds": { "mode": "absolute", "steps": [
+            { "color": "red", "value": null }, { "color": "green", "value": 1 } ] } } },
+          "targets": [{ "expr": "count(up{job=\"studylife-mcp\"} == 1) or vector(0)", "refId": "A" }] },
+        { "id": 2, "title": "Tool-Calls/Sekunde (gesamt)", "type": "stat", "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
+          "targets": [{ "expr": "sum(rate(studylife_mcp_tool_calls_total[5m]))", "refId": "A" }] },
+        { "id": 3, "title": "Fehlerrate (Tool-Calls)", "type": "stat", "gridPos": { "h": 6, "w": 6, "x": 12, "y": 0 },
+          "fieldConfig": { "defaults": { "unit": "percentunit", "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": null }, { "color": "yellow", "value": 0.01 }, { "color": "red", "value": 0.05 } ] } } },
+          "targets": [{ "expr": "sum(rate(studylife_mcp_tool_calls_total{status=\"error\"}[5m])) / sum(rate(studylife_mcp_tool_calls_total[5m])) or vector(0)", "refId": "A" }] },
+        { "id": 4, "title": "Rate-Limit-Ablehnungen/Sekunde", "type": "stat", "gridPos": { "h": 6, "w": 6, "x": 18, "y": 0 },
+          "description": "Sollte dauerhaft nahe 0 liegen - Anstiege zeigen entweder Missbrauchsversuche (/register) oder einen durchdrehenden/fehlerhaften Client (/mcp).",
+          "targets": [{ "expr": "sum(rate(studylife_mcp_rate_limit_rejections_total[5m]))", "refId": "A" }] },
+        { "id": 5, "title": "Tool-Calls/Sekunde nach Tool", "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+          "targets": [{ "expr": "sum by (tool) (rate(studylife_mcp_tool_calls_total[5m]))", "legendFormat": "{{tool}}", "refId": "A" }] },
+        { "id": 6, "title": "Tool-Call-Latenz p95 nach Tool", "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+          "fieldConfig": { "defaults": { "unit": "s" } },
+          "targets": [{ "expr": "histogram_quantile(0.95, sum by (tool, le) (rate(studylife_mcp_tool_call_duration_seconds_bucket[5m])))", "legendFormat": "{{tool}}", "refId": "A" }] },
+        { "id": 7, "title": "Erfolgs- vs. Fehlerrate (Tool-Calls)", "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+          "fieldConfig": { "defaults": { "custom": { "stacking": { "mode": "normal" } } } },
+          "targets": [{ "expr": "sum by (status) (rate(studylife_mcp_tool_calls_total[5m]))", "legendFormat": "{{status}}", "refId": "A" }] },
+        { "id": 8, "title": "Rate-Limit-Ablehnungen nach Pfad", "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+          "targets": [{ "expr": "sum by (path) (rate(studylife_mcp_rate_limit_rejections_total[5m]))", "legendFormat": "{{path}}", "refId": "A" }] },
+        { "id": 9, "title": "Top-Tools nach Call-Volumen (24h)", "type": "table", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 22 },
+          "targets": [{ "expr": "topk(10, sum by (tool) (increase(studylife_mcp_tool_calls_total[24h])))", "format": "table", "instant": true, "refId": "A" }] },
+        { "id": 10, "title": "Fehlgeschlagene Calls nach Tool (24h)", "type": "table", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 22 },
+          "description": "Nur status=\"error\" - zeigt, welches Tool in den letzten 24h am häufigsten fehlgeschlagen ist.",
+          "targets": [{ "expr": "topk(10, sum by (tool) (increase(studylife_mcp_tool_calls_total{status=\"error\"}[24h])))", "format": "table", "instant": true, "refId": "A" }] }
       ]
     }
