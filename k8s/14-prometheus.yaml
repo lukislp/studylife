@@ -115,6 +115,25 @@ data:
             replacement: "${1}:8000"
           - source_labels: [__meta_kubernetes_pod_name]
             target_label: pod
+      # studylife-mcp (separate repo/namespace, see its own k8s/04-app.yaml) - tool-call
+      # counters/duration and rate-limit-rejection counters (studylife_mcp_*, hand-registered
+      # in metrics.py), exposed on the app's own port 8000 at /metrics. Reached directly
+      # pod-to-pod like every job on this page - never through the Gateway or Tailscale Funnel
+      # ingress paths that app also has. Dashboard: k8s/17b-grafana-dashboards.yaml
+      # "StudyLife MCP" folder.
+      - job_name: studylife-mcp
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces: { names: [studylife-mcp] }
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            regex: studylife-mcp
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_ip]
+            target_label: __address__
+            replacement: "${1}:8000"
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
       # NGINX Gateway Fabric (see k8s/06c-nginx-gateway-fabric.md, now completely replaces the
       # decommissioned ingress-nginx): the control-plane pod (nginx-gateway:
       # nginx_gateway_fabric_*/controller_runtime_*) and the NGINX data plane provisioned per

@@ -116,6 +116,7 @@ spec:
             - { name: dashboard-core, mountPath: /etc/grafana/provisioning/dashboard-json/core }
             - { name: dashboard-community, mountPath: /etc/grafana/provisioning/dashboard-json/community }
             - { name: dashboard-studylife-ai, mountPath: /etc/grafana/provisioning/dashboard-json/studylife-ai }
+            - { name: dashboard-studylife-mcp, mountPath: /etc/grafana/provisioning/dashboard-json/studylife-mcp }
             - { name: alerting, mountPath: /etc/grafana/provisioning/alerting }
             - { name: backend-tls, mountPath: /etc/grafana-backend-tls, readOnly: true }
           readinessProbe:
@@ -129,6 +130,7 @@ spec:
         - { name: dashboard-core, configMap: { name: grafana-dashboard-core } }
         - { name: dashboard-community, configMap: { name: grafana-dashboard-community } }
         - { name: dashboard-studylife-ai, configMap: { name: grafana-dashboard-studylife-ai } }
+        - { name: dashboard-studylife-mcp, configMap: { name: grafana-dashboard-studylife-mcp } }
         - { name: alerting, configMap: { name: grafana-alerting } }
         - { name: backend-tls, secret: { secretName: grafana-backend-tls } }
 ---
