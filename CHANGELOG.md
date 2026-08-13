@@ -1,3 +1,10 @@
+## [1.11.1](https://github.com/lukislp/studylife/compare/v1.11.0...v1.11.1) (2026-08-13)
+
+
+### Bug Fixes
+
+* **tests:** assert AiApiKeyHash stays null for the seeded demo user ([d5fbd2a](https://github.com/lukislp/studylife/commit/d5fbd2a1f705252f358ec194b302ff8f70420507)), closes [#2](https://github.com/lukislp/studylife/issues/2)
+
 # [1.11.0](https://github.com/lukislp/studylife/compare/v1.10.3...v1.11.0) (2026-08-13)
 
 
