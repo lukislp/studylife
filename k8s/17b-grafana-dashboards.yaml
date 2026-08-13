@@ -443,6 +443,10 @@ data:
           "targets": [{ "expr": "topk(10, sum by (tool) (increase(studylife_mcp_tool_calls_total[24h])))", "format": "table", "instant": true, "refId": "A" }] },
         { "id": 10, "title": "Fehlgeschlagene Calls nach Tool (24h)", "type": "table", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 22 },
           "description": "Nur status=\"error\" - zeigt, welches Tool in den letzten 24h am häufigsten fehlgeschlagen ist.",
-          "targets": [{ "expr": "topk(10, sum by (tool) (increase(studylife_mcp_tool_calls_total{status=\"error\"}[24h])))", "format": "table", "instant": true, "refId": "A" }] }
+          "targets": [{ "expr": "topk(10, sum by (tool) (increase(studylife_mcp_tool_calls_total{status=\"error\"}[24h])))", "format": "table", "instant": true, "refId": "A" }] },
+        { "id": 11, "title": "Registrierte OAuth-Clients (aktiviert vs. wartend)", "type": "timeseries", "gridPos": { "h": 8, "w": 24, "x": 0, "y": 30 },
+          "description": "\"pending\" = per DCR registriert, aber nie eingeloggt (kein Access-Token je ausgestellt) - wird nach 24h ohne Aktivierung automatisch bereinigt (oauth_store.py UNUSED_CLIENT_TTL_SECONDS). Ein dauerhaft hoher/wachsender pending-Wert relativ zu activated wäre das Signal für laufenden Registrierungs-Missbrauch trotz Rate-Limit.",
+          "fieldConfig": { "defaults": { "custom": { "stacking": { "mode": "normal" } } } },
+          "targets": [{ "expr": "sum by (status) (studylife_mcp_registered_clients)", "legendFormat": "{{status}}", "refId": "A" }] }
       ]
     }
