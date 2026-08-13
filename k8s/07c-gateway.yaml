@@ -224,18 +224,36 @@ spec:
           from: Selector
           selector:
             matchLabels: { kubernetes.io/metadata.name: homelab-hub }
-    # studylife-mcp (separate repo/namespace) - LAN-only on purpose, no "-public" counterpart:
-    # that project's public exposure deliberately goes through Tailscale Funnel instead of this
-    # gateway's example.com pattern (see studylife-mcp's docs/decisions.md "Public exposure").
+    # studylife-mcp (separate repo/namespace) - same -heim/-public pair as every other service
+    # on this Gateway. Neither is actually "public internet" reachable - lukas2311-homelab.com
+    # is only a vehicle for a trusted (Cloudflare-issued) cert on internal-only traffic, same
+    # trust level as heim.lan, terminated by NPM inside the network (see this file's own header
+    # comment on why two listeners share one cert: SNI is always *.heim.lan, but the public Host
+    # header passes through 1:1). studylife-mcp's actual public/internet-reachable path is a
+    # separate thing entirely - Tailscale Funnel, see that repo's docs/decisions.md.
     #
     # Hostname uses "heim.lan" (not "home.lan" like every other listener above) because the
-    # LIVE Gateway object already drifted to "heim.lan"/a real public domain at some point after
-    # this file was last written - `kubectl -n nginx-gateway get gateway studylife-gateway -o
-    # yaml` is the actual source of truth for existing hostnames right now, not the entries
-    # above. Only this new listener was added here; the pre-existing drift on the others was
-    # left untouched rather than guessed at and "fixed" without confirming the real intent.
+    # LIVE Gateway object already drifted to "heim.lan"/the real lukas2311-homelab.com domain at
+    # some point after this file was last written - `kubectl -n nginx-gateway get gateway
+    # studylife-gateway -o yaml` is the actual source of truth for existing hostnames right now,
+    # not the entries above. Only these two new listeners were added here; the pre-existing
+    # drift on the others was left untouched rather than guessed at and "fixed" without
+    # confirming the real intent.
     - name: studylife-mcp-heim
       hostname: studylife-mcp.heim.lan
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - { kind: Secret, name: studylife-mcp-tls }
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels: { kubernetes.io/metadata.name: studylife-mcp }
+    - name: studylife-mcp-public
+      hostname: studylife-mcp.lukas2311-homelab.com
       port: 443
       protocol: HTTPS
       tls:
