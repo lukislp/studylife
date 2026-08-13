@@ -1,3 +1,15 @@
+# [1.11.0](https://github.com/lukislp/studylife/compare/v1.10.3...v1.11.0) (2026-08-13)
+
+
+### Bug Fixes
+
+* **monitoring:** scope currencyUSD formatting to the Value column only ([6e9437c](https://github.com/lukislp/studylife/commit/6e9437c25b0dbea997fbd4e70131b80ddfe270fc))
+
+
+### Features
+
+* **monitoring:** add 30-day total cost per user panel to studylife-ai dashboard ([87f5056](https://github.com/lukislp/studylife/commit/87f5056034b5e1c6938951bbdf104c06cc7d9e15))
+
 ## [1.10.3](https://github.com/lukislp/studylife/compare/v1.10.2...v1.10.3) (2026-08-13)
 
 
