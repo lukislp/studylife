@@ -368,8 +368,72 @@ public class SettingsControllerAiApiKeyTests : IClassFixture<CustomWebApplicatio
 }
 
 /// <summary>
-/// The whole point of two separate key slots: generating/revoking one must never affect the
-/// other. Own class/factory, same isolation reasoning as the two lifecycle tests above.
+/// Same lifecycle as SettingsControllerHaApiKeyTests, mirrored for the separate studylife-mcp
+/// key slot (AuthUserEntity.McpApiKeyHash / api/settings/mcp-api-key). Own class/factory for the
+/// same reason as the HA test - generate/revoke mutate AuthUser 1.
+/// </summary>
+public class SettingsControllerMcpApiKeyTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+
+    public SettingsControllerMcpApiKeyTests(CustomWebApplicationFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient(); // carries the seeded test user's session token
+    }
+
+    [Fact]
+    public async Task McpApiKeyLifecycle_StatusGenerateGateRevoke()
+    {
+        // ── Fresh state: no key ─────────────────────────────────────────────────────────────
+        var status = await _client.GetFromJsonAsync<McpApiKeyStatusDto>("/api/settings/mcp-api-key");
+        Assert.NotNull(status);
+        Assert.False(status!.HasKey);
+        Assert.Null(status.CreatedAt);
+
+        // ── Generate: plaintext exactly once, only the hash is stored ───────────────────────
+        var generateResponse = await _client.PostAsync("/api/settings/mcp-api-key/generate", null);
+        Assert.Equal(HttpStatusCode.OK, generateResponse.StatusCode);
+        var generated = await generateResponse.Content.ReadFromJsonAsync<McpApiKeyGenerateResponseDto>();
+        Assert.NotNull(generated);
+        Assert.NotEmpty(generated!.ApiKey);
+        Assert.True(generated.CreatedAt >= DateTime.UtcNow.AddMinutes(-2));
+
+        status = await _client.GetFromJsonAsync<McpApiKeyStatusDto>("/api/settings/mcp-api-key");
+        Assert.True(status!.HasKey);
+        Assert.NotNull(status.CreatedAt);
+
+        // ── The generated key passes the /api gate as X-Api-Key, same as the HA/AI keys ─────
+        using (var keyClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, generated.ApiKey))
+        {
+            Assert.Equal(HttpStatusCode.OK, (await keyClient.GetAsync("/api/notes")).StatusCode);
+
+            // ... but the key must NOT be able to manage itself: all three mcp-api-key
+            // endpoints reject gate-only (API key) authentication with 401.
+            Assert.Equal(HttpStatusCode.Unauthorized, (await keyClient.GetAsync("/api/settings/mcp-api-key")).StatusCode);
+            Assert.Equal(HttpStatusCode.Unauthorized, (await keyClient.PostAsync("/api/settings/mcp-api-key/generate", null)).StatusCode);
+            Assert.Equal(HttpStatusCode.Unauthorized, (await keyClient.PostAsync("/api/settings/mcp-api-key/revoke", null)).StatusCode);
+        }
+
+        // ── Revoke (with a real session): key hash deleted, old key gets 401 at the gate ────
+        var revokeResponse = await _client.PostAsync("/api/settings/mcp-api-key/revoke", null);
+        Assert.Equal(HttpStatusCode.NoContent, revokeResponse.StatusCode);
+
+        status = await _client.GetFromJsonAsync<McpApiKeyStatusDto>("/api/settings/mcp-api-key");
+        Assert.False(status!.HasKey);
+        Assert.Null(status.CreatedAt);
+
+        using (var revokedClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, generated.ApiKey))
+        {
+            Assert.Equal(HttpStatusCode.Unauthorized, (await revokedClient.GetAsync("/api/notes")).StatusCode);
+        }
+    }
+}
+
+/// <summary>
+/// The whole point of three separate key slots: generating/revoking one must never affect the
+/// others. Own class/factory, same isolation reasoning as the lifecycle tests above.
 /// </summary>
 public class SettingsControllerApiKeySlotsAreIndependentTests : IClassFixture<CustomWebApplicationFactory>
 {
@@ -383,35 +447,50 @@ public class SettingsControllerApiKeySlotsAreIndependentTests : IClassFixture<Cu
     }
 
     [Fact]
-    public async Task GeneratingOrRevokingOneKeySlot_DoesNotAffectTheOther()
+    public async Task GeneratingOrRevokingOneKeySlot_DoesNotAffectTheOthers()
     {
         var haGenerated = (await (await _client.PostAsync("/api/settings/ha-api-key/generate", null))
             .Content.ReadFromJsonAsync<HaApiKeyGenerateResponseDto>())!;
         var aiGenerated = (await (await _client.PostAsync("/api/settings/ai-api-key/generate", null))
             .Content.ReadFromJsonAsync<AiApiKeyGenerateResponseDto>())!;
+        var mcpGenerated = (await (await _client.PostAsync("/api/settings/mcp-api-key/generate", null))
+            .Content.ReadFromJsonAsync<McpApiKeyGenerateResponseDto>())!;
 
-        // Both keys independently authenticate at the gate right after generation.
+        // All three keys independently authenticate at the gate right after generation.
         using (var haClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, haGenerated.ApiKey))
         using (var aiClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, aiGenerated.ApiKey))
+        using (var mcpClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, mcpGenerated.ApiKey))
         {
             Assert.Equal(HttpStatusCode.OK, (await haClient.GetAsync("/api/notes")).StatusCode);
             Assert.Equal(HttpStatusCode.OK, (await aiClient.GetAsync("/api/notes")).StatusCode);
+            Assert.Equal(HttpStatusCode.OK, (await mcpClient.GetAsync("/api/notes")).StatusCode);
         }
 
-        // Revoking the AI key must not invalidate the HA key.
+        // Revoking the AI key must not invalidate the HA or MCP keys.
         Assert.Equal(HttpStatusCode.NoContent, (await _client.PostAsync("/api/settings/ai-api-key/revoke", null)).StatusCode);
         using (var haClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, haGenerated.ApiKey))
+        using (var mcpClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, mcpGenerated.ApiKey))
         {
             Assert.Equal(HttpStatusCode.OK, (await haClient.GetAsync("/api/notes")).StatusCode);
+            Assert.Equal(HttpStatusCode.OK, (await mcpClient.GetAsync("/api/notes")).StatusCode);
         }
         var aiStatus = await _client.GetFromJsonAsync<AiApiKeyStatusDto>("/api/settings/ai-api-key");
         Assert.False(aiStatus!.HasKey);
         var haStatus = await _client.GetFromJsonAsync<HaApiKeyStatusDto>("/api/settings/ha-api-key");
         Assert.True(haStatus!.HasKey);
+        var mcpStatus = await _client.GetFromJsonAsync<McpApiKeyStatusDto>("/api/settings/mcp-api-key");
+        Assert.True(mcpStatus!.HasKey);
 
-        // Regenerating the HA key must not resurrect or touch the (now revoked) AI key.
+        // Regenerating the HA key must not resurrect the (now revoked) AI key, nor touch MCP's.
         await _client.PostAsync("/api/settings/ha-api-key/generate", null);
         aiStatus = await _client.GetFromJsonAsync<AiApiKeyStatusDto>("/api/settings/ai-api-key");
         Assert.False(aiStatus!.HasKey);
+        mcpStatus = await _client.GetFromJsonAsync<McpApiKeyStatusDto>("/api/settings/mcp-api-key");
+        Assert.True(mcpStatus!.HasKey);
+
+        // Revoking the MCP key must not invalidate the (regenerated) HA key.
+        Assert.Equal(HttpStatusCode.NoContent, (await _client.PostAsync("/api/settings/mcp-api-key/revoke", null)).StatusCode);
+        haStatus = await _client.GetFromJsonAsync<HaApiKeyStatusDto>("/api/settings/ha-api-key");
+        Assert.True(haStatus!.HasKey);
     }
 }

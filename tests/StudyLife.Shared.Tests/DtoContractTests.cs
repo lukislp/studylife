@@ -88,6 +88,41 @@ public class DtoContractTests
     }
 
     [Fact]
+    public void McpApiKeyStatusDto_Defaults_MeanNoKeyGenerated()
+    {
+        var dto = new McpApiKeyStatusDto();
+
+        Assert.False(dto.HasKey);
+        Assert.Null(dto.CreatedAt);
+    }
+
+    [Fact]
+    public void McpApiKeyStatusDto_RoundTrip_PreservesKeyStatusAndTimestamp()
+    {
+        var created = new DateTime(2026, 8, 1, 12, 30, 0);
+        var dto = RoundTrip(new McpApiKeyStatusDto { HasKey = true, CreatedAt = created });
+
+        Assert.True(dto.HasKey);
+        Assert.Equal(created, dto.CreatedAt);
+    }
+
+    [Fact]
+    public void McpApiKeyGenerateResponseDto_RoundTrip_PreservesPlaintextKeyAndTimestamp()
+    {
+        var created = new DateTime(2026, 8, 2, 9, 0, 0);
+        var dto = RoundTrip(new McpApiKeyGenerateResponseDto { ApiKey = "sl_secret123", CreatedAt = created });
+
+        Assert.Equal("sl_secret123", dto.ApiKey);
+        Assert.Equal(created, dto.CreatedAt);
+    }
+
+    [Fact]
+    public void McpApiKeyGenerateResponseDto_Default_HasEmptyKeyNotNull()
+    {
+        Assert.Equal("", new McpApiKeyGenerateResponseDto().ApiKey);
+    }
+
+    [Fact]
     public void VersionResponseDto_RoundTrip_PreservesVersionString()
     {
         Assert.Equal("1.42.0", RoundTrip(new VersionResponseDto { Version = "1.42.0" }).Version);
