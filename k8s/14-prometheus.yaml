@@ -329,7 +329,12 @@ metadata:
 spec:
   accessModes: ["ReadWriteOnce"]
   resources:
-    requests: { storage: 5Gi }
+    # 5Gi -> 20Gi 2026-08-13, alongside the retention bump to 30d (~9.4GB estimated) - the
+    # local-path StorageClass doesn't support live volume expansion (no
+    # allowVolumeExpansion), so this requires deleting and recreating the PVC, not just an
+    # in-place edit (existing 7d of data is lost, acceptable - it was mostly same-day test
+    # traffic).
+    requests: { storage: 20Gi }
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -353,7 +358,11 @@ spec:
           args:
             - --config.file=/etc/prometheus/prometheus.yml
             - --storage.tsdb.path=/prometheus
-            - --storage.tsdb.retention.time=7d # limits growth to the Pi's storage budget
+            # Raised from 7d 2026-08-13: real usage was ~315MB/day against 195GB+ free on both
+            # node root filesystems (verified live via node_filesystem_avail_bytes) - 30d costs
+            # ~9.4GB, comfortably affordable. Needed for the studylife-ai per-user cost dashboard
+            # to show more than a rolling week.
+            - --storage.tsdb.retention.time=30d
           ports:
             - containerPort: 9090
           resources:
