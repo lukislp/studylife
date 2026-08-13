@@ -246,6 +246,13 @@ Architecture, API reference, and notes for changes: [docs/ARCHITECTURE.md](docs/
 
 ---
 
+## Add-ons
+
+Two separate repos extend this app without their own database or user system - both authenticate against a per-user API key generated on the Setup page and read/write through StudyLife's existing API.
+
+- **[studylife-ai](https://github.com/lukislp/studylife-ai)** - a RAG study assistant with source citations over your own notes/courses/sessions, a LangGraph agent with a confirmation flow for write actions, and a RAGAS eval pipeline in CI. FastAPI + LiteLLM (provider-agnostic - API models or fully local via Ollama) + Qdrant.
+- **[studylife-mcp](https://github.com/lukislp/studylife-mcp)** - a Model Context Protocol server exposing StudyLife to Claude and other MCP clients: read tools (courses, notes, sessions, course goals), write tools (create note, create session), and a self-built OAuth 2.1 authorization server for multi-user remote access.
+
 ## Home Assistant Integration
 
 [StudyLife for Home Assistant](https://github.com/lukislp/studylife-hacs) is a separate HACS custom integration that maps dashboard and evaluation data (active/next session, weekly/monthly statistics, streak including the longest ever achieved series, quotas, grade average, ECTS progress, ECTS forecast, month comparison, achievements, topic progress, course tags, course catalog, live timer phase, weekly review as an event) as sensors, binary sensors (including inactivity warning), and calendars (sessions plus course goals) in Home Assistant, plus a dropdown of active courses (`select.studylife_active_course`) and services for creating/editing/deleting sessions and course goals. The pairing runs via a per-user API key generated once on the Setup page (see [Security](#security)). Installation and details are in that repo's README.
