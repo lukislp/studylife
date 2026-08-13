@@ -242,10 +242,10 @@ public class SettingsController : ControllerBase
 
     // Same three-endpoint shape as the ha-api-key group above, for the separate studylife-ai
     // key slot (AuthUserEntity.AiApiKeyHash) - deliberately duplicated rather than
-    // parameterized into one generic "integration key" mechanism: there are exactly two
-    // integrations today, and a real per-integration state machine (open/rotate/revoke on a
-    // shared code path) would be more indirection than the current need justifies. Revisit if
-    // a third integration shows up.
+    // parameterized into one generic "integration key" mechanism: a real per-integration state
+    // machine (open/rotate/revoke on a shared code path) would be more indirection than the
+    // current need justifies. Still true with the third slot added below for studylife-mcp
+    // (McpApiKeyHash) - three near-identical endpoint trios, on purpose.
 
     /// <summary>Status for the setup card: does an AI-integration key exist, and since when?
     /// Same "never the plaintext" rule as GetHaApiKeyStatus.</summary>
@@ -297,6 +297,55 @@ public class SettingsController : ControllerBase
         user.AiApiKeyCreatedAt = null;
         await _db.SaveChangesAsync();
         await _aiProxyClient.RevokeKeyAsync(userId, ct);
+        return NoContent();
+    }
+
+    // Same three-endpoint shape again, for the separate studylife-mcp key slot
+    // (AuthUserEntity.McpApiKeyHash). Unlike the ai-api-key group above, there is no
+    // server-to-server registration call here: studylife-mcp is a locally-run MCP server (like
+    // Home Assistant, not like the hosted studylife-ai microservice) that the user configures
+    // with the plaintext key themselves - this backend never needs to hand it to anyone.
+
+    /// <summary>Status for the setup card: does an MCP-integration key exist, and since when?
+    /// Same "never the plaintext" rule as GetHaApiKeyStatus.</summary>
+    [HttpGet("mcp-api-key")]
+    public async Task<ActionResult<McpApiKeyStatusDto>> GetMcpApiKeyStatus()
+    {
+        if (SessionUser is not int userId) return Unauthorized();
+        var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+        return new McpApiKeyStatusDto { HasKey = user.McpApiKeyHash != null, CreatedAt = user.McpApiKeyCreatedAt };
+    }
+
+    /// <summary>Generates a new long-lived per-user API key for studylife-mcp (immediately
+    /// replaces any existing one in this slot only - ApiKeyHash/AiApiKeyHash are untouched).
+    /// Same one-time-plaintext shape as GenerateHaApiKey.</summary>
+    [HttpPost("mcp-api-key/generate")]
+    public async Task<ActionResult<McpApiKeyGenerateResponseDto>> GenerateMcpApiKey()
+    {
+        if (SessionUser is not int userId) return Unauthorized();
+        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+
+        var key = AuthSessionService.GenerateToken();
+        user.McpApiKeyHash = AuthSessionService.HashToken(key);
+        user.McpApiKeyCreatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+        return new McpApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = user.McpApiKeyCreatedAt.Value };
+    }
+
+    /// <summary>Permanently revokes the studylife-mcp API key (hash is deleted) - studylife-mcp
+    /// gets 401 from the next request onward. The other two slots are untouched.</summary>
+    [HttpPost("mcp-api-key/revoke")]
+    public async Task<IActionResult> RevokeMcpApiKey()
+    {
+        if (SessionUser is not int userId) return Unauthorized();
+        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+
+        user.McpApiKeyHash = null;
+        user.McpApiKeyCreatedAt = null;
+        await _db.SaveChangesAsync();
         return NoContent();
     }
 

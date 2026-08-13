@@ -379,6 +379,28 @@ public class AiApiKeyGenerateResponseDto
 }
 
 /// <summary>
+/// Response of GET /api/settings/mcp-api-key: status of the long-lived per-user API key for the
+/// studylife-mcp integration - separate slot from the Home Assistant and studylife-ai keys (see
+/// AuthUserEntity.McpApiKeyHash), same "existence + timestamp only, never the plaintext" shape as
+/// HaApiKeyStatusDto.
+/// </summary>
+public class McpApiKeyStatusDto
+{
+    public bool HasKey { get; set; }
+    public DateTime? CreatedAt { get; set; }
+}
+
+/// <summary>
+/// Response of POST /api/settings/mcp-api-key/generate - same one-time-plaintext shape as
+/// HaApiKeyGenerateResponseDto, for the separate studylife-mcp key slot.
+/// </summary>
+public class McpApiKeyGenerateResponseDto
+{
+    public string ApiKey { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
+}
+
+/// <summary>
 /// Request/response shapes for POST /api/ai/chat, /api/ai/agent, /api/ai/agent/confirm - the
 /// AiProxyController passes bodies through byte-for-byte, so these must match studylife-ai's own
 /// pydantic schemas exactly (field names, including its snake_case ones - see

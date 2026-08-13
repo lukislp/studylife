@@ -267,6 +267,12 @@
              SetupAiIntegrationCard. -->
         <SetupAiIntegrationCard />
 
+        <!-- studylife-mcp: THIRD, separate long-lived per-user API key slot (McpApiKeyHash) for
+             the MCP server exposing StudyLife to Claude Desktop/other MCP clients - same shape
+             as the other two keys but independently generated/revoked, see
+             SetupMcpIntegrationCard. -->
+        <SetupMcpIntegrationCard />
+
         @if (_rawBackupSupported)
         {
             <!-- Backup & export. DownloadDatabaseButtonText/PasswordPlaceholder/-Hint only apply to
