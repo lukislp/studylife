@@ -380,7 +380,9 @@ data:
           "targets": [{ "expr": "sum by (call_site, model) (rate(studylife_ai_llm_calls_total{status=\"failure\"}[5m]))", "legendFormat": "{{call_site}} / {{model}}", "refId": "A" }] },
         { "id": 16, "title": "Gesamtkosten pro Nutzer (30 Tage)", "type": "table", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 54 },
           "description": "Rollierende 30-Tage-Summe pro User - Obergrenze ist die Prometheus-Retention (k8s/14-prometheus.yaml), keine unbegrenzte 'seit Projektstart'-Summe. Dafür bräuchte es einen separaten persistenten Cost-Ledger (noch nicht gebaut, s. docs/decisions.md im studylife-ai-Repo).",
-          "fieldConfig": { "defaults": { "unit": "currencyUSD" } },
+          "fieldConfig": { "defaults": {}, "overrides": [
+            { "matcher": { "id": "byName", "options": "Value" }, "properties": [ { "id": "unit", "value": "currencyUSD" } ] }
+          ] },
           "targets": [{ "expr": "sort_desc(sum by (user_id) (increase(studylife_ai_llm_cost_usd_total[30d])))", "format": "table", "instant": true, "refId": "A" }] }
       ]
     }
