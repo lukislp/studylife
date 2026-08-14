@@ -1,3 +1,10 @@
+## [1.11.5](https://github.com/lukislp/studylife/compare/v1.11.4...v1.11.5) (2026-08-14)
+
+
+### Bug Fixes
+
+* pad mobile page content below the notch/status bar ([04d6274](https://github.com/lukislp/studylife/commit/04d62747b59d4b8d2bfa27d9e60289743ab1c7ed))
+
 ## [1.11.4](https://github.com/lukislp/studylife/compare/v1.11.3...v1.11.4) (2026-08-14)
 
 
