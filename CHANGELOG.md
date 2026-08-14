@@ -1,3 +1,16 @@
+# [1.12.0](https://github.com/lukislp/studylife/compare/v1.11.6...v1.12.0) (2026-08-14)
+
+
+### Bug Fixes
+
+* hide the visible focus ring FocusOnNavigate leaves on page headings ([5723b27](https://github.com/lukislp/studylife/commit/5723b27fb680a9e2233630761f324269a66b61f3))
+* unclip the 00:00 label at the top of the calendar hour grid ([e799d33](https://github.com/lukislp/studylife/commit/e799d33397f8a23f4f10ed88c0812271e7bceebe))
+
+
+### Features
+
+* mark the end of the day at 24:00 in the calendar hour grid ([161aa1c](https://github.com/lukislp/studylife/commit/161aa1c765363b5650aad7a3b834a95d0fa4aa70))
+
 ## [1.11.6](https://github.com/lukislp/studylife/compare/v1.11.5...v1.11.6) (2026-08-14)
 
 
