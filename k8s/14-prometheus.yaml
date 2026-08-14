@@ -178,6 +178,39 @@ data:
             replacement: "${1}:9100"
           - source_labels: [__meta_kubernetes_pod_node_name]
             target_label: node
+      # Loki (k8s/18-loki.yaml) - exposes /metrics on the same port as its log API (3100, no
+      # separate metrics port). Feeds the "Log Pipeline Health" row on the Kubernetes Logs
+      # dashboard (k8s/17b-grafana-dashboards.yaml).
+      - job_name: loki
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces: { names: [monitoring] }
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            regex: loki
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_ip]
+            target_label: __address__
+            replacement: "${1}:3100"
+      # Promtail (k8s/19-promtail.yaml) - DaemonSet, one target per node (same role:pod +
+      # per-pod discovery pattern as node-exporter above, not a single aggregate target).
+      # sent/dropped entry counters are the direct signal for the two root causes found the
+      # first time this was actually deployed (see docs/decisions.md in studylife-mcp): a
+      # stalled discovery pipeline shows up here as sent_entries_total flatlining, a missing
+      # NetworkPolicy shows up as dropped_entries_total{reason="ingester_error"} climbing.
+      - job_name: promtail
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces: { names: [monitoring] }
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            regex: promtail
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_ip]
+            target_label: __address__
+            replacement: "${1}:9080"
+          - source_labels: [__meta_kubernetes_pod_node_name]
+            target_label: node
       # Nginx Proxy Manager (NPM) + Keepalived - runs OUTSIDE the K8s cluster directly as a
       # Docker Compose stack on both Pis (see docs/SCALING.md), hence static_configs instead of
       # kubernetes_sd_configs. nginx-prometheus-exporter scrapes NPM's stub_status (enabled via
