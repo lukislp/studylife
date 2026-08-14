@@ -1,3 +1,20 @@
+# [1.14.0](https://github.com/lukislp/studylife/compare/v1.13.0...v1.14.0) (2026-08-14)
+
+
+### Bug Fixes
+
+* **auth:** persist DataProtection key ring to Redis across replicas ([43d9ed7](https://github.com/lukislp/studylife/commit/43d9ed7ba3c1dce0f303e36c2ad7e9df7e029013)), closes [hi#severity](https://github.com/hi/issues/severity)
+* **monitoring:** allow Prometheus to scrape Loki/Promtail, add 7 alert rules ([6ef2e6a](https://github.com/lukislp/studylife/commit/6ef2e6a175504cc4ecb0f0f780f429d9245f4e84))
+* **monitoring:** exclude CoreDNS/NGF infra noise from the logs dashboard warnings ([0e08fb4](https://github.com/lukislp/studylife/commit/0e08fb4c14dfcb6b5376de457c238dcc0c45c419))
+* **monitoring:** exclude NGF gRPC-reconnect and TLS-scanner noise from error panels ([0e37bea](https://github.com/lukislp/studylife/commit/0e37bea3a5c1daceab551d2836dfda6e532b4de6))
+* **monitoring:** exclude redis_exporter's MOVED noise from the logs dashboard ([8b5de26](https://github.com/lukislp/studylife/commit/8b5de263a9d6e0558dc10f8aa2338f0e4e772d2b))
+* **monitoring:** stop the studylife-mcp error-rate alert from firing on no data ([5d8c382](https://github.com/lukislp/studylife/commit/5d8c38234465a23fc98dc46de6f4a396fad91f4c))
+
+
+### Features
+
+* **monitoring:** alert on Uptime Kuma itself being down ([3af124c](https://github.com/lukislp/studylife/commit/3af124c3dc734b2886262e6c3b5988beb1ed6651))
+
 # [1.13.0](https://github.com/lukislp/studylife/compare/v1.12.3...v1.13.0) (2026-08-14)
 
 
