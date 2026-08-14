@@ -232,6 +232,13 @@
     transform: none;
     top: 4px;
 }
+/* Same clipping issue as :first-child above, mirrored: anchored by its bottom edge instead
+   of centered on a line, since there's nothing below the grid's own bottom edge either. */
+.hour-label-end {
+    top: auto;
+    bottom: 2px;
+    transform: none;
+}
 
 .cal-day {
     flex: 1;
