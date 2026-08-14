@@ -1,3 +1,10 @@
+# [1.13.0](https://github.com/lukislp/studylife/compare/v1.12.3...v1.13.0) (2026-08-14)
+
+
+### Features
+
+* **monitoring:** scrape Loki/Promtail, add a proper Kubernetes Logs dashboard ([1a6b87c](https://github.com/lukislp/studylife/commit/1a6b87c7890cbf563026f4bcaff447fd2867ab43))
+
 ## [1.12.3](https://github.com/lukislp/studylife/compare/v1.12.2...v1.12.3) (2026-08-14)
 
 
