@@ -55,6 +55,12 @@
         height: calc(100vh - 64px - var(--safe-bottom));
         margin-bottom: 0;
         padding-bottom: 1rem;
+        /* On mobile the nav bar sits at the bottom, so nothing else reserves the top notch/
+           Dynamic Island area - the WebView now covers the full physical screen
+           (SafeAreaEdges="None"), so page content needs its own top inset here. Scrolls
+           away with the rest of the content, which is correct - it only needs to protect
+           the very first paint. */
+        padding-top: var(--safe-top);
         overflow-y: auto;
     }
 
