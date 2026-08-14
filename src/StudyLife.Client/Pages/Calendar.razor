@@ -66,6 +66,10 @@
                         {
                             <div class="hour-label" style="top: @(h * 60)px">@h.ToString("00"):00</div>
                         }
+                        <!-- Closing "24:00" mark at the very bottom edge, purely to visualize where the
+                             day ends - every other label is the hour it starts, this one has no session
+                             slot below it. -->
+                        <div class="hour-label hour-label-end">24:00</div>
                     </div>
 
                     <!-- Day columns (day view: only _currentDay, full width) -->
