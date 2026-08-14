@@ -1,3 +1,10 @@
+## [1.14.6](https://github.com/lukislp/studylife/compare/v1.14.5...v1.14.6) (2026-08-14)
+
+
+### Bug Fixes
+
+* **monitoring:** exclude Loki's own internal querier<->scheduler noise ([62ea3c4](https://github.com/lukislp/studylife/commit/62ea3c45b9344ac0057b05073a296b51e4e6e4aa))
+
 ## [1.14.5](https://github.com/lukislp/studylife/compare/v1.14.4...v1.14.5) (2026-08-14)
 
 
