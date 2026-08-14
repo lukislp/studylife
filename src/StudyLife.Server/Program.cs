@@ -2,6 +2,7 @@ using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
@@ -76,6 +77,20 @@ if (isRedisCache)
         new RedisVersionCounter(sp.GetRequiredService<StackExchange.Redis.IConnectionMultiplexer>(), "version:sessionhistory")));
     builder.Services.AddSingleton(sp => new SettingsCacheVersion(
         new RedisVersionCounter(sp.GetRequiredService<StackExchange.Redis.IConnectionMultiplexer>(), "version:settings")));
+
+    // DataProtection key ring persisted to Redis, ONLY in the Redis branch - same reasoning as
+    // every other "needs a shared coordination point across replicas" feature above. Without this,
+    // ASP.NET Core silently falls back to a local, ephemeral, unencrypted key ring per pod
+    // (Microsoft.AspNetCore.DataProtection's documented default when nothing is configured) - a
+    // request round-robined to a different pod than the one that issued a given auth cookie/
+    // antiforgery token then fails to validate it. Found live via recurring FileSystemXmlRepository/
+    // XmlKeyManager warnings in the aggregated cluster logs (studylife-mcp Loki dashboard), NOT
+    // caught before because this only manifests with 2+ replicas actually receiving traffic - see
+    // docs/decisions.md. Separate dedicated connection (like the IConnectionMultiplexer singleton
+    // above), not the DI singleton itself - that's only resolvable after builder.Build().
+    builder.Services.AddDataProtection()
+        .SetApplicationName("StudyLife")
+        .PersistKeysToStackExchangeRedis(StackExchange.Redis.ConnectionMultiplexer.Connect(redisOptions), "dataprotection:keys");
 }
 else
 {
