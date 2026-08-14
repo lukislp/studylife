@@ -60,6 +60,14 @@ spec:
     metadata:
       labels: { app: loki }
     spec:
+      # Pinned to pinode02 (8GB RAM) instead of pinode01 (4GB) - was already landing there by
+      # scheduler coincidence (matches where the local-path PVC's PV was actually provisioned,
+      # see loki-data below), this just makes it a guarantee instead of an accident. OOMKilled
+      # live (2026-08-14, exit 137) at the old 256Mi limit once Promtail was actually shipping
+      # full-cluster log volume instead of sitting empty - 128Mi/256Mi was sized before the log
+      # pipeline was ever really exercised.
+      nodeSelector:
+        kubernetes.io/hostname: pinode02
       containers:
         - name: loki
           image: grafana/loki:3.2.1
@@ -67,8 +75,8 @@ spec:
           ports:
             - containerPort: 3100
           resources:
-            requests: { cpu: 100m, memory: 128Mi }
-            limits: { cpu: 300m, memory: 256Mi }
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { cpu: 300m, memory: 1Gi }
           volumeMounts:
             - { name: config, mountPath: /etc/loki }
             - { name: data, mountPath: /loki }
