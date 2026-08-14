@@ -121,6 +121,14 @@ a { color: var(--accent); text-decoration: none; }
 a:hover { opacity: 0.8; }
 button { font-family: var(--font); cursor: pointer; border: none; background: none; }
 
+/* App.razor's <FocusOnNavigate Selector="h1" /> programmatically focuses each page's <h1>
+   after every navigation (screen-reader-only accessibility feature: announces where the user
+   landed) - Blazor sets tabindex="-1" on it to make that possible, which is also how the
+   browser's default focus outline ends up wrapping the full-width heading (e.g. the Dashboard
+   greeting) until the user taps/clicks something else. Real interactive elements (buttons,
+   links, inputs) never carry tabindex="-1", so this leaves their own focus rings untouched. */
+[tabindex="-1"]:focus { outline: none; }
+
 /* Standard Blazor error banner (index.html) - hidden by default, the framework's own JS sets
    display:block on an actual unhandled exception. Without this rule the div renders inline
    (browser default display:block for a <div>) below the viewport, invisible in normal use
