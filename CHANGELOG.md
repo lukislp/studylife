@@ -1,3 +1,10 @@
+## [1.14.5](https://github.com/lukislp/studylife/compare/v1.14.4...v1.14.5) (2026-08-14)
+
+
+### Bug Fixes
+
+* **monitoring:** exclude studylife's architectural Kestrel binding log ([0fd1752](https://github.com/lukislp/studylife/commit/0fd175275eae9b42e8ae9f560bf0c22d4d5e447f))
+
 ## [1.14.4](https://github.com/lukislp/studylife/compare/v1.14.3...v1.14.4) (2026-08-14)
 
 
