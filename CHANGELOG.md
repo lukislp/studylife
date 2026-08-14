@@ -1,3 +1,10 @@
+## [1.14.4](https://github.com/lukislp/studylife/compare/v1.14.3...v1.14.4) (2026-08-14)
+
+
+### Bug Fixes
+
+* **auth:** stop redirecting Kubernetes' own health probes to HTTPS ([5b774b6](https://github.com/lukislp/studylife/commit/5b774b62c9f887d2c373f578a57e294c713318da))
+
 ## [1.14.3](https://github.com/lukislp/studylife/compare/v1.14.2...v1.14.3) (2026-08-14)
 
 
