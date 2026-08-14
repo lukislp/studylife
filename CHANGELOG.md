@@ -1,3 +1,11 @@
+## [1.11.4](https://github.com/lukislp/studylife/compare/v1.11.3...v1.11.4) (2026-08-14)
+
+
+### Bug Fixes
+
+* extend bottom navbar flush to the physical screen edge on iOS ([c16bc0d](https://github.com/lukislp/studylife/commit/c16bc0df81ce8f14691e6ca9e0e0c81a48c4f195))
+* prevent iOS auto-zoom on focus for all text inputs, not just chat ([4a35450](https://github.com/lukislp/studylife/commit/4a35450460213f918c013717d8773dccfdc2f5b2))
+
 ## [1.11.3](https://github.com/lukislp/studylife/compare/v1.11.2...v1.11.3) (2026-08-14)
 
 
