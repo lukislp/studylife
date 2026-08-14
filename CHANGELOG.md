@@ -1,3 +1,12 @@
+## [1.14.3](https://github.com/lukislp/studylife/compare/v1.14.2...v1.14.3) (2026-08-14)
+
+
+### Bug Fixes
+
+* **auth:** eliminate three startup warnings found via aggregated logs ([93147b7](https://github.com/lukislp/studylife/commit/93147b7d09b2fe8bc72b938aaccf82cf923e574b))
+* **monitoring:** exclude NGF gRPC-reconnect noise from the warnings panel too ([1bcb9ae](https://github.com/lukislp/studylife/commit/1bcb9aeb6177e8abd6a26a660c49a7e8faf1a612))
+* **monitoring:** upgrade kube-state-metrics to stop watching deprecated Endpoints ([d248bde](https://github.com/lukislp/studylife/commit/d248bde3464ad53b429a0f9d4097e3e781711623))
+
 ## [1.14.2](https://github.com/lukislp/studylife/compare/v1.14.1...v1.14.2) (2026-08-14)
 
 
