@@ -239,6 +239,14 @@ input::-webkit-date-and-time-value {
 .acm-input-row { display: flex; gap: 0.5rem; }
 .acm-input-row .input { flex: 1; }
 
+/* iOS Safari/WKWebView auto-zooms the whole page on focus of any input whose computed
+   font-size is below 16px, and the viewport meta tag here has no maximum-scale to undo it -
+   the page stays zoomed in until the user manually pinches back out. .input's base 0.875rem
+   (14px) triggers this; bump it to 16px on mobile only, so desktop keeps the smaller size. */
+@media (max-width: 768px) {
+    .acm-input-row .input { font-size: 16px; }
+}
+
 .acm-pending {
     background: color-mix(in srgb, #E1A93C 10%, var(--bg3));
     border: 1px solid color-mix(in srgb, #E1A93C 40%, var(--border));
