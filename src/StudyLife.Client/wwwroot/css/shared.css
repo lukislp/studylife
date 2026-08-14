@@ -125,6 +125,16 @@ input::-webkit-date-and-time-value {
 }
 .select:focus { border-color: var(--accent); }
 
+/* iOS Safari/WKWebView auto-zooms the whole page on focus of any input/select whose computed
+   font-size is below 16px, and the viewport meta tag here has no maximum-scale to undo it -
+   the page stays zoomed in until the user manually pinches back out. .input/.select's base
+   0.875rem (14px) triggers this; bump to 16px on mobile only, so desktop keeps the smaller
+   size. Elements that set their own font-size on top of .input (e.g. .note-textarea) need
+   their own override - this rule alone won't win that specificity/source-order tie. */
+@media (max-width: 768px) {
+    .input, .select { font-size: 16px; }
+}
+
 /* Modal */
 .modal-overlay {
     position: fixed;
@@ -238,14 +248,6 @@ input::-webkit-date-and-time-value {
 
 .acm-input-row { display: flex; gap: 0.5rem; }
 .acm-input-row .input { flex: 1; }
-
-/* iOS Safari/WKWebView auto-zooms the whole page on focus of any input whose computed
-   font-size is below 16px, and the viewport meta tag here has no maximum-scale to undo it -
-   the page stays zoomed in until the user manually pinches back out. .input's base 0.875rem
-   (14px) triggers this; bump it to 16px on mobile only, so desktop keeps the smaller size. */
-@media (max-width: 768px) {
-    .acm-input-row .input { font-size: 16px; }
-}
 
 .acm-pending {
     background: color-mix(in srgb, #E1A93C 10%, var(--bg3));

@@ -122,6 +122,11 @@
     font-family: inherit;
 }
 .cc-goal-input:focus { border-color: var(--accent); color: var(--text); }
+/* Own font-size below 16px triggers iOS Safari/WKWebView's auto-zoom-on-focus, see the
+   .input/.select rule in shared.css for the full explanation. */
+@media (max-width: 768px) {
+    .cc-goal-input { font-size: 16px; }
+}
 .cc-grade-pill {
     flex-shrink: 0;
     font-size: 0.7rem;

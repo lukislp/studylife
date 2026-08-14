@@ -385,6 +385,12 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 }
 .gs-input::placeholder { color: var(--text3); }
 
+/* Own font-size below 16px triggers iOS Safari/WKWebView's auto-zoom-on-focus, see the
+   .input/.select rule in shared.css for the full explanation. */
+@media (max-width: 768px) {
+    .gs-input { font-size: 16px; }
+}
+
 .gs-results {
     max-height: 50vh;
     overflow-y: auto;
