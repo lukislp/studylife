@@ -507,3 +507,26 @@ data:
                 model: { refId: C, type: threshold, expression: B, conditions: [{ evaluator: { type: gt, params: [5] } }] }
             labels: { severity: warning }
             annotations: { summary: "Mehr als 5 Container-Neustarts in den letzten 30 Minuten, ueber alle Namespaces summiert - deutet auf ein akutes Crash-Loop-Problem irgendwo im Cluster hin." }
+          # "Wer ueberwacht den Waechter": Uptime Kuma ueberwacht alle anderen Dienste (inkl.
+          # Grafana selbst), aber bisher ueberwachte nichts Uptime Kuma - faellt es aus, faellt
+          # sowohl die externe Erreichbarkeitspruefung als auch die Telegram-Benachrichtigung
+          # lautlos weg. Gleiches Muster wie alert-piwatch-down.
+          - uid: alert-uptime-kuma-down
+            title: "Uptime Kuma nicht erreichbar"
+            condition: C
+            for: 2m
+            data:
+              - refId: A
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: prometheus
+                model: { refId: A, expr: 'min(kube_deployment_status_replicas_available{namespace="studylife-scale",deployment="uptime-kuma"}) or vector(0)' }
+              - refId: B
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: B, type: reduce, expression: A, reducer: last }
+              - refId: C
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: C, type: threshold, expression: B, conditions: [{ evaluator: { type: lt, params: [1] } }] }
+            labels: { severity: warning }
+            annotations: { summary: "Kein uptime-kuma-Pod laeuft mehr - externe Erreichbarkeitspruefung UND Telegram-Benachrichtigung fallen beide gleichzeitig aus, ohne dass irgendetwas anderes das meldet." }
