@@ -1,3 +1,10 @@
+## [1.14.1](https://github.com/lukislp/studylife/compare/v1.14.0...v1.14.1) (2026-08-14)
+
+
+### Bug Fixes
+
+* **ci:** make the Docker version-tag guard self-healing instead of a hard stop ([4540f9b](https://github.com/lukislp/studylife/commit/4540f9ba0dbb2c9d4f7cc7624be23ea8a3da20bd))
+
 # [1.14.0](https://github.com/lukislp/studylife/compare/v1.13.0...v1.14.0) (2026-08-14)
 
 
