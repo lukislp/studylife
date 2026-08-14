@@ -77,6 +77,14 @@ spec:
               value: app.studylife.mobile
             - name: Apns__UseSandbox
               value: "true"
+            # DataProtection key-ring-at-rest encryption (Program.cs, ProtectKeysWithCertificate)
+            # - identical to k8s/04-web.yaml, required whenever Cache__Provider=Redis. The
+            # worker runs the same AddDataProtection() setup as web (shared Program.cs), so it
+            # needs the same certificate mounted here too, not just in the web pod.
+            - name: DataProtection__CertPath
+              value: /etc/studylife-dataprotection-tls/tls.crt
+            - name: DataProtection__KeyPath
+              value: /etc/studylife-dataprotection-tls/tls.key
           ports:
             - containerPort: 8080
           resources:
@@ -94,6 +102,11 @@ spec:
             - name: apns-key
               mountPath: /secrets/apns
               readOnly: true
+            - name: dataprotection-tls
+              mountPath: /etc/studylife-dataprotection-tls
+              readOnly: true
       volumes:
         - name: apns-key
           secret: {secretName: studylife-apns}
+        - name: dataprotection-tls
+          secret: {secretName: studylife-dataprotection-tls}

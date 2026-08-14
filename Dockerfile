@@ -29,6 +29,10 @@ WORKDIR /app
 # co. would otherwise fire systematically shifted by the UTC offset. Must match
 # src/StudyLife.Server/Dockerfile (the production path), which already sets the same TZ.
 ENV TZ=Europe/Berlin
+# aspnet:10.0 sets ASPNETCORE_HTTP_PORTS=8080 itself, which competes with the explicit
+# ASPNETCORE_URLS below - clears the redundant source instead of the deliberately-set one
+# (same fix as src/StudyLife.Server/Dockerfile, keep both in sync).
+ENV ASPNETCORE_HTTP_PORTS=
 
 # Install curl for healthcheck
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
