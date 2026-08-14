@@ -1,3 +1,12 @@
+## [1.12.2](https://github.com/lukislp/studylife/compare/v1.12.1...v1.12.2) (2026-08-14)
+
+
+### Bug Fixes
+
+* break .app-shell out of flex layout for print, restore pagination ([220fe23](https://github.com/lukislp/studylife/commit/220fe2332005bc7d36cc56cdb1d6d25338eda20a))
+* reset html/body overflow for print, not just the inner containers ([39898c1](https://github.com/lukislp/studylife/commit/39898c19ddfb774d0b8dceeba9eb8a5fdac9682c))
+* use "Notizen" as the notes PDF export's own document heading ([c222b37](https://github.com/lukislp/studylife/commit/c222b371481d19f2ee95d049d0747f7fd31e8731))
+
 ## [1.12.1](https://github.com/lukislp/studylife/compare/v1.12.0...v1.12.1) (2026-08-14)
 
 
