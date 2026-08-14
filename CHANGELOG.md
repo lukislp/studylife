@@ -1,3 +1,10 @@
+## [1.12.3](https://github.com/lukislp/studylife/compare/v1.12.2...v1.12.3) (2026-08-14)
+
+
+### Bug Fixes
+
+* **monitoring:** deploy Loki log aggregation, drop broken k8s SD from promtail ([9caef8c](https://github.com/lukislp/studylife/commit/9caef8c76e3cb9a5dcd46bd81104364f60c14094))
+
 ## [1.12.2](https://github.com/lukislp/studylife/compare/v1.12.1...v1.12.2) (2026-08-14)
 
 
