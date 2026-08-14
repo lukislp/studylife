@@ -1,3 +1,10 @@
+## [1.11.6](https://github.com/lukislp/studylife/compare/v1.11.5...v1.11.6) (2026-08-14)
+
+
+### Bug Fixes
+
+* drop bottom-navbar safe-area padding, keep it flush again ([a07569f](https://github.com/lukislp/studylife/commit/a07569f4f073f05d0b5c8d1c7de8ad3577f7ff99))
+
 ## [1.11.5](https://github.com/lukislp/studylife/compare/v1.11.4...v1.11.5) (2026-08-14)
 
 
