@@ -223,6 +223,15 @@
     color: var(--text3);
     transform: translateY(-50%);
 }
+/* The 00:00 label sits at top:0 like every other hour label, but translateY(-50%) centers
+   it ON that line - with nothing above top:0 to render into, its top half gets clipped by
+   the grid's own edge (Calendar.razor generates these h=0..23 in order, so it's always
+   first). Anchor it by its top edge instead, just low enough to roughly match where a
+   centered label's top edge would otherwise land. */
+.cal-hours .hour-label:first-child {
+    transform: none;
+    top: 4px;
+}
 
 .cal-day {
     flex: 1;
