@@ -229,7 +229,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 
 /* "New version available" toast (MainLayout): above the bottom bar, below modals (z-index) */
 .update-toast {
-    position: fixed; bottom: calc(84px + var(--safe-bottom)); left: 50%; transform: translateX(-50%); z-index: 950;
+    position: fixed; bottom: 84px; left: 50%; transform: translateX(-50%); z-index: 950;
     display: flex; align-items: center; gap: 10px;
     background: var(--card-bg, #1a1a1c); color: var(--fg, #e8e6e0);
     border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px;
@@ -278,7 +278,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 /* Speed dial: combined floating action button at the bottom right for search + language switcher
    (replaces the previous dedicated sidebar search entry and the top-right fixed
    language switcher). Higher than the sidebar (z-index 100) and the lang-popup backdrop. */
-.fab-dial { position: fixed; right: 1.25rem; bottom: calc(1.25rem + var(--safe-bottom)); z-index: 110; display: flex; flex-direction: column; align-items: flex-end; gap: 0.6rem; }
+.fab-dial { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 110; display: flex; flex-direction: column; align-items: flex-end; gap: 0.6rem; }
 .fab-main {
     display: flex;
     align-items: center;
