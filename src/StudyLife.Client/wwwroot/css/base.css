@@ -23,6 +23,11 @@
     --radius: 12px;
     --sidebar-w: 200px;
     --transition: 0.2s ease;
+    /* MainPage.xaml no longer reserves native safe-area insets (SafeAreaEdges="None") - the
+       WebView now gets the full physical screen, same as an installed PWA in standalone mode.
+       Every fixed-position element anchored to a physical edge needs to add these back itself. */
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 @media (prefers-color-scheme: light) {
@@ -130,6 +135,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
     display: none;
     left: 0;
     padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    padding-bottom: calc(0.7rem + var(--safe-bottom));
     position: fixed;
     width: 100%;
     z-index: 1000;
@@ -155,6 +161,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
     display: flex;
     flex-direction: column;
     padding: 1.5rem 0;
+    padding-top: calc(1.5rem + var(--safe-top));
     position: fixed;
     top: 0;
     left: 0;
@@ -212,7 +219,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
    phase are still waiting to be replayed. Fixed instead of in the nav so it stays
    visible on both desktop (sidebar) and mobile (bottom bar). */
 .pending-sync-chip {
-    position: fixed; top: 10px; right: 12px; z-index: 900;
+    position: fixed; top: calc(10px + var(--safe-top)); right: 12px; z-index: 900;
     display: flex; align-items: center; gap: 4px;
     background: rgba(225, 112, 85, 0.15); color: #E17055;
     border: 1px solid rgba(225, 112, 85, 0.4);
@@ -222,7 +229,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 
 /* "New version available" toast (MainLayout): above the bottom bar, below modals (z-index) */
 .update-toast {
-    position: fixed; bottom: 84px; left: 50%; transform: translateX(-50%); z-index: 950;
+    position: fixed; bottom: calc(84px + var(--safe-bottom)); left: 50%; transform: translateX(-50%); z-index: 950;
     display: flex; align-items: center; gap: 10px;
     background: var(--card-bg, #1a1a1c); color: var(--fg, #e8e6e0);
     border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px;
@@ -271,7 +278,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 /* Speed dial: combined floating action button at the bottom right for search + language switcher
    (replaces the previous dedicated sidebar search entry and the top-right fixed
    language switcher). Higher than the sidebar (z-index 100) and the lang-popup backdrop. */
-.fab-dial { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 110; display: flex; flex-direction: column; align-items: flex-end; gap: 0.6rem; }
+.fab-dial { position: fixed; right: 1.25rem; bottom: calc(1.25rem + var(--safe-bottom)); z-index: 110; display: flex; flex-direction: column; align-items: flex-end; gap: 0.6rem; }
 .fab-main {
     display: flex;
     align-items: center;
