@@ -8,6 +8,17 @@
         display: none !important;
     }
 
+    /* html/body's own height:100%/overflow:hidden (base.css, the app-shell's fixed-viewport
+       scroll model) clips anything beyond one screen's worth of content BEFORE it ever
+       reaches the elements below - overriding only those wasn't enough on its own. This
+       exact gap was the actual cause of native iOS printing (WKWebView.ViewPrintFormatter)
+       silently truncating long pages after roughly one screenful, confirmed live on
+       WeekPlan.razor (see the matching rule in the report block below). */
+    html, body {
+        height: auto !important;
+        overflow: visible !important;
+    }
+
     .main-content,
     .app-shell.page-calendar .main-content,
     .cal-outer,
