@@ -1,3 +1,10 @@
+## [1.14.2](https://github.com/lukislp/studylife/compare/v1.14.1...v1.14.2) (2026-08-14)
+
+
+### Bug Fixes
+
+* **monitoring:** fix Loki OOMKilling itself, pin to the node with more RAM ([c2359b5](https://github.com/lukislp/studylife/commit/c2359b5e1fc3848c6e50ce7568fc012d0bdb764c))
+
 ## [1.14.1](https://github.com/lukislp/studylife/compare/v1.14.0...v1.14.1) (2026-08-14)
 
 
