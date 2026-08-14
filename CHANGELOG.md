@@ -1,3 +1,10 @@
+## [1.12.1](https://github.com/lukislp/studylife/compare/v1.12.0...v1.12.1) (2026-08-14)
+
+
+### Bug Fixes
+
+* remove the redundant "Woche drucken" button from the calendar ([c97e38f](https://github.com/lukislp/studylife/commit/c97e38fa273b854e9bae2506df9549451a3a576c))
+
 # [1.12.0](https://github.com/lukislp/studylife/compare/v1.11.6...v1.12.0) (2026-08-14)
 
 
