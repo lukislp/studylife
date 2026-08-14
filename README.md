@@ -19,6 +19,62 @@ container restart.
 
 ---
 
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph Clients["Clients"]
+        BlazorUI["Blazor WASM UI\n(StudyLife.Client)"]
+        MauiApp["StudyLife.App\nMAUI native shell\niOS / Android / Windows / macOS"]
+    end
+
+    subgraph StudyLife["StudyLife (this repo, same image)"]
+        API["ASP.NET Core REST API\n(StudyLife.Server, Worker:Enabled=false)"]
+        AiProxy["AiProxyController\n(mints short-lived proxy tokens)"]
+        Worker["Worker\n(reminders, weekly report,\nachievements, APNs push)\nWorker:Enabled=true"]
+        DB[("SQLite / PostgreSQL")]
+        Cache[("In-memory / Redis")]
+    end
+
+    WebPush["Web Push\n(browser notifications)"]
+    APNs["Apple Push Notification service\n(Live Activity)"]
+    HomeAssistant["Home Assistant\n(studylife-hacs)"]
+    Mcp["studylife-mcp\n(local MCP server)"]
+    StudyLifeAI["studylife-ai\n(hosted LLM agent)"]
+
+    MauiApp -- "BlazorWebView\n(project reference, no copy)" --> BlazorUI
+    BlazorUI -- "passkey session\n(X-Session-Token)" --> API
+    BlazorUI -- "passkey session\n(X-Session-Token)" --> AiProxy
+    AiProxy -- "signed proxy token" --> StudyLifeAI
+    API --> DB
+    API --> Cache
+    Worker --> DB
+    Worker -- "shard coordination" --> Cache
+    Worker -- "reminders, reports" --> WebPush
+    Worker -- "Live Activity updates" --> APNs
+    HomeAssistant -- "X-Api-Key" --> API
+    Mcp -- "X-Api-Key" --> API
+```
+
+`API` and `Worker` are the same container image, just started with a different `Worker:Enabled`
+flag — the default single-container deployment (`docker-compose.yml`) runs both roles combined
+in one process; the horizontally-scalable setup (`docker-compose.scale.yml`/Kubernetes, see
+[docs/SCALING.md](docs/SCALING.md)) splits them into separately scaled replicas so that N web
+replicas never fire the same push reminder N times — exactly one `Worker` shard set (coordinated
+via Redis once it scales past a single replica) owns the 30s reminder/report tick.
+
+The browser client authenticates exclusively via its passkey session; Home Assistant and
+studylife-mcp instead each get their own long-lived, revocable per-user API key (`X-Api-Key`) —
+neither can hold a live browser session, so a bare API key is deliberately accepted from them
+but never from the AI proxy path. `AiProxyController` mints a short-lived, HMAC-signed token per
+request instead of forwarding a stored key (which only ever exists as a hash server-side, see
+[Security](#security)) — studylife-ai verifies that signature locally against a shared secret,
+no round-trip back here. `StudyLife.App` (the native iOS/Android/Windows/macOS shell) is a
+separate repo that pulls in this repo's entire Blazor UI via a project reference — no copy, so
+the native app and the browser/PWA client are always pixel-identical.
+
+---
+
 ## Features
 
 ### Accounts & Login
