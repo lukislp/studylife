@@ -346,3 +346,156 @@ data:
                 model: { refId: C, type: threshold, expression: B, conditions: [{ evaluator: { type: lt, params: [1] } }] }
             labels: { severity: warning }
             annotations: { summary: "Kein piwatch-Pod laeuft mehr - das K8s-Live-Dashboard ist nicht erreichbar (Uptime Kuma/Grafana/Postgres/Redis selbst sind davon unabhaengig)." }
+          # From here on: 7 more rules closing gaps found during a review of what's actually
+          # scraped (k8s/14-prometheus.yaml) vs. what's actually alerted on - all metrics already
+          # verified live via existing dashboards (k8s/17b/17c), same principle as above.
+          - uid: alert-studylife-ai-down
+            title: "studylife-ai nicht erreichbar"
+            condition: C
+            for: 2m
+            data:
+              - refId: A
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: prometheus
+                model: { refId: A, expr: 'count(up{job="studylife-ai"} == 1) or vector(0)' }
+              - refId: B
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: B, type: reduce, expression: A, reducer: last }
+              - refId: C
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: C, type: threshold, expression: B, conditions: [{ evaluator: { type: lt, params: [1] } }] }
+            labels: { severity: warning }
+            annotations: { summary: "Kein studylife-ai-Pod antwortet auf /metrics - die RAG-Chat-Funktion ist ausgefallen, die Kern-App (Notizen/Kurse/Sessions) ist davon unabhaengig." }
+          - uid: alert-studylife-mcp-down
+            title: "studylife-mcp nicht erreichbar"
+            condition: C
+            for: 2m
+            data:
+              - refId: A
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: prometheus
+                model: { refId: A, expr: 'count(up{job="studylife-mcp"} == 1) or vector(0)' }
+              - refId: B
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: B, type: reduce, expression: A, reducer: last }
+              - refId: C
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: C, type: threshold, expression: B, conditions: [{ evaluator: { type: lt, params: [1] } }] }
+            labels: { severity: warning }
+            annotations: { summary: "Kein studylife-mcp-Pod antwortet auf /metrics - MCP-Clients (Claude etc.) koennen nicht mehr auf StudyLife zugreifen, die Web-App selbst ist davon unabhaengig." }
+          - uid: alert-studylife-mcp-error-rate
+            title: "studylife-mcp Tool-Call-Fehlerrate hoch"
+            condition: C
+            for: 10m
+            data:
+              - refId: A
+                relativeTimeRange: { from: 900, to: 0 }
+                datasourceUid: prometheus
+                # 15m-Fenster statt der ueblichen 5m, weil das Call-Volumen naturgemaess niedrig
+                # ist (ein paar Tool-Calls pro Konversation) - kurze Fenster waeren zu verrauscht.
+                # 0/0 (keine Calls ueberhaupt) ergibt NaN, was der Schwellwert-Vergleich als
+                # "nicht erfuellt" behandelt, also kein Fehlalarm in ruhigen Phasen.
+                model: { refId: A, expr: 'sum(rate(studylife_mcp_tool_calls_total{status="error"}[15m])) / sum(rate(studylife_mcp_tool_calls_total[15m]))' }
+              - refId: B
+                relativeTimeRange: { from: 900, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: B, type: reduce, expression: A, reducer: last }
+              - refId: C
+                relativeTimeRange: { from: 900, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: C, type: threshold, expression: B, conditions: [{ evaluator: { type: gt, params: [0.05] } }] }
+            labels: { severity: warning }
+            annotations: { summary: "Mehr als 5% der studylife-mcp-Tool-Calls der letzten 15 Minuten schlagen fehl - deutet auf ein kaputtes Tool oder einen StudyLife-API-Fehler hin." }
+          - uid: alert-coredns-down
+            title: "CoreDNS nicht erreichbar"
+            condition: C
+            for: 2m
+            data:
+              - refId: A
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: prometheus
+                model: { refId: A, expr: 'count(up{job="coredns"} == 1) or vector(0)' }
+              - refId: B
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: B, type: reduce, expression: A, reducer: last }
+              - refId: C
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: C, type: threshold, expression: B, conditions: [{ evaluator: { type: lt, params: [1] } }] }
+            labels: { severity: critical }
+            annotations: { summary: "CoreDNS laeuft nur mit 1 Replica (live geprueft) - faellt sie aus, ist Cluster-interne Namensaufloesung komplett weg, betrifft praktisch jeden anderen Dienst." }
+          - uid: alert-metallb-degraded
+            title: "MetalLB degradiert (Controller oder Speaker down)"
+            condition: C
+            for: 2m
+            data:
+              - refId: A
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: prometheus
+                # Additiv statt getrennter Alerts, gleiches Muster wie alert-cnpg-manual-intervention:
+                # Controller-Ausfall (keine neuen LB-IP-Zuweisungen mehr) und Speaker-Ausfall (ein
+                # Pi kuendigt seine VIPs nicht mehr per L2 an) sind beides "MetalLB degradiert",
+                # nur die Schwere unterscheidet sich nicht genug fuer zwei Regeln. Live geprueft:
+                # 1 Controller + 2 Speaker (einer je Pi).
+                model: { refId: A, expr: '((count(up{job="metallb",component="controller"} == 1) or vector(0)) < bool 1) + ((count(up{job="metallb",component="speaker"} == 1) or vector(0)) < bool 2)' }
+              - refId: B
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: B, type: reduce, expression: A, reducer: last }
+              - refId: C
+                relativeTimeRange: { from: 300, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: C, type: threshold, expression: B, conditions: [{ evaluator: { type: gt, params: [0] } }] }
+            labels: { severity: warning }
+            annotations: { summary: "MetalLB-Controller oder mindestens ein Speaker-Pod ist down - LoadBalancer-IP-Vergabe bzw. L2-Announcement auf mindestens einem Pi ist beeintraechtigt." }
+          - uid: alert-log-pipeline-degraded
+            title: "Log-Pipeline degradiert (Loki/Promtail)"
+            condition: C
+            for: 5m
+            data:
+              - refId: A
+                relativeTimeRange: { from: 600, to: 0 }
+                datasourceUid: prometheus
+                # Additiv, gleiches Muster wie bei MetalLB oben: Loki down, zu wenige Promtail-Pods
+                # (erwartet: 2, einer je Node) und tatsaechlich verworfene Zeilen sind drei
+                # unabhaengige Symptome derselben Pipeline - genau die zwei Fehlerbilder, die beim
+                # ersten echten Deploy gefunden wurden (docs/decisions.md im studylife-mcp-Repo).
+                model: { refId: A, expr: '((count(up{job="loki"} == 1) or vector(0)) < bool 1) + ((count(up{job="promtail"} == 1) or vector(0)) < bool 2) + ((sum(rate(promtail_dropped_entries_total[10m])) or vector(0)) > bool 0)' }
+              - refId: B
+                relativeTimeRange: { from: 600, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: B, type: reduce, expression: A, reducer: last }
+              - refId: C
+                relativeTimeRange: { from: 600, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: C, type: threshold, expression: B, conditions: [{ evaluator: { type: gt, params: [0] } }] }
+            labels: { severity: warning }
+            annotations: { summary: "Loki ist down, es laeuft weniger als ein Promtail-Pod pro Node, oder Promtail verwirft aktuell Log-Zeilen - die Log-Aggregation ist beeintraechtigt, die App-Funktionalitaet selbst nicht." }
+          - uid: alert-pod-restart-storm
+            title: "Ungewoehnlich viele Pod-Neustarts clusterweit"
+            condition: C
+            for: 5m
+            data:
+              - refId: A
+                relativeTimeRange: { from: 1800, to: 0 }
+                datasourceUid: prometheus
+                # Bewusst OHNE Namespace-Filter (anders als das bestehende Neustarts-Panel im
+                # Ueberblick-Dashboard, das nur studylife-scale zeigt) - ein clusterweites
+                # Fruehwarnsignal fuer "irgendwas crashloopt gerade", unabhaengig davon in
+                # welchem Namespace.
+                model: { refId: A, expr: 'sum(increase(kube_pod_container_status_restarts_total[30m])) or vector(0)' }
+              - refId: B
+                relativeTimeRange: { from: 1800, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: B, type: reduce, expression: A, reducer: last }
+              - refId: C
+                relativeTimeRange: { from: 1800, to: 0 }
+                datasourceUid: "__expr__"
+                model: { refId: C, type: threshold, expression: B, conditions: [{ evaluator: { type: gt, params: [5] } }] }
+            labels: { severity: warning }
+            annotations: { summary: "Mehr als 5 Container-Neustarts in den letzten 30 Minuten, ueber alle Namespaces summiert - deutet auf ein akutes Crash-Loop-Problem irgendwo im Cluster hin." }

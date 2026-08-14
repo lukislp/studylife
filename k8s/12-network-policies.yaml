@@ -305,8 +305,27 @@ spec:
     - from:
         - podSelector: { matchLabels: { app: promtail } } # log pushes
         - podSelector: { matchLabels: { app: grafana } } # datasource queries (Explore)
+        - podSelector: { matchLabels: { app: prometheus } } # scrapes /metrics on the same port as the log API
       ports:
         - { protocol: TCP, port: 3100 }
+---
+# Promtail's own /metrics (port 9080, separate from the log-push traffic FROM promtail
+# above) had no ingress policy at all - Prometheus' "promtail" scrape job (k8s/14-prometheus.yaml)
+# got "connection refused" from every pod until this was added, the same default-deny-ingress
+# gap as allow-ingress-to-loki above.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-promtail
+  namespace: monitoring
+spec:
+  podSelector: { matchLabels: { app: promtail } }
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app: prometheus } }
+      ports:
+        - { protocol: TCP, port: 9080 }
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
