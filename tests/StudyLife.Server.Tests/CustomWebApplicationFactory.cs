@@ -99,6 +99,15 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     protected override void ConfigureClient(HttpClient client)
     {
         base.ConfigureClient(client);
+        // Simulates the nginx/NPM hop every real request actually goes through (Program.cs's
+        // UseForwardedHeaders trusts this from loopback, which is what TestServer's client
+        // connects as) - without it, every test request looks like plain, unproxied HTTP
+        // straight to Kestrel, which since the HttpsRedirectionOptions.HttpsPort fix now
+        // actually redirects (as intended - that's the direct-bypass case the forwarded-headers
+        // restriction exists for) instead of just logging an ignored warning. Request.Scheme
+        // feeds Fido2's dynamic Origins (AuthController.CreateFido2) - PasskeyHttp.Origin below
+        // matches this.
+        client.DefaultRequestHeaders.Add("X-Forwarded-Proto", "https");
         if (string.IsNullOrEmpty(SessionToken))
         {
             using var scope = Services.CreateScope();

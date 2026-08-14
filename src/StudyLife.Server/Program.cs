@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
@@ -12,6 +13,15 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
+
+// Kestrel itself only ever listens on plain HTTP:8080 (nginx/NPM terminate TLS in front of
+// it, see the UseHttpsRedirection() comment below) - UseHttpsRedirection() can't infer an
+// HTTPS port from that on its own and logs "Failed to determine the https port for redirect"
+// on every request it would otherwise redirect. 443 is the public HTTPS port every deploy
+// target's reverse proxy actually presents to clients (NPM externally, nginx-gateway/Tailscale
+// Funnel for the scalability branch) - stating it explicitly keeps the redirect actually
+// functional instead of just silencing the symptom.
+builder.Services.Configure<HttpsRedirectionOptions>(options => options.HttpsPort = 443);
 
 // Encrypted hop ingress-nginx -> Kestrel (scalability branch, K8s): WebBackendTls__CertPath/
 // KeyPath (see k8s/04-web.yaml) point to a secret issued by cert-manager from the
@@ -84,13 +94,31 @@ if (isRedisCache)
     // (Microsoft.AspNetCore.DataProtection's documented default when nothing is configured) - a
     // request round-robined to a different pod than the one that issued a given auth cookie/
     // antiforgery token then fails to validate it. Found live via recurring FileSystemXmlRepository/
-    // XmlKeyManager warnings in the aggregated cluster logs (studylife-mcp Loki dashboard), NOT
-    // caught before because this only manifests with 2+ replicas actually receiving traffic - see
-    // docs/decisions.md. Separate dedicated connection (like the IConnectionMultiplexer singleton
-    // above), not the DI singleton itself - that's only resolvable after builder.Build().
+    // XmlKeyManager warnings in the aggregated cluster logs (studylife-mcp Loki dashboard) - NOT
+    // caught before because this only manifests with 2+ replicas actually receiving traffic.
+    // Separate dedicated connection (like the IConnectionMultiplexer singleton above), not the DI
+    // singleton itself - that's only resolvable after builder.Build().
+    //
+    // The key material itself is additionally encrypted at rest (ProtectKeysWithCertificate) using
+    // a dedicated cert-manager certificate (k8s/04-web.yaml, same internal CA as
+    // studylife-web-backend-tls but a separate cert - this one is mounted into both web AND
+    // worker, since both run this same DataProtection setup, unlike the web-only TLS cert).
+    // Without this, ASP.NET Core stores the raw key material as unencrypted XML in Redis - found
+    // live via the matching XmlKeyManager "No XML encryptor configured" warning that appeared the
+    // moment the Redis persistence above went in. Required (not optional-with-fallback) in this
+    // branch: silently falling back to unencrypted-in-Redis would be a worse and less visible
+    // outcome than failing fast at startup, same reasoning as the Cache:ConnectionString check.
+    var dataProtectionCertPath = builder.Configuration["DataProtection:CertPath"]
+        ?? throw new InvalidOperationException(
+            "DataProtection:CertPath (bzw. ENV DataProtection__CertPath) muss gesetzt sein, wenn Cache:Provider=Redis.");
+    var dataProtectionKeyPath = builder.Configuration["DataProtection:KeyPath"]
+        ?? throw new InvalidOperationException(
+            "DataProtection:KeyPath (bzw. ENV DataProtection__KeyPath) muss gesetzt sein, wenn Cache:Provider=Redis.");
     builder.Services.AddDataProtection()
         .SetApplicationName("StudyLife")
-        .PersistKeysToStackExchangeRedis(StackExchange.Redis.ConnectionMultiplexer.Connect(redisOptions), "dataprotection:keys");
+        .PersistKeysToStackExchangeRedis(StackExchange.Redis.ConnectionMultiplexer.Connect(redisOptions), "dataprotection:keys")
+        .ProtectKeysWithCertificate(
+            X509Certificate2.CreateFromPemFile(dataProtectionCertPath, dataProtectionKeyPath));
 }
 else
 {

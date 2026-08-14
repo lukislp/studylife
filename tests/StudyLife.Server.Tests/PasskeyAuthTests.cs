@@ -12,11 +12,13 @@ using StudyLife.Shared;
 namespace StudyLife.Server.Tests;
 
 /// <summary>Shared HTTP helpers for the passkey test classes. Origin/RP ID result from the
-/// WebApplicationFactory base address (http://localhost) - the AuthController derives its
-/// Fido2 config per request from exactly that.</summary>
+/// WebApplicationFactory base address (localhost) plus the X-Forwarded-Proto: https header
+/// CustomWebApplicationFactory.ConfigureClient adds by default (simulating the real
+/// nginx/NPM hop) - the AuthController derives its Fido2 config per request from exactly
+/// that, hence https here, not http.</summary>
 internal static class PasskeyHttp
 {
-    public const string Origin = "http://localhost";
+    public const string Origin = "https://localhost";
 
     public static async Task<(string OptionsId, string OptionsJson)> BeginAsync(
         HttpClient client, string path, object? body = null, string? sessionToken = null)

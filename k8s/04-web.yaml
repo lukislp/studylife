@@ -19,6 +19,28 @@ spec:
     kind: ClusterIssuer
     group: cert-manager.io
 ---
+# Separate certificate from studylife-web-backend-tls above, even though both come from the
+# same internal CA - this one isn't used for TLS handshakes at all, only as an asymmetric key
+# pair to encrypt the DataProtection key ring at rest in Redis (Program.cs,
+# ProtectKeysWithCertificate). Needs its own Certificate (not a reused one) because it must be
+# mounted into BOTH web and worker (DataProtection runs in both processes identically), while
+# studylife-web-backend-tls is web-only (it terminates the ingress-nginx -> Kestrel hop, which
+# only the web pod serves). No custom duration/renewBefore - same cert-manager defaults as
+# every other certificate here.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: studylife-dataprotection-tls
+  namespace: studylife-scale
+spec:
+  secretName: studylife-dataprotection-tls
+  dnsNames:
+    - studylife-dataprotection.studylife-scale.svc.cluster.local
+  issuerRef:
+    name: studylife-internal-ca-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
 # Stateless web instances - Worker:Enabled=false (the 30s reminder/report tick runs ONLY in the
 # separate worker deployment, see 05-worker.yaml, otherwise multiple replicas would produce
 # duplicate push notifications). imagePullPolicy: Never + image loaded locally into the node's
@@ -88,6 +110,13 @@ spec:
               value: /etc/studylife-web-backend-tls/tls.crt
             - name: WebBackendTls__KeyPath
               value: /etc/studylife-web-backend-tls/tls.key
+            # DataProtection key-ring-at-rest encryption (Program.cs, ProtectKeysWithCertificate)
+            # - required whenever Cache__Provider=Redis is set below, same as
+            # Cache__ConnectionString.
+            - name: DataProtection__CertPath
+              value: /etc/studylife-dataprotection-tls/tls.crt
+            - name: DataProtection__KeyPath
+              value: /etc/studylife-dataprotection-tls/tls.key
             # APNs channel (ApnsSender) for the native app shell - free signing never registers
             # a device (no aps-environment entitlement), so this config alone does not enable
             # sending without a paid-signed app (docs/PLAN-paid-umschaltung.md). Apns__KeyId/
@@ -132,6 +161,9 @@ spec:
             - name: web-backend-tls
               mountPath: /etc/studylife-web-backend-tls
               readOnly: true
+            - name: dataprotection-tls
+              mountPath: /etc/studylife-dataprotection-tls
+              readOnly: true
             # This secret is NOT managed by Flux (deliberately kept out of k8s/flux/deploy/
             # resources:, see the comment there) - created manually once, see
             # docs/PLAN-paid-umschaltung.md step C for the kubectl-create-secret command.
@@ -141,6 +173,8 @@ spec:
       volumes:
         - name: web-backend-tls
           secret: {secretName: studylife-web-backend-tls}
+        - name: dataprotection-tls
+          secret: {secretName: studylife-dataprotection-tls}
         - name: apns-key
           secret: {secretName: studylife-apns}
 ---
