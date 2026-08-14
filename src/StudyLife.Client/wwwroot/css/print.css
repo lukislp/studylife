@@ -49,6 +49,17 @@
         overflow: visible !important;
     }
 
+    /* CSS page fragmentation (multi-page printing) is unreliable across browsers for content
+       inside a display:flex formatting context - .app-shell is flex (sidebar + main-content
+       side by side), so anything printed underneath it could get clipped at the bottom of
+       page 1 instead of properly flowing onto page 2+ (confirmed live: WeekPlan.razor's
+       Sunday section showed its heading but not its content, with no second page at all).
+       Drop back to normal block layout for print - .sidebar is already hidden above, so
+       nothing depends on the flex row arrangement here anymore. */
+    .app-shell:has(.report-page) {
+        display: block !important;
+    }
+
     /* Black on white instead of the dark-theme variables - otherwise light text on paper
        would be practically unreadable as soon as the browser omits background colors when printing. */
     .report-page,
@@ -80,6 +91,12 @@
     .main-content:has(.notes-print-doc) {
         height: auto !important;
         overflow: visible !important;
+    }
+
+    /* Same flex-fragmentation issue as the report block above - notes can easily run long
+       enough to need multiple pages too. */
+    .app-shell:has(.notes-print-doc) {
+        display: block !important;
     }
 
     /* Black on white instead of dark-theme variables - see the report rule above. */
