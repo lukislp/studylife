@@ -1,3 +1,10 @@
+## [1.11.3](https://github.com/lukislp/studylife/compare/v1.11.2...v1.11.3) (2026-08-14)
+
+
+### Bug Fixes
+
+* prevent iOS auto-zoom on chat input focus ([7b9cc26](https://github.com/lukislp/studylife/commit/7b9cc26b755ff0cd2e887be182cfcd01e319176c))
+
 ## [1.11.2](https://github.com/lukislp/studylife/compare/v1.11.1...v1.11.2) (2026-08-13)
 
 
