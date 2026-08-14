@@ -27,8 +27,6 @@
   "RepeatIntervalEveryNWeeks": "Iga {0} nädala tagant",
   "RepeatUntilLabel": "Kuni",
   "RepeatWeekdaysLabel": "Nädalapäevad",
-  "ExportWeekButton": "Prindi nädal",
-  "PrintUnsupportedHint": "Printimine ei ole siin toetatud - proovi lehte avada brauseri vahekaardil.",
   "WeekViewLabel": "Nädal",
   "DayViewLabel": "Päev",
   "ImportIcsButton": "Impordi kalender",

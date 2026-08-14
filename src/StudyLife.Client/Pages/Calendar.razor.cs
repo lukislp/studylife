@@ -21,7 +21,6 @@ public partial class Calendar
     private List<StudySession> _sessions = new();
     private List<CourseDto> _courses = new();
     private List<CourseGoalDto> _goals = new();
-    private bool _printUnsupported;
     private string _weekLabel = "";
     private I18nText.CalendarText T = new();
 
@@ -254,24 +253,4 @@ public partial class Calendar
     [JSInvokable]
     public void SwipePrevWeek() { Prev(); StateHasChanged(); }
 
-    private async Task PrintWeek()
-    {
-        bool supported;
-        try
-        {
-            supported = await JS.InvokeAsync<bool>("printPage");
-        }
-        catch
-        {
-            supported = false;
-        }
-        if (!supported)
-        {
-            _printUnsupported = true;
-            StateHasChanged();
-            await Task.Delay(2500);
-            _printUnsupported = false;
-            StateHasChanged();
-        }
-    }
 }

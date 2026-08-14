@@ -27,8 +27,6 @@
   "RepeatIntervalEveryNWeeks": "Vsakih {0} tednov",
   "RepeatUntilLabel": "Do",
   "RepeatWeekdaysLabel": "Dnevi v tednu",
-  "ExportWeekButton": "Natisni teden",
-  "PrintUnsupportedHint": "Tiskanje tukaj ni podprto - poskusi stran odpreti v zavihku brskalnika.",
   "WeekViewLabel": "Teden",
   "DayViewLabel": "Dan",
   "ImportIcsButton": "Uvozi koledar",

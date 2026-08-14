@@ -27,8 +27,6 @@
   "RepeatIntervalEveryNWeeks": "La fiecare {0} săptămâni",
   "RepeatUntilLabel": "Până la",
   "RepeatWeekdaysLabel": "Zile ale săptămânii",
-  "ExportWeekButton": "Printează săptămâna",
-  "PrintUnsupportedHint": "Imprimarea nu este acceptată aici - încearcă să deschizi pagina într-un tab de browser.",
   "WeekViewLabel": "Săptămână",
   "DayViewLabel": "Zi",
   "ImportIcsButton": "Importă calendar",

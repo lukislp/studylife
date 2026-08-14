@@ -27,8 +27,6 @@
   "RepeatIntervalEveryNWeeks": "Всеки {0} седмици",
   "RepeatUntilLabel": "До",
   "RepeatWeekdaysLabel": "Дни от седмицата",
-  "ExportWeekButton": "Печат на седмицата",
-  "PrintUnsupportedHint": "Печатането не се поддържа тук - опитай да отвориш страницата в раздел на браузъра.",
   "WeekViewLabel": "Седмица",
   "DayViewLabel": "Ден",
   "ImportIcsButton": "Импортиране на календар",

@@ -27,8 +27,6 @@
   "RepeatIntervalEveryNWeeks": "Co {0} tygodnie",
   "RepeatUntilLabel": "Do",
   "RepeatWeekdaysLabel": "Dni tygodnia",
-  "ExportWeekButton": "Drukuj tydzień",
-  "PrintUnsupportedHint": "Drukowanie nie jest tu obsługiwane - spróbuj otworzyć tę stronę w karcie przeglądarki.",
   "WeekViewLabel": "Tydzień",
   "DayViewLabel": "Dzień",
   "ImportIcsButton": "Importuj kalendarz",

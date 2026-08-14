@@ -27,8 +27,6 @@
   "RepeatIntervalEveryNWeeks": "Var {0}:e vecka",
   "RepeatUntilLabel": "Till",
   "RepeatWeekdaysLabel": "Veckodagar",
-  "ExportWeekButton": "Skriv ut vecka",
-  "PrintUnsupportedHint": "Utskrift stöds inte här - försök öppna sidan i en webbläsarflik.",
   "WeekViewLabel": "Vecka",
   "DayViewLabel": "Dag",
   "ImportIcsButton": "Importera kalender",

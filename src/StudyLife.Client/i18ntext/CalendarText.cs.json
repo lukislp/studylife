@@ -27,8 +27,6 @@
   "RepeatIntervalEveryNWeeks": "Každé {0} týdny",
   "RepeatUntilLabel": "Do",
   "RepeatWeekdaysLabel": "Dny v týdnu",
-  "ExportWeekButton": "Vytisknout týden",
-  "PrintUnsupportedHint": "Tisk zde není podporován - zkus stránku otevřít v záložce prohlížeče.",
   "WeekViewLabel": "Týden",
   "DayViewLabel": "Den",
   "ImportIcsButton": "Importovat kalendář",

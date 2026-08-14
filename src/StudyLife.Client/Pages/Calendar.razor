@@ -13,9 +13,6 @@
 <div class="calendar-page">
     <CalendarHeader WeekLabel="@_weekLabel"
                     TodayText="@T.Today"
-                    ExportWeekButtonText="@T.ExportWeekButton"
-                    PrintUnsupported="_printUnsupported"
-                    PrintUnsupportedHintText="@T.PrintUnsupportedHint"
                     ViewMode="@_viewMode"
                     WeekViewText="@T.WeekViewLabel"
                     DayViewText="@T.DayViewLabel"
@@ -23,7 +20,6 @@
                     OnPrevWeek="Prev"
                     OnNextWeek="Next"
                     OnToday="GoToday"
-                    OnPrint="PrintWeek"
                     OnHeaderTouchStart="OnHeaderTouchStart"
                     OnHeaderTouchEnd="OnHeaderTouchEnd" />
 

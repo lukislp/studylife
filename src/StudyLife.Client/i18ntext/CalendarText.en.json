@@ -27,8 +27,6 @@
   "RepeatIntervalEveryNWeeks": "Every {0} weeks",
   "RepeatUntilLabel": "Until",
   "RepeatWeekdaysLabel": "Weekdays",
-  "ExportWeekButton": "Print week",
-  "PrintUnsupportedHint": "Printing isn't supported here - try opening this page in a browser tab.",
   "WeekViewLabel": "Week",
   "DayViewLabel": "Day",
   "ImportIcsButton": "Import calendar",

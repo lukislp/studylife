@@ -27,8 +27,6 @@
   "RepeatIntervalEveryNWeeks": "Kas {0} savaites",
   "RepeatUntilLabel": "Iki",
   "RepeatWeekdaysLabel": "Savaitės dienos",
-  "ExportWeekButton": "Spausdinti savaitę",
-  "PrintUnsupportedHint": "Spausdinimas čia nepalaikomas - pabandyk atidaryti puslapį naršyklės skirtuke.",
   "WeekViewLabel": "Savaitė",
   "DayViewLabel": "Diena",
   "ImportIcsButton": "Importuoti kalendorių",

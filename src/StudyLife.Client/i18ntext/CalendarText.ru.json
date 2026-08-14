@@ -27,8 +27,6 @@
   "RepeatIntervalEveryNWeeks": "Каждые {0} недель",
   "RepeatUntilLabel": "До",
   "RepeatWeekdaysLabel": "Дни недели",
-  "ExportWeekButton": "Печать недели",
-  "PrintUnsupportedHint": "Печать здесь не поддерживается - попробуй открыть страницу во вкладке браузера.",
   "WeekViewLabel": "Неделя",
   "DayViewLabel": "День",
   "ImportIcsButton": "Импортировать календарь",

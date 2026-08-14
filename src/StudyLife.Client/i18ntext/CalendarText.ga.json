@@ -27,8 +27,6 @@
   "RepeatIntervalEveryNWeeks": "Gach {0} seachtaine",
   "RepeatUntilLabel": "Go dtí",
   "RepeatWeekdaysLabel": "Laethanta na seachtaine",
-  "ExportWeekButton": "Priontáil an tseachtain",
-  "PrintUnsupportedHint": "Ní thacaítear le priontáil anseo - triail an leathanach a oscailt i gcluaisín brabhsálaí.",
   "WeekViewLabel": "Seachtain",
   "DayViewLabel": "Lá",
   "ImportIcsButton": "Iompórtáil féilire",
