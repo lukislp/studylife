@@ -13,7 +13,7 @@
         top: auto;
         bottom: 0;
         flex-direction: row;
-        padding: 0;
+        padding: 0 0 var(--safe-bottom) 0;
         border-right: none;
         border-top: 1px solid var(--border);
         z-index: 200;
@@ -22,10 +22,11 @@
     .brand { display: none; }
     .sidebar-foot { display: none; }
 
-    /* Float above the 64px-tall bottom tab bar instead of overlapping it. */
+    /* Float above the 64px-tall bottom tab bar (plus the home-indicator safe area now
+       included in its own height via the padding-bottom above) instead of overlapping it. */
     .fab-dial {
         right: 12px;
-        bottom: calc(64px + 0.75rem);
+        bottom: calc(64px + var(--safe-bottom) + 0.75rem);
     }
 
     .nav-links {
@@ -51,14 +52,14 @@
 
     .main-content {
         margin-left: 0;
-        height: calc(100vh - 64px);
+        height: calc(100vh - 64px - var(--safe-bottom));
         margin-bottom: 0;
         padding-bottom: 1rem;
         overflow-y: auto;
     }
 
     .app-shell.page-calendar .main-content {
-        height: calc(100vh - 64px);
+        height: calc(100vh - 64px - var(--safe-bottom));
     }
 
     .dashboard { padding: 1.25rem 1rem; }
@@ -88,7 +89,7 @@
     .style-grid { grid-template-columns: 1fr 1fr; }
 
     .page-focus .main-content {
-        height: calc(100vh - 64px);
+        height: calc(100vh - 64px - var(--safe-bottom));
         overflow-y: auto;
     }
 }
