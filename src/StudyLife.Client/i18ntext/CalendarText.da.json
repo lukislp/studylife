@@ -27,8 +27,6 @@
   "RepeatIntervalEveryNWeeks": "Hver {0}. uge",
   "RepeatUntilLabel": "Til",
   "RepeatWeekdaysLabel": "Ugedage",
-  "ExportWeekButton": "Udskriv uge",
-  "PrintUnsupportedHint": "Udskrivning understøttes ikke her - prøv at åbne siden i en browserfane.",
   "WeekViewLabel": "Uge",
   "DayViewLabel": "Dag",
   "ImportIcsButton": "Importér kalender",

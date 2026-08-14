@@ -27,8 +27,6 @@
   "RepeatIntervalEveryNWeeks": "Κάθε {0} εβδομάδες",
   "RepeatUntilLabel": "Έως",
   "RepeatWeekdaysLabel": "Ημέρες εβδομάδας",
-  "ExportWeekButton": "Εκτύπωση εβδομάδας",
-  "PrintUnsupportedHint": "Η εκτύπωση δεν υποστηρίζεται εδώ - δοκίμασε να ανοίξεις τη σελίδα σε καρτέλα του προγράμματος περιήγησης.",
   "WeekViewLabel": "Εβδομάδα",
   "DayViewLabel": "Ημέρα",
   "ImportIcsButton": "Εισαγωγή ημερολογίου",

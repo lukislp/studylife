@@ -27,8 +27,6 @@
   "RepeatIntervalEveryNWeeks": "A cada {0} semanas",
   "RepeatUntilLabel": "Até",
   "RepeatWeekdaysLabel": "Dias da semana",
-  "ExportWeekButton": "Imprimir semana",
-  "PrintUnsupportedHint": "A impressão não é suportada aqui - tenta abrir esta página numa aba do navegador.",
   "WeekViewLabel": "Semana",
   "DayViewLabel": "Dia",
   "ImportIcsButton": "Importar calendário",

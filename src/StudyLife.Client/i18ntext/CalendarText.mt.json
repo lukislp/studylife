@@ -27,8 +27,6 @@
   "RepeatIntervalEveryNWeeks": "Kull {0} ġimgħat",
   "RepeatUntilLabel": "Sa",
   "RepeatWeekdaysLabel": "Ijiem tal-ġimgħa",
-  "ExportWeekButton": "Ipprintja l-ġimgħa",
-  "PrintUnsupportedHint": "L-istampar mhux appoġġjat hawn - ipprova ftaħ din il-paġna f'tab tal-brawżer.",
   "WeekViewLabel": "Ġimgħa",
   "DayViewLabel": "Jum",
   "ImportIcsButton": "Importa kalendarju",

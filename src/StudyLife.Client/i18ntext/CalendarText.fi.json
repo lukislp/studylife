@@ -27,8 +27,6 @@
   "RepeatIntervalEveryNWeeks": "Joka {0}. viikko",
   "RepeatUntilLabel": "Asti",
   "RepeatWeekdaysLabel": "Viikonpäivät",
-  "ExportWeekButton": "Tulosta viikko",
-  "PrintUnsupportedHint": "Tulostus ei toimi täällä - avaa sivu selainvälilehdessä.",
   "WeekViewLabel": "Viikko",
   "DayViewLabel": "Päivä",
   "ImportIcsButton": "Tuo kalenteri",

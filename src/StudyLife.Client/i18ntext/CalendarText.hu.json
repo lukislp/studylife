@@ -27,8 +27,6 @@
   "RepeatIntervalEveryNWeeks": "Minden {0}. héten",
   "RepeatUntilLabel": "Eddig",
   "RepeatWeekdaysLabel": "Hét napjai",
-  "ExportWeekButton": "Hét nyomtatása",
-  "PrintUnsupportedHint": "A nyomtatás itt nem támogatott - próbáld megnyitni az oldalt egy böngészőlapon.",
   "WeekViewLabel": "Hét",
   "DayViewLabel": "Nap",
   "ImportIcsButton": "Naptár importálása",

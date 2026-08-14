@@ -27,8 +27,6 @@
   "RepeatIntervalEveryNWeeks": "Ik pēc {0} nedēļām",
   "RepeatUntilLabel": "Līdz",
   "RepeatWeekdaysLabel": "Nedēļas dienas",
-  "ExportWeekButton": "Drukāt nedēļu",
-  "PrintUnsupportedHint": "Drukāšana šeit netiek atbalstīta - mēģini atvērt lapu pārlūkprogrammas cilnē.",
   "WeekViewLabel": "Nedēļa",
   "DayViewLabel": "Diena",
   "ImportIcsButton": "Importēt kalendāru",

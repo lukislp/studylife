@@ -27,8 +27,6 @@
   "RepeatIntervalEveryNWeeks": "Svaka {0} tjedna",
   "RepeatUntilLabel": "Do",
   "RepeatWeekdaysLabel": "Dani u tjednu",
-  "ExportWeekButton": "Ispiši tjedan",
-  "PrintUnsupportedHint": "Ispis ovdje nije podržan - pokušaj otvoriti stranicu u kartici preglednika.",
   "WeekViewLabel": "Tjedan",
   "DayViewLabel": "Dan",
   "ImportIcsButton": "Uvezi kalendar",

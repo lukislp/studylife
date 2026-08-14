@@ -27,8 +27,6 @@
   "RepeatIntervalEveryNWeeks": "Elke {0} weken",
   "RepeatUntilLabel": "Tot",
   "RepeatWeekdaysLabel": "Weekdagen",
-  "ExportWeekButton": "Week afdrukken",
-  "PrintUnsupportedHint": "Afdrukken wordt hier niet ondersteund - probeer deze pagina in een browsertab te openen.",
   "WeekViewLabel": "Week",
   "DayViewLabel": "Dag",
   "ImportIcsButton": "Kalender importeren",
