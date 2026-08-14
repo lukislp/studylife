@@ -409,7 +409,19 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// Skip HTTPS redirection for Kubernetes' own liveness/readiness probes (kubelet's HTTP
+// probe client sends this exact User-Agent, e.g. "kube-probe/1.36" - well-established,
+// documented Kubernetes behavior, not something this app controls). Found live (2026-08-14):
+// kubelet's httpGet probe (k8s/04-web.yaml/05-worker.yaml, path "/", port 8080) is genuine
+// plain HTTP with no X-Forwarded-Proto header - after the HttpsPort=443 fix above, it started
+// looking exactly like the direct-bypass traffic this middleware is meant to catch, got
+// redirected to https://.../  :443 (nothing listens there), and every pod failed readiness
+// forever. Kubernetes-internal health checks were never the threat this middleware defends
+// against - only requests that could plausibly be an external client reaching Kestrel
+// directly are.
+app.UseWhen(
+    context => !(context.Request.Headers.UserAgent.ToString().StartsWith("kube-probe", StringComparison.Ordinal)),
+    branch => branch.UseHttpsRedirection());
 
 // Security headers on EVERY response (including static assets), hence here before the
 // short-circuiting static-file middlewares. On the CSP - as strict as possible without a bigger
