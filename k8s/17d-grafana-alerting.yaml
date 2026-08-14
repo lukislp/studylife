@@ -391,15 +391,23 @@ data:
             title: "studylife-mcp Tool-Call-Fehlerrate hoch"
             condition: C
             for: 10m
+            noDataState: OK
             data:
               - refId: A
                 relativeTimeRange: { from: 900, to: 0 }
                 datasourceUid: prometheus
                 # 15m-Fenster statt der ueblichen 5m, weil das Call-Volumen naturgemaess niedrig
                 # ist (ein paar Tool-Calls pro Konversation) - kurze Fenster waeren zu verrauscht.
-                # 0/0 (keine Calls ueberhaupt) ergibt NaN, was der Schwellwert-Vergleich als
-                # "nicht erfuellt" behandelt, also kein Fehlalarm in ruhigen Phasen.
-                model: { refId: A, expr: 'sum(rate(studylife_mcp_tool_calls_total{status="error"}[15m])) / sum(rate(studylife_mcp_tool_calls_total[15m]))' }
+                # BUG gefunden live: 0/0 (keine Calls ueberhaupt im Fenster) ergibt in PromQL kein
+                # 0, sondern GAR KEIN Ergebnis (NaN wird aus dem Vektor gefiltert) - anders als
+                # angenommen wertet Grafana eine leere Query NICHT als "Bedingung nicht erfuellt",
+                # sondern feuert per Default einen eigenen "DatasourceNoData"-Alarm. clamp_min
+                # haelt den Nenner von echtem 0 fern (division bleibt definiert), das aeussere
+                # "or vector(0)" faengt zusaetzlich den Fall ab, dass die Zaehler-Metrik noch nie
+                # inkrementiert wurde und deshalb ueberhaupt keine Zeitreihe existiert - noDataState:
+                # OK oben als zusaetzliche Absicherung fuer alles, was trotzdem durchrutscht (z.B.
+                # ein kurzer Datasource-Timeout).
+                model: { refId: A, expr: '(sum(rate(studylife_mcp_tool_calls_total{status="error"}[15m])) / clamp_min(sum(rate(studylife_mcp_tool_calls_total[15m])), 0.0001)) or vector(0)' }
               - refId: B
                 relativeTimeRange: { from: 900, to: 0 }
                 datasourceUid: "__expr__"
