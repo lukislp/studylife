@@ -1,3 +1,10 @@
+## [1.14.7](https://github.com/lukislp/studylife/compare/v1.14.6...v1.14.7) (2026-08-15)
+
+
+### Bug Fixes
+
+* **k8s:** add PodDisruptionBudgets for coredns, pg-pooler, nginx-gateway ([e3cd343](https://github.com/lukislp/studylife/commit/e3cd34382b5d068cc9cd44f8bc4102e47014dd4e)), closes [#3](https://github.com/lukislp/studylife/issues/3)
+
 ## [1.14.6](https://github.com/lukislp/studylife/compare/v1.14.5...v1.14.6) (2026-08-14)
 
 
