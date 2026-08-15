@@ -29,18 +29,25 @@ public partial class WeekPlan
 
     protected override async Task OnInitializedAsync()
     {
-        T = await I18nText.GetTextTableAsync<I18nText.WeekPlanText>(this);
+        // Independent of each other - start them all immediately instead of await-ing one after
+        // another (same pattern as Index.razor.cs/Setup.razor).
+        var i18nTask = I18nText.GetTextTableAsync<I18nText.WeekPlanText>(this);
+        var settingsTask = State.GetSettingsAsync();
+        var coursesTask = State.GetCoursesAsync();
+        var sessionsTask = State.GetSessionsAsync();
+
+        T = await i18nTask;
         _generatedAt = DateTime.Now;
         // Monday start, same convention as Calendar.razor.cs (MondayOf) - here via the shared
         // StudyMetrics helper instead of its own copy of the offset calculation.
         _weekStart = StudyMetrics.WeekStartOf(DateTime.Today);
         _weekEnd = _weekStart.AddDays(6);
 
-        var settings = await State.GetSettingsAsync();
-        var allCourses = await State.GetCoursesAsync();
+        var settings = await settingsTask;
+        var allCourses = await coursesTask;
         _courseLookup = allCourses.ToDictionary(c => c.Id);
 
-        var sessions = await State.GetSessionsAsync();
+        var sessions = await sessionsTask;
         var weekSessions = sessions
             .Where(s => s.StartTime.Date >= _weekStart && s.StartTime.Date <= _weekEnd)
             .OrderBy(s => s.StartTime)

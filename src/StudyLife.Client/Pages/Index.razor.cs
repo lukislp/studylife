@@ -168,10 +168,11 @@ public partial class Index
     {
         State.OnSessionsChanged += OnSessionsChanged;
         State.OnSettingsChanged += OnSettingsChanged;
+        var isOwnerTask = State.GetIsOwnerAsync();
         T = await I18nText.GetTextTableAsync<I18nText.IndexText>(this);
         _langWatcher = new I18nLanguageWatcher(I18nText);
         await _langWatcher.InitAsync();
-        _isOwner = await State.GetIsOwnerAsync();
+        _isOwner = await isOwnerTask;
         RefreshGreeting();
         _motivation = GetRandomMotivation();
         _insightVariant = new Random().Next(2);
@@ -218,8 +219,29 @@ public partial class Index
 
     private async Task LoadDataAsync(bool refreshHeavyHistory)
     {
-        var settings = await State.GetSettingsAsync();
-        var allCourses = await State.GetCoursesAsync();
+        // All of the fetches below are independent of each other - only the computation further
+        // down needs their results, not the fetches themselves. Starting every task immediately
+        // instead of `await`ing each one in turn (the previous shape) turns ~9 sequential round
+        // trips into one round trip's worth of wall-clock time (roughly the slowest single
+        // request instead of the sum of all of them) - imperceptible on a low-latency LAN, but
+        // adds up to multiple real seconds once server round-trip time is non-trivial (e.g. the
+        // public demo). dueForHeavyRefresh only touches local fields/the method parameter (no
+        // I/O), so it's safe to compute this early too, to decide whether to start that fetch.
+        var settingsTask = State.GetSettingsAsync();
+        var coursesTask = State.GetCoursesAsync();
+        var sessionsTask = State.GetSessionsAsync();
+        var historyTask = State.GetJsonCachedAsync<List<StudySessionDto>>($"api/sessions/history?days={HistoryDays}&onlyCompleted=false");
+        var isDemoTask = State.GetIsDemoAsync();
+        var goalsTask = State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals");
+        var groupQuotasTask = State.GetActiveGroupQuotasAsync();
+        var studyProgramsTask = State.GetJsonCachedAsync<List<StudyProgramSummaryDto>>("api/studyprograms");
+        var dueForHeavyRefresh = _lastHeavyFetchAt == DateTime.MinValue || DateTime.UtcNow - _lastHeavyFetchAt >= HeavyFetchThrottle;
+        var heavyHistoryTask = refreshHeavyHistory && dueForHeavyRefresh
+            ? State.GetJsonCachedAsync<List<StudySessionDto>>($"api/sessions/history?days={AchievementHistoryDays}")
+            : null;
+
+        var settings = await settingsTask;
+        var allCourses = await coursesTask;
         _courses = allCourses.Where(c => settings.SelectedCourseIds.Contains(c.Id)).ToList();
 
         // Active-programme scope: allCourses is already limited to the active programme
@@ -232,7 +254,7 @@ public partial class Index
 
         // Also scope the near-term data (today/active/upcoming): a session from another
         // programme showing up as "today's session" would be just as confusing as its history in the charts.
-        var sessions = (await State.GetSessionsAsync()).Where(s => activeCourseIds.Contains(s.CourseId)).ToList();
+        var sessions = (await sessionsTask).Where(s => activeCourseIds.Contains(s.CourseId)).ToList();
         var today = DateTime.Today;
         _todaySessions = sessions.Where(s => s.StartTime.Date == today).OrderBy(s => s.StartTime).ToList();
 
@@ -248,7 +270,7 @@ public partial class Index
         // 8-week trend, streak, recent sessions, mini-donut, neglected-course.
         // historyAllPrograms stays unscoped for the inactivity nudge below; everything else uses
         // `history`, filtered to the active programme.
-        var historyAllPrograms = await State.GetJsonCachedAsync<List<StudySessionDto>>($"api/sessions/history?days={HistoryDays}&onlyCompleted=false") ?? new();
+        var historyAllPrograms = await historyTask ?? new();
         var history = historyAllPrograms.Where(s => activeCourseIds.Contains(s.CourseId)).ToList();
         // "Studied" = timer-completed OR the scheduled time has simply passed - see StudyMetrics.IsStudied.
         var now = DateTime.Now;
@@ -291,7 +313,7 @@ public partial class Index
         // the demo user IS the owner and never has a backup timestamp, so the banner would
         // permanently nag every visitor about backing up throwaway seed data - and the
         // backup endpoints are 403-blocked there anyway.
-        var isDemo = await State.GetIsDemoAsync();
+        var isDemo = await isDemoTask;
         if (settings.LastBackupDownloadAt == null)
         {
             _backupNeverDownloaded = true;
@@ -395,7 +417,7 @@ public partial class Index
         // Active-programme scope: goals/grades from other programmes must not factor into either
         // the average grade or the upcoming deadlines (same activeCourseIds set
         // as above for history/sessions).
-        var goals = (await State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals") ?? new())
+        var goals = (await goalsTask ?? new())
             .Where(g => activeCourseIds.Contains(g.CourseId))
             .ToList();
         _courseTags = goals.ToDictionary(g => g.CourseId, g => g.Tag);
@@ -414,7 +436,7 @@ public partial class Index
         // ECTS & average grade (mirrors Stats.razor's Ects-weighted calculation).
         // Programme-aware: the group quotas of the ACTIVE programme (built-in: the static
         // CourseCatalog.GroupEctsQuotas; custom: fetched per programme via AppStateService).
-        var groupQuotas = await State.GetActiveGroupQuotasAsync();
+        var groupQuotas = await groupQuotasTask;
         _ectsTotal = CourseCatalog.CalcTotalEcts(allCourses, groupQuotas);
         _ectsEarned = CourseCatalog.CalcEctsEarned(allCourses, settings.CompletedCourseIds, groupQuotas);
         _ectsPercent = _ectsTotal > 0 ? Math.Min(100.0, _ectsEarned / (double)_ectsTotal * 100) : 0;
@@ -486,10 +508,9 @@ public partial class Index
         // AND at least HeavyFetchThrottle has passed since the last fetch (or this is the first load) -
         // a second safety net so rapid-fire session edits (e.g. several Focus Timer sessions in a row)
         // don't each re-hammer the ~10-year endpoint.
-        var dueForHeavyRefresh = _lastHeavyFetchAt == DateTime.MinValue || DateTime.UtcNow - _lastHeavyFetchAt >= HeavyFetchThrottle;
-        if (refreshHeavyHistory && dueForHeavyRefresh)
+        if (heavyHistoryTask != null)
         {
-            _allTimeHistoryRaw = await State.GetJsonCachedAsync<List<StudySessionDto>>($"api/sessions/history?days={AchievementHistoryDays}") ?? new();
+            _allTimeHistoryRaw = await heavyHistoryTask ?? new();
             _lastHeavyFetchAt = DateTime.UtcNow;
         }
         // Scoped to the active programme + rebuilt on EVERY reload (including settings-only, e.g.
@@ -504,7 +525,7 @@ public partial class Index
         // a purely manual flag (StudyProgramsController), the built-in programme never counts
         // (no DB entry, IsCompleted always false). Small/cheap enough to
         // refetch on every reload instead of hiding it behind refreshHeavyHistory.
-        var studyPrograms = await State.GetJsonCachedAsync<List<StudyProgramSummaryDto>>("api/studyprograms") ?? new();
+        var studyPrograms = await studyProgramsTask ?? new();
         _programsCompleted = studyPrograms.Count(p => p.IsCompleted);
 
         BuildAchievements(settings, activeCourseIds);

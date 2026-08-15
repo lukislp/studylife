@@ -32,17 +32,29 @@ public partial class Calendar
 
     protected override async Task OnInitializedAsync()
     {
-        T = await I18nText.GetTextTableAsync<I18nText.CalendarText>(this);
+        // All fetches below are independent of each other - start them all immediately instead
+        // of await-ing one after another (same pattern as Index.razor.cs/Setup.razor). The
+        // templates fetch is duplicated inline (same shape as LoadTemplatesAsync, used unchanged
+        // by its other call site) rather than started through that method, since its own fetch
+        // can't be started this early without touching its signature.
+        var i18nTask = I18nText.GetTextTableAsync<I18nText.CalendarText>(this);
+        var settingsTask = State.GetSettingsAsync();
+        var coursesTask = State.GetCoursesAsync();
+        var sessionsTask = State.GetSessionsAsync();
+        var goalsTask = State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals");
+        var templatesTask = State.GetJsonCachedAsync<List<SessionTemplateDto>>("api/sessiontemplates");
+
+        T = await i18nTask;
         State.OnChange += OnStateChanged;
-        var settings = await State.GetSettingsAsync();
-        var allCourses = await State.GetCoursesAsync();
+        var settings = await settingsTask;
+        var allCourses = await coursesTask;
         _courses = allCourses
             .Where(c => settings.SelectedCourseIds.Contains(c.Id) && !settings.CompletedCourseIds.Contains(c.Id))
             .ToList();
-        _sessions = await State.GetSessionsAsync();
+        _sessions = await sessionsTask;
         try
         {
-            _goals = await State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals") ?? new();
+            _goals = await goalsTask ?? new();
         }
         catch
         {
@@ -50,7 +62,16 @@ public partial class Calendar
             // topic suggestion in the modal) — the calendar works fully without them.
             _goals = new();
         }
-        await LoadTemplatesAsync();
+        try
+        {
+            _templates = await templatesTask ?? new();
+        }
+        catch
+        {
+            // Offline/flaky network: templates are a pure convenience feature, the calendar
+            // works fully without them - same degradation as with _goals.
+            _templates = new();
+        }
         BuildWeek();
 
         // Fetch a .ics shared from the native app shell (always a no-op in the browser) -
@@ -60,12 +81,13 @@ public partial class Calendar
 
     private void OnStateChanged() => InvokeAsync(async () =>
     {
+        var sessionsTask = State.GetSessionsAsync();
         var settings = await State.GetSettingsAsync();
         var allCourses = await State.GetCoursesAsync();
         _courses = allCourses
             .Where(c => settings.SelectedCourseIds.Contains(c.Id) && !settings.CompletedCourseIds.Contains(c.Id))
             .ToList();
-        _sessions = await State.GetSessionsAsync();
+        _sessions = await sessionsTask;
         StateHasChanged();
     });
 
