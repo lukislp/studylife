@@ -1,3 +1,10 @@
+# [1.15.0](https://github.com/lukislp/studylife/compare/v1.14.7...v1.15.0) (2026-08-15)
+
+
+### Features
+
+* **flux:** onboard piwatch into Flux-managed GitOps ([6be9556](https://github.com/lukislp/studylife/commit/6be955679b571be7a7157c2e9828ea0543df8064))
+
 ## [1.14.7](https://github.com/lukislp/studylife/compare/v1.14.6...v1.14.7) (2026-08-15)
 
 
