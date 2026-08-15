@@ -3,13 +3,15 @@
 # DO NOT edit that file directly, it gets silently regenerated on the next `flux install`/
 # version upgrade).
 #
-# Scope was derived from what kustomize-controller's ONE Kustomization (studylife-deploy, see
-# 05-kustomization.yaml) actually applies: exclusively k8s/flux/deploy/kustomization.yaml's
-# resource list (04-web.yaml, 05-worker.yaml, 14-prometheus.yaml, 17b/17c/17d-grafana-*.yaml).
-# The rest of k8s/*.yaml (Postgres/Gateway/MetalLB/NetworkPolicies/HPA/PDB/cert-manager
-# ClusterIssuers/...) is applied directly by the operator via bootstrap-cluster.ps1, NOT
-# through Flux - so kustomize-controller never touches any of those apiGroups and needs no
-# permissions for them.
+# Scope was derived from what kustomize-controller's Kustomizations actually apply:
+# studylife-deploy (05-kustomization.yaml, exclusively k8s/flux/deploy/kustomization.yaml's
+# resource list: 04-web.yaml, 05-worker.yaml, 14-prometheus.yaml, 17b/17c/17d-grafana-*.yaml),
+# studylife-ai-deploy, studylife-mcp-deploy, and piwatch-deploy (20-piwatch-kustomization.yaml,
+# piwatch repo's own deploy/flux-deploy/ subset). The rest of each repo's manifests (Postgres/
+# Gateway/MetalLB/NetworkPolicies/HPA/PDB/cert-manager ClusterIssuers/Namespaces/RBAC/
+# HTTPRoutes/SealedSecrets/...) is applied directly by the operator (bootstrap-cluster.ps1 for
+# this repo, by hand for the others), NOT through Flux - so kustomize-controller never touches
+# any of those apiGroups and needs no permissions for them.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -20,6 +22,20 @@ rules:
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
   - apiGroups: ["apps"]
     resources: ["deployments"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Added for piwatch-deploy (20-piwatch-kustomization.yaml) - its node-agent DaemonSet's spec
+  # changes over time too (e.g. privileged:true + a /dev mount for NVMe SMART monitoring), not
+  # just its image tag, so it needed to be part of the Flux-managed subset rather than staying
+  # bootstrap-only like the other repos' non-Deployment resources. No prior Kustomization needed
+  # this apiGroup/resource combination.
+  - apiGroups: ["apps"]
+    resources: ["daemonsets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Also added for piwatch-deploy: its flux-deploy/ subset includes pdb.yaml
+  # (a PodDisruptionBudget for the piwatch Deployment), which needs its own apiGroup -
+  # missed in the first pass, caught when piwatch-deploy's dry-run apply failed forbidden.
+  - apiGroups: ["policy"]
+    resources: ["poddisruptionbudgets"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
   # Read-only on replicasets: Flux's health check computes a Deployment's actual rollout
   # status (kstatus) by inspecting its owned ReplicaSets, not just the Deployment object
