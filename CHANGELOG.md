@@ -1,3 +1,10 @@
+## [1.15.4](https://github.com/lukislp/studylife/compare/v1.15.3...v1.15.4) (2026-08-15)
+
+
+### Bug Fixes
+
+* parallelize independent data fetches across every page's initial load ([10208e8](https://github.com/lukislp/studylife/commit/10208e81d933880fb51047e3a75df40d0f0fef33))
+
 ## [1.15.3](https://github.com/lukislp/studylife/compare/v1.15.2...v1.15.3) (2026-08-15)
 
 
