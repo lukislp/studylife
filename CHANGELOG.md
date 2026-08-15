@@ -1,3 +1,10 @@
+## [1.15.3](https://github.com/lukislp/studylife/compare/v1.15.2...v1.15.3) (2026-08-15)
+
+
+### Bug Fixes
+
+* remove dead styles.css link, stop premature restore/status call ([2647426](https://github.com/lukislp/studylife/commit/264742689167d61d09883e2889cb8a17e6e97704))
+
 ## [1.15.2](https://github.com/lukislp/studylife/compare/v1.15.1...v1.15.2) (2026-08-15)
 
 
