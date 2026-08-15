@@ -1,0 +1,15 @@
+# Same SemVer policy as 08-studylife-ai-image-policy.yaml / 13-studylife-mcp-image-policy.yaml -
+# piwatch's own semantic-release setup also pushes plain SemVer docker tags without a "v"
+# prefix (the git tag itself is "v1.2.0", but the published image tag is "1.2.0" - verified live
+# via docker buildx imagetools inspect).
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: piwatch
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: piwatch
+  policy:
+    semver:
+      range: ">=0.0.0"
