@@ -1,3 +1,10 @@
+## [1.15.1](https://github.com/lukislp/studylife/compare/v1.15.0...v1.15.1) (2026-08-15)
+
+
+### Bug Fixes
+
+* use 100dvh instead of 100vh for the app-shell layout ([ad23345](https://github.com/lukislp/studylife/commit/ad2334592151de114a582a71354369a0f362a6ed))
+
 # [1.15.0](https://github.com/lukislp/studylife/compare/v1.14.7...v1.15.0) (2026-08-15)
 
 
