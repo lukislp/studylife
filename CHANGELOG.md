@@ -1,3 +1,10 @@
+## [1.15.2](https://github.com/lukislp/studylife/compare/v1.15.1...v1.15.2) (2026-08-15)
+
+
+### Bug Fixes
+
+* allow piwatch ingress to Prometheus for PVC usage queries ([10f9782](https://github.com/lukislp/studylife/commit/10f9782f59dcf7a126d90a848d6c5ac8f14d3601))
+
 ## [1.15.1](https://github.com/lukislp/studylife/compare/v1.15.0...v1.15.1) (2026-08-15)
 
 
