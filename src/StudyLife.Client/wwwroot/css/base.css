@@ -158,7 +158,14 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 /* === App Shell === */
 .app-shell {
     display: flex;
+    /* 100vh in mobile Safari means the viewport height with the toolbar collapsed (its
+       tallest possible state), not what's actually visible right now - the fixed bottom
+       navbar (tracks the real visual viewport) and this vh-based layout disagreed about
+       where "the bottom" is, which looked like the navbar covering part of the page.
+       100dvh tracks the real, current viewport and overrides the line above wherever
+       supported; browsers without dvh support just keep the 100vh fallback. */
     height: 100vh;
+    height: 100dvh;
 }
 
 /* === Sidebar === */
@@ -174,6 +181,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
     top: 0;
     left: 0;
     height: 100vh;
+    height: 100dvh;
     z-index: 100;
 }
 
@@ -463,16 +471,19 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
     margin-left: var(--sidebar-w);
     flex: 1;
     height: 100vh;
+    height: 100dvh;
     overflow-y: auto;
 }
 
 /* Calendar page: cap the entire shell at 100vh, no page scroll */
 .app-shell.page-calendar {
     height: 100vh;
+    height: 100dvh;
     overflow: hidden;
 }
 .app-shell.page-calendar .main-content {
     height: 100vh;
+    height: 100dvh;
     min-height: 0;
     overflow: hidden;
     display: flex;
