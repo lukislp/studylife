@@ -139,10 +139,20 @@
 
         var results = new List<SearchResult>();
 
+        // The three sources below are independent of each other - start all three requests now,
+        // await each inside its own try/catch further down IN THE SAME ORDER AS BEFORE, so the
+        // AddRange calls still populate the groups courses-then-notes-then-sessions exactly as
+        // before (that order is what determines the dropdown's group order) while the actual
+        // network round trips (notes search is the only one that hits the server on a warm
+        // cache) overlap instead of running one after another.
+        var coursesTask = State.GetCoursesAsync();
+        var notesTask = Http.GetFromJsonAsync<List<NoteDto>>($"api/notes/search?q={Uri.EscapeDataString(q)}");
+        var sessionsTask = State.GetSessionsAsync();
+
         // Courses: local catalog cache, name/code substring match
         try
         {
-            var courses = await State.GetCoursesAsync();
+            var courses = await coursesTask;
             results.AddRange(courses
                 .Where(c => c.Name.Contains(q, StringComparison.OrdinalIgnoreCase)
                     || c.Code.Contains(q, StringComparison.OrdinalIgnoreCase))
@@ -154,8 +164,7 @@
         // Notes: server FTS5 (same endpoint as the notes page)
         try
         {
-            var notes = await Http.GetFromJsonAsync<List<NoteDto>>(
-                $"api/notes/search?q={Uri.EscapeDataString(q)}");
+            var notes = await notesTask;
             if (notes != null)
             {
                 results.AddRange(notes
@@ -170,7 +179,7 @@
         // Upcoming sessions: local cache, from today onward, sorted by start time
         try
         {
-            var sessions = await State.GetSessionsAsync();
+            var sessions = await sessionsTask;
             var today = DateTime.Today;
             results.AddRange(sessions
                 .Where(s => s.StartTime.Date >= today

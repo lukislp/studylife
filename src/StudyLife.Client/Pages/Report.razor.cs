@@ -38,21 +38,31 @@ public partial class Report
 
     protected override async Task OnInitializedAsync()
     {
-        T = await I18nText.GetTextTableAsync<I18nText.ReportText>(this);
+        // All fetches below are independent of each other - start them all immediately instead
+        // of await-ing one after another (same pattern as Index.razor.cs/Setup.razor/Stats.razor.cs).
+        var i18nTask = I18nText.GetTextTableAsync<I18nText.ReportText>(this);
+        var settingsTask = State.GetSettingsAsync();
+        var coursesTask = State.GetCoursesAsync();
+        var goalsUnfilteredTask = State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals");
+        var historyTask = State.GetJsonCachedAsync<List<StudySessionDto>>($"api/sessions/history?days={HistoryDays}");
+        var programsTask = State.GetJsonCachedAsync<List<StudyProgramSummaryDto>>("api/studyprograms");
+        var groupQuotasTask = State.GetActiveGroupQuotasAsync();
+
+        T = await i18nTask;
         _generatedAt = DateTime.Now;
 
-        var settings = await State.GetSettingsAsync();
-        var allCourses = await State.GetCoursesAsync();
+        var settings = await settingsTask;
+        var allCourses = await coursesTask;
         var activeCourseIds = allCourses.Select(c => c.Id).ToHashSet();
 
-        var goalsUnfiltered = await State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals") ?? new();
+        var goalsUnfiltered = await goalsUnfilteredTask ?? new();
         var goals = goalsUnfiltered.Where(g => activeCourseIds.Contains(g.CourseId)).ToList();
 
-        var history = (await State.GetJsonCachedAsync<List<StudySessionDto>>($"api/sessions/history?days={HistoryDays}") ?? new())
+        var history = (await historyTask ?? new())
             .Where(s => activeCourseIds.Contains(s.CourseId))
             .ToList();
 
-        var programs = await State.GetJsonCachedAsync<List<StudyProgramSummaryDto>>("api/studyprograms") ?? new();
+        var programs = await programsTask ?? new();
         _programmeName = programs.FirstOrDefault(p => p.Id == settings.ActiveStudyProgramId)?.Name
             ?? CourseCatalog.BuiltInProgramName;
 
@@ -102,7 +112,7 @@ public partial class Report
             ? averageGrade.Value.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ',')
             : null;
 
-        var groupQuotas = await State.GetActiveGroupQuotasAsync();
+        var groupQuotas = await groupQuotasTask;
         _ectsTotal = CourseCatalog.CalcTotalEcts(allCourses, groupQuotas);
         _ectsEarned = CourseCatalog.CalcEctsEarned(allCourses, settings.CompletedCourseIds, groupQuotas);
         _ectsPercent = _ectsTotal > 0 ? Math.Min(100.0, _ectsEarned / (double)_ectsTotal * 100) : 0;

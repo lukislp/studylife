@@ -51,12 +51,20 @@ public partial class Wrapped
 
     protected override async Task OnInitializedAsync()
     {
-        T = await I18nText.GetTextTableAsync<I18nText.WrappedText>(this);
+        // All fetches below are independent of each other - start them all immediately instead
+        // of await-ing one after another (same pattern as Index.razor.cs/Setup.razor).
+        var i18nTask = I18nText.GetTextTableAsync<I18nText.WrappedText>(this);
+        var settingsTask = State.GetSettingsAsync();
+        var coursesTask = State.GetCoursesAsync();
+        var periodHistoryTask = State.GetJsonCachedAsync<List<StudySessionDto>>("api/sessions/history");
+        var allTimeHistoryTask = State.GetJsonCachedAsync<List<StudySessionDto>>("api/sessions/history?days=3650");
+
+        T = await i18nTask;
         _langWatcher = new I18nLanguageWatcher(I18nText);
         await _langWatcher.InitAsync();
 
-        var settings = await State.GetSettingsAsync();
-        var allCourses = await State.GetCoursesAsync();
+        var settings = await settingsTask;
+        var allCourses = await coursesTask;
         var activeCourseIds = allCourses.Select(c => c.Id).ToHashSet();
 
         _periodEnd = DateTime.Today;
@@ -64,14 +72,14 @@ public partial class Wrapped
 
         // Recap period (365 days, default of /api/sessions/history) - for total hours,
         // sessions, streak, top course, weekday, and chronotype highlight.
-        var periodHistory = (await State.GetJsonCachedAsync<List<StudySessionDto>>("api/sessions/history") ?? new())
+        var periodHistory = (await periodHistoryTask ?? new())
             .Where(s => activeCourseIds.Contains(s.CourseId))
             .ToList();
 
         // All-time history for the achievement count - the same ~10-year span as
         // Index.Achievements.razor.cs' AchievementHistoryDays, since achievements are
         // deliberately programme-wide milestones, not tied to the recap period.
-        var allTimeHistory = (await State.GetJsonCachedAsync<List<StudySessionDto>>("api/sessions/history?days=3650") ?? new())
+        var allTimeHistory = (await allTimeHistoryTask ?? new())
             .Where(s => activeCourseIds.Contains(s.CourseId))
             .ToList();
 
@@ -147,12 +155,18 @@ public partial class Wrapped
     private async Task BuildAchievementCountAsync(
         UserSettings settings, HashSet<int> activeCourseIds, List<CourseDto> allCourses, List<StudySessionDto> allTimeHistory)
     {
+        // Independent of each other and of the pure-CPU computation below - start both now,
+        // await at first use.
+        var groupQuotasTask = State.GetActiveGroupQuotasAsync();
+        var notesTask = State.GetJsonCachedAsync<List<NoteDto>>("api/notes");
+        var studyProgramsTask = State.GetJsonCachedAsync<List<StudyProgramSummaryDto>>("api/studyprograms");
+
         var totalHours = allTimeHistory.Sum(s => (s.EndTime - s.StartTime).TotalHours);
         var totalSessions = allTimeHistory.Count;
         var longestStreak = StudyMetrics.CalcLongestStreak(allTimeHistory.Select(s => s.StartTime));
         var coursesCompleted = settings.CompletedCourseIds.Count(id => activeCourseIds.Contains(id));
 
-        var groupQuotas = await State.GetActiveGroupQuotasAsync();
+        var groupQuotas = await groupQuotasTask;
         var ectsTotal = CourseCatalog.CalcTotalEcts(allCourses, groupQuotas);
         var ectsEarned = CourseCatalog.CalcEctsEarned(allCourses, settings.CompletedCourseIds, groupQuotas);
         var allCoursesDone = ectsTotal > 0 && ectsEarned >= ectsTotal;
@@ -170,10 +184,10 @@ public partial class Wrapped
             ? weeklyGroups.Max(g => g.Select(s => s.CourseId).Distinct().Count())
             : 0;
 
-        var notes = await State.GetJsonCachedAsync<List<NoteDto>>("api/notes") ?? new();
+        var notes = await notesTask ?? new();
         var notesCount = notes.Count(n => !n.CourseId.HasValue || activeCourseIds.Contains(n.CourseId.Value));
 
-        var studyPrograms = await State.GetJsonCachedAsync<List<StudyProgramSummaryDto>>("api/studyprograms") ?? new();
+        var studyPrograms = await studyProgramsTask ?? new();
         var programsCompleted = studyPrograms.Count(p => p.IsCompleted);
 
         (_achievementsUnlocked, _achievementsTotal) = StudyMetrics.CountUnlockedAchievements(

@@ -258,19 +258,28 @@
 
     protected override async Task OnInitializedAsync()
     {
-        T = await I18nText.GetTextTableAsync<I18nText.PlannerText>(this);
+        // All fetches below are independent of each other - start them all immediately instead
+        // of await-ing one after another (same pattern as Index.razor.cs/Setup.razor).
+        var i18nTask = I18nText.GetTextTableAsync<I18nText.PlannerText>(this);
+        var settingsTask = State.GetSettingsAsync();
+        var coursesTask = State.GetCoursesAsync();
+        var sessionsTask = State.GetSessionsAsync();
+        var goalsTask = State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals");
+        var historyTask = State.GetJsonCachedAsync<List<StudySessionDto>>($"api/sessions/history?days={NeglectHistoryDays}&onlyCompleted=false");
+
+        T = await i18nTask;
         _langWatcher = new I18nLanguageWatcher(I18nText);
         await _langWatcher.InitAsync();
         State.OnChange += OnStateChanged;
 
-        _settings = await State.GetSettingsAsync();
-        var allCourses = await State.GetCoursesAsync();
+        _settings = await settingsTask;
+        var allCourses = await coursesTask;
         _courses = allCourses
             .Where(c => _settings.SelectedCourseIds.Contains(c.Id) && !_settings.CompletedCourseIds.Contains(c.Id))
             .ToList();
-        _sessions = await State.GetSessionsAsync();
-        _goals = await State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals") ?? new();
-        _history = await State.GetJsonCachedAsync<List<StudySessionDto>>($"api/sessions/history?days={NeglectHistoryDays}&onlyCompleted=false") ?? new();
+        _sessions = await sessionsTask;
+        _goals = await goalsTask ?? new();
+        _history = await historyTask ?? new();
 
         if (_courses.Count > 0)
         {

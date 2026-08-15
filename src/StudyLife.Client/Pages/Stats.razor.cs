@@ -62,12 +62,26 @@ public partial class Stats
 
     protected override async Task OnInitializedAsync()
     {
+        // All fetches below are independent of each other - start them all immediately instead
+        // of await-ing one after another (same pattern as Index.razor.cs/Setup.razor). Safe to
+        // start GetCoursesAsync/GetActiveGroupQuotasAsync alongside GetSettingsAsync: their
+        // internal settings lookup shares the same de-duplicated in-flight task
+        // (AppStateService.GetSettingsAsync) instead of firing a second request.
+        var settingsTask = State.GetSettingsAsync();
+        var goalsUnfilteredTask = State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals");
+        var coursesTask = State.GetCoursesAsync();
+        var sessionsTask = State.GetSessionsAsync();
+        var notesTask = State.GetJsonCachedAsync<List<NoteDto>>("api/notes");
+        var historyAllTask = State.GetJsonCachedAsync<List<StudySessionDto>>($"api/sessions/history?days={HistoryDays}");
+        var groupQuotasTask = State.GetActiveGroupQuotasAsync();
+        var historyAllTimeTask = State.GetJsonCachedAsync<List<StudySessionDto>>("api/sessions/history?days=3650");
+
         T = await I18nText.GetTextTableAsync<I18nText.StatsText>(this);
         _langWatcher = new I18nLanguageWatcher(I18nText);
         await _langWatcher.InitAsync();
-        var settings = await State.GetSettingsAsync();
-        var goalsUnfiltered = await State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals") ?? new();
-        var allCourses = await State.GetCoursesAsync();
+        var settings = await settingsTask;
+        var goalsUnfiltered = await goalsUnfilteredTask ?? new();
+        var allCourses = await coursesTask;
         _allCourses = allCourses;
         // Active-programme scope: allCourses is already limited to the active programme
         // (AppStateService.GetCoursesAsync). `sessions` (near-term, course rows above), `history`
@@ -77,10 +91,10 @@ public partial class Stats
         // programmes'. General (course-less) notes always stay visible.
         var activeCourseIds = allCourses.Select(c => c.Id).ToHashSet();
         var goals = goalsUnfiltered.Where(g => activeCourseIds.Contains(g.CourseId)).ToList();
-        var sessions = (await State.GetSessionsAsync()).Where(s => activeCourseIds.Contains(s.CourseId)).ToList();
+        var sessions = (await sessionsTask).Where(s => activeCourseIds.Contains(s.CourseId)).ToList();
         // For the notes/study-time correlation card - its own fetch because otherwise no
         // notes data would be needed on this page (see Stats.Comparisons.razor.cs).
-        var notes = (await State.GetJsonCachedAsync<List<NoteDto>>("api/notes") ?? new())
+        var notes = (await notesTask ?? new())
             .Where(n => !n.CourseId.HasValue || activeCourseIds.Contains(n.CourseId.Value))
             .ToList();
         // Shared long-term history (12 months) for the heatmap, donut, weekday/time-of-day, and
@@ -88,7 +102,7 @@ public partial class Stats
         // from `sessions` above (AppStateService, ±7/90-day window) - see /api/sessions/history.
         // historyAll stays unfiltered for the programme comparison (Stats.Programs.razor.cs),
         // the only card that looks beyond the active programme.
-        var historyAll = await State.GetJsonCachedAsync<List<StudySessionDto>>($"api/sessions/history?days={HistoryDays}") ?? new();
+        var historyAll = await historyAllTask ?? new();
         var history = historyAll
             .Where(s => activeCourseIds.Contains(s.CourseId))
             .ToList();
@@ -151,7 +165,7 @@ public partial class Stats
         BuildGradeDistribution(goals);
 
         // Programme-aware: quotas of the ACTIVE programme (built-in: static, otherwise via fetch).
-        var groupQuotas = await State.GetActiveGroupQuotasAsync();
+        var groupQuotas = await groupQuotasTask;
         _ectsTotal = CourseCatalog.CalcTotalEcts(allCourses, groupQuotas);
         _ectsEarned = CourseCatalog.CalcEctsEarned(allCourses, settings.CompletedCourseIds, groupQuotas);
         _ectsPercent = _ectsTotal > 0 ? Math.Min(100.0, _ectsEarned / (double)_ectsTotal * 100) : 0;
@@ -176,7 +190,7 @@ public partial class Stats
         // Separate all-time fetch ONLY for the semester comparison: its average-hours figure for
         // earlier semesters needs sessions beyond the 371-day window above - the same
         // 10-year convention as Index.Achievements' AchievementHistoryDays.
-        var historyAllTime = (await State.GetJsonCachedAsync<List<StudySessionDto>>("api/sessions/history?days=3650") ?? new())
+        var historyAllTime = (await historyAllTimeTask ?? new())
             .Where(s => activeCourseIds.Contains(s.CourseId))
             .ToList();
         BuildSemesterComparison(historyAllTime, goals, allCourses, settings);

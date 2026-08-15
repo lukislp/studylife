@@ -114,15 +114,30 @@
 
     protected override async Task OnInitializedAsync()
     {
-        T = await I18nText.GetTextTableAsync<I18nText.FocusText>(this);
+        // Independent of each other - start them all immediately instead of await-ing one after
+        // another (same pattern as Index.razor.cs/Setup.razor). GetActiveSessionAsync/
+        // GetUpcomingSessionAsync both wrap GetSessionsAsync internally (no in-flight dedup
+        // there, unlike GetSettingsAsync) - fetch sessions once ourselves instead of calling
+        // both wrappers, to avoid firing two api/sessions requests on a cold cache.
+        var i18nTask = I18nText.GetTextTableAsync<I18nText.FocusText>(this);
+        var sessionsTask = State.GetSessionsAsync();
+        var remoteTimerTask = RefreshRemoteTimerAsync();
+        var settingsTask = State.GetSettingsAsync();
+
+        T = await i18nTask;
         _langWatcher = new I18nLanguageWatcher(I18nText);
         await _langWatcher.InitAsync();
-        _activeSession = await State.GetActiveSessionAsync();
-        _upcomingSession = await State.GetUpcomingSessionAsync();
-        await RefreshRemoteTimerAsync();
+        var sessions = await sessionsTask;
+        var nowForSessions = DateTime.Now;
+        _activeSession = sessions.FirstOrDefault(s => !s.IsCompleted && s.StartTime <= nowForSessions && s.EndTime >= nowForSessions);
+        _upcomingSession = sessions
+            .Where(s => !s.IsCompleted && s.StartTime > nowForSessions)
+            .OrderBy(s => s.StartTime)
+            .FirstOrDefault();
+        await remoteTimerTask;
 
         // Built-in + user-defined modes (from settings) in the same switcher
-        var settings = await State.GetSettingsAsync();
+        var settings = await settingsTask;
         _allModes = CustomTimerModes.Combined(settings.CustomTimerModes);
         RefreshLocalizedModeNames();
 

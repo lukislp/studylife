@@ -551,10 +551,25 @@ public class AppStateService : IAsyncDisposable
 
     // ── Settings ─────────────────────────────────────────────────────────────
 
-    public async Task<UserSettings> GetSettingsAsync()
+    // In-flight dedup: GetCoursesAsync/GetActiveGroupQuotasAsync/GetSettingsAsync itself are all
+    // now started concurrently from several pages' initial load (instead of one after another) -
+    // without this, a cold cache would fire off one GET api/settings per concurrent caller
+    // instead of sharing the single request already on the wire. Cleared once the fetch settles
+    // (success or failure) so a later cache invalidation (SaveSettingsAsync sets _settingsCache
+    // directly, doesn't go through here) always starts a fresh fetch rather than replaying a
+    // stale in-flight task.
+    private Task<UserSettings>? _settingsFetchInFlight;
+
+    public Task<UserSettings> GetSettingsAsync()
     {
-        if (_settingsCache != null) return _settingsCache;
-        return await FetchSettingsFromServerAsync();
+        if (_settingsCache != null) return Task.FromResult(_settingsCache);
+        return _settingsFetchInFlight ??= FetchSettingsDedupedAsync();
+    }
+
+    private async Task<UserSettings> FetchSettingsDedupedAsync()
+    {
+        try { return await FetchSettingsFromServerAsync(); }
+        finally { _settingsFetchInFlight = null; }
     }
 
     public async Task<UserSettings> FetchSettingsFromServerAsync()

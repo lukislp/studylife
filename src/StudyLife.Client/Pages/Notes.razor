@@ -303,14 +303,21 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        var settings = await State.GetSettingsAsync();
-        var allCourses = await State.GetCoursesAsync();
+        // Independent of each other - start them all immediately instead of await-ing one after
+        // another (same pattern as Index.razor.cs/Setup.razor).
+        var settingsTask = State.GetSettingsAsync();
+        var coursesTask = State.GetCoursesAsync();
+        var loadNotesTask = LoadNotes();
+        var i18nTask = I18nText.GetTextTableAsync<I18nText.NotesText>(this);
+
+        var settings = await settingsTask;
+        var allCourses = await coursesTask;
         _allProgramCourseIds = allCourses.Select(c => c.Id).ToHashSet();
         _courses = allCourses
             .Where(c => settings.SelectedCourseIds.Contains(c.Id) || settings.CompletedCourseIds.Contains(c.Id))
             .ToList();
-        await LoadNotes();
-        T = await I18nText.GetTextTableAsync<I18nText.NotesText>(this);
+        await loadNotesTask;
+        T = await i18nTask;
 
         // PWA app-icon shortcut ("New note") links here with ?new=1 to jump straight into a fresh note.
         var uri = Nav.ToAbsoluteUri(Nav.Uri);
