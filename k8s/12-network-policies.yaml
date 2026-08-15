@@ -287,6 +287,11 @@ spec:
     - from:
         - podSelector: { matchLabels: { app: grafana } } # datasource queries
         - podSelector: { matchLabels: { app: prometheus } } # its own scrape job on itself
+        # piwatch's optional PIWATCH_PROMETHEUS_URL feature (PVC usage %, see the piwatch repo's
+        # collectors/pvc.py) queries kubelet_volume_stats_* here directly - without this, the
+        # request gets "connection refused" the same way promtail's did before allow-ingress-to-loki
+        # existed (default-deny-ingress above blocks it silently).
+        - podSelector: { matchLabels: { app: piwatch } }
       ports:
         - { protocol: TCP, port: 9090 }
 ---
