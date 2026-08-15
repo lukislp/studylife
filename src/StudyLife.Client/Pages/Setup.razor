@@ -417,9 +417,16 @@
         catch { /* diagnostic display is purely cosmetic */ }
     }
 
-    // Fail-open (default true): if the server doesn't respond (offline/older version without the
-    // capabilities endpoint), the backup and restore cards stay visible as before.
-    private bool _rawBackupSupported = true;
+    // Fail-safe (default false): the previous fail-open default (true) meant the restore card
+    // briefly rendered - and fired its own restore/status fetch - on every single page load,
+    // before this flips to the real value below. Harmless on a normal instance, but on a demo
+    // (DEMO_MODE=true) that request always hits the server's dedicated /api/backup 403 block
+    // (see SystemController.GetCapabilities), showing up as console noise on every visit.
+    // Starting hidden and only showing once capabilities positively confirms support trades
+    // away the old "stay visible while genuinely offline/pre-capabilities-endpoint" fallback
+    // for not flashing a broken control (and firing a request that goes nowhere useful) by
+    // default - the right way around for a raw-database-access feature.
+    private bool _rawBackupSupported;
 
     protected override async Task OnInitializedAsync()
     {
