@@ -289,6 +289,9 @@ namespace StudyLife.Server.Migrations.Postgres
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone");
 
+                    b.Property<bool>("IsMarkdown")
+                        .HasColumnType("boolean");
+
                     b.Property<int?>("SessionId")
                         .HasColumnType("integer");
 

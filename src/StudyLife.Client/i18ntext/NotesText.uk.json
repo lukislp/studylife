@@ -35,5 +35,8 @@
   "ExportPreviewButton": "Показати попередній перегляд друку",
   "PrintBackButton": "← Назад до нотаток",
   "PrintNowButton": "🖨 Зберегти як PDF",
-  "PrintGeneratedOnFormat": "Створено {0}"
+  "PrintGeneratedOnFormat": "Створено {0}",
+  "FormatTextOption": "Текст",
+  "FormatMarkdownOption": "Markdown",
+  "ShowPreviewButton": "Попередній перегляд"
 }

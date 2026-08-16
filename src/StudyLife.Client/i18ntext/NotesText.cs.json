@@ -35,5 +35,8 @@
   "ExportPreviewButton": "Zobrazit náhled tisku",
   "PrintBackButton": "← Zpět na poznámky",
   "PrintNowButton": "🖨 Uložit jako PDF",
-  "PrintGeneratedOnFormat": "Vytvořeno {0}"
+  "PrintGeneratedOnFormat": "Vytvořeno {0}",
+  "FormatTextOption": "Text",
+  "FormatMarkdownOption": "Markdown",
+  "ShowPreviewButton": "Náhled"
 }

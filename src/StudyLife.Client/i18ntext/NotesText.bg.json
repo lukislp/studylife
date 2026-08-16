@@ -35,5 +35,8 @@
   "ExportPreviewButton": "Покажи преглед за печат",
   "PrintBackButton": "← Обратно към бележките",
   "PrintNowButton": "🖨 Запази като PDF",
-  "PrintGeneratedOnFormat": "Създаден на {0}"
+  "PrintGeneratedOnFormat": "Създаден на {0}",
+  "FormatTextOption": "Текст",
+  "FormatMarkdownOption": "Markdown",
+  "ShowPreviewButton": "Преглед"
 }

@@ -35,5 +35,8 @@
   "ExportPreviewButton": "Kuva prindivaade",
   "PrintBackButton": "← Tagasi märkmete juurde",
   "PrintNowButton": "🖨 Salvesta PDF-ina",
-  "PrintGeneratedOnFormat": "Loodud {0}"
+  "PrintGeneratedOnFormat": "Loodud {0}",
+  "FormatTextOption": "Tekst",
+  "FormatMarkdownOption": "Markdown",
+  "ShowPreviewButton": "Eelvaade"
 }

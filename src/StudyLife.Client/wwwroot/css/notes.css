@@ -75,6 +75,96 @@
     line-height: 1.7;
 }
 
+/* Text/Markdown format toggle - same look as .cal-view-switch/.cal-view-opt, just smaller
+   to fit the compact row above the content field. */
+.notes-format-switch { display: inline-flex; gap: 0.3rem; }
+.notes-format-opt {
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    font-size: 0.72rem;
+    font-weight: 500;
+    transition: var(--transition);
+}
+.notes-format-opt:hover { color: var(--text); border-color: var(--border2); }
+.notes-format-opt.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* Live Markdown preview: same box dimensions as .note-textarea (it swaps in for it 1:1) but
+   read-only rendered HTML instead of a raw-source textarea, so it needs its own overflow/
+   scroll instead of the textarea's native one. */
+.note-markdown-preview {
+    min-height: 320px;
+    overflow-y: auto;
+    font-size: 0.875rem;
+    line-height: 1.6;
+}
+
+/* Rendered Markdown content (Markdig output) - shared between the live editor preview and the
+   PDF export, since both render the exact same HTML. Print gets its own color override further
+   below (see the print.css report-page pattern) via the existing black-on-white print rule,
+   which already applies broadly enough to cover these tags without a separate copy here. */
+.note-markdown-preview :is(h1, h2, h3, h4, h5, h6),
+.notes-print-card-content--markdown :is(h1, h2, h3, h4, h5, h6) {
+    font-weight: 600;
+    line-height: 1.3;
+    margin: 0.9em 0 0.4em;
+}
+.note-markdown-preview :is(h1, h2, h3, h4, h5, h6):first-child,
+.notes-print-card-content--markdown :is(h1, h2, h3, h4, h5, h6):first-child { margin-top: 0; }
+.note-markdown-preview h1, .notes-print-card-content--markdown h1 { font-size: 1.3em; }
+.note-markdown-preview h2, .notes-print-card-content--markdown h2 { font-size: 1.15em; }
+.note-markdown-preview h3, .notes-print-card-content--markdown h3 { font-size: 1.05em; }
+.note-markdown-preview :is(h4, h5, h6),
+.notes-print-card-content--markdown :is(h4, h5, h6) { font-size: 1em; }
+.note-markdown-preview p, .notes-print-card-content--markdown p { margin: 0 0 0.75em; }
+.note-markdown-preview :is(ul, ol),
+.notes-print-card-content--markdown :is(ul, ol) { margin: 0 0 0.75em; padding-left: 1.4em; }
+.note-markdown-preview li, .notes-print-card-content--markdown li { margin: 0.2em 0; }
+.note-markdown-preview strong, .notes-print-card-content--markdown strong { font-weight: 700; }
+.note-markdown-preview a, .notes-print-card-content--markdown a { color: var(--accent); text-decoration: underline; }
+.note-markdown-preview code, .notes-print-card-content--markdown code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    background: var(--bg3);
+    border-radius: 4px;
+    padding: 0.1em 0.35em;
+}
+.note-markdown-preview pre, .notes-print-card-content--markdown pre {
+    background: var(--bg3);
+    border-radius: 8px;
+    padding: 0.75em 1em;
+    overflow-x: auto;
+    margin: 0 0 0.75em;
+}
+.note-markdown-preview pre code, .notes-print-card-content--markdown pre code {
+    background: none;
+    padding: 0;
+}
+.note-markdown-preview blockquote, .notes-print-card-content--markdown blockquote {
+    border-left: 3px solid var(--border2);
+    color: var(--text2);
+    margin: 0 0 0.75em;
+    padding: 0.1em 0 0.1em 1em;
+}
+.note-markdown-preview hr, .notes-print-card-content--markdown hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 1em 0;
+}
+.note-markdown-preview table, .notes-print-card-content--markdown table {
+    border-collapse: collapse;
+    margin: 0 0 0.75em;
+    font-size: 0.95em;
+}
+.note-markdown-preview :is(th, td),
+.notes-print-card-content--markdown :is(th, td) {
+    border: 1px solid var(--border2);
+    padding: 0.35em 0.6em;
+    text-align: left;
+}
+
 /* Own font-size above wins the cascade tie against shared.css's .input mobile-zoom-fix rule
    (same specificity, later source order) - needs its own override to actually take effect. */
 @media (max-width: 768px) {
@@ -139,3 +229,6 @@
     line-height: 1.6;
     white-space: pre-wrap;
 }
+/* Markdown content is already-rendered HTML (headings/paragraphs/lists provide their own
+   spacing) - preserving literal whitespace on top of that would double up blank lines. */
+.notes-print-card-content--markdown { white-space: normal; }

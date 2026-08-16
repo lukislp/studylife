@@ -35,5 +35,8 @@
   "ExportPreviewButton": "Rodyti spausdinimo peržiūrą",
   "PrintBackButton": "← Atgal į užrašus",
   "PrintNowButton": "🖨 Išsaugoti kaip PDF",
-  "PrintGeneratedOnFormat": "Sukurta {0}"
+  "PrintGeneratedOnFormat": "Sukurta {0}",
+  "FormatTextOption": "Tekstas",
+  "FormatMarkdownOption": "Markdown",
+  "ShowPreviewButton": "Peržiūra"
 }

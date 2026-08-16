@@ -35,5 +35,8 @@
   "ExportPreviewButton": "Показать предпросмотр печати",
   "PrintBackButton": "← Назад к заметкам",
   "PrintNowButton": "🖨 Сохранить как PDF",
-  "PrintGeneratedOnFormat": "Создано {0}"
+  "PrintGeneratedOnFormat": "Создано {0}",
+  "FormatTextOption": "Текст",
+  "FormatMarkdownOption": "Markdown",
+  "ShowPreviewButton": "Предпросмотр"
 }

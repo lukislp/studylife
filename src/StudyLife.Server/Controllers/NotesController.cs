@@ -46,6 +46,7 @@ public class NotesController : ControllerBase
             Content = dto.Content,
             CourseId = dto.CourseId,
             SessionId = dto.SessionId,
+            IsMarkdown = dto.IsMarkdown,
             CreatedAt = DateTime.Now,
             UpdatedAt = DateTime.Now
         };
@@ -63,6 +64,7 @@ public class NotesController : ControllerBase
         entity.Content = dto.Content;
         entity.CourseId = dto.CourseId;
         entity.SessionId = dto.SessionId;
+        entity.IsMarkdown = dto.IsMarkdown;
         entity.UpdatedAt = DateTime.Now;
         await _db.SaveChangesAsync();
         return Ok(ToDto(entity));
@@ -88,6 +90,7 @@ public class NotesController : ControllerBase
         CreatedAt = e.CreatedAt,
         UpdatedAt = e.UpdatedAt,
         CourseId = e.CourseId,
-        SessionId = e.SessionId
+        SessionId = e.SessionId,
+        IsMarkdown = e.IsMarkdown
     };
 }

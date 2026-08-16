@@ -35,5 +35,8 @@
   "ExportPreviewButton": "Uri l-anteprima tal-istampar",
   "PrintBackButton": "← Lura għan-noti",
   "PrintNowButton": "🖨 Issejvja bħala PDF",
-  "PrintGeneratedOnFormat": "Iġġenerat fi {0}"
+  "PrintGeneratedOnFormat": "Iġġenerat fi {0}",
+  "FormatTextOption": "Test",
+  "FormatMarkdownOption": "Markdown",
+  "ShowPreviewButton": "Preview"
 }

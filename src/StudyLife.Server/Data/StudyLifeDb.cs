@@ -558,6 +558,10 @@ public class NoteEntity
     public DateTime UpdatedAt { get; set; }
     public int? CourseId { get; set; }
     public int? SessionId { get; set; }
+    /// <summary>When true, Content is Markdown source (rendered client-side via Markdig) instead
+    /// of plain text. Defaults to false so every pre-existing note keeps rendering exactly as
+    /// before.</summary>
+    public bool IsMarkdown { get; set; }
 }
 
 /// <summary>

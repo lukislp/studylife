@@ -35,5 +35,8 @@
   "ExportPreviewButton": "Rādīt drukas priekšskatījumu",
   "PrintBackButton": "← Atpakaļ uz piezīmes",
   "PrintNowButton": "🖨 Saglabāt kā PDF",
-  "PrintGeneratedOnFormat": "Izveidots {0}"
+  "PrintGeneratedOnFormat": "Izveidots {0}",
+  "FormatTextOption": "Teksts",
+  "FormatMarkdownOption": "Markdown",
+  "ShowPreviewButton": "Priekšskatījums"
 }

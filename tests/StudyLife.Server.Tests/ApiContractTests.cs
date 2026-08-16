@@ -458,7 +458,7 @@ public class DtoContractSnapshotTests : IClassFixture<CustomWebApplicationFactor
         // Mirrors StudyLife.Shared.Dtos.NoteDto (src/StudyLife.Shared/Dtos.cs).
         var expected = new HashSet<string>
         {
-            "id", "title", "content", "createdAt", "updatedAt", "courseId", "sessionId",
+            "id", "title", "content", "createdAt", "updatedAt", "courseId", "sessionId", "isMarkdown",
         };
 
         var note = new NoteDto { Title = "Snapshot-Test-Note", Content = "Inhalt", CourseId = 1 };

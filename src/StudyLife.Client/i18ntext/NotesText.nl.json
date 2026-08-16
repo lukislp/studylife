@@ -35,5 +35,8 @@
   "ExportPreviewButton": "Afdrukvoorbeeld weergeven",
   "PrintBackButton": "← Terug naar notities",
   "PrintNowButton": "🖨 Opslaan als PDF",
-  "PrintGeneratedOnFormat": "Gegenereerd op {0}"
+  "PrintGeneratedOnFormat": "Gegenereerd op {0}",
+  "FormatTextOption": "Tekst",
+  "FormatMarkdownOption": "Markdown",
+  "ShowPreviewButton": "Voorvertoning"
 }
