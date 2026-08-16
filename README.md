@@ -147,6 +147,7 @@ the native app and the browser/PWA client are always pixel-identical.
 
 ### Notes
 - Free-text notes, optionally assigned to a course
+- Togglable Markdown mode per note (headings, bold/italic, lists, quotes, code, tables, links) with a live preview — plain text stays the default, nothing changes for existing notes
 - Automatic saving while typing
 - Search (title/content) and course filter
 - Delete confirmation (two clicks instead of immediate deletion)
