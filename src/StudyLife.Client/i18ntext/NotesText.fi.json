@@ -35,5 +35,8 @@
   "ExportPreviewButton": "Näytä tulostuksen esikatselu",
   "PrintBackButton": "← Takaisin muistiinpanoihin",
   "PrintNowButton": "🖨 Tallenna PDF:nä",
-  "PrintGeneratedOnFormat": "Luotu {0}"
+  "PrintGeneratedOnFormat": "Luotu {0}",
+  "FormatTextOption": "Teksti",
+  "FormatMarkdownOption": "Markdown",
+  "ShowPreviewButton": "Esikatselu"
 }

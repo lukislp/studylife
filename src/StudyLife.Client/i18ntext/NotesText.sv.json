@@ -35,5 +35,8 @@
   "ExportPreviewButton": "Visa förhandsgranskning",
   "PrintBackButton": "← Tillbaka till anteckningar",
   "PrintNowButton": "🖨 Spara som PDF",
-  "PrintGeneratedOnFormat": "Skapad {0}"
+  "PrintGeneratedOnFormat": "Skapad {0}",
+  "FormatTextOption": "Text",
+  "FormatMarkdownOption": "Markdown",
+  "ShowPreviewButton": "Förhandsgranskning"
 }

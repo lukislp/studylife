@@ -35,5 +35,8 @@
   "ExportPreviewButton": "Prikaži predogled tiskanja",
   "PrintBackButton": "← Nazaj na zapiske",
   "PrintNowButton": "🖨 Shrani kot PDF",
-  "PrintGeneratedOnFormat": "Ustvarjeno {0}"
+  "PrintGeneratedOnFormat": "Ustvarjeno {0}",
+  "FormatTextOption": "Besedilo",
+  "FormatMarkdownOption": "Markdown",
+  "ShowPreviewButton": "Predogled"
 }

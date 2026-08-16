@@ -35,5 +35,8 @@
   "ExportPreviewButton": "Druckvorschau anzeigen",
   "PrintBackButton": "← Zurück zu den Notizen",
   "PrintNowButton": "🖨 Als PDF speichern",
-  "PrintGeneratedOnFormat": "Erstellt am {0}"
+  "PrintGeneratedOnFormat": "Erstellt am {0}",
+  "FormatTextOption": "Text",
+  "FormatMarkdownOption": "Markdown",
+  "ShowPreviewButton": "Vorschau"
 }

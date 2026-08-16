@@ -35,5 +35,8 @@
   "ExportPreviewButton": "Εμφάνιση προεπισκόπησης εκτύπωσης",
   "PrintBackButton": "← Πίσω στις σημειώσεις",
   "PrintNowButton": "🖨 Αποθήκευση ως PDF",
-  "PrintGeneratedOnFormat": "Δημιουργήθηκε στις {0}"
+  "PrintGeneratedOnFormat": "Δημιουργήθηκε στις {0}",
+  "FormatTextOption": "Κείμενο",
+  "FormatMarkdownOption": "Markdown",
+  "ShowPreviewButton": "Προεπισκόπηση"
 }

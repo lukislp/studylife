@@ -35,5 +35,8 @@
   "ExportPreviewButton": "Nyomtatási előnézet megjelenítése",
   "PrintBackButton": "← Vissza a jegyzetekhez",
   "PrintNowButton": "🖨 Mentés PDF-ként",
-  "PrintGeneratedOnFormat": "Létrehozva: {0}"
+  "PrintGeneratedOnFormat": "Létrehozva: {0}",
+  "FormatTextOption": "Szöveg",
+  "FormatMarkdownOption": "Markdown",
+  "ShowPreviewButton": "Előnézet"
 }

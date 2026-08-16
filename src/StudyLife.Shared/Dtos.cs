@@ -138,6 +138,7 @@ public class NoteDto
     public DateTime UpdatedAt { get; set; }
     public int? CourseId { get; set; }
     public int? SessionId { get; set; }
+    public bool IsMarkdown { get; set; }
 }
 
 public class CourseGoalDto

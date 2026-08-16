@@ -35,5 +35,8 @@
   "ExportPreviewButton": "Prikaži pregled ispisa",
   "PrintBackButton": "← Natrag na bilješke",
   "PrintNowButton": "🖨 Spremi kao PDF",
-  "PrintGeneratedOnFormat": "Generirano {0}"
+  "PrintGeneratedOnFormat": "Generirano {0}",
+  "FormatTextOption": "Tekst",
+  "FormatMarkdownOption": "Markdown",
+  "ShowPreviewButton": "Pregled"
 }

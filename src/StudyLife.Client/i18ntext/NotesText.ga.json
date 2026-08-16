@@ -35,5 +35,8 @@
   "ExportPreviewButton": "Taispeáin réamhamharc priontála",
   "PrintBackButton": "← Ar ais chuig na Nótaí",
   "PrintNowButton": "🖨 Sábháil mar PDF",
-  "PrintGeneratedOnFormat": "Ginte an {0}"
+  "PrintGeneratedOnFormat": "Ginte an {0}",
+  "FormatTextOption": "Téacs",
+  "FormatMarkdownOption": "Markdown",
+  "ShowPreviewButton": "Réamhamharc"
 }

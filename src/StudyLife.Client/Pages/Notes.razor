@@ -1,6 +1,7 @@
 @page "/notes"
 @using System.Net
 @using System.Text
+@using Markdig
 @using StudyLife.Client.Models
 @using StudyLife.Client.Services
 @using StudyLife.Shared
@@ -39,7 +40,14 @@
                     <div class="notes-print-card">
                         <div class="notes-print-card-title">@(string.IsNullOrWhiteSpace(n.Title) ? (T.Untitled ?? "") : n.Title)</div>
                         <div class="notes-print-card-meta">@n.UpdatedAt.ToString("dd.MM.yyyy HH:mm")</div>
-                        <div class="notes-print-card-content">@n.Content</div>
+                        @if (n.IsMarkdown)
+                        {
+                            <div class="notes-print-card-content notes-print-card-content--markdown">@RenderMarkdown(n.Content)</div>
+                        }
+                        else
+                        {
+                            <div class="notes-print-card-content">@n.Content</div>
+                        }
                     </div>
                 }
             </div>
@@ -169,12 +177,33 @@ else
                     </div>
 
                     <div class="field">
-                        <label style="font-size:0.75rem;color:var(--text2);margin-bottom:0.3rem;display:block">@T.ContentLabel</label>
-                        <textarea class="input note-textarea"
-                                  placeholder="@T.ContentPlaceholder"
-                                  @bind="_editContent"
-                                  @bind:event="oninput"
-                                  @bind:after="ScheduleSave"></textarea>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem">
+                            <label style="font-size:0.75rem;color:var(--text2)">@T.ContentLabel</label>
+                            <div style="display:flex;gap:0.5rem;align-items:center">
+                                <div class="notes-format-switch">
+                                    <button type="button" class="notes-format-opt @(!_editIsMarkdown ? "active" : "")" @onclick="() => SetFormat(false)">@T.FormatTextOption</button>
+                                    <button type="button" class="notes-format-opt @(_editIsMarkdown ? "active" : "")" @onclick="() => SetFormat(true)">@T.FormatMarkdownOption</button>
+                                </div>
+                                @if (_editIsMarkdown)
+                                {
+                                    <button type="button" class="btn-secondary" style="font-size:0.75rem;padding:0.25rem 0.6rem;border-radius:6px" @onclick="() => _showMarkdownPreview = !_showMarkdownPreview">
+                                        @(_showMarkdownPreview ? T.Edit : T.ShowPreviewButton)
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                        @if (_editIsMarkdown && _showMarkdownPreview)
+                        {
+                            <div class="input note-textarea note-markdown-preview">@RenderMarkdown(_editContent)</div>
+                        }
+                        else
+                        {
+                            <textarea class="input note-textarea"
+                                      placeholder="@T.ContentPlaceholder"
+                                      @bind="_editContent"
+                                      @bind:event="oninput"
+                                      @bind:after="ScheduleSave"></textarea>
+                        }
                     </div>
                 </div>
             }
@@ -231,6 +260,8 @@ else
     private string _editTitle = "";
     private string _editContent = "";
     private int _editCourseId = 0;
+    private bool _editIsMarkdown;
+    private bool _showMarkdownPreview;
     private bool _saving;
     private bool _confirmingDelete;
     private System.Threading.Timer? _debounce;
@@ -350,6 +381,8 @@ else
         _editTitle = "";
         _editContent = "";
         _editCourseId = 0;
+        _editIsMarkdown = false;
+        _showMarkdownPreview = false;
         _confirmingDelete = false;
     }
 
@@ -359,8 +392,28 @@ else
         _editTitle = note.Title;
         _editContent = note.Content;
         _editCourseId = note.CourseId ?? 0;
+        _editIsMarkdown = note.IsMarkdown;
+        _showMarkdownPreview = false;
         _confirmingDelete = false;
     }
+
+    private void SetFormat(bool isMarkdown)
+    {
+        if (_editIsMarkdown == isMarkdown) return;
+        _editIsMarkdown = isMarkdown;
+        _showMarkdownPreview = false;
+        ScheduleSave();
+    }
+
+    // One shared pipeline instance (Markdig recommends reuse - immutable/thread-safe once built).
+    // DisableHtml: notes are personal content, not shared with other users - there's no
+    // legitimate need for raw HTML embedding, so it's stripped rather than passed through
+    // (defense in depth against a pasted <script> tag rendering in the author's own preview/print).
+    private static readonly MarkdownPipeline MarkdownPipeline =
+        new MarkdownPipelineBuilder().UseAdvancedExtensions().DisableHtml().Build();
+
+    private static MarkupString RenderMarkdown(string content) =>
+        new(Markdig.Markdown.ToHtml(content ?? "", MarkdownPipeline));
 
     private void OnSearchQueryChanged()
     {
@@ -422,6 +475,7 @@ else
         _selectedNote.Title = _editTitle;
         _selectedNote.Content = _editContent;
         _selectedNote.CourseId = _editCourseId == 0 ? null : _editCourseId;
+        _selectedNote.IsMarkdown = _editIsMarkdown;
 
         // Offline (network exception): enqueue the note into AppStateService's write queue
         // (replayed on the next poll) instead of silently losing it.

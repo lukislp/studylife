@@ -35,5 +35,8 @@
   "ExportPreviewButton": "Vis udskriftsvisning",
   "PrintBackButton": "← Tilbage til noter",
   "PrintNowButton": "🖨 Gem som PDF",
-  "PrintGeneratedOnFormat": "Genereret den {0}"
+  "PrintGeneratedOnFormat": "Genereret den {0}",
+  "FormatTextOption": "Tekst",
+  "FormatMarkdownOption": "Markdown",
+  "ShowPreviewButton": "Forhåndsvisning"
 }

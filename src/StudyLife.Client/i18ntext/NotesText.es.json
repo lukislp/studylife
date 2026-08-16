@@ -35,5 +35,8 @@
   "ExportPreviewButton": "Mostrar vista previa de impresión",
   "PrintBackButton": "← Volver a Notas",
   "PrintNowButton": "🖨 Guardar como PDF",
-  "PrintGeneratedOnFormat": "Generado el {0}"
+  "PrintGeneratedOnFormat": "Generado el {0}",
+  "FormatTextOption": "Texto",
+  "FormatMarkdownOption": "Markdown",
+  "ShowPreviewButton": "Vista previa"
 }

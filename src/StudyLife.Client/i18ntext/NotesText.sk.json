@@ -35,5 +35,8 @@
   "ExportPreviewButton": "Zobraziť ukážku pred tlačou",
   "PrintBackButton": "← Späť na poznámky",
   "PrintNowButton": "🖨 Uložiť ako PDF",
-  "PrintGeneratedOnFormat": "Vytvorené {0}"
+  "PrintGeneratedOnFormat": "Vytvorené {0}",
+  "FormatTextOption": "Text",
+  "FormatMarkdownOption": "Markdown",
+  "ShowPreviewButton": "Náhľad"
 }

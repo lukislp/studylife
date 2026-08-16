@@ -35,5 +35,8 @@
   "ExportPreviewButton": "Pokaż podgląd wydruku",
   "PrintBackButton": "← Powrót do notatek",
   "PrintNowButton": "🖨 Zapisz jako PDF",
-  "PrintGeneratedOnFormat": "Wygenerowano {0}"
+  "PrintGeneratedOnFormat": "Wygenerowano {0}",
+  "FormatTextOption": "Tekst",
+  "FormatMarkdownOption": "Markdown",
+  "ShowPreviewButton": "Podgląd"
 }

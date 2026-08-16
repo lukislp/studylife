@@ -35,5 +35,8 @@
   "ExportPreviewButton": "Afișează previzualizarea de imprimare",
   "PrintBackButton": "← Înapoi la notițe",
   "PrintNowButton": "🖨 Salvează ca PDF",
-  "PrintGeneratedOnFormat": "Generat la {0}"
+  "PrintGeneratedOnFormat": "Generat la {0}",
+  "FormatTextOption": "Text",
+  "FormatMarkdownOption": "Markdown",
+  "ShowPreviewButton": "Previzualizare"
 }
