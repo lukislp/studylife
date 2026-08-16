@@ -1,3 +1,10 @@
+## [1.16.1](https://github.com/lukislp/studylife/compare/v1.16.0...v1.16.1) (2026-08-16)
+
+
+### Bug Fixes
+
+* **notes:** default markdown notes to preview when opened ([6b4d050](https://github.com/lukislp/studylife/commit/6b4d05044618ab7a4c2fd65c00d726507e6bd5db))
+
 # [1.16.0](https://github.com/lukislp/studylife/compare/v1.15.4...v1.16.0) (2026-08-16)
 
 
