@@ -393,7 +393,7 @@ else
         _editContent = note.Content;
         _editCourseId = note.CourseId ?? 0;
         _editIsMarkdown = note.IsMarkdown;
-        _showMarkdownPreview = false;
+        _showMarkdownPreview = note.IsMarkdown;
         _confirmingDelete = false;
     }
 
