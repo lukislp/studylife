@@ -1,3 +1,15 @@
+# [1.16.0](https://github.com/lukislp/studylife/compare/v1.15.4...v1.16.0) (2026-08-16)
+
+
+### Bug Fixes
+
+* **docs:** mention the new Markdown note mode in the README ([1fbf60a](https://github.com/lukislp/studylife/commit/1fbf60a2ff56e65d562a044b48ec6e356f33b749))
+
+
+### Features
+
+* add a togglable Markdown mode for notes ([66e6f28](https://github.com/lukislp/studylife/commit/66e6f286da5665c3e85345585508b0808bcfeb04))
+
 ## [1.15.4](https://github.com/lukislp/studylife/compare/v1.15.3...v1.15.4) (2026-08-15)
 
 
