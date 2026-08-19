@@ -38,5 +38,8 @@
   "PrintGeneratedOnFormat": "Vytvorené {0}",
   "FormatTextOption": "Text",
   "FormatMarkdownOption": "Markdown",
-  "ShowPreviewButton": "Náhľad"
+  "ShowPreviewButton": "Náhľad",
+  "ReadAloudButton": "Prečítať nahlas",
+  "ReadAloudLoading": "Generuje sa…",
+  "ReadAloudUnavailable": "Predčítanie nie je pre tento jazyk dostupné"
 }

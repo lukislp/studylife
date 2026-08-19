@@ -38,5 +38,8 @@
   "PrintGeneratedOnFormat": "Iġġenerat fi {0}",
   "FormatTextOption": "Test",
   "FormatMarkdownOption": "Markdown",
-  "ShowPreviewButton": "Preview"
+  "ShowPreviewButton": "Preview",
+  "ReadAloudButton": "Aqra b'leħen għoli",
+  "ReadAloudLoading": "Qed jiġġenera…",
+  "ReadAloudUnavailable": "Il-qari b'leħen mhux disponibbli għal dan il-lingwa"
 }

@@ -38,5 +38,8 @@
   "PrintGeneratedOnFormat": "Створено {0}",
   "FormatTextOption": "Текст",
   "FormatMarkdownOption": "Markdown",
-  "ShowPreviewButton": "Попередній перегляд"
+  "ShowPreviewButton": "Попередній перегляд",
+  "ReadAloudButton": "Прочитати вголос",
+  "ReadAloudLoading": "Генерується…",
+  "ReadAloudUnavailable": "Озвучення недоступне для цієї мови"
 }
