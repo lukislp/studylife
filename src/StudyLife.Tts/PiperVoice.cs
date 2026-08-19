@@ -24,7 +24,19 @@ public sealed class PiperVoice : IDisposable
 
     public PiperVoice(string onnxModelPath, string onnxConfigPath)
     {
-        _session = new InferenceSession(onnxModelPath);
+        // ORT's default CPU arena allocator grows in large power-of-two jumps and never
+        // shrinks - fine on a workstation, but on the ~300Mi-per-pod budget this runs under
+        // (Raspberry Pi cluster) it's what actually OOMKilled every studylife-web pod in
+        // production, not the model file size itself. Disabling the arena (and the memory-
+        // pattern optimizer, which caches its own extra buffers) trades a bit of steady-state
+        // throughput for a much smaller, more predictable footprint - the right trade for a
+        // feature invoked per note-read, not a hot loop.
+        var sessionOptions = new SessionOptions
+        {
+            EnableCpuMemArena = false,
+            EnableMemoryPattern = false,
+        };
+        _session = new InferenceSession(onnxModelPath, sessionOptions);
 
         using var configDoc = JsonDocument.Parse(File.ReadAllText(onnxConfigPath));
         var root = configDoc.RootElement;
