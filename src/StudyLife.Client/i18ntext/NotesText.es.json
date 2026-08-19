@@ -38,5 +38,8 @@
   "PrintGeneratedOnFormat": "Generado el {0}",
   "FormatTextOption": "Texto",
   "FormatMarkdownOption": "Markdown",
-  "ShowPreviewButton": "Vista previa"
+  "ShowPreviewButton": "Vista previa",
+  "ReadAloudButton": "Leer en voz alta",
+  "ReadAloudLoading": "Generando…",
+  "ReadAloudUnavailable": "Lectura en voz alta no disponible para este idioma"
 }

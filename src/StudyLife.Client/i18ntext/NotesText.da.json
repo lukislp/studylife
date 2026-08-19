@@ -38,5 +38,8 @@
   "PrintGeneratedOnFormat": "Genereret den {0}",
   "FormatTextOption": "Tekst",
   "FormatMarkdownOption": "Markdown",
-  "ShowPreviewButton": "Forhåndsvisning"
+  "ShowPreviewButton": "Forhåndsvisning",
+  "ReadAloudButton": "Læs højt",
+  "ReadAloudLoading": "Genererer…",
+  "ReadAloudUnavailable": "Oplæsning ikke tilgængelig for dette sprog"
 }

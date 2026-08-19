@@ -252,6 +252,14 @@ if (!isPostgres)
 }
 builder.Services.AddScoped<SystemSecretsService>();
 builder.Services.AddSingleton<VapidKeysHolder>();
+// "Read note aloud": voices are ONNX files baked into the image (see Dockerfile), not
+// checked into this repo - loading one is real work (ONNX Runtime session init), so the
+// registry caches loaded voices process-wide instead of per-request. Which languages are
+// actually shipped is a Dockerfile concern, not a code concern - TryGet just returns null
+// for anything not present on disk, which the controller turns into a 404.
+builder.Services.AddSingleton(new StudyLife.Tts.PiperVoiceRegistry(
+    builder.Configuration["Tts:VoicesDirectory"] ?? Path.Combine(builder.Environment.ContentRootPath, "tts-voices")));
+builder.Services.AddSingleton<StudyLife.Tts.EspeakPhonemizer>();
 // Worker:Enabled disables BackgroundTaskService (30s tick loop: push reminders, reports, maintenance)
 // when this process is a stateless web pod in scaled operation (docker-
 // compose.scale.yml/k8s/) - there the worker runs as its OWN deployment. Default true =
@@ -437,12 +445,17 @@ app.UseWhen(
 //   of its own script (= this one here).
 // Referrer-Policy same-origin: a pure same-origin SPA, the only cross-origin requests (Google Fonts)
 // don't need a referrer. frame-ancestors 'none' + X-Frame-Options DENY: no embedding use case.
+// media-src 'self' data:: the "read note aloud" feature (TtsController) hands the client a WAV
+// as a base64 data: URI for a plain <audio src="..."> - without this, default-src's implicit
+// media-src fallback blocks playback entirely (found live via a real browser, not just a code
+// read-through - Chrome's console error names the exact fallback rule being hit).
 // Dev exception: ws:/wss: in connect-src, so dotnet watch's browser-refresh WebSocket isn't blocked.
 var csp = "default-src 'self'; "
     + "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; "
     + "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
     + "font-src 'self' https://fonts.gstatic.com; "
     + "img-src 'self' data:; "
+    + "media-src 'self' data:; "
     + "connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com"
     + (app.Environment.IsDevelopment() ? " ws: wss:; " : "; ")
     + "base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'";
