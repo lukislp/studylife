@@ -55,30 +55,37 @@ public sealed class PiperVoice : IDisposable
         _noiseW = inference.GetProperty("noise_w").GetSingle();
     }
 
-    public byte[] SynthesizeWav(string phonemes) => SynthesizeWav([phonemes]);
+    public byte[] SynthesizeWav(string phonemes) => SynthesizeWav([(phonemes, true)]);
 
-    // Takes one already-phonemized chunk (TextChunker: one sentence each) per ONNX inference
-    // call rather than the whole note in one shot - two independent reasons, see TextChunker's
-    // doc comment: memory (a single call's cost grows much faster than linearly with sequence
-    // length) and pacing (espeak's phonemization strips punctuation entirely, so Piper gets no
-    // pause cue between sentences bundled into one call). A fixed silence gap is inserted
-    // between chunks here for the same pacing reason - without it, sentences synthesized
-    // separately would still run straight into each other with no audible break at all.
-    public byte[] SynthesizeWav(IEnumerable<string> phonemeChunks)
+    // Takes one already-phonemized chunk (TextChunker: one clause/sentence each) per ONNX
+    // inference call rather than the whole note in one shot - two independent reasons, see
+    // TextChunker's doc comment: memory (a single call's cost grows much faster than linearly
+    // with sequence length) and pacing (espeak's phonemization strips punctuation entirely, so
+    // Piper gets no pause cue between clauses/sentences bundled into one call). A silence gap
+    // is inserted between chunks here for the same pacing reason - without it, clauses
+    // synthesized separately would still run straight into each other with no audible break at
+    // all. LongPause distinguishes a sentence-ending pause from a shorter clause-level one
+    // (comma/semicolon/etc.) - same idea as natural speech prosody, just driven by the
+    // punctuation TextChunker already split on rather than re-detected here.
+    public byte[] SynthesizeWav(IEnumerable<(string Phonemes, bool LongPause)> phonemeChunks)
     {
-        var silenceGap = new float[(int)(SampleRate * InterChunkSilenceSeconds)];
+        var longSilence = new float[(int)(SampleRate * LongPauseSeconds)];
+        var shortSilence = new float[(int)(SampleRate * ShortPauseSeconds)];
         var allSamples = new List<float>();
         var first = true;
-        foreach (var phonemes in phonemeChunks)
+        var previousLongPause = true;
+        foreach (var (phonemes, longPause) in phonemeChunks)
         {
-            if (!first) allSamples.AddRange(silenceGap);
+            if (!first) allSamples.AddRange(previousLongPause ? longSilence : shortSilence);
             first = false;
             allSamples.AddRange(RunInference(phonemes));
+            previousLongPause = longPause;
         }
         return EncodeWav(allSamples.ToArray(), SampleRate);
     }
 
-    private const float InterChunkSilenceSeconds = 0.35f;
+    private const float LongPauseSeconds = 0.35f;
+    private const float ShortPauseSeconds = 0.15f;
 
     private float[] RunInference(string phonemes)
     {
