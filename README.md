@@ -148,6 +148,7 @@ the native app and the browser/PWA client are always pixel-identical.
 ### Notes
 - Free-text notes, optionally assigned to a course
 - Togglable Markdown mode per note (headings, bold/italic, lists, quotes, code, tables, links) with a live preview — plain text stays the default, nothing changes for existing notes
+- Read a note aloud: natively synthesized (German/English) via a self-hosted [Piper](https://github.com/rhasspy/piper) voice, no cloud TTS service involved — every other language falls back to the browser's own built-in speech synthesis, so it works everywhere, just with native voice quality only for the two baked-in languages (see [docs/TTS-VOICES.md](docs/TTS-VOICES.md) for the full coverage matrix and voice licenses)
 - Automatic saving while typing
 - Search (title/content) and course filter
 - Delete confirmation (two clicks instead of immediate deletion)
