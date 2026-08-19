@@ -25,16 +25,6 @@ spec:
     - backendRefs:
         - name: studylife-web
           port: 443
-      # NGF's default backend-read timeout (~60s, unset here previously) is too short for the
-      # "read note aloud" feature (TtsController) on long notes - confirmed live: a ~2.4-minute
-      # audio synthesis on the Pi cluster's real ARM CPU exceeded it ("upstream timed out (110:
-      # Operation timed out) while reading response header from upstream" in the gateway's own
-      # logs, request already past the memory fix - the pod was still working, not crashed).
-      # 150s covers that with margin without leaving a route open indefinitely. Every other
-      # endpoint on this route keeps whatever NGF's default is - this is scoped to the rule, not
-      # the whole HTTPRoute/Gateway.
-      timeouts:
-        backendRequest: 150s
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: BackendTLSPolicy
@@ -76,6 +66,30 @@ spec:
           burst: 200
           noDelay: true
     rejectCode: 503
+---
+# NGF's default backend-read timeout (~60s) is too short for the "read note aloud" feature
+# (TtsController) on long notes - confirmed live: a ~2.4-minute audio synthesis on the Pi
+# cluster's real ARM CPU exceeded it ("upstream timed out (110: Operation timed out) while
+# reading response header from upstream" in the gateway's own logs; the pod was still working,
+# not crashed - this was after the memory fix already landed). The standard Gateway API
+# HTTPRoute `rules[].timeouts.backendRequest` field looked like the right tool, but NGF rejects
+# it outright ("Forbidden: Timeouts... UnsupportedField" in the HTTPRoute's own status
+# conditions, confirmed live) - it's an "Extended" conformance field the CRD schema allows but
+# this controller doesn't implement. ProxySettingsPolicy's `timeout.read` is NGF's own vendor
+# extension for the same nginx directive (proxy_read_timeout) and is what actually works.
+# 150s covers the slow case with margin without leaving a route open indefinitely.
+apiVersion: gateway.nginx.org/v1alpha1
+kind: ProxySettingsPolicy
+metadata:
+  name: studylife-web-tts-timeout
+  namespace: studylife-scale
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: studylife-web
+  timeout:
+    read: 150s
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
