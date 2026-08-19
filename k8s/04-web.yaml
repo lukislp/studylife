@@ -146,19 +146,20 @@ spec:
           # Without requests/limits the scheduler cannot bin-pack sensibly, and a runaway pod
           # (e.g. GC pressure under load) could starve neighbors on the same Pi - limit set as a
           # rough 2x buffer over observed demand.
-          # Memory raised 300Mi->768Mi (2026-08-19): the "read note aloud" feature's
+          # Memory raised 300Mi->768Mi->900Mi (2026-08-19): the "read note aloud" feature's
           # PiperVoiceRegistry loads each ONNX voice once and keeps it cached for the pod's
-          # lifetime (avoids re-loading - and the latency that costs - on every request), so
-          # after first use a pod's steady-state footprint permanently includes every voice
-          # it has served (both de.onnx + en.onnx = ~126MB on disk, more once deserialized into
-          # an ONNX Runtime session) on top of the ~90-145Mi baseline this limit was originally
-          # sized for. Confirmed live: every studylife-web pod OOMKilled (exit 137) shortly
-          # after the first /api/notes/{id}/tts request against the old 300Mi limit. Request
-          # bumped in step (150Mi->300Mi) to match the new realistic steady-state, not just the
-          # ceiling.
+          # lifetime, so after first use a pod's footprint permanently includes every voice
+          # it has served. 768Mi still OOMKilled every pod (exit 137) - ONNX Runtime's default
+          # CPU memory arena allocator grows in large steps and never shrinks; disabled in
+          # PiperVoice.cs (EnableCpuMemArena/EnableMemoryPattern = false). Locally reproducing
+          # the same 768Mi cgroup limit (docker run --memory=768m) after that fix: steady state
+          # with BOTH voices loaded and warm plateaus at ~628Mi (confirmed flat, not growing,
+          # across 15 repeated requests) - workable but only ~140Mi of headroom for real
+          # concurrent multi-user load, hence one more bump for a safer margin. Request bumped
+          # in step to match the realistic steady-state, not just the ceiling.
           resources:
             requests: {cpu: 100m, memory: 300Mi}
-            limits: {cpu: 500m, memory: 768Mi}
+            limits: {cpu: 500m, memory: 900Mi}
           readinessProbe:
             httpGet: {path: /, port: 8080}
             initialDelaySeconds: 10
