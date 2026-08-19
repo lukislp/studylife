@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
@@ -34,7 +35,16 @@ public class TtsController : ControllerBase
     // shipped kept serving the stale pre-fix audio for up to 24h after the fix was already live,
     // because its cache key never changed. Confirmed live as the cause of "the fix doesn't
     // seem to have landed" reports for notes that had been tested earlier.
-    private const int SynthesisVersion = 2;
+    private const int SynthesisVersion = 3;
+
+    // A client retry (or several concurrent readers of the same note) while the first
+    // synthesis is still running would otherwise each kick off their own independent ONNX
+    // pass over the same content, competing for the same limited Pi CPU instead of just
+    // waiting for the one already in progress - directly counterproductive on hardware slow
+    // enough to need a retry in the first place. All callers for the same cache key share one
+    // underlying Task and get the same result the moment it's ready, instead of each starting
+    // their own.
+    private static readonly ConcurrentDictionary<string, Task<byte[]>> InFlightSyntheses = new();
 
     private readonly StudyLifeDb _db;
     private readonly PiperVoiceRegistry _voices;
@@ -70,15 +80,41 @@ public class TtsController : ControllerBase
         var cached = await _cache.GetAsync(cacheKey);
         if (cached != null) return File(cached, "audio/wav");
 
-        // Chunked, not one phonemize+inference call over the whole note: a single ONNX
-        // inference call's memory cost grows much faster than linearly with sequence length,
-        // which OOMKilled every production pod on a long, table-heavy note even at a limit
-        // that comfortably handled short ones. TextChunker bounds each call's input length
-        // regardless of how long the overall note is.
-        var phonemeChunks = TextChunker.Chunk(text).Select(chunk => _phonemizer.Phonemize(chunk, voice.EspeakVoice));
+        var phonemizer = _phonemizer;
+        var cache = _cache;
+        var synthesis = InFlightSyntheses.GetOrAdd(cacheKey,
+            _ => Task.Run(() => SynthesizeAndCache(cacheKey, text, voice, phonemizer, cache)));
+        try
+        {
+            var wav = await synthesis;
+            return File(wav, "audio/wav");
+        }
+        finally
+        {
+            InFlightSyntheses.TryRemove(new KeyValuePair<string, Task<byte[]>>(cacheKey, synthesis));
+        }
+    }
+
+    // Static + all dependencies passed explicitly (not reading instance fields) on purpose:
+    // the Task this returns is stored in a dictionary that outlives any single request/
+    // controller instance, so nothing here may depend on per-request state like _db (a scoped
+    // DbContext that could be disposed by the time a later, unrelated request awaits the same
+    // Task) - voice/phonemizer/cache are all singleton-scoped, safe to hold onto.
+    //
+    // Chunked, not one phonemize+inference call over the whole note: a single ONNX inference
+    // call's memory cost grows much faster than linearly with sequence length, which OOMKilled
+    // every production pod on a long, table-heavy note even at a limit that comfortably
+    // handled short ones. TextChunker bounds each call's input length regardless of how long
+    // the overall note is, and carries the pause length (sentence vs. clause-level punctuation)
+    // through to PiperVoice so it can insert the right gap between the resulting audio segments.
+    private static async Task<byte[]> SynthesizeAndCache(
+        string cacheKey, string text, PiperVoice voice, EspeakPhonemizer phonemizer, IDistributedCache cache)
+    {
+        var phonemeChunks = TextChunker.Chunk(text)
+            .Select(chunk => (Phonemes: phonemizer.Phonemize(chunk.Text, voice.EspeakVoice), chunk.LongPause));
         var wav = voice.SynthesizeWav(phonemeChunks);
-        await _cache.SetAsync(cacheKey, wav, new DistributedCacheEntryOptions().SetAbsoluteExpiration(CacheTtl));
-        return File(wav, "audio/wav");
+        await cache.SetAsync(cacheKey, wav, new DistributedCacheEntryOptions().SetAbsoluteExpiration(CacheTtl));
+        return wav;
     }
 
     private static string CacheKey(string lang, string text) =>
