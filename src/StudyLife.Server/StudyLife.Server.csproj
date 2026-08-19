@@ -28,6 +28,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\StudyLife.Shared\StudyLife.Shared.csproj" />
+    <ProjectReference Include="..\StudyLife.Tts\StudyLife.Tts.csproj" />
   </ItemGroup>
   <ItemGroup>
     <!-- Exposes BackgroundTaskService's internal-marked Run*Async methods to tests

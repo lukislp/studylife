@@ -10,8 +10,11 @@ ENV TZ=Europe/Berlin
 # ASPNETCORE_URLS convention) removes the competing source instead of the established one.
 ENV ASPNETCORE_HTTP_PORTS=
 # curl isn't included in the minimal aspnet runtime image, but docker-compose.yml's
-# healthcheck relies on it to probe the running container from the inside.
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+# healthcheck relies on it to probe the running container from the inside. espeak-ng
+# (+ its libespeak-ng.so.1) is StudyLife.Tts's phonemizer for the "read note aloud"
+# feature - resolved dynamically at runtime via NativeLibrary.SetDllImportResolver,
+# not linked at build time, so no -dev package is needed here.
+RUN apt-get update && apt-get install -y --no-install-recommends curl espeak-ng && rm -rf /var/lib/apt/lists/*
 
 FROM base AS final
 # TARGETARCH is set automatically by "docker buildx build --platform ..." (amd64/arm64) -
