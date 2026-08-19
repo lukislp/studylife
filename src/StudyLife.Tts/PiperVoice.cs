@@ -57,19 +57,28 @@ public sealed class PiperVoice : IDisposable
 
     public byte[] SynthesizeWav(string phonemes) => SynthesizeWav([phonemes]);
 
-    // Takes one already-phonemized chunk per ONNX inference call rather than the whole note in
-    // one shot - a single call's memory cost grows much faster than linearly with sequence
-    // length (confirmed live: a long note OOMKilled every production pod at a limit that
-    // comfortably handled short notes), so bounding each chunk's length (see TextChunker) bounds
-    // peak memory regardless of the note's total length. Chunks are synthesized and concatenated
-    // as raw samples, WAV-encoded once at the end - the caller hears one continuous clip.
+    // Takes one already-phonemized chunk (TextChunker: one sentence each) per ONNX inference
+    // call rather than the whole note in one shot - two independent reasons, see TextChunker's
+    // doc comment: memory (a single call's cost grows much faster than linearly with sequence
+    // length) and pacing (espeak's phonemization strips punctuation entirely, so Piper gets no
+    // pause cue between sentences bundled into one call). A fixed silence gap is inserted
+    // between chunks here for the same pacing reason - without it, sentences synthesized
+    // separately would still run straight into each other with no audible break at all.
     public byte[] SynthesizeWav(IEnumerable<string> phonemeChunks)
     {
+        var silenceGap = new float[(int)(SampleRate * InterChunkSilenceSeconds)];
         var allSamples = new List<float>();
+        var first = true;
         foreach (var phonemes in phonemeChunks)
+        {
+            if (!first) allSamples.AddRange(silenceGap);
+            first = false;
             allSamples.AddRange(RunInference(phonemes));
+        }
         return EncodeWav(allSamples.ToArray(), SampleRate);
     }
+
+    private const float InterChunkSilenceSeconds = 0.35f;
 
     private float[] RunInference(string phonemes)
     {

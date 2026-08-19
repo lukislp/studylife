@@ -4,11 +4,19 @@ using System.Text.RegularExpressions;
 namespace StudyLife.Tts;
 
 /// <summary>
-/// Splits text into bounded-size pieces for TTS synthesis. A single ONNX inference call's
-/// memory cost grows much faster than linearly with phoneme-sequence length - confirmed live
-/// in production: a several-thousand-character note OOMKilled every pod at a memory limit that
-/// comfortably handled short notes. Keeping each individual synthesis call's input short bounds
-/// peak memory regardless of how long the overall note is.
+/// Splits text into one piece per sentence for TTS synthesis - two independent reasons, not
+/// just one:
+/// 1. Memory: a single ONNX inference call's cost grows much faster than linearly with phoneme
+///    sequence length - confirmed live in production, a several-thousand-character note
+///    OOMKilled every pod at a memory limit that comfortably handled short notes.
+/// 2. Pacing: espeak-ng's IPA phonemization (EspeakPhonemizer) strips punctuation entirely -
+///    verified directly, "Hallo, das ist ein Test." phonemizes with no comma/period symbol
+///    anywhere in the output. Piper therefore gets no pause cue from punctuation at all, so
+///    multiple sentences fed into one synthesis call run together with no break. Splitting per
+///    sentence (never batching several into one chunk, even when short) and inserting silence
+///    between the resulting audio segments (PiperVoice.SynthesizeWav) is what actually produces
+///    a pause at every sentence boundary - the memory bound is a side effect of the same split,
+///    not the only reason for it.
 /// </summary>
 public static partial class TextChunker
 {
@@ -22,7 +30,6 @@ public static partial class TextChunker
             var line = rawLine.Trim();
             if (line.Length == 0) continue;
 
-            var current = new StringBuilder();
             foreach (var sentence in SentenceSplit().Split(line))
             {
                 if (sentence.Length == 0) continue;
@@ -30,16 +37,8 @@ public static partial class TextChunker
                 // A "sentence" can itself exceed the cap (e.g. a long unpunctuated table row) -
                 // hard word-wrap it so no chunk is ever unbounded regardless of input shape.
                 foreach (var piece in WrapIfTooLong(sentence, maxChunkLength))
-                {
-                    if (current.Length > 0 && current.Length + piece.Length + 1 > maxChunkLength)
-                    {
-                        yield return current.ToString().Trim();
-                        current.Clear();
-                    }
-                    current.Append(piece).Append(' ');
-                }
+                    yield return piece.Trim();
             }
-            if (current.Length > 0) yield return current.ToString().Trim();
         }
     }
 
