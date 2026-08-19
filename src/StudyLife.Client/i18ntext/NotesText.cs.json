@@ -42,5 +42,6 @@
   "ReadAloudButton": "Přečíst nahlas",
   "ReadAloudLoading": "Generuje se…",
   "ReadAloudUnavailable": "Předčítání není pro tento jazyk dostupné",
-  "ReadAloudBrowserVoice": "Čtení hlasem prohlížeče…"
+  "ReadAloudBrowserVoice": "Čtení hlasem prohlížeče…",
+  "ReadAloudTimeout": "U této poznámky to trvá déle, než se očekávalo – zkuste to prosím za chvíli znovu."
 }

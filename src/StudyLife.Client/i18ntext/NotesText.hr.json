@@ -42,5 +42,6 @@
   "ReadAloudButton": "Pročitaj naglas",
   "ReadAloudLoading": "Generiranje…",
   "ReadAloudUnavailable": "Čitanje naglas nije dostupno za ovaj jezik",
-  "ReadAloudBrowserVoice": "Čitanje glasom preglednika…"
+  "ReadAloudBrowserVoice": "Čitanje glasom preglednika…",
+  "ReadAloudTimeout": "Ovo traje dulje nego što se očekivalo za ovu bilješku – pokušajte ponovno za trenutak."
 }

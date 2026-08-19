@@ -42,5 +42,6 @@
   "ReadAloudButton": "Nolasīt skaļi",
   "ReadAloudLoading": "Ģenerē…",
   "ReadAloudUnavailable": "Skaļā lasīšana nav pieejama šai valodai",
-  "ReadAloudBrowserVoice": "Nolasa ar pārlūkprogrammas balsi…"
+  "ReadAloudBrowserVoice": "Nolasa ar pārlūkprogrammas balsi…",
+  "ReadAloudTimeout": "Šai piezīmei tas aizņem ilgāku laiku, nekā gaidīts – mēģiniet vēlreiz pēc brīža."
 }

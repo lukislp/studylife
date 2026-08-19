@@ -42,5 +42,6 @@
   "ReadAloudButton": "Läs upp",
   "ReadAloudLoading": "Genererar…",
   "ReadAloudUnavailable": "Uppläsning ej tillgänglig för detta språk",
-  "ReadAloudBrowserVoice": "Läser upp med webbläsarens röst…"
+  "ReadAloudBrowserVoice": "Läser upp med webbläsarens röst…",
+  "ReadAloudTimeout": "Detta tar längre tid än väntat för den här anteckningen – försök igen om en stund."
 }
