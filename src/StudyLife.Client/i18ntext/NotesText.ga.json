@@ -38,5 +38,8 @@
   "PrintGeneratedOnFormat": "Ginte an {0}",
   "FormatTextOption": "Téacs",
   "FormatMarkdownOption": "Markdown",
-  "ShowPreviewButton": "Réamhamharc"
+  "ShowPreviewButton": "Réamhamharc",
+  "ReadAloudButton": "Léigh amach",
+  "ReadAloudLoading": "Ag giniúint…",
+  "ReadAloudUnavailable": "Níl léamh os ard ar fáil don teanga seo"
 }

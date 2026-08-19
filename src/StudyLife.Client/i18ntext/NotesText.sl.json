@@ -38,5 +38,8 @@
   "PrintGeneratedOnFormat": "Ustvarjeno {0}",
   "FormatTextOption": "Besedilo",
   "FormatMarkdownOption": "Markdown",
-  "ShowPreviewButton": "Predogled"
+  "ShowPreviewButton": "Predogled",
+  "ReadAloudButton": "Preberi naglas",
+  "ReadAloudLoading": "Ustvarjanje…",
+  "ReadAloudUnavailable": "Branje naglas ni na voljo za ta jezik"
 }

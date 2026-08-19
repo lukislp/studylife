@@ -38,5 +38,8 @@
   "PrintGeneratedOnFormat": "Gegenereerd op {0}",
   "FormatTextOption": "Tekst",
   "FormatMarkdownOption": "Markdown",
-  "ShowPreviewButton": "Voorvertoning"
+  "ShowPreviewButton": "Voorvertoning",
+  "ReadAloudButton": "Voorlezen",
+  "ReadAloudLoading": "Bezig met genereren…",
+  "ReadAloudUnavailable": "Voorlezen niet beschikbaar voor deze taal"
 }

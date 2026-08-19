@@ -38,5 +38,8 @@
   "PrintGeneratedOnFormat": "Generat la {0}",
   "FormatTextOption": "Text",
   "FormatMarkdownOption": "Markdown",
-  "ShowPreviewButton": "Previzualizare"
+  "ShowPreviewButton": "Previzualizare",
+  "ReadAloudButton": "Citește cu voce tare",
+  "ReadAloudLoading": "Se generează…",
+  "ReadAloudUnavailable": "Citirea cu voce tare nu este disponibilă pentru această limbă"
 }

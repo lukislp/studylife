@@ -38,5 +38,8 @@
   "PrintGeneratedOnFormat": "Създаден на {0}",
   "FormatTextOption": "Текст",
   "FormatMarkdownOption": "Markdown",
-  "ShowPreviewButton": "Преглед"
+  "ShowPreviewButton": "Преглед",
+  "ReadAloudButton": "Прочети на глас",
+  "ReadAloudLoading": "Генериране…",
+  "ReadAloudUnavailable": "Четенето на глас не е налично за този език"
 }
