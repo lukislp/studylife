@@ -25,6 +25,16 @@ spec:
     - backendRefs:
         - name: studylife-web
           port: 443
+      # NGF's default backend-read timeout (~60s, unset here previously) is too short for the
+      # "read note aloud" feature (TtsController) on long notes - confirmed live: a ~2.4-minute
+      # audio synthesis on the Pi cluster's real ARM CPU exceeded it ("upstream timed out (110:
+      # Operation timed out) while reading response header from upstream" in the gateway's own
+      # logs, request already past the memory fix - the pod was still working, not crashed).
+      # 150s covers that with margin without leaving a route open indefinitely. Every other
+      # endpoint on this route keeps whatever NGF's default is - this is scoped to the rule, not
+      # the whole HTTPRoute/Gateway.
+      timeouts:
+        backendRequest: 150s
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: BackendTLSPolicy
