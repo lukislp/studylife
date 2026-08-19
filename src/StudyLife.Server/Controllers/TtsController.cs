@@ -27,6 +27,15 @@ public class TtsController : ControllerBase
     // accumulate audio blobs indefinitely on Raspberry-Pi-class hardware.
     private static readonly TimeSpan CacheTtl = TimeSpan.FromHours(24);
 
+    // Bumped whenever the synthesis pipeline itself changes (TextChunker granularity,
+    // inter-chunk silence, phonemization, ...) - not just when the note's text changes. Without
+    // this, the key is purely a function of (lang, text): in production, Redis-backed and
+    // therefore untouched by any pod restart/rollout, a note tested BEFORE a pacing/quality fix
+    // shipped kept serving the stale pre-fix audio for up to 24h after the fix was already live,
+    // because its cache key never changed. Confirmed live as the cause of "the fix doesn't
+    // seem to have landed" reports for notes that had been tested earlier.
+    private const int SynthesisVersion = 2;
+
     private readonly StudyLifeDb _db;
     private readonly PiperVoiceRegistry _voices;
     private readonly EspeakPhonemizer _phonemizer;
@@ -73,5 +82,5 @@ public class TtsController : ControllerBase
     }
 
     private static string CacheKey(string lang, string text) =>
-        $"tts:{lang}:{Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text)))}";
+        $"tts:v{SynthesisVersion}:{lang}:{Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text)))}";
 }
