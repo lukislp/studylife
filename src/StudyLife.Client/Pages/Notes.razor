@@ -468,22 +468,31 @@ else
             // the browser's own synthesis instead of just telling the user it's unavailable.
             await TryBrowserSpeechFallback(lang);
         }
-        catch (HttpRequestException)
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException)
         {
-            // A long note's first (uncached) synthesis can exceed the gateway's read timeout
-            // even though the server keeps working and caches the result once done - confirmed
-            // live: a request that 504'd to the browser was instantly available on the very
-            // next one. One silent retry after a pause covers exactly that, instead of
-            // surfacing an error for something that's actually still finishing server-side.
-            try
+            // A long note's first (uncached) synthesis can take a while on the Pi cluster's
+            // real ARM CPU - long enough to exceed the gateway's own read timeout more than
+            // once in a row, confirmed live - even though the server keeps working and caches
+            // the result once done regardless of whether any particular client is still
+            // listening (TtsController now also dedupes concurrent/retried requests for the
+            // same content server-side, so a retry waits on the one synthesis already running
+            // instead of starting a competing one). Retry several times with a pause between
+            // attempts instead of giving up after one.
+            var succeeded = false;
+            for (var attempt = 0; attempt < MaxRetries && !succeeded; attempt++)
             {
-                await Task.Delay(TimeSpan.FromSeconds(5));
-                _ttsAudioUrl = await FetchAudioDataUrl(_selectedNote.Id, lang);
+                await Task.Delay(RetryDelay);
+                try
+                {
+                    _ttsAudioUrl = await FetchAudioDataUrl(_selectedNote.Id, lang);
+                    succeeded = true;
+                }
+                catch
+                {
+                    // keep trying
+                }
             }
-            catch
-            {
-                _ttsTimedOut = true;
-            }
+            if (!succeeded) _ttsTimedOut = true;
         }
         finally
         {
@@ -491,9 +500,19 @@ else
         }
     }
 
+    private const int MaxRetries = 5;
+    private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(25);
+    // Longer than HttpClient's 100s default - short enough that a long note's synthesis
+    // legitimately exceeds it (that's what the retry loop above is for), but without this a
+    // Blazor WASM HttpClient would give up client-side before the gateway's own (already
+    // raised) read timeout does, throwing a plain OperationCanceledException instead of a
+    // proper HttpRequestException with a status code to react to.
+    private static readonly TimeSpan PerAttemptTimeout = TimeSpan.FromSeconds(200);
+
     private async Task<string> FetchAudioDataUrl(int noteId, string lang)
     {
-        var bytes = await Http.GetByteArrayAsync($"api/notes/{noteId}/tts?lang={lang}");
+        using var cts = new CancellationTokenSource(PerAttemptTimeout);
+        var bytes = await Http.GetByteArrayAsync($"api/notes/{noteId}/tts?lang={lang}", cts.Token);
         return $"data:audio/wav;base64,{Convert.ToBase64String(bytes)}";
     }
 
