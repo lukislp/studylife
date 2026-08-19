@@ -1,3 +1,10 @@
+## [1.21.5](https://github.com/lukislp/studylife/compare/v1.21.4...v1.21.5) (2026-08-19)
+
+
+### Bug Fixes
+
+* **tts:** version the cache key so pipeline changes bust stale audio ([8366d9f](https://github.com/lukislp/studylife/commit/8366d9fea4af670fb5ce70287e8d91963cc9d3fb))
+
 ## [1.21.4](https://github.com/lukislp/studylife/compare/v1.21.3...v1.21.4) (2026-08-19)
 
 
