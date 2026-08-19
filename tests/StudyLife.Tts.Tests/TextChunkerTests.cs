@@ -9,7 +9,8 @@ public class TextChunkerTests
     {
         var chunks = TextChunker.Chunk("Ein kurzer Satz.").ToList();
         Assert.Single(chunks);
-        Assert.Equal("Ein kurzer Satz.", chunks[0]);
+        Assert.Equal("Ein kurzer Satz.", chunks[0].Text);
+        Assert.True(chunks[0].LongPause);
     }
 
     [Fact]
@@ -19,7 +20,7 @@ public class TextChunkerTests
         var chunks = TextChunker.Chunk(longText, maxChunkLength: 100).ToList();
 
         Assert.True(chunks.Count > 1);
-        Assert.All(chunks, c => Assert.True(c.Length <= 100, $"chunk exceeded cap: \"{c}\" ({c.Length} chars)"));
+        Assert.All(chunks, c => Assert.True(c.Text.Length <= 100, $"chunk exceeded cap: \"{c.Text}\" ({c.Text.Length} chars)"));
     }
 
     [Fact]
@@ -29,7 +30,7 @@ public class TextChunkerTests
         var chunks = TextChunker.Chunk(longWord, maxChunkLength: 50).ToList();
 
         Assert.True(chunks.Count > 1);
-        Assert.All(chunks, c => Assert.True(c.Length <= 50));
+        Assert.All(chunks, c => Assert.True(c.Text.Length <= 50));
     }
 
     [Fact]
@@ -39,9 +40,9 @@ public class TextChunkerTests
         var chunks = TextChunker.Chunk(text, maxChunkLength: 300).ToList();
 
         Assert.Equal(3, chunks.Count);
-        Assert.Equal("Zeile eins.", chunks[0]);
-        Assert.Equal("Zeile zwei.", chunks[1]);
-        Assert.Equal("Zeile drei.", chunks[2]);
+        Assert.Equal("Zeile eins.", chunks[0].Text);
+        Assert.Equal("Zeile zwei.", chunks[1].Text);
+        Assert.Equal("Zeile drei.", chunks[2].Text);
     }
 
     [Fact]
@@ -63,9 +64,53 @@ public class TextChunkerTests
     {
         var text = "Erster Satz hier. Zweiter Satz da. Dritter Satz überall, mit mehr Wörtern als die anderen beiden zusammen.";
         var chunks = TextChunker.Chunk(text, maxChunkLength: 30).ToList();
-        var rejoined = string.Join(" ", chunks);
+        var rejoined = string.Join(" ", chunks.Select(c => c.Text));
 
         foreach (var word in text.Split(' ', StringSplitOptions.RemoveEmptyEntries))
             Assert.Contains(word, rejoined);
+    }
+
+    [Theory]
+    [InlineData("Erster Teil, zweiter Teil.")]
+    [InlineData("Erster Teil; zweiter Teil.")]
+    [InlineData("Erster Teil: zweiter Teil.")]
+    public void ClauseLevelPunctuation_SplitsIntoShortPauseChunks(string text)
+    {
+        var chunks = TextChunker.Chunk(text).ToList();
+
+        Assert.Equal(2, chunks.Count);
+        Assert.False(chunks[0].LongPause, $"first chunk of \"{text}\" should be a short pause");
+        Assert.True(chunks[1].LongPause, "sentence-ending chunk should be a long pause");
+    }
+
+    [Theory]
+    [InlineData("Ein Satz. Noch einer.")]
+    [InlineData("Ein Satz! Noch einer.")]
+    [InlineData("Ein Satz? Noch einer.")]
+    [InlineData("Ein Satz… Noch einer.")]
+    public void SentenceEnders_SplitIntoLongPauseChunks(string text)
+    {
+        var chunks = TextChunker.Chunk(text).ToList();
+
+        Assert.Equal(2, chunks.Count);
+        Assert.True(chunks[0].LongPause, $"first chunk of \"{text}\" should be a long pause");
+    }
+
+    [Fact]
+    public void EmDashAndClosingParen_AreShortPauses()
+    {
+        var chunks = TextChunker.Chunk("Ein Einschub — wie dieser hier — geht weiter.").ToList();
+        Assert.True(chunks.Count >= 2);
+        Assert.False(chunks[0].LongPause);
+    }
+
+    [Fact]
+    public void PlainHyphenInCompoundWord_DoesNotSplit()
+    {
+        // A literal ASCII hyphen must NOT be treated as a pause - it's overwhelmingly used
+        // inside compound words in German note content (Wort-Vektorisierung, Skip-Gram, ...).
+        var chunks = TextChunker.Chunk("Wort-Vektorisierung ist ein Kernthema.").ToList();
+        Assert.Single(chunks);
+        Assert.Equal("Wort-Vektorisierung ist ein Kernthema.", chunks[0].Text);
     }
 }
