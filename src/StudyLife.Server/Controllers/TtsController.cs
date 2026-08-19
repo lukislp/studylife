@@ -1,5 +1,8 @@
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using StudyLife.Server.Data;
 using StudyLife.Tts;
 
@@ -15,15 +18,26 @@ namespace StudyLife.Server.Controllers;
 [Route("api/notes")]
 public class TtsController : ControllerBase
 {
+    // Content-addressed, not note-ID-addressed: the cache key is a hash of the exact text
+    // that would be synthesized, so an edited note automatically gets a fresh key (no explicit
+    // invalidation needed) while an unchanged note - re-opened, or "Vorlesen" clicked again -
+    // is served from cache instead of re-running phonemization + ONNX inference every time.
+    // 24h TTL: long enough to cover "read it again later the same day", short enough that a
+    // single-container deployment's in-memory cache (the Cache:Provider=Memory default) doesn't
+    // accumulate audio blobs indefinitely on Raspberry-Pi-class hardware.
+    private static readonly TimeSpan CacheTtl = TimeSpan.FromHours(24);
+
     private readonly StudyLifeDb _db;
     private readonly PiperVoiceRegistry _voices;
     private readonly EspeakPhonemizer _phonemizer;
+    private readonly IDistributedCache _cache;
 
-    public TtsController(StudyLifeDb db, PiperVoiceRegistry voices, EspeakPhonemizer phonemizer)
+    public TtsController(StudyLifeDb db, PiperVoiceRegistry voices, EspeakPhonemizer phonemizer, IDistributedCache cache)
     {
         _db = db;
         _voices = voices;
         _phonemizer = phonemizer;
+        _cache = cache;
     }
 
     [HttpGet("{id}/tts")]
@@ -43,8 +57,16 @@ public class TtsController : ControllerBase
         if (string.IsNullOrWhiteSpace(text))
             return NotFound(new { error = "note has no readable content" });
 
+        var cacheKey = CacheKey(lang, text);
+        var cached = await _cache.GetAsync(cacheKey);
+        if (cached != null) return File(cached, "audio/wav");
+
         var phonemes = _phonemizer.Phonemize(text, voice.EspeakVoice);
         var wav = voice.SynthesizeWav(phonemes);
+        await _cache.SetAsync(cacheKey, wav, new DistributedCacheEntryOptions().SetAbsoluteExpiration(CacheTtl));
         return File(wav, "audio/wav");
     }
+
+    private static string CacheKey(string lang, string text) =>
+        $"tts:{lang}:{Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text)))}";
 }
