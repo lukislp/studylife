@@ -41,5 +41,6 @@
   "ShowPreviewButton": "Voorvertoning",
   "ReadAloudButton": "Voorlezen",
   "ReadAloudLoading": "Bezig met genereren…",
-  "ReadAloudUnavailable": "Voorlezen niet beschikbaar voor deze taal"
+  "ReadAloudUnavailable": "Voorlezen niet beschikbaar voor deze taal",
+  "ReadAloudBrowserVoice": "Voorlezen met browserstem…"
 }

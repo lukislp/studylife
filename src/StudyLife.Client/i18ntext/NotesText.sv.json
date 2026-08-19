@@ -41,5 +41,6 @@
   "ShowPreviewButton": "Förhandsgranskning",
   "ReadAloudButton": "Läs upp",
   "ReadAloudLoading": "Genererar…",
-  "ReadAloudUnavailable": "Uppläsning ej tillgänglig för detta språk"
+  "ReadAloudUnavailable": "Uppläsning ej tillgänglig för detta språk",
+  "ReadAloudBrowserVoice": "Läser upp med webbläsarens röst…"
 }

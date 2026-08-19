@@ -41,5 +41,6 @@
   "ShowPreviewButton": "Előnézet",
   "ReadAloudButton": "Felolvasás",
   "ReadAloudLoading": "Generálás…",
-  "ReadAloudUnavailable": "A felolvasás ehhez a nyelvhez nem érhető el"
+  "ReadAloudUnavailable": "A felolvasás ehhez a nyelvhez nem érhető el",
+  "ReadAloudBrowserVoice": "Felolvasás a böngésző hangjával…"
 }

@@ -41,5 +41,6 @@
   "ShowPreviewButton": "Réamhamharc",
   "ReadAloudButton": "Léigh amach",
   "ReadAloudLoading": "Ag giniúint…",
-  "ReadAloudUnavailable": "Níl léamh os ard ar fáil don teanga seo"
+  "ReadAloudUnavailable": "Níl léamh os ard ar fáil don teanga seo",
+  "ReadAloudBrowserVoice": "Á léamh amach le guth an bhrabhsálaí…"
 }

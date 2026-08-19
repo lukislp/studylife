@@ -41,5 +41,6 @@
   "ShowPreviewButton": "Peržiūra",
   "ReadAloudButton": "Perskaityti garsiai",
   "ReadAloudLoading": "Generuojama…",
-  "ReadAloudUnavailable": "Garsinis skaitymas šiai kalbai nepasiekiamas"
+  "ReadAloudUnavailable": "Garsinis skaitymas šiai kalbai nepasiekiamas",
+  "ReadAloudBrowserVoice": "Skaitoma naršyklės balsu…"
 }
