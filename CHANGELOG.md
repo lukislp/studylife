@@ -1,3 +1,10 @@
+# [1.18.0](https://github.com/lukislp/studylife/compare/v1.17.0...v1.18.0) (2026-08-19)
+
+
+### Features
+
+* **tts:** add markdown-to-speech-text preprocessing (SL-2 S2) ([742cd45](https://github.com/lukislp/studylife/commit/742cd45150d3d4d7de5853beb483a748901c6057))
+
 # [1.17.0](https://github.com/lukislp/studylife/compare/v1.16.1...v1.17.0) (2026-08-19)
 
 
