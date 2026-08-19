@@ -148,6 +148,7 @@ the native app and the browser/PWA client are always pixel-identical.
 ### Notes
 - Free-text notes, optionally assigned to a course
 - Togglable Markdown mode per note (headings, bold/italic, lists, quotes, code, tables, links) with a live preview — plain text stays the default, nothing changes for existing notes
+- Read a note aloud: natively synthesized (German/English) via a self-hosted [Piper](https://github.com/rhasspy/piper) voice, no cloud TTS service involved — every other language falls back to the browser's own built-in speech synthesis, so it works everywhere, just with native voice quality only for the two baked-in languages (see [docs/TTS-VOICES.md](docs/TTS-VOICES.md) for the full coverage matrix and voice licenses)
 - Automatic saving while typing
 - Search (title/content) and course filter
 - Delete confirmation (two clicks instead of immediate deletion)
@@ -357,3 +358,10 @@ Copyright (C) 2026 Lukas Koerber
 [AGPL-3.0](LICENSE) - if you run a modified version of this app as a network service, you
 must make your modified source available to its users. The Home Assistant integration is
 maintained as a separate, MIT-licensed repository: see [Home Assistant Integration](#home-assistant-integration).
+
+The English text-to-speech voice (`en_US-amy-low`, used by the "read note aloud" feature) is
+built on the [Mimic 3 voices](https://github.com/MycroftAI/mimic3-voices) dataset, licensed
+[CC-BY-SA-4.0](https://creativecommons.org/licenses/by-sa/4.0/) - attribution required. The
+German voice (`de_DE-thorsten-low`, [Thorsten-Voice](https://github.com/thorstenMueller/Thorsten-Voice))
+is CC0. Both via [rhasspy/piper-voices](https://huggingface.co/rhasspy/piper-voices); see
+[docs/TTS-VOICES.md](docs/TTS-VOICES.md) for the full coverage matrix and licenses.

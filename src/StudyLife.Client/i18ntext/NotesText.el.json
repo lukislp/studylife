@@ -41,5 +41,6 @@
   "ShowPreviewButton": "Προεπισκόπηση",
   "ReadAloudButton": "Ανάγνωση δυνατά",
   "ReadAloudLoading": "Δημιουργία…",
-  "ReadAloudUnavailable": "Η ανάγνωση δεν είναι διαθέσιμη για αυτήν τη γλώσσα"
+  "ReadAloudUnavailable": "Η ανάγνωση δεν είναι διαθέσιμη για αυτήν τη γλώσσα",
+  "ReadAloudBrowserVoice": "Ανάγνωση με φωνή προγράμματος περιήγησης…"
 }

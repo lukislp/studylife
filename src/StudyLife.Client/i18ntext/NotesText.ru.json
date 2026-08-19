@@ -41,5 +41,6 @@
   "ShowPreviewButton": "Предпросмотр",
   "ReadAloudButton": "Прочитать вслух",
   "ReadAloudLoading": "Генерация…",
-  "ReadAloudUnavailable": "Озвучивание недоступно для этого языка"
+  "ReadAloudUnavailable": "Озвучивание недоступно для этого языка",
+  "ReadAloudBrowserVoice": "Чтение голосом браузера…"
 }
