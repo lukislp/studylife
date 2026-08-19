@@ -1,3 +1,10 @@
+# [1.17.0](https://github.com/lukislp/studylife/compare/v1.16.1...v1.17.0) (2026-08-19)
+
+
+### Features
+
+* **tts:** add native Piper voice synthesis core (SL-2 S1) ([b31c717](https://github.com/lukislp/studylife/commit/b31c7177eac72d0c7f69946814391c7be7032849))
+
 ## [1.16.1](https://github.com/lukislp/studylife/compare/v1.16.0...v1.16.1) (2026-08-16)
 
 
