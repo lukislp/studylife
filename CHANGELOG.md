@@ -1,3 +1,11 @@
+## [1.21.4](https://github.com/lukislp/studylife/compare/v1.21.3...v1.21.4) (2026-08-19)
+
+
+### Bug Fixes
+
+* **k8s:** replace unsupported HTTPRoute timeout with NGF's ProxySettingsPolicy ([f6d8c1e](https://github.com/lukislp/studylife/commit/f6d8c1e619f29c85052c1318680cd83e70a16e31))
+* **tts:** retry once on timeout - server keeps working after the client gives up ([bc8d673](https://github.com/lukislp/studylife/commit/bc8d6733313bdd2a98a8385bf99308ebffecfc84))
+
 ## [1.21.3](https://github.com/lukislp/studylife/compare/v1.21.2...v1.21.3) (2026-08-19)
 
 
