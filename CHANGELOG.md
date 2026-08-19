@@ -1,3 +1,10 @@
+## [1.21.1](https://github.com/lukislp/studylife/compare/v1.21.0...v1.21.1) (2026-08-19)
+
+
+### Bug Fixes
+
+* **tts:** disable ONNX Runtime's CPU memory arena, raise pod limit again ([077e774](https://github.com/lukislp/studylife/commit/077e77416c8cc9b0fab7d209a329b472aa2a8592))
+
 # [1.21.0](https://github.com/lukislp/studylife/compare/v1.20.0...v1.21.0) (2026-08-19)
 
 
