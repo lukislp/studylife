@@ -190,6 +190,12 @@ else
                                         @(_showMarkdownPreview ? T.Edit : T.ShowPreviewButton)
                                     </button>
                                 }
+                                @if (_selectedNote?.Id > 0)
+                                {
+                                    <button type="button" class="btn-secondary" style="font-size:0.75rem;padding:0.25rem 0.6rem;border-radius:6px" disabled="@_ttsLoading" @onclick="PlayNoteAudio">
+                                        🔊 @(_ttsLoading ? T.ReadAloudLoading : T.ReadAloudButton)
+                                    </button>
+                                }
                             </div>
                         </div>
                         @if (_editIsMarkdown && _showMarkdownPreview)
@@ -203,6 +209,14 @@ else
                                       @bind="_editContent"
                                       @bind:event="oninput"
                                       @bind:after="ScheduleSave"></textarea>
+                        }
+                        @if (_ttsAudioUrl != null)
+                        {
+                            <audio controls autoplay src="@_ttsAudioUrl" style="width:100%;margin-top:0.5rem"></audio>
+                        }
+                        else if (_ttsUnavailable)
+                        {
+                            <div style="font-size:0.75rem;color:var(--text3);margin-top:0.5rem">@T.ReadAloudUnavailable</div>
                         }
                     </div>
                 </div>
@@ -262,6 +276,9 @@ else
     private int _editCourseId = 0;
     private bool _editIsMarkdown;
     private bool _showMarkdownPreview;
+    private bool _ttsLoading;
+    private string? _ttsAudioUrl;
+    private bool _ttsUnavailable;
     private bool _saving;
     private bool _confirmingDelete;
     private System.Threading.Timer? _debounce;
@@ -384,6 +401,7 @@ else
         _editIsMarkdown = false;
         _showMarkdownPreview = false;
         _confirmingDelete = false;
+        ResetTtsState();
     }
 
     private void SelectNote(NoteDto note)
@@ -395,6 +413,37 @@ else
         _editIsMarkdown = note.IsMarkdown;
         _showMarkdownPreview = note.IsMarkdown;
         _confirmingDelete = false;
+        ResetTtsState();
+    }
+
+    private void ResetTtsState()
+    {
+        _ttsLoading = false;
+        _ttsAudioUrl = null;
+        _ttsUnavailable = false;
+    }
+
+    private async Task PlayNoteAudio()
+    {
+        if (_selectedNote == null || _selectedNote.Id <= 0) return;
+        _ttsLoading = true;
+        _ttsAudioUrl = null;
+        _ttsUnavailable = false;
+        StateHasChanged();
+        try
+        {
+            var lang = await I18nText.GetCurrentLanguageAsync();
+            var bytes = await Http.GetByteArrayAsync($"api/notes/{_selectedNote.Id}/tts?lang={lang}");
+            _ttsAudioUrl = $"data:audio/wav;base64,{Convert.ToBase64String(bytes)}";
+        }
+        catch (HttpRequestException)
+        {
+            _ttsUnavailable = true;
+        }
+        finally
+        {
+            _ttsLoading = false;
+        }
     }
 
     private void SetFormat(bool isMarkdown)

@@ -38,5 +38,8 @@
   "PrintGeneratedOnFormat": "Luotu {0}",
   "FormatTextOption": "Teksti",
   "FormatMarkdownOption": "Markdown",
-  "ShowPreviewButton": "Esikatselu"
+  "ShowPreviewButton": "Esikatselu",
+  "ReadAloudButton": "Lue ääneen",
+  "ReadAloudLoading": "Luodaan…",
+  "ReadAloudUnavailable": "Ääneen lukeminen ei ole käytettävissä tälle kielelle"
 }

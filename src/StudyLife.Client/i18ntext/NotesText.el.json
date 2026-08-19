@@ -38,5 +38,8 @@
   "PrintGeneratedOnFormat": "Δημιουργήθηκε στις {0}",
   "FormatTextOption": "Κείμενο",
   "FormatMarkdownOption": "Markdown",
-  "ShowPreviewButton": "Προεπισκόπηση"
+  "ShowPreviewButton": "Προεπισκόπηση",
+  "ReadAloudButton": "Ανάγνωση δυνατά",
+  "ReadAloudLoading": "Δημιουργία…",
+  "ReadAloudUnavailable": "Η ανάγνωση δεν είναι διαθέσιμη για αυτήν τη γλώσσα"
 }

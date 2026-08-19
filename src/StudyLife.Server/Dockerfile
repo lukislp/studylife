@@ -14,7 +14,15 @@ ENV ASPNETCORE_HTTP_PORTS=
 # (+ its libespeak-ng.so.1) is StudyLife.Tts's phonemizer for the "read note aloud"
 # feature - resolved dynamically at runtime via NativeLibrary.SetDllImportResolver,
 # not linked at build time, so no -dev package is needed here.
-RUN apt-get update && apt-get install -y --no-install-recommends curl espeak-ng && rm -rf /var/lib/apt/lists/*
+# Piper voice models are ~15-70MB binary ONNX files - not checked into this repo (would
+# bloat every clone/diff forever), pulled from Hugging Face at image build time instead, the
+# same way the base image itself and NuGet packages are already external build-time
+# dependencies. PiperVoiceRegistry expects "{lang}.onnx" + "{lang}.onnx.json" pairs here.
+# German only for now - see StudyLife.Tts's S4 plan for the full language coverage matrix.
+RUN apt-get update && apt-get install -y --no-install-recommends curl espeak-ng && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /app/tts-voices \
+    && curl -fsSL -o /app/tts-voices/de.onnx https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/low/de_DE-thorsten-low.onnx \
+    && curl -fsSL -o /app/tts-voices/de.onnx.json https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/low/de_DE-thorsten-low.onnx.json
 
 FROM base AS final
 # TARGETARCH is set automatically by "docker buildx build --platform ..." (amd64/arm64) -

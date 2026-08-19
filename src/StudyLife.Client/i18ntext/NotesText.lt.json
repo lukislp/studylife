@@ -38,5 +38,8 @@
   "PrintGeneratedOnFormat": "Sukurta {0}",
   "FormatTextOption": "Tekstas",
   "FormatMarkdownOption": "Markdown",
-  "ShowPreviewButton": "Peržiūra"
+  "ShowPreviewButton": "Peržiūra",
+  "ReadAloudButton": "Perskaityti garsiai",
+  "ReadAloudLoading": "Generuojama…",
+  "ReadAloudUnavailable": "Garsinis skaitymas šiai kalbai nepasiekiamas"
 }

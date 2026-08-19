@@ -38,5 +38,8 @@
   "PrintGeneratedOnFormat": "Loodud {0}",
   "FormatTextOption": "Tekst",
   "FormatMarkdownOption": "Markdown",
-  "ShowPreviewButton": "Eelvaade"
+  "ShowPreviewButton": "Eelvaade",
+  "ReadAloudButton": "Loe ette",
+  "ReadAloudLoading": "Genereerimine…",
+  "ReadAloudUnavailable": "Ettelugemine pole selle keele jaoks saadaval"
 }
