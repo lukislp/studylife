@@ -42,5 +42,6 @@
   "ReadAloudButton": "Voorlezen",
   "ReadAloudLoading": "Bezig met genereren…",
   "ReadAloudUnavailable": "Voorlezen niet beschikbaar voor deze taal",
-  "ReadAloudBrowserVoice": "Voorlezen met browserstem…"
+  "ReadAloudBrowserVoice": "Voorlezen met browserstem…",
+  "ReadAloudTimeout": "Dit duurt langer dan verwacht voor deze notitie – probeer het zo nog eens."
 }

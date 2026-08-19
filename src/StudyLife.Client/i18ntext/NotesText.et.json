@@ -42,5 +42,6 @@
   "ReadAloudButton": "Loe ette",
   "ReadAloudLoading": "Genereerimine…",
   "ReadAloudUnavailable": "Ettelugemine pole selle keele jaoks saadaval",
-  "ReadAloudBrowserVoice": "Loetakse brauseri häälega…"
+  "ReadAloudBrowserVoice": "Loetakse brauseri häälega…",
+  "ReadAloudTimeout": "See võtab selle märkme puhul oodatust kauem aega – proovi kohe uuesti."
 }

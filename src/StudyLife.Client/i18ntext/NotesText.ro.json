@@ -42,5 +42,6 @@
   "ReadAloudButton": "Citește cu voce tare",
   "ReadAloudLoading": "Se generează…",
   "ReadAloudUnavailable": "Citirea cu voce tare nu este disponibilă pentru această limbă",
-  "ReadAloudBrowserVoice": "Se citește cu vocea browserului…"
+  "ReadAloudBrowserVoice": "Se citește cu vocea browserului…",
+  "ReadAloudTimeout": "Durează mai mult decât ne așteptam pentru această notă – încearcă din nou peste puțin timp."
 }

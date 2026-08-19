@@ -42,5 +42,6 @@
   "ReadAloudButton": "Perskaityti garsiai",
   "ReadAloudLoading": "Generuojama…",
   "ReadAloudUnavailable": "Garsinis skaitymas šiai kalbai nepasiekiamas",
-  "ReadAloudBrowserVoice": "Skaitoma naršyklės balsu…"
+  "ReadAloudBrowserVoice": "Skaitoma naršyklės balsu…",
+  "ReadAloudTimeout": "Šiam užrašui tai užtrunka ilgiau nei tikėtasi – pabandykite dar kartą po akimirkos."
 }

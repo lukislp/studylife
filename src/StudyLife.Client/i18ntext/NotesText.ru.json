@@ -42,5 +42,6 @@
   "ReadAloudButton": "Прочитать вслух",
   "ReadAloudLoading": "Генерация…",
   "ReadAloudUnavailable": "Озвучивание недоступно для этого языка",
-  "ReadAloudBrowserVoice": "Чтение голосом браузера…"
+  "ReadAloudBrowserVoice": "Чтение голосом браузера…",
+  "ReadAloudTimeout": "Это занимает больше времени, чем ожидалось, для этой заметки – повторите попытку через мгновение."
 }

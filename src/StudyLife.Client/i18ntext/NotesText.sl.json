@@ -42,5 +42,6 @@
   "ReadAloudButton": "Preberi naglas",
   "ReadAloudLoading": "Ustvarjanje…",
   "ReadAloudUnavailable": "Branje naglas ni na voljo za ta jezik",
-  "ReadAloudBrowserVoice": "Branje z glasom brskalnika…"
+  "ReadAloudBrowserVoice": "Branje z glasom brskalnika…",
+  "ReadAloudTimeout": "To traja dlje, kot je bilo pričakovano za to opombo – poskusite znova čez trenutek."
 }
