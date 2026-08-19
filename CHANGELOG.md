@@ -1,3 +1,15 @@
+# [1.21.0](https://github.com/lukislp/studylife/compare/v1.20.0...v1.21.0) (2026-08-19)
+
+
+### Bug Fixes
+
+* **k8s:** raise studylife-web memory limit for the TTS feature ([5f1913f](https://github.com/lukislp/studylife/commit/5f1913f20a2e489096cc6859dfe2553fcfc779b4))
+
+
+### Features
+
+* **tts:** cache synthesized audio, close out the SL-2 plan (S5) ([3d69876](https://github.com/lukislp/studylife/commit/3d69876f296cf5a324e9de6d2a6e4e9ae1057a73))
+
 # [1.20.0](https://github.com/lukislp/studylife/compare/v1.19.0...v1.20.0) (2026-08-19)
 
 
