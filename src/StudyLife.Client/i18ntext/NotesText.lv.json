@@ -41,5 +41,6 @@
   "ShowPreviewButton": "Priekšskatījums",
   "ReadAloudButton": "Nolasīt skaļi",
   "ReadAloudLoading": "Ģenerē…",
-  "ReadAloudUnavailable": "Skaļā lasīšana nav pieejama šai valodai"
+  "ReadAloudUnavailable": "Skaļā lasīšana nav pieejama šai valodai",
+  "ReadAloudBrowserVoice": "Nolasa ar pārlūkprogrammas balsi…"
 }

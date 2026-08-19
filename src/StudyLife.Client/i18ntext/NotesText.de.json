@@ -41,5 +41,6 @@
   "ShowPreviewButton": "Vorschau",
   "ReadAloudButton": "Vorlesen",
   "ReadAloudLoading": "Wird generiert…",
-  "ReadAloudUnavailable": "Vorlesen für diese Sprache nicht verfügbar"
+  "ReadAloudUnavailable": "Vorlesen für diese Sprache nicht verfügbar",
+  "ReadAloudBrowserVoice": "Browser-Stimme liest vor…"
 }

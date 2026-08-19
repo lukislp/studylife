@@ -41,5 +41,6 @@
   "ShowPreviewButton": "Forhåndsvisning",
   "ReadAloudButton": "Læs højt",
   "ReadAloudLoading": "Genererer…",
-  "ReadAloudUnavailable": "Oplæsning ikke tilgængelig for dette sprog"
+  "ReadAloudUnavailable": "Oplæsning ikke tilgængelig for dette sprog",
+  "ReadAloudBrowserVoice": "Læser op med browserens stemme…"
 }

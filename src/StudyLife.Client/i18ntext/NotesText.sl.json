@@ -41,5 +41,6 @@
   "ShowPreviewButton": "Predogled",
   "ReadAloudButton": "Preberi naglas",
   "ReadAloudLoading": "Ustvarjanje…",
-  "ReadAloudUnavailable": "Branje naglas ni na voljo za ta jezik"
+  "ReadAloudUnavailable": "Branje naglas ni na voljo za ta jezik",
+  "ReadAloudBrowserVoice": "Branje z glasom brskalnika…"
 }

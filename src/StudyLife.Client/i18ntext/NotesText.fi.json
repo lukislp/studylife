@@ -41,5 +41,6 @@
   "ShowPreviewButton": "Esikatselu",
   "ReadAloudButton": "Lue ääneen",
   "ReadAloudLoading": "Luodaan…",
-  "ReadAloudUnavailable": "Ääneen lukeminen ei ole käytettävissä tälle kielelle"
+  "ReadAloudUnavailable": "Ääneen lukeminen ei ole käytettävissä tälle kielelle",
+  "ReadAloudBrowserVoice": "Luetaan selaimen äänellä…"
 }

@@ -18,11 +18,18 @@ ENV ASPNETCORE_HTTP_PORTS=
 # bloat every clone/diff forever), pulled from Hugging Face at image build time instead, the
 # same way the base image itself and NuGet packages are already external build-time
 # dependencies. PiperVoiceRegistry expects "{lang}.onnx" + "{lang}.onnx.json" pairs here.
-# German only for now - see StudyLife.Tts's S4 plan for the full language coverage matrix.
+# Only de+en baked in (~126MB) - deliberate: 21 of the app's 26 languages have a Piper voice,
+# but baking in all of them adds ~1.2GB to an image every self-hoster pulls (Pi cluster/ARM
+# VPS included), a cost not everyone needs. Every other language falls back to the browser's
+# own Web Speech API client-side (see index.html's speakText + Notes.razor) - full native
+# coverage for the remaining 19 is a possible future addition, not required for the feature
+# to work everywhere. See docs/TTS-VOICES.md for each voice's license.
 RUN apt-get update && apt-get install -y --no-install-recommends curl espeak-ng && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /app/tts-voices \
     && curl -fsSL -o /app/tts-voices/de.onnx https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/low/de_DE-thorsten-low.onnx \
-    && curl -fsSL -o /app/tts-voices/de.onnx.json https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/low/de_DE-thorsten-low.onnx.json
+    && curl -fsSL -o /app/tts-voices/de.onnx.json https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/low/de_DE-thorsten-low.onnx.json \
+    && curl -fsSL -o /app/tts-voices/en.onnx https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/amy/low/en_US-amy-low.onnx \
+    && curl -fsSL -o /app/tts-voices/en.onnx.json https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/amy/low/en_US-amy-low.onnx.json
 
 FROM base AS final
 # TARGETARCH is set automatically by "docker buildx build --platform ..." (amd64/arm64) -
