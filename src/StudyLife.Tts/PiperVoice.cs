@@ -55,7 +55,23 @@ public sealed class PiperVoice : IDisposable
         _noiseW = inference.GetProperty("noise_w").GetSingle();
     }
 
-    public byte[] SynthesizeWav(string phonemes)
+    public byte[] SynthesizeWav(string phonemes) => SynthesizeWav([phonemes]);
+
+    // Takes one already-phonemized chunk per ONNX inference call rather than the whole note in
+    // one shot - a single call's memory cost grows much faster than linearly with sequence
+    // length (confirmed live: a long note OOMKilled every production pod at a limit that
+    // comfortably handled short notes), so bounding each chunk's length (see TextChunker) bounds
+    // peak memory regardless of the note's total length. Chunks are synthesized and concatenated
+    // as raw samples, WAV-encoded once at the end - the caller hears one continuous clip.
+    public byte[] SynthesizeWav(IEnumerable<string> phonemeChunks)
+    {
+        var allSamples = new List<float>();
+        foreach (var phonemes in phonemeChunks)
+            allSamples.AddRange(RunInference(phonemes));
+        return EncodeWav(allSamples.ToArray(), SampleRate);
+    }
+
+    private float[] RunInference(string phonemes)
     {
         var ids = BuildPhonemeIds(phonemes);
 
@@ -70,8 +86,7 @@ public sealed class PiperVoice : IDisposable
         };
 
         using var results = _session.Run(inputs);
-        var audio = results.First().AsEnumerable<float>().ToArray();
-        return EncodeWav(audio, SampleRate);
+        return results.First().AsEnumerable<float>().ToArray();
     }
 
     // Piper's own convention (rhasspy/piper voice.py): beginning-of-sequence id, then each

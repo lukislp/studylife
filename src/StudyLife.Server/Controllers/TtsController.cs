@@ -61,8 +61,13 @@ public class TtsController : ControllerBase
         var cached = await _cache.GetAsync(cacheKey);
         if (cached != null) return File(cached, "audio/wav");
 
-        var phonemes = _phonemizer.Phonemize(text, voice.EspeakVoice);
-        var wav = voice.SynthesizeWav(phonemes);
+        // Chunked, not one phonemize+inference call over the whole note: a single ONNX
+        // inference call's memory cost grows much faster than linearly with sequence length,
+        // which OOMKilled every production pod on a long, table-heavy note even at a limit
+        // that comfortably handled short ones. TextChunker bounds each call's input length
+        // regardless of how long the overall note is.
+        var phonemeChunks = TextChunker.Chunk(text).Select(chunk => _phonemizer.Phonemize(chunk, voice.EspeakVoice));
+        var wav = voice.SynthesizeWav(phonemeChunks);
         await _cache.SetAsync(cacheKey, wav, new DistributedCacheEntryOptions().SetAbsoluteExpiration(CacheTtl));
         return File(wav, "audio/wav");
     }
