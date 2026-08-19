@@ -1,3 +1,10 @@
+## [1.21.3](https://github.com/lukislp/studylife/compare/v1.21.2...v1.21.3) (2026-08-19)
+
+
+### Bug Fixes
+
+* **tts:** raise gateway timeout, split per sentence, add inter-chunk silence ([d6da8ca](https://github.com/lukislp/studylife/commit/d6da8cac9c2a6c5b8d7b12fba29d21c1619438e8))
+
 ## [1.21.2](https://github.com/lukislp/studylife/compare/v1.21.1...v1.21.2) (2026-08-19)
 
 
