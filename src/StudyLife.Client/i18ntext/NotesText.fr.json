@@ -42,5 +42,6 @@
   "ReadAloudButton": "Lire à voix haute",
   "ReadAloudLoading": "Génération…",
   "ReadAloudUnavailable": "Lecture audio indisponible pour cette langue",
-  "ReadAloudBrowserVoice": "Lecture par la voix du navigateur…"
+  "ReadAloudBrowserVoice": "Lecture par la voix du navigateur…",
+  "ReadAloudTimeout": "Cela prend plus de temps que prévu pour cette note – veuillez réessayer dans un instant."
 }

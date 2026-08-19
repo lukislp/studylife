@@ -42,5 +42,6 @@
   "ReadAloudButton": "Læs højt",
   "ReadAloudLoading": "Genererer…",
   "ReadAloudUnavailable": "Oplæsning ikke tilgængelig for dette sprog",
-  "ReadAloudBrowserVoice": "Læser op med browserens stemme…"
+  "ReadAloudBrowserVoice": "Læser op med browserens stemme…",
+  "ReadAloudTimeout": "Dette tager længere tid end forventet for denne note – prøv igen om lidt."
 }

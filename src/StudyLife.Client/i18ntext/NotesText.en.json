@@ -42,5 +42,6 @@
   "ReadAloudButton": "Read aloud",
   "ReadAloudLoading": "Generating…",
   "ReadAloudUnavailable": "Read-aloud not available for this language",
-  "ReadAloudBrowserVoice": "Browser voice reading…"
+  "ReadAloudBrowserVoice": "Browser voice reading…",
+  "ReadAloudTimeout": "Taking longer than expected for this note – please try again shortly."
 }

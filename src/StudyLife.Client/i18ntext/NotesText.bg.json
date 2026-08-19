@@ -42,5 +42,6 @@
   "ReadAloudButton": "Прочети на глас",
   "ReadAloudLoading": "Генериране…",
   "ReadAloudUnavailable": "Четенето на глас не е налично за този език",
-  "ReadAloudBrowserVoice": "Четене с гласа на браузъра…"
+  "ReadAloudBrowserVoice": "Четене с гласа на браузъра…",
+  "ReadAloudTimeout": "Отнема повече време от очакваното за тази бележка – опитайте отново след малко."
 }

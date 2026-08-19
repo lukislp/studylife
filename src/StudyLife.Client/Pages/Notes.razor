@@ -222,6 +222,10 @@ else
                         {
                             <div style="font-size:0.75rem;color:var(--text3);margin-top:0.5rem">@T.ReadAloudUnavailable</div>
                         }
+                        else if (_ttsTimedOut)
+                        {
+                            <div style="font-size:0.75rem;color:var(--text3);margin-top:0.5rem">@T.ReadAloudTimeout</div>
+                        }
                     </div>
                 </div>
             }
@@ -283,6 +287,7 @@ else
     private bool _ttsLoading;
     private string? _ttsAudioUrl;
     private bool _ttsUnavailable;
+    private bool _ttsTimedOut;
     private bool _ttsBrowserFallbackActive;
     private bool _saving;
     private bool _confirmingDelete;
@@ -426,6 +431,7 @@ else
         _ttsLoading = false;
         _ttsAudioUrl = null;
         _ttsUnavailable = false;
+        _ttsTimedOut = false;
         _ttsBrowserFallbackActive = false;
     }
 
@@ -448,13 +454,13 @@ else
         _ttsLoading = true;
         _ttsAudioUrl = null;
         _ttsUnavailable = false;
+        _ttsTimedOut = false;
         _ttsBrowserFallbackActive = false;
         StateHasChanged();
         var lang = await I18nText.GetCurrentLanguageAsync();
         try
         {
-            var bytes = await Http.GetByteArrayAsync($"api/notes/{_selectedNote.Id}/tts?lang={lang}");
-            _ttsAudioUrl = $"data:audio/wav;base64,{Convert.ToBase64String(bytes)}";
+            _ttsAudioUrl = await FetchAudioDataUrl(_selectedNote.Id, lang);
         }
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
@@ -464,12 +470,31 @@ else
         }
         catch (HttpRequestException)
         {
-            _ttsUnavailable = true;
+            // A long note's first (uncached) synthesis can exceed the gateway's read timeout
+            // even though the server keeps working and caches the result once done - confirmed
+            // live: a request that 504'd to the browser was instantly available on the very
+            // next one. One silent retry after a pause covers exactly that, instead of
+            // surfacing an error for something that's actually still finishing server-side.
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(5));
+                _ttsAudioUrl = await FetchAudioDataUrl(_selectedNote.Id, lang);
+            }
+            catch
+            {
+                _ttsTimedOut = true;
+            }
         }
         finally
         {
             _ttsLoading = false;
         }
+    }
+
+    private async Task<string> FetchAudioDataUrl(int noteId, string lang)
+    {
+        var bytes = await Http.GetByteArrayAsync($"api/notes/{noteId}/tts?lang={lang}");
+        return $"data:audio/wav;base64,{Convert.ToBase64String(bytes)}";
     }
 
     private async Task TryBrowserSpeechFallback(string lang)
