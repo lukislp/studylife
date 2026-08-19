@@ -1,3 +1,10 @@
+# [1.19.0](https://github.com/lukislp/studylife/compare/v1.18.0...v1.19.0) (2026-08-19)
+
+
+### Features
+
+* **tts:** add read-aloud endpoint, playback UI, and CSP fix (SL-2 S3) ([195a197](https://github.com/lukislp/studylife/commit/195a1979f34ea297fb8e41e152846efd32abb3b9))
+
 # [1.18.0](https://github.com/lukislp/studylife/compare/v1.17.0...v1.18.0) (2026-08-19)
 
 
