@@ -417,6 +417,18 @@
             var maxScroll = container.scrollHeight - container.clientHeight;
             container.scrollTop = Math.max(0, Math.min(target, maxScroll));
         }
+
+        // "Read note aloud" fallback for languages without a server-side Piper voice: the
+        // browser's own built-in synthesis, so the feature still works everywhere, just with
+        // whatever voice quality the OS/browser ships - no server round-trip, no audio bytes.
+        function speakText(text, lang) {
+            if (!window.speechSynthesis) return false;
+            window.speechSynthesis.cancel(); // don't stack utterances if clicked again mid-playback
+            var utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = lang;
+            window.speechSynthesis.speak(utterance);
+            return true;
+        }
     </script>
 </body>
 </html>

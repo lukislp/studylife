@@ -214,6 +214,10 @@ else
                         {
                             <audio controls autoplay src="@_ttsAudioUrl" style="width:100%;margin-top:0.5rem"></audio>
                         }
+                        else if (_ttsBrowserFallbackActive)
+                        {
+                            <div style="font-size:0.75rem;color:var(--text3);margin-top:0.5rem">🔊 @T.ReadAloudBrowserVoice</div>
+                        }
                         else if (_ttsUnavailable)
                         {
                             <div style="font-size:0.75rem;color:var(--text3);margin-top:0.5rem">@T.ReadAloudUnavailable</div>
@@ -279,6 +283,7 @@ else
     private bool _ttsLoading;
     private string? _ttsAudioUrl;
     private bool _ttsUnavailable;
+    private bool _ttsBrowserFallbackActive;
     private bool _saving;
     private bool _confirmingDelete;
     private System.Threading.Timer? _debounce;
@@ -421,7 +426,21 @@ else
         _ttsLoading = false;
         _ttsAudioUrl = null;
         _ttsUnavailable = false;
+        _ttsBrowserFallbackActive = false;
     }
+
+    // BCP-47 tags for the Web Speech API fallback - the app's own language codes (used
+    // throughout for i18n and the TTS endpoint's ?lang=) are plain ISO 639-1, but
+    // SpeechSynthesisUtterance.lang wants a full locale tag to pick the right OS voice.
+    private static readonly Dictionary<string, string> SpeechLocales = new()
+    {
+        ["en"] = "en-US", ["de"] = "de-DE", ["fr"] = "fr-FR", ["es"] = "es-ES", ["it"] = "it-IT",
+        ["pt"] = "pt-PT", ["nl"] = "nl-NL", ["da"] = "da-DK", ["sv"] = "sv-SE", ["fi"] = "fi-FI",
+        ["el"] = "el-GR", ["pl"] = "pl-PL", ["cs"] = "cs-CZ", ["sk"] = "sk-SK", ["hu"] = "hu-HU",
+        ["ro"] = "ro-RO", ["bg"] = "bg-BG", ["hr"] = "hr-HR", ["sl"] = "sl-SI", ["et"] = "et-EE",
+        ["lv"] = "lv-LV", ["lt"] = "lt-LT", ["mt"] = "mt-MT", ["ga"] = "ga-IE", ["uk"] = "uk-UA",
+        ["ru"] = "ru-RU",
+    };
 
     private async Task PlayNoteAudio()
     {
@@ -429,12 +448,19 @@ else
         _ttsLoading = true;
         _ttsAudioUrl = null;
         _ttsUnavailable = false;
+        _ttsBrowserFallbackActive = false;
         StateHasChanged();
+        var lang = await I18nText.GetCurrentLanguageAsync();
         try
         {
-            var lang = await I18nText.GetCurrentLanguageAsync();
             var bytes = await Http.GetByteArrayAsync($"api/notes/{_selectedNote.Id}/tts?lang={lang}");
             _ttsAudioUrl = $"data:audio/wav;base64,{Convert.ToBase64String(bytes)}";
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            // No server-side voice for this language (see docs/TTS-VOICES.md) - fall back to
+            // the browser's own synthesis instead of just telling the user it's unavailable.
+            await TryBrowserSpeechFallback(lang);
         }
         catch (HttpRequestException)
         {
@@ -445,6 +471,39 @@ else
             _ttsLoading = false;
         }
     }
+
+    private async Task TryBrowserSpeechFallback(string lang)
+    {
+        var text = ExtractPlainTextForSpeech(_editContent, _editIsMarkdown);
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            _ttsUnavailable = true;
+            return;
+        }
+        var locale = SpeechLocales.GetValueOrDefault(lang, lang);
+        var spoke = await JS.InvokeAsync<bool>("speakText", text, locale);
+        if (!spoke)
+        {
+            _ttsUnavailable = true;
+            return;
+        }
+        _ttsBrowserFallbackActive = true;
+        // No onend callback wired up (would need a DotNetObjectReference just for a status
+        // label) - a rough, length-proportional estimate is enough to clear the indicator
+        // without the note staying "playing" long after the browser voice actually finished.
+        _ = Task.Delay(TimeSpan.FromMilliseconds(Math.Clamp(text.Length * 65, 1500, 20000))).ContinueWith(_ =>
+        {
+            _ttsBrowserFallbackActive = false;
+            InvokeAsync(StateHasChanged);
+        });
+    }
+
+    // Mirrors StudyLife.Tts's MarkdownToSpeechText.Extract server-side - not shared as a
+    // project reference: StudyLife.Tts P/Invokes into a native Linux library (libespeak-ng),
+    // which can't run in the Blazor WASM client, so the whole project isn't referenceable
+    // from here. This one small piece (Markdig -> plain text) is duplicated instead.
+    private static string ExtractPlainTextForSpeech(string? content, bool isMarkdown) =>
+        isMarkdown ? Markdown.ToPlainText(content ?? "", MarkdownPipeline) : content ?? "";
 
     private void SetFormat(bool isMarkdown)
     {

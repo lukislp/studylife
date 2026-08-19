@@ -41,5 +41,6 @@
   "ShowPreviewButton": "Previzualizare",
   "ReadAloudButton": "Citește cu voce tare",
   "ReadAloudLoading": "Se generează…",
-  "ReadAloudUnavailable": "Citirea cu voce tare nu este disponibilă pentru această limbă"
+  "ReadAloudUnavailable": "Citirea cu voce tare nu este disponibilă pentru această limbă",
+  "ReadAloudBrowserVoice": "Se citește cu vocea browserului…"
 }

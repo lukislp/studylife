@@ -41,5 +41,6 @@
   "ShowPreviewButton": "Náhled",
   "ReadAloudButton": "Přečíst nahlas",
   "ReadAloudLoading": "Generuje se…",
-  "ReadAloudUnavailable": "Předčítání není pro tento jazyk dostupné"
+  "ReadAloudUnavailable": "Předčítání není pro tento jazyk dostupné",
+  "ReadAloudBrowserVoice": "Čtení hlasem prohlížeče…"
 }

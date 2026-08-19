@@ -41,5 +41,6 @@
   "ShowPreviewButton": "Anteprima",
   "ReadAloudButton": "Leggi ad alta voce",
   "ReadAloudLoading": "Generazione…",
-  "ReadAloudUnavailable": "Lettura vocale non disponibile per questa lingua"
+  "ReadAloudUnavailable": "Lettura vocale non disponibile per questa lingua",
+  "ReadAloudBrowserVoice": "Lettura con la voce del browser…"
 }

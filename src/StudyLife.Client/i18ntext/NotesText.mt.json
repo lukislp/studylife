@@ -41,5 +41,6 @@
   "ShowPreviewButton": "Preview",
   "ReadAloudButton": "Aqra b'leħen għoli",
   "ReadAloudLoading": "Qed jiġġenera…",
-  "ReadAloudUnavailable": "Il-qari b'leħen mhux disponibbli għal dan il-lingwa"
+  "ReadAloudUnavailable": "Il-qari b'leħen mhux disponibbli għal dan il-lingwa",
+  "ReadAloudBrowserVoice": "Qed jinqara bil-vuċi tal-browser…"
 }

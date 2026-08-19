@@ -41,5 +41,6 @@
   "ShowPreviewButton": "Eelvaade",
   "ReadAloudButton": "Loe ette",
   "ReadAloudLoading": "Genereerimine…",
-  "ReadAloudUnavailable": "Ettelugemine pole selle keele jaoks saadaval"
+  "ReadAloudUnavailable": "Ettelugemine pole selle keele jaoks saadaval",
+  "ReadAloudBrowserVoice": "Loetakse brauseri häälega…"
 }
