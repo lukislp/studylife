@@ -1,3 +1,10 @@
+## [1.21.6](https://github.com/lukislp/studylife/compare/v1.21.5...v1.21.6) (2026-08-19)
+
+
+### Bug Fixes
+
+* **tts:** recognize more punctuation as pauses, dedupe slow retries ([989b7d1](https://github.com/lukislp/studylife/commit/989b7d1397183e86c1f5b76ebc6481dd50610815))
+
 ## [1.21.5](https://github.com/lukislp/studylife/compare/v1.21.4...v1.21.5) (2026-08-19)
 
 
