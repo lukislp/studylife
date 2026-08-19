@@ -1,3 +1,10 @@
+# [1.20.0](https://github.com/lukislp/studylife/compare/v1.19.0...v1.20.0) (2026-08-19)
+
+
+### Features
+
+* **tts:** bake English voice + Web Speech API fallback (SL-2 S4) ([cf0a0ca](https://github.com/lukislp/studylife/commit/cf0a0ca1accab8e2126768a70346d4c4809185c8))
+
 # [1.19.0](https://github.com/lukislp/studylife/compare/v1.18.0...v1.19.0) (2026-08-19)
 
 
