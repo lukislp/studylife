@@ -24,3 +24,21 @@ sv, fi, el, pl, cs, sk, hu, ro, bg, sl, lv, uk, ru (21 of the app's 26 languages
 de/en above). No Piper voice exists (as of this writing) for: hr, et, lt, mt, ga - the Web Speech
 API fallback is the only option for these regardless of future additions, unless a suitable model
 appears upstream.
+
+## Caching
+
+`TtsController` caches synthesized audio in the app's existing `IDistributedCache` (in-memory by
+default, Redis in the horizontally-scaled deployment - the same instance already used elsewhere,
+see `docs/ARCHITECTURE.md`), keyed by a SHA-256 hash of the exact synthesized text + language,
+**not** the note ID. Two practical effects of that choice:
+
+- Editing a note produces a different hash automatically, so the cache never serves stale audio
+  for edited content - no explicit invalidation code needed.
+- Re-reading an unchanged note (or clicking "Vorlesen" again) skips phonemization + ONNX
+  inference entirely. Measured locally (linux/amd64, single-container): a cold request for a
+  ~318KB/~10s note took **1.16s**; the identical warm request took **10ms** - about **115x**
+  faster, and byte-identical to the cold response.
+
+Entries expire after 24h (`TtsController.CacheTtl`) - long enough to cover same-day re-reads,
+short enough that a single-container deployment's in-memory cache doesn't accumulate audio blobs
+indefinitely on Raspberry-Pi-class hardware.
