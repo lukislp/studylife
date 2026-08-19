@@ -1,3 +1,10 @@
+## [1.21.2](https://github.com/lukislp/studylife/compare/v1.21.1...v1.21.2) (2026-08-19)
+
+
+### Bug Fixes
+
+* **tts:** chunk long notes instead of one ONNX call for the whole text ([d32985b](https://github.com/lukislp/studylife/commit/d32985b11800dc66be5a5c8098a9d6334a92811c))
+
 ## [1.21.1](https://github.com/lukislp/studylife/compare/v1.21.0...v1.21.1) (2026-08-19)
 
 
