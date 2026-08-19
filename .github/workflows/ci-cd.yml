@@ -38,6 +38,7 @@ jobs:
       - run: dotnet workload restore StudyLife.sln
       - run: dotnet test tests/StudyLife.Shared.Tests/StudyLife.Shared.Tests.csproj --configuration ${{ env.CONFIGURATION }} --logger "junit;LogFilePath=TestResults/shared-tests-junit.xml" --collect:"XPlat Code Coverage"
       - run: dotnet test tests/StudyLife.Server.Tests/StudyLife.Server.Tests.csproj --configuration ${{ env.CONFIGURATION }} --logger "junit;LogFilePath=TestResults/server-tests-junit.xml" --collect:"XPlat Code Coverage"
+      - run: dotnet test tests/StudyLife.Tts.Tests/StudyLife.Tts.Tests.csproj --configuration ${{ env.CONFIGURATION }} --logger "junit;LogFilePath=TestResults/tts-tests-junit.xml" --collect:"XPlat Code Coverage"
       - if: always()
         uses: actions/upload-artifact@v7.0.1
         with:
@@ -45,6 +46,7 @@ jobs:
           path: |
             tests/StudyLife.Shared.Tests/TestResults/shared-tests-junit.xml
             tests/StudyLife.Server.Tests/TestResults/server-tests-junit.xml
+            tests/StudyLife.Tts.Tests/TestResults/tts-tests-junit.xml
           retention-days: 7
       # Coverage badge (self-hosted, no external service): merges both projects' cobertura
       # reports, scoped to StudyLife.Server/StudyLife.Shared - StudyLife.Client (Blazor UI
