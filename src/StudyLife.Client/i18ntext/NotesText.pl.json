@@ -42,5 +42,6 @@
   "ReadAloudButton": "Czytaj na głos",
   "ReadAloudLoading": "Generowanie…",
   "ReadAloudUnavailable": "Czytanie na głos niedostępne dla tego języka",
-  "ReadAloudBrowserVoice": "Czytanie głosem przeglądarki…"
+  "ReadAloudBrowserVoice": "Czytanie głosem przeglądarki…",
+  "ReadAloudTimeout": "To trwa dłużej niż oczekiwano w przypadku tej notatki – spróbuj ponownie za chwilę."
 }

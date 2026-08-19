@@ -42,5 +42,6 @@
   "ReadAloudButton": "Aqra b'leħen għoli",
   "ReadAloudLoading": "Qed jiġġenera…",
   "ReadAloudUnavailable": "Il-qari b'leħen mhux disponibbli għal dan il-lingwa",
-  "ReadAloudBrowserVoice": "Qed jinqara bil-vuċi tal-browser…"
+  "ReadAloudBrowserVoice": "Qed jinqara bil-vuċi tal-browser…",
+  "ReadAloudTimeout": "Dan qed jieħu aktar żmien milli mistenni għal din in-nota – jekk jogħġbok erġa' pprova fi ftit."
 }

@@ -42,5 +42,6 @@
   "ReadAloudButton": "Vorlesen",
   "ReadAloudLoading": "Wird generiert…",
   "ReadAloudUnavailable": "Vorlesen für diese Sprache nicht verfügbar",
-  "ReadAloudBrowserVoice": "Browser-Stimme liest vor…"
+  "ReadAloudBrowserVoice": "Browser-Stimme liest vor…",
+  "ReadAloudTimeout": "Dauert bei dieser Notiz länger als erwartet – bitte gleich nochmal versuchen."
 }

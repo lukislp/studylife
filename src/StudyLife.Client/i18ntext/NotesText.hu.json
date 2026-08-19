@@ -42,5 +42,6 @@
   "ReadAloudButton": "Felolvasás",
   "ReadAloudLoading": "Generálás…",
   "ReadAloudUnavailable": "A felolvasás ehhez a nyelvhez nem érhető el",
-  "ReadAloudBrowserVoice": "Felolvasás a böngésző hangjával…"
+  "ReadAloudBrowserVoice": "Felolvasás a böngésző hangjával…",
+  "ReadAloudTimeout": "Ennél a jegyzetnél a vártnál tovább tart – kérjük, próbáld újra kicsit később."
 }
