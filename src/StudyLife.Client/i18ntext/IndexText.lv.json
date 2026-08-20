@@ -101,7 +101,7 @@
   "FocusScorePartial": "Daļēji",
   "FocusScoreMissed": "Palaists garām",
   "ReadinessScoreLabel": "Gatavība mācībām",
-  "ReadinessRatioText": "salīdzinājumā ar jūsu pēdējām 30 dienām",
+  "ReadinessValueFormat": "{0} ms salīdzinājumā ar vidējo {1} ms (30 dienas)",
   "ReadinessAboveBaseline": "Virs jūsu vidējā rādītāja",
   "ReadinessAroundBaseline": "Ap jūsu vidējo rādītāju",
   "ReadinessBelowBaseline": "Zem jūsu vidējā rādītāja",

@@ -101,7 +101,7 @@
   "FocusScorePartial": "Partially",
   "FocusScoreMissed": "Missed",
   "ReadinessScoreLabel": "Study readiness",
-  "ReadinessRatioText": "vs. your last 30 days",
+  "ReadinessValueFormat": "{0} ms vs. avg {1} ms (30 days)",
   "ReadinessAboveBaseline": "Above your baseline",
   "ReadinessAroundBaseline": "Around your baseline",
   "ReadinessBelowBaseline": "Below your baseline",

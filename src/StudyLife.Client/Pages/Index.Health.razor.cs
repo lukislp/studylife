@@ -10,6 +10,8 @@ public partial class Index
     private bool _readinessVisible;
     private double _readinessPercent;
     private string _readinessStatus = "";
+    private double _readinessTodayMs;
+    private double _readinessBaselineMs;
     private const int ReadinessMinSamples = 14;
 
     private string ReadinessStatusText => _readinessStatus switch
@@ -19,11 +21,22 @@ public partial class Index
         _ => T.ReadinessAroundBaseline ?? "",
     };
 
+    // The percent/badge alone don't explain themselves - e.g. 100% just means the Z-score hit
+    // the display clamp (+2.5 SD), which could be a genuine outlier OR an artifact of a small,
+    // low-variance baseline (only ReadinessMinSamples days required). Showing the actual ms
+    // values lets it be sanity-checked against the Health app instead of trusting a bare score.
+    private string ReadinessValueText => string.Format(
+        T.ReadinessValueFormat ?? "",
+        _readinessTodayMs.ToString("0"),
+        _readinessBaselineMs.ToString("0"));
+
     private void BuildReadinessScore(IReadOnlyList<double>? hrvSamples)
     {
         _readinessVisible = false;
         _readinessPercent = 0;
         _readinessStatus = "";
+        _readinessTodayMs = 0;
+        _readinessBaselineMs = 0;
 
         if (hrvSamples == null || hrvSamples.Count < ReadinessMinSamples) return;
 
@@ -40,6 +53,8 @@ public partial class Index
         // Z of 0 (exactly average) -> 50%, +-2.5 (rare) saturates the display at 0/100%.
         _readinessPercent = Math.Clamp(50 + z * 20, 0, 100);
         _readinessStatus = z >= 0.5 ? "above" : z <= -0.5 ? "below" : "around";
+        _readinessTodayMs = today;
+        _readinessBaselineMs = mean;
         _readinessVisible = true;
     }
 }

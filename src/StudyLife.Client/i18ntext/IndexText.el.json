@@ -101,7 +101,7 @@
   "FocusScorePartial": "Μερικώς",
   "FocusScoreMissed": "Χάθηκε",
   "ReadinessScoreLabel": "Ετοιμότητα μελέτης",
-  "ReadinessRatioText": "σε σύγκριση με τις τελευταίες 30 ημέρες σας",
+  "ReadinessValueFormat": "{0} ms σε σύγκριση με μέσο όρο {1} ms (30 ημέρες)",
   "ReadinessAboveBaseline": "Πάνω από τον μέσο όρο σας",
   "ReadinessAroundBaseline": "Γύρω από τον μέσο όρο σας",
   "ReadinessBelowBaseline": "Κάτω από τον μέσο όρο σας",

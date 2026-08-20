@@ -101,7 +101,7 @@
   "FocusScorePartial": "Iš dalies",
   "FocusScoreMissed": "Praleista",
   "ReadinessScoreLabel": "Pasirengimas mokytis",
-  "ReadinessRatioText": "palyginti su jūsų paskutinėmis 30 dienų",
+  "ReadinessValueFormat": "{0} ms palyginti su vidurkiu {1} ms (30 dienų)",
   "ReadinessAboveBaseline": "Virš jūsų vidurkio",
   "ReadinessAroundBaseline": "Ties jūsų vidurkiu",
   "ReadinessBelowBaseline": "Žemiau jūsų vidurkio",
