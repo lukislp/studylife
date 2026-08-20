@@ -464,6 +464,12 @@ else
 
     private void ResetDictationState()
     {
+        _dictationAutoStopTimer?.Dispose();
+        _dictationAutoStopTimer = null;
+        // Switching notes mid-recording would otherwise leave the MediaRecorder (and the
+        // browser's mic-active indicator) running in the background, recording into a note
+        // that's no longer even selected - stop it, don't just forget about it client-side.
+        if (_dictationRecording) _ = JS.InvokeVoidAsync("cancelDictationRecording");
         _dictationRecording = false;
         _dictationProcessing = false;
         _dictationUnavailable = false;
@@ -586,6 +592,16 @@ else
         else await StartDictation();
     }
 
+    // Whisper itself copes fine with long audio memory-wise (measured: ~830MB peak for 6+
+    // minutes on the same base model shipped here, no runaway growth like Piper's per-call ONNX
+    // cost) - the real problem with letting a dictation run indefinitely is transcription
+    // quality, which visibly drifts/degrades the longer (especially the more repetitive) the
+    // audio gets. Auto-stopping well before that point is simpler and more predictable than
+    // trying to chunk audio client-side purely to work around a memory problem that doesn't
+    // actually exist here.
+    private static readonly TimeSpan MaxDictationLength = TimeSpan.FromMinutes(3);
+    private System.Threading.Timer? _dictationAutoStopTimer;
+
     private async Task StartDictation()
     {
         _dictationUnavailable = false;
@@ -600,12 +616,18 @@ else
             return;
         }
         _dictationRecording = true;
+        _dictationAutoStopTimer = new System.Threading.Timer(
+            async _ => await InvokeAsync(async () => await StopDictation()),
+            null, MaxDictationLength, Timeout.InfiniteTimeSpan);
     }
 
     private sealed record DictateResponse(string Text);
 
     private async Task StopDictation()
     {
+        if (!_dictationRecording) return; // already stopped (e.g. the auto-stop timer beat a manual click)
+        _dictationAutoStopTimer?.Dispose();
+        _dictationAutoStopTimer = null;
         _dictationRecording = false;
         _dictationProcessing = true;
         StateHasChanged();
@@ -623,7 +645,12 @@ else
             audioContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("audio/wav");
             content.Add(audioContent, "audio", "recording.wav");
 
-            using var response = await Http.PostAsync($"api/dictate?lang={lang}", content);
+            // Longer than HttpClient's 100s default - a Pi transcribing a nearly-3-minute
+            // recording (MaxDictationLength) needs real headroom, same reasoning as TTS's
+            // PerAttemptTimeout. No retry loop here (unlike PlayNoteAudio): re-uploading the
+            // same recording on timeout would just make an already-slow Pi redo the same work.
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(150));
+            using var response = await Http.PostAsync($"api/dictate?lang={lang}", content, cts.Token);
             if (!response.IsSuccessStatusCode)
             {
                 _dictationFailed = true;
