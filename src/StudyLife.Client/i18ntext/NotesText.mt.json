@@ -43,5 +43,10 @@
   "ReadAloudLoading": "Qed jiġġenera…",
   "ReadAloudUnavailable": "Il-qari b'leħen mhux disponibbli għal dan il-lingwa",
   "ReadAloudBrowserVoice": "Qed jinqara bil-vuċi tal-browser…",
-  "ReadAloudTimeout": "Dan qed jieħu aktar żmien milli mistenni għal din in-nota – jekk jogħġbok erġa' pprova fi ftit."
+  "ReadAloudTimeout": "Dan qed jieħu aktar żmien milli mistenni għal din in-nota – jekk jogħġbok erġa' pprova fi ftit.",
+  "DictateButton": "Detta",
+  "DictateStopButton": "Waqqaf",
+  "DictateProcessing": "Qed jiġi ttraskritt…",
+  "DictateUnavailable": "Id-dittatura bil-vuċi mhux disponibbli f'dan il-browser",
+  "DictateFailed": "It-traskrizzjoni falliet – jekk jogħġbok erġa' pprova."
 }
