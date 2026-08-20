@@ -43,5 +43,10 @@
   "ReadAloudLoading": "Genererer…",
   "ReadAloudUnavailable": "Oplæsning ikke tilgængelig for dette sprog",
   "ReadAloudBrowserVoice": "Læser op med browserens stemme…",
-  "ReadAloudTimeout": "Dette tager længere tid end forventet for denne note – prøv igen om lidt."
+  "ReadAloudTimeout": "Dette tager længere tid end forventet for denne note – prøv igen om lidt.",
+  "DictateButton": "Diktér",
+  "DictateStopButton": "Stop",
+  "DictateProcessing": "Transskriberer…",
+  "DictateUnavailable": "Stemmediktering er ikke tilgængelig i denne browser",
+  "DictateFailed": "Transskription mislykkedes – prøv igen."
 }

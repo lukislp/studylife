@@ -43,5 +43,10 @@
   "ReadAloudLoading": "Ag giniúint…",
   "ReadAloudUnavailable": "Níl léamh os ard ar fáil don teanga seo",
   "ReadAloudBrowserVoice": "Á léamh amach le guth an bhrabhsálaí…",
-  "ReadAloudTimeout": "Tá sé seo ag glacadh níos faide ná mar a bhíothas ag súil leis don nóta seo – bain triail eile as gan mhoill."
+  "ReadAloudTimeout": "Tá sé seo ag glacadh níos faide ná mar a bhíothas ag súil leis don nóta seo – bain triail eile as gan mhoill.",
+  "DictateButton": "Deachtaigh",
+  "DictateStopButton": "Stad",
+  "DictateProcessing": "Ag trascríobh…",
+  "DictateUnavailable": "Níl deachtú gutha ar fáil sa bhrabhsálaí seo",
+  "DictateFailed": "Theip ar an trascríobh – bain triail eile as."
 }
