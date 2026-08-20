@@ -1,3 +1,10 @@
+# [1.31.0](https://github.com/lukislp/studylife/compare/v1.30.0...v1.31.0) (2026-08-20)
+
+
+### Features
+
+* add movement-break reminder to Focus Timer (client-side, S2b) ([ccc6cac](https://github.com/lukislp/studylife/commit/ccc6cacae0fd491b34ed65b65db22be59b5acb52))
+
 # [1.30.0](https://github.com/lukislp/studylife/compare/v1.29.0...v1.30.0) (2026-08-20)
 
 
