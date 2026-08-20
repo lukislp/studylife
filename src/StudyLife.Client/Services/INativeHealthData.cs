@@ -29,6 +29,14 @@ public interface INativeHealthData
     /// has moved at all during a long uninterrupted focus stretch. Null if authorization was
     /// never granted/denied (distinct from a genuine 0 steps).</summary>
     Task<int?> GetStepsSinceAsync(int minutesAgo) => Task.FromResult<int?>(null);
+
+    /// <summary>Cardio Fitness (VO2max, ml/(kg·min)) history for the last <paramref name="days"/>
+    /// days, oldest first - unlike HRV/sleep, watchOS computes these roughly monthly (from
+    /// outdoor walk/run workouts), so readings are sparse rather than daily. Null if
+    /// authorization was never granted/denied, or if there simply are no readings in the
+    /// window (e.g. no Watch workout history) - the Stats page card treats both the same way.</summary>
+    Task<IReadOnlyList<(DateTime Date, double Vo2Max)>?> GetCardioFitnessHistoryAsync(int days) =>
+        Task.FromResult<IReadOnlyList<(DateTime Date, double Vo2Max)>?>(null);
 }
 
 /// <summary>Default registration in the browser client (Program.cs).</summary>
