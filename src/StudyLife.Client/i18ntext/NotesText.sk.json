@@ -43,5 +43,10 @@
   "ReadAloudLoading": "Generuje sa…",
   "ReadAloudUnavailable": "Predčítanie nie je pre tento jazyk dostupné",
   "ReadAloudBrowserVoice": "Číta sa hlasom prehliadača…",
-  "ReadAloudTimeout": "Pri tejto poznámke to trvá dlhšie, ako sa očakávalo – skúste to o chvíľu znova."
+  "ReadAloudTimeout": "Pri tejto poznámke to trvá dlhšie, ako sa očakávalo – skúste to o chvíľu znova.",
+  "DictateButton": "Diktovať",
+  "DictateStopButton": "Zastaviť",
+  "DictateProcessing": "Prepisuje sa…",
+  "DictateUnavailable": "Hlasové diktovanie nie je v tomto prehliadači k dispozícii",
+  "DictateFailed": "Prepis zlyhal – skúste to prosím znova."
 }

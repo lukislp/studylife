@@ -43,5 +43,10 @@
   "ReadAloudLoading": "Génération…",
   "ReadAloudUnavailable": "Lecture audio indisponible pour cette langue",
   "ReadAloudBrowserVoice": "Lecture par la voix du navigateur…",
-  "ReadAloudTimeout": "Cela prend plus de temps que prévu pour cette note – veuillez réessayer dans un instant."
+  "ReadAloudTimeout": "Cela prend plus de temps que prévu pour cette note – veuillez réessayer dans un instant.",
+  "DictateButton": "Dicter",
+  "DictateStopButton": "Arrêter",
+  "DictateProcessing": "Transcription…",
+  "DictateUnavailable": "La dictée vocale n'est pas disponible dans ce navigateur",
+  "DictateFailed": "Échec de la transcription – veuillez réessayer."
 }

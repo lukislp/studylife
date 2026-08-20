@@ -43,5 +43,10 @@
   "ReadAloudLoading": "Generiranje…",
   "ReadAloudUnavailable": "Čitanje naglas nije dostupno za ovaj jezik",
   "ReadAloudBrowserVoice": "Čitanje glasom preglednika…",
-  "ReadAloudTimeout": "Ovo traje dulje nego što se očekivalo za ovu bilješku – pokušajte ponovno za trenutak."
+  "ReadAloudTimeout": "Ovo traje dulje nego što se očekivalo za ovu bilješku – pokušajte ponovno za trenutak.",
+  "DictateButton": "Diktiraj",
+  "DictateStopButton": "Zaustavi",
+  "DictateProcessing": "Transkribiranje…",
+  "DictateUnavailable": "Glasovno diktiranje nije dostupno u ovom pregledniku",
+  "DictateFailed": "Transkripcija nije uspjela – pokušajte ponovno."
 }
