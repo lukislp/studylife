@@ -1,3 +1,10 @@
+# [1.26.0](https://github.com/lukislp/studylife/compare/v1.25.1...v1.26.0) (2026-08-20)
+
+
+### Features
+
+* **stt:** handle silent recordings, add browser recognition fallback (SL-3 S5) ([8afe392](https://github.com/lukislp/studylife/commit/8afe392f8872257e79b64b913d5644fb8f81aa54))
+
 ## [1.25.1](https://github.com/lukislp/studylife/compare/v1.25.0...v1.25.1) (2026-08-20)
 
 
