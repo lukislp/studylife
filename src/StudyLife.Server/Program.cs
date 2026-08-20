@@ -260,6 +260,11 @@ builder.Services.AddSingleton<VapidKeysHolder>();
 builder.Services.AddSingleton(new StudyLife.Tts.PiperVoiceRegistry(
     builder.Configuration["Tts:VoicesDirectory"] ?? Path.Combine(builder.Environment.ContentRootPath, "tts-voices")));
 builder.Services.AddSingleton<StudyLife.Tts.EspeakPhonemizer>();
+// Voice dictation: one multilingual Whisper model (see Dockerfile), unlike PiperVoiceRegistry's
+// per-language voices - loaded once at startup instead of lazily, since (unlike TTS voices)
+// there's only ever the one model to load, no "which languages are actually present" question.
+builder.Services.AddSingleton(new StudyLife.Stt.WhisperTranscriber(
+    builder.Configuration["Stt:ModelPath"] ?? Path.Combine(builder.Environment.ContentRootPath, "stt-model", "ggml-base.bin")));
 // Worker:Enabled disables BackgroundTaskService (30s tick loop: push reminders, reports, maintenance)
 // when this process is a stateless web pod in scaled operation (docker-
 // compose.scale.yml/k8s/) - there the worker runs as its OWN deployment. Default true =
@@ -572,7 +577,13 @@ if (string.Equals(app.Configuration["DEMO_MODE"], "true", StringComparison.Ordin
             && !HttpMethods.IsHead(context.Request.Method)
             && !HttpMethods.IsOptions(context.Request.Method)
             && !(context.Request.Path.StartsWithSegments("/api/auth/demo-login", out var demoRemainder)
-                 && string.IsNullOrEmpty(demoRemainder.Value)))
+                 && string.IsNullOrEmpty(demoRemainder.Value))
+            // Same reasoning as TtsController being deliberately GET: dictation is POST only
+            // because file uploads need a body, but it's just as pure a transform+return
+            // operation - nothing persisted, so it's exempted here instead of appearing to
+            // "fail to save" on the demo the way an actual blocked note edit correctly does.
+            && !(context.Request.Path.StartsWithSegments("/api/dictate", out var dictateRemainder)
+                 && string.IsNullOrEmpty(dictateRemainder.Value)))
         {
             context.Response.StatusCode = StatusCodes.Status403Forbidden;
             await context.Response.WriteAsJsonAsync(new { error = "read-only demo instance - changes aren't saved" });
