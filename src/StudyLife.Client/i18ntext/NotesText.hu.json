@@ -43,5 +43,10 @@
   "ReadAloudLoading": "Generálás…",
   "ReadAloudUnavailable": "A felolvasás ehhez a nyelvhez nem érhető el",
   "ReadAloudBrowserVoice": "Felolvasás a böngésző hangjával…",
-  "ReadAloudTimeout": "Ennél a jegyzetnél a vártnál tovább tart – kérjük, próbáld újra kicsit később."
+  "ReadAloudTimeout": "Ennél a jegyzetnél a vártnál tovább tart – kérjük, próbáld újra kicsit később.",
+  "DictateButton": "Diktálás",
+  "DictateStopButton": "Leállítás",
+  "DictateProcessing": "Átírás…",
+  "DictateUnavailable": "A hangalapú diktálás nem érhető el ebben a böngészőben",
+  "DictateFailed": "Az átírás sikertelen – kérjük, próbáld újra."
 }

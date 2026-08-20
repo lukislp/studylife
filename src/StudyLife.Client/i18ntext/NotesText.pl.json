@@ -43,5 +43,10 @@
   "ReadAloudLoading": "Generowanie…",
   "ReadAloudUnavailable": "Czytanie na głos niedostępne dla tego języka",
   "ReadAloudBrowserVoice": "Czytanie głosem przeglądarki…",
-  "ReadAloudTimeout": "To trwa dłużej niż oczekiwano w przypadku tej notatki – spróbuj ponownie za chwilę."
+  "ReadAloudTimeout": "To trwa dłużej niż oczekiwano w przypadku tej notatki – spróbuj ponownie za chwilę.",
+  "DictateButton": "Dyktuj",
+  "DictateStopButton": "Zatrzymaj",
+  "DictateProcessing": "Transkrypcja…",
+  "DictateUnavailable": "Dyktowanie głosowe nie jest dostępne w tej przeglądarce",
+  "DictateFailed": "Transkrypcja nie powiodła się – spróbuj ponownie."
 }

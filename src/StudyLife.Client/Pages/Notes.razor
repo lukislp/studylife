@@ -196,6 +196,20 @@ else
                                         🔊 @(_ttsLoading ? T.ReadAloudLoading : T.ReadAloudButton)
                                     </button>
                                 }
+                                <button type="button" id="note-dictate-btn" class="btn-secondary @(_dictationRecording ? "note-dictate-recording" : "")" style="font-size:0.75rem;padding:0.25rem 0.6rem;border-radius:6px" disabled="@_dictationProcessing" @onclick="ToggleDictation">
+                                    @if (_dictationRecording)
+                                    {
+                                        <text>⏹️ @T.DictateStopButton</text>
+                                    }
+                                    else if (_dictationProcessing)
+                                    {
+                                        <text>🎙️ @T.DictateProcessing</text>
+                                    }
+                                    else
+                                    {
+                                        <text>🎙️ @T.DictateButton</text>
+                                    }
+                                </button>
                             </div>
                         </div>
                         @if (_editIsMarkdown && _showMarkdownPreview)
@@ -209,6 +223,14 @@ else
                                       @bind="_editContent"
                                       @bind:event="oninput"
                                       @bind:after="ScheduleSave"></textarea>
+                        }
+                        @if (_dictationUnavailable)
+                        {
+                            <div style="font-size:0.75rem;color:var(--text3);margin-top:0.5rem">@T.DictateUnavailable</div>
+                        }
+                        else if (_dictationFailed)
+                        {
+                            <div style="font-size:0.75rem;color:var(--text3);margin-top:0.5rem">@T.DictateFailed</div>
                         }
                         @if (_ttsAudioUrl != null)
                         {
@@ -289,6 +311,10 @@ else
     private bool _ttsUnavailable;
     private bool _ttsTimedOut;
     private bool _ttsBrowserFallbackActive;
+    private bool _dictationRecording;
+    private bool _dictationProcessing;
+    private bool _dictationUnavailable;
+    private bool _dictationFailed;
     private bool _saving;
     private bool _confirmingDelete;
     private System.Threading.Timer? _debounce;
@@ -424,6 +450,7 @@ else
         _showMarkdownPreview = note.IsMarkdown;
         _confirmingDelete = false;
         ResetTtsState();
+        ResetDictationState();
     }
 
     private void ResetTtsState()
@@ -433,6 +460,14 @@ else
         _ttsUnavailable = false;
         _ttsTimedOut = false;
         _ttsBrowserFallbackActive = false;
+    }
+
+    private void ResetDictationState()
+    {
+        _dictationRecording = false;
+        _dictationProcessing = false;
+        _dictationUnavailable = false;
+        _dictationFailed = false;
     }
 
     // BCP-47 tags for the Web Speech API fallback - the app's own language codes (used
@@ -540,6 +575,78 @@ else
             _ttsBrowserFallbackActive = false;
             InvokeAsync(StateHasChanged);
         });
+    }
+
+    // Voice dictation ("speak instead of type") - the reverse of PlayNoteAudio. Works on notes
+    // that aren't saved yet too (unlike read-aloud, which needs a persisted note server-side to
+    // read from): transcription only depends on the recorded audio, nothing about the note.
+    private async Task ToggleDictation()
+    {
+        if (_dictationRecording) await StopDictation();
+        else await StartDictation();
+    }
+
+    private async Task StartDictation()
+    {
+        _dictationUnavailable = false;
+        _dictationFailed = false;
+        var started = await JS.InvokeAsync<bool>("startDictationRecording");
+        if (!started)
+        {
+            // No MediaRecorder support, or the user denied/has no microphone - JS can't tell
+            // these apart from getUserMedia's rejected promise alone, and the exact reason
+            // doesn't change what the user needs to do next either way.
+            _dictationUnavailable = true;
+            return;
+        }
+        _dictationRecording = true;
+    }
+
+    private sealed record DictateResponse(string Text);
+
+    private async Task StopDictation()
+    {
+        _dictationRecording = false;
+        _dictationProcessing = true;
+        StateHasChanged();
+        try
+        {
+            // JS resamples/encodes to 16 kHz mono WAV client-side (same format PiperVoice
+            // already produces server-side) - avoids adding an audio transcoding dependency to
+            // the server for what the browser's own Web Audio API already does natively.
+            var wavBase64 = await JS.InvokeAsync<string>("stopDictationRecording");
+            var wavBytes = Convert.FromBase64String(wavBase64);
+
+            var lang = await I18nText.GetCurrentLanguageAsync();
+            using var content = new MultipartFormDataContent();
+            var audioContent = new ByteArrayContent(wavBytes);
+            audioContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("audio/wav");
+            content.Add(audioContent, "audio", "recording.wav");
+
+            using var response = await Http.PostAsync($"api/dictate?lang={lang}", content);
+            if (!response.IsSuccessStatusCode)
+            {
+                _dictationFailed = true;
+                return;
+            }
+            var result = await response.Content.ReadFromJsonAsync<DictateResponse>();
+            if (string.IsNullOrWhiteSpace(result?.Text))
+            {
+                // Empty transcription (silence, too short, or a garbled recording) - not an
+                // error worth alarming the user over, just nothing to insert.
+                return;
+            }
+            _editContent = string.IsNullOrWhiteSpace(_editContent) ? result.Text : $"{_editContent} {result.Text}";
+            ScheduleSave();
+        }
+        catch
+        {
+            _dictationFailed = true;
+        }
+        finally
+        {
+            _dictationProcessing = false;
+        }
     }
 
     // Mirrors StudyLife.Tts's MarkdownToSpeechText.Extract server-side - not shared as a
