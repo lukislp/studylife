@@ -57,4 +57,44 @@ public partial class Index
         _readinessBaselineMs = mean;
         _readinessVisible = true;
     }
+
+    // Sleep consistency: unlike readiness, this isn't "today vs. baseline" - it's "how variable
+    // has bedtime been lately," so the displayed statistic is the rolling standard deviation of
+    // onset times itself, not a Z-score. Needs at least SleepConsistencyMinNights of history.
+    private bool _sleepConsistencyVisible;
+    private double _sleepConsistencyPercent;
+    private string _sleepConsistencyStatus = "";
+    private double _sleepConsistencyStdDevMinutes;
+    private const int SleepConsistencyMinNights = 14;
+
+    private string SleepConsistencyStatusText => _sleepConsistencyStatus switch
+    {
+        "good" => T.SleepConsistencyGood ?? "",
+        "poor" => T.SleepConsistencyPoor ?? "",
+        _ => T.SleepConsistencyModerate ?? "",
+    };
+
+    private string SleepConsistencyValueText => string.Format(
+        T.SleepConsistencyValueFormat ?? "",
+        _sleepConsistencyStdDevMinutes.ToString("0"));
+
+    private void BuildSleepConsistency(IReadOnlyList<double>? sleepOnsetMinutes)
+    {
+        _sleepConsistencyVisible = false;
+        _sleepConsistencyPercent = 0;
+        _sleepConsistencyStatus = "";
+        _sleepConsistencyStdDevMinutes = 0;
+
+        if (sleepOnsetMinutes == null || sleepOnsetMinutes.Count < SleepConsistencyMinNights) return;
+
+        var mean = sleepOnsetMinutes.Average();
+        var variance = sleepOnsetMinutes.Sum(v => (v - mean) * (v - mean)) / sleepOnsetMinutes.Count;
+        var stdDev = Math.Sqrt(variance);
+
+        // 0 min spread -> 100%, 90+ min spread -> 0%.
+        _sleepConsistencyPercent = Math.Clamp(100 - stdDev / 90.0 * 100, 0, 100);
+        _sleepConsistencyStatus = stdDev <= 30 ? "good" : stdDev >= 60 ? "poor" : "moderate";
+        _sleepConsistencyStdDevMinutes = stdDev;
+        _sleepConsistencyVisible = true;
+    }
 }
