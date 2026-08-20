@@ -1,3 +1,10 @@
+# [1.23.0](https://github.com/lukislp/studylife/compare/v1.22.0...v1.23.0) (2026-08-20)
+
+
+### Features
+
+* **stt:** add voice dictation endpoint (SL-3 S2) ([e29782c](https://github.com/lukislp/studylife/commit/e29782cb55f8016aa5c5c4615ad8653018ae8a6e))
+
 # [1.22.0](https://github.com/lukislp/studylife/compare/v1.21.6...v1.22.0) (2026-08-20)
 
 
