@@ -41,6 +41,7 @@ builder.Services.AddScoped<INativeAppAuth, NoNativeAppAuth>();
 builder.Services.AddScoped<INativePush, NoNativePush>();
 builder.Services.AddScoped<INativeIcsIntake, NoNativeIcsIntake>();
 builder.Services.AddScoped<INativeFileExport, NoNativeFileExport>();
+builder.Services.AddScoped<INativeHealthData, NoNativeHealthData>();
 
 var host = builder.Build();
 
