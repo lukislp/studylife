@@ -13,7 +13,11 @@ ENV ASPNETCORE_HTTP_PORTS=
 # healthcheck relies on it to probe the running container from the inside. espeak-ng
 # (+ its libespeak-ng.so.1) is StudyLife.Tts's phonemizer for the "read note aloud"
 # feature - resolved dynamically at runtime via NativeLibrary.SetDllImportResolver,
-# not linked at build time, so no -dev package is needed here.
+# not linked at build time, so no -dev package is needed here. libgomp1 is the OpenMP
+# runtime StudyLife.Stt's bundled whisper.cpp native library needs (voice dictation,
+# not yet wired into the API) - confirmed missing via a plain "dotnet <app>.dll" run
+# failing with "Failed to load native whisper library", root-caused with ldd showing
+# "libgomp.so.1 => not found" against the Whisper.net.Runtime package's linux-x64 .so.
 # Piper voice models are ~15-70MB binary ONNX files - not checked into this repo (would
 # bloat every clone/diff forever), pulled from Hugging Face at image build time instead, the
 # same way the base image itself and NuGet packages are already external build-time
@@ -24,7 +28,7 @@ ENV ASPNETCORE_HTTP_PORTS=
 # own Web Speech API client-side (see index.html's speakText + Notes.razor) - full native
 # coverage for the remaining 19 is a possible future addition, not required for the feature
 # to work everywhere. See docs/TTS-VOICES.md for each voice's license.
-RUN apt-get update && apt-get install -y --no-install-recommends curl espeak-ng && rm -rf /var/lib/apt/lists/* \
+RUN apt-get update && apt-get install -y --no-install-recommends curl espeak-ng libgomp1 && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /app/tts-voices \
     && curl -fsSL -o /app/tts-voices/de.onnx https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/low/de_DE-thorsten-low.onnx \
     && curl -fsSL -o /app/tts-voices/de.onnx.json https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/low/de_DE-thorsten-low.onnx.json \
