@@ -1,3 +1,10 @@
+# [1.29.0](https://github.com/lukislp/studylife/compare/v1.28.0...v1.29.0) (2026-08-20)
+
+
+### Features
+
+* **dashboard:** show raw HRV value + baseline on the readiness card ([2352876](https://github.com/lukislp/studylife/commit/2352876848e0ba201c7ecf9451db30d25ac41e12))
+
 # [1.28.0](https://github.com/lukislp/studylife/compare/v1.27.0...v1.28.0) (2026-08-20)
 
 
