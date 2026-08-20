@@ -23,6 +23,12 @@ public interface INativeHealthData
     /// with a detected sleep session (gaps simply absent). Null if authorization was never
     /// granted/denied.</summary>
     Task<IReadOnlyList<double>?> GetRecentSleepOnsetMinutesAsync(int nights) => Task.FromResult<IReadOnlyList<double>?>(null);
+
+    /// <summary>Step count over the last <paramref name="minutesAgo"/> minutes up to now - used
+    /// by the Focus Timer's movement-break nudge (OnFocusMilestone) to check whether the user
+    /// has moved at all during a long uninterrupted focus stretch. Null if authorization was
+    /// never granted/denied (distinct from a genuine 0 steps).</summary>
+    Task<int?> GetStepsSinceAsync(int minutesAgo) => Task.FromResult<int?>(null);
 }
 
 /// <summary>Default registration in the browser client (Program.cs).</summary>
