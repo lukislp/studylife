@@ -101,7 +101,7 @@
   "FocusScorePartial": "Частично",
   "FocusScoreMissed": "Пропуснато",
   "ReadinessScoreLabel": "Готовност за учене",
-  "ReadinessRatioText": "спрямо последните ви 30 дни",
+  "ReadinessValueFormat": "{0} ms спрямо средно {1} ms (30 дни)",
   "ReadinessAboveBaseline": "Над средното ви ниво",
   "ReadinessAroundBaseline": "Около средното ви ниво",
   "ReadinessBelowBaseline": "Под средното ви ниво",

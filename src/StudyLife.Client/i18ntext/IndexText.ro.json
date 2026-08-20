@@ -101,7 +101,7 @@
   "FocusScorePartial": "Parțial",
   "FocusScoreMissed": "Ratat",
   "ReadinessScoreLabel": "Pregătire de studiu",
-  "ReadinessRatioText": "față de ultimele tale 30 de zile",
+  "ReadinessValueFormat": "{0} ms față de media de {1} ms (30 de zile)",
   "ReadinessAboveBaseline": "Peste media ta",
   "ReadinessAroundBaseline": "În jurul mediei tale",
   "ReadinessBelowBaseline": "Sub media ta",

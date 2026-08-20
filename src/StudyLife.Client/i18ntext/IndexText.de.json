@@ -101,7 +101,7 @@
   "FocusScorePartial": "Teilweise",
   "FocusScoreMissed": "Verpasst",
   "ReadinessScoreLabel": "Lernbereitschaft",
-  "ReadinessRatioText": "ggü. den letzten 30 Tagen",
+  "ReadinessValueFormat": "{0} ms vs. Ø {1} ms (30 Tage)",
   "ReadinessAboveBaseline": "Über deinem Normalwert",
   "ReadinessAroundBaseline": "Um deinen Normalwert",
   "ReadinessBelowBaseline": "Unter deinem Normalwert",

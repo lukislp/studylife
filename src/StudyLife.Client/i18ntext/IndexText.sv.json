@@ -101,7 +101,7 @@
   "FocusScorePartial": "Delvis",
   "FocusScoreMissed": "Missat",
   "ReadinessScoreLabel": "Studieberedskap",
-  "ReadinessRatioText": "jämfört med dina senaste 30 dagar",
+  "ReadinessValueFormat": "{0} ms jämfört med snittet {1} ms (30 dagar)",
   "ReadinessAboveBaseline": "Över ditt genomsnitt",
   "ReadinessAroundBaseline": "Kring ditt genomsnitt",
   "ReadinessBelowBaseline": "Under ditt genomsnitt",

@@ -101,7 +101,7 @@
   "FocusScorePartial": "Parzjalment",
   "FocusScoreMissed": "Maqbuża",
   "ReadinessScoreLabel": "Tħejjija għall-istudju",
-  "ReadinessRatioText": "meta mqabbla mal-aħħar 30 jum tiegħek",
+  "ReadinessValueFormat": "{0} ms meta mqabbla mal-medja ta' {1} ms (30 jum)",
   "ReadinessAboveBaseline": "Ogħla mill-medja tiegħek",
   "ReadinessAroundBaseline": "Qrib il-medja tiegħek",
   "ReadinessBelowBaseline": "Taħt il-medja tiegħek",
