@@ -43,5 +43,10 @@
   "ReadAloudLoading": "Luodaan…",
   "ReadAloudUnavailable": "Ääneen lukeminen ei ole käytettävissä tälle kielelle",
   "ReadAloudBrowserVoice": "Luetaan selaimen äänellä…",
-  "ReadAloudTimeout": "Tämä kestää odotettua kauemmin tälle muistiinpanolle – yritä hetken kuluttua uudelleen."
+  "ReadAloudTimeout": "Tämä kestää odotettua kauemmin tälle muistiinpanolle – yritä hetken kuluttua uudelleen.",
+  "DictateButton": "Sanele",
+  "DictateStopButton": "Pysäytä",
+  "DictateProcessing": "Litteroidaan…",
+  "DictateUnavailable": "Puhesanelu ei ole käytettävissä tässä selaimessa",
+  "DictateFailed": "Litterointi epäonnistui – yritä uudelleen."
 }

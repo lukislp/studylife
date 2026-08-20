@@ -43,5 +43,10 @@
   "ReadAloudLoading": "Se generează…",
   "ReadAloudUnavailable": "Citirea cu voce tare nu este disponibilă pentru această limbă",
   "ReadAloudBrowserVoice": "Se citește cu vocea browserului…",
-  "ReadAloudTimeout": "Durează mai mult decât ne așteptam pentru această notă – încearcă din nou peste puțin timp."
+  "ReadAloudTimeout": "Durează mai mult decât ne așteptam pentru această notă – încearcă din nou peste puțin timp.",
+  "DictateButton": "Dictează",
+  "DictateStopButton": "Oprește",
+  "DictateProcessing": "Se transcrie…",
+  "DictateUnavailable": "Dictarea vocală nu este disponibilă în acest browser",
+  "DictateFailed": "Transcrierea a eșuat – încearcă din nou."
 }

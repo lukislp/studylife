@@ -43,5 +43,10 @@
   "ReadAloudLoading": "Генерується…",
   "ReadAloudUnavailable": "Озвучення недоступне для цієї мови",
   "ReadAloudBrowserVoice": "Читання голосом браузера…",
-  "ReadAloudTimeout": "Це триває довше, ніж очікувалося, для цієї нотатки – спробуйте ще раз за мить."
+  "ReadAloudTimeout": "Це триває довше, ніж очікувалося, для цієї нотатки – спробуйте ще раз за мить.",
+  "DictateButton": "Диктувати",
+  "DictateStopButton": "Зупинити",
+  "DictateProcessing": "Транскрибується…",
+  "DictateUnavailable": "Голосове диктування недоступне в цьому браузері",
+  "DictateFailed": "Не вдалося розшифрувати – спробуйте ще раз."
 }

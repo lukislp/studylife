@@ -43,5 +43,10 @@
   "ReadAloudLoading": "A gerar…",
   "ReadAloudUnavailable": "Leitura em voz alta não disponível para este idioma",
   "ReadAloudBrowserVoice": "A ler com a voz do navegador…",
-  "ReadAloudTimeout": "Esta nota está a demorar mais do que o esperado – tenta novamente daqui a pouco."
+  "ReadAloudTimeout": "Esta nota está a demorar mais do que o esperado – tenta novamente daqui a pouco.",
+  "DictateButton": "Ditar",
+  "DictateStopButton": "Parar",
+  "DictateProcessing": "A transcrever…",
+  "DictateUnavailable": "O ditado por voz não está disponível neste navegador",
+  "DictateFailed": "Falha na transcrição – tenta novamente."
 }

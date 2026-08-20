@@ -43,5 +43,10 @@
   "ReadAloudLoading": "Genereerimine…",
   "ReadAloudUnavailable": "Ettelugemine pole selle keele jaoks saadaval",
   "ReadAloudBrowserVoice": "Loetakse brauseri häälega…",
-  "ReadAloudTimeout": "See võtab selle märkme puhul oodatust kauem aega – proovi kohe uuesti."
+  "ReadAloudTimeout": "See võtab selle märkme puhul oodatust kauem aega – proovi kohe uuesti.",
+  "DictateButton": "Dikteeri",
+  "DictateStopButton": "Peata",
+  "DictateProcessing": "Transkribeerimine…",
+  "DictateUnavailable": "Hääldikteerimine ei ole selles brauseris saadaval",
+  "DictateFailed": "Transkriptsioon ebaõnnestus – proovi uuesti."
 }
