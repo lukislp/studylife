@@ -1,3 +1,10 @@
+## [1.25.1](https://github.com/lukislp/studylife/compare/v1.25.0...v1.25.1) (2026-08-20)
+
+
+### Bug Fixes
+
+* **stt:** pin Whisper thread count to the cgroup-visible CPU count ([ad6518a](https://github.com/lukislp/studylife/commit/ad6518a4a63b2d1150bc64b676fef1ac04ec2f8b))
+
 # [1.25.0](https://github.com/lukislp/studylife/compare/v1.24.0...v1.25.0) (2026-08-20)
 
 
