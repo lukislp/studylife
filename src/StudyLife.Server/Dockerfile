@@ -14,10 +14,10 @@ ENV ASPNETCORE_HTTP_PORTS=
 # (+ its libespeak-ng.so.1) is StudyLife.Tts's phonemizer for the "read note aloud"
 # feature - resolved dynamically at runtime via NativeLibrary.SetDllImportResolver,
 # not linked at build time, so no -dev package is needed here. libgomp1 is the OpenMP
-# runtime StudyLife.Stt's bundled whisper.cpp native library needs (voice dictation,
-# not yet wired into the API) - confirmed missing via a plain "dotnet <app>.dll" run
-# failing with "Failed to load native whisper library", root-caused with ldd showing
-# "libgomp.so.1 => not found" against the Whisper.net.Runtime package's linux-x64 .so.
+# runtime StudyLife.Stt's bundled whisper.cpp native library needs - confirmed missing via
+# a plain "dotnet <app>.dll" run failing with "Failed to load native whisper library",
+# root-caused with ldd showing "libgomp.so.1 => not found" against the Whisper.net.Runtime
+# package's linux-x64 .so.
 # Piper voice models are ~15-70MB binary ONNX files - not checked into this repo (would
 # bloat every clone/diff forever), pulled from Hugging Face at image build time instead, the
 # same way the base image itself and NuGet packages are already external build-time
@@ -28,12 +28,21 @@ ENV ASPNETCORE_HTTP_PORTS=
 # own Web Speech API client-side (see index.html's speakText + Notes.razor) - full native
 # coverage for the remaining 19 is a possible future addition, not required for the feature
 # to work everywhere. See docs/TTS-VOICES.md for each voice's license.
+# Whisper GGML model for voice dictation (DictationController/StudyLife.Stt) - same "pull at
+# build time, don't check in" reasoning as the Piper voices above. Multilingual "base" (~148MB),
+# not "tiny" (~78MB): measured directly against real demo note content (technical study
+# vocabulary, e.g. "Eigenvektoren", "Diagonalisierbarkeit") round-tripped through the existing
+# Piper voice - tiny produced visibly garbled output ("die er kronolisierbarkeit prüfen"), base
+# was clearly more usable ("diagonalisierbarkeit prüfen") at no measurable inference-time cost
+# on this hardware class. A measured choice, not a guess deferred to a later step.
 RUN apt-get update && apt-get install -y --no-install-recommends curl espeak-ng libgomp1 && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /app/tts-voices \
     && curl -fsSL -o /app/tts-voices/de.onnx https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/low/de_DE-thorsten-low.onnx \
     && curl -fsSL -o /app/tts-voices/de.onnx.json https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/low/de_DE-thorsten-low.onnx.json \
     && curl -fsSL -o /app/tts-voices/en.onnx https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/amy/low/en_US-amy-low.onnx \
-    && curl -fsSL -o /app/tts-voices/en.onnx.json https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/amy/low/en_US-amy-low.onnx.json
+    && curl -fsSL -o /app/tts-voices/en.onnx.json https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/amy/low/en_US-amy-low.onnx.json \
+    && mkdir -p /app/stt-model \
+    && curl -fsSL -o /app/stt-model/ggml-base.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin
 
 FROM base AS final
 # TARGETARCH is set automatically by "docker buildx build --platform ..." (amd64/arm64) -
