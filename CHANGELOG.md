@@ -1,3 +1,10 @@
+## [1.26.1](https://github.com/lukislp/studylife/compare/v1.26.0...v1.26.1) (2026-08-20)
+
+
+### Bug Fixes
+
+* **notes:** move Vorlesen/Diktieren to their own toolbar row ([239cbbb](https://github.com/lukislp/studylife/commit/239cbbba6553f889fafd66230f1851eeffe58652))
+
 # [1.26.0](https://github.com/lukislp/studylife/compare/v1.25.1...v1.26.0) (2026-08-20)
 
 
