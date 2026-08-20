@@ -270,6 +270,17 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
     font-variant-numeric: tabular-nums;
 }
 
+/* Movement-break nudge reuses .focus-remote-banner but needs room for longer text + a dismiss
+   action, so it switches to a flexible pill shape when a dismiss button is present. */
+.focus-remote-banner:has(.focus-nudge-dismiss) {
+    display: flex; align-items: center; gap: 10px;
+    border-radius: 14px; max-width: 440px; text-align: left;
+}
+.focus-nudge-dismiss {
+    background: none; border: none; color: inherit; text-decoration: underline;
+    cursor: pointer; font-size: 0.75rem; flex-shrink: 0; padding: 0; white-space: nowrap;
+}
+
 .sidebar-foot {
     padding: 1rem 1.25rem 0;
     border-top: 1px solid var(--border);
