@@ -1,3 +1,10 @@
+# [1.30.0](https://github.com/lukislp/studylife/compare/v1.29.0...v1.30.0) (2026-08-20)
+
+
+### Features
+
+* add sleep consistency dashboard tile (client-side, S1b) ([d573ced](https://github.com/lukislp/studylife/commit/d573cedf7eb56a0d2f49d0e74c6baa2799ef85fd))
+
 # [1.29.0](https://github.com/lukislp/studylife/compare/v1.28.0...v1.29.0) (2026-08-20)
 
 
