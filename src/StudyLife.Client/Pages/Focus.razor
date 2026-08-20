@@ -6,6 +6,7 @@
 @inject AppStateService State
 @inject TimerService Timer
 @inject NotificationService Notifications
+@inject INativeHealthData Health
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
 @inject IJSRuntime JS
 @inject HttpClient Http
@@ -63,6 +64,14 @@
                                 SkipText="@T.SkipReflection" SaveText="@T.SaveReflection" OnSkip="SkipReflection" OnSave="SaveReflection" />
     }
 
+    @if (_showMovementNudge)
+    {
+        <div class="focus-remote-banner">
+            🧍 @T.MovementNudgeText
+            <button type="button" class="focus-nudge-dismiss" @onclick="DismissMovementNudge">@T.MovementNudgeDismiss</button>
+        </div>
+    }
+
     @if (_activeSession == null)
     {
         <FocusSessionStatus UpcomingSession="_upcomingSession" NoSessionTitle="@T.NoSessionActive" PlanSessionPrompt="@T.PlanSessionPrompt"
@@ -87,6 +96,13 @@
     private string _reflectionText = "";
     private int? _reflectionSessionId;
     private int? _reflectionCourseId;
+
+    // Movement-break nudge: fired every TimerService.FocusMilestoneIntervalMinutes of
+    // continuous, unbroken focus if HealthKit reports barely any steps in that window - see
+    // TimerService.OnFocusMilestone's doc comment. Health.IsAvailable is false everywhere
+    // outside the native iOS app, so this never fires in the browser/PWA.
+    private bool _showMovementNudge;
+    private const int MovementNudgeStepThreshold = 50;
 
     // Timer state (mirrored from service)
     private int _secondsLeft;
@@ -174,6 +190,7 @@
         Timer.OnBreakStarted += OnBreakStarted;
         Timer.OnPaused += OnTimerPaused;
         Timer.OnModeChanged += OnModeChangedFromService;
+        Timer.OnFocusMilestone += OnFocusMilestone;
 
         _motivationText = GetRandomMotivation();
         _ = ShowMotivationAfterDelay();
@@ -378,6 +395,27 @@
         await InvokeAsync(StateHasChanged);
     }
 
+    /// <summary>Best-effort: HealthKit calls and notifications are both fallible and neither
+    /// should ever crash the timer (async-void handler, same reasoning as OnTimerTick/
+    /// OnBreakStarted).</summary>
+    private async void OnFocusMilestone()
+    {
+        if (!Health.IsAvailable) return;
+        try
+        {
+            var steps = await Health.GetStepsSinceAsync(TimerService.FocusMilestoneIntervalMinutes);
+            if (steps is not (null or >= MovementNudgeStepThreshold))
+            {
+                _showMovementNudge = true;
+                await Notifications.ShowLocalNotificationAsync(T.MovementNudgeTitle, T.MovementNudgeText);
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch { /* HealthKit query failed - simply skip this milestone's nudge */ }
+    }
+
+    private void DismissMovementNudge() => _showMovementNudge = false;
+
     private async void OnTimerPaused()
     {
         if (_currentMode == null) return;
@@ -578,6 +616,7 @@
         Timer.OnBreakStarted -= OnBreakStarted;
         Timer.OnPaused -= OnTimerPaused;
         Timer.OnModeChanged -= OnModeChangedFromService;
+        Timer.OnFocusMilestone -= OnFocusMilestone;
         // Conservative: release even if the (app-scoped) timer keeps running after
         // navigating away — the screen may sleep, which is acceptable off this page.
         ReleaseWakeLock();

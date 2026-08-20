@@ -25,10 +25,25 @@ public class TimerService
     // Null = paused/stopped (the frozen _secondsLeft remainder applies).
     private DateTime? _phaseEndsAtUtc;
 
+    // Continuous-focus streak tracking for OnFocusMilestone, kept pause-safe by splitting it
+    // into a frozen accumulator (_focusStreakSeconds) plus the wall-clock anchor of the
+    // currently-running segment (_focusStreakSegmentStartUtc, null while paused/on break/
+    // stopped) - mirrors the _phaseEndsAtUtc pattern so a suspended app catches up correctly
+    // instead of a naive "increment by 1 every Tick()" undercounting missed real time.
+    private int _focusStreakSeconds;
+    private DateTime? _focusStreakSegmentStartUtc;
+    private int _focusMilestonesFired;
+    public const int FocusMilestoneIntervalMinutes = 25;
+
     public event Action<int, bool, int, bool>? OnTick; // secondsLeft, isBreak, round, isRunning
     public event Action? OnSessionComplete;
     public event Action? OnBreakStarted;
     public event Action? OnPaused;
+    /// <summary>Fires once per FocusMilestoneIntervalMinutes of continuous, unbroken focus time
+    /// (pauses and breaks reset the streak) - a generic "N minutes of sustained focus" signal,
+    /// not inherently movement-specific, so other features can subscribe to it later too. The
+    /// movement-break nudge (Focus.razor) is its first consumer.</summary>
+    public event Action? OnFocusMilestone;
     /// <summary>Fires whenever LoadMode sets a new mode, regardless of caller - lets any open
     /// Focus.razor instance mirror a mode change triggered from elsewhere (e.g. the Watch
     /// companion app's mode picker relaying through WatchTimerCoordinator), not just its own
@@ -71,6 +86,7 @@ public class TimerService
             if (_mode == null || _isRunning) return;
             _isRunning = true;
             _phaseEndsAtUtc = DateTime.UtcNow.AddSeconds(_secondsLeft);
+            if (!_isBreak) _focusStreakSegmentStartUtc = DateTime.UtcNow;
             _timer = new System.Threading.Timer(_ => Tick(), null, 1000, 1000);
         }
         OnTick?.Invoke(SecondsLeft, IsBreak, CurrentRound, IsRunning);
@@ -84,6 +100,7 @@ public class TimerService
             // Freeze the remainder based on the wall clock - not on the last tick.
             if (_isRunning && _phaseEndsAtUtc is { } endsAt)
                 _secondsLeft = Math.Max(0, (int)Math.Ceiling((endsAt - DateTime.UtcNow).TotalSeconds));
+            FlushFocusStreakSegment();
             _isRunning = false;
             _phaseEndsAtUtc = null;
             _timer?.Dispose();
@@ -106,6 +123,19 @@ public class TimerService
         _phaseEndsAtUtc = null;
         _timer?.Dispose();
         _timer = null;
+        _focusStreakSeconds = 0;
+        _focusStreakSegmentStartUtc = null;
+        _focusMilestonesFired = 0;
+    }
+
+    /// <summary>Folds the currently-running focus segment's elapsed wall-clock time into the
+    /// frozen accumulator - called before any transition that stops the segment from running
+    /// (pause, break start) so the accumulator always reflects true elapsed focus time.</summary>
+    private void FlushFocusStreakSegment()
+    {
+        if (!_isBreak && _focusStreakSegmentStartUtc is { } segStart)
+            _focusStreakSeconds += (int)(DateTime.UtcNow - segStart).TotalSeconds;
+        _focusStreakSegmentStartUtc = null;
     }
 
     public void Reset()
@@ -133,6 +163,7 @@ public class TimerService
         Action? extraEvent = null;
         bool complete = false;
         bool phaseChanged = false;
+        bool milestoneReached = false;
 
         lock (_lock)
         {
@@ -157,17 +188,39 @@ public class TimerService
                     }
                     _isBreak = false;
                     _phaseEndsAtUtc = endsAt.AddSeconds(_mode!.FocusMinutes * 60);
+                    // New focus phase begins exactly at the previous phase's end (endsAt), not
+                    // "now" - keeps the streak's total accurate across a missed-phase catch-up.
+                    _focusStreakSegmentStartUtc = endsAt;
                 }
                 else
                 {
                     _isBreak = true;
                     _phaseEndsAtUtc = endsAt.AddSeconds(_mode!.BreakMinutes * 60);
                     extraEvent = () => OnBreakStarted?.Invoke();
+                    // A break interrupts the streak - fold in what was accumulated up to
+                    // endsAt (the segment's real end, not "now") and reset for the next streak.
+                    if (_focusStreakSegmentStartUtc is { } segStart)
+                        _focusStreakSeconds += (int)(endsAt - segStart).TotalSeconds;
+                    _focusStreakSegmentStartUtc = null;
+                    _focusStreakSeconds = 0;
+                    _focusMilestonesFired = 0;
                 }
             }
 
             if (!complete && _phaseEndsAtUtc is { } currentEnd)
                 _secondsLeft = Math.Max(0, (int)Math.Ceiling((currentEnd - now).TotalSeconds));
+
+            if (!complete && !_isBreak && _focusStreakSegmentStartUtc is { } runningSegStart)
+            {
+                var totalFocusSeconds = _focusStreakSeconds + (int)(now - runningSegStart).TotalSeconds;
+                var milestoneIntervalSeconds = FocusMilestoneIntervalMinutes * 60;
+                var reachedMilestones = totalFocusSeconds / milestoneIntervalSeconds;
+                if (reachedMilestones > _focusMilestonesFired)
+                {
+                    _focusMilestonesFired = reachedMilestones;
+                    milestoneReached = true;
+                }
+            }
         }
 
         if (complete)
@@ -178,6 +231,7 @@ public class TimerService
         }
         extraEvent?.Invoke();
         OnTick?.Invoke(SecondsLeft, IsBreak, CurrentRound, IsRunning);
+        if (milestoneReached) OnFocusMilestone?.Invoke();
         if (phaseChanged) _ = PushStateAsync();
     }
 
