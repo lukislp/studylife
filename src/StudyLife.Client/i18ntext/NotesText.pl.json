@@ -48,5 +48,7 @@
   "DictateStopButton": "Zatrzymaj",
   "DictateProcessing": "Transkrypcja…",
   "DictateUnavailable": "Dyktowanie głosowe nie jest dostępne w tej przeglądarce",
-  "DictateFailed": "Transkrypcja nie powiodła się – spróbuj ponownie."
+  "DictateFailed": "Transkrypcja nie powiodła się – spróbuj ponownie.",
+  "DictateSilent": "Nie wykryto mowy",
+  "DictateBrowserVoice": "Nasłuchiwanie przez rozpoznawanie mowy przeglądarki…"
 }
