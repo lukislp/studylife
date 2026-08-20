@@ -48,5 +48,7 @@
   "DictateStopButton": "Interrompi",
   "DictateProcessing": "Trascrizione…",
   "DictateUnavailable": "La dettatura vocale non è disponibile in questo browser",
-  "DictateFailed": "Trascrizione non riuscita – riprova."
+  "DictateFailed": "Trascrizione non riuscita – riprova.",
+  "DictateSilent": "Nessuna voce rilevata",
+  "DictateBrowserVoice": "Ascolto tramite il riconoscimento vocale del browser…"
 }

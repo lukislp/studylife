@@ -455,6 +455,12 @@
             }
         }
 
+        // Resolves to null (instead of a WAV) when the recording is essentially silent - found
+        // live: Whisper doesn't reliably flag this itself (WithNoSpeechThreshold/segment
+        // probabilities measured directly against real silence AND low-level mic hiss - both
+        // still came back as a confidently "recognized" hallucination, e.g. " * Musik *", so
+        // Whisper's own confidence score can't be trusted to catch this). Cheaper too: skips the
+        // upload and a doomed transcription on already CPU-tight Pi hardware entirely.
         function stopDictationRecording() {
             return new Promise(function (resolve, reject) {
                 if (!_dictationRecorder) { reject('not recording'); return; }
@@ -483,6 +489,59 @@
             _dictationChunks = [];
         }
 
+        // Dictation fallback for browsers without MediaRecorder (or where getUserMedia fails -
+        // no mic, denied permission, insecure context): the browser's own SpeechRecognition API,
+        // mirroring speakText's "browser's own facility as a last resort" choice above. Real
+        // trade-off worth being explicit about: unlike everything else in this pipeline (Piper,
+        // Whisper, both self-hosted), most browsers' SpeechRecognition implementation - Chrome's
+        // included - sends the audio to the vendor's own cloud speech service to recognize it.
+        // Only reached when local recording isn't possible at all, and only with the same
+        // "otherwise the feature simply doesn't work here" justification already accepted for
+        // speakText's browser-voice fallback.
+        let _activeSpeechRecognition = null;
+
+        function startBrowserSpeechRecognition(lang) {
+            return new Promise(function (resolve, reject) {
+                const SpeechRecognitionApi = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!SpeechRecognitionApi) { reject('not supported'); return; }
+                const recognition = new SpeechRecognitionApi();
+                recognition.lang = lang;
+                recognition.interimResults = false;
+                recognition.continuous = true;
+                let finalTranscript = '';
+                let started = false;
+                recognition.onresult = function (event) {
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript + ' ';
+                    }
+                };
+                recognition.onstart = function () { started = true; resolve(true); };
+                recognition.onerror = function (event) {
+                    if (!started) resolve(false); // couldn't even start (permission denied, etc.)
+                };
+                recognition.onend = function () {
+                    _activeSpeechRecognition = null;
+                    window._lastSpeechRecognitionResult = finalTranscript.trim();
+                };
+                _activeSpeechRecognition = recognition;
+                recognition.start();
+            });
+        }
+
+        // Stops listening and returns whatever was recognized so far - recognition.onend fires
+        // asynchronously after stop(), so this polls briefly for _lastSpeechRecognitionResult
+        // instead of assuming it's already there the instant stop() returns.
+        async function stopBrowserSpeechRecognition() {
+            if (!_activeSpeechRecognition) return window._lastSpeechRecognitionResult || '';
+            _activeSpeechRecognition.stop();
+            for (let i = 0; i < 20 && _activeSpeechRecognition !== null; i++) {
+                await new Promise(function (r) { setTimeout(r, 100); });
+            }
+            const result = window._lastSpeechRecognitionResult || '';
+            window._lastSpeechRecognitionResult = undefined;
+            return result;
+        }
+
         async function blobToWavBase64(blob) {
             const arrayBuffer = await blob.arrayBuffer();
             const decodeCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -498,8 +557,19 @@
             source.connect(offlineCtx.destination);
             source.start();
             const rendered = await offlineCtx.startRendering();
+            const samples = rendered.getChannelData(0);
 
-            const wavBytes = encodeWavPcm16(rendered.getChannelData(0), targetRate);
+            // Root-mean-square amplitude as a plain loudness gate - a pragmatic heuristic, not a
+            // real voice-activity detector, but real speech at normal mic gain sits well above
+            // this even quietly, while true silence/room tone doesn't. 0.01 threshold: measured
+            // directly, low-level mic hiss (RMS ~0.006) already fooled Whisper into a confident
+            // hallucination, so this only needs to catch what's quieter than that.
+            let sumSquares = 0;
+            for (let i = 0; i < samples.length; i++) sumSquares += samples[i] * samples[i];
+            const rms = Math.sqrt(sumSquares / samples.length);
+            if (rms < 0.01) return null;
+
+            const wavBytes = encodeWavPcm16(samples, targetRate);
             let binary = '';
             for (let i = 0; i < wavBytes.length; i++) binary += String.fromCharCode(wavBytes[i]);
             return window.btoa(binary);

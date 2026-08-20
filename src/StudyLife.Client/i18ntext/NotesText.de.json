@@ -48,5 +48,7 @@
   "DictateStopButton": "Stopp",
   "DictateProcessing": "Wird transkribiert…",
   "DictateUnavailable": "Spracheingabe ist in diesem Browser nicht verfügbar",
-  "DictateFailed": "Transkription fehlgeschlagen – bitte nochmal versuchen."
+  "DictateFailed": "Transkription fehlgeschlagen – bitte nochmal versuchen.",
+  "DictateSilent": "Keine Sprache erkannt",
+  "DictateBrowserVoice": "Spracherkennung über den Browser läuft…"
 }

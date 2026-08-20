@@ -48,5 +48,7 @@
   "DictateStopButton": "Apturēt",
   "DictateProcessing": "Transkribē…",
   "DictateUnavailable": "Balss diktēšana nav pieejama šajā pārlūkprogrammā",
-  "DictateFailed": "Transkripcija neizdevās – mēģiniet vēlreiz."
+  "DictateFailed": "Transkripcija neizdevās – mēģiniet vēlreiz.",
+  "DictateSilent": "Runa netika konstatēta",
+  "DictateBrowserVoice": "Klausās, izmantojot pārlūkprogrammas runas atpazīšanu…"
 }

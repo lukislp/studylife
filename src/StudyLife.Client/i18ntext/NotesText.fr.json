@@ -48,5 +48,7 @@
   "DictateStopButton": "Arrêter",
   "DictateProcessing": "Transcription…",
   "DictateUnavailable": "La dictée vocale n'est pas disponible dans ce navigateur",
-  "DictateFailed": "Échec de la transcription – veuillez réessayer."
+  "DictateFailed": "Échec de la transcription – veuillez réessayer.",
+  "DictateSilent": "Aucune parole détectée",
+  "DictateBrowserVoice": "Écoute via la reconnaissance vocale du navigateur…"
 }
