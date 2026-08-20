@@ -1,3 +1,10 @@
+# [1.24.0](https://github.com/lukislp/studylife/compare/v1.23.0...v1.24.0) (2026-08-20)
+
+
+### Features
+
+* **stt:** add microphone recording UI to Notes (SL-3 S3) ([c18c582](https://github.com/lukislp/studylife/commit/c18c58214b11b05299306a0330389e54e9e31a9d))
+
 # [1.23.0](https://github.com/lukislp/studylife/compare/v1.22.0...v1.23.0) (2026-08-20)
 
 
