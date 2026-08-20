@@ -48,5 +48,7 @@
   "DictateStopButton": "Ustavi",
   "DictateProcessing": "Prepisovanje…",
   "DictateUnavailable": "Glasovno narekovanje ni na voljo v tem brskalniku",
-  "DictateFailed": "Prepis ni uspel – poskusite znova."
+  "DictateFailed": "Prepis ni uspel – poskusite znova.",
+  "DictateSilent": "Ni zaznanega govora",
+  "DictateBrowserVoice": "Poslušanje s prepoznavanjem govora brskalnika…"
 }

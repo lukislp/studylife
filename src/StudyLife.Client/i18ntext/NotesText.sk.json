@@ -48,5 +48,7 @@
   "DictateStopButton": "Zastaviť",
   "DictateProcessing": "Prepisuje sa…",
   "DictateUnavailable": "Hlasové diktovanie nie je v tomto prehliadači k dispozícii",
-  "DictateFailed": "Prepis zlyhal – skúste to prosím znova."
+  "DictateFailed": "Prepis zlyhal – skúste to prosím znova.",
+  "DictateSilent": "Nezistila sa žiadna reč",
+  "DictateBrowserVoice": "Počúvanie pomocou rozpoznávania reči prehliadača…"
 }

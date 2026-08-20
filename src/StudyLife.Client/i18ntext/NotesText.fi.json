@@ -48,5 +48,7 @@
   "DictateStopButton": "Pysäytä",
   "DictateProcessing": "Litteroidaan…",
   "DictateUnavailable": "Puhesanelu ei ole käytettävissä tässä selaimessa",
-  "DictateFailed": "Litterointi epäonnistui – yritä uudelleen."
+  "DictateFailed": "Litterointi epäonnistui – yritä uudelleen.",
+  "DictateSilent": "Puhetta ei havaittu",
+  "DictateBrowserVoice": "Kuunnellaan selaimen puheentunnistuksella…"
 }

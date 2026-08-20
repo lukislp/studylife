@@ -232,6 +232,14 @@ else
                         {
                             <div style="font-size:0.75rem;color:var(--text3);margin-top:0.5rem">@T.DictateFailed</div>
                         }
+                        else if (_dictationSilent)
+                        {
+                            <div style="font-size:0.75rem;color:var(--text3);margin-top:0.5rem">@T.DictateSilent</div>
+                        }
+                        else if (_dictationRecording && _dictationUsingBrowserFallback)
+                        {
+                            <div style="font-size:0.75rem;color:var(--text3);margin-top:0.5rem">🎙️ @T.DictateBrowserVoice</div>
+                        }
                         @if (_ttsAudioUrl != null)
                         {
                             <audio controls autoplay src="@_ttsAudioUrl" style="width:100%;margin-top:0.5rem"></audio>
@@ -315,6 +323,7 @@ else
     private bool _dictationProcessing;
     private bool _dictationUnavailable;
     private bool _dictationFailed;
+    private bool _dictationSilent;
     private bool _saving;
     private bool _confirmingDelete;
     private System.Threading.Timer? _debounce;
@@ -466,14 +475,22 @@ else
     {
         _dictationAutoStopTimer?.Dispose();
         _dictationAutoStopTimer = null;
-        // Switching notes mid-recording would otherwise leave the MediaRecorder (and the
-        // browser's mic-active indicator) running in the background, recording into a note
-        // that's no longer even selected - stop it, don't just forget about it client-side.
-        if (_dictationRecording) _ = JS.InvokeVoidAsync("cancelDictationRecording");
+        // Switching notes mid-recording would otherwise leave the recorder (MediaRecorder or
+        // browser SpeechRecognition, and the browser's mic-active indicator) running in the
+        // background, recording into a note that's no longer even selected - stop it, don't just
+        // forget about it client-side.
+        if (_dictationRecording)
+        {
+            _ = JS.InvokeVoidAsync(_dictationUsingBrowserFallback
+                ? "stopBrowserSpeechRecognition"
+                : "cancelDictationRecording");
+        }
         _dictationRecording = false;
         _dictationProcessing = false;
         _dictationUnavailable = false;
         _dictationFailed = false;
+        _dictationSilent = false;
+        _dictationUsingBrowserFallback = false;
     }
 
     // BCP-47 tags for the Web Speech API fallback - the app's own language codes (used
@@ -602,23 +619,42 @@ else
     private static readonly TimeSpan MaxDictationLength = TimeSpan.FromMinutes(3);
     private System.Threading.Timer? _dictationAutoStopTimer;
 
+    private bool _dictationUsingBrowserFallback;
+
     private async Task StartDictation()
     {
         _dictationUnavailable = false;
         _dictationFailed = false;
-        var started = await JS.InvokeAsync<bool>("startDictationRecording");
-        if (!started)
+        _dictationSilent = false;
+        _dictationUsingBrowserFallback = false;
+        var lang = await I18nText.GetCurrentLanguageAsync();
+
+        if (await JS.InvokeAsync<bool>("startDictationRecording"))
         {
-            // No MediaRecorder support, or the user denied/has no microphone - JS can't tell
-            // these apart from getUserMedia's rejected promise alone, and the exact reason
-            // doesn't change what the user needs to do next either way.
-            _dictationUnavailable = true;
+            _dictationRecording = true;
+            _dictationAutoStopTimer = new System.Threading.Timer(
+                async _ => await InvokeAsync(async () => await StopDictation()),
+                null, MaxDictationLength, Timeout.InfiniteTimeSpan);
             return;
         }
-        _dictationRecording = true;
-        _dictationAutoStopTimer = new System.Threading.Timer(
-            async _ => await InvokeAsync(async () => await StopDictation()),
-            null, MaxDictationLength, Timeout.InfiniteTimeSpan);
+
+        // No MediaRecorder support, or the user denied/has no microphone - JS can't tell these
+        // apart from getUserMedia's rejected promise alone. Before giving up, try the browser's
+        // own SpeechRecognition as a last resort (mirrors PlayNoteAudio/speakText's fallback) -
+        // worth being explicit that, unlike everything else here, most browsers' implementation
+        // sends the audio to their own cloud speech service rather than recognizing it locally.
+        var locale = SpeechLocales.GetValueOrDefault(lang, lang);
+        if (await JS.InvokeAsync<bool>("startBrowserSpeechRecognition", locale))
+        {
+            _dictationUsingBrowserFallback = true;
+            _dictationRecording = true;
+            _dictationAutoStopTimer = new System.Threading.Timer(
+                async _ => await InvokeAsync(async () => await StopDictation()),
+                null, MaxDictationLength, Timeout.InfiniteTimeSpan);
+            return;
+        }
+
+        _dictationUnavailable = true;
     }
 
     private sealed record DictateResponse(string Text);
@@ -633,10 +669,25 @@ else
         StateHasChanged();
         try
         {
+            if (_dictationUsingBrowserFallback)
+            {
+                var recognized = await JS.InvokeAsync<string>("stopBrowserSpeechRecognition");
+                InsertDictatedText(recognized);
+                return;
+            }
+
             // JS resamples/encodes to 16 kHz mono WAV client-side (same format PiperVoice
             // already produces server-side) - avoids adding an audio transcoding dependency to
-            // the server for what the browser's own Web Audio API already does natively.
-            var wavBase64 = await JS.InvokeAsync<string>("stopDictationRecording");
+            // the server for what the browser's own Web Audio API already does natively. Null
+            // means JS judged the recording essentially silent (RMS gate) and skipped encoding
+            // it at all - Whisper's own confidence score can't be trusted to catch this itself,
+            // measured directly (see stopDictationRecording's JS comment).
+            var wavBase64 = await JS.InvokeAsync<string?>("stopDictationRecording");
+            if (wavBase64 == null)
+            {
+                _dictationSilent = true;
+                return;
+            }
             var wavBytes = Convert.FromBase64String(wavBase64);
 
             var lang = await I18nText.GetCurrentLanguageAsync();
@@ -657,14 +708,7 @@ else
                 return;
             }
             var result = await response.Content.ReadFromJsonAsync<DictateResponse>();
-            if (string.IsNullOrWhiteSpace(result?.Text))
-            {
-                // Empty transcription (silence, too short, or a garbled recording) - not an
-                // error worth alarming the user over, just nothing to insert.
-                return;
-            }
-            _editContent = string.IsNullOrWhiteSpace(_editContent) ? result.Text : $"{_editContent} {result.Text}";
-            ScheduleSave();
+            InsertDictatedText(result?.Text);
         }
         catch
         {
@@ -674,6 +718,18 @@ else
         {
             _dictationProcessing = false;
         }
+    }
+
+    private void InsertDictatedText(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            // Empty transcription (silence, too short, or a garbled recording) - not an error
+            // worth alarming the user over, just nothing to insert.
+            return;
+        }
+        _editContent = string.IsNullOrWhiteSpace(_editContent) ? text : $"{_editContent} {text}";
+        ScheduleSave();
     }
 
     // Mirrors StudyLife.Tts's MarkdownToSpeechText.Extract server-side - not shared as a

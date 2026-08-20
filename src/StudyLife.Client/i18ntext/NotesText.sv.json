@@ -48,5 +48,7 @@
   "DictateStopButton": "Stopp",
   "DictateProcessing": "Transkriberar…",
   "DictateUnavailable": "Röstdiktering är inte tillgänglig i den här webbläsaren",
-  "DictateFailed": "Transkribering misslyckades – försök igen."
+  "DictateFailed": "Transkribering misslyckades – försök igen.",
+  "DictateSilent": "Inget tal upptäckt",
+  "DictateBrowserVoice": "Lyssnar via webbläsarens taligenkänning…"
 }
