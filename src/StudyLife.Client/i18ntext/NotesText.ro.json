@@ -48,5 +48,7 @@
   "DictateStopButton": "Oprește",
   "DictateProcessing": "Se transcrie…",
   "DictateUnavailable": "Dictarea vocală nu este disponibilă în acest browser",
-  "DictateFailed": "Transcrierea a eșuat – încearcă din nou."
+  "DictateFailed": "Transcrierea a eșuat – încearcă din nou.",
+  "DictateSilent": "Nu s-a detectat nicio vorbire",
+  "DictateBrowserVoice": "Se ascultă prin recunoașterea vocală a browserului…"
 }

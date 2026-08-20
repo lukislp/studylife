@@ -48,5 +48,7 @@
   "DictateStopButton": "Stop",
   "DictateProcessing": "Transskriberer…",
   "DictateUnavailable": "Stemmediktering er ikke tilgængelig i denne browser",
-  "DictateFailed": "Transskription mislykkedes – prøv igen."
+  "DictateFailed": "Transskription mislykkedes – prøv igen.",
+  "DictateSilent": "Ingen tale registreret",
+  "DictateBrowserVoice": "Lytter via browserens talegenkendelse…"
 }
