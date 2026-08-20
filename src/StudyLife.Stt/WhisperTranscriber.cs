@@ -6,17 +6,18 @@ namespace StudyLife.Stt;
 /// <summary>
 /// Wraps a single loaded Whisper model for local, self-hosted speech-to-text. Unlike Piper's
 /// per-language voices, one multilingual Whisper model covers all of StudyLife's languages -
-/// no per-language registry needed here. Loaded once and reused across requests: model load
-/// reads the GGML weights into memory, a real cost that transcription itself doesn't repeat.
+/// no per-language registry needed here. The model is loaded lazily on first use, not in the
+/// constructor - mirrors PiperVoiceRegistry's laziness (a Dockerfile concern, not a code
+/// concern): registering this as a DI singleton must not crash the whole app at startup in an
+/// environment without the baked model file (local "dotnet run", tests), the same way a missing
+/// Piper voice never crashes startup either.
 /// </summary>
-public sealed class WhisperTranscriber : IDisposable
+public sealed class WhisperTranscriber(string modelPath) : IDisposable
 {
-    private readonly WhisperFactory _factory;
+    private readonly Lock _lock = new();
+    private WhisperFactory? _factory;
 
-    public WhisperTranscriber(string modelPath)
-    {
-        _factory = WhisperFactory.FromPath(modelPath);
-    }
+    public bool IsModelAvailable => File.Exists(modelPath);
 
     /// <param name="wavStream">16 kHz mono PCM WAV audio.</param>
     /// <param name="language">
@@ -26,7 +27,8 @@ public sealed class WhisperTranscriber : IDisposable
     /// </param>
     public async Task<string> TranscribeAsync(Stream wavStream, string? language, CancellationToken cancellationToken = default)
     {
-        var builder = _factory.CreateBuilder();
+        var factory = GetOrLoadFactory();
+        var builder = factory.CreateBuilder();
         builder = string.IsNullOrWhiteSpace(language) ? builder.WithLanguageDetection() : builder.WithLanguage(language);
         using var processor = builder.Build();
 
@@ -39,5 +41,15 @@ public sealed class WhisperTranscriber : IDisposable
         return text.ToString();
     }
 
-    public void Dispose() => _factory.Dispose();
+    private WhisperFactory GetOrLoadFactory()
+    {
+        if (_factory != null) return _factory;
+        lock (_lock)
+        {
+            _factory ??= WhisperFactory.FromPath(modelPath);
+            return _factory;
+        }
+    }
+
+    public void Dispose() => _factory?.Dispose();
 }
