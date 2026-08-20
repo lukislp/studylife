@@ -5,6 +5,7 @@
 @inject AppStateService State
 @inject HttpClient Http
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
+@inject INativeHealthData Health
 @implements IDisposable
 
 <PageTitle>@T.DashboardPageTitle</PageTitle>
@@ -180,6 +181,11 @@
         @if (_focusScoreVisible)
         {
             <DashboardFocusScoreCard Label="@T.FocusScoreLabel" Percent="@_focusScorePercent" StatusText="@FocusScoreStatusText" RatioText="@FocusScoreRatioText" />
+        }
+
+        @if (_readinessVisible)
+        {
+            <DashboardReadinessScoreCard Label="@T.ReadinessScoreLabel" Percent="@_readinessPercent" StatusText="@ReadinessStatusText" RatioText="@T.ReadinessRatioText" />
         }
 
         <DashboardBestRecordCard Label="@T.BestRecordLabel"
