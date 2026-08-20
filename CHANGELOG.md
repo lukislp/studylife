@@ -1,3 +1,10 @@
+# [1.22.0](https://github.com/lukislp/studylife/compare/v1.21.6...v1.22.0) (2026-08-20)
+
+
+### Features
+
+* **stt:** add native Whisper transcription core (SL-3 S1) ([06f5e6e](https://github.com/lukislp/studylife/commit/06f5e6edcef86813ecaf81000d167b2821324d1b))
+
 ## [1.21.6](https://github.com/lukislp/studylife/compare/v1.21.5...v1.21.6) (2026-08-19)
 
 
