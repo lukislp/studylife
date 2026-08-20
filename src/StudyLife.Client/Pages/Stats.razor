@@ -6,6 +6,7 @@
 @inject HttpClient Http
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
 @inject IJSRuntime JS
+@inject INativeHealthData Health
 
 <PageTitle>StudyLife — @T.Stats</PageTitle>
 
@@ -100,6 +101,12 @@
 
         <StatsGradeTimelineCard Label="@T.GradeTimeline" GradeFormat="@T.GradeFormat"
             EmptyText="@T.GradeTimelineEmpty" Points="@_gradeTimelinePoints" />
+
+        @if (Health.IsAvailable)
+        {
+            <StatsCardioFitnessTrendCard Label="@T.CardioFitnessTrendLabel" ValueFormat="@T.CardioFitnessValueFormat"
+                EmptyText="@T.CardioFitnessTrendEmpty" Points="@_cardioFitnessPoints" />
+        }
 
         @if (_scatterPoints.Count >= 3)
         {
