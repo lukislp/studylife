@@ -1,0 +1,43 @@
+<div class="setup-section">
+    <div class="ss-label">@Label</div>
+    @if (Points.Count >= 2)
+    {
+        @* Sparse readings (watchOS computes VO2max roughly monthly from outdoor walk/run
+           workouts) plotted chronologically - same scrolling-columns pattern as the grade/ECTS
+           timelines, just with a series-relative percent scale instead of an absolute one, since
+           a healthy VO2max range varies a lot by person/age/fitness level. *@
+        <div class="timeline-chart-wrap">
+            <div class="timeline-chart grade-timeline-chart">
+                @foreach (var p in Points)
+                {
+                    <div class="timeline-col" title="@($"{p.DateLabel}: {string.Format(ValueFormat, p.Vo2MaxLabel)}")">
+                        <div class="mini-bar-value">@p.Vo2MaxLabel</div>
+                        <div class="timeline-track">
+                            <div class="timeline-fill" style="height: @p.PercentLabel%"></div>
+                        </div>
+                        <div class="timeline-label">@p.DateLabel</div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div style="color:var(--text3);font-size:0.875rem">@EmptyText</div>
+    }
+</div>
+
+@code {
+    public record CardioPoint(DateTime Date, double Vo2Max, double Percent)
+    {
+        public string DateLabel => Date.ToString("MM.yy");
+        public string Vo2MaxLabel => Vo2Max.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture);
+        // Formatted invariantly so CSS percent values never get a decimal comma (cf. GradeTimelineCard).
+        public string PercentLabel => Percent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string ValueFormat { get; set; } = "";
+    [Parameter] public string EmptyText { get; set; } = "";
+    [Parameter] public List<CardioPoint> Points { get; set; } = new();
+}

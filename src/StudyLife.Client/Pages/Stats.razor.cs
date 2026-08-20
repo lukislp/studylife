@@ -75,6 +75,9 @@ public partial class Stats
         var historyAllTask = State.GetJsonCachedAsync<List<StudySessionDto>>($"api/sessions/history?days={HistoryDays}");
         var groupQuotasTask = State.GetActiveGroupQuotasAsync();
         var historyAllTimeTask = State.GetJsonCachedAsync<List<StudySessionDto>>("api/sessions/history?days=3650");
+        var cardioFitnessTask = Health.IsAvailable
+            ? Health.GetCardioFitnessHistoryAsync(365)
+            : Task.FromResult<IReadOnlyList<(DateTime Date, double Vo2Max)>?>(null);
 
         T = await I18nText.GetTextTableAsync<I18nText.StatsText>(this);
         _langWatcher = new I18nLanguageWatcher(I18nText);
@@ -163,6 +166,7 @@ public partial class Stats
         BuildHoursGradeScatter(goals, allCourses, raw);
         BuildHoursEctsScatter(allCourses, raw, settings);
         BuildGradeDistribution(goals);
+        BuildCardioFitnessTrend(await cardioFitnessTask);
 
         // Programme-aware: quotas of the ACTIVE programme (built-in: static, otherwise via fetch).
         var groupQuotas = await groupQuotasTask;
