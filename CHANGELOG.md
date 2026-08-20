@@ -1,3 +1,10 @@
+# [1.25.0](https://github.com/lukislp/studylife/compare/v1.24.0...v1.25.0) (2026-08-20)
+
+
+### Features
+
+* **stt:** cap dictation length, raise pod memory for the model (SL-3 S4) ([e87c743](https://github.com/lukislp/studylife/commit/e87c743f1169362260bd323ff90f617f00bc185e))
+
 # [1.24.0](https://github.com/lukislp/studylife/compare/v1.23.0...v1.24.0) (2026-08-20)
 
 
