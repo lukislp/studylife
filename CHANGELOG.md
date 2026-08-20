@@ -1,3 +1,10 @@
+# [1.32.0](https://github.com/lukislp/studylife/compare/v1.31.0...v1.32.0) (2026-08-20)
+
+
+### Features
+
+* add cardio fitness (VO2max) trend to Stats page (client-side, S3b) ([88226c4](https://github.com/lukislp/studylife/commit/88226c4cb106f5d7daa76cc74dd4f744fa473255))
+
 # [1.31.0](https://github.com/lukislp/studylife/compare/v1.30.0...v1.31.0) (2026-08-20)
 
 
