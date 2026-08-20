@@ -1,3 +1,10 @@
+# [1.27.0](https://github.com/lukislp/studylife/compare/v1.26.1...v1.27.0) (2026-08-20)
+
+
+### Features
+
+* **dashboard:** add INativeHealthData abstraction for HRV readiness score (SL-4 S2) ([7af617b](https://github.com/lukislp/studylife/commit/7af617b01897244cb6fe057d29c917afae57db03))
+
 ## [1.26.1](https://github.com/lukislp/studylife/compare/v1.26.0...v1.26.1) (2026-08-20)
 
 
