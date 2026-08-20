@@ -43,5 +43,10 @@
   "ReadAloudLoading": "Genererar…",
   "ReadAloudUnavailable": "Uppläsning ej tillgänglig för detta språk",
   "ReadAloudBrowserVoice": "Läser upp med webbläsarens röst…",
-  "ReadAloudTimeout": "Detta tar längre tid än väntat för den här anteckningen – försök igen om en stund."
+  "ReadAloudTimeout": "Detta tar längre tid än väntat för den här anteckningen – försök igen om en stund.",
+  "DictateButton": "Diktera",
+  "DictateStopButton": "Stopp",
+  "DictateProcessing": "Transkriberar…",
+  "DictateUnavailable": "Röstdiktering är inte tillgänglig i den här webbläsaren",
+  "DictateFailed": "Transkribering misslyckades – försök igen."
 }

@@ -43,5 +43,10 @@
   "ReadAloudLoading": "Bezig met genereren…",
   "ReadAloudUnavailable": "Voorlezen niet beschikbaar voor deze taal",
   "ReadAloudBrowserVoice": "Voorlezen met browserstem…",
-  "ReadAloudTimeout": "Dit duurt langer dan verwacht voor deze notitie – probeer het zo nog eens."
+  "ReadAloudTimeout": "Dit duurt langer dan verwacht voor deze notitie – probeer het zo nog eens.",
+  "DictateButton": "Dicteren",
+  "DictateStopButton": "Stoppen",
+  "DictateProcessing": "Bezig met transcriberen…",
+  "DictateUnavailable": "Spraakinvoer is niet beschikbaar in deze browser",
+  "DictateFailed": "Transcriptie mislukt – probeer het opnieuw."
 }

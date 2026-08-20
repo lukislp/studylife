@@ -43,5 +43,10 @@
   "ReadAloudLoading": "Ģenerē…",
   "ReadAloudUnavailable": "Skaļā lasīšana nav pieejama šai valodai",
   "ReadAloudBrowserVoice": "Nolasa ar pārlūkprogrammas balsi…",
-  "ReadAloudTimeout": "Šai piezīmei tas aizņem ilgāku laiku, nekā gaidīts – mēģiniet vēlreiz pēc brīža."
+  "ReadAloudTimeout": "Šai piezīmei tas aizņem ilgāku laiku, nekā gaidīts – mēģiniet vēlreiz pēc brīža.",
+  "DictateButton": "Diktēt",
+  "DictateStopButton": "Apturēt",
+  "DictateProcessing": "Transkribē…",
+  "DictateUnavailable": "Balss diktēšana nav pieejama šajā pārlūkprogrammā",
+  "DictateFailed": "Transkripcija neizdevās – mēģiniet vēlreiz."
 }

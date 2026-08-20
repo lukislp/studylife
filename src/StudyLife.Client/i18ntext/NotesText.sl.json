@@ -43,5 +43,10 @@
   "ReadAloudLoading": "Ustvarjanje…",
   "ReadAloudUnavailable": "Branje naglas ni na voljo za ta jezik",
   "ReadAloudBrowserVoice": "Branje z glasom brskalnika…",
-  "ReadAloudTimeout": "To traja dlje, kot je bilo pričakovano za to opombo – poskusite znova čez trenutek."
+  "ReadAloudTimeout": "To traja dlje, kot je bilo pričakovano za to opombo – poskusite znova čez trenutek.",
+  "DictateButton": "Narekuj",
+  "DictateStopButton": "Ustavi",
+  "DictateProcessing": "Prepisovanje…",
+  "DictateUnavailable": "Glasovno narekovanje ni na voljo v tem brskalniku",
+  "DictateFailed": "Prepis ni uspel – poskusite znova."
 }

@@ -429,6 +429,99 @@
             window.speechSynthesis.speak(utterance);
             return true;
         }
+
+        // Voice dictation ("speak a note instead of typing it") - records via MediaRecorder in
+        // whatever format the browser natively supports (webm/opus, ogg/opus, ...), then
+        // resamples/encodes to 16 kHz mono PCM WAV via the Web Audio API before upload, since
+        // that's what DictationController/StudyLife.Stt (Whisper.net) expects - the same "do the
+        // format conversion in the browser instead of adding a server-side transcoding
+        // dependency" choice already made for ExtractPlainTextForSpeech (Notes.razor).
+        let _dictationRecorder = null;
+        let _dictationChunks = [];
+
+        async function startDictationRecording() {
+            if (!navigator.mediaDevices || !window.MediaRecorder) return false;
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                _dictationChunks = [];
+                _dictationRecorder = new MediaRecorder(stream);
+                _dictationRecorder.ondataavailable = function (e) {
+                    if (e.data.size > 0) _dictationChunks.push(e.data);
+                };
+                _dictationRecorder.start();
+                return true;
+            } catch {
+                return false; // permission denied, no microphone, or an insecure (non-HTTPS) context
+            }
+        }
+
+        function stopDictationRecording() {
+            return new Promise(function (resolve, reject) {
+                if (!_dictationRecorder) { reject('not recording'); return; }
+                _dictationRecorder.onstop = async function () {
+                    _dictationRecorder.stream.getTracks().forEach(function (t) { t.stop(); });
+                    _dictationRecorder = null;
+                    try {
+                        const blob = new Blob(_dictationChunks, { type: 'audio/webm' });
+                        resolve(await blobToWavBase64(blob));
+                    } catch (err) {
+                        reject(String(err));
+                    }
+                };
+                _dictationRecorder.stop();
+            });
+        }
+
+        async function blobToWavBase64(blob) {
+            const arrayBuffer = await blob.arrayBuffer();
+            const decodeCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const decoded = await decodeCtx.decodeAudioData(arrayBuffer);
+            decodeCtx.close();
+
+            // OfflineAudioContext resamples automatically: an AudioBufferSourceNode's buffer is
+            // rendered at the context's own sample rate, whatever the buffer's native rate was.
+            const targetRate = 16000;
+            const offlineCtx = new OfflineAudioContext(1, Math.ceil(decoded.duration * targetRate), targetRate);
+            const source = offlineCtx.createBufferSource();
+            source.buffer = decoded;
+            source.connect(offlineCtx.destination);
+            source.start();
+            const rendered = await offlineCtx.startRendering();
+
+            const wavBytes = encodeWavPcm16(rendered.getChannelData(0), targetRate);
+            let binary = '';
+            for (let i = 0; i < wavBytes.length; i++) binary += String.fromCharCode(wavBytes[i]);
+            return window.btoa(binary);
+        }
+
+        // Minimal 16-bit PCM mono WAV encoder - just the fixed 44-byte header plus the samples,
+        // no exotic chunk types needed for what Whisper.net's WaveParser reads back server-side.
+        function encodeWavPcm16(samples, sampleRate) {
+            const buffer = new ArrayBuffer(44 + samples.length * 2);
+            const view = new DataView(buffer);
+            function writeString(offset, str) {
+                for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+            }
+            writeString(0, 'RIFF');
+            view.setUint32(4, 36 + samples.length * 2, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);       // fmt chunk size
+            view.setUint16(20, 1, true);        // PCM
+            view.setUint16(22, 1, true);        // mono
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true); // byte rate (sampleRate * blockAlign)
+            view.setUint16(32, 2, true);        // block align (channels * bytesPerSample)
+            view.setUint16(34, 16, true);       // bits per sample
+            writeString(36, 'data');
+            view.setUint32(40, samples.length * 2, true);
+            let offset = 44;
+            for (let i = 0; i < samples.length; i++, offset += 2) {
+                const s = Math.max(-1, Math.min(1, samples[i]));
+                view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+            }
+            return new Uint8Array(buffer);
+        }
     </script>
 </body>
 </html>

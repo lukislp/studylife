@@ -43,5 +43,10 @@
   "ReadAloudLoading": "Wird generiert…",
   "ReadAloudUnavailable": "Vorlesen für diese Sprache nicht verfügbar",
   "ReadAloudBrowserVoice": "Browser-Stimme liest vor…",
-  "ReadAloudTimeout": "Dauert bei dieser Notiz länger als erwartet – bitte gleich nochmal versuchen."
+  "ReadAloudTimeout": "Dauert bei dieser Notiz länger als erwartet – bitte gleich nochmal versuchen.",
+  "DictateButton": "Diktieren",
+  "DictateStopButton": "Stopp",
+  "DictateProcessing": "Wird transkribiert…",
+  "DictateUnavailable": "Spracheingabe ist in diesem Browser nicht verfügbar",
+  "DictateFailed": "Transkription fehlgeschlagen – bitte nochmal versuchen."
 }

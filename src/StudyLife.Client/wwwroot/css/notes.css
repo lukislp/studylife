@@ -91,6 +91,11 @@
 .notes-format-opt:hover { color: var(--text); border-color: var(--border2); }
 .notes-format-opt.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
+/* Voice dictation button while actively recording - a plain color change would be easy to miss
+   given how small this toolbar button is, so it pulses instead. */
+.note-dictate-recording { background: #e33; border-color: #e33; color: #fff; animation: note-dictate-pulse 1.4s ease-in-out infinite; }
+@keyframes note-dictate-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
 /* Live Markdown preview: same box dimensions as .note-textarea (it swaps in for it 1:1) but
    read-only rendered HTML instead of a raw-source textarea, so it needs its own overflow/
    scroll instead of the textarea's native one. */
