@@ -190,27 +190,29 @@ else
                                         @(_showMarkdownPreview ? T.Edit : T.ShowPreviewButton)
                                     </button>
                                 }
-                                @if (_selectedNote?.Id > 0)
-                                {
-                                    <button type="button" class="btn-secondary" style="font-size:0.75rem;padding:0.25rem 0.6rem;border-radius:6px" disabled="@_ttsLoading" @onclick="PlayNoteAudio">
-                                        🔊 @(_ttsLoading ? T.ReadAloudLoading : T.ReadAloudButton)
-                                    </button>
-                                }
-                                <button type="button" id="note-dictate-btn" class="btn-secondary @(_dictationRecording ? "note-dictate-recording" : "")" style="font-size:0.75rem;padding:0.25rem 0.6rem;border-radius:6px" disabled="@_dictationProcessing" @onclick="ToggleDictation">
-                                    @if (_dictationRecording)
-                                    {
-                                        <text>⏹️ @T.DictateStopButton</text>
-                                    }
-                                    else if (_dictationProcessing)
-                                    {
-                                        <text>🎙️ @T.DictateProcessing</text>
-                                    }
-                                    else
-                                    {
-                                        <text>🎙️ @T.DictateButton</text>
-                                    }
-                                </button>
                             </div>
+                        </div>
+                        <div style="display:flex;justify-content:flex-end;gap:0.5rem;align-items:center;margin-bottom:0.4rem">
+                            @if (_selectedNote?.Id > 0)
+                            {
+                                <button type="button" class="btn-secondary" style="font-size:0.75rem;padding:0.25rem 0.6rem;border-radius:6px" disabled="@_ttsLoading" @onclick="PlayNoteAudio">
+                                    🔊 @(_ttsLoading ? T.ReadAloudLoading : T.ReadAloudButton)
+                                </button>
+                            }
+                            <button type="button" id="note-dictate-btn" class="btn-secondary @(_dictationRecording ? "note-dictate-recording" : "")" style="font-size:0.75rem;padding:0.25rem 0.6rem;border-radius:6px" disabled="@_dictationProcessing" @onclick="ToggleDictation">
+                                @if (_dictationRecording)
+                                {
+                                    <text>⏹️ @T.DictateStopButton</text>
+                                }
+                                else if (_dictationProcessing)
+                                {
+                                    <text>🎙️ @T.DictateProcessing</text>
+                                }
+                                else
+                                {
+                                    <text>🎙️ @T.DictateButton</text>
+                                }
+                            </button>
                         </div>
                         @if (_editIsMarkdown && _showMarkdownPreview)
                         {
