@@ -101,7 +101,7 @@
   "FocusScorePartial": "Osaliselt",
   "FocusScoreMissed": "Vahele jäänud",
   "ReadinessScoreLabel": "Õpivalmidus",
-  "ReadinessRatioText": "võrreldes sinu viimase 30 päevaga",
+  "ReadinessValueFormat": "{0} ms võrreldes keskmisega {1} ms (30 päeva)",
   "ReadinessAboveBaseline": "Üle sinu keskmise",
   "ReadinessAroundBaseline": "Sinu keskmise lähedal",
   "ReadinessBelowBaseline": "Alla sinu keskmise",
