@@ -101,7 +101,7 @@
   "FocusScorePartial": "Частково",
   "FocusScoreMissed": "Пропущено",
   "ReadinessScoreLabel": "Готовність до навчання",
-  "ReadinessRatioText": "порівняно з вашими останніми 30 днями",
+  "ReadinessValueFormat": "{0} ms порівняно із середнім {1} ms (30 днів)",
   "ReadinessAboveBaseline": "Вище вашого середнього рівня",
   "ReadinessAroundBaseline": "Близько до вашого середнього рівня",
   "ReadinessBelowBaseline": "Нижче вашого середнього рівня",

@@ -101,7 +101,7 @@
   "FocusScorePartial": "Részben",
   "FocusScoreMissed": "Elmaradt",
   "ReadinessScoreLabel": "Tanulási készenlét",
-  "ReadinessRatioText": "az elmúlt 30 napodhoz képest",
+  "ReadinessValueFormat": "{0} ms az átlagos {1} ms-hoz képest (30 nap)",
   "ReadinessAboveBaseline": "Az átlagod felett",
   "ReadinessAroundBaseline": "Az átlagod körül",
   "ReadinessBelowBaseline": "Az átlagod alatt",

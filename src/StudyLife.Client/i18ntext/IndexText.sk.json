@@ -101,7 +101,7 @@
   "FocusScorePartial": "Čiastočne",
   "FocusScoreMissed": "Zmeškané",
   "ReadinessScoreLabel": "Pripravenosť na štúdium",
-  "ReadinessRatioText": "v porovnaní s poslednými 30 dňami",
+  "ReadinessValueFormat": "{0} ms v porovnaní s priemerom {1} ms (30 dní)",
   "ReadinessAboveBaseline": "Nad Vaším priemerom",
   "ReadinessAroundBaseline": "Okolo Vášho priemeru",
   "ReadinessBelowBaseline": "Pod Vaším priemerom",

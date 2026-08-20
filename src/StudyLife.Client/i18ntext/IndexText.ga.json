@@ -101,7 +101,7 @@
   "FocusScorePartial": "Go páirteach",
   "FocusScoreMissed": "Ar iarraidh",
   "ReadinessScoreLabel": "Ullmhacht staidéir",
-  "ReadinessRatioText": "i gcomparáid le do 30 lá is déanaí",
+  "ReadinessValueFormat": "{0} ms i gcomparáid leis an meán {1} ms (30 lá)",
   "ReadinessAboveBaseline": "Os cionn do mheáin",
   "ReadinessAroundBaseline": "Ar do mheán",
   "ReadinessBelowBaseline": "Faoi bhun do mheáin",

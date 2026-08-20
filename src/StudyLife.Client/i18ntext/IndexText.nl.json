@@ -101,7 +101,7 @@
   "FocusScorePartial": "Deels",
   "FocusScoreMissed": "Gemist",
   "ReadinessScoreLabel": "Studiegereedheid",
-  "ReadinessRatioText": "t.o.v. je laatste 30 dagen",
+  "ReadinessValueFormat": "{0} ms t.o.v. gemiddeld {1} ms (30 dagen)",
   "ReadinessAboveBaseline": "Boven jouw gemiddelde",
   "ReadinessAroundBaseline": "Rond jouw gemiddelde",
   "ReadinessBelowBaseline": "Onder jouw gemiddelde",

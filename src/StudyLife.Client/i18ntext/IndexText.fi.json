@@ -101,7 +101,7 @@
   "FocusScorePartial": "Osittain",
   "FocusScoreMissed": "Jäi väliin",
   "ReadinessScoreLabel": "Opiskeluvalmius",
-  "ReadinessRatioText": "verrattuna viimeisiin 30 päivääsi",
+  "ReadinessValueFormat": "{0} ms verrattuna keskiarvoon {1} ms (30 päivää)",
   "ReadinessAboveBaseline": "Yli keskiarvosi",
   "ReadinessAroundBaseline": "Keskiarvosi tasolla",
   "ReadinessBelowBaseline": "Alle keskiarvosi",

@@ -101,7 +101,7 @@
   "FocusScorePartial": "Delno",
   "FocusScoreMissed": "Zamujeno",
   "ReadinessScoreLabel": "Pripravljenost za učenje",
-  "ReadinessRatioText": "v primerjavi s tvojimi zadnjimi 30 dnevi",
+  "ReadinessValueFormat": "{0} ms v primerjavi s povprečjem {1} ms (30 dni)",
   "ReadinessAboveBaseline": "Nad tvojim povprečjem",
   "ReadinessAroundBaseline": "Okoli tvojega povprečja",
   "ReadinessBelowBaseline": "Pod tvojim povprečjem",

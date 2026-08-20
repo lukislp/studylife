@@ -101,7 +101,7 @@
   "FocusScorePartial": "Parcial",
   "FocusScoreMissed": "Fallido",
   "ReadinessScoreLabel": "Preparación para estudiar",
-  "ReadinessRatioText": "frente a tus últimos 30 días",
+  "ReadinessValueFormat": "{0} ms frente a la media de {1} ms (30 días)",
   "ReadinessAboveBaseline": "Por encima de tu media",
   "ReadinessAroundBaseline": "En torno a tu media",
   "ReadinessBelowBaseline": "Por debajo de tu media",

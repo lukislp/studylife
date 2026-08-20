@@ -101,7 +101,7 @@
   "FocusScorePartial": "Delvist",
   "FocusScoreMissed": "Misset",
   "ReadinessScoreLabel": "Studieparathed",
-  "ReadinessRatioText": "ift. dine sidste 30 dage",
+  "ReadinessValueFormat": "{0} ms ift. gennemsnit på {1} ms (30 dage)",
   "ReadinessAboveBaseline": "Over dit gennemsnit",
   "ReadinessAroundBaseline": "Omkring dit gennemsnit",
   "ReadinessBelowBaseline": "Under dit gennemsnit",
