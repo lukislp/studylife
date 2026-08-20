@@ -157,9 +157,21 @@ spec:
           # across 15 repeated requests) - workable but only ~140Mi of headroom for real
           # concurrent multi-user load, hence one more bump for a safer margin. Request bumped
           # in step to match the realistic steady-state, not just the ceiling.
+          # Limit raised again 900Mi->1200Mi (2026-08-20): voice dictation (StudyLife.Stt,
+          # Whisper.net/whisper.cpp) adds a second model to the same pod. Unlike Piper's ONNX
+          # arena bug, whisper.cpp itself does NOT leak/grow unboundedly with audio length -
+          # measured directly (isolated harness, same "base" model this pod loads): ~830MB peak
+          # working set for 6+ minutes of continuous audio, not runaway. But that's on top of
+          # everything else already resident in the pod (Piper voices, ASP.NET Core, EF Core),
+          # and the client now caps a single dictation at 3 minutes (Notes.razor,
+          # MaxDictationLength) - so worst case is meaningfully less than the measured 830MB,
+          # but still a real new addition to the pod's budget that 900Mi wasn't sized for.
+          # This bump is evidence-informed, not evidence-of-an-actual-OOM the way the earlier
+          # ones were - watch real pod memory after this deploys rather than treating 1200Mi as
+          # final.
           resources:
             requests: {cpu: 100m, memory: 300Mi}
-            limits: {cpu: 500m, memory: 900Mi}
+            limits: {cpu: 500m, memory: 1200Mi}
           readinessProbe:
             httpGet: {path: /, port: 8080}
             initialDelaySeconds: 10

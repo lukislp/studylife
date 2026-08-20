@@ -472,6 +472,17 @@
             });
         }
 
+        // Stops and discards an in-progress recording without encoding/uploading anything -
+        // used when the user navigates away from the note being dictated into mid-recording.
+        function cancelDictationRecording() {
+            if (!_dictationRecorder) return;
+            _dictationRecorder.onstop = null;
+            _dictationRecorder.stream.getTracks().forEach(function (t) { t.stop(); });
+            _dictationRecorder.stop();
+            _dictationRecorder = null;
+            _dictationChunks = [];
+        }
+
         async function blobToWavBase64(blob) {
             const arrayBuffer = await blob.arrayBuffer();
             const decodeCtx = new (window.AudioContext || window.webkitAudioContext)();
