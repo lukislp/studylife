@@ -1,3 +1,10 @@
+# [1.28.0](https://github.com/lukislp/studylife/compare/v1.27.0...v1.28.0) (2026-08-20)
+
+
+### Features
+
+* **dashboard:** add HRV readiness score tile (SL-4 S3) ([de9512d](https://github.com/lukislp/studylife/commit/de9512def93830481b29d71dadce80e704cb2efb))
+
 # [1.27.0](https://github.com/lukislp/studylife/compare/v1.26.1...v1.27.0) (2026-08-20)
 
 
