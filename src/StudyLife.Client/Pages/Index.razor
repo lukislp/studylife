@@ -188,6 +188,11 @@
             <DashboardReadinessScoreCard Label="@T.ReadinessScoreLabel" Percent="@_readinessPercent" StatusText="@ReadinessStatusText" RatioText="@ReadinessValueText" />
         }
 
+        @if (_sleepConsistencyVisible)
+        {
+            <DashboardSleepConsistencyCard Label="@T.SleepConsistencyLabel" Percent="@_sleepConsistencyPercent" StatusText="@SleepConsistencyStatusText" ValueText="@SleepConsistencyValueText" />
+        }
+
         <DashboardBestRecordCard Label="@T.BestRecordLabel"
                                   DayLabel="@T.BestRecordDayLabel" BestDayHours="@_bestDayHoursLabel" BestDayDate="@_bestDayDateLabel" BestDayIsNew="_bestDayIsNew"
                                   WeekLabel="@T.BestRecordWeekLabel" BestWeekHours="@_bestWeekHoursLabel" BestWeekRange="@_bestWeekRangeLabel" BestWeekIsNew="_bestWeekIsNew"
