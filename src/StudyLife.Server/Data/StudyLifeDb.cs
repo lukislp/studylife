@@ -562,6 +562,10 @@ public class NoteEntity
     /// of plain text. Defaults to false so every pre-existing note keeps rendering exactly as
     /// before.</summary>
     public bool IsMarkdown { get; set; }
+    /// <summary>Origin URL for notes created from external capture (e.g. the studylife-capture
+    /// browser extension) - null for every note created directly in StudyLife itself. Purely
+    /// informational (a "where did this come from" link), not used for any lookup/uniqueness.</summary>
+    public string? SourceUrl { get; set; }
 }
 
 /// <summary>

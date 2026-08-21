@@ -276,6 +276,9 @@ namespace StudyLife.Server.Migrations
                     b.Property<int?>("SessionId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("SourceUrl")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("TEXT");
