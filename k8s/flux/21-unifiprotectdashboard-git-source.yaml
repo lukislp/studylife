@@ -1,0 +1,21 @@
+# Fifth GitRepository source (in addition to 01-git-source.yaml watching this repo,
+# 06-studylife-ai-git-source.yaml watching studylife-ai, 11-studylife-mcp-git-source.yaml
+# watching studylife-mcp, and 16-piwatch-git-source.yaml watching piwatch) - UnifiProtectDashboard
+# is a separate repo/service (the UniFi Protect camera event dashboard), onboarded onto the same
+# Flux install rather than standing up a second one, same reasoning as the others. Needs write
+# access (not just read) - image-automation-controller pushes commits for new image tags directly
+# to main. Reuses the existing "studylife-git-auth" secret, same trade-off already accepted for
+# the other repos (a classic GitHub PAT with public_repo scope, not scoped to a single repo
+# anyway).
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: unifiprotectdashboard
+  namespace: flux-system
+spec:
+  interval: 5m
+  url: https://github.com/lukislp/UnifiProtectDashboard.git
+  ref:
+    branch: main
+  secretRef:
+    name: studylife-git-auth
