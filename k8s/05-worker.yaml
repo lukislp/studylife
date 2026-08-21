@@ -48,7 +48,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: studylife
-          image: ghcr.io/lukislp/studylife-server:1.33.0 # {"$imagepolicy": "flux-system:studylife-server"}
+          image: ghcr.io/lukislp/studylife-server:1.34.0 # {"$imagepolicy": "flux-system:studylife-server"}
           imagePullPolicy: Never
           securityContext:
             allowPrivilegeEscalation: false
