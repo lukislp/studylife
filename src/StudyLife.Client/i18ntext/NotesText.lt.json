@@ -51,5 +51,6 @@
   "DictateFailed": "Transkripcija nepavyko – bandykite dar kartą.",
   "DictateSilent": "Kalba neaptikta",
   "DictateBrowserVoice": "Klausoma naudojant naršyklės kalbos atpažinimą…",
-  "CaptureSourceLinkLabel": "Žiūrėti originalą"
+  "CaptureSourceLinkLabel": "Žiūrėti originalą",
+  "RelatedNotesLabel": "Susiję užrašai"
 }

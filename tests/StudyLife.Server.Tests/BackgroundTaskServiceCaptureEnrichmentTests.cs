@@ -104,7 +104,7 @@ public class BackgroundTaskServiceCaptureEnrichmentTests : IClassFixture<CustomW
         var noteId = await SeedNoteAsync("https://example.com/article");
         var (service, _) = CreateService(_ => new HttpResponseMessage(HttpStatusCode.OK)
         {
-            Content = new StringContent("{\"course_id\":3,\"course_confidence\":0.9,\"tags\":[\"eigenvalues\",\"matrices\"],\"summary\":\"A summary.\"}"),
+            Content = new StringContent("{\"course_id\":3,\"course_confidence\":0.9,\"tags\":[\"eigenvalues\",\"matrices\"],\"summary\":\"A summary.\",\"related_note_ids\":[12,34]}"),
         });
 
         await _factory.WithDbAsync(db => service.RunCaptureEnrichmentAsync(db));
@@ -114,6 +114,22 @@ public class BackgroundTaskServiceCaptureEnrichmentTests : IClassFixture<CustomW
         Assert.Equal(3, note.CourseId);
         Assert.Equal("eigenvalues, matrices", note.Tags);
         Assert.Equal("A summary.", note.Summary);
+        Assert.Equal("12,34", note.RelatedNoteIds);
+    }
+
+    [Fact]
+    public async Task RunCaptureEnrichmentAsync_EmptyRelatedNoteIds_LeavesRelatedNoteIdsNull()
+    {
+        var noteId = await SeedNoteAsync("https://example.com/article");
+        var (service, _) = CreateService(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("{\"course_id\":null,\"course_confidence\":null,\"tags\":[],\"summary\":null,\"related_note_ids\":[]}"),
+        });
+
+        await _factory.WithDbAsync(db => service.RunCaptureEnrichmentAsync(db));
+
+        var note = await ReloadNoteAsync(noteId);
+        Assert.Null(note.RelatedNoteIds);
     }
 
     [Fact]

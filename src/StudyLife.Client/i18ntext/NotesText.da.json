@@ -51,5 +51,6 @@
   "DictateFailed": "Transskription mislykkedes – prøv igen.",
   "DictateSilent": "Ingen tale registreret",
   "DictateBrowserVoice": "Lytter via browserens talegenkendelse…",
-  "CaptureSourceLinkLabel": "Se original"
+  "CaptureSourceLinkLabel": "Se original",
+  "RelatedNotesLabel": "Relaterede noter"
 }

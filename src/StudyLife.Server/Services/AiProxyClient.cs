@@ -9,7 +9,8 @@ namespace StudyLife.Server.Services;
 /// EnrichCaptureAsync) - null CourseId/Confidence means no course matched confidently enough,
 /// an empty Tags/null Summary means the LLM step produced none. All fields independently
 /// optional - see studylife-ai's rag/enrichment.py, each sub-step degrades on its own.</summary>
-public sealed record CaptureEnrichmentResult(int? CourseId, double? CourseConfidence, List<string> Tags, string? Summary);
+public sealed record CaptureEnrichmentResult(
+    int? CourseId, double? CourseConfidence, List<string> Tags, string? Summary, List<int> RelatedNoteIds);
 
 /// <summary>
 /// Talks to the studylife-ai microservice on the logged-in user's behalf - both the live
@@ -118,7 +119,9 @@ public sealed class AiProxyClient
             }
             var json = await response.Content.ReadFromJsonAsync<EnrichCaptureResponseJson>(cancellationToken: ct);
             if (json is null) return null;
-            return new CaptureEnrichmentResult(json.CourseId, json.CourseConfidence, json.Tags ?? new List<string>(), json.Summary);
+            return new CaptureEnrichmentResult(
+                json.CourseId, json.CourseConfidence, json.Tags ?? new List<string>(), json.Summary,
+                json.RelatedNoteIds ?? new List<int>());
         }
         catch (Exception ex)
         {
@@ -147,6 +150,7 @@ public sealed class AiProxyClient
         [JsonPropertyName("course_confidence")] public double? CourseConfidence { get; set; }
         [JsonPropertyName("tags")] public List<string>? Tags { get; set; }
         [JsonPropertyName("summary")] public string? Summary { get; set; }
+        [JsonPropertyName("related_note_ids")] public List<int>? RelatedNoteIds { get; set; }
     }
 
     private async Task PostInternalAsync(string path, Dictionary<string, string> body, CancellationToken ct)

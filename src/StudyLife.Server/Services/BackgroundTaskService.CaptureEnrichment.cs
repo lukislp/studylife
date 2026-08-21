@@ -50,6 +50,8 @@ public partial class BackgroundTaskService
                 if (result.Tags.Count > 0)
                     note.Tags = string.Join(", ", result.Tags);
                 note.Summary = result.Summary;
+                if (result.RelatedNoteIds.Count > 0)
+                    note.RelatedNoteIds = string.Join(",", result.RelatedNoteIds);
             }
         }
 

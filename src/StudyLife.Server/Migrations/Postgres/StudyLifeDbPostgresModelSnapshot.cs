@@ -304,6 +304,9 @@ namespace StudyLife.Server.Migrations.Postgres
                     b.Property<bool>("IsMarkdown")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("RelatedNoteIds")
+                        .HasColumnType("text");
+
                     b.Property<int?>("SessionId")
                         .HasColumnType("integer");
 

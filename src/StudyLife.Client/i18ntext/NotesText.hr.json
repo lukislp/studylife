@@ -51,5 +51,6 @@
   "DictateFailed": "Transkripcija nije uspjela – pokušajte ponovno.",
   "DictateSilent": "Nije otkriven govor",
   "DictateBrowserVoice": "Slušanje putem prepoznavanja govora preglednika…",
-  "CaptureSourceLinkLabel": "Pogledaj izvornik"
+  "CaptureSourceLinkLabel": "Pogledaj izvornik",
+  "RelatedNotesLabel": "Povezane bilješke"
 }

@@ -596,6 +596,13 @@ public class NoteEntity
     /// <summary>One-sentence AI-generated summary from capture enrichment (see EnrichedAt) -
     /// null until enrichment runs, or if it produced none.</summary>
     public string? Summary { get; set; }
+    /// <summary>Comma-separated ids of existing notes studylife-ai found similar to this capture
+    /// (see EnrichedAt) - null until enrichment runs, or if it found none. Same comma-separated
+    /// convention as Tags/UserSettingsEntity.SelectedCourseIds; a note whose id appears here may
+    /// since have been deleted - the UI resolves ids against the client's already-loaded notes
+    /// list and simply skips any that no longer exist, rather than this needing to be kept in
+    /// sync with deletions.</summary>
+    public string? RelatedNoteIds { get; set; }
 }
 
 /// <summary>
