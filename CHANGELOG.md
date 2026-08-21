@@ -1,3 +1,10 @@
+# [1.34.0](https://github.com/lukislp/studylife/compare/v1.33.0...v1.34.0) (2026-08-21)
+
+
+### Features
+
+* add per-user studylife-capture API key slot ([6c2c2d4](https://github.com/lukislp/studylife/commit/6c2c2d4ec479a63dc8dab1ae2e10451cc9280a4c))
+
 # [1.33.0](https://github.com/lukislp/studylife/compare/v1.32.1...v1.33.0) (2026-08-21)
 
 
