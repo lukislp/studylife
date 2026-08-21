@@ -1,3 +1,10 @@
+# [1.39.0](https://github.com/lukislp/studylife/compare/v1.38.0...v1.39.0) (2026-08-21)
+
+
+### Features
+
+* **flux:** onboard UnifiProtectDashboard into Flux-managed GitOps ([4203202](https://github.com/lukislp/studylife/commit/42032023652ffe35285227ff189a7d64dec67ec5))
+
 # [1.38.0](https://github.com/lukislp/studylife/compare/v1.37.0...v1.38.0) (2026-08-21)
 
 
