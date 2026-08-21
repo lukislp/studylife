@@ -37,7 +37,12 @@ public class BackgroundTaskServiceCaptureEnrichmentTests : IClassFixture<CustomW
         return (BackgroundTaskServiceTestFactory.Create(_factory, aiProxyClient: aiProxyClient), handler);
     }
 
-    private async Task<int> SeedNoteAsync(string? sourceUrl, DateTime? enrichedAt = null, int? courseId = null) =>
+    private async Task<int> SeedNoteAsync(
+        string? sourceUrl,
+        DateTime? enrichedAt = null,
+        int? courseId = null,
+        int enrichmentAttempts = 0,
+        DateTime? lastEnrichmentAttemptAt = null) =>
         await _factory.WithDbAsync(async db =>
         {
             var note = new NoteEntity
@@ -47,6 +52,8 @@ public class BackgroundTaskServiceCaptureEnrichmentTests : IClassFixture<CustomW
                 SourceUrl = sourceUrl,
                 EnrichedAt = enrichedAt,
                 CourseId = courseId,
+                EnrichmentAttempts = enrichmentAttempts,
+                LastEnrichmentAttemptAt = lastEnrichmentAttemptAt,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now,
             };
@@ -149,7 +156,7 @@ public class BackgroundTaskServiceCaptureEnrichmentTests : IClassFixture<CustomW
     }
 
     [Fact]
-    public async Task RunCaptureEnrichmentAsync_UpstreamFailure_StillMarksEnrichedAt_NoRetryStorm()
+    public async Task RunCaptureEnrichmentAsync_FirstFailure_LeavesEnrichedAtNullAndIncrementsAttempts()
     {
         var noteId = await SeedNoteAsync("https://example.com/article");
         var (service, _) = CreateService(_ => new HttpResponseMessage(HttpStatusCode.InternalServerError));
@@ -157,10 +164,97 @@ public class BackgroundTaskServiceCaptureEnrichmentTests : IClassFixture<CustomW
         await _factory.WithDbAsync(db => service.RunCaptureEnrichmentAsync(db));
 
         var note = await ReloadNoteAsync(noteId);
-        Assert.NotNull(note.EnrichedAt);
+        // Still "pending" from the query's point of view - a later tick (once MinRetryBackoff
+        // has passed) retries it, budget not yet exhausted.
+        Assert.Null(note.EnrichedAt);
+        Assert.Equal(1, note.EnrichmentAttempts);
+        Assert.NotNull(note.LastEnrichmentAttemptAt);
         Assert.Null(note.CourseId);
         Assert.Null(note.Tags);
         Assert.Null(note.Summary);
+    }
+
+    [Fact]
+    public async Task RunCaptureEnrichmentAsync_FailureAfterExhaustingRetryBudget_FinallyMarksEnrichedAt()
+    {
+        // Already failed twice, backoff window long since passed - this tick is attempt 3 of 3.
+        var noteId = await SeedNoteAsync(
+            "https://example.com/article",
+            enrichmentAttempts: 2,
+            lastEnrichmentAttemptAt: DateTime.Now.AddMinutes(-5));
+        var (service, _) = CreateService(_ => new HttpResponseMessage(HttpStatusCode.InternalServerError));
+
+        await _factory.WithDbAsync(db => service.RunCaptureEnrichmentAsync(db));
+
+        var note = await ReloadNoteAsync(noteId);
+        Assert.NotNull(note.EnrichedAt);
+        Assert.Equal(3, note.EnrichmentAttempts);
+        Assert.Null(note.CourseId);
+    }
+
+    [Fact]
+    public async Task RunCaptureEnrichmentAsync_RecentlyFailedNote_NotRetriedBeforeBackoffElapses()
+    {
+        var noteId = await SeedNoteAsync(
+            "https://example.com/article",
+            enrichmentAttempts: 1,
+            lastEnrichmentAttemptAt: DateTime.Now.AddSeconds(-5));
+        var (service, handler) = CreateService(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("{\"course_id\":null,\"course_confidence\":null,\"tags\":[],\"summary\":null}"),
+        });
+
+        await _factory.WithDbAsync(db => service.RunCaptureEnrichmentAsync(db));
+
+        Assert.Empty(handler.Requests);
+        var note = await ReloadNoteAsync(noteId);
+        Assert.Equal(1, note.EnrichmentAttempts);
+    }
+
+    [Fact]
+    public async Task RunCaptureEnrichmentAsync_RetrySucceeds_SetsEnrichedAtAndFields()
+    {
+        var noteId = await SeedNoteAsync(
+            "https://example.com/article",
+            enrichmentAttempts: 1,
+            lastEnrichmentAttemptAt: DateTime.Now.AddMinutes(-5));
+        var (service, _) = CreateService(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("{\"course_id\":3,\"course_confidence\":0.9,\"tags\":[\"a\"],\"summary\":\"S.\"}"),
+        });
+
+        await _factory.WithDbAsync(db => service.RunCaptureEnrichmentAsync(db));
+
+        var note = await ReloadNoteAsync(noteId);
+        Assert.NotNull(note.EnrichedAt);
+        Assert.Equal(2, note.EnrichmentAttempts);
+        Assert.Equal(3, note.CourseId);
+    }
+
+    [Fact]
+    public async Task RunCaptureEnrichmentAsync_SendsActiveCourseIdsFromSettings()
+    {
+        await _factory.WithDbAsync(async db =>
+        {
+            var settings = await db.Settings.FirstOrDefaultAsync();
+            if (settings is null)
+            {
+                settings = new UserSettingsEntity { SelectedCourseIds = "5,9" };
+                db.Settings.Add(settings);
+            }
+            else
+            {
+                settings.SelectedCourseIds = "5,9";
+            }
+            await db.SaveChangesAsync();
+        });
+        await SeedNoteAsync("https://example.com/article");
+        var (service, handler) = CreateService();
+
+        await _factory.WithDbAsync(db => service.RunCaptureEnrichmentAsync(db));
+
+        var request = Assert.Single(handler.Requests);
+        Assert.Contains("\"active_course_ids\":[5,9]", request.Body);
     }
 
     [Fact]

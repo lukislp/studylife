@@ -93,7 +93,8 @@ public sealed class AiProxyClient
     /// retry storm), so a null result here just means the note stays unenriched, not that
     /// anything crashes.</summary>
     public async Task<CaptureEnrichmentResult?> EnrichCaptureAsync(
-        int userId, int noteId, string title, string content, string? sourceUrl, CancellationToken ct)
+        int userId, int noteId, string title, string content, string? sourceUrl,
+        List<int> activeCourseIds, CancellationToken ct)
     {
         if (!Enabled) return null;
         try
@@ -105,6 +106,7 @@ public sealed class AiProxyClient
                 Title = title,
                 Content = content,
                 SourceUrl = sourceUrl,
+                ActiveCourseIds = activeCourseIds,
             };
             var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/internal/enrich-capture")
             {
@@ -142,6 +144,7 @@ public sealed class AiProxyClient
         [JsonPropertyName("title")] public string Title { get; set; } = "";
         [JsonPropertyName("content")] public string Content { get; set; } = "";
         [JsonPropertyName("source_url")] public string? SourceUrl { get; set; }
+        [JsonPropertyName("active_course_ids")] public List<int> ActiveCourseIds { get; set; } = new();
     }
 
     private sealed class EnrichCaptureResponseJson
