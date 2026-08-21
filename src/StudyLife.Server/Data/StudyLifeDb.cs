@@ -110,6 +110,9 @@ public class StudyLifeDb : DbContext
         // Per-user API key for studylife-mcp: separate slot from ApiKeyHash/AiApiKeyHash (see
         // AuthUserEntity.McpApiKeyHash), same uniqueness reasoning.
         modelBuilder.Entity<AuthUserEntity>().HasIndex(u => u.McpApiKeyHash).IsUnique();
+        // Per-user API key for the studylife-capture browser extension: separate slot from the
+        // three above (see AuthUserEntity.CaptureApiKeyHash), same uniqueness reasoning.
+        modelBuilder.Entity<AuthUserEntity>().HasIndex(u => u.CaptureApiKeyHash).IsUnique();
         // Calendar feed (security fix): resolves the user analogous to the API key, instead of
         // (as before, global CalendarTokenProvider) giving every caller the same,
         // user-independent token - see AuthUserEntity.CalendarToken.
@@ -270,6 +273,18 @@ public class AuthUserEntity
     public string? McpApiKeyHash { get; set; }
     /// <summary>Timestamp of the (last) generation of <see cref="McpApiKeyHash"/> - display-only, same as ApiKeyCreatedAt.</summary>
     public DateTime? McpApiKeyCreatedAt { get; set; }
+    /// <summary>
+    /// SHA-256 hash of the per-user API key for the studylife-capture browser extension - same
+    /// shape and same reasoning as <see cref="ApiKeyHash"/> (long-lived, no rotation), but a
+    /// SEPARATE credential/slot: generating or revoking this one must not affect Home
+    /// Assistant's, studylife-ai's, or studylife-mcp's key and vice versa (independent blast
+    /// radius if one integration's key ever leaks - a browser extension key in particular is
+    /// stored in extension settings on a device that isn't this server, a materially different
+    /// exposure than the others). Null = no key generated, or revoked.
+    /// </summary>
+    public string? CaptureApiKeyHash { get; set; }
+    /// <summary>Timestamp of the (last) generation of <see cref="CaptureApiKeyHash"/> - display-only, same as ApiKeyCreatedAt.</summary>
+    public DateTime? CaptureApiKeyCreatedAt { get; set; }
     /// <summary>
     /// Permanent, per-user token for the subscribable ICS calendar feed
     /// (GET /api/sessions/ics?calendarToken=...). Unlike ApiKeyHash, stored in PLAINTEXT
