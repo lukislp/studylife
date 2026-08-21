@@ -119,6 +119,7 @@ the native app and the browser/PWA client are always pixel-identical.
 - Browser tab title shows the remaining time while the timer is running
 - Sound and vibration feedback when a session completes
 - Reflection prompt after a session ends ("What did you learn?"), saved directly as a linked note
+- Movement-break reminder (native app only): after ~25 minutes of continuous, uninterrupted focus, a dismissible banner + notification suggests a short break if Apple HealthKit step data shows barely any movement
 
 ### Dashboard
 - Daily overview with active/next session
@@ -144,6 +145,8 @@ the native app and the browser/PWA client are always pixel-identical.
 - Productivity hint: suggests the best time of day for the next session based on your study rhythm so far
 - Month/year comparison: study hours versus the previous month and (if enough data is available) the same month in the previous year
 - Course tags as small badges on the course pills (e.g. "exam soon")
+- Study readiness score (native app only): a personal Heart Rate Variability baseline comparison via Apple HealthKit - today's HRV against your own 30-day rolling average, with the raw values shown alongside the score
+- Sleep consistency tile (native app only): how variable your bedtime has been over the last 30 nights, via Apple HealthKit sleep data
 
 ### Notes
 - Free-text notes, optionally assigned to a course
@@ -165,6 +168,7 @@ the native app and the browser/PWA client are always pixel-identical.
 - Year in review: "Wrapped"-style summary (total hours, strongest course, most productive day/time, longest streak, total sessions)
 - ECTS forecast and month comparison (previous month) in the study progress tile
 - Study report as a printable PDF: total hours, hours per course, ECTS progress including grade average, course goal status - for scholarship applications or academic advising
+- Cardio fitness (VO2max) trend (native app only): chart of Apple Watch-measured cardio fitness over the last year, via Apple HealthKit
 
 ### Share Progress
 - Optional, public read-only link (no login) with a compact progress snapshot (ECTS, grade average, topic progress of active courses) - for sharing with parents or a mentor
@@ -206,7 +210,7 @@ the native app and the browser/PWA client are always pixel-identical.
 - App icon shortcuts (long-press on the home screen icon): start focus, new note, calendar
 
 ### Native Apps
-- [StudyLife App](https://github.com/lukislp/studylife-app) is a separate .NET MAUI Blazor Hybrid shell (iOS/Android/Mac/Windows) built on top of this repo's Blazor Client, adding native notifications, home screen widgets, Live Activities, Siri Shortcuts, and an Apple Watch companion app.
+- [StudyLife App](https://github.com/lukislp/studylife-app) is a separate .NET MAUI Blazor Hybrid shell (iOS/Android/Mac/Windows) built on top of this repo's Blazor Client, adding native notifications, home screen widgets, Live Activities, Siri Shortcuts, an Apple Watch companion app, and Apple HealthKit integration (HRV-based study readiness, sleep consistency, a movement-break reminder, and a cardio fitness trend chart) - all read-only and processed entirely on-device, never leaving it.
 
 ---
 
