@@ -50,5 +50,6 @@
   "DictateUnavailable": "Voice dictation isn't available in this browser",
   "DictateFailed": "Transcription failed – please try again.",
   "DictateSilent": "No speech detected",
-  "DictateBrowserVoice": "Listening via browser speech recognition…"
+  "DictateBrowserVoice": "Listening via browser speech recognition…",
+  "CaptureSourceLinkLabel": "View original"
 }

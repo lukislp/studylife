@@ -93,6 +93,8 @@ public class NotesController : ControllerBase
         CourseId = e.CourseId,
         SessionId = e.SessionId,
         IsMarkdown = e.IsMarkdown,
-        SourceUrl = e.SourceUrl
+        SourceUrl = e.SourceUrl,
+        Tags = e.Tags,
+        Summary = e.Summary
     };
 }

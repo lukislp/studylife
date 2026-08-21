@@ -50,5 +50,6 @@
   "DictateUnavailable": "Hääldikteerimine ei ole selles brauseris saadaval",
   "DictateFailed": "Transkriptsioon ebaõnnestus – proovi uuesti.",
   "DictateSilent": "Kõnet ei tuvastatud",
-  "DictateBrowserVoice": "Kuulamine brauseri kõnetuvastuse abil…"
+  "DictateBrowserVoice": "Kuulamine brauseri kõnetuvastuse abil…",
+  "CaptureSourceLinkLabel": "Vaata originaali"
 }
