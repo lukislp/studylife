@@ -1,0 +1,176 @@
+@using StudyLife.Shared
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+@* Long-lived per-user API key for the studylife-capture browser extension - a FOURTH, SEPARATE
+   slot from the Home Assistant, studylife-ai, and studylife-mcp keys (AuthUserEntity.
+   CaptureApiKeyHash vs ApiKeyHash/AiApiKeyHash/McpApiKeyHash, see SettingsController's
+   capture-api-key group), same reasoning and shape otherwise: the plaintext key is ONLY visible
+   right after generation (the server stores exclusively the SHA-256 hash) - after that the card
+   just shows "active since ...". Deliberately no rotation, same as HA/AI/MCP: the extension
+   (running in the user's own browser) has no live session that could pick up a rotation.
+   Self-contained component, structurally a copy of SetupMcpIntegrationCard (its own SetupText
+   instance + its own HTTP calls) with the capture-api-key endpoints and Capture-prefixed i18n
+   keys instead. *@
+
+<div class="setup-section">
+    <div class="ss-label">@T.CaptureIntegrationHeading</div>
+    <p class="ss-desc">@T.CaptureIntegrationDesc</p>
+
+    @if (!string.IsNullOrEmpty(_generatedKey))
+    {
+        <div class="field-row" style="flex-wrap:wrap">
+            <input class="input" readonly value="@_generatedKey" />
+            <button type="button" class="btn-secondary" style="flex-shrink:0" @onclick="CopyKey">
+                @(_copied ? $"✓ {T.Copied}" : T.Copy)
+            </button>
+        </div>
+        <p class="ss-desc" style="font-weight:600">⚠️ @T.CaptureKeyOnceHint</p>
+    }
+
+    @if (_hasKey)
+    {
+        <p class="ss-desc">@string.Format(T.CaptureKeyActiveSince ?? "", _createdAt?.ToLocalTime().ToString("g") ?? "")</p>
+        <div class="toggle-row" style="gap:0.75rem;flex-wrap:wrap">
+            <button type="button" class="btn-secondary" @onclick="() => _confirmingRegenerate = true" disabled="@_busy">
+                @T.CaptureKeyRegenerateButton
+            </button>
+            <button type="button" class="btn-danger" @onclick="() => _confirmingRevoke = true" disabled="@_busy">
+                @T.CaptureKeyRevokeButton
+            </button>
+        </div>
+    }
+    else
+    {
+        <button type="button" class="btn-secondary" @onclick="Generate" disabled="@_busy">
+            @(_busy ? "…" : T.CaptureKeyGenerateButton)
+        </button>
+    }
+</div>
+
+@if (_confirmingRegenerate)
+{
+    <div class="modal-overlay" @onclick="() => _confirmingRegenerate = false">
+        <div class="modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>@T.CaptureKeyRegenerateConfirmTitle</h3>
+                <button type="button" class="modal-close" @onclick="() => _confirmingRegenerate = false">✕</button>
+            </div>
+            <div class="modal-body">
+                <p>⚠️ @T.CaptureKeyRegenerateConfirmWarning</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" @onclick="() => _confirmingRegenerate = false" disabled="@_busy">
+                    @T.CaptureKeyConfirmCancel
+                </button>
+                <button type="button" class="btn-danger" @onclick="ConfirmRegenerate" disabled="@_busy">
+                    @(_busy ? "…" : T.CaptureKeyRegenerateConfirmYes)
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_confirmingRevoke)
+{
+    <div class="modal-overlay" @onclick="() => _confirmingRevoke = false">
+        <div class="modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>@T.CaptureKeyRevokeConfirmTitle</h3>
+                <button type="button" class="modal-close" @onclick="() => _confirmingRevoke = false">✕</button>
+            </div>
+            <div class="modal-body">
+                <p>⚠️ @T.CaptureKeyRevokeConfirmWarning</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" @onclick="() => _confirmingRevoke = false" disabled="@_busy">
+                    @T.CaptureKeyConfirmCancel
+                </button>
+                <button type="button" class="btn-danger" @onclick="ConfirmRevoke" disabled="@_busy">
+                    @(_busy ? "…" : T.CaptureKeyRevokeConfirmYes)
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private I18nText.SetupText T = new();
+
+    private bool _hasKey;
+    private DateTime? _createdAt;
+    // Plaintext only visible right after a generation within this page load - the server
+    // never gives it out again (only the hash lives in the DB).
+    private string? _generatedKey;
+    private bool _copied;
+    private bool _busy;
+    private bool _confirmingRegenerate;
+    private bool _confirmingRevoke;
+
+    protected override async Task OnInitializedAsync()
+    {
+        T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
+        try
+        {
+            var status = await Http.GetFromJsonAsync<CaptureApiKeyStatusDto>("api/settings/capture-api-key");
+            _hasKey = status?.HasKey ?? false;
+            _createdAt = status?.CreatedAt;
+        }
+        catch { /* offline: card shows the "no key" default */ }
+    }
+
+    private async Task Generate()
+    {
+        _busy = true;
+        try
+        {
+            var response = await Http.PostAsync("api/settings/capture-api-key/generate", null);
+            if (response.IsSuccessStatusCode)
+            {
+                var dto = await response.Content.ReadFromJsonAsync<CaptureApiKeyGenerateResponseDto>();
+                if (!string.IsNullOrEmpty(dto?.ApiKey))
+                {
+                    _generatedKey = dto!.ApiKey;
+                    _hasKey = true;
+                    _createdAt = dto.CreatedAt;
+                }
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task ConfirmRegenerate()
+    {
+        _confirmingRegenerate = false;
+        await Generate();
+    }
+
+    private async Task ConfirmRevoke()
+    {
+        _confirmingRevoke = false;
+        _busy = true;
+        try
+        {
+            var response = await Http.PostAsync("api/settings/capture-api-key/revoke", null);
+            if (response.IsSuccessStatusCode)
+            {
+                _hasKey = false;
+                _createdAt = null;
+                _generatedKey = null;
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task CopyKey()
+    {
+        if (string.IsNullOrEmpty(_generatedKey)) return;
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", _generatedKey);
+        _copied = true;
+        StateHasChanged();
+        await Task.Delay(2000);
+        _copied = false;
+        StateHasChanged();
+    }
+}

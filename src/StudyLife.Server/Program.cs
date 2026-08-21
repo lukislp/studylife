@@ -597,10 +597,11 @@ if (string.Equals(app.Configuration["DEMO_MODE"], "true", StringComparison.Ordin
 // passkey session token (X-Session-Token, phase 2 - the normal path of the browser client)
 // OR a per-user API key (X-Api-Key header or ?apiKey= query string for URL-only
 // consumers) - the latter is a long-lived key, NEVER automatically rotated, for non-interactive
-// integrations. Three independent slots exist per user: AuthUserEntity.ApiKeyHash (Home
-// Assistant), AuthUserEntity.AiApiKeyHash (studylife-ai), and AuthUserEntity.McpApiKeyHash
-// (studylife-mcp), all generated via the setup page - separate slots so one integration's key
-// leaking/rotating never affects the others.
+// integrations. Four independent slots exist per user: AuthUserEntity.ApiKeyHash (Home
+// Assistant), AuthUserEntity.AiApiKeyHash (studylife-ai), AuthUserEntity.McpApiKeyHash
+// (studylife-mcp), and AuthUserEntity.CaptureApiKeyHash (studylife-capture browser extension),
+// all generated via the setup page - separate slots so one integration's key leaking/rotating
+// never affects the others.
 // The former global, monthly-rotating key (ApiKeyProvider) and its
 // unauthenticated bootstrap-key endpoint have been completely removed - the browser client
 // authenticates exclusively via its session, an API key always identifies
@@ -705,13 +706,14 @@ app.Use(async (context, next) =>
             // Without a session token: per-user API key. The hash of the submitted plaintext
             // key is matched against AuthUsers.ApiKeyHash (Home Assistant & co), OR
             // AuthUsers.AiApiKeyHash (studylife-ai), OR AuthUsers.McpApiKeyHash
-            // (studylife-mcp) - three separate slots (see AuthUserEntity.AiApiKeyHash /
-            // McpApiKeyHash) so revoking/rotating one integration's key can never affect the
+            // (studylife-mcp), OR AuthUsers.CaptureApiKeyHash (studylife-capture) - four
+            // separate slots (see AuthUserEntity.AiApiKeyHash / McpApiKeyHash /
+            // CaptureApiKeyHash) so revoking/rotating one integration's key can never affect the
             // others, but any one of them authenticates AND identifies the user in one step
             // here, there is no more "first user" fallback for key requests.
             // Deliberately NO SessionItemKey item: session-required endpoints (passkey
-            // management, ha-api-key/*, ai-api-key/*, mcp-api-key/*) remain off-limits for pure
-            // key consumers.
+            // management, ha-api-key/*, ai-api-key/*, mcp-api-key/*, capture-api-key/*) remain
+            // off-limits for pure key consumers.
             var provided = context.Request.Headers["X-Api-Key"].FirstOrDefault()
                 ?? context.Request.Query["apiKey"].FirstOrDefault();
             if (string.IsNullOrEmpty(provided))
@@ -722,7 +724,8 @@ app.Use(async (context, next) =>
             var keyHash = AuthSessionService.HashToken(provided);
             var keyDb = context.RequestServices.GetRequiredService<StudyLifeDb>();
             var keyOwner = await keyDb.AuthUsers.AsNoTracking()
-                .FirstOrDefaultAsync(u => u.ApiKeyHash == keyHash || u.AiApiKeyHash == keyHash || u.McpApiKeyHash == keyHash);
+                .FirstOrDefaultAsync(u => u.ApiKeyHash == keyHash || u.AiApiKeyHash == keyHash
+                    || u.McpApiKeyHash == keyHash || u.CaptureApiKeyHash == keyHash);
             if (keyOwner is null)
             {
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
