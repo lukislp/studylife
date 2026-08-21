@@ -51,5 +51,6 @@
   "DictateFailed": "Theip ar an trascríobh – bain triail eile as.",
   "DictateSilent": "Níor braitheadh aon chaint",
   "DictateBrowserVoice": "Ag éisteacht trí aitheantóireacht ghutha an bhrabhsálaí…",
-  "CaptureSourceLinkLabel": "Féach ar an mbunleagan"
+  "CaptureSourceLinkLabel": "Féach ar an mbunleagan",
+  "RelatedNotesLabel": "Nótaí gaolmhara"
 }

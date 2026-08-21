@@ -51,5 +51,6 @@
   "DictateFailed": "Falha na transcrição – tenta novamente.",
   "DictateSilent": "Não foi detetada fala",
   "DictateBrowserVoice": "A ouvir através do reconhecimento de voz do navegador…",
-  "CaptureSourceLinkLabel": "Ver original"
+  "CaptureSourceLinkLabel": "Ver original",
+  "RelatedNotesLabel": "Notas relacionadas"
 }

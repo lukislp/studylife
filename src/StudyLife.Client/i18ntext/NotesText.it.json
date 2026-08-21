@@ -51,5 +51,6 @@
   "DictateFailed": "Trascrizione non riuscita – riprova.",
   "DictateSilent": "Nessuna voce rilevata",
   "DictateBrowserVoice": "Ascolto tramite il riconoscimento vocale del browser…",
-  "CaptureSourceLinkLabel": "Visualizza originale"
+  "CaptureSourceLinkLabel": "Visualizza originale",
+  "RelatedNotesLabel": "Note correlate"
 }

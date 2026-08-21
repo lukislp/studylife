@@ -51,5 +51,6 @@
   "DictateFailed": "Не удалось расшифровать текст – попробуйте снова.",
   "DictateSilent": "Речь не обнаружена",
   "DictateBrowserVoice": "Прослушивание через распознавание речи браузера…",
-  "CaptureSourceLinkLabel": "Смотреть оригинал"
+  "CaptureSourceLinkLabel": "Смотреть оригинал",
+  "RelatedNotesLabel": "Похожие заметки"
 }

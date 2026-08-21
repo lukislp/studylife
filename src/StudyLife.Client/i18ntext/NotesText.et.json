@@ -51,5 +51,6 @@
   "DictateFailed": "Transkriptsioon ebaõnnestus – proovi uuesti.",
   "DictateSilent": "Kõnet ei tuvastatud",
   "DictateBrowserVoice": "Kuulamine brauseri kõnetuvastuse abil…",
-  "CaptureSourceLinkLabel": "Vaata originaali"
+  "CaptureSourceLinkLabel": "Vaata originaali",
+  "RelatedNotesLabel": "Seotud märkmed"
 }

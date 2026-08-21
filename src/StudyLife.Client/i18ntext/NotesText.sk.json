@@ -51,5 +51,6 @@
   "DictateFailed": "Prepis zlyhal – skúste to prosím znova.",
   "DictateSilent": "Nezistila sa žiadna reč",
   "DictateBrowserVoice": "Počúvanie pomocou rozpoznávania reči prehliadača…",
-  "CaptureSourceLinkLabel": "Zobraziť originál"
+  "CaptureSourceLinkLabel": "Zobraziť originál",
+  "RelatedNotesLabel": "Súvisiace poznámky"
 }

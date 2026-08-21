@@ -51,5 +51,6 @@
   "DictateFailed": "Transcrierea a eșuat – încearcă din nou.",
   "DictateSilent": "Nu s-a detectat nicio vorbire",
   "DictateBrowserVoice": "Se ascultă prin recunoașterea vocală a browserului…",
-  "CaptureSourceLinkLabel": "Vezi originalul"
+  "CaptureSourceLinkLabel": "Vezi originalul",
+  "RelatedNotesLabel": "Notițe conexe"
 }

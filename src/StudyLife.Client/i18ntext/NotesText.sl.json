@@ -51,5 +51,6 @@
   "DictateFailed": "Prepis ni uspel – poskusite znova.",
   "DictateSilent": "Ni zaznanega govora",
   "DictateBrowserVoice": "Poslušanje s prepoznavanjem govora brskalnika…",
-  "CaptureSourceLinkLabel": "Poglej izvirnik"
+  "CaptureSourceLinkLabel": "Poglej izvirnik",
+  "RelatedNotesLabel": "Povezani zapiski"
 }
