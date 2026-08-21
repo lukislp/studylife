@@ -139,6 +139,7 @@ public class NoteDto
     public int? CourseId { get; set; }
     public int? SessionId { get; set; }
     public bool IsMarkdown { get; set; }
+    public string? SourceUrl { get; set; }
 }
 
 public class CourseGoalDto
