@@ -273,6 +273,12 @@
              SetupMcpIntegrationCard. -->
         <SetupMcpIntegrationCard />
 
+        <!-- studylife-capture: FOURTH, separate long-lived per-user API key slot
+             (CaptureApiKeyHash) for the browser extension that saves selected text/articles
+             into StudyLife as notes - same shape as the other three keys but independently
+             generated/revoked, see SetupCaptureIntegrationCard. -->
+        <SetupCaptureIntegrationCard />
+
         @if (_rawBackupSupported)
         {
             <!-- Backup & export. DownloadDatabaseButtonText/PasswordPlaceholder/-Hint only apply to

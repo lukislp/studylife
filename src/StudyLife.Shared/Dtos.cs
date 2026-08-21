@@ -403,6 +403,27 @@ public class McpApiKeyGenerateResponseDto
 }
 
 /// <summary>
+/// Status of the per-user API key (existence + creation date, never the plaintext) for the
+/// studylife-capture browser extension - separate slot from the other three keys (see
+/// AuthUserEntity.CaptureApiKeyHash), same "existence + timestamp only" shape as HaApiKeyStatusDto.
+/// </summary>
+public class CaptureApiKeyStatusDto
+{
+    public bool HasKey { get; set; }
+    public DateTime? CreatedAt { get; set; }
+}
+
+/// <summary>
+/// Response of POST /api/settings/capture-api-key/generate - same one-time-plaintext shape as
+/// HaApiKeyGenerateResponseDto, for the separate studylife-capture key slot.
+/// </summary>
+public class CaptureApiKeyGenerateResponseDto
+{
+    public string ApiKey { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
+}
+
+/// <summary>
 /// Request/response shapes for POST /api/ai/chat, /api/ai/agent, /api/ai/agent/confirm - the
 /// AiProxyController passes bodies through byte-for-byte, so these must match studylife-ai's own
 /// pydantic schemas exactly (field names, including its snake_case ones - see

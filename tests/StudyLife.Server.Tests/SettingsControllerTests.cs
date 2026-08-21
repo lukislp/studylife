@@ -432,6 +432,70 @@ public class SettingsControllerMcpApiKeyTests : IClassFixture<CustomWebApplicati
 }
 
 /// <summary>
+/// Same lifecycle as SettingsControllerHaApiKeyTests, mirrored for the separate studylife-capture
+/// key slot (AuthUserEntity.CaptureApiKeyHash / api/settings/capture-api-key). Own class/factory
+/// for the same reason as the HA test - generate/revoke mutate AuthUser 1.
+/// </summary>
+public class SettingsControllerCaptureApiKeyTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+
+    public SettingsControllerCaptureApiKeyTests(CustomWebApplicationFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient(); // carries the seeded test user's session token
+    }
+
+    [Fact]
+    public async Task CaptureApiKeyLifecycle_StatusGenerateGateRevoke()
+    {
+        // ── Fresh state: no key ─────────────────────────────────────────────────────────────
+        var status = await _client.GetFromJsonAsync<CaptureApiKeyStatusDto>("/api/settings/capture-api-key");
+        Assert.NotNull(status);
+        Assert.False(status!.HasKey);
+        Assert.Null(status.CreatedAt);
+
+        // ── Generate: plaintext exactly once, only the hash is stored ───────────────────────
+        var generateResponse = await _client.PostAsync("/api/settings/capture-api-key/generate", null);
+        Assert.Equal(HttpStatusCode.OK, generateResponse.StatusCode);
+        var generated = await generateResponse.Content.ReadFromJsonAsync<CaptureApiKeyGenerateResponseDto>();
+        Assert.NotNull(generated);
+        Assert.NotEmpty(generated!.ApiKey);
+        Assert.True(generated.CreatedAt >= DateTime.UtcNow.AddMinutes(-2));
+
+        status = await _client.GetFromJsonAsync<CaptureApiKeyStatusDto>("/api/settings/capture-api-key");
+        Assert.True(status!.HasKey);
+        Assert.NotNull(status.CreatedAt);
+
+        // ── The generated key passes the /api gate as X-Api-Key, same as the HA/AI/MCP keys ─
+        using (var keyClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, generated.ApiKey))
+        {
+            Assert.Equal(HttpStatusCode.OK, (await keyClient.GetAsync("/api/notes")).StatusCode);
+
+            // ... but the key must NOT be able to manage itself: all three capture-api-key
+            // endpoints reject gate-only (API key) authentication with 401.
+            Assert.Equal(HttpStatusCode.Unauthorized, (await keyClient.GetAsync("/api/settings/capture-api-key")).StatusCode);
+            Assert.Equal(HttpStatusCode.Unauthorized, (await keyClient.PostAsync("/api/settings/capture-api-key/generate", null)).StatusCode);
+            Assert.Equal(HttpStatusCode.Unauthorized, (await keyClient.PostAsync("/api/settings/capture-api-key/revoke", null)).StatusCode);
+        }
+
+        // ── Revoke (with a real session): key hash deleted, old key gets 401 at the gate ────
+        var revokeResponse = await _client.PostAsync("/api/settings/capture-api-key/revoke", null);
+        Assert.Equal(HttpStatusCode.NoContent, revokeResponse.StatusCode);
+
+        status = await _client.GetFromJsonAsync<CaptureApiKeyStatusDto>("/api/settings/capture-api-key");
+        Assert.False(status!.HasKey);
+        Assert.Null(status.CreatedAt);
+
+        using (var revokedClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, generated.ApiKey))
+        {
+            Assert.Equal(HttpStatusCode.Unauthorized, (await revokedClient.GetAsync("/api/notes")).StatusCode);
+        }
+    }
+}
+
+/// <summary>
 /// The whole point of three separate key slots: generating/revoking one must never affect the
 /// others. Own class/factory, same isolation reasoning as the lifecycle tests above.
 /// </summary>
