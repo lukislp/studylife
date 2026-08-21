@@ -49,6 +49,32 @@
 
 .note-linked-badge { font-size: 0.75rem; cursor: default; opacity: 0.8; }
 
+/* Capture metadata (studylife-capture browser extension): source link + AI-suggested tags +
+   summary, all optional/independent (see NoteDto.SourceUrl/Tags/Summary) - shown read-only,
+   never editable here. Tag pill styling matches dashboard.css's .pill-tag exactly (same
+   accent2-tinted chip look), duplicated rather than shared across files since dashboard.css's
+   classes are dashboard-scoped by convention. */
+.note-capture-meta { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.75rem; }
+.note-source-link {
+    font-size: 0.75rem;
+    color: var(--text2);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    text-decoration: none;
+    width: fit-content;
+}
+.note-source-link:hover { color: var(--accent); }
+.note-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.note-tag-pill {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent2) 18%, transparent);
+    color: var(--accent2);
+}
+.note-summary { font-size: 0.8rem; color: var(--text2); font-style: italic; margin: 0; }
+
 .note-row__meta {
     display: flex;
     align-items: center;

@@ -50,5 +50,6 @@
   "DictateUnavailable": "Hlasové diktování není v tomto prohlížeči k dispozici",
   "DictateFailed": "Přepis se nezdařil – zkuste to prosím znovu.",
   "DictateSilent": "Nebyla zjištěna žádná řeč",
-  "DictateBrowserVoice": "Naslouchání pomocí rozpoznávání řeči prohlížeče…"
+  "DictateBrowserVoice": "Naslouchání pomocí rozpoznávání řeči prohlížeče…",
+  "CaptureSourceLinkLabel": "Zobrazit originál"
 }

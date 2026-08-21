@@ -140,6 +140,13 @@ public class NoteDto
     public int? SessionId { get; set; }
     public bool IsMarkdown { get; set; }
     public string? SourceUrl { get; set; }
+    /// <summary>Comma-separated tags from capture enrichment (see NoteEntity.EnrichedAt) -
+    /// server-assigned, read-only from the client's point of view (Create/Update never accept
+    /// it, see NotesController).</summary>
+    public string? Tags { get; set; }
+    /// <summary>One-sentence AI-generated summary from capture enrichment - same read-only
+    /// contract as Tags.</summary>
+    public string? Summary { get; set; }
 }
 
 public class CourseGoalDto

@@ -50,5 +50,6 @@
   "DictateUnavailable": "Spraakinvoer is niet beschikbaar in deze browser",
   "DictateFailed": "Transcriptie mislukt – probeer het opnieuw.",
   "DictateSilent": "Geen spraak gedetecteerd",
-  "DictateBrowserVoice": "Luisteren via spraakherkenning van de browser…"
+  "DictateBrowserVoice": "Luisteren via spraakherkenning van de browser…",
+  "CaptureSourceLinkLabel": "Origineel bekijken"
 }

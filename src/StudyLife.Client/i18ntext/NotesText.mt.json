@@ -50,5 +50,6 @@
   "DictateUnavailable": "Id-dittatura bil-vuċi mhux disponibbli f'dan il-browser",
   "DictateFailed": "It-traskrizzjoni falliet – jekk jogħġbok erġa' pprova.",
   "DictateSilent": "Ma nstab ebda diskors",
-  "DictateBrowserVoice": "Qed jisma' permezz tar-rikonoxximent tal-vuċi tal-browser…"
+  "DictateBrowserVoice": "Qed jisma' permezz tar-rikonoxximent tal-vuċi tal-browser…",
+  "CaptureSourceLinkLabel": "Ara l-oriġinal"
 }

@@ -581,6 +581,21 @@ public class NoteEntity
     /// browser extension) - null for every note created directly in StudyLife itself. Purely
     /// informational (a "where did this come from" link), not used for any lookup/uniqueness.</summary>
     public string? SourceUrl { get; set; }
+    /// <summary>Set once BackgroundTaskService.CaptureEnrichment has run studylife-ai's
+    /// POST /internal/enrich-capture for this note (success or failure alike - see that
+    /// sub-task's comment for why a single attempt, not indefinite retry). Null for every note
+    /// that was never a capture (SourceUrl null) or hasn't been picked up by the sub-task yet -
+    /// the query filter for "still needs enrichment" is exactly SourceUrl != null &amp;&amp;
+    /// EnrichedAt == null.</summary>
+    public DateTime? EnrichedAt { get; set; }
+    /// <summary>Comma-separated short keywords from studylife-ai's tag suggestion (capture
+    /// enrichment only, see EnrichedAt) - null until enrichment runs, or if it produced none.
+    /// Plain comma-separated string, same convention as CourseGoalDto's own Tag field elsewhere
+    /// in this schema - not worth a separate table for a handful of short strings.</summary>
+    public string? Tags { get; set; }
+    /// <summary>One-sentence AI-generated summary from capture enrichment (see EnrichedAt) -
+    /// null until enrichment runs, or if it produced none.</summary>
+    public string? Summary { get; set; }
 }
 
 /// <summary>

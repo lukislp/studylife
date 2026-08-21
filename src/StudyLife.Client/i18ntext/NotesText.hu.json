@@ -50,5 +50,6 @@
   "DictateUnavailable": "A hangalapú diktálás nem érhető el ebben a böngészőben",
   "DictateFailed": "Az átírás sikertelen – kérjük, próbáld újra.",
   "DictateSilent": "Nem észleltünk beszédet",
-  "DictateBrowserVoice": "Hallgatás a böngésző beszédfelismerésével…"
+  "DictateBrowserVoice": "Hallgatás a böngésző beszédfelismerésével…",
+  "CaptureSourceLinkLabel": "Eredeti megtekintése"
 }
