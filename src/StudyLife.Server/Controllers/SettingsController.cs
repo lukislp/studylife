@@ -349,6 +349,55 @@ public class SettingsController : ControllerBase
         return NoContent();
     }
 
+    // Same three-endpoint shape again, for the separate studylife-capture browser-extension key
+    // slot (AuthUserEntity.CaptureApiKeyHash). Like the mcp-api-key group (and unlike ai-api-key),
+    // there is no server-to-server registration call here - the extension holds the plaintext
+    // key itself (pasted into its own settings popup) and sends it directly as X-Api-Key on
+    // every request, resolved by the same gate middleware every other key type goes through.
+
+    /// <summary>Status for the setup card: does a Capture-extension key exist, and since when?
+    /// Same "never the plaintext" rule as GetHaApiKeyStatus.</summary>
+    [HttpGet("capture-api-key")]
+    public async Task<ActionResult<CaptureApiKeyStatusDto>> GetCaptureApiKeyStatus()
+    {
+        if (SessionUser is not int userId) return Unauthorized();
+        var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+        return new CaptureApiKeyStatusDto { HasKey = user.CaptureApiKeyHash != null, CreatedAt = user.CaptureApiKeyCreatedAt };
+    }
+
+    /// <summary>Generates a new long-lived per-user API key for studylife-capture (immediately
+    /// replaces any existing one in this slot only - the other three slots are untouched).
+    /// Same one-time-plaintext shape as GenerateHaApiKey.</summary>
+    [HttpPost("capture-api-key/generate")]
+    public async Task<ActionResult<CaptureApiKeyGenerateResponseDto>> GenerateCaptureApiKey()
+    {
+        if (SessionUser is not int userId) return Unauthorized();
+        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+
+        var key = AuthSessionService.GenerateToken();
+        user.CaptureApiKeyHash = AuthSessionService.HashToken(key);
+        user.CaptureApiKeyCreatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+        return new CaptureApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = user.CaptureApiKeyCreatedAt.Value };
+    }
+
+    /// <summary>Permanently revokes the studylife-capture API key (hash is deleted) - the
+    /// extension gets 401 from the next request onward. The other three slots are untouched.</summary>
+    [HttpPost("capture-api-key/revoke")]
+    public async Task<IActionResult> RevokeCaptureApiKey()
+    {
+        if (SessionUser is not int userId) return Unauthorized();
+        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+
+        user.CaptureApiKeyHash = null;
+        user.CaptureApiKeyCreatedAt = null;
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
     /// <summary>AuthUserId of the request, but ONLY if it came via a real validated passkey
     /// session (same pattern as AuthController.SessionAuthUserId) - API-key requests
     /// don't set the SessionItemKey and are rejected here.</summary>

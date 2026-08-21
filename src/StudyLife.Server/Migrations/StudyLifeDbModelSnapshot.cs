@@ -74,6 +74,12 @@ namespace StudyLife.Server.Migrations
                     b.Property<DateTime?>("CalendarTokenCreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("CaptureApiKeyCreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CaptureApiKeyHash")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
@@ -96,6 +102,9 @@ namespace StudyLife.Server.Migrations
                         .IsUnique();
 
                     b.HasIndex("CalendarToken")
+                        .IsUnique();
+
+                    b.HasIndex("CaptureApiKeyHash")
                         .IsUnique();
 
                     b.HasIndex("McpApiKeyHash")
