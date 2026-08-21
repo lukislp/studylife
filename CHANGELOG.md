@@ -1,3 +1,10 @@
+# [1.38.0](https://github.com/lukislp/studylife/compare/v1.37.0...v1.38.0) (2026-08-21)
+
+
+### Features
+
+* match favicon/PWA icon to the native app's actual logo ([ae782a3](https://github.com/lukislp/studylife/commit/ae782a34256c26ce60fa9519d78fea1eaeec59c8))
+
 # [1.37.0](https://github.com/lukislp/studylife/compare/v1.36.0...v1.37.0) (2026-08-21)
 
 
