@@ -23,15 +23,19 @@ namespace StudyLife.Server.Tests;
 /// </summary>
 internal static class BackgroundTaskServiceTestFactory
 {
-    /// <summary>apnsSender override for tests that need an actually "enabled" sender with a
-    /// stub HTTP handler (Live Activity push, see LiveActivityPushTests) - the
-    /// DI-registered sender in the test host has no Apns:* config and is therefore Enabled=false.</summary>
-    public static BackgroundTaskService Create(CustomWebApplicationFactory factory, ApnsSender? apnsSender = null) => new(
+    /// <summary>apnsSender/aiProxyClient overrides for tests that need an actually "enabled"
+    /// dependency with a stub HTTP handler (Live Activity push, see LiveActivityPushTests;
+    /// capture enrichment, see BackgroundTaskServiceCaptureEnrichmentTests) - the DI-registered
+    /// instances in the test host have no Apns:*/StudyLifeAi:* config and are therefore
+    /// Enabled=false.</summary>
+    public static BackgroundTaskService Create(
+        CustomWebApplicationFactory factory, ApnsSender? apnsSender = null, AiProxyClient? aiProxyClient = null) => new(
         factory.Services,
         factory.Services.GetRequiredService<VapidKeysHolder>(),
         factory.Services.GetRequiredService<ILogger<BackgroundTaskService>>(),
         apnsSender ?? factory.Services.GetRequiredService<ApnsSender>(),
-        backupService: factory.Services.GetRequiredService<DatabaseBackupService>());
+        backupService: factory.Services.GetRequiredService<DatabaseBackupService>(),
+        aiProxyClient: aiProxyClient ?? factory.Services.GetRequiredService<AiProxyClient>());
 }
 
 /// <summary>

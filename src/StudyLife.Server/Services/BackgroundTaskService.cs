@@ -83,6 +83,13 @@ public partial class BackgroundTaskService : BackgroundService
     private readonly IWorkerShardClaim _shardClaim;
 
     private readonly ApnsSender _apnsSender;
+    // Optional constructor param (like _backupService) purely so the 4 existing direct-
+    // construction unit tests (none of which exercise capture enrichment) don't all need
+    // updating for an unrelated new dependency - always resolved for real via DI in production
+    // (registered as a singleton in Program.cs, unlike _backupService's genuinely conditional
+    // registration). CaptureEnrichment.cs's Enabled gate covers both "not configured" and "not
+    // passed in a test" identically.
+    private readonly AiProxyClient? _aiProxyClient;
 
     // Clock seam for the wall-clock gates in the sub-task partials (weekly report on Sunday
     // evenings, monthly report on the 1st, daily motivation from 8 AM, ...). Production always
@@ -102,7 +109,8 @@ public partial class BackgroundTaskService : BackgroundService
         ApnsSender apnsSender,
         IWorkerShardClaim? shardClaim = null,
         DatabaseBackupService? backupService = null,
-        TimeProvider? timeProvider = null)
+        TimeProvider? timeProvider = null,
+        AiProxyClient? aiProxyClient = null)
     {
         _services = services;
         _vapidKeys = vapidKeysHolder.Keys!; // always set - see VapidKeysHolder comment
@@ -111,6 +119,7 @@ public partial class BackgroundTaskService : BackgroundService
         _backupService = backupService;
         _shardClaim = shardClaim ?? new StaticWorkerShardClaim();
         _time = timeProvider ?? TimeProvider.System;
+        _aiProxyClient = aiProxyClient;
     }
 
     private WebPushClient GetPushClient()
@@ -205,6 +214,15 @@ public partial class BackgroundTaskService : BackgroundService
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error in LiveActivityPushService");
+                }
+
+                try
+                {
+                    await RunCaptureEnrichmentAsync(db);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error in CaptureEnrichmentService");
                 }
 
                 if (runCourseGoalReminder)

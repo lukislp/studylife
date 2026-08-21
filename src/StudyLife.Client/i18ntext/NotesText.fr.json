@@ -50,5 +50,6 @@
   "DictateUnavailable": "La dictée vocale n'est pas disponible dans ce navigateur",
   "DictateFailed": "Échec de la transcription – veuillez réessayer.",
   "DictateSilent": "Aucune parole détectée",
-  "DictateBrowserVoice": "Écoute via la reconnaissance vocale du navigateur…"
+  "DictateBrowserVoice": "Écoute via la reconnaissance vocale du navigateur…",
+  "CaptureSourceLinkLabel": "Voir l'original"
 }

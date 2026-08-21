@@ -135,6 +135,79 @@ public class AiProxyClientTests
         await client.RegisterKeyAsync(7, "key", CancellationToken.None);
     }
 
+    [Fact]
+    public async Task EnrichCaptureAsync_SendsSharedSecretAndFields()
+    {
+        var handler = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("{\"course_id\":null,\"course_confidence\":null,\"tags\":[],\"summary\":null}"),
+        });
+        var client = CreateClient(handler);
+
+        await client.EnrichCaptureAsync(7, 99, "Title", "Content", "https://example.com/a", CancellationToken.None);
+
+        var request = Assert.Single(handler.Requests);
+        Assert.Equal("https://ai.test/internal/enrich-capture", request.Uri);
+        Assert.Equal("shared-secret", request.Headers["x-studylife-shared-secret"]);
+        Assert.Contains("\"user_id\":\"7\"", request.Body);
+        Assert.Contains("\"note_id\":99", request.Body);
+        Assert.Contains("\"title\":\"Title\"", request.Body);
+        Assert.Contains("\"content\":\"Content\"", request.Body);
+        Assert.Contains("\"source_url\":\"https://example.com/a\"", request.Body);
+    }
+
+    [Fact]
+    public async Task EnrichCaptureAsync_ParsesSuccessfulResponse()
+    {
+        var handler = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("{\"course_id\":3,\"course_confidence\":0.91,\"tags\":[\"eigenvalues\",\"matrices\"],\"summary\":\"A summary.\"}"),
+        });
+        var client = CreateClient(handler);
+
+        var result = await client.EnrichCaptureAsync(7, 99, "Title", "Content", null, CancellationToken.None);
+
+        Assert.NotNull(result);
+        Assert.Equal(3, result!.CourseId);
+        Assert.Equal(0.91, result.CourseConfidence);
+        Assert.Equal(new List<string> { "eigenvalues", "matrices" }, result.Tags);
+        Assert.Equal("A summary.", result.Summary);
+    }
+
+    [Fact]
+    public async Task EnrichCaptureAsync_WhenDisabled_NeverCallsOut()
+    {
+        var handler = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
+        var client = CreateClient(handler, baseUrl: null, sharedSecret: null);
+
+        var result = await client.EnrichCaptureAsync(7, 99, "Title", "Content", null, CancellationToken.None);
+
+        Assert.Null(result);
+        Assert.Empty(handler.Requests);
+    }
+
+    [Fact]
+    public async Task EnrichCaptureAsync_UpstreamFailure_ReturnsNull()
+    {
+        var handler = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.InternalServerError));
+        var client = CreateClient(handler);
+
+        var result = await client.EnrichCaptureAsync(7, 99, "Title", "Content", null, CancellationToken.None);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task EnrichCaptureAsync_NetworkFailure_ReturnsNull()
+    {
+        var handler = new StubHttpHandler(_ => throw new HttpRequestException("connection refused"));
+        var client = CreateClient(handler);
+
+        var result = await client.EnrichCaptureAsync(7, 99, "Title", "Content", null, CancellationToken.None);
+
+        Assert.Null(result);
+    }
+
     /// <summary>Records all requests (including headers/body) and returns predefined responses -
     /// same deliberately plainly-built stub as ApnsPushTests.StubHttpHandler.</summary>
     private sealed class StubHttpHandler : HttpMessageHandler

@@ -176,6 +176,29 @@ else
                         </select>
                     </div>
 
+                    @if (!string.IsNullOrEmpty(_selectedNote.SourceUrl) || !string.IsNullOrEmpty(_selectedNote.Tags) || !string.IsNullOrEmpty(_selectedNote.Summary))
+                    {
+                        <div class="note-capture-meta">
+                            @if (!string.IsNullOrEmpty(_selectedNote.SourceUrl))
+                            {
+                                <a href="@_selectedNote.SourceUrl" target="_blank" rel="noopener noreferrer" class="note-source-link">🔗 @T.CaptureSourceLinkLabel</a>
+                            }
+                            @if (!string.IsNullOrEmpty(_selectedNote.Tags))
+                            {
+                                <div class="note-tags">
+                                    @foreach (var tag in _selectedNote.Tags.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+                                    {
+                                        <span class="note-tag-pill">@tag</span>
+                                    }
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(_selectedNote.Summary))
+                            {
+                                <p class="note-summary">@_selectedNote.Summary</p>
+                            }
+                        </div>
+                    }
+
                     <div class="field">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem">
                             <label style="font-size:0.75rem;color:var(--text2)">@T.ContentLabel</label>
