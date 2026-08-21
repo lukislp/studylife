@@ -582,12 +582,25 @@ public class NoteEntity
     /// informational (a "where did this come from" link), not used for any lookup/uniqueness.</summary>
     public string? SourceUrl { get; set; }
     /// <summary>Set once BackgroundTaskService.CaptureEnrichment has run studylife-ai's
-    /// POST /internal/enrich-capture for this note (success or failure alike - see that
-    /// sub-task's comment for why a single attempt, not indefinite retry). Null for every note
-    /// that was never a capture (SourceUrl null) or hasn't been picked up by the sub-task yet -
-    /// the query filter for "still needs enrichment" is exactly SourceUrl != null &amp;&amp;
-    /// EnrichedAt == null.</summary>
+    /// POST /internal/enrich-capture for this note - either because it succeeded, or because
+    /// EnrichmentAttempts reached BackgroundTaskService.CaptureEnrichment.MaxEnrichmentAttempts
+    /// (see that field's comment for why bounded retry, not indefinite or single-shot). Null
+    /// for every note that was never a capture (SourceUrl null) or hasn't finished retrying yet -
+    /// the query filter for "still needs enrichment" is SourceUrl != null &amp;&amp;
+    /// EnrichedAt == null (EnrichmentAttempts is checked separately, in code, since SQLite/
+    /// Postgres would need the constant duplicated into the query otherwise).</summary>
     public DateTime? EnrichedAt { get; set; }
+    /// <summary>How many times BackgroundTaskService.CaptureEnrichment has attempted this note
+    /// (successful or not) - caps retries after a transient failure (e.g. studylife-ai
+    /// unreachable during a deployment rollout) instead of giving up after one attempt forever,
+    /// while still avoiding an indefinite retry storm against a genuinely broken integration.</summary>
+    public int EnrichmentAttempts { get; set; }
+    /// <summary>When EnrichmentAttempts was last incremented - enforces a minimum backoff
+    /// between retries (see BackgroundTaskService.CaptureEnrichment.MinRetryBackoff) so a
+    /// transient outage gets a realistic amount of time to recover before the next attempt,
+    /// instead of burning through MaxEnrichmentAttempts within seconds at the normal tick
+    /// cadence.</summary>
+    public DateTime? LastEnrichmentAttemptAt { get; set; }
     /// <summary>Comma-separated short keywords from studylife-ai's tag suggestion (capture
     /// enrichment only, see EnrichedAt) - null until enrichment runs, or if it produced none.
     /// Plain comma-separated string, same convention as CourseGoalDto's own Tag field elsewhere

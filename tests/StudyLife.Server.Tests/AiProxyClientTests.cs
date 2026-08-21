@@ -144,7 +144,7 @@ public class AiProxyClientTests
         });
         var client = CreateClient(handler);
 
-        await client.EnrichCaptureAsync(7, 99, "Title", "Content", "https://example.com/a", CancellationToken.None);
+        await client.EnrichCaptureAsync(7, 99, "Title", "Content", "https://example.com/a", new List<int> { 1, 2 }, CancellationToken.None);
 
         var request = Assert.Single(handler.Requests);
         Assert.Equal("https://ai.test/internal/enrich-capture", request.Uri);
@@ -154,6 +154,7 @@ public class AiProxyClientTests
         Assert.Contains("\"title\":\"Title\"", request.Body);
         Assert.Contains("\"content\":\"Content\"", request.Body);
         Assert.Contains("\"source_url\":\"https://example.com/a\"", request.Body);
+        Assert.Contains("\"active_course_ids\":[1,2]", request.Body);
     }
 
     [Fact]
@@ -165,7 +166,7 @@ public class AiProxyClientTests
         });
         var client = CreateClient(handler);
 
-        var result = await client.EnrichCaptureAsync(7, 99, "Title", "Content", null, CancellationToken.None);
+        var result = await client.EnrichCaptureAsync(7, 99, "Title", "Content", null, new List<int>(), CancellationToken.None);
 
         Assert.NotNull(result);
         Assert.Equal(3, result!.CourseId);
@@ -181,7 +182,7 @@ public class AiProxyClientTests
         var handler = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
         var client = CreateClient(handler, baseUrl: null, sharedSecret: null);
 
-        var result = await client.EnrichCaptureAsync(7, 99, "Title", "Content", null, CancellationToken.None);
+        var result = await client.EnrichCaptureAsync(7, 99, "Title", "Content", null, new List<int>(), CancellationToken.None);
 
         Assert.Null(result);
         Assert.Empty(handler.Requests);
@@ -193,7 +194,7 @@ public class AiProxyClientTests
         var handler = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.InternalServerError));
         var client = CreateClient(handler);
 
-        var result = await client.EnrichCaptureAsync(7, 99, "Title", "Content", null, CancellationToken.None);
+        var result = await client.EnrichCaptureAsync(7, 99, "Title", "Content", null, new List<int>(), CancellationToken.None);
 
         Assert.Null(result);
     }
@@ -204,7 +205,7 @@ public class AiProxyClientTests
         var handler = new StubHttpHandler(_ => throw new HttpRequestException("connection refused"));
         var client = CreateClient(handler);
 
-        var result = await client.EnrichCaptureAsync(7, 99, "Title", "Content", null, CancellationToken.None);
+        var result = await client.EnrichCaptureAsync(7, 99, "Title", "Content", null, new List<int>(), CancellationToken.None);
 
         Assert.Null(result);
     }

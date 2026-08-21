@@ -282,8 +282,14 @@ namespace StudyLife.Server.Migrations
                     b.Property<DateTime?>("EnrichedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("EnrichmentAttempts")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("IsMarkdown")
                         .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("LastEnrichmentAttemptAt")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("RelatedNoteIds")
                         .HasColumnType("TEXT");
