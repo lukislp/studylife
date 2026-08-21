@@ -75,6 +75,20 @@
 }
 .note-summary { font-size: 0.8rem; color: var(--text2); font-style: italic; margin: 0; }
 
+.note-related { display: flex; flex-direction: column; gap: 0.3rem; }
+.note-related__label { font-size: 0.7rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.02em; }
+.note-related__link {
+    background: none;
+    border: none;
+    padding: 0;
+    text-align: left;
+    font-size: 0.78rem;
+    color: var(--accent);
+    cursor: pointer;
+    width: fit-content;
+}
+.note-related__link:hover { text-decoration: underline; }
+
 .note-row__meta {
     display: flex;
     align-items: center;

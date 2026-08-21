@@ -51,5 +51,6 @@
   "DictateFailed": "Transcription failed – please try again.",
   "DictateSilent": "No speech detected",
   "DictateBrowserVoice": "Listening via browser speech recognition…",
-  "CaptureSourceLinkLabel": "View original"
+  "CaptureSourceLinkLabel": "View original",
+  "RelatedNotesLabel": "Related notes"
 }

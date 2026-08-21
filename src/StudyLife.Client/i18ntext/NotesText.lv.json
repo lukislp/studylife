@@ -51,5 +51,6 @@
   "DictateFailed": "Transkripcija neizdevās – mēģiniet vēlreiz.",
   "DictateSilent": "Runa netika konstatēta",
   "DictateBrowserVoice": "Klausās, izmantojot pārlūkprogrammas runas atpazīšanu…",
-  "CaptureSourceLinkLabel": "Skatīt oriģinālu"
+  "CaptureSourceLinkLabel": "Skatīt oriģinālu",
+  "RelatedNotesLabel": "Saistītās piezīmes"
 }

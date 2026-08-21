@@ -51,5 +51,6 @@
   "DictateFailed": "Не вдалося розшифрувати – спробуйте ще раз.",
   "DictateSilent": "Мовлення не виявлено",
   "DictateBrowserVoice": "Прослуховування через розпізнавання мовлення браузера…",
-  "CaptureSourceLinkLabel": "Переглянути оригінал"
+  "CaptureSourceLinkLabel": "Переглянути оригінал",
+  "RelatedNotesLabel": "Пов'язані нотатки"
 }

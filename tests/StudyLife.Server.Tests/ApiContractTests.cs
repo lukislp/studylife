@@ -459,7 +459,7 @@ public class DtoContractSnapshotTests : IClassFixture<CustomWebApplicationFactor
         var expected = new HashSet<string>
         {
             "id", "title", "content", "createdAt", "updatedAt", "courseId", "sessionId", "isMarkdown", "sourceUrl",
-            "tags", "summary",
+            "tags", "summary", "relatedNoteIds",
         };
 
         var note = new NoteDto { Title = "Snapshot-Test-Note", Content = "Inhalt", CourseId = 1 };

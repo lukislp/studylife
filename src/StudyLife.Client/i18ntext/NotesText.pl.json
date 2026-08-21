@@ -51,5 +51,6 @@
   "DictateFailed": "Transkrypcja nie powiodła się – spróbuj ponownie.",
   "DictateSilent": "Nie wykryto mowy",
   "DictateBrowserVoice": "Nasłuchiwanie przez rozpoznawanie mowy przeglądarki…",
-  "CaptureSourceLinkLabel": "Zobacz oryginał"
+  "CaptureSourceLinkLabel": "Zobacz oryginał",
+  "RelatedNotesLabel": "Powiązane notatki"
 }

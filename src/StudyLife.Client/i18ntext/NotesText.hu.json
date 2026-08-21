@@ -51,5 +51,6 @@
   "DictateFailed": "Az átírás sikertelen – kérjük, próbáld újra.",
   "DictateSilent": "Nem észleltünk beszédet",
   "DictateBrowserVoice": "Hallgatás a böngésző beszédfelismerésével…",
-  "CaptureSourceLinkLabel": "Eredeti megtekintése"
+  "CaptureSourceLinkLabel": "Eredeti megtekintése",
+  "RelatedNotesLabel": "Kapcsolódó jegyzetek"
 }

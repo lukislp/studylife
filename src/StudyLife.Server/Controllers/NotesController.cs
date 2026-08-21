@@ -95,6 +95,9 @@ public class NotesController : ControllerBase
         IsMarkdown = e.IsMarkdown,
         SourceUrl = e.SourceUrl,
         Tags = e.Tags,
-        Summary = e.Summary
+        Summary = e.Summary,
+        RelatedNoteIds = string.IsNullOrEmpty(e.RelatedNoteIds)
+            ? new List<int>()
+            : e.RelatedNoteIds.Split(',').Select(int.Parse).ToList()
     };
 }

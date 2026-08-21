@@ -176,7 +176,7 @@ else
                         </select>
                     </div>
 
-                    @if (!string.IsNullOrEmpty(_selectedNote.SourceUrl) || !string.IsNullOrEmpty(_selectedNote.Tags) || !string.IsNullOrEmpty(_selectedNote.Summary))
+                    @if (!string.IsNullOrEmpty(_selectedNote.SourceUrl) || !string.IsNullOrEmpty(_selectedNote.Tags) || !string.IsNullOrEmpty(_selectedNote.Summary) || RelatedNotes.Count > 0)
                     {
                         <div class="note-capture-meta">
                             @if (!string.IsNullOrEmpty(_selectedNote.SourceUrl))
@@ -195,6 +195,16 @@ else
                             @if (!string.IsNullOrEmpty(_selectedNote.Summary))
                             {
                                 <p class="note-summary">@_selectedNote.Summary</p>
+                            }
+                            @if (RelatedNotes.Count > 0)
+                            {
+                                <div class="note-related">
+                                    <span class="note-related__label">@T.RelatedNotesLabel</span>
+                                    @foreach (var related in RelatedNotes)
+                                    {
+                                        <button type="button" class="note-related__link" @onclick="() => SelectNote(related)">@related.Title</button>
+                                    }
+                                </div>
                             }
                         </div>
                     }
@@ -473,6 +483,17 @@ else
         _confirmingDelete = false;
         ResetTtsState();
     }
+
+    // Resolved against the already-loaded _notes list (no extra API call) - a related note may
+    // since have been deleted, in which case it's simply not found and silently skipped rather
+    // than needing NoteEntity.RelatedNoteIds to be kept in sync with deletions.
+    private List<NoteDto> RelatedNotes =>
+        _selectedNote?.RelatedNoteIds
+            .Select(id => _notes.FirstOrDefault(n => n.Id == id))
+            .Where(n => n != null)
+            .Cast<NoteDto>()
+            .ToList()
+        ?? new List<NoteDto>();
 
     private void SelectNote(NoteDto note)
     {
