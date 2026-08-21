@@ -51,5 +51,6 @@
   "DictateFailed": "Transcriptie mislukt – probeer het opnieuw.",
   "DictateSilent": "Geen spraak gedetecteerd",
   "DictateBrowserVoice": "Luisteren via spraakherkenning van de browser…",
-  "CaptureSourceLinkLabel": "Origineel bekijken"
+  "CaptureSourceLinkLabel": "Origineel bekijken",
+  "RelatedNotesLabel": "Gerelateerde notities"
 }

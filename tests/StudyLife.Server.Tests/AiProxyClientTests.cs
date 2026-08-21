@@ -161,7 +161,7 @@ public class AiProxyClientTests
     {
         var handler = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
         {
-            Content = new StringContent("{\"course_id\":3,\"course_confidence\":0.91,\"tags\":[\"eigenvalues\",\"matrices\"],\"summary\":\"A summary.\"}"),
+            Content = new StringContent("{\"course_id\":3,\"course_confidence\":0.91,\"tags\":[\"eigenvalues\",\"matrices\"],\"summary\":\"A summary.\",\"related_note_ids\":[12,34]}"),
         });
         var client = CreateClient(handler);
 
@@ -172,6 +172,7 @@ public class AiProxyClientTests
         Assert.Equal(0.91, result.CourseConfidence);
         Assert.Equal(new List<string> { "eigenvalues", "matrices" }, result.Tags);
         Assert.Equal("A summary.", result.Summary);
+        Assert.Equal(new List<int> { 12, 34 }, result.RelatedNoteIds);
     }
 
     [Fact]

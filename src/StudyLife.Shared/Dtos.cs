@@ -147,6 +147,11 @@ public class NoteDto
     /// <summary>One-sentence AI-generated summary from capture enrichment - same read-only
     /// contract as Tags.</summary>
     public string? Summary { get; set; }
+    /// <summary>Ids of existing notes studylife-ai found similar to this capture - same
+    /// read-only contract as Tags/Summary. Empty (not null) when there are none, matching
+    /// UserSettingsDto.SelectedCourseIds's List&lt;int&gt; convention rather than NoteEntity's
+    /// raw comma-separated string.</summary>
+    public List<int> RelatedNoteIds { get; set; } = new();
 }
 
 public class CourseGoalDto

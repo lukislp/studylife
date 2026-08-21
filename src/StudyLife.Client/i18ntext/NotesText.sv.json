@@ -51,5 +51,6 @@
   "DictateFailed": "Transkribering misslyckades – försök igen.",
   "DictateSilent": "Inget tal upptäckt",
   "DictateBrowserVoice": "Lyssnar via webbläsarens taligenkänning…",
-  "CaptureSourceLinkLabel": "Visa original"
+  "CaptureSourceLinkLabel": "Visa original",
+  "RelatedNotesLabel": "Relaterade anteckningar"
 }

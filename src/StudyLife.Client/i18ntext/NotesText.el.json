@@ -51,5 +51,6 @@
   "DictateFailed": "Η μεταγραφή απέτυχε – δοκιμάστε ξανά.",
   "DictateSilent": "Δεν εντοπίστηκε ομιλία",
   "DictateBrowserVoice": "Ακρόαση μέσω αναγνώρισης φωνής του προγράμματος περιήγησης…",
-  "CaptureSourceLinkLabel": "Προβολή πρωτοτύπου"
+  "CaptureSourceLinkLabel": "Προβολή πρωτοτύπου",
+  "RelatedNotesLabel": "Σχετικές σημειώσεις"
 }

@@ -51,5 +51,6 @@
   "DictateFailed": "Litterointi epäonnistui – yritä uudelleen.",
   "DictateSilent": "Puhetta ei havaittu",
   "DictateBrowserVoice": "Kuunnellaan selaimen puheentunnistuksella…",
-  "CaptureSourceLinkLabel": "Näytä alkuperäinen"
+  "CaptureSourceLinkLabel": "Näytä alkuperäinen",
+  "RelatedNotesLabel": "Liittyvät muistiinpanot"
 }

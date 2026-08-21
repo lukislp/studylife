@@ -51,5 +51,6 @@
   "DictateFailed": "It-traskrizzjoni falliet – jekk jogħġbok erġa' pprova.",
   "DictateSilent": "Ma nstab ebda diskors",
   "DictateBrowserVoice": "Qed jisma' permezz tar-rikonoxximent tal-vuċi tal-browser…",
-  "CaptureSourceLinkLabel": "Ara l-oriġinal"
+  "CaptureSourceLinkLabel": "Ara l-oriġinal",
+  "RelatedNotesLabel": "Noti relatati"
 }
