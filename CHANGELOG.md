@@ -1,3 +1,10 @@
+# [1.37.0](https://github.com/lukislp/studylife/compare/v1.36.0...v1.37.0) (2026-08-21)
+
+
+### Features
+
+* bounded retry for capture enrichment + scope course matching to active courses ([14a1436](https://github.com/lukislp/studylife/commit/14a1436e0556f889b337e28143680bcdfaa3b493))
+
 # [1.36.0](https://github.com/lukislp/studylife/compare/v1.35.0...v1.36.0) (2026-08-21)
 
 
