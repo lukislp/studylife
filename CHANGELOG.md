@@ -1,3 +1,10 @@
+# [1.35.0](https://github.com/lukislp/studylife/compare/v1.34.0...v1.35.0) (2026-08-21)
+
+
+### Features
+
+* AI enrichment for studylife-capture notes (S2) ([a4669b0](https://github.com/lukislp/studylife/commit/a4669b01eb10eed0c6d29377e0eaef37272a2581))
+
 # [1.34.0](https://github.com/lukislp/studylife/compare/v1.33.0...v1.34.0) (2026-08-21)
 
 
