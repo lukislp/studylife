@@ -50,5 +50,6 @@
   "DictateUnavailable": "Balss diktēšana nav pieejama šajā pārlūkprogrammā",
   "DictateFailed": "Transkripcija neizdevās – mēģiniet vēlreiz.",
   "DictateSilent": "Runa netika konstatēta",
-  "DictateBrowserVoice": "Klausās, izmantojot pārlūkprogrammas runas atpazīšanu…"
+  "DictateBrowserVoice": "Klausās, izmantojot pārlūkprogrammas runas atpazīšanu…",
+  "CaptureSourceLinkLabel": "Skatīt oriģinālu"
 }

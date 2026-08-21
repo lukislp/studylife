@@ -50,5 +50,6 @@
   "DictateUnavailable": "Níl deachtú gutha ar fáil sa bhrabhsálaí seo",
   "DictateFailed": "Theip ar an trascríobh – bain triail eile as.",
   "DictateSilent": "Níor braitheadh aon chaint",
-  "DictateBrowserVoice": "Ag éisteacht trí aitheantóireacht ghutha an bhrabhsálaí…"
+  "DictateBrowserVoice": "Ag éisteacht trí aitheantóireacht ghutha an bhrabhsálaí…",
+  "CaptureSourceLinkLabel": "Féach ar an mbunleagan"
 }

@@ -50,5 +50,6 @@
   "DictateUnavailable": "Balso diktavimas nepasiekiamas šioje naršyklėje",
   "DictateFailed": "Transkripcija nepavyko – bandykite dar kartą.",
   "DictateSilent": "Kalba neaptikta",
-  "DictateBrowserVoice": "Klausoma naudojant naršyklės kalbos atpažinimą…"
+  "DictateBrowserVoice": "Klausoma naudojant naršyklės kalbos atpažinimą…",
+  "CaptureSourceLinkLabel": "Žiūrėti originalą"
 }

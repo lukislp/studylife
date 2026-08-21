@@ -279,6 +279,9 @@ namespace StudyLife.Server.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("EnrichedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("IsMarkdown")
                         .HasColumnType("INTEGER");
 
@@ -286,6 +289,12 @@ namespace StudyLife.Server.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("SourceUrl")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Summary")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Tags")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Title")

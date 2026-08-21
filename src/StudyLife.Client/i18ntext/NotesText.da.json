@@ -50,5 +50,6 @@
   "DictateUnavailable": "Stemmediktering er ikke tilgængelig i denne browser",
   "DictateFailed": "Transskription mislykkedes – prøv igen.",
   "DictateSilent": "Ingen tale registreret",
-  "DictateBrowserVoice": "Lytter via browserens talegenkendelse…"
+  "DictateBrowserVoice": "Lytter via browserens talegenkendelse…",
+  "CaptureSourceLinkLabel": "Se original"
 }

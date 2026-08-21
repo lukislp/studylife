@@ -50,5 +50,6 @@
   "DictateUnavailable": "Glasovno diktiranje nije dostupno u ovom pregledniku",
   "DictateFailed": "Transkripcija nije uspjela – pokušajte ponovno.",
   "DictateSilent": "Nije otkriven govor",
-  "DictateBrowserVoice": "Slušanje putem prepoznavanja govora preglednika…"
+  "DictateBrowserVoice": "Slušanje putem prepoznavanja govora preglednika…",
+  "CaptureSourceLinkLabel": "Pogledaj izvornik"
 }

@@ -1,7 +1,15 @@
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace StudyLife.Server.Services;
+
+/// <summary>Result of studylife-ai's POST /internal/enrich-capture (see AiProxyClient.
+/// EnrichCaptureAsync) - null CourseId/Confidence means no course matched confidently enough,
+/// an empty Tags/null Summary means the LLM step produced none. All fields independently
+/// optional - see studylife-ai's rag/enrichment.py, each sub-step degrades on its own.</summary>
+public sealed record CaptureEnrichmentResult(int? CourseId, double? CourseConfidence, List<string> Tags, string? Summary);
 
 /// <summary>
 /// Talks to the studylife-ai microservice on the logged-in user's behalf - both the live
@@ -75,6 +83,71 @@ public sealed class AiProxyClient
     public Task RevokeKeyAsync(int userId, CancellationToken ct) =>
         PostInternalAsync("/internal/revoke-key",
             new Dictionary<string, string> { ["user_id"] = userId.ToString() }, ct);
+
+    /// <summary>Requests course-match + tags/summary enrichment for one just-created capture
+    /// note from studylife-ai (see BackgroundTaskService.CaptureEnrichment.cs, the only caller).
+    /// Returns null on ANY failure (not Enabled, network error, non-success status, unparseable
+    /// body) - same never-throws contract as RegisterKeyAsync/RevokeKeyAsync; the caller marks
+    /// the note as attempted regardless (see EnrichedAt's doc comment - single attempt, no
+    /// retry storm), so a null result here just means the note stays unenriched, not that
+    /// anything crashes.</summary>
+    public async Task<CaptureEnrichmentResult?> EnrichCaptureAsync(
+        int userId, int noteId, string title, string content, string? sourceUrl, CancellationToken ct)
+    {
+        if (!Enabled) return null;
+        try
+        {
+            var requestBody = new EnrichCaptureRequestJson
+            {
+                UserId = userId.ToString(),
+                NoteId = noteId,
+                Title = title,
+                Content = content,
+                SourceUrl = sourceUrl,
+            };
+            var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/internal/enrich-capture")
+            {
+                Content = JsonContent.Create(requestBody),
+            };
+            request.Headers.Add("X-StudyLife-Shared-Secret", _sharedSecret);
+            var response = await _http.SendAsync(request, ct);
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("studylife-ai /internal/enrich-capture returned {Status} for note {NoteId}", response.StatusCode, noteId);
+                return null;
+            }
+            var json = await response.Content.ReadFromJsonAsync<EnrichCaptureResponseJson>(cancellationToken: ct);
+            if (json is null) return null;
+            return new CaptureEnrichmentResult(json.CourseId, json.CourseConfidence, json.Tags ?? new List<string>(), json.Summary);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "studylife-ai /internal/enrich-capture call failed for note {NoteId}", noteId);
+            return null;
+        }
+    }
+
+    // Field names match studylife-ai's schemas/internal.py EnrichCaptureRequest/Response
+    // exactly (snake_case) - same manual-matching convention as PostInternalAsync's
+    // Dictionary<string,string> bodies above, not a naming-policy-driven serializer, since this
+    // internal contract has never used camelCase (unlike StudyLifeNote's alias_generator on the
+    // Python side, which exists specifically to match calls INTO StudyLife's own API).
+    private sealed class EnrichCaptureRequestJson
+    {
+        [JsonPropertyName("user_id")] public string UserId { get; set; } = "";
+        [JsonPropertyName("note_id")] public int NoteId { get; set; }
+        [JsonPropertyName("title")] public string Title { get; set; } = "";
+        [JsonPropertyName("content")] public string Content { get; set; } = "";
+        [JsonPropertyName("source_url")] public string? SourceUrl { get; set; }
+    }
+
+    private sealed class EnrichCaptureResponseJson
+    {
+        [JsonPropertyName("course_id")] public int? CourseId { get; set; }
+        [JsonPropertyName("course_confidence")] public double? CourseConfidence { get; set; }
+        [JsonPropertyName("tags")] public List<string>? Tags { get; set; }
+        [JsonPropertyName("summary")] public string? Summary { get; set; }
+    }
 
     private async Task PostInternalAsync(string path, Dictionary<string, string> body, CancellationToken ct)
     {

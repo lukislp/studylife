@@ -50,5 +50,6 @@
   "DictateUnavailable": "Spracheingabe ist in diesem Browser nicht verfügbar",
   "DictateFailed": "Transkription fehlgeschlagen – bitte nochmal versuchen.",
   "DictateSilent": "Keine Sprache erkannt",
-  "DictateBrowserVoice": "Spracherkennung über den Browser läuft…"
+  "DictateBrowserVoice": "Spracherkennung über den Browser läuft…",
+  "CaptureSourceLinkLabel": "Original ansehen"
 }

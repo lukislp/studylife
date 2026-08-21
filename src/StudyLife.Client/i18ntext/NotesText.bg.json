@@ -50,5 +50,6 @@
   "DictateUnavailable": "Гласовото въвеждане не е налично в този браузър",
   "DictateFailed": "Транскрибирането не бе успешно – опитайте отново.",
   "DictateSilent": "Не е засечена реч",
-  "DictateBrowserVoice": "Слушане чрез разпознаване на реч на браузъра…"
+  "DictateBrowserVoice": "Слушане чрез разпознаване на реч на браузъра…",
+  "CaptureSourceLinkLabel": "Виж оригинала"
 }
