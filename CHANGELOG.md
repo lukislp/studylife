@@ -1,3 +1,10 @@
+## [1.32.1](https://github.com/lukislp/studylife/compare/v1.32.0...v1.32.1) (2026-08-21)
+
+
+### Bug Fixes
+
+* replace LINQ with plain loops in BuildCardioFitnessTrend to avoid iOS AOT crash ([b1cc145](https://github.com/lukislp/studylife/commit/b1cc145cc3bd5d48627f44b6b0a69faedc93ef5e))
+
 # [1.32.0](https://github.com/lukislp/studylife/compare/v1.31.0...v1.32.0) (2026-08-20)
 
 
