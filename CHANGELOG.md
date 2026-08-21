@@ -1,3 +1,10 @@
+# [1.36.0](https://github.com/lukislp/studylife/compare/v1.35.0...v1.36.0) (2026-08-21)
+
+
+### Features
+
+* related notes for capture-enriched notes (S3) ([67c7ca6](https://github.com/lukislp/studylife/commit/67c7ca69874487258e2480e9778305aef57fc523))
+
 # [1.35.0](https://github.com/lukislp/studylife/compare/v1.34.0...v1.35.0) (2026-08-21)
 
 
