@@ -41,6 +41,7 @@ flowchart LR
     HomeAssistant["Home Assistant\n(studylife-hacs)"]
     Mcp["studylife-mcp\n(local MCP server)"]
     StudyLifeAI["studylife-ai\n(hosted LLM agent)"]
+    Capture["studylife-capture\n(browser extension)"]
 
     MauiApp -- "BlazorWebView\n(project reference, no copy)" --> BlazorUI
     BlazorUI -- "passkey session\n(X-Session-Token)" --> API
@@ -52,8 +53,10 @@ flowchart LR
     Worker -- "shard coordination" --> Cache
     Worker -- "reminders, reports" --> WebPush
     Worker -- "Live Activity updates" --> APNs
+    Worker -- "shared secret" --> StudyLifeAI
     HomeAssistant -- "X-Api-Key" --> API
     Mcp -- "X-Api-Key" --> API
+    Capture -- "X-Api-Key" --> API
 ```
 
 `API` and `Worker` are the same container image, just started with a different `Worker:Enabled`
@@ -63,13 +66,17 @@ in one process; the horizontally-scalable setup (`docker-compose.scale.yml`/Kube
 replicas never fire the same push reminder N times — exactly one `Worker` shard set (coordinated
 via Redis once it scales past a single replica) owns the 30s reminder/report tick.
 
-The browser client authenticates exclusively via its passkey session; Home Assistant and
-studylife-mcp instead each get their own long-lived, revocable per-user API key (`X-Api-Key`) —
-neither can hold a live browser session, so a bare API key is deliberately accepted from them
-but never from the AI proxy path. `AiProxyController` mints a short-lived, HMAC-signed token per
-request instead of forwarding a stored key (which only ever exists as a hash server-side, see
-[Security](#security)) — studylife-ai verifies that signature locally against a shared secret,
-no round-trip back here. `StudyLife.App` (the native iOS/Android/Windows/macOS shell) is a
+The browser client authenticates exclusively via its passkey session; Home Assistant,
+studylife-mcp, and studylife-capture instead each get their own long-lived, revocable per-user
+API key (`X-Api-Key`) — neither can hold a live browser session, so a bare API key is
+deliberately accepted from them but never from the AI proxy path. `AiProxyController` mints a
+short-lived, HMAC-signed token per request instead of forwarding a stored key (which only ever
+exists as a hash server-side, see [Security](#security)) — studylife-ai verifies that signature
+locally against a shared secret, no round-trip back here. `Worker` reaches studylife-ai the same
+way for capture enrichment (`POST /internal/enrich-capture`, course matching plus tags/summary
+for notes saved via studylife-capture), authenticated with that same shared secret rather than a
+per-request user token, since it runs outside any user's live session. `StudyLife.App` (the
+native iOS/Android/Windows/macOS shell) is a
 separate repo that pulls in this repo's entire Blazor UI via a project reference — no copy, so
 the native app and the browser/PWA client are always pixel-identical.
 
@@ -156,6 +163,7 @@ the native app and the browser/PWA client are always pixel-identical.
 - Search (title/content) and course filter
 - Delete confirmation (two clicks instead of immediate deletion)
 - Link to the triggering focus session visible (🔗), if created from the reflection prompt
+- Web capture (via the [studylife-capture](https://github.com/lukislp/studylife-capture) browser extension): save a selection or a whole article from any page as a note, auto-enriched in the background with a course match, tags, a one-sentence summary, and related-notes links
 
 ### Evaluation
 - Hours studied and sessions per course
@@ -310,10 +318,11 @@ Architecture, API reference, and notes for changes: [docs/ARCHITECTURE.md](docs/
 
 ## Add-ons
 
-Two separate repos extend this app without their own database or user system - both authenticate against a per-user API key generated on the Setup page and read/write through StudyLife's existing API.
+Three separate repos extend this app without their own database or user system - all authenticate against a per-user API key generated on the Setup page and read/write through StudyLife's existing API.
 
 - **[studylife-ai](https://github.com/lukislp/studylife-ai)** - a RAG study assistant with source citations over your own notes/courses/sessions, a LangGraph agent with a confirmation flow for write actions, and a RAGAS eval pipeline in CI. FastAPI + LiteLLM (provider-agnostic - API models or fully local via Ollama) + Qdrant.
 - **[studylife-mcp](https://github.com/lukislp/studylife-mcp)** - a Model Context Protocol server exposing StudyLife to Claude and other MCP clients: read tools (courses, notes, sessions, course goals), write tools (create note, create session), and a self-built OAuth 2.1 authorization server for multi-user remote access.
+- **[studylife-capture](https://github.com/lukislp/studylife-capture)** - a Chrome extension (Manifest V3) for saving a selection or a whole article from any page as a StudyLife note, using a dedicated `CaptureApiKey`. Saved notes are enriched asynchronously by a StudyLife background task calling studylife-ai: course match (scoped to your active courses), tags, a one-sentence summary, related-notes links, and immediate search indexing.
 
 ## Home Assistant Integration
 
