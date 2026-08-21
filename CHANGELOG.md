@@ -1,3 +1,15 @@
+# [1.33.0](https://github.com/lukislp/studylife/compare/v1.32.1...v1.33.0) (2026-08-21)
+
+
+### Bug Fixes
+
+* add sourceUrl to NoteDto contract-test snapshot ([9f9c40c](https://github.com/lukislp/studylife/commit/9f9c40c7d7bfc08e0b19d3f20f7b45700af5b790)), closes [#34](https://github.com/lukislp/studylife/issues/34)
+
+
+### Features
+
+* add SourceUrl to notes for external capture ([0fe7c9e](https://github.com/lukislp/studylife/commit/0fe7c9e9acf472d9ece57675fc56443591b21738))
+
 ## [1.32.1](https://github.com/lukislp/studylife/compare/v1.32.0...v1.32.1) (2026-08-21)
 
 
