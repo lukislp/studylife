@@ -1,0 +1,12 @@
+# Scans GHCR for new tags of the UnifiProtectDashboard image (.github/workflows CI/CD
+# "docker-build-push" job in the UnifiProtectDashboard repo). Public package - no secretRef
+# needed, same as 07-studylife-ai-image-repository.yaml / 12-studylife-mcp-image-repository.yaml /
+# 17-piwatch-image-repository.yaml.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: unifiprotectdashboard
+  namespace: flux-system
+spec:
+  image: ghcr.io/lukislp/unifiprotectdashboard
+  interval: 5m
