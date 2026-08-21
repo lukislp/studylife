@@ -47,6 +47,7 @@ public class NotesController : ControllerBase
             CourseId = dto.CourseId,
             SessionId = dto.SessionId,
             IsMarkdown = dto.IsMarkdown,
+            SourceUrl = dto.SourceUrl,
             CreatedAt = DateTime.Now,
             UpdatedAt = DateTime.Now
         };
@@ -91,6 +92,7 @@ public class NotesController : ControllerBase
         UpdatedAt = e.UpdatedAt,
         CourseId = e.CourseId,
         SessionId = e.SessionId,
-        IsMarkdown = e.IsMarkdown
+        IsMarkdown = e.IsMarkdown,
+        SourceUrl = e.SourceUrl
     };
 }
