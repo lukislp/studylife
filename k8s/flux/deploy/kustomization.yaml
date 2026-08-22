@@ -3,6 +3,12 @@
 # does commit the new image tag directly into k8s/04-web.yaml/05-worker.yaml, but without this
 # Kustomization that would never actually be applied to the cluster.
 #
+# Prometheus + the 3 Grafana dashboard/alerting files that used to be listed here moved to
+# homelab-infra/flux/infra-deploy/kustomization.yaml as part of the cluster-wide-infra split -
+# that Kustomization reached Ready and adopted the same live objects (server-side apply, same
+# field manager semantics) before this list was trimmed, so there was no window without anything
+# reconciling them.
+#
 # imagePullPolicy patch: the git-versioned files permanently have "Never" set (only
 # bootstrap-cluster.ps1 writes "Always" in memory before applying, never back into Git,
 # see k8s/bootstrap-cluster.ps1). A direct "kubectl apply -f k8s/04-web.yaml" WOULD therefore
@@ -13,22 +19,6 @@ kind: Kustomization
 resources:
   - ../../04-web.yaml
   - ../../05-worker.yaml
-  # Prometheus scrape config (no placeholders) - e.g. the NPM static_configs job. WARNING:
-  # Prometheus only reads prometheus.yml at startup (--web.enable-lifecycle not set) - a
-  # plain ConfigMap apply is NOT enough, after every scrape config change additionally
-  # "kubectl -n monitoring rollout restart deployment/prometheus" is required (deliberately not
-  # automated, to avoid losing Prometheus' in-memory state on every dashboard update).
-  - ../../14-prometheus.yaml
-  # Grafana dashboard contents (no placeholders, see their file header) - so "tested once,
-  # automatically to prod" also applies to dashboard changes, not just image tags.
-  - ../../17b-grafana-dashboards.yaml
-  # Alert rules + notification policy (no placeholders) - the Telegram contact point itself
-  # is deliberately NOT managed here (manual UI setup, see file header).
-  - ../../17d-grafana-alerting.yaml
-  # >250KB of vendored community dashboards - deliberately ONLY here (server-side apply), never via
-  # bootstrap-cluster.ps1's normal apply path (client-side 256KiB annotation limit, see
-  # the comment there). No placeholders, so unproblematic here with prune:true.
-  - ../../17c-grafana-community-dashboards.yaml
 patches:
   - target:
       kind: Deployment
