@@ -3,6 +3,11 @@
 # spreads, the PDB limits how many can voluntarily disappear at the same time). CNPG doesn't
 # need a manual PDB - the operator already manages one automatically for its cluster pods
 # (specifically protecting the primary from voluntary eviction).
+#
+# The 3 cluster-wide-shared PDBs that used to live in this file (studylife-gateway-nginx,
+# nginx-gateway, coredns - none of them studylife-specific) moved to
+# homelab-infra/cluster/04-pod-disruption-budgets.yaml as part of the cluster-wide-infra split -
+# same objects, same names, pure relocation.
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
@@ -38,40 +43,6 @@ spec:
   selector:
     matchLabels: { app: redis-cluster }
 ---
-# ingress-nginx (previously here: a PDB in the ingress-nginx namespace) has been decommissioned,
-# see docs/SCALING.md "Migration to NGINX Gateway Fabric". Replacement for the NGF data plane
-# (2 replicas, Deployment "studylife-gateway-nginx" in the nginx-gateway namespace) - found live:
-# this didn't exist before at all (NGF doesn't create its own PDB), would have been unprotected
-# during a node drain without this PDB.
-apiVersion: policy/v1
-kind: PodDisruptionBudget
-metadata:
-  name: studylife-gateway-nginx
-  namespace: nginx-gateway
-spec:
-  minAvailable: 1 # of 2
-  selector:
-    matchLabels: { app.kubernetes.io/name: studylife-gateway-nginx }
----
-# Three more singletons found live without a PDB (2026-08-15 audit): each is a 1-replica
-# Deployment where a voluntary eviction during a node drain has a real, distinct consequence -
-# minAvailable: 1 on a 1-replica Deployment fully blocks voluntary eviction (Kubernetes waits
-# for a replacement to be ready elsewhere first, or the drain itself blocks/warns), it does NOT
-# prevent an actual forced node shutdown.
-#
-# CoreDNS: cluster-wide DNS. Without this, every in-cluster service-name lookup (Redis,
-# Postgres pooler, inter-pod calls) fails cluster-wide for however long the single pod takes to
-# reschedule - not specific to this app, affects everything.
-apiVersion: policy/v1
-kind: PodDisruptionBudget
-metadata:
-  name: coredns
-  namespace: kube-system
-spec:
-  minAvailable: 1 # of 1
-  selector:
-    matchLabels: { k8s-app: kube-dns }
----
 # studylife-pg-pooler (CNPG Pooler/PgBouncer, k8s/11-pooler.yaml): Database__ConnectionString
 # (k8s/01-config-and-secret.yaml) points here, not at the Postgres primary directly - this is
 # the app's ONLY configured path to the database. Losing it isn't a degraded-DB scenario, it's
@@ -85,19 +56,3 @@ spec:
   minAvailable: 1 # of 1
   selector:
     matchLabels: { cnpg.io/poolerName: studylife-pg-pooler }
----
-# nginx-gateway control plane (distinct from the studylife-gateway-nginx DATA plane PDB above,
-# which already covers live traffic) - translates Gateway/HTTPRoute changes into config for the
-# data plane. Losing it briefly causes no traffic impact (the data plane keeps serving its last
-# known-good config), but any Gateway/HTTPRoute change made during that window silently doesn't
-# take effect until the pod reschedules - a "why isn't my change applying" trap, just without
-# any live-traffic consequence.
-apiVersion: policy/v1
-kind: PodDisruptionBudget
-metadata:
-  name: nginx-gateway
-  namespace: nginx-gateway
-spec:
-  minAvailable: 1 # of 1
-  selector:
-    matchLabels: { app.kubernetes.io/name: nginx-gateway }
