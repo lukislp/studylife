@@ -235,17 +235,18 @@ if ($WithFlux) {
     if ($LASTEXITCODE -ne 0) {
         throw "Secrets 'studylife-git-auth'/'studylife-registry-auth' are missing in namespace 'flux-system' - see docs/SCALING.md, Flux section."
     }
+    # Flux's own install manifest + the shared reconciler RBAC now live in homelab-infra
+    # (cluster-wide-infra split) - bootstrap that repo's flux/00-install.yaml and
+    # flux/01-reconciler-rbac.yaml first, then this block for studylife's own wiring only.
     kubectl apply -f "$K8sDir/flux/00-install.yaml"
     Wait-Deployment -Namespace "flux-system" -Name "source-controller"
     Wait-Deployment -Namespace "flux-system" -Name "kustomize-controller"
     Wait-Deployment -Namespace "flux-system" -Name "image-reflector-controller"
     Wait-Deployment -Namespace "flux-system" -Name "image-automation-controller"
     kubectl apply -f "$K8sDir/flux/01-git-source.yaml" -f "$K8sDir/flux/02-image-repository.yaml" -f "$K8sDir/flux/03-image-policy.yaml" -f "$K8sDir/flux/04-image-update-automation.yaml" -f "$K8sDir/flux/05-kustomization.yaml"
-    kubectl apply -f "$K8sDir/flux/06-studylife-ai-git-source.yaml" -f "$K8sDir/flux/07-studylife-ai-image-repository.yaml" -f "$K8sDir/flux/08-studylife-ai-image-policy.yaml" -f "$K8sDir/flux/09-studylife-ai-image-update-automation.yaml" -f "$K8sDir/flux/10-studylife-ai-kustomization.yaml"
-    # studylife-mcp onboarding (an MCP server exposing StudyLife to Claude/other MCP clients,
-    # separate repo/namespace, same pattern as studylife-ai above) - reuses the same
-    # studylife-git-auth secret, no separate credential needed.
-    kubectl apply -f "$K8sDir/flux/11-studylife-mcp-git-source.yaml" -f "$K8sDir/flux/12-studylife-mcp-image-repository.yaml" -f "$K8sDir/flux/13-studylife-mcp-image-policy.yaml" -f "$K8sDir/flux/14-studylife-mcp-image-update-automation.yaml" -f "$K8sDir/flux/15-studylife-mcp-kustomization.yaml"
+    # studylife-ai/studylife-mcp/piwatch/unifiprotectdashboard each own their own Flux wiring in
+    # their own repo now (k8s/flux/ or deploy/flux/ there) - this script no longer applies it on
+    # their behalf, see each repo's own bootstrap/README for onboarding a fresh cluster.
 }
 
 # From here on, only informational output - none of these lines should still cause the script to
