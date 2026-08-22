@@ -9,6 +9,11 @@
 # VERIFIES the backend hop - CA reference to the ca.crt in the respective *-backend-tls secret
 # (supplied by cert-manager when issuing), hostname = service DNS name (SAN of the backend
 # certificate, see the Certificate objects in k8s/04-web.yaml/09/17).
+#
+# The grafana HTTPRoute/BackendTLSPolicy/RateLimitPolicy that used to live in this file moved to
+# homelab-infra/cluster/03-httproutes-shared.yaml as part of the cluster-wide-infra split - same
+# objects, same names, pure relocation. Referencing the shared Gateway (k8s/07c-gateway.yaml)
+# from a different repo/path than the HTTPRoute itself is normal, intended Gateway API usage.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -19,8 +24,8 @@ spec:
     - name: studylife-gateway
       namespace: nginx-gateway
   hostnames:
-    - studylife.home.lan
-    - studylife.example.com
+    - studylife.heim.lan
+    - studylife.lukas2311-homelab.com
   rules:
     - backendRefs:
         - name: studylife-web
@@ -101,8 +106,8 @@ spec:
     - name: studylife-gateway
       namespace: nginx-gateway
   hostnames:
-    - uptimekuma.home.lan
-    - uptimekuma.example.com
+    - uptimekuma.heim.lan
+    - uptimekuma.lukas2311-homelab.com
   rules:
     - backendRefs:
         - name: uptime-kuma
@@ -135,60 +140,6 @@ spec:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       name: uptime-kuma
-  rateLimit:
-    local:
-      rules:
-        - zoneSize: 10m
-          key: "$binary_remote_addr"
-          rate: 20r/s
-          burst: 200
-          noDelay: true
-    rejectCode: 503
----
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: grafana
-  namespace: monitoring
-spec:
-  parentRefs:
-    - name: studylife-gateway
-      namespace: nginx-gateway
-  hostnames:
-    - grafana.home.lan
-    - grafana.example.com
-  rules:
-    - backendRefs:
-        - name: grafana
-          port: 80
----
-apiVersion: gateway.networking.k8s.io/v1
-kind: BackendTLSPolicy
-metadata:
-  name: grafana-backend-tls
-  namespace: monitoring
-spec:
-  targetRefs:
-    - group: ""
-      kind: Service
-      name: grafana
-  validation:
-    caCertificateRefs:
-      - group: ""
-        kind: Secret
-        name: grafana-backend-tls
-    hostname: grafana.monitoring.svc.cluster.local
----
-apiVersion: gateway.nginx.org/v1alpha1
-kind: RateLimitPolicy
-metadata:
-  name: grafana-rate-limit
-  namespace: monitoring
-spec:
-  targetRefs:
-    - group: gateway.networking.k8s.io
-      kind: HTTPRoute
-      name: grafana
   rateLimit:
     local:
       rules:
