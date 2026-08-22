@@ -56,12 +56,13 @@ spec:
   policyTypes: ["Ingress"]
   ingress:
     - from:
-        # Uptime Kuma (itself in studylife-scale, not the gateway) also checks studylife-web
-        # DIRECTLY internally (see the k8s/09-uptime-kuma.yaml comment) - found live: without
-        # this allowance the "StudyLife Web (internal)" monitor hangs permanently in
+        # Uptime Kuma (moved to the monitoring namespace, see homelab-infra/monitoring/
+        # 10-uptime-kuma.yaml) also checks studylife-web DIRECTLY internally - found live:
+        # without this allowance the "StudyLife Web (internal)" monitor hangs permanently in
         # PENDING/timeout, even though the same check works perfectly over the public URL. The
         # actual external reachability is handled via allow-nginx-gateway-to-web further below.
-        - podSelector: { matchLabels: { app: uptime-kuma } }
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+          podSelector: { matchLabels: { app: uptime-kuma } }
       ports:
         - { protocol: TCP, port: 8080 }
         # Additional HTTPS listener (Kestrel, see k8s/04-web.yaml/Program.cs) - 8080 stays open
@@ -125,9 +126,11 @@ spec:
         - podSelector: { matchLabels: { app: studylife-web } }
         - podSelector: { matchLabels: { app: studylife-worker } }
         - podSelector: { matchLabels: { cnpg.io/poolerName: studylife-pg-pooler } }
-        # Uptime Kuma needs this for a pure TCP reachability monitor (no real DB login needed,
-        # just "is the port reachable?") - analogous to allow-ingress-to-web above.
-        - podSelector: { matchLabels: { app: uptime-kuma } }
+        # Uptime Kuma (monitoring namespace) needs this for a pure TCP reachability monitor (no
+        # real DB login needed, just "is the port reachable?") - analogous to
+        # allow-ingress-to-web above.
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+          podSelector: { matchLabels: { app: uptime-kuma } }
       ports:
         - { protocol: TCP, port: 5432 }
 ---
@@ -181,9 +184,11 @@ spec:
         - podSelector: { matchLabels: { app: studylife-web } }
         - podSelector: { matchLabels: { app: studylife-worker } }
         - podSelector: { matchLabels: { app: redis-cluster } } # cluster bus between the nodes
-        # Uptime Kuma needs this for a pure TCP reachability monitor (no Redis login needed,
-        # just "is the port reachable?") - analogous to allow-ingress-to-web above.
-        - podSelector: { matchLabels: { app: uptime-kuma } }
+        # Uptime Kuma (monitoring namespace) needs this for a pure TCP reachability monitor (no
+        # Redis login needed, just "is the port reachable?") - analogous to
+        # allow-ingress-to-web above.
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+          podSelector: { matchLabels: { app: uptime-kuma } }
       ports:
         - { protocol: TCP, port: 6379 }
         - { protocol: TCP, port: 16379 }
@@ -275,17 +280,3 @@ spec:
         - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: nginx-gateway } }
       ports:
         - { protocol: TCP, port: 8443 }
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-nginx-gateway-to-uptime-kuma
-  namespace: studylife-scale
-spec:
-  podSelector: { matchLabels: { app: uptime-kuma } }
-  policyTypes: ["Ingress"]
-  ingress:
-    - from:
-        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: nginx-gateway } }
-      ports:
-        - { protocol: TCP, port: 3001 }
