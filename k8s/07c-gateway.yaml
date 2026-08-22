@@ -268,3 +268,34 @@ spec:
           from: Selector
           selector:
             matchLabels: { kubernetes.io/metadata.name: studylife-mcp }
+    # UnifiProtectDashboard (separate repo/namespace) - same -heim/-public pair as every other
+    # service on this Gateway. Added live via a surgical `kubectl patch --type=json` JSON Patch
+    # append (not a full `kubectl apply` of this file), specifically to avoid the incident
+    # documented above; backfilled into this file afterwards so it doesn't drift again the next
+    # time this file IS applied in full.
+    - name: unifidashboard-heim
+      hostname: unifidashboard.heim.lan
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - { kind: Secret, name: unifidashboard-tls }
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels: { kubernetes.io/metadata.name: unifiprotectdashboard }
+    - name: unifidashboard-public
+      hostname: unifidashboard.lukas2311-homelab.com
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - { kind: Secret, name: unifidashboard-tls }
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels: { kubernetes.io/metadata.name: unifiprotectdashboard }
