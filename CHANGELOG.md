@@ -1,3 +1,10 @@
+## [1.39.2](https://github.com/lukislp/studylife/compare/v1.39.1...v1.39.2) (2026-08-22)
+
+
+### Bug Fixes
+
+* correct MetalLB pool range and pin Gateway LB IP ([4d1150c](https://github.com/lukislp/studylife/commit/4d1150c3a9a6f6c01a7c12077ec502f514afacfa))
+
 ## [1.39.1](https://github.com/lukislp/studylife/compare/v1.39.0...v1.39.1) (2026-08-22)
 
 
