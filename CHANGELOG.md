@@ -1,3 +1,11 @@
+## [1.39.3](https://github.com/lukislp/studylife/compare/v1.39.2...v1.39.3) (2026-08-22)
+
+
+### Bug Fixes
+
+* complete cluster-wide-infra split to homelab-infra ([fe8777b](https://github.com/lukislp/studylife/commit/fe8777bcd4e6820409b9c976943a0bcc824946f4))
+* remove app Flux wiring now owned by each app's own repo ([a49e19a](https://github.com/lukislp/studylife/commit/a49e19aadeae60d8f8917bcb281c890795ce7331))
+
 ## [1.39.2](https://github.com/lukislp/studylife/compare/v1.39.1...v1.39.2) (2026-08-22)
 
 
