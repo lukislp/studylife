@@ -1,3 +1,10 @@
+## [1.39.1](https://github.com/lukislp/studylife/compare/v1.39.0...v1.39.1) (2026-08-22)
+
+
+### Bug Fixes
+
+* **k8s:** backfill the unifidashboard Gateway listeners into the repo ([811c859](https://github.com/lukislp/studylife/commit/811c859a0e40d16488323c85ec871f305a8d25c9))
+
 # [1.39.0](https://github.com/lukislp/studylife/compare/v1.38.0...v1.39.0) (2026-08-21)
 
 
