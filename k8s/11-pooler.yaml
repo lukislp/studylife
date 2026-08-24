@@ -34,3 +34,10 @@ spec:
           resources:
             requests: { cpu: 25m, memory: 32Mi }
             limits: { cpu: 100m, memory: 64Mi }
+          # CNPG's generated pooler ships a readiness probe but no liveness -
+          # a TCP check on the PgBouncer port is the honest option (its
+          # protocol is Postgres, not HTTP).
+          livenessProbe:
+            tcpSocket: { port: 5432 }
+            initialDelaySeconds: 10
+            periodSeconds: 15
