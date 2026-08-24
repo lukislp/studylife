@@ -1,3 +1,10 @@
+## [1.39.6](https://github.com/lukislp/studylife/compare/v1.39.5...v1.39.6) (2026-08-24)
+
+
+### Performance Improvements
+
+* **ci:** cut test-unit time (drop workload restore, restore once, manifest tool) ([17f58d6](https://github.com/lukislp/studylife/commit/17f58d640d0fbdc34aa88c952cd5b609e64441ad))
+
 ## [1.39.5](https://github.com/lukislp/studylife/compare/v1.39.4...v1.39.5) (2026-08-24)
 
 
