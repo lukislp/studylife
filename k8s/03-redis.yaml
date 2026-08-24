@@ -117,10 +117,32 @@ spec:
                 labelSelector:
                   matchLabels: { app: redis-cluster }
                 topologyKey: kubernetes.io/hostname
+      initContainers:
+        # /data was written by the root era (the explicit redis-server command
+        # bypasses the image entrypoint's own user drop, so the process really
+        # ran as root); chown on every start - idempotent - so the non-root
+        # redis below keeps writing its dump and cluster state. The only root
+        # in the pod.
+        - name: fix-data-ownership
+          image: busybox:1.36.1
+          command: ["chown", "-R", "999:999", "/data"]
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: data
+              mountPath: /data
       containers:
         - name: redis
           image: redis:7-alpine
           command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+          # 999 is the image's own redis user - starting as it directly instead
+          # of relying on an entrypoint drop the explicit command bypasses.
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+            seccompProfile: { type: RuntimeDefault }
           ports:
             - containerPort: 6379
             - containerPort: 16379
@@ -158,6 +180,23 @@ spec:
           resources:
             requests: { cpu: 25m, memory: 32Mi }
             limits: { cpu: 100m, memory: 64Mi }
+          # The exporter image is scratch-based and already runs as its own
+          # non-root user - declared so the posture is enforced, not
+          # incidental. /health verified live before writing this down.
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 59000
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+            seccompProfile: { type: RuntimeDefault }
+          livenessProbe:
+            httpGet: { path: /health, port: 9121 }
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet: { path: /health, port: 9121 }
+            initialDelaySeconds: 3
+            periodSeconds: 10
       volumes:
         - name: config
           configMap: { name: redis-cluster-config }
