@@ -1,3 +1,10 @@
+## [1.39.5](https://github.com/lukislp/studylife/compare/v1.39.4...v1.39.5) (2026-08-24)
+
+
+### Performance Improvements
+
+* **ci:** native per-arch docker builds instead of QEMU emulation ([9e069e3](https://github.com/lukislp/studylife/commit/9e069e3c2f317151079705a29a71afe8a590102b))
+
 ## [1.39.4](https://github.com/lukislp/studylife/compare/v1.39.3...v1.39.4) (2026-08-24)
 
 
