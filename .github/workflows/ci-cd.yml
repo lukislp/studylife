@@ -227,7 +227,7 @@ jobs:
       - name: No release needed for this push
         if: steps.semrel.outputs.new_release_published != 'true'
         run: |
-          echo "No releasable commits since the last tag (e.g. docs/ci/chore-only) - this is the expected, common case with Conventional Commits, not a failure. publish-server/docker-server/trivy-server/semantic-release below skip themselves via needs.get-version.outputs.published." | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "No releasable commits since the last tag (e.g. docs/ci/chore-only) - this is the expected, common case with Conventional Commits, not a failure. publish-server/docker-server/docker-manifest-merge/trivy-server/semantic-release below skip themselves via needs.get-version.outputs.published." | tee -a "$GITHUB_STEP_SUMMARY"
 
   publish-server:
     needs: [build, get-version]
@@ -266,18 +266,31 @@ jobs:
           retention-days: 7
 
   docker-server:
+    # One native runner per platform instead of a single QEMU-emulated multi-platform build -
+    # ubuntu-24.04-arm is a real arm64 GitHub-hosted runner (free for public repos), so that
+    # leg runs at native speed (same pattern as homelab-autodoc/UnifiProtectDashboard). The
+    # .NET binaries still come prebuilt per-arch from publish-server (built ONCE, consumed by
+    # both legs via TARGETARCH), so what stops being emulated here is the image assembly
+    # itself (apt layer, voice/model downloads, layer packing). Each leg pushes by digest
+    # only; docker-manifest-merge below writes the actual tags - which is also why the
+    # release-chain concurrency group moved THERE: tag races can only happen where tags are
+    # written, and keeping the group here would serialize the two legs against each other.
+    #
     # Runs after semantic-release (not before, see that job) - so a build/push failure here
-    # never leaves an orphaned, un-tagged GHCR image blocking every future release via the
-    # duplicate-tag guard below. This repo has already hit a version-tag desync once (a
-    # published GHCR image with no matching git tag, manually backfilled); the studylife-ai
-    # sibling repo hit the same failure shape from this exact ordering (see its own
-    # docs/decisions.md "CI incident" entries) - reordering here closes the same gap.
+    # never leaves an orphaned, un-tagged GHCR image blocking every future release.
     needs: [get-version, publish-server, semantic-release]
     if: github.event_name == 'push' && needs.get-version.outputs.published == 'true'
-    runs-on: ubuntu-latest
-    concurrency:
-      group: studylife-release-chain
-      cancel-in-progress: false
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
       packages: write
@@ -289,26 +302,65 @@ jobs:
         with:
           name: publish-output
           path: publish
-      - uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
       - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      # REPLACES the old "Guard against duplicate tag" (hard-fail on any existing tag): that
-      # guard checked only whether the tag STRING existed, not whether it already held THIS
-      # commit's content - found live (2026-08-14) that under overlapping runs, an EARLIER,
-      # unrelated commit's docker-server can win the same guessed NEXT_VERSION and publish
-      # first; every LATER run then aborts here forever, even though its own semantic-release
-      # job already published the real git tag/changelog for that version covering the later
-      # commit too. Net effect: a published release whose Docker image silently did NOT match
-      # its own git tag/changelog, with no automatic recovery. Fixed by making this self-healing instead
-      # of a hard stop: every build also gets a permanent, content-addressed "sha-<short-sha>"
-      # tag; if the version tag exists but its own sha-tag is missing, that's proof the version
-      # tag currently holds a DIFFERENT (stale) commit's content - rebuild and overwrite it
-      # (ghcr.io tags are mutable by default) instead of aborting. If the exact commit was
-      # already pushed under this version tag, the rebuild is a harmless cache hit.
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: src/StudyLife.Server/Dockerfile
+          platforms: ${{ matrix.platform }}
+          build-args: |
+            VERSION=${{ env.NEXT_VERSION }}
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=server-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=server-${{ matrix.arch }}
+      - name: Export digest
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: digests-${{ matrix.arch }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  docker-manifest-merge:
+    needs: [get-version, docker-server]
+    if: github.event_name == 'push' && needs.get-version.outputs.published == 'true'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: studylife-release-chain
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      packages: write
+    env:
+      NEXT_VERSION: ${{ needs.get-version.outputs.next_version }}
+    steps:
+      - uses: actions/download-artifact@v8.0.1
+        with:
+          path: /tmp/digests
+          pattern: digests-*
+          merge-multiple: true
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+      # Same self-healing stale-tag semantics the single-job version had (see git history
+      # for the full incident write-up): a version tag that exists WITHOUT this commit's
+      # sha-tag is proof a parallel run's version race left stale content under it -
+      # imagetools create below overwrites it with the right content either way; this step
+      # only makes that visible instead of silent.
       - name: Check for a stale version tag (self-healing, does not block)
         id: check
         run: |
@@ -316,28 +368,24 @@ jobs:
           echo "sha_tag=$SHA_TAG" >> "$GITHUB_OUTPUT"
           if docker manifest inspect "${{ env.IMAGE }}:${{ env.NEXT_VERSION }}" >/dev/null 2>&1; then
             if docker manifest inspect "${{ env.IMAGE }}:${SHA_TAG}" >/dev/null 2>&1; then
-              echo "Tag ${{ env.NEXT_VERSION }} already reflects this exact commit ($SHA_TAG) - rebuild below is a harmless no-op (cache hit)."
+              echo "Tag ${{ env.NEXT_VERSION }} already reflects this exact commit ($SHA_TAG) - re-tagging below is a harmless no-op."
             else
               echo "::warning::registry tag ${{ env.NEXT_VERSION }} already exists but was NOT built from this commit (no matching $SHA_TAG) - a parallel run's version race left stale content under this tag. Overwriting it now with the correct content for $GITHUB_SHA."
             fi
           fi
-      - uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
-        with:
-          context: .
-          file: src/StudyLife.Server/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          build-args: |
-            VERSION=${{ env.NEXT_VERSION }}
-          tags: |
-            ${{ env.IMAGE }}:latest
-            ${{ env.IMAGE }}:${{ env.NEXT_VERSION }}
-            ${{ env.IMAGE }}:${{ steps.check.outputs.sha_tag }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: Create and push the multi-arch manifest
+        working-directory: /tmp/digests
+        run: |
+          docker buildx imagetools create \
+            -t "${{ env.IMAGE }}:${{ env.NEXT_VERSION }}" \
+            -t "${{ env.IMAGE }}:latest" \
+            -t "${{ env.IMAGE }}:${{ steps.check.outputs.sha_tag }}" \
+            $(printf "${{ env.IMAGE }}@sha256:%s " *)
+      - name: Inspect the pushed manifest
+        run: docker buildx imagetools inspect "${{ env.IMAGE }}:${{ env.NEXT_VERSION }}"
 
   trivy-server:
-    needs: [get-version, docker-server]
+    needs: [get-version, docker-manifest-merge]
     if: github.event_name == 'push' && needs.get-version.outputs.published == 'true'
     runs-on: ubuntu-latest
     concurrency:
