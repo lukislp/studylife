@@ -1,3 +1,10 @@
+## [1.39.4](https://github.com/lukislp/studylife/compare/v1.39.3...v1.39.4) (2026-08-24)
+
+
+### Bug Fixes
+
+* **k8s:** redis non-root, exporter hardening and probes, pooler liveness ([fb85894](https://github.com/lukislp/studylife/commit/fb8589448bbac2758a003eda580b200e2253bd7f))
+
 ## [1.39.3](https://github.com/lukislp/studylife/compare/v1.39.2...v1.39.3) (2026-08-22)
 
 
