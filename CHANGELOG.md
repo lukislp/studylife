@@ -1,3 +1,10 @@
+## [1.39.11](https://github.com/lukislp/studylife/compare/v1.39.10...v1.39.11) (2026-08-25)
+
+
+### Bug Fixes
+
+* require explicit confirmation before DEMO_MODE wipes the database ([22c9dd6](https://github.com/lukislp/studylife/commit/22c9dd636acad46df0c2c10ade2e34b95f309a88))
+
 ## [1.39.10](https://github.com/lukislp/studylife/compare/v1.39.9...v1.39.10) (2026-08-25)
 
 
