@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
@@ -12,6 +13,7 @@ public class AppStateService : IAsyncDisposable
     private readonly HttpClient _http;
     private readonly IJSRuntime _jsRuntime;
     private readonly ILogger<AppStateService> _logger;
+    private readonly SessionTokenStore _sessionTokenStore;
     private UserSettings? _settingsCache;
     private string _settingsHash = "";
     private List<StudySession>? _sessionsCache;
@@ -27,8 +29,12 @@ public class AppStateService : IAsyncDisposable
     // If a write fails with an exception (typically: offline), it gets
     // enqueued here, persisted to localStorage, and replayed in original order
     // on the next poll. Non-success responses (e.g. 400 due to
-    // EndTime <= StartTime) are deliberately NOT enqueued - those would keep
-    // failing forever on replay.
+    // EndTime <= StartTime) are deliberately NOT enqueued on the initial attempt -
+    // those would keep failing forever on replay. Replay itself applies the same
+    // distinction to responses it gets back (see TryReplayEntryAsync): a definitive
+    // rejection is discarded, but a 401/403/408/429/5xx is treated like a network
+    // error - the entry is kept and replay stops, so an expired session or a
+    // transient server hiccup can never drain the queue.
     private const string QueueStorageKey = "studylife-write-queue";
     private const string TypeSaveSession = "saveSession";
     private const string TypeDeleteSession = "deleteSession";
@@ -137,11 +143,12 @@ public class AppStateService : IAsyncDisposable
         return _writeQueue.Count;
     }
 
-    public AppStateService(HttpClient http, IJSRuntime jsRuntime, ILogger<AppStateService> logger)
+    public AppStateService(HttpClient http, IJSRuntime jsRuntime, ILogger<AppStateService> logger, SessionTokenStore sessionTokenStore)
     {
         _http = http;
         _jsRuntime = jsRuntime;
         _logger = logger;
+        _sessionTokenStore = sessionTokenStore;
         _refreshTimer = new Timer(async _ => await PollAsync(), null,
             TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
     }
@@ -399,9 +406,10 @@ public class AppStateService : IAsyncDisposable
     }
 
     /// <summary>
-    /// Replays the queue in original order. On the FIRST failure
-    /// (exception = presumably still offline), replay is aborted - the rest
-    /// stays queued and is retried on the next poll.
+    /// Replays the queue in original order. On the FIRST entry that isn't a definitive
+    /// success or a definitive rejection (network error, or a 401/403/408/429/5xx response -
+    /// see TryReplayEntryAsync), replay is aborted - the rest, including that entry, stays
+    /// queued and is retried on the next poll.
     /// </summary>
     private async Task ReplayQueueAsync()
     {
@@ -411,6 +419,10 @@ public class AppStateService : IAsyncDisposable
         {
             await EnsureQueueLoadedAsync();
             if (_writeQueue.Count == 0) return;
+            // No session token yet (fresh login pending, or logged out) - every request would
+            // just come back 401 and immediately abort the loop anyway. Skip the round trips
+            // entirely and wait for a token to show up on a later poll.
+            if (string.IsNullOrEmpty(_sessionTokenStore.Token)) return;
 
             var flushed = 0;
             while (_writeQueue.Count > 0)
@@ -436,9 +448,15 @@ public class AppStateService : IAsyncDisposable
     }
 
     /// <summary>
-    /// true = entry is done (either succeeded OR was rejected by the server/is corrupt -
-    /// both cases get removed, otherwise it would keep failing forever).
-    /// false = network error, stop the replay.
+    /// true = entry is done: either it succeeded, or the server definitively rejected it
+    /// (corrupt payload, or a 4xx like 400/404/409/422 that would keep failing forever on
+    /// replay) - both cases get removed from the queue.
+    /// false = entry must be retried later: a network error (still offline), or a response
+    /// that means "try again", not "this write is invalid" - 401/403 (session expired/forbidden,
+    /// see SessionHandler - may recover after a fresh login), 408/429 (timeout/rate limited),
+    /// or any 5xx (server-side transient failure). The entry is kept and replay stops for
+    /// this cycle, exactly like the network-error case, so a queue full of real offline work
+    /// is never wiped out by an expired session or a flaky server.
     /// </summary>
     private async Task<bool> TryReplayEntryAsync(QueuedWrite entry)
     {
@@ -449,52 +467,67 @@ public class AppStateService : IAsyncDisposable
                 case TypeSaveSession:
                     var sessionDto = JsonSerializer.Deserialize<StudySessionDto>(entry.Payload);
                     if (sessionDto == null) return true;
-                    if (sessionDto.Id == 0)
-                        await _http.PostAsJsonAsync("api/sessions", sessionDto);
-                    else
-                        await _http.PutAsJsonAsync($"api/sessions/{sessionDto.Id}", sessionDto);
-                    return true;
+                    var sessionResponse = sessionDto.Id == 0
+                        ? await _http.PostAsJsonAsync("api/sessions", sessionDto)
+                        : await _http.PutAsJsonAsync($"api/sessions/{sessionDto.Id}", sessionDto);
+                    return IsEntryDone(sessionResponse);
                 case TypeDeleteSession:
-                    await _http.DeleteAsync($"api/sessions/{entry.Payload}");
-                    return true;
+                    var deleteSessionResponse = await _http.DeleteAsync($"api/sessions/{entry.Payload}");
+                    return IsEntryDone(deleteSessionResponse);
                 case TypeDeleteSeries:
                     var series = JsonSerializer.Deserialize<DeleteSeriesPayload>(entry.Payload);
                     if (series == null || string.IsNullOrEmpty(series.GroupId)) return true;
                     var query = series.FromDate.HasValue ? $"?fromDate={series.FromDate:yyyy-MM-dd}" : "";
-                    await _http.DeleteAsync($"api/sessions/series/{series.GroupId}{query}");
-                    return true;
+                    var deleteSeriesResponse = await _http.DeleteAsync($"api/sessions/series/{series.GroupId}{query}");
+                    return IsEntryDone(deleteSeriesResponse);
                 case TypeSaveSettings:
                     var settingsDto = JsonSerializer.Deserialize<UserSettingsDto>(entry.Payload);
                     if (settingsDto == null) return true;
-                    await _http.PutAsJsonAsync("api/settings", settingsDto);
-                    return true;
+                    var settingsResponse = await _http.PutAsJsonAsync("api/settings", settingsDto);
+                    return IsEntryDone(settingsResponse);
                 case TypeSaveNote:
                     var noteDto = JsonSerializer.Deserialize<NoteDto>(entry.Payload);
                     if (noteDto == null) return true;
+                    HttpResponseMessage noteResponse;
                     if (noteDto.Id <= 0)
                     {
                         noteDto.Id = 0; // strip the temporary offline id → normal create
-                        await _http.PostAsJsonAsync("api/notes", noteDto);
+                        noteResponse = await _http.PostAsJsonAsync("api/notes", noteDto);
                     }
                     else
                     {
-                        await _http.PutAsJsonAsync($"api/notes/{noteDto.Id}", noteDto);
+                        noteResponse = await _http.PutAsJsonAsync($"api/notes/{noteDto.Id}", noteDto);
                     }
-                    return true;
+                    return IsEntryDone(noteResponse);
                 case TypeDeleteNote:
-                    await _http.DeleteAsync($"api/notes/{entry.Payload}");
-                    return true;
+                    var deleteNoteResponse = await _http.DeleteAsync($"api/notes/{entry.Payload}");
+                    return IsEntryDone(deleteNoteResponse);
                 case TypeSaveCourseGoal:
                     var goalDto = JsonSerializer.Deserialize<CourseGoalDto>(entry.Payload);
                     if (goalDto == null) return true;
-                    await _http.PutAsJsonAsync($"api/coursegoals/{goalDto.CourseId}", goalDto);
-                    return true;
+                    var goalResponse = await _http.PutAsJsonAsync($"api/coursegoals/{goalDto.CourseId}", goalDto);
+                    return IsEntryDone(goalResponse);
                 default:
                     return true; // unknown type → discard
             }
         }
         catch (JsonException) { return true; } // corrupt payload → discard
         catch { return false; } // network error → still offline, stop the replay
+    }
+
+    /// <summary>
+    /// Classifies a replay response: true = definitive (success or a rejection that would
+    /// never succeed on retry), false = transient (session/auth or server-side) - see
+    /// TryReplayEntryAsync for how each outcome is handled.
+    /// </summary>
+    private static bool IsEntryDone(HttpResponseMessage response)
+    {
+        if (response.IsSuccessStatusCode) return true;
+        var status = response.StatusCode;
+        if (status is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden
+            or HttpStatusCode.RequestTimeout or HttpStatusCode.TooManyRequests) return false;
+        if ((int)status >= 500) return false;
+        return true; // other 4xx (400/404/409/422/...) - definitive server rejection
     }
 
     // ── Account info (IsOwner) ───────────────────────────────────────────────
