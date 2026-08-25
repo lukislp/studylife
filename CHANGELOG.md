@@ -1,3 +1,12 @@
+## [1.39.10](https://github.com/lukislp/studylife/compare/v1.39.9...v1.39.10) (2026-08-25)
+
+
+### Bug Fixes
+
+* detect content-only session edits in the 30s poll ([742893a](https://github.com/lukislp/studylife/commit/742893a54661a36335d2947891fac72860a53ef4))
+* drop first-user fallback in the API user-resolution middleware ([ffcb370](https://github.com/lukislp/studylife/commit/ffcb3702e833a67434eb30663ca4982ee70104f0)), closes [#1](https://github.com/lukislp/studylife/issues/1)
+* stop offline write queue being wiped by auth expiry and server errors ([769d2db](https://github.com/lukislp/studylife/commit/769d2db553a8e183fea107df18a86b44a825a722))
+
 ## [1.39.9](https://github.com/lukislp/studylife/compare/v1.39.8...v1.39.9) (2026-08-25)
 
 
