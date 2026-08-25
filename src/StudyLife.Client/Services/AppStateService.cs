@@ -162,7 +162,7 @@ public class AppStateService : IAsyncDisposable
         {
             var dtos = await _http.GetFromJsonAsync<List<StudySessionDto>>("api/sessions");
             var sessions = dtos?.Select(FromDto).ToList() ?? new List<StudySession>();
-            var hash = ComputeHash(sessions);
+            var hash = ComputeHash(dtos ?? new List<StudySessionDto>());
             if (hash != _sessionsHash)
             {
                 _sessionsHash = hash;
@@ -200,13 +200,10 @@ public class AppStateService : IAsyncDisposable
     private static string ComputeSettingsHash(UserSettings s)
         => $"{string.Join(",", s.SelectedCourseIds.OrderBy(x => x))}|{string.Join(",", s.CompletedCourseIds.OrderBy(x => x))}|{s.Theme}|{s.AccentColor}|{s.AutoSwitchFocus}|{s.AutoSwitchMinutesBefore}|{s.MotivationalStyle}|{s.SessionReminderMinutes}|{s.CourseGoalReminderDays}|{s.InactivityThresholdDays}|{s.StudyWindowStartHour}|{s.StudyWindowEndHour}|{s.StudyDays}|{s.TargetGraduationDate:yyyy-MM-dd}|{s.CustomTimerModes}|{s.WeeklyGoalMinHours}|{s.WeeklyGoalMaxHours}|{s.MonthlyGoalMinHours}|{s.MonthlyGoalMaxHours}|{s.SessionRemindersEnabled}|{s.CourseGoalRemindersEnabled}|{s.InactivityRemindersEnabled}|{s.AchievementNotificationsEnabled}|{s.WeeklyReportEnabled}|{s.DailyMotivationEnabled}|{s.PerCourseInactivityRemindersEnabled}|{s.StreakRiskRemindersEnabled}|{s.WeeklyGoalNudgeEnabled}|{s.CourseAlmostDoneRemindersEnabled}|{s.BestStudyTimeRemindersEnabled}|{s.ComebackNudgeEnabled}|{s.NewRecordNotificationsEnabled}|{s.MonthlyReportEnabled}|{s.LastBackupDownloadAt:yyyy-MM-dd}|{s.ActiveStudyProgramId}|{s.ProgressShareEnabled}|{s.ProgressShareToken}";
 
-    private static string ComputeHash(List<StudySession> sessions)
-    {
-        var sb = new System.Text.StringBuilder();
-        foreach (var s in sessions.OrderBy(x => x.Id))
-            sb.Append($"{s.Id}:{s.IsCompleted}:{s.StartTime.Ticks}:{s.EndTime.Ticks};");
-        return sb.ToString();
-    }
+    // Serializes the full DTOs (ordered by Id) so EVERY field change is detected - a
+    // hand-picked field subset here silently breaks cross-device sync for the omitted fields.
+    private static string ComputeHash(List<StudySessionDto> sessions)
+        => JsonSerializer.Serialize(sessions.OrderBy(s => s.Id).ToList());
 
     public async ValueTask DisposeAsync()
     {
@@ -702,7 +699,7 @@ public class AppStateService : IAsyncDisposable
         {
             var dtos = await _http.GetFromJsonAsync<List<StudySessionDto>>("api/sessions");
             _sessionsCache = dtos?.Select(FromDto).ToList() ?? new List<StudySession>();
-            _sessionsHash = ComputeHash(_sessionsCache);
+            _sessionsHash = ComputeHash(dtos ?? new List<StudySessionDto>());
             if (dtos != null) await StoreReadCacheAsync(ReadCacheKeySessions, dtos);
         }
         catch
@@ -710,7 +707,7 @@ public class AppStateService : IAsyncDisposable
             // Offline cold start: last successful server state instead of an empty list.
             var cached = await LoadReadCacheAsync<List<StudySessionDto>>(ReadCacheKeySessions);
             _sessionsCache = cached?.Select(FromDto).ToList() ?? new List<StudySession>();
-            _sessionsHash = ComputeHash(_sessionsCache);
+            _sessionsHash = ComputeHash(cached ?? new List<StudySessionDto>());
         }
         return _sessionsCache;
     }
