@@ -166,10 +166,10 @@ public static class StudyMetrics
     /// Pure counting variant of the achievement tiers from Index.Achievements.razor.cs
     /// (BuildAchievements): the same 13 categories/44 tiers, but only as (Unlocked, Total) -
     /// for the study year-in-review (Wrapped.razor.cs), which doesn't need individual achievement
-    /// names/icons, just the total number of unlocked tiers. Deliberate, documented duplication:
-    /// when BuildAchievements' thresholds change, this list must be kept manually in sync,
-    /// since Index.Achievements.razor.cs additionally needs i18n names per tier
-    /// and therefore can't be moved here 1:1.
+    /// names/icons, just the total number of unlocked tiers. Thresholds/unlock computation come
+    /// from AchievementCatalog, so this stays in sync with BuildAchievements automatically -
+    /// only the counting-vs-display shape differs, which is why this isn't a 1:1 reuse of
+    /// BuildAchievements (that one additionally needs i18n names per tier).
     /// </summary>
     public static (int Unlocked, int Total) CountUnlockedAchievements(
         double totalHours, int longestStreak, int totalSessions, int coursesCompleted, bool allCoursesDone,
@@ -177,19 +177,19 @@ public static class StudyMetrics
         int perfectWeeks, int notesCount, int maxCourseDiversity, int programsCompleted)
     {
         var tiers = new List<bool>();
-        foreach (var t in new[] { 25, 100, 500, 1000, 2000 }) tiers.Add(totalHours >= t);
-        foreach (var t in new[] { 7, 30, 100, 365 }) tiers.Add(longestStreak >= t);
-        foreach (var t in new[] { 50, 200, 500, 1000 }) tiers.Add(totalSessions >= t);
-        foreach (var t in new[] { 1, 10, 20, 30 }) tiers.Add(coursesCompleted >= t);
+        tiers.AddRange(AchievementCatalog.BuildTiers(AchievementCatalog.HoursTiers, totalHours).Select(t => t.Unlocked));
+        tiers.AddRange(AchievementCatalog.BuildTiers(AchievementCatalog.StreakTiers, longestStreak).Select(t => t.Unlocked));
+        tiers.AddRange(AchievementCatalog.BuildTiers(AchievementCatalog.SessionsTiers, totalSessions).Select(t => t.Unlocked));
+        tiers.AddRange(AchievementCatalog.BuildTiers(AchievementCatalog.CoursesTiers, coursesCompleted).Select(t => t.Unlocked));
         tiers.Add(allCoursesDone);
-        foreach (var t in new[] { 5, 25, 100 }) tiers.Add(earlyBirdCount >= t);
-        foreach (var t in new[] { 5, 25, 100 }) tiers.Add(nightOwlCount >= t);
-        foreach (var t in new[] { 10, 50, 150 }) tiers.Add(weekendCount >= t);
-        foreach (var t in new[] { 2, 4, 6 }) tiers.Add(longestSessionHours >= t);
-        foreach (var t in new[] { 1, 4, 12, 26, 52 }) tiers.Add(perfectWeeks >= t);
-        foreach (var t in new[] { 5, 25, 100 }) tiers.Add(notesCount >= t);
-        foreach (var t in new[] { 2, 4, 6 }) tiers.Add(maxCourseDiversity >= t);
-        foreach (var t in new[] { 1, 2, 3 }) tiers.Add(programsCompleted >= t);
+        tiers.AddRange(AchievementCatalog.BuildTiers(AchievementCatalog.EarlyBirdTiers, earlyBirdCount).Select(t => t.Unlocked));
+        tiers.AddRange(AchievementCatalog.BuildTiers(AchievementCatalog.NightOwlTiers, nightOwlCount).Select(t => t.Unlocked));
+        tiers.AddRange(AchievementCatalog.BuildTiers(AchievementCatalog.WeekendTiers, weekendCount).Select(t => t.Unlocked));
+        tiers.AddRange(AchievementCatalog.BuildTiers(AchievementCatalog.MarathonTiers, longestSessionHours).Select(t => t.Unlocked));
+        tiers.AddRange(AchievementCatalog.BuildTiers(AchievementCatalog.PerfectWeekTiers, perfectWeeks).Select(t => t.Unlocked));
+        tiers.AddRange(AchievementCatalog.BuildTiers(AchievementCatalog.NotesTiers, notesCount).Select(t => t.Unlocked));
+        tiers.AddRange(AchievementCatalog.BuildTiers(AchievementCatalog.CourseDiversityTiers, maxCourseDiversity).Select(t => t.Unlocked));
+        tiers.AddRange(AchievementCatalog.BuildTiers(AchievementCatalog.ProgramsTiers, programsCompleted).Select(t => t.Unlocked));
         return (tiers.Count(x => x), tiers.Count);
     }
 }
