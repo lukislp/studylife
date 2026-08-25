@@ -37,8 +37,10 @@ public class SystemController : ControllerBase
         // middleware 403s the whole /api/backup path (raw DB downloads would leak
         // SystemSecrets), and rawBackupSupported=false is exactly the existing signal the
         // setup page already uses to hide the backup/restore cards - no client change needed.
+        // DemoModeGuard.IsEnabled (not a bare DEMO_MODE check) so this agrees with Program.cs
+        // about whether the write-block middleware is actually registered.
         _rawBackupSupported = backupService is not null && restoreService is not null
-            && !string.Equals(config["DEMO_MODE"], "true", StringComparison.OrdinalIgnoreCase);
+            && !DemoModeGuard.IsEnabled(config);
     }
 
     /// <summary>
