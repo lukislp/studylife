@@ -1,3 +1,10 @@
+## [1.39.7](https://github.com/lukislp/studylife/compare/v1.39.6...v1.39.7) (2026-08-25)
+
+
+### Bug Fixes
+
+* migrate studylife-pg PVCs to Longhorn for cross-node replication ([4043b01](https://github.com/lukislp/studylife/commit/4043b019fe35b15294ec411daa844a9d1562cd6f))
+
 ## [1.39.6](https://github.com/lukislp/studylife/compare/v1.39.5...v1.39.6) (2026-08-24)
 
 
