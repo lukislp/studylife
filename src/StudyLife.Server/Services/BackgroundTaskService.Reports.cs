@@ -42,7 +42,6 @@ public partial class BackgroundTaskService
             .Where(x => int.TryParse(x, out _))
             .Select(int.Parse)
             .ToList();
-        var coursesCompleted = completedIds.Count;
 
         // "All courses done" is based on creditable ECTS rather than a simple course count,
         // because elective groups only count up to the group quota - exactly how the client
@@ -65,17 +64,33 @@ public partial class BackgroundTaskService
         var ectsEarned = CourseCatalog.CalcEctsEarned(catalog, completedIds, groupQuotas);
         var allCoursesDone = ectsTotal > 0 && ectsEarned >= ectsTotal;
 
-        // Thresholds exactly as in Index.razor (BuildAchievements) - keep in sync if changed there.
+        // coursesCompleted, like ectsEarned above, is scoped to the ACTIVE study programme's
+        // catalog (catalog.Select(c => c.Id)) - not a raw completedIds.Count. settings.CompletedCourseIds
+        // is a flat field spanning EVERY programme the user has ever created, so an unscoped count
+        // would leak other programmes' completions in here - the same reasoning as the client's
+        // activeCourseIds scoping in Index.razor.cs (BuildAchievements/LoadDataAsync).
+        var activeCourseIds = catalog.Select(c => c.Id).ToHashSet();
+        var coursesCompleted = completedIds.Count(id => activeCourseIds.Contains(id));
+
+        // Thresholds come from AchievementCatalog (StudyLife.Shared) - the full tier sets, same as
+        // the client (Index.Achievements.razor.cs). Only these 5 categories push notifications;
+        // the other 8 (early bird, night owl, weekend warrior, marathon, perfect week, notes,
+        // course diversity, programmes completed) are display-only on the client/Wrapped recap and
+        // deliberately don't have server-side push copy here - out of scope for this fix (D1 was
+        // about truncated tiers/course scoping in the existing 5, not adding new push categories).
+        // Key format ("achievement:{key}:{threshold}") is unchanged for previously-existing tiers,
+        // so already-sent reminders don't re-fire; newly reachable tiers (e.g. 1000h, 365-day streak)
+        // firing once for already-crossed milestones is expected.
         var earned = new List<(string Key, string Body)>();
-        foreach (var t in new[] { 25, 100, 500 })
-            if (totalHours >= t) earned.Add(($"achievement:hours:{t}", $"{t} Stunden gelernt ⏱"));
-        foreach (var t in new[] { 7, 30, 100 })
-            if (longestStreak >= t) earned.Add(($"achievement:streak:{t}", $"{t}-Tage-Streak erreicht 🔥"));
-        foreach (var t in new[] { 50, 200, 500 })
-            if (totalSessions >= t) earned.Add(($"achievement:sessions:{t}", $"{t} Sessions abgeschlossen ✅"));
-        foreach (var t in new[] { 1, 10, 20 })
-            if (coursesCompleted >= t) earned.Add(($"achievement:courses:{t}", t == 1 ? "Ersten Kurs abgeschlossen 🎓" : $"{t} Kurse abgeschlossen 🎓"));
-        if (allCoursesDone) earned.Add(("achievement:allcourses", "Alle Kurse abgeschlossen 🏆"));
+        foreach (var t in AchievementCatalog.HoursTiers)
+            if (totalHours >= t) earned.Add(($"achievement:{AchievementCatalog.HoursKey}:{t}", $"{t} Stunden gelernt ⏱"));
+        foreach (var t in AchievementCatalog.StreakTiers)
+            if (longestStreak >= t) earned.Add(($"achievement:{AchievementCatalog.StreakKey}:{t}", $"{t}-Tage-Streak erreicht 🔥"));
+        foreach (var t in AchievementCatalog.SessionsTiers)
+            if (totalSessions >= t) earned.Add(($"achievement:{AchievementCatalog.SessionsKey}:{t}", $"{t} Sessions abgeschlossen ✅"));
+        foreach (var t in AchievementCatalog.CoursesTiers)
+            if (coursesCompleted >= t) earned.Add(($"achievement:{AchievementCatalog.CoursesKey}:{t}", t == 1 ? "Ersten Kurs abgeschlossen 🎓" : $"{t} Kurse abgeschlossen 🎓"));
+        if (allCoursesDone) earned.Add(($"achievement:{AchievementCatalog.AllCoursesKey}", "Alle Kurse abgeschlossen 🏆"));
 
         if (earned.Count == 0) return;
 
