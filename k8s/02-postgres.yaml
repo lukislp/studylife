@@ -18,6 +18,17 @@ spec:
   # re-enabled.
   instances: 3
   storage:
+    # Longhorn (cross-node-replicated, homelab-infra/cluster/11-longhorn-values.yaml) instead
+    # of local-path - migrated 2026-08-25 one replica at a time (delete a non-primary
+    # instance's PVC+pod, CNPG detects the missing volume for that ordinal and re-clones it
+    # from the primary using this spec, i.e. onto the new storage class; the cluster stays at
+    # full instance count throughout since only one instance is ever missing at once), then a
+    # "kubectl cnpg promote" switched the primary onto an already-migrated instance before the
+    # old primary's own PVC got the same treatment. Existing PVCs are immutable in-place and
+    # scaling instances down/up always drops the highest-ordinal (i.e. newest) instance first,
+    # which would just undo a freshly migrated one - the per-ordinal PVC replacement is CNPG's
+    # actual supported path for a live storage-class change on a multi-instance cluster.
+    storageClass: longhorn
     size: 1Gi
   resources:
     requests: { cpu: 100m, memory: 256Mi }
