@@ -1,3 +1,10 @@
+## [1.39.8](https://github.com/lukislp/studylife/compare/v1.39.7...v1.39.8) (2026-08-25)
+
+
+### Bug Fixes
+
+* migrate redis-cluster PVCs to Longhorn for cross-node replication ([a13b2dc](https://github.com/lukislp/studylife/commit/a13b2dc1c65e6fd74a3fcd2ed4eb804f334d9556))
+
 ## [1.39.7](https://github.com/lukislp/studylife/compare/v1.39.6...v1.39.7) (2026-08-25)
 
 
