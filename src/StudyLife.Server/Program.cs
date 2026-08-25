@@ -744,16 +744,18 @@ app.Use(async (context, next) =>
 // 1. If an X-Session-Token came along (possible even on the exception paths), its user
 //    EXCLUSIVELY applies - including sliding extension (ExpiresAt = now + 90 days, hard
 //    capped at HardExpiresAt). An INVALID/expired token leads to 401: silently falling back
-//    to the fallback user would show the wrong user's data, and the
+//    to an ambient user would show the wrong user's data, and the
 //    explicit 401 is exactly the signal that makes the client discard its token and redirect to
 //    login. Exception /api/auth: there the request continues unauthenticated,
 //    otherwise one could never log in again with an expired token in localStorage.
-// 2. Without any header (anonymous progress-share request): phase-1 fallback to the first
-//    AuthUserEntity - harmless, because ProgressController.GetShared resolves the actual token
-//    owner itself via IgnoreQueryFilters()+BeginBackgroundScope and overwrites this
-//    fallback for its own queries in the process. /api/auth deliberately gets NO
-//    fallback: the session-required auth endpoints must never rely on a
-//    fallback resolution.
+// 2. Without any header (e.g. anonymous progress-share request): NO fallback user is assigned
+//    (audit finding A2 - the former "first AuthUser" fallback here was harmless only because
+//    ProgressController.GetShared resolves the actual token owner itself via
+//    IgnoreQueryFilters()+BeginBackgroundScope, but any FUTURE gate exemption that forgot to do
+//    the same would otherwise have silently run as user #1 with full access to their data).
+//    CurrentUserAccessor.AuthUserId then stays 0 (its documented "no user resolved" value),
+//    which every tenant-filtered query filter compares against - 0 never matches a real
+//    AuthUserId (they start at 1), so such a request simply sees no data instead of user #1's.
 app.Use(async (context, next) =>
 {
     if (context.Request.Path.StartsWithSegments("/api"))
@@ -776,13 +778,6 @@ app.Use(async (context, next) =>
                     context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                     return;
                 }
-            }
-
-            if (!isAuthPath && !context.Items.ContainsKey(CurrentUserAccessor.HttpContextItemKey))
-            {
-                var authUser = await db.AuthUsers.AsNoTracking().OrderBy(u => u.Id).FirstOrDefaultAsync();
-                if (authUser is not null)
-                    context.Items[CurrentUserAccessor.HttpContextItemKey] = authUser.Id;
             }
         }
     }
