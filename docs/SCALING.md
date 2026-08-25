@@ -104,7 +104,14 @@ docker compose -f docker-compose.scale.yml down -v
    ```
 3. Build the image as above (step 1).
 4. **Get the image into the cluster** - the actually tricky part, see the box below.
-5. `kubectl apply -f k8s/`
+5. ```bash
+   kubectl apply -f k8s/
+   # k8s/dev/ (the learning-cluster placeholder Secret) is a SEPARATE, deliberate step - "kubectl
+   # apply -f k8s/" above is NOT recursive and never touches it, precisely so a bulk apply of
+   # this same command against prod can never clobber the prod SealedSecret-managed secret of
+   # the same name/namespace. See k8s/dev/README.md.
+   kubectl apply -f k8s/dev/
+   ```
 6. `kubectl -n studylife-scale get pods` - wait until everything is `Running` (the Postgres
    cluster takes the longest, `kubectl -n studylife-scale get cluster studylife-pg` shows
    bootstrap progress).
@@ -134,10 +141,12 @@ docker compose -f docker-compose.scale.yml down -v
     ```bash
     kubectl apply -f k8s/10-pod-disruption-budgets.yaml
     kubectl apply -f k8s/11-pooler.yaml
-    # Database__ConnectionString in k8s/01-config-and-secret.yaml then points at the pooler -
-    # on a fresh cluster, "kubectl apply -f k8s/01-config-and-secret.yaml" is enough as-is
-    # with the test password; on an already-running cluster with a rotated password, see
-    # the rotation procedure in the "Connection pooler" section below.
+    # Database__ConnectionString lives in k8s/dev/01-secrets.yaml (moved out of
+    # k8s/01-config-and-secret.yaml so a bulk "kubectl apply -f k8s/" can never clobber the prod
+    # SealedSecret of the same name, see k8s/dev/README.md) and then points at the pooler - on a
+    # fresh cluster, "kubectl apply -f k8s/dev/" is enough as-is with the test password; on an
+    # already-running cluster with a rotated password, see the rotation procedure in the
+    # "Connection pooler" section below.
     kubectl apply -f k8s/12-network-policies.yaml
     kubectl apply -f k8s/13-monitoring-namespace.yaml
     kubectl apply -f k8s/14-prometheus.yaml -f k8s/15-node-exporter.yaml -f k8s/16-kube-state-metrics.yaml
@@ -480,6 +489,21 @@ value via a SealedSecret delete+reapply (the same trick used to force adoption, 
 change in the same file - work with targeted `kubectl patch`/`kubectl set env`/Sealed-Secret
 reapply, exactly as with the other placeholder files (`07-ingress.yaml`, `17-grafana.yaml`,
 `09-uptime-kuma.yaml`).
+
+### Prod Secret vs. Learning-Cluster Placeholder (structural fix)
+
+The near-incident above was possible because the placeholder `Secret`s lived directly under
+`k8s/`, under the SAME name/namespace as the prod SealedSecret-managed secrets - so ANY bulk
+`kubectl apply -f k8s/` against prod (not just editing `Cache__ConnectionString`) could have
+overwritten them. Since then, the two `Secret`s (`studylife-secrets`, `studylife-pg-app-secret`)
+have moved to their own `k8s/dev/01-secrets.yaml` (see `k8s/dev/README.md`) - `kubectl apply -f
+k8s/` is not recursive, so the collision is now structurally impossible, not just a documented
+warning to remember. The `ConfigMap` (`studylife-config`, no credentials) stays directly under
+`k8s/` in `k8s/01-config-and-secret.yaml`, shared by both flows. This doesn't replace the
+"targeted patch, never full-file apply" discipline for the other placeholder files below (their
+placeholders are hostnames/scrape-configs, not credentials with a same-name prod counterpart, so
+the same subfolder trick doesn't directly apply) - it only closes this specific, highest-severity
+collision.
 
 **This exact mistake actually happened later (no longer a near-incident), despite the warning
 above**: `k8s/17-grafana.yaml`/`k8s/09-uptime-kuma.yaml` were applied directly via
@@ -1037,7 +1061,8 @@ PDB here was added.
 2 instances for its own redundancy) - avoids every pod opening its own Npgsql connection pool
 against Postgres' `max_connections` as the number of Web replicas grows. CNPG automatically
 creates a service with the same name as the pooler object (verified live: **`studylife-pg-pooler`,
-no `-rw` suffix** - unlike the cluster service itself). `k8s/01-config-and-secret.yaml`'s
+no `-rw` suffix** - unlike the cluster service itself). `k8s/dev/01-secrets.yaml`'s (formerly
+`k8s/01-config-and-secret.yaml`'s, see "Prod Secret vs. Learning-Cluster Placeholder" above)
 `Database__ConnectionString` now points to this pooler instead of directly to
 `studylife-pg-rw`, with `Max Auto Prepare=0` (MANDATORY in transaction pooling mode - PgBouncer
 doesn't hold a fixed server connection per client there, and Npgsql's default behavior of
