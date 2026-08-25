@@ -1,3 +1,10 @@
+## [1.39.12](https://github.com/lukislp/studylife/compare/v1.39.11...v1.39.12) (2026-08-25)
+
+
+### Bug Fixes
+
+* single achievement catalog in Shared, ending live threshold drift ([83b3eb6](https://github.com/lukislp/studylife/commit/83b3eb6c5655dede2aef3dd2fc9fd10c1a235834))
+
 ## [1.39.11](https://github.com/lukislp/studylife/compare/v1.39.10...v1.39.11) (2026-08-25)
 
 
