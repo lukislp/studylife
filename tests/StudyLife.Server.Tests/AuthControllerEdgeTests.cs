@@ -203,6 +203,9 @@ public class AuthControllerDemoModeTests : IClassFixture<AuthControllerDemoModeT
         {
             base.ConfigureWebHost(builder);
             builder.UseSetting("DEMO_MODE", "true");
+            // Required alongside DEMO_MODE=true - see DemoModeGuard. Without it demo mode
+            // stays fully disabled (covered separately by AuthControllerDemoModeUnconfirmedTests).
+            builder.UseSetting("DEMO_MODE_CONFIRM_DATA_LOSS", "yes-delete-all-data");
         }
     }
 
@@ -254,5 +257,55 @@ public class AuthControllerDemoModeTests : IClassFixture<AuthControllerDemoModeT
         var brokenLogin = await _client.PostAsync("/api/auth/demo-login", null);
         Assert.Equal(HttpStatusCode.ServiceUnavailable, brokenLogin.StatusCode);
         Assert.Contains("demo user not seeded", await brokenLogin.Content.ReadAsStringAsync());
+    }
+}
+
+/// <summary>
+/// DEMO_MODE=true WITHOUT DEMO_MODE_CONFIRM_DATA_LOSS: the guard (DemoModeGuard) must treat
+/// this exactly like a normal deployment - no reseed, no demo-login, no write-block - rather
+/// than half-enabling it. This is the O1 audit finding's actual regression test: a copy-pasted
+/// compose file or env typo that carries DEMO_MODE=true without the confirmation must NOT wipe
+/// or expose a production instance as read-only-demo.
+/// </summary>
+public class AuthControllerDemoModeUnconfirmedTests : IClassFixture<AuthControllerDemoModeUnconfirmedTests.UnconfirmedDemoModeFactory>
+{
+    public class UnconfirmedDemoModeFactory : CustomWebApplicationFactory
+    {
+        protected override void ConfigureWebHost(IWebHostBuilder builder)
+        {
+            base.ConfigureWebHost(builder);
+            builder.UseSetting("DEMO_MODE", "true");
+            // Deliberately no DEMO_MODE_CONFIRM_DATA_LOSS (or a wrong one) - this is exactly
+            // the misconfiguration the guard exists for.
+        }
+    }
+
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+
+    public AuthControllerDemoModeUnconfirmedTests(UnconfirmedDemoModeFactory factory)
+    {
+        _factory = factory;
+        _client = ApiKeyTestHelpers.CreateClientWithKey(factory, null);
+    }
+
+    [Fact]
+    public async Task UnconfirmedDemoMode_DisablesDemoEntirely()
+    {
+        // ── Discovery reports a normal instance, not a demo ──────────────────────────────────
+        var info = await _client.GetFromJsonAsync<DemoInfoDto>("/api/auth/demo");
+        Assert.False(info!.Demo);
+
+        // ── demo-login stays hard-disabled, like on any normal instance ─────────────────────
+        var login = await _client.PostAsync("/api/auth/demo-login", null);
+        Assert.Equal(HttpStatusCode.NotFound, login.StatusCode);
+
+        // ── The write-block middleware is NOT registered: an unauthenticated write fails with
+        // the normal API gate's 401, not the demo middleware's 403 "read-only demo instance". ──
+        using var put = new HttpRequestMessage(HttpMethod.Put, "/api/settings")
+        {
+            Content = JsonContent.Create(new UserSettingsDto()),
+        };
+        Assert.Equal(HttpStatusCode.Unauthorized, (await _client.SendAsync(put)).StatusCode);
     }
 }
