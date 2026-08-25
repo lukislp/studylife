@@ -1,3 +1,10 @@
+## [1.39.9](https://github.com/lukislp/studylife/compare/v1.39.8...v1.39.9) (2026-08-25)
+
+
+### Bug Fixes
+
+* move learning-cluster placeholder secrets out of the bulk k8s apply set ([ed7c48b](https://github.com/lukislp/studylife/commit/ed7c48bd853ad87acfb3e3901b22b569ca231c6a))
+
 ## [1.39.8](https://github.com/lukislp/studylife/compare/v1.39.7...v1.39.8) (2026-08-25)
 
 
