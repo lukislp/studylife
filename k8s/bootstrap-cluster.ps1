@@ -61,6 +61,20 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Host ""
 Write-Host "=== [2/5] Applying StudyLife manifests (with your own values instead of the test placeholders) ==="
+# k8s/dev/01-secrets.yaml (the learning-cluster Postgres credentials) applied explicitly first,
+# same as the main loop below would do for a same-named file directly under k8s/ - it deliberately
+# lives in its OWN subfolder instead (see k8s/dev/README.md) so that a bulk "kubectl apply -f k8s/"
+# against prod can never collide with the SealedSecret-managed prod secret of the same name/
+# namespace. Get-ChildItem below has no -Recurse, so it would never pick this up on its own.
+# Namespace applied first too (idempotent - the main loop re-applies 00-namespace.yaml again
+# further down) since the Secret needs the namespace to already exist.
+kubectl apply -f "$K8sDir/00-namespace.yaml"
+if ($LASTEXITCODE -ne 0) { throw "kubectl apply failed for 00-namespace.yaml" }
+Write-Host "  apply: dev/01-secrets.yaml"
+$devSecrets = (Get-Content "$K8sDir/dev/01-secrets.yaml" -Raw) -replace "studylife-k8s-dev", $PostgresPassword
+$devSecrets | kubectl apply -f -
+if ($LASTEXITCODE -ne 0) { throw "kubectl apply failed for dev/01-secrets.yaml" }
+
 # A plain PowerShell array + "-contains" instead of List<string>.AddRange() - an @(...) array
 # literal is an untyped Object[] at runtime, which .NET's generic AddRange(IEnumerable<string>)
 # doesn't always accept (type conversion error). "-contains" doesn't have this problem.
@@ -75,9 +89,6 @@ foreach ($f in $files) {
     }
     $content = Get-Content $f.FullName -Raw
     switch ($f.Name) {
-        "01-config-and-secret.yaml" {
-            $content = $content -replace "studylife-k8s-dev", $PostgresPassword
-        }
         "04-web.yaml" {
             $content = $content -replace "image: studylife-server:scale-v\d+", "image: $RegistryImage"
             $content = $content -replace "imagePullPolicy: Never", "imagePullPolicy: Always"
