@@ -206,5 +206,16 @@ spec:
     - metadata: { name: data }
       spec:
         accessModes: ["ReadWriteOnce"]
+        # Longhorn (cross-node-replicated, homelab-infra/cluster/11-longhorn-values.yaml)
+        # instead of local-path - migrated 2026-08-25 node by node (StatefulSet recreated with
+        # --cascade=orphan so existing pods/PVCs were untouched by the template change itself,
+        # then each pod+PVC deleted one at a time: replicas first via a plain "redis-cli
+        # --cluster add-node --cluster-slave" rejoin, masters only after a graceful "cluster
+        # failover" onto their already-migrated replica). volumeClaimTemplates is immutable on
+        # a live StatefulSet, and a fresh pod's data dir comes up as an empty, unclustered node
+        # (no CNPG-style auto-reclone) - unlike everything else migrated tonight, this data is
+        # pure disposable cache (appendonly no) with its own master/replica redundancy already,
+        # so the storage-class change is redundancy-on-redundancy, not a durability fix.
+        storageClassName: longhorn
         resources:
           requests: { storage: 256Mi }
