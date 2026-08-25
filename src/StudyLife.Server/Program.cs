@@ -337,8 +337,9 @@ using (var scope = app.Services.CreateScope())
     // Public demo instances: wipe and re-create the demo dataset on EVERY start - the data is
     // generated relative to "today", so restarting the container is also what keeps the demo
     // looking current (see DemoSeeder). Deliberately after Migrate() and the VAPID resolution
-    // above (SystemSecrets stay untouched), and never reachable without DEMO_MODE=true.
-    if (string.Equals(builder.Configuration["DEMO_MODE"], "true", StringComparison.OrdinalIgnoreCase))
+    // above (SystemSecrets stay untouched), and never reachable without DEMO_MODE=true PLUS the
+    // DEMO_MODE_CONFIRM_DATA_LOSS guard (see DemoModeGuard) - this is a full-table wipe.
+    if (DemoModeGuard.IsEnabled(builder.Configuration))
     {
         await DemoSeeder.ReseedAsync(db);
         Console.WriteLine("[demo] DEMO_MODE active: database wiped and reseeded with demo data");
@@ -548,16 +549,16 @@ app.UseRouting();
 // API key itself. Partition/limit rationale is at AddRateLimiter above.
 app.UseRateLimiter();
 
-// Public demo instances (DEMO_MODE=true): reject every mutating /api request with 403 before
-// it reaches any controller - one middleware covers all of them, no per-endpoint auditing.
-// The single exception is POST /api/auth/demo-login (the demo auto-sign-in,
-// AuthController.DemoLogin); notably this also blocks passkey registration/login POSTs, so
-// nobody can create themselves an account on a public demo. The client's offline write queue
-// already treats a server rejection as "done, drop it" (only network errors are retried), so
-// blocked writes act as local-only edits that a reload resets - no queue buildup. The
+// Public demo instances (DEMO_MODE=true, confirmed - see DemoModeGuard): reject every mutating
+// /api request with 403 before it reaches any controller - one middleware covers all of them,
+// no per-endpoint auditing. The single exception is POST /api/auth/demo-login (the demo
+// auto-sign-in, AuthController.DemoLogin); notably this also blocks passkey registration/login
+// POSTs, so nobody can create themselves an account on a public demo. The client's offline write
+// queue already treats a server rejection as "done, drop it" (only network errors are retried),
+// so blocked writes act as local-only edits that a reload resets - no queue buildup. The
 // middleware is only registered at all when the flag is set: a normal deployment runs a
 // byte-identical pipeline.
-if (string.Equals(app.Configuration["DEMO_MODE"], "true", StringComparison.OrdinalIgnoreCase))
+if (DemoModeGuard.IsEnabled(app.Configuration))
 {
     app.Use(async (context, next) =>
     {

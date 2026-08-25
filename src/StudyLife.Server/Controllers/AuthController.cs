@@ -587,10 +587,9 @@ public class AuthController : ControllerBase
 
     // ── Demo mode (public read-only demo instances) ──────────────────────────
 
-    /// <summary>True only when the DEMO_MODE=true environment variable is set on this
-    /// instance - never on a normal deployment.</summary>
-    private bool DemoModeEnabled =>
-        string.Equals(_config["DEMO_MODE"], "true", StringComparison.OrdinalIgnoreCase);
+    /// <summary>True only when DEMO_MODE=true AND the confirmation guard also passes - see
+    /// DemoModeGuard. Never true on a normal deployment.</summary>
+    private bool DemoModeEnabled => DemoModeGuard.IsEnabled(_config);
 
     /// <summary>Lets the client discover at login time whether this is a public demo
     /// instance (Login.razor then auto-signs-in via demo-login instead of showing the
