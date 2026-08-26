@@ -250,26 +250,29 @@ public class ProgressControllerMultiUserTests : IClassFixture<CustomWebApplicati
             var alex = await db.AuthUsers.SingleAsync(u => u.DisplayName == "Alex");
             var anna = await db.AuthUsers.SingleAsync(u => u.DisplayName == "Anna");
 
-            using (CurrentUserAccessor.BeginBackgroundScope(alex.Id))
+            // AuthUserId set explicitly instead of via BeginBackgroundScope: both usings would
+            // have already exited by the time the single SaveChangesAsync below runs, so
+            // StampAuthUserIdOnAddedEntries' one-time-memoized ambient lookup would stamp BOTH
+            // rows with whatever user happens to be ambient at that point instead of each
+            // one's actual owner - harmless before the AddPerUserUniqueRows migration (both
+            // rows just silently got the same wrong AuthUserId, masked by GetShared querying
+            // by token, not AuthUserId), but a genuine UNIQUE constraint violation since.
+            db.Settings.Add(new UserSettingsEntity
             {
-                db.Settings.Add(new UserSettingsEntity
-                {
-                    ProgressShareEnabled = true,
-                    ProgressShareToken = "alex-share-token",
-                    SelectedCourseIds = "",
-                    CompletedCourseIds = "3", // Mathematik: Analysis, 5 ECTS
-                });
-            }
-            using (CurrentUserAccessor.BeginBackgroundScope(anna.Id))
+                AuthUserId = alex.Id,
+                ProgressShareEnabled = true,
+                ProgressShareToken = "alex-share-token",
+                SelectedCourseIds = "",
+                CompletedCourseIds = "3", // Mathematik: Analysis, 5 ECTS
+            });
+            db.Settings.Add(new UserSettingsEntity
             {
-                db.Settings.Add(new UserSettingsEntity
-                {
-                    ProgressShareEnabled = true,
-                    ProgressShareToken = "anna-share-token",
-                    SelectedCourseIds = "1,2",
-                    CompletedCourseIds = "",
-                });
-            }
+                AuthUserId = anna.Id,
+                ProgressShareEnabled = true,
+                ProgressShareToken = "anna-share-token",
+                SelectedCourseIds = "1,2",
+                CompletedCourseIds = "",
+            });
             await db.SaveChangesAsync();
             return (alex.Id, anna.Id);
         });

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StudyLife.Server.Data;
 
@@ -10,44 +11,14 @@ using StudyLife.Server.Data;
 namespace StudyLife.Server.Migrations
 {
     [DbContext(typeof(StudyLifeDb))]
-    partial class StudyLifeDbModelSnapshot : ModelSnapshot
+    [Migration("20260826084957_AddPerUserUniqueRows")]
+    partial class AddPerUserUniqueRows
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.9");
-
-            modelBuilder.Entity("StudyLife.Server.Data.AiKeyOutboxEntity", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("AiApiKeyPlaintext")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("Attempts")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("AuthUserId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("LastAttemptAt")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AuthUserId");
-
-                    b.ToTable("AiKeyOutbox");
-                });
 
             modelBuilder.Entity("StudyLife.Server.Data.AuthSessionEntity", b =>
                 {
