@@ -9,28 +9,16 @@
 # field manager semantics) before this list was trimmed, so there was no window without anything
 # reconciling them.
 #
-# imagePullPolicy patch: the git-versioned files permanently have "Never" set (only
-# bootstrap-cluster.ps1 writes "Always" in memory before applying, never back into Git,
-# see k8s/bootstrap-cluster.ps1). A direct "kubectl apply -f k8s/04-web.yaml" WOULD therefore
-# break the prod pull (falling back to "Never") - this patch enforces "Always" via this path
-# too, regardless of the Git state.
+# Audit finding O4: the imagePullPolicy patch that used to live here is GONE - it existed only
+# because the git-versioned files permanently had "Never" set (only bootstrap-cluster.ps1 wrote
+# "Always" in memory before applying, never back into Git), so a direct "kubectl apply -f
+# k8s/04-web.yaml" during an incident would silently break the prod pull. k8s/04-web.yaml/
+# 05-worker.yaml now commit "imagePullPolicy: Always" directly, so this Kustomization has nothing
+# left to patch - a plain resource list is now enough to keep this path's output identical to a
+# direct apply of those two files (see test-k8s-manifests in .github/workflows/ci-cd.yml, which
+# validates this exact `kubectl kustomize` output).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../04-web.yaml
   - ../../05-worker.yaml
-patches:
-  - target:
-      kind: Deployment
-      name: studylife-web
-    patch: |-
-      - op: replace
-        path: /spec/template/spec/containers/0/imagePullPolicy
-        value: Always
-  - target:
-      kind: Deployment
-      name: studylife-worker
-    patch: |-
-      - op: replace
-        path: /spec/template/spec/containers/0/imagePullPolicy
-        value: Always

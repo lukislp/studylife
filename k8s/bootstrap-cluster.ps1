@@ -31,8 +31,8 @@
   Real Postgres password (replaces the test placeholder "studylife-k8s-dev" in the repo).
 
 .PARAMETER RegistryImage
-  Fully qualified image, default = the same image the existing single-instance
-  deployment already uses via Watchtower.
+  Fully qualified image, default = a placeholder - override with the real
+  ghcr.io/lukislp/studylife-server image (or your own fork's registry) for an actual deploy.
 
 .EXAMPLE
   .\bootstrap-cluster.ps1 -PostgresPassword "your-own-secure-password"
@@ -89,13 +89,15 @@ foreach ($f in $files) {
     }
     $content = Get-Content $f.FullName -Raw
     switch ($f.Name) {
+        # Audit finding O4: the "imagePullPolicy: Never" -> "Always" replace that used to run here
+        # is gone - k8s/04-web.yaml/05-worker.yaml now commit "Always" directly (a direct `kubectl
+        # apply` no longer silently falls back to "Never" without this script's help), so the
+        # replace would have been a permanent no-op (nothing left in the file to match).
         "04-web.yaml" {
             $content = $content -replace "image: studylife-server:scale-v\d+", "image: $RegistryImage"
-            $content = $content -replace "imagePullPolicy: Never", "imagePullPolicy: Always"
         }
         "05-worker.yaml" {
             $content = $content -replace "image: studylife-server:scale-v\d+", "image: $RegistryImage"
-            $content = $content -replace "imagePullPolicy: Never", "imagePullPolicy: Always"
         }
     }
     Write-Host "  apply: $($f.Name)"
