@@ -50,7 +50,12 @@ public class AppStateService : IAsyncDisposable
     // one tab ever replays (and POSTs) the queue per cycle. If navigator.locks
     // doesn't exist (exotic WebView), the JS helper returns handle 0 and this
     // degrades to today's single-tab-only behavior automatically.
-    private const string QueueStorageKey = "studylife-write-queue";
+    // "studylife-write-queue" is now a BASE name only (audit S7): the actual localStorage key is
+    // namespaced per account (GetQueueStorageKeyAsync, below the offline-read-cache section) so
+    // two different users on the same shared browser never share (or clobber) each other's
+    // offline write queue. QueueLockName deliberately stays UN-namespaced/global - see
+    // GetQueueStorageKeyAsync's own comment for why that's still correct.
+    private const string QueueStorageKeyBase = "studylife-write-queue";
     private const string QueueLockName = "studylife-write-queue-lock";
     private const string TypeSaveSession = "saveSession";
     private const string TypeDeleteSession = "deleteSession";
@@ -93,18 +98,154 @@ public class AppStateService : IAsyncDisposable
     // orphans every existing cache entry so all installs get exactly one forced fresh fetch;
     // the underlying "why did it keep failing" is deliberately not chased further here, since it
     // no longer matters once the cache can't wedge itself into permanent staleness.
+    //
+    // Per-account namespacing (audit S7, 2026-08-26): the "-v2" fix above stopped the cache from
+    // going permanently stale, but never addressed WHOSE data it holds - on a shared browser,
+    // SessionTokenStore.ClearAsync (still only clearing the token even after -v2) let user B log
+    // in and, if B's very first app load happened to be offline, cold-start straight into user
+    // A's still-present cached settings/sessions/courses/notes/etc. Fix: EVERY cache key AND the
+    // write queue key (QueueStorageKeyBase) is now suffixed with ":{namespace}", where
+    // {namespace} is the CURRENT account's AuthUserId - see EnsureNamespaceAsync/
+    // ResolveNamespaceAsync below for how that's resolved (crucially, from a LOCALLY persisted
+    // marker FIRST, so this still works before any server round trip completes - offline cold
+    // start must keep working). SessionTokenStore.OnLoggedOutAsync (wired in the constructor)
+    // now also purges every cache/queue key AND the marker on logout, so the common case (a clean
+    // logout, then a different user logs in) never leaves anything behind to namespace around in
+    // the first place - the namespacing is defense-in-depth for the cases where that purge either
+    // didn't run (process crash, browser closed without an explicit logout) or raced a reload
+    // (see SessionTokenStore.NotifySessionInvalidated). Trade-off, deliberately accepted: logout
+    // purges ALL cached data (every account's, not just the outgoing one) rather than tracking
+    // per-account retention - simplest correct behavior, and the cost is just re-fetching once on
+    // the NEXT login (already the existing "-v2 forces one fresh fetch" cost, just retriggered by
+    // an event instead of a version bump). A same-user relogin therefore also starts cold - also
+    // accepted, for the same reason.
     private const string ReadCacheKeySettings = "studylife-cache-settings-v2";
     private const string ReadCacheKeySessions = "studylife-cache-sessions-v2";
     private const string ReadCacheKeyCourses = "studylife-cache-courses-v2";
+    /// <summary>Marker of the account whose namespace the caches above currently belong to -
+    /// itself NOT namespaced (there's only ever one "current" value). Not sensitive (a bare
+    /// integer AuthUserId), safe to keep in localStorage in the clear. See ResolveNamespaceAsync
+    /// for how a mismatch against the server's actual current user is detected and reconciled.</summary>
+    private const string UserIdMarkerKey = "studylife-current-user-id";
+    /// <summary>Common prefix shared by every namespaced read-cache key (the three constants
+    /// above AND GetJsonCachedAsync's per-URL keys AND callers like Notes.razor's own
+    /// NotesReadCacheKey) - lets PurgeCachesAndQueueAsync sweep all of them in one localStorage
+    /// pass without needing to know the full set of keys that happen to exist.</summary>
+    private const string CacheKeyPrefix = "studylife-cache-";
 
     private sealed record CachedCourses(int? ProgramId, List<CourseDto> Courses);
 
+    // ── Per-account cache namespace resolution (audit S7) ────────────────────────────────────
+    // Memoized exactly like _settingsFetchInFlight further below: the FIRST cache-touching call
+    // this AppStateService instance ever makes triggers ResolveNamespaceAsync once; every later
+    // call (from any page, any concurrently-racing caller) just awaits the same already-resolved
+    // (or already in-flight) value - so this never costs more than one extra request per app
+    // cold start, no matter how many pages/components touch the cache concurrently at startup.
+    private string? _cacheNamespace;
+    private Task<string>? _namespaceResolveTask;
+    private IJSObjectReference? _cachePurgeModule;
+
+    private Task<string> EnsureNamespaceAsync()
+    {
+        if (_cacheNamespace != null) return Task.FromResult(_cacheNamespace);
+        return _namespaceResolveTask ??= ResolveNamespaceAsync();
+    }
+
+    /// <summary>
+    /// Resolves (and memoizes) which account's cache namespace this AppStateService instance
+    /// should read/write. Two layers, in order:
+    ///   1. The LOCAL marker (UserIdMarkerKey) - a plain localStorage read, no network. This
+    ///      alone is enough to pick a namespace before any server round trip completes, which is
+    ///      the hard constraint here: the offline-cold-start read cache must keep working with no
+    ///      connectivity at all.
+    ///   2. account-info (via FetchAccountInfoAsync, also used by GetIsOwnerAsync - see that
+    ///      method) - the AUTHORITATIVE current user id, when reachable. If it disagrees with the
+    ///      local marker, a DIFFERENT account was active on this browser before: purge every
+    ///      existing cache/queue key (PurgeCachesAndQueueAsync) before adopting the new
+    ///      namespace, so a later offline cold start can never resurrect the previous account's
+    ///      data under the new one's key by accident. A marker that's simply ABSENT (fresh
+    ///      install, or right after a logout purge) is treated as "nothing to purge", not a
+    ///      mismatch - purging an already-empty cache on every fresh install would just be wasted
+    ///      work.
+    /// Offline (account-info unreachable): falls back to the local marker as-is, or the fixed
+    /// "anon" bucket if there isn't one yet (see the class comment above for the narrow residual
+    /// risk that last fallback carries, and why it's accepted).
+    /// </summary>
+    private async Task<string> ResolveNamespaceAsync()
+    {
+        string? marker = null;
+        try { marker = await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", UserIdMarkerKey); }
+        catch { /* localStorage not available */ }
+
+        var info = await FetchAccountInfoAsync();
+        if (info != null)
+        {
+            var userId = info.UserId.ToString();
+            if (marker != null && marker != userId)
+                await PurgeCachesAndQueueAsync(); // a different account's leftovers - wipe before adopting the new namespace
+            if (marker != userId)
+            {
+                try { await _jsRuntime.InvokeVoidAsync("localStorage.setItem", UserIdMarkerKey, userId); }
+                catch { /* best effort */ }
+            }
+            marker = userId;
+        }
+
+        _cacheNamespace = marker ?? "anon";
+        return _cacheNamespace;
+    }
+
+    /// <summary>Namespaced write-queue storage key (S7) - queue entries are account-scoped for
+    /// the same reason the read caches are (see the class comment on ReadCacheKeySettings).
+    /// QueueLockName (Web Locks cross-tab coordination) deliberately stays UN-namespaced/global:
+    /// two tabs on DIFFERENT accounts sharing one lock name just means slightly less parallelism
+    /// (tab B waits for tab A's turn even though they touch different storage keys) - never a
+    /// correctness problem, since MutateQueueAsync/ReplayQueueAsync always re-read the queue
+    /// fresh under the lock anyway.</summary>
+    private async Task<string> GetQueueStorageKeyAsync() => $"{QueueStorageKeyBase}:{await EnsureNamespaceAsync()}";
+
+    /// <summary>Wipes every namespaced read-cache key (ALL accounts' - see the class comment on
+    /// ReadCacheKeySettings for why "all" instead of "just one") and the write queue, via a
+    /// single enumerate-and-remove pass in JS (cachepurge.js - there is no way to enumerate
+    /// localStorage keys through the plain getItem/setItem/removeItem calls used everywhere else
+    /// in this file). Deliberately does NOT touch UserIdMarkerKey - callers that need the marker
+    /// gone too (logout, see PurgeOnLogoutAsync) remove it themselves right after. Best-effort: a
+    /// failure here just means the previous account's stale cache lives on - no worse than before
+    /// this fix, never a hard error for the caller.</summary>
+    private async Task PurgeCachesAndQueueAsync()
+    {
+        try
+        {
+            _cachePurgeModule ??= await _jsRuntime.InvokeAsync<IJSObjectReference>("import", "./js/cachepurge.js");
+            await _cachePurgeModule.InvokeVoidAsync("removeKeysWithPrefixes", new[] { CacheKeyPrefix, QueueStorageKeyBase });
+        }
+        catch { /* best effort - see above */ }
+    }
+
+    /// <summary>SessionTokenStore.OnLoggedOutAsync hook (wired in the constructor): purges every
+    /// cache/queue key AND the account marker itself, so the very NEXT ResolveNamespaceAsync (for
+    /// whoever logs in next) starts from "nothing to purge" instead of immediately detecting a
+    /// mismatch and purging again - same end state, this just makes it happen at logout time
+    /// instead of at the next login's first cache touch.</summary>
+    private async Task PurgeOnLogoutAsync()
+    {
+        await PurgeCachesAndQueueAsync();
+        try { await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", UserIdMarkerKey); }
+        catch { /* best effort */ }
+    }
+
     /// <summary>Public so pages with their own data management (e.g. Notes.razor) can
     /// also use the same offline read cache mechanism - same rule applies there:
-    /// read ONLY in the error path of a genuine server attempt.</summary>
+    /// read ONLY in the error path of a genuine server attempt. `key` is namespaced per-account
+    /// (S7) before it ever touches localStorage - existing callers pass the same bare key they
+    /// always have, no call-site changes needed.</summary>
     public async Task StoreReadCacheAsync(string key, object payload)
     {
-        try { await _jsRuntime.InvokeVoidAsync("localStorage.setItem", key, JsonSerializer.Serialize(payload)); }
+        try
+        {
+            var namespacedKey = $"{key}:{await EnsureNamespaceAsync()}";
+            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", namespacedKey, JsonSerializer.Serialize(payload));
+        }
         catch { /* localStorage not available - cache is purely a nice-to-have */ }
     }
 
@@ -112,7 +253,8 @@ public class AppStateService : IAsyncDisposable
     {
         try
         {
-            var json = await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", key);
+            var namespacedKey = $"{key}:{await EnsureNamespaceAsync()}";
+            var json = await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", namespacedKey);
             return string.IsNullOrWhiteSpace(json) ? null : JsonSerializer.Deserialize<T>(json);
         }
         catch { return null; }
@@ -128,7 +270,8 @@ public class AppStateService : IAsyncDisposable
     /// silent-staleness bug applied here too, since every GetJsonCachedAsync caller shares this
     /// exact mechanism. The exception is now logged (it previously wasn't, anywhere) so a
     /// persistently failing fetch is diagnosable going forward instead of just silently serving
-    /// old data forever.
+    /// old data forever. StoreReadCacheAsync/LoadReadCacheAsync additionally namespace this key
+    /// per-account (S7) before it touches localStorage.
     /// </summary>
     public async Task<T?> GetJsonCachedAsync<T>(string url) where T : class
     {
@@ -169,6 +312,10 @@ public class AppStateService : IAsyncDisposable
         _jsRuntime = jsRuntime;
         _logger = logger;
         _sessionTokenStore = sessionTokenStore;
+        // Composition, not DI (S7): SessionTokenStore already can't depend back on
+        // AppStateService, so this is how both logout paths (ClearAsync, NotifySessionInvalidated)
+        // reach the cache purge - see the OnLoggedOutAsync doc comment on SessionTokenStore.
+        _sessionTokenStore.OnLoggedOutAsync = PurgeOnLogoutAsync;
         _refreshTimer = new Timer(async _ => await PollAsync(), null,
             TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
     }
@@ -288,7 +435,8 @@ public class AppStateService : IAsyncDisposable
     {
         try
         {
-            var json = await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", QueueStorageKey);
+            var key = await GetQueueStorageKeyAsync();
+            var json = await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", key);
             return string.IsNullOrWhiteSpace(json)
                 ? new List<QueuedWrite>()
                 : JsonSerializer.Deserialize<List<QueuedWrite>>(json) ?? new List<QueuedWrite>();
@@ -300,8 +448,9 @@ public class AppStateService : IAsyncDisposable
     {
         try
         {
+            var key = await GetQueueStorageKeyAsync();
             var json = JsonSerializer.Serialize(_writeQueue);
-            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", QueueStorageKey, json);
+            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", key, json);
         }
         catch { /* localStorage not available - queue lives in memory only, silent degradation */ }
     }
@@ -675,21 +824,44 @@ public class AppStateService : IAsyncDisposable
     // and Index.razor hide the corresponding UI for all other users.
 
     private bool? _isOwnerCache;
+    private AccountInfoDto? _accountInfoCache;
+    private Task<AccountInfoDto?>? _accountInfoFetchInFlight;
+
+    /// <summary>
+    /// Fetches (and memoizes, with in-flight dedup like _settingsFetchInFlight below) GET
+    /// api/auth/account-info. Shared by GetIsOwnerAsync AND ResolveNamespaceAsync (S7) - both
+    /// need the SAME response (IsOwner, UserId), so they share the one request instead of each
+    /// firing their own at app startup. Returns null on any failure (offline, non-2xx, ...);
+    /// unlike GetSettingsAsync's dedup, a null result is NOT permanently cached here - a LATER
+    /// call (e.g. ResolveNamespaceAsync retrying after GetIsOwnerAsync already failed once) gets
+    /// its own fresh attempt, since by then connectivity may have come back. GetIsOwnerAsync
+    /// itself still only ever resolves once per app lifetime either way (see below).
+    /// </summary>
+    private Task<AccountInfoDto?> FetchAccountInfoAsync()
+    {
+        if (_accountInfoCache != null) return Task.FromResult<AccountInfoDto?>(_accountInfoCache);
+        return _accountInfoFetchInFlight ??= FetchAccountInfoDedupedAsync();
+    }
+
+    private async Task<AccountInfoDto?> FetchAccountInfoDedupedAsync()
+    {
+        try
+        {
+            var dto = await _http.GetFromJsonAsync<AccountInfoDto>("api/auth/account-info");
+            _accountInfoCache = dto;
+            return dto;
+        }
+        catch { return null; }
+        finally { _accountInfoFetchInFlight = null; }
+    }
 
     public async Task<bool> GetIsOwnerAsync()
     {
         if (_isOwnerCache is bool cached) return cached;
-        try
-        {
-            var dto = await _http.GetFromJsonAsync<AccountInfoDto>("api/auth/account-info");
-            _isOwnerCache = dto?.IsOwner ?? false;
-        }
-        catch
-        {
-            // Conservative when in doubt: better to hide the backup/restore UI than offer
-            // an action that then fails with 403.
-            _isOwnerCache = false;
-        }
+        // Conservative when in doubt: better to hide the backup/restore UI than offer an action
+        // that then fails with 403 (same fallback as before this was refactored to share
+        // FetchAccountInfoAsync with ResolveNamespaceAsync).
+        _isOwnerCache = (await FetchAccountInfoAsync())?.IsOwner ?? false;
         return _isOwnerCache.Value;
     }
 
@@ -855,11 +1027,46 @@ public class AppStateService : IAsyncDisposable
     /// programs the program id is sent as a query parameter - purely a
     /// URL cache buster against /api/courses's hourly browser max-age.
     /// </summary>
+    // In-flight dedup (audit S8), keyed by programId in addition to the usual task-memo pattern:
+    // several pages start GetCoursesAsync concurrently on load (Setup.razor/Notes.razor/...) -
+    // without this, a cold cache fires one GET per concurrent caller instead of sharing the
+    // single request already on the wire, same bug as GetSessionsAsync below. Keyed by programId
+    // because, unlike settings/sessions, courses aren't a single global resource: a program
+    // switch mid-fetch must start its OWN fetch rather than piggyback on (and wrongly return)
+    // whatever the PREVIOUS program's still-in-flight request resolves to.
+    private Task<List<CourseDto>>? _coursesFetchInFlight;
+    private int? _coursesFetchInFlightProgramId;
+
     public async Task<List<CourseDto>> GetCoursesAsync()
     {
         var settings = await GetSettingsAsync();
         var programId = settings.ActiveStudyProgramId;
         if (_coursesCache != null && _coursesCacheProgramId == programId) return _coursesCache;
+
+        if (_coursesFetchInFlight != null && _coursesFetchInFlightProgramId == programId)
+            return await _coursesFetchInFlight;
+
+        var task = FetchCoursesDedupedAsync(programId);
+        _coursesFetchInFlight = task;
+        _coursesFetchInFlightProgramId = programId;
+        return await task;
+    }
+
+    private async Task<List<CourseDto>> FetchCoursesDedupedAsync(int? programId)
+    {
+        try { return await FetchCoursesFromServerAsync(programId); }
+        finally
+        {
+            // Only clear if we're still the CURRENT in-flight entry for this programId - a
+            // program switch that started its own fetch while this one was still running
+            // already overwrote both fields, and clearing them here would wrongly make that
+            // NEWER fetch look like nothing is in flight to a caller arriving right after.
+            if (_coursesFetchInFlightProgramId == programId) _coursesFetchInFlight = null;
+        }
+    }
+
+    private async Task<List<CourseDto>> FetchCoursesFromServerAsync(int? programId)
+    {
         try
         {
             var url = programId.HasValue ? $"api/courses?program={programId.Value}" : "api/courses";
@@ -910,9 +1117,28 @@ public class AppStateService : IAsyncDisposable
 
     // ── Sessions ──────────────────────────────────────────────────────────────
 
-    public async Task<List<StudySession>> GetSessionsAsync()
+    // In-flight dedup (audit S8): SaveSessionAsync/DeleteSessionAsync/DeleteSeriesAsync all null
+    // _sessionsCache and fire OnSessionsChanged/NotifyStateChanged, and 2-4 subscribers
+    // (MainLayout's badge, the active/upcoming-session banners, whichever page is open, ...) each
+    // react by calling GetSessionsAsync again - without this, that fired one GET api/sessions PER
+    // subscriber instead of sharing the single request already on the wire. Same pattern as
+    // _settingsFetchInFlight above.
+    private Task<List<StudySession>>? _sessionsFetchInFlight;
+
+    public Task<List<StudySession>> GetSessionsAsync()
     {
-        if (_sessionsCache != null) return _sessionsCache;
+        if (_sessionsCache != null) return Task.FromResult(_sessionsCache);
+        return _sessionsFetchInFlight ??= FetchSessionsDedupedAsync();
+    }
+
+    private async Task<List<StudySession>> FetchSessionsDedupedAsync()
+    {
+        try { return await FetchSessionsFromServerAsync(); }
+        finally { _sessionsFetchInFlight = null; }
+    }
+
+    private async Task<List<StudySession>> FetchSessionsFromServerAsync()
+    {
         try
         {
             var dtos = await _http.GetFromJsonAsync<List<StudySessionDto>>("api/sessions");
