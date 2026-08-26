@@ -62,7 +62,7 @@ public partial class Stats
             .Select(g =>
             {
                 // Group is never empty (GroupBy) -> CalcWeightedAverageGrade never returns null here.
-                var avg = StudyMetrics.CalcWeightedAverageGrade(g.Select(x => (x.Grade, x.Course!.Ects)))!.Value;
+                var avg = StudyMetrics.CalcWeightedAverageGrade(g.Select(x => new StudyMetrics.GradedCourse(x.Grade, x.Course!.Ects)))!.Value;
                 // German grading scale: 1.0 = best grade -> inverted, so better grades yield taller bars.
                 var percent = Math.Clamp((5.0 - (double)avg) / 4.0 * 100, 0, 100);
                 return new StatsGradeChartCard.GradePoint(string.Format(T.SemesterShortFormat ?? "", g.Key), avg, g.Count(), percent);

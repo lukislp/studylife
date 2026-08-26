@@ -193,7 +193,7 @@ public partial class Stats
             .Sum(s => (s.EndTime - s.StartTime).TotalHours);
         decimal? GradeOf(int semester) => StudyMetrics.CalcWeightedAverageGrade(goals
             .Where(g => g.Grade.HasValue && semesterByCourse.TryGetValue(g.CourseId, out var sem) && sem == semester)
-            .Select(g => (g.Grade!.Value, allCourses.First(c => c.Id == g.CourseId).Ects)));
+            .Select(g => new StudyMetrics.GradedCourse(g.Grade!.Value, allCourses.First(c => c.Id == g.CourseId).Ects)));
         int EctsOf(int semester) => allCourses
             .Where(c => c.Semester == semester && settings.CompletedCourseIds.Contains(c.Id))
             .Sum(c => c.Ects);
