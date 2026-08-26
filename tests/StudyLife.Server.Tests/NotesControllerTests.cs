@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using Microsoft.EntityFrameworkCore;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Tests;
@@ -316,5 +317,51 @@ public class NotesControllerTests : IClassFixture<CustomWebApplicationFactory>
         var newSearch = await _client.GetAsync($"/api/notes/search?q={newUnique}");
         var newResults = await newSearch.Content.ReadFromJsonAsync<List<NoteDto>>();
         Assert.Contains(newResults!, n => n.Id == created.Id);
+    }
+}
+
+/// <summary>
+/// M1 regression: RelatedNoteIds used to be parsed with bare int.Parse in
+/// NotesController.ToDto - written by the EXTERNAL studylife-ai capture-enrichment path
+/// (BackgroundTaskService.CaptureEnrichment), so a single malformed suggestion from there made
+/// GET /api/notes throw 500 permanently for every note, not just the poisoned one (ToDto runs
+/// per-row inside the same LINQ projection). Own factory: poisons the row directly via the
+/// DbContext, since the normal write paths never produce malformed data themselves.
+/// </summary>
+public class NotesControllerPoisonedDataTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+
+    public NotesControllerPoisonedDataTests(CustomWebApplicationFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient();
+    }
+
+    [Fact]
+    public async Task GetAll_WithPoisonedRelatedNoteIds_ReturnsOkAndSkipsGarbageTokens()
+    {
+        var created = await (await _client.PostAsJsonAsync("/api/notes", new NoteDto
+        {
+            Title = "Poisoned RelatedNoteIds regression",
+            Content = "content",
+        })).Content.ReadFromJsonAsync<NoteDto>();
+        Assert.NotNull(created);
+
+        await _factory.WithDbAsync(async db =>
+        {
+            var entity = await db.Notes.FirstAsync(n => n.Id == created!.Id);
+            entity.RelatedNoteIds = "1,corrupted,2";
+            await db.SaveChangesAsync();
+        });
+
+        var response = await _client.GetAsync("/api/notes");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var notes = await response.Content.ReadFromJsonAsync<List<NoteDto>>();
+        Assert.NotNull(notes);
+        var poisoned = notes!.Single(n => n.Id == created!.Id);
+        Assert.Equal(new List<int> { 1, 2 }, poisoned.RelatedNoteIds);
     }
 }

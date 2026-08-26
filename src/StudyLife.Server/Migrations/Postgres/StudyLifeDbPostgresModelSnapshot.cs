@@ -696,6 +696,9 @@ namespace StudyLife.Server.Migrations.Postgres
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AuthUserId")
+                        .IsUnique();
+
                     b.ToTable("TimerState");
                 });
 
@@ -831,6 +834,9 @@ namespace StudyLife.Server.Migrations.Postgres
                         .HasColumnType("boolean");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AuthUserId")
+                        .IsUnique();
 
                     b.ToTable("Settings");
                 });

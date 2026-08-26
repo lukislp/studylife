@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using StudyLife.Server.Services;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Tests;
@@ -556,5 +557,45 @@ public class SettingsControllerApiKeySlotsAreIndependentTests : IClassFixture<Cu
         Assert.Equal(HttpStatusCode.NoContent, (await _client.PostAsync("/api/settings/mcp-api-key/revoke", null)).StatusCode);
         haStatus = await _client.GetFromJsonAsync<HaApiKeyStatusDto>("/api/settings/ha-api-key");
         Assert.True(haStatus!.HasKey);
+    }
+}
+
+/// <summary>
+/// M1 regression: SelectedCourseIds/CompletedCourseIds used to be parsed with bare
+/// int.Parse in SettingsController.ToDto - one malformed entry (e.g. planted by a bug
+/// elsewhere, or by the external studylife-ai capture-enrichment path for other comma-int-list
+/// columns) made every subsequent GET throw 500 permanently, since the poisoned row never
+/// self-heals. Own factory: seeds the settings row directly via the DbContext (bypassing the
+/// normal PUT, which validates/re-serializes and would never itself write garbage).
+/// </summary>
+public class SettingsControllerPoisonedDataTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+
+    public SettingsControllerPoisonedDataTests(CustomWebApplicationFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient();
+    }
+
+    [Fact]
+    public async Task Get_WithPoisonedSelectedAndCompletedCourseIds_ReturnsOkAndSkipsGarbageTokens()
+    {
+        await _factory.WithDbAsync(async db =>
+        {
+            var entity = await db.Settings.GetOrCreateAsync(db);
+            entity.SelectedCourseIds = "1,notanumber,3";
+            entity.CompletedCourseIds = "corrupted";
+            await db.SaveChangesAsync();
+        });
+
+        var response = await _client.GetAsync("/api/settings");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var dto = await response.Content.ReadFromJsonAsync<UserSettingsDto>();
+        Assert.NotNull(dto);
+        Assert.Equal(new List<int> { 1, 3 }, dto!.SelectedCourseIds);
+        Assert.Empty(dto.CompletedCourseIds);
     }
 }
