@@ -1,3 +1,10 @@
+## [1.40.5](https://github.com/lukislp/studylife/compare/v1.40.4...v1.40.5) (2026-08-26)
+
+
+### Bug Fixes
+
+* settings versioning, non-forgeable backup timestamp, structural hash ([f6a2c77](https://github.com/lukislp/studylife/commit/f6a2c77758332eeba6041cc84bc426086d5dc06a))
+
 ## [1.40.4](https://github.com/lukislp/studylife/compare/v1.40.3...v1.40.4) (2026-08-26)
 
 
