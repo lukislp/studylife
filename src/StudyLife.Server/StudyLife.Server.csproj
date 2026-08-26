@@ -4,9 +4,56 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
+  <PropertyGroup>
+    <!-- Audit finding D2: a plain `dotnet build` regenerates docs/api/openapi.json
+         deterministically. Microsoft.Extensions.ApiDescription.Server's build-time generation
+         (hooked into the Build target automatically once OpenApiGenerateDocuments is set) names
+         its output after $(MSBuildProjectName) ("StudyLife.Server.json") with no supported way
+         to override that filename directly - so it's generated into an intermediate staging
+         directory instead, and CopyOpenApiDocumentToCommittedSpec below (which always runs
+         right after generation, whether or not the underlying target's own up-to-date check
+         skipped regenerating the staged file) copies it to the fixed, committed path
+         docs/api/openapi.json - the path three consumer repos pin their client generation
+         against. See the "openapi-contract" CI job (.github/workflows/ci-cd.yml) for how CI
+         verifies the committed file stays in sync with a fresh build. -->
+    <OpenApiGenerateDocuments>true</OpenApiGenerateDocuments>
+    <OpenApiGenerateDocumentsOnBuild>true</OpenApiGenerateDocumentsOnBuild>
+    <!-- $(IntermediateOutputPath) (obj\$(Configuration)\$(TargetFramework)\) isn't resolved yet
+         this early in project evaluation and would silently fall back to an empty prefix,
+         landing the staging directory at the project ROOT instead of under obj\ (observed live -
+         a stray, untracked src/StudyLife.Server/openapi-staging/ directory, not gitignored like
+         obj/ is). $(MSBuildProjectExtensionsPath) (obj\, unconditionally, no Configuration/TFM
+         suffix needed since only one file is ever staged here at a time) is set from the very
+         first line of project evaluation and IS covered by .gitignore's "obj/" pattern. -->
+    <OpenApiDocumentsDirectory>$(MSBuildProjectExtensionsPath)openapi-staging</OpenApiDocumentsDirectory>
+    <StudyLifeCommittedOpenApiSpecPath>$(MSBuildThisFileDirectory)../../docs/api/openapi.json</StudyLifeCommittedOpenApiSpecPath>
+  </PropertyGroup>
+
+  <Target Name="CopyOpenApiDocumentToCommittedSpec" AfterTargets="GenerateOpenApiDocuments">
+    <Copy
+      SourceFiles="$(OpenApiDocumentsDirectory)\$(MSBuildProjectName).json"
+      DestinationFiles="$(StudyLifeCommittedOpenApiSpecPath)"
+      Condition="Exists('$(OpenApiDocumentsDirectory)\$(MSBuildProjectName).json')" />
+  </Target>
   <ItemGroup>
     <PackageReference Include="Fido2.AspNet" Version="4.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.9" />
+    <!-- Audit finding D2: formal API contract. AddOpenApi()/MapOpenApi() (Program.cs) serve the
+         live document at /openapi/v1.json; ApiDescription.Server hooks a build-time generation
+         target into plain `dotnet build` (see the OpenApiDocumentsDirectory/OpenApiDocumentsOptions
+         properties below) that regenerates the COMMITTED contract artifact at
+         docs/api/openapi.json - the fixed path three consumer repos pin their client generation
+         against, checked for staleness by the "openapi-contract" CI job (.github/workflows/ci-cd.yml). -->
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <!-- Explicit pin, not a direct dependency of our own code: Microsoft.AspNetCore.OpenApi 10.0.9
+         pulls in Microsoft.OpenApi 2.0.0 transitively, which NuGet flags with a known
+         high-severity advisory (CVE-2026-49451, stack-overflow via a circular schema reference),
+         fixed in 2.7.5. Same pattern as the System.Security.Cryptography.Xml pin below. -->
+    <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
     <PackageReference Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="10.0.9" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

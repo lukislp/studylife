@@ -28,8 +28,8 @@ public class PushController : ControllerBase
     }
 
     [HttpGet("publickey")]
-    public IActionResult GetPublicKey() =>
-        Ok(new { publicKey = _vapidKeys.PublicKey });
+    public ActionResult<PushPublicKeyResponseDto> GetPublicKey() =>
+        Ok(new PushPublicKeyResponseDto { PublicKey = _vapidKeys.PublicKey });
 
     [HttpPost("subscribe")]
     public async Task<IActionResult> Subscribe(PushSubscribeRequest dto)
