@@ -1,3 +1,10 @@
+# [2.1.0](https://github.com/lukislp/studylife/compare/v2.0.1...v2.1.0) (2026-08-26)
+
+
+### Features
+
+* validate CourseId on writes, derive course name and color server-side ([f04986f](https://github.com/lukislp/studylife/commit/f04986f7f24775388b639cb278b8d9f5d433fff4))
+
 ## [2.0.1](https://github.com/lukislp/studylife/compare/v2.0.0...v2.0.1) (2026-08-26)
 
 
