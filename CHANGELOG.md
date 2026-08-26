@@ -1,3 +1,10 @@
+## [2.1.2](https://github.com/lukislp/studylife/compare/v2.1.1...v2.1.2) (2026-08-26)
+
+
+### Bug Fixes
+
+* gate speech services behind Speech:Enabled, off for the k8s worker ([1bf417a](https://github.com/lukislp/studylife/commit/1bf417aa7344f262f8d9e32f0f3379014d989ad0))
+
 ## [2.1.1](https://github.com/lukislp/studylife/compare/v2.1.0...v2.1.1) (2026-08-26)
 
 
