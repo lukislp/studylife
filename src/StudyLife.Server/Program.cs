@@ -505,16 +505,22 @@ app.UseWhen(
 
 // Security headers on EVERY response (including static assets), hence here before the
 // short-circuiting static-file middlewares. On the CSP - as strict as possible without a bigger
-// refactor, three deliberate relaxations:
-// - script-src 'unsafe-inline': index.html contains a large inline JS interop block
-//   (calendar swipe, WakeLock, push, ...). Nonce/hash isn't feasible for a statically served
-//   WASM site without extracting it into an external file - a separate refactor, out of scope here.
+// refactor, two remaining deliberate relaxations (audit A11a, 2026-08-26: script-src's
+// 'unsafe-inline' was removed - index.html's inline JS interop block (calendar swipe, WakeLock,
+// push, TTS speakText, ...) now lives in wwwroot/js/interop.js + wwwroot/js/boot-loading.js,
+// loaded via <script src>, so no inline script executes anymore and the directive could be
+// dropped without a nonce/hash scheme):
 // - script-src 'wasm-unsafe-eval': without this the browser won't compile the Blazor .wasm modules.
+//   NOT 'unsafe-eval' - the WASM-specific token is narrower (only allows compiling WebAssembly,
+//   not arbitrary eval()/Function()) and is what .NET's WASM runtime actually needs.
 // - style-src 'unsafe-inline' + fonts.googleapis.com: inline style attributes (index.html loader,
 //   dynamic chart styles) plus the Google Fonts @import in base.css; font-src analogous for the
 //   actual font files from fonts.gstatic.com. Both font hosts additionally in connect-src,
 //   because the service worker proxies these requests via fetch() and is thereby bound to the CSP
-//   of its own script (= this one here).
+//   of its own script (= this one here). Out of scope for A11a (style-src, not script-src) - Blazor
+//   itself sets inline style="" attributes at runtime (e.g. @bind, dynamic chart colors), so
+//   removing this would need per-element nonce/hash plumbing through Blazor's own rendering, a
+//   separate, larger refactor.
 // Referrer-Policy same-origin: a pure same-origin SPA, the only cross-origin requests (Google Fonts)
 // don't need a referrer. frame-ancestors 'none' + X-Frame-Options DENY: no embedding use case.
 // media-src 'self' data:: the "read note aloud" feature (TtsController) hands the client a WAV
@@ -523,7 +529,7 @@ app.UseWhen(
 // read-through - Chrome's console error names the exact fallback rule being hit).
 // Dev exception: ws:/wss: in connect-src, so dotnet watch's browser-refresh WebSocket isn't blocked.
 var csp = "default-src 'self'; "
-    + "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; "
+    + "script-src 'self' 'wasm-unsafe-eval'; "
     + "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
     + "font-src 'self' https://fonts.gstatic.com; "
     + "img-src 'self' data:; "
