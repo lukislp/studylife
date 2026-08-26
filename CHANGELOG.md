@@ -1,3 +1,11 @@
+## [1.43.2](https://github.com/lukislp/studylife/compare/v1.43.1...v1.43.2) (2026-08-26)
+
+
+### Bug Fixes
+
+* DB-aware health probes and opt-in Redis AUTH preparation ([e214af5](https://github.com/lukislp/studylife/commit/e214af50c4c5e3e7f97726c2643f5b9d50362cb0))
+* hygiene sweep - i18n guard base class, NaN quota, dead code, AOT shapes ([51d9547](https://github.com/lukislp/studylife/commit/51d954721b4c32cf4cfee00592a3f814ad3cdfeb))
+
 ## [1.43.1](https://github.com/lukislp/studylife/compare/v1.43.0...v1.43.1) (2026-08-26)
 
 
