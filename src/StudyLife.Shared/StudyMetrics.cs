@@ -6,8 +6,14 @@ namespace StudyLife.Shared;
 /// Replaces the previously three hand-maintained copies of the same logic - changes here take
 /// effect everywhere at once. The Home Assistant integration (coordinator.py) remains a deliberately
 /// parallel Python implementation with identical semantics.
+///
+/// Split across partial files by concern, same convention as BackgroundTaskService.*.cs: this
+/// file keeps the original core (streak/quota/forecast/grade), StudyMetrics.Dashboard.cs holds
+/// the dashboard-aggregate functions extracted from Index.razor.cs/Stats.razor.cs for the
+/// metrics API (see MetricsController), and StudyMetrics.WeeklyReport.cs the HA-facing
+/// last-completed-week variant.
 /// </summary>
-public static class StudyMetrics
+public static partial class StudyMetrics
 {
     /// <summary>
     /// "Studied" = timer completed OR the planned end lies in the past

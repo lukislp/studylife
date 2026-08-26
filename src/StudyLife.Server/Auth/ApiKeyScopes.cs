@@ -73,6 +73,13 @@ public static class ApiKeyScopes
         // fix/coordinator-week-bound-and-ects).
         new("TimerState", "Get"), // GET /api/timerstate - api.py async_get_timer_state (coordinator poll)
         new("Planner", "GenerateExamPlan"), // POST /api/planner/exam-plan - api.py async_generate_exam_plan <- services.py handle_generate_exam_plan
+        // Metrics API (docs/api/metrics-contract-v1): coordinator.py's _async_update_data polls
+        // both once per cycle instead of computing streak/quota/forecast/course-hours/achievements
+        // etc. itself from the raw sessions/settings/courses polls above - the server is now the
+        // single source of truth for every one of those numbers (see MetricsController /
+        // StudyLife.Shared/StudyMetrics.cs), the HA sensors just read and display them.
+        new("Metrics", "GetSummary"), // GET /api/metrics/summary(?program=&now=) - api.py async_get_metrics_summary (coordinator poll)
+        new("Metrics", "GetAchievements"), // GET /api/metrics/achievements(?program=) - api.py async_get_metrics_achievements (coordinator poll)
     ];
 
     /// <summary>

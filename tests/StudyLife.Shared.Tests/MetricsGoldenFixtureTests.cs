@@ -37,7 +37,27 @@ public class MetricsGoldenFixtureTests
         List<CourseDto> Courses,
         List<MetricsCourseGoal> CourseGoals,
         List<int> CompletedCourseIds,
-        MetricsExpected Expected);
+        MetricsExpected Expected,
+        // Additive, only present on the handful of scenarios whose existing inputs also
+        // exercise the newer centralized metrics (course hours, neglected course, topics,
+        // month comparison, upcoming goals, weekly report - see metrics-contract-v1). Null on
+        // every other scenario, which simply skips NewSharedMetrics_MatchExpectations below.
+        List<int>? SelectedCourseIds,
+        NewMetricsExpected? NewMetrics);
+
+    private record NewMetricsExpected(
+        List<MetricsCourseHoursExpected> CourseHours,
+        int TopicsCompleted, int TopicsTotal,
+        MetricsNeglectedCourseExpected? NeglectedCourse,
+        List<MetricsUpcomingGoalExpected> UpcomingCourseGoals,
+        MetricsMonthComparisonExpected MonthComparison,
+        MetricsWeeklyReportExpected WeeklyReport);
+
+    private record MetricsCourseHoursExpected(int CourseId, string CourseName, string CourseColor, double Hours, int SessionCount);
+    private record MetricsNeglectedCourseExpected(int CourseId, string CourseName, DateTime? LastStudied, int? DaysSince);
+    private record MetricsUpcomingGoalExpected(int CourseId, string CourseName, DateTime TargetDate, int DaysLeft);
+    private record MetricsMonthComparisonExpected(double CurrentMonthHours, double PreviousMonthHours, double DeltaVsPreviousMonth, bool HasYearData, double? SameMonthLastYearHours, double? DeltaVsLastYear);
+    private record MetricsWeeklyReportExpected(string WeekId, double Hours, double DeltaVsPreviousWeek, string? TopCourseName, int SessionCount);
 
     private record MetricsSettings(
         int WeeklyGoalMinHours, int WeeklyGoalMaxHours,
@@ -181,6 +201,95 @@ public class MetricsGoldenFixtureTests
         {
             Assert.Null(expected.ForecastDate);
         }
+    }
+
+    public static IEnumerable<object[]> ScenariosWithNewMetrics() =>
+        Fixture.Value.Scenarios.Where(s => s.NewMetrics != null).Select(s => new object[] { s.Name });
+
+    /// <summary>
+    /// Pins the dashboard-aggregate functions extracted for the metrics API (StudyMetrics.
+    /// CalcCourseHours/CalcNeglectedCourse/CalcTopicsProgress/CalcMonthComparison/
+    /// CalcUpcomingCourseGoals/CalcLastCompletedWeekReport) - same "load fixture, run the real
+    /// code, compare" shape as CoordinatorMetrics_MatchStudyMetricsAndCourseCatalog above, just
+    /// for the metrics that didn't exist yet when that test was written. Only scenarios whose
+    /// existing inputs (courses/sessions/completedCourseIds, plus the additive selectedCourseIds
+    /// where present) actually exercise these newer metrics carry a "newMetrics" block - see each
+    /// scenario's own "$description" for what it pins.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(ScenariosWithNewMetrics))]
+    public void NewSharedMetrics_MatchExpectations(string scenarioName)
+    {
+        var s = Find(scenarioName);
+        var expected = s.NewMetrics!;
+        var now = s.Now;
+        var today = now.Date;
+        var selectedCourseIds = s.SelectedCourseIds ?? new List<int>();
+        var goals = s.CourseGoals.Select(g => new CourseGoalDto
+        {
+            CourseId = g.CourseId,
+            CourseName = g.CourseName ?? "",
+            TargetDate = g.TargetDate,
+            CompletedAt = g.CompletedAt,
+            Grade = g.Grade,
+            CompletedTopics = g.CompletedTopics ?? "",
+        }).ToList();
+
+        var courseHours = StudyMetrics.CalcCourseHours(s.Courses, selectedCourseIds, s.CompletedCourseIds, s.Sessions, now);
+        var actualCourseHours = courseHours.Select(r => new MetricsCourseHoursExpected(r.Course.Id, r.Course.Name, r.Course.Color, r.Hours, r.SessionCount)).ToList();
+        Assert.Equal(expected.CourseHours.Count, actualCourseHours.Count);
+        for (var i = 0; i < expected.CourseHours.Count; i++)
+        {
+            Assert.Equal(expected.CourseHours[i].CourseId, actualCourseHours[i].CourseId);
+            Assert.Equal(expected.CourseHours[i].CourseName, actualCourseHours[i].CourseName);
+            Assert.Equal(expected.CourseHours[i].CourseColor, actualCourseHours[i].CourseColor);
+            Assert.Equal(expected.CourseHours[i].Hours, actualCourseHours[i].Hours, precision: 6);
+            Assert.Equal(expected.CourseHours[i].SessionCount, actualCourseHours[i].SessionCount);
+        }
+
+        var topics = StudyMetrics.CalcTopicsProgress(s.Courses, selectedCourseIds, goals);
+        Assert.Equal(expected.TopicsCompleted, topics.Completed);
+        Assert.Equal(expected.TopicsTotal, topics.Total);
+
+        var neglected = StudyMetrics.CalcNeglectedCourse(s.Courses, selectedCourseIds, s.CompletedCourseIds, s.Sessions.Where(x => StudyMetrics.IsStudied(x, now)), today);
+        if (expected.NeglectedCourse == null)
+        {
+            Assert.Null(neglected);
+        }
+        else
+        {
+            Assert.NotNull(neglected);
+            Assert.Equal(expected.NeglectedCourse.CourseId, neglected!.Value.Course.Id);
+            Assert.Equal(expected.NeglectedCourse.CourseName, neglected.Value.Course.Name);
+            Assert.Equal(expected.NeglectedCourse.LastStudied, neglected.Value.LastStudied);
+        }
+
+        var upcoming = StudyMetrics.CalcUpcomingCourseGoals(goals, today);
+        Assert.Equal(expected.UpcomingCourseGoals.Count, upcoming.Count);
+        for (var i = 0; i < expected.UpcomingCourseGoals.Count; i++)
+        {
+            Assert.Equal(expected.UpcomingCourseGoals[i].CourseId, upcoming[i].CourseId);
+            Assert.Equal(expected.UpcomingCourseGoals[i].CourseName, upcoming[i].CourseName);
+            Assert.Equal(expected.UpcomingCourseGoals[i].TargetDate, upcoming[i].TargetDate);
+            Assert.Equal(expected.UpcomingCourseGoals[i].DaysLeft, upcoming[i].DaysLeft);
+        }
+
+        var studiedForMonth = s.Sessions.Where(x => StudyMetrics.IsStudied(x, now));
+        var monthComparison = StudyMetrics.CalcMonthComparison(studiedForMonth, today);
+        Assert.Equal(expected.MonthComparison.CurrentMonthHours, monthComparison.CurrentMonthHours, precision: 6);
+        Assert.Equal(expected.MonthComparison.PreviousMonthHours, monthComparison.PreviousMonthHours, precision: 6);
+        Assert.Equal(expected.MonthComparison.DeltaVsPreviousMonth, monthComparison.DeltaVsPreviousMonth, precision: 6);
+        Assert.Equal(expected.MonthComparison.HasYearData, monthComparison.HasYearData);
+        Assert.Equal(expected.MonthComparison.SameMonthLastYearHours, monthComparison.SameMonthLastYearHours);
+        Assert.Equal(expected.MonthComparison.DeltaVsLastYear, monthComparison.DeltaVsLastYear);
+
+        var studiedForWeek = s.Sessions.Where(x => StudyMetrics.IsStudied(x, now));
+        var weeklyReport = StudyMetrics.CalcLastCompletedWeekReport(studiedForWeek, now);
+        Assert.Equal(expected.WeeklyReport.WeekId, weeklyReport.WeekId);
+        Assert.Equal(expected.WeeklyReport.Hours, weeklyReport.Hours, precision: 6);
+        Assert.Equal(expected.WeeklyReport.DeltaVsPreviousWeek, weeklyReport.DeltaVsPreviousWeek, precision: 6);
+        Assert.Equal(expected.WeeklyReport.TopCourseName, weeklyReport.TopCourseName);
+        Assert.Equal(expected.WeeklyReport.SessionCount, weeklyReport.SessionCount);
     }
 
     /// <summary>Sanity check on the fixture file itself: every scenario name must be unique

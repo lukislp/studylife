@@ -931,3 +931,176 @@ public class BackupImportResponseDto
     public Dictionary<string, int> Imported { get; set; } = new();
     public Dictionary<string, int> Dropped { get; set; } = new();
 }
+
+// Metrics API (docs/api/metrics-contract-v1, owner decision: every metric computed in exactly
+// ONE place, served by the server - see MetricsController and docs/ARCHITECTURE.md "Metrics
+// API"). Field names/casing/nullability are the FIXED wire contract shared with studylife-hacs
+// (the Home Assistant integration consumes GET /api/metrics/summary and /api/metrics/achievements
+// directly, see ApiKeyScopes.Ha) - do not rename without coordinating a contract version bump.
+
+/// <summary>Response of GET /api/metrics/summary?program=&amp;now= - every field is always
+/// present unless explicitly documented as nullable below.</summary>
+public class MetricsSummaryDto
+{
+    /// <summary>The `now` the response was computed against (echoes the query param, or the
+    /// server's local now if omitted) - naive local, no offset, same convention as every other
+    /// DateTime in this API.</summary>
+    public DateTime AsOf { get; set; }
+    public MetricsProgramDto Program { get; set; } = new();
+    public MetricsStreakDto Streak { get; set; } = new();
+    public MetricsHoursDto Hours { get; set; } = new();
+    public MetricsQuotaDto WeekQuota { get; set; } = new();
+    public MetricsQuotaDto MonthQuota { get; set; } = new();
+    public MetricsEctsDto Ects { get; set; } = new();
+    /// <summary>ECTS-weighted average grade (StudyMetrics.CalcWeightedAverageGrade). Null when
+    /// no course has a grade recorded yet.</summary>
+    public decimal? AverageGrade { get; set; }
+    public MetricsForecastDto Forecast { get; set; } = new();
+    public MetricsMonthComparisonDto MonthComparison { get; set; } = new();
+    /// <summary>Null when the "≥2 active courses" gate isn't met (StudyMetrics.CalcNeglectedCourse) -
+    /// see that function for the full rule set.</summary>
+    public MetricsNeglectedCourseDto? NeglectedCourse { get; set; }
+    /// <summary>The last COMPLETED Mon-Sun week (StudyMetrics.CalcLastCompletedWeekReport) -
+    /// always available, unlike the app's own current-week push recap.</summary>
+    public MetricsWeeklyReportDto WeeklyReport { get; set; } = new();
+    /// <summary>Selected courses with ≥1 studied session, sorted by hours descending.</summary>
+    public List<MetricsCourseHoursDto> CourseHours { get; set; } = new();
+    public MetricsTopicsDto Topics { get; set; } = new();
+    /// <summary>Open goals with a target date, soonest first, max 5.</summary>
+    public List<MetricsUpcomingGoalDto> UpcomingCourseGoals { get; set; } = new();
+}
+
+/// <summary>The resolved study programme (see MetricsController's `program` query param
+/// resolution, same convention as GET /api/courses). Id null = built-in.</summary>
+public class MetricsProgramDto
+{
+    public int? Id { get; set; }
+    public string Name { get; set; } = "";
+    public bool IsBuiltIn { get; set; }
+}
+
+public class MetricsStreakDto
+{
+    public int Current { get; set; }
+    public int Longest { get; set; }
+}
+
+/// <summary>Total/TotalSessions are all-time studied hours/session count (same aggregation as
+/// AchievementCatalog.BuildInputs' TotalHours/TotalSessions).</summary>
+public class MetricsHoursDto
+{
+    public double Week { get; set; }
+    public double Month { get; set; }
+    public double Total { get; set; }
+    public int TotalSessions { get; set; }
+}
+
+/// <summary>Shape shared by WeekQuota and MonthQuota (StudyMetrics.CalcQuota).</summary>
+public class MetricsQuotaDto
+{
+    public double Hours { get; set; }
+    public int TargetMin { get; set; }
+    public int TargetMax { get; set; }
+    public double Percent { get; set; }
+    public double MinPercent { get; set; }
+    public bool Warning { get; set; }
+    public double MissingHours { get; set; }
+}
+
+public class MetricsEctsDto
+{
+    public int Earned { get; set; }
+    public int Total { get; set; }
+}
+
+/// <summary>StudyMetrics.CalcForecast, trimmed to the fields the wire contract needs (no
+/// BaselineWeeksNeeded/ReferenceWeeklyHours - those only feed the client's own graduation-goal
+/// inverse calculation, which stays client-side).</summary>
+public class MetricsForecastDto
+{
+    public bool Available { get; set; }
+    public bool AlreadyDone { get; set; }
+    /// <summary>Null when Available is false.</summary>
+    public DateTime? Date { get; set; }
+    public double RecentWeeklyHours { get; set; }
+}
+
+/// <summary>StudyMetrics.CalcMonthComparison. SameMonthLastYearHours/DeltaVsLastYear are null
+/// exactly when HasYearData is false.</summary>
+public class MetricsMonthComparisonDto
+{
+    public double CurrentMonthHours { get; set; }
+    public double PreviousMonthHours { get; set; }
+    public double DeltaVsPreviousMonth { get; set; }
+    public bool HasYearData { get; set; }
+    public double? SameMonthLastYearHours { get; set; }
+    public double? DeltaVsLastYear { get; set; }
+}
+
+/// <summary>StudyMetrics.CalcNeglectedCourse. LastStudied/DaysSince are null when the course was
+/// never studied within the lookback window (StudyMetrics.NeglectedCourseHistoryDays).</summary>
+public class MetricsNeglectedCourseDto
+{
+    public int CourseId { get; set; }
+    public string CourseName { get; set; } = "";
+    public DateTime? LastStudied { get; set; }
+    public int? DaysSince { get; set; }
+}
+
+/// <summary>StudyMetrics.CalcLastCompletedWeekReport. WeekId is an ISO week string
+/// ("{year}-W{week:D2}"). TopCourseName is null exactly when SessionCount is 0.</summary>
+public class MetricsWeeklyReportDto
+{
+    public string WeekId { get; set; } = "";
+    public double Hours { get; set; }
+    public double DeltaVsPreviousWeek { get; set; }
+    public string? TopCourseName { get; set; }
+    public int SessionCount { get; set; }
+}
+
+/// <summary>StudyMetrics.CalcCourseHours, one entry per selected course with ≥1 studied session.</summary>
+public class MetricsCourseHoursDto
+{
+    public int CourseId { get; set; }
+    public string CourseName { get; set; } = "";
+    public string CourseColor { get; set; } = "#6C5CE7";
+    public double Hours { get; set; }
+    public int SessionCount { get; set; }
+}
+
+/// <summary>StudyMetrics.CalcTopicsProgress.</summary>
+public class MetricsTopicsDto
+{
+    public int Completed { get; set; }
+    public int Total { get; set; }
+}
+
+/// <summary>One entry of StudyMetrics.CalcUpcomingCourseGoals. DaysLeft is uncapped at the low
+/// end (negative = overdue).</summary>
+public class MetricsUpcomingGoalDto
+{
+    public int CourseId { get; set; }
+    public string CourseName { get; set; } = "";
+    public DateTime TargetDate { get; set; }
+    public int DaysLeft { get; set; }
+}
+
+/// <summary>Response of GET /api/metrics/achievements?program= - all 44 tiers across every
+/// category in AchievementCatalog order.</summary>
+public class MetricsAchievementsDto
+{
+    public int Unlocked { get; set; }
+    public int Total { get; set; }
+    public List<MetricsAchievementTierDto> Tiers { get; set; } = new();
+}
+
+/// <summary>One achievement tier. Category is one of AchievementCatalog's stable string keys
+/// (HoursKey/StreakKey/.../ProgramsKey) - see that class for the full list and why they must
+/// stay stable.</summary>
+public class MetricsAchievementTierDto
+{
+    public string Category { get; set; } = "";
+    public int Threshold { get; set; }
+    public bool Unlocked { get; set; }
+    public double Current { get; set; }
+}

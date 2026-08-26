@@ -23,19 +23,14 @@ public partial class BackgroundTaskService
 
         var now = LocalNow;
 
-        // Deliberately duplicates the client logic from Index.razor (BuildAchievements) - an
-        // established pattern in this codebase (cf. Home Assistant integration): the server must
-        // know the same milestones so the push still fires when the app isn't currently open.
-        // "Studied" = timer completed OR scheduled end lies in the past -
-        // the same semantics as /api/sessions/history?onlyCompleted=true, which the client uses.
+        // "Studied" = timer completed OR scheduled end lies in the past - the same semantics as
+        // /api/sessions/history?onlyCompleted=true, which the client uses. CourseId is carried
+        // along even though this sub-task only needs 5 of AchievementCatalog.BuildInputs's 13
+        // fields - that shared function computes maxCourseDiversity (unused here) from it too.
         var studied = await db.Sessions
             .Where(s => s.IsCompleted || s.EndTime <= now)
-            .Select(s => new { s.StartTime, s.EndTime })
+            .Select(s => new { s.StartTime, s.EndTime, s.CourseId })
             .ToListAsync();
-
-        var totalHours = studied.Sum(s => (s.EndTime - s.StartTime).TotalHours);
-        var totalSessions = studied.Count;
-        var longestStreak = StudyMetrics.CalcLongestStreak(studied.Select(s => s.StartTime));
 
         var completedIds = (settings?.CompletedCourseIds ?? "")
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -62,15 +57,22 @@ public partial class BackgroundTaskService
         }
         var ectsTotal = CourseCatalog.CalcTotalEcts(catalog, groupQuotas);
         var ectsEarned = CourseCatalog.CalcEctsEarned(catalog, completedIds, groupQuotas);
-        var allCoursesDone = ectsTotal > 0 && ectsEarned >= ectsTotal;
 
-        // coursesCompleted, like ectsEarned above, is scoped to the ACTIVE study programme's
-        // catalog (catalog.Select(c => c.Id)) - not a raw completedIds.Count. settings.CompletedCourseIds
-        // is a flat field spanning EVERY programme the user has ever created, so an unscoped count
-        // would leak other programmes' completions in here - the same reasoning as the client's
-        // activeCourseIds scoping in Index.razor.cs (BuildAchievements/LoadDataAsync).
+        // activeCourseIds scopes coursesCompleted to the ACTIVE study programme's catalog -
+        // not a raw completedIds.Count. settings.CompletedCourseIds is a flat field spanning
+        // EVERY programme the user has ever created, so an unscoped count would leak other
+        // programmes' completions in here - the same reasoning as the client's activeCourseIds
+        // scoping in Index.razor.cs (BuildAchievements/LoadDataAsync).
         var activeCourseIds = catalog.Select(c => c.Id).ToHashSet();
-        var coursesCompleted = completedIds.Count(id => activeCourseIds.Contains(id));
+
+        // Same shared aggregation as the client's BuildAchievements (Index.Achievements.razor.cs) -
+        // this sub-task only needs 5 of the 13 fields (the categories that push a notification, see
+        // below), so notesCount/programsCompleted are passed as 0 (unused placeholders, not fetched
+        // here to avoid two extra queries this sub-task has no other use for).
+        var inputs = AchievementCatalog.BuildInputs(
+            studied.Select(s => new StudySessionDto { StartTime = s.StartTime, EndTime = s.EndTime, CourseId = s.CourseId }).ToList(),
+            completedIds, activeCourseIds, settings?.WeeklyGoalMinHours ?? 0, ectsTotal, ectsEarned,
+            notesCount: 0, programsCompleted: 0);
 
         // Thresholds come from AchievementCatalog (StudyLife.Shared) - the full tier sets, same as
         // the client (Index.Achievements.razor.cs). Only these 5 categories push notifications;
@@ -83,14 +85,14 @@ public partial class BackgroundTaskService
         // firing once for already-crossed milestones is expected.
         var earned = new List<(string Key, string Body)>();
         foreach (var t in AchievementCatalog.HoursTiers)
-            if (totalHours >= t) earned.Add(($"achievement:{AchievementCatalog.HoursKey}:{t}", $"{t} Stunden gelernt ⏱"));
+            if (inputs.TotalHours >= t) earned.Add(($"achievement:{AchievementCatalog.HoursKey}:{t}", $"{t} Stunden gelernt ⏱"));
         foreach (var t in AchievementCatalog.StreakTiers)
-            if (longestStreak >= t) earned.Add(($"achievement:{AchievementCatalog.StreakKey}:{t}", $"{t}-Tage-Streak erreicht 🔥"));
+            if (inputs.LongestStreak >= t) earned.Add(($"achievement:{AchievementCatalog.StreakKey}:{t}", $"{t}-Tage-Streak erreicht 🔥"));
         foreach (var t in AchievementCatalog.SessionsTiers)
-            if (totalSessions >= t) earned.Add(($"achievement:{AchievementCatalog.SessionsKey}:{t}", $"{t} Sessions abgeschlossen ✅"));
+            if (inputs.TotalSessions >= t) earned.Add(($"achievement:{AchievementCatalog.SessionsKey}:{t}", $"{t} Sessions abgeschlossen ✅"));
         foreach (var t in AchievementCatalog.CoursesTiers)
-            if (coursesCompleted >= t) earned.Add(($"achievement:{AchievementCatalog.CoursesKey}:{t}", t == 1 ? "Ersten Kurs abgeschlossen 🎓" : $"{t} Kurse abgeschlossen 🎓"));
-        if (allCoursesDone) earned.Add(($"achievement:{AchievementCatalog.AllCoursesKey}", "Alle Kurse abgeschlossen 🏆"));
+            if (inputs.CoursesCompleted >= t) earned.Add(($"achievement:{AchievementCatalog.CoursesKey}:{t}", t == 1 ? "Ersten Kurs abgeschlossen 🎓" : $"{t} Kurse abgeschlossen 🎓"));
+        if (inputs.AllCoursesDone) earned.Add(($"achievement:{AchievementCatalog.AllCoursesKey}", "Alle Kurse abgeschlossen 🏆"));
 
         if (earned.Count == 0) return;
 
@@ -127,6 +129,13 @@ public partial class BackgroundTaskService
             await db.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// CURRENT week's push recap (fires once, Sunday evening) - deliberately left as its own,
+    /// independent computation, NOT rewired onto StudyMetrics.CalcLastCompletedWeekReport: that
+    /// new Shared function (metrics API, see MetricsController) reports on the last COMPLETED
+    /// Mon-Sun week instead, which is a different week than this method needs on the one day it
+    /// runs (today's still-in-progress week, "here's how your week went so far").
+    /// </summary>
     internal async Task RunWeeklyReportAsync(StudyLifeDb db, Func<Task<List<PushSubscriptionEntity>>> getSubscriptions)
     {
         // LocalNow (naive local wall clock) as in all other sub-tasks: the container runs with TZ=Europe/Berlin,

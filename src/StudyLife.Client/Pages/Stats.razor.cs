@@ -9,11 +9,11 @@ namespace StudyLife.Client.Pages;
 
 public partial class Stats
 {
-    /// <summary>Per-course aggregate hours/session-count for the current filter set. Record
-    /// struct instead of a value tuple - LINQ over a List<(...)> of value tuples has triggered a
-    /// Mono AOT crash at compile time (not call time) in the native app shell (studylife-app,
-    /// BlazorWebView) that links this same Client project - see
-    /// project_studylife_app_ios_aot_linq_tuple_crash.</summary>
+    /// <summary>Alias for StudyMetrics.CourseHoursResult, kept so the rest of this file (and
+    /// Stats.Grades.razor.cs's BuildHoursGradeScatter/BuildHoursEctsScatter, which also consume
+    /// this shape) doesn't have to spell out the fully qualified Shared type everywhere - the
+    /// actual (Course, Hours, SessionCount) computation now lives in StudyMetrics.CalcCourseHours
+    /// (metrics API, see MetricsController), not here.</summary>
     internal readonly record struct CourseHoursRow(CourseDto Course, double Hours, int Count);
 
     private List<StatsCourseListCard.CourseStatRow> _courseRows = new();
@@ -132,23 +132,14 @@ public partial class Stats
             .Where(s => activeCourseIds.Contains(s.CourseId))
             .ToList();
 
-        var relevantIds = settings.SelectedCourseIds
-            .Concat(settings.CompletedCourseIds)
-            .Concat(sessions.Select(s => s.CourseId))
-            .Distinct();
-
-        var raw = new List<CourseHoursRow>();
-        foreach (var id in relevantIds)
-        {
-            var course = allCourses.FirstOrDefault(c => c.Id == id);
-            if (course == null) continue;
-            // "Studied" = timer-completed OR the scheduled time has simply passed (not every
-            // session runs through the in-app timer, e.g. reading offline at the lake).
-            var completedSessions = sessions.Where(s => s.CourseId == id && (s.IsCompleted || s.EndTime <= DateTime.Now)).ToList();
-            if (completedSessions.Count == 0) continue;
-            var hours = completedSessions.Sum(s => s.Duration.TotalHours);
-            raw.Add(new CourseHoursRow(course, hours, completedSessions.Count));
-        }
+        // Selected + completed + courses that actually have sessions - StudyMetrics.CalcCourseHours
+        // computes this relevant-id set internally from the three raw inputs below.
+        var raw = StudyMetrics.CalcCourseHours(
+                allCourses, settings.SelectedCourseIds, settings.CompletedCourseIds,
+                sessions.Select(s => new StudySessionDto { CourseId = s.CourseId, StartTime = s.StartTime, EndTime = s.EndTime, IsCompleted = s.IsCompleted }),
+                DateTime.Now)
+            .Select(r => new CourseHoursRow(r.Course, r.Hours, r.SessionCount))
+            .ToList();
 
         var maxHours = raw.Count == 0 ? 1 : Math.Max(1, raw.Max(r => r.Hours));
         var trends = BuildCourseTrends(history);
