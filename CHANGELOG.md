@@ -1,3 +1,10 @@
+## [1.40.3](https://github.com/lukislp/studylife/compare/v1.40.2...v1.40.3) (2026-08-26)
+
+
+### Bug Fixes
+
+* replace hand-rolled auth middleware with AuthenticationHandler and policies ([43f9e55](https://github.com/lukislp/studylife/commit/43f9e5554f540f95b3f5fdda0a5995c5c13bb8b3))
+
 ## [1.40.2](https://github.com/lukislp/studylife/compare/v1.40.1...v1.40.2) (2026-08-26)
 
 
