@@ -1,3 +1,10 @@
+## [1.40.6](https://github.com/lukislp/studylife/compare/v1.40.5...v1.40.6) (2026-08-26)
+
+
+### Bug Fixes
+
+* dedicated signing and internal-API secrets for the AI proxy ([efe62f1](https://github.com/lukislp/studylife/commit/efe62f147545e9a0930e5dc3cf4520323fbc14d2))
+
 ## [1.40.5](https://github.com/lukislp/studylife/compare/v1.40.4...v1.40.5) (2026-08-26)
 
 
