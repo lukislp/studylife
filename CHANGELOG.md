@@ -1,3 +1,10 @@
+## [1.42.1](https://github.com/lukislp/studylife/compare/v1.42.0...v1.42.1) (2026-08-26)
+
+
+### Bug Fixes
+
+* explicit instance-owner flag instead of lowest-id semantics ([7ee2bdc](https://github.com/lukislp/studylife/commit/7ee2bdc2cfe8d3271fa17543c0512936fc311100))
+
 # [1.42.0](https://github.com/lukislp/studylife/compare/v1.41.0...v1.42.0) (2026-08-26)
 
 
