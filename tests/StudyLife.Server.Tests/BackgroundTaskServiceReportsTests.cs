@@ -41,7 +41,7 @@ public class BackgroundTaskServiceAchievementCrossesThresholdTests : IClassFixtu
         var start1 = DateTime.Now.AddHours(-40);
         await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
         {
-            CourseId = 421,
+            CourseId = 1,
             CourseName = "Long Session 1",
             CourseColor = "#6C5CE7",
             StartTime = start1,
@@ -52,7 +52,7 @@ public class BackgroundTaskServiceAchievementCrossesThresholdTests : IClassFixtu
         var start2 = DateTime.Now.AddHours(-20);
         await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
         {
-            CourseId = 421,
+            CourseId = 1,
             CourseName = "Long Session 2",
             CourseColor = "#6C5CE7",
             StartTime = start2,
@@ -97,7 +97,7 @@ public class BackgroundTaskServiceAchievementBelowThresholdTests : IClassFixture
         var start = DateTime.Now.AddHours(-2);
         await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
         {
-            CourseId = 422,
+            CourseId = 1,
             CourseName = "Short Session",
             CourseColor = "#6C5CE7",
             StartTime = start,
@@ -138,7 +138,7 @@ public class BackgroundTaskServiceAchievementToggleDisabledTests : IClassFixture
         var start1 = DateTime.Now.AddHours(-40);
         await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
         {
-            CourseId = 423,
+            CourseId = 1,
             CourseName = "Long Session 1",
             CourseColor = "#6C5CE7",
             StartTime = start1,
@@ -149,7 +149,7 @@ public class BackgroundTaskServiceAchievementToggleDisabledTests : IClassFixture
         var start2 = DateTime.Now.AddHours(-20);
         await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
         {
-            CourseId = 423,
+            CourseId = 1,
             CourseName = "Long Session 2",
             CourseColor = "#6C5CE7",
             StartTime = start2,

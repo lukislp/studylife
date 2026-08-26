@@ -96,7 +96,7 @@ public class ApiContractCasingTests : IClassFixture<CustomWebApplicationFactory>
     [Fact]
     public async Task CourseGoals_AllPropertiesAreCamelCase()
     {
-        var courseId = Random.Shared.Next(100_000, 999_999);
+        var courseId = 1; // audit finding M2: must be a real catalog id now (CourseId is validated)
         var goal = new CourseGoalDto
         {
             CourseId = courseId,
@@ -231,14 +231,17 @@ public class BackupExportCasingTests : IClassFixture<CustomWebApplicationFactory
     [Fact]
     public async Task Export_AllPropertiesAreCamelCase()
     {
-        var uniqueCourseName = $"ExportCasingCourse-{Guid.NewGuid():N}";
+        // CourseName is irrelevant here - audit finding M2: POST /api/sessions now derives it
+        // server-side from the resolved catalog course, so the marker for finding this session
+        // again below lives in Topic instead.
+        var uniqueTopic = $"Export-Casing-Test-{Guid.NewGuid():N}";
         var session = new StudySessionDto
         {
-            CourseId = 999,
-            CourseName = uniqueCourseName,
+            CourseId = 2,
+            CourseName = "irrelevant",
             StartTime = DateTime.Today.AddDays(-1).AddHours(10),
             EndTime = DateTime.Today.AddDays(-1).AddHours(11),
-            Topic = "Export-Casing-Test",
+            Topic = uniqueTopic,
             IsCompleted = false,
             TimerModeId = 1,
         };
@@ -277,7 +280,7 @@ public class BackupExportCasingTests : IClassFixture<CustomWebApplicationFactory
 
         // FIXED: the session DTOs in the "sessions" array are camelCase now, not PascalCase.
         var matchingSession = root.GetProperty("sessions").EnumerateArray()
-            .First(s => s.GetProperty("courseName").GetString() == uniqueCourseName);
+            .First(s => s.GetProperty("topic").GetString() == uniqueTopic);
         Assert.True(matchingSession.TryGetProperty("courseName", out _));
         Assert.True(matchingSession.TryGetProperty("topic", out _));
         Assert.True(matchingSession.TryGetProperty("isCompleted", out _));
@@ -364,7 +367,7 @@ public class DtoContractSnapshotTests : IClassFixture<CustomWebApplicationFactor
             "completedAt", "grade", "completedTopics", "tag",
         };
 
-        var courseId = Random.Shared.Next(100_000, 999_999);
+        var courseId = 1; // audit finding M2: must be a real catalog id now (CourseId is validated)
         var goal = new CourseGoalDto
         {
             CourseId = courseId,
@@ -587,7 +590,7 @@ public class NullableFieldPresenceTests : IClassFixture<CustomWebApplicationFact
     [Fact]
     public async Task CourseGoalDto_NullNullableFields_AreSerializedAsJsonNull()
     {
-        var courseId = Random.Shared.Next(100_000, 999_999);
+        var courseId = 1; // audit finding M2: must be a real catalog id now (CourseId is validated)
         var goal = new CourseGoalDto
         {
             CourseId = courseId,

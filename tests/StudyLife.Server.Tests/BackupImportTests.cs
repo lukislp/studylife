@@ -259,11 +259,13 @@ public class BackupImportMultiUserIsolationTests : IClassFixture<CustomWebApplic
         using var keyB = new FakePasskey();
         var tokenB = await PasskeyHttp.RegisterAsync(_factory, _client, "UserB", keyB);
 
-        var untouchedName = $"UserB-Untouched-{Guid.NewGuid():N}";
+        // CourseName is irrelevant here (audit finding M2: POST /api/sessions now derives it
+        // server-side from the resolved catalog course) - user B's session is distinguished by
+        // its CourseId instead, see the assertion below.
         var sessionB = await SendAsync(HttpMethod.Post, "/api/sessions", tokenB, new StudySessionDto
         {
             CourseId = 1,
-            CourseName = untouchedName,
+            CourseName = "irrelevant",
             StartTime = DateTime.Today.AddHours(8),
             EndTime = DateTime.Today.AddHours(9),
             TimerModeId = 1,
@@ -311,7 +313,7 @@ public class BackupImportMultiUserIsolationTests : IClassFixture<CustomWebApplic
         var sessionsBResponse = await SendAsync(HttpMethod.Get, "/api/sessions", tokenB);
         var sessionsB = await sessionsBResponse.Content.ReadFromJsonAsync<List<StudySessionDto>>();
         Assert.Single(sessionsB!);
-        Assert.Equal(untouchedName, sessionsB![0].CourseName);
+        Assert.Equal(1, sessionsB![0].CourseId);
     }
 }
 

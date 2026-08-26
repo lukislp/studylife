@@ -37,7 +37,7 @@ internal static class NewRecordPushDelivery
     {
         var response = await client.PostAsJsonAsync("/api/sessions", new StudySessionDto
         {
-            CourseId = 720,
+            CourseId = 1,
             CourseName = "Record Delivery Test Course",
             CourseColor = "#6C5CE7",
             StartTime = start,

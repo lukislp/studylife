@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
+using StudyLife.Server.Services;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Controllers;
@@ -15,8 +16,13 @@ namespace StudyLife.Server.Controllers;
 public class SessionTemplatesController : ControllerBase
 {
     private readonly StudyLifeDb _db;
+    private readonly ICourseResolver _courseResolver;
 
-    public SessionTemplatesController(StudyLifeDb db) => _db = db;
+    public SessionTemplatesController(StudyLifeDb db, ICourseResolver courseResolver)
+    {
+        _db = db;
+        _courseResolver = courseResolver;
+    }
 
     [HttpGet]
     public async Task<IEnumerable<SessionTemplateDto>> GetAll() =>
@@ -28,12 +34,18 @@ public class SessionTemplatesController : ControllerBase
         var error = Validate(dto);
         if (error != null) return BadRequest(error);
 
+        // Audit finding M2: no PUT/update exists here (see the class doc comment), so every
+        // template creation is a fresh CourseId binding - CourseName/CourseColor are derived
+        // from the resolved course, client-supplied values are ignored.
+        var course = await _courseResolver.ResolveAsync(dto.CourseId);
+        if (course == null) return BadRequest(CourseValidationMessages.UnknownCourseId(dto.CourseId));
+
         var entity = new SessionTemplateEntity
         {
             Name = dto.Name.Trim(),
             CourseId = dto.CourseId,
-            CourseName = dto.CourseName,
-            CourseColor = dto.CourseColor,
+            CourseName = course.Name,
+            CourseColor = course.Color,
             DurationMinutes = dto.DurationMinutes,
             Topic = dto.Topic,
             DefaultWeekday = dto.DefaultWeekday,
