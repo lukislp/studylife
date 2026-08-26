@@ -1470,6 +1470,30 @@
         }
       }
     },
+    "/healthz/live": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/healthz/ready": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/notes": {
       "get": {
         "tags": [
@@ -5583,6 +5607,9 @@
     },
     {
       "name": "Dictation"
+    },
+    {
+      "name": "Health"
     },
     {
       "name": "Notes"
