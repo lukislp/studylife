@@ -1,0 +1,1619 @@
+{
+  "$description": "Golden fixtures for the metrics duplicated between the StudyLife server (StudyLife.Shared/StudyMetrics.cs + CourseCatalog.cs) and the Home Assistant integration (studylife-hacs/custom_components/studylife/coordinator.py's _calc_* helpers) - audit finding D4. C# is the single source of truth: tests/StudyLife.Shared.Tests/MetricsGoldenFixtureTests.cs in this repo derives every 'expected' value below by actually RUNNING StudyMetrics/CourseCatalog against each scenario's inputs (see that file and Zzz_FixtureHarness in git history for how). studylife-hacs's tests/test_metrics_golden_fixtures.py fetches this same file and asserts coordinator.py's own _calc_* helpers reproduce the same numbers from the same inputs - see individual scenario 'description' fields for two scenarios that are EXPECTED to currently fail on the HA side (real, pre-existing drift, not a fixture bug).",
+  "$fieldNotes": {
+    "sessions[].startTime/endTime": "Naive local datetime, no timezone offset - matches StudySessionDto/StudySession's convention (server always uses DateTime.Now, never UtcNow, for these fields).",
+    "expected.forecastDate": "Naive local datetime string (StudyMetrics.ForecastResult.ForecastDate / coordinator.py's forecast_date, compared by DATE only since the two implementations accumulate sub-day fractions slightly differently).",
+    "expected.*Percent/*MissingHours/averageGrade/forecastRecentWeeklyHours": "Compare with a small tolerance (e.g. 0.01-0.05) - StudyMetrics.CalcQuota/CalcWeightedAverageGrade return raw unrounded doubles/decimals while coordinator.py's _calc_week_quota/_calc_month_quota/_calc_average_grade round internally (1-2 decimals)."
+  },
+  "scenarios": [
+    {
+      "name": "empty_state",
+      "description": "No sessions, no courses, no course goals - every metric's zero/empty-input baseline.",
+      "now": "2026-01-10T12:00:00",
+      "settings": {
+        "weeklyGoalMinHours": 25,
+        "weeklyGoalMaxHours": 30,
+        "monthlyGoalMinHours": 100,
+        "monthlyGoalMaxHours": 130
+      },
+      "sessions": [],
+      "courses": [],
+      "courseGoals": [],
+      "completedCourseIds": [],
+      "expected": {
+        "streak": 0,
+        "longestStreak": 0,
+        "weekHours": 0.0,
+        "weekQuotaPercent": 0.0,
+        "weekQuotaWarning": true,
+        "weekQuotaMissingHours": 25.0,
+        "monthHours": 0.0,
+        "monthQuotaPercent": 0.0,
+        "monthQuotaWarning": true,
+        "monthQuotaMissingHours": 100.0,
+        "averageGrade": null,
+        "ectsEarned": 0,
+        "ectsTotal": 0,
+        "forecastAvailable": false,
+        "forecastDate": null,
+        "forecastRecentWeeklyHours": null
+      }
+    },
+    {
+      "name": "week_start_monday_and_studied_semantics",
+      "description": "Pins the Monday week-start convention (WeekStartOf/_week_start) and the 'studied' = IsCompleted OR EndTime<=now semantics (IsStudied/_calc_streak's completed_history filter). Sunday 2026-01-04 belongs to the PREVIOUS week (excluded from week hours); Wednesday 2026-01-07 is not timer-completed but its end has passed by 'now' (studied, counts for streak); Thursday 2026-01-08's session ends AFTER 'now' and is not completed (NOT studied, excluded from streak, but still counts toward raw week hours - week hours ignore the completed/studied flag entirely).",
+      "now": "2026-01-08T18:00:00",
+      "settings": {
+        "weeklyGoalMinHours": 25,
+        "weeklyGoalMaxHours": 30,
+        "monthlyGoalMinHours": 100,
+        "monthlyGoalMaxHours": 130
+      },
+      "sessions": [
+        {
+          "id": 1,
+          "courseId": 1,
+          "courseName": "C1",
+          "courseColor": "#111111",
+          "startTime": "2026-01-04T20:00:00",
+          "endTime": "2026-01-04T21:00:00",
+          "topic": null,
+          "notes": null,
+          "isCompleted": true,
+          "timerModeId": 1,
+          "recurrenceGroupId": null
+        },
+        {
+          "id": 2,
+          "courseId": 1,
+          "courseName": "C1",
+          "courseColor": "#111111",
+          "startTime": "2026-01-05T09:00:00",
+          "endTime": "2026-01-05T11:00:00",
+          "topic": null,
+          "notes": null,
+          "isCompleted": true,
+          "timerModeId": 1,
+          "recurrenceGroupId": null
+        },
+        {
+          "id": 3,
+          "courseId": 1,
+          "courseName": "C1",
+          "courseColor": "#111111",
+          "startTime": "2026-01-07T09:00:00",
+          "endTime": "2026-01-07T10:00:00",
+          "topic": null,
+          "notes": null,
+          "isCompleted": false,
+          "timerModeId": 1,
+          "recurrenceGroupId": null
+        },
+        {
+          "id": 4,
+          "courseId": 1,
+          "courseName": "C1",
+          "courseColor": "#111111",
+          "startTime": "2026-01-08T20:00:00",
+          "endTime": "2026-01-08T21:00:00",
+          "topic": null,
+          "notes": null,
+          "isCompleted": false,
+          "timerModeId": 1,
+          "recurrenceGroupId": null
+        }
+      ],
+      "courses": [],
+      "courseGoals": [],
+      "completedCourseIds": [],
+      "expected": {
+        "streak": 1,
+        "longestStreak": 2,
+        "weekHours": 4.0,
+        "weekQuotaPercent": 11.594202898550725,
+        "weekQuotaWarning": true,
+        "weekQuotaMissingHours": 21.0,
+        "monthHours": 5.0,
+        "monthQuotaPercent": 3.3444816053511706,
+        "monthQuotaWarning": true,
+        "monthQuotaMissingHours": 95.0,
+        "averageGrade": null,
+        "ectsEarned": 0,
+        "ectsTotal": 0,
+        "forecastAvailable": false,
+        "forecastDate": null,
+        "forecastRecentWeeklyHours": null
+      }
+    },
+    {
+      "name": "streak_stays_alive_and_longest_streak_with_gap",
+      "description": "'now' is 2026-01-10T07:00 (Saturday, before any session today) - the CURRENT streak must anchor on yesterday (01-09) and stay alive rather than resetting to 0, counting back the unbroken 5-day run 01-05..01-09. The LONGEST-ever streak is a bigger, earlier 6-day run (2025-12-15..12-20) separated by a real gap - confirms longest-streak tracks the best-ever run, not the most recent one.",
+      "now": "2026-01-10T07:00:00",
+      "settings": {
+        "weeklyGoalMinHours": 25,
+        "weeklyGoalMaxHours": 30,
+        "monthlyGoalMinHours": 100,
+        "monthlyGoalMaxHours": 130
+      },
+      "sessions": [
+        {
+          "id": 1,
+          "courseId": 1,
+          "courseName": "C1",
+          "courseColor": "#111111",
+          "startTime": "2025-12-15T09:00:00",
+          "endTime": "2025-12-15T10:00:00",
+          "topic": null,
+          "notes": null,
+          "isCompleted": true,
+          "timerModeId": 1,
+          "recurrenceGroupId": null
+        },
+        {
+          "id": 2,
+          "courseId": 1,
+          "courseName": "C1",
+          "courseColor": "#111111",
+          "startTime": "2025-12-16T09:00:00",
+          "endTime": "2025-12-16T10:00:00",
+          "topic": null,
+          "notes": null,
+          "isCompleted": true,
+          "timerModeId": 1,
+          "recurrenceGroupId": null
+        },
+        {
+          "id": 3,
+          "courseId": 1,
+          "courseName": "C1",
+          "courseColor": "#111111",
+          "startTime": "2025-12-17T09:00:00",
+          "endTime": "2025-12-17T10:00:00",
+          "topic": null,
+          "notes": null,
+          "isCompleted": true,
+          "timerModeId": 1,
+          "recurrenceGroupId": null
+        },
+        {
+          "id": 4,
+          "courseId": 1,
+          "courseName": "C1",
+          "courseColor": "#111111",
+          "startTime": "2025-12-18T09:00:00",
+          "endTime": "2025-12-18T10:00:00",
+          "topic": null,
+          "notes": null,
+          "isCompleted": true,
+          "timerModeId": 1,
+          "recurrenceGroupId": null
+        },
+        {
+          "id": 5,
+          "courseId": 1,
+          "courseName": "C1",
+          "courseColor": "#111111",
+          "startTime": "2025-12-19T09:00:00",
+          "endTime": "2025-12-19T10:00:00",
+          "topic": null,
+          "notes": null,
+          "isCompleted": true,
+          "timerModeId": 1,
+          "recurrenceGroupId": null
+        },
+        {
+          "id": 6,
+          "courseId": 1,
+          "courseName": "C1",
+          "courseColor": "#111111",
+          "startTime": "2025-12-20T09:00:00",
+          "endTime": "2025-12-20T10:00:00",
+          "topic": null,
+          "notes": null,
+          "isCompleted": true,
+          "timerModeId": 1,
+          "recurrenceGroupId": null
+        },
+        {
+          "id": 7,
+          "courseId": 1,
+          "courseName": "C1",
+          "courseColor": "#111111",
+          "startTime": "2026-01-05T09:00:00",
+          "endTime": "2026-01-05T10:00:00",
+          "topic": null,
+          "notes": null,
+          "isCompleted": true,
+          "timerModeId": 1,
+          "recurrenceGroupId": null
+        },
+        {
+          "id": 8,
+          "courseId": 1,
+          "courseName": "C1",
+          "courseColor": "#111111",
+          "startTime": "2026-01-06T09:00:00",
+          "endTime": "2026-01-06T10:00:00",
+          "topic": null,
+          "notes": null,
+          "isCompleted": true,
+          "timerModeId": 1,
+          "recurrenceGroupId": null
+        },
+        {
+          "id": 9,
+          "courseId": 1,
+          "courseName": "C1",
+          "courseColor": "#111111",
+          "startTime": "2026-01-07T09:00:00",
+          "endTime": "2026-01-07T10:00:00",
+          "topic": null,
+          "notes": null,
+          "isCompleted": true,
+          "timerModeId": 1,
+          "recurrenceGroupId": null
+        },
+        {
+          "id": 10,
+          "courseId": 1,
+          "courseName": "C1",
+          "courseColor": "#111111",
+          "startTime": "2026-01-08T09:00:00",
+          "endTime": "2026-01-08T10:00:00",
+          "topic": null,
+          "notes": null,
+          "isCompleted": true,
+          "timerModeId": 1,
+          "recurrenceGroupId": null
+        },
+        {
+          "id": 11,
+          "courseId": 1,
+          "courseName": "C1",
+          "courseColor": "#111111",
+          "startTime": "2026-01-09T09:00:00",
+          "endTime": "2026-01-09T10:00:00",
+          "topic": null,
+          "notes": null,
+          "isCompleted": true,
+          "timerModeId": 1,
+          "recurrenceGroupId": null
+        }
+      ],
+      "courses": [],
+      "courseGoals": [],
+      "completedCourseIds": [],
+      "expected": {
+        "streak": 5,
+        "longestStreak": 6,
+        "weekHours": 5.0,
+        "weekQuotaPercent": 14.492753623188406,
+        "weekQuotaWarning": true,
+        "weekQuotaMissingHours": 20.0,
+        "monthHours": 5.0,
+        "monthQuotaPercent": 3.3444816053511706,
+        "monthQuotaWarning": true,
+        "monthQuotaMissingHours": 95.0,
+        "averageGrade": null,
+        "ectsEarned": 0,
+        "ectsTotal": 0,
+        "forecastAvailable": false,
+        "forecastDate": null,
+        "forecastRecentWeeklyHours": null
+      }
+    },
+    {
+      "name": "week_quota_future_dated_session_drift",
+      "description": "KNOWN DRIFT (see the task report, not fixed here): /api/sessions/history has no upper date bound (SessionsController.GetHistory: `StartTime >= from` only), so it can return sessions scheduled arbitrarily far in the future. The real C# app (Index.razor.cs) bounds its week-sessions filter to `StartTime.Date >= weekStart && < weekStart.AddDays(7)`, correctly excluding a session almost 4 weeks out. coordinator.py's week_sessions/week_hours filter (`s.start.date() >= week_start`, coordinator.py) has NO upper bound at all, so it wrongly includes that future session's hours in 'this week'. Expected values below are the CORRECT (bounded) C# truth (weekHours=2.0, only the 2026-01-06 session) - the HA coordinator is expected to compute weekHours=6.0 (2+4) instead, which is the drift this scenario exists to surface, not paper over.",
+      "now": "2026-01-08T12:00:00",
+      "settings": {
+        "weeklyGoalMinHours": 25,
+        "weeklyGoalMaxHours": 30,
+        "monthlyGoalMinHours": 100,
+        "monthlyGoalMaxHours": 130
+      },
+      "sessions": [
+        {
+          "id": 1,
+          "courseId": 1,
+          "courseName": "C1",
+          "courseColor": "#111111",
+          "startTime": "2026-01-06T09:00:00",
+          "endTime": "2026-01-06T11:00:00",
+          "topic": null,
+          "notes": null,
+          "isCompleted": true,
+          "timerModeId": 1,
+          "recurrenceGroupId": null
+        },
+        {
+          "id": 2,
+          "courseId": 1,
+          "courseName": "C1",
+          "courseColor": "#111111",
+          "startTime": "2026-02-02T09:00:00",
+          "endTime": "2026-02-02T13:00:00",
+          "topic": null,
+          "notes": null,
+          "isCompleted": false,
+          "timerModeId": 1,
+          "recurrenceGroupId": null
+        }
+      ],
+      "courses": [],
+      "courseGoals": [],
+      "completedCourseIds": [],
+      "expected": {
+        "streak": 0,
+        "longestStreak": 1,
+        "weekHours": 2.0,
+        "weekQuotaPercent": 5.797101449275362,
+        "weekQuotaWarning": true,
+        "weekQuotaMissingHours": 23.0,
+        "monthHours": 6.0,
+        "monthQuotaPercent": 4.013377926421405,
+        "monthQuotaWarning": true,
+        "monthQuotaMissingHours": 94.0,
+        "averageGrade": null,
+        "ectsEarned": 0,
+        "ectsTotal": 0,
+        "forecastAvailable": false,
+        "forecastDate": null,
+        "forecastRecentWeeklyHours": null
+      }
+    },
+    {
+      "name": "builtin_catalog_ects_quota",
+      "description": "The REAL built-in AppliedAICourses catalog (CourseCatalog.cs, exactly as GET /api/courses?program=0 returns it) - completing all 5 semester-1 mandatory courses (ungrouped, ids 1-5) plus BOTH 'Wahlpflichtmodule A (5 ECTS)' courses (ids 24, 25: raw sum 5+5=10 ECTS, must cap at the group's parsed/dict quota of 5). Validates the intended-to-agree happy path: both CourseCatalog's static quota dictionary (C#) and coordinator.py's '(N ECTS)' name-regex parsing (_calc_ects_progress) derive the SAME 5/10/10/30 quotas from these exact group name strings, so this one is expected to match on both sides.",
+      "now": "2026-01-10T12:00:00",
+      "settings": {
+        "weeklyGoalMinHours": 25,
+        "weeklyGoalMaxHours": 30,
+        "monthlyGoalMinHours": 100,
+        "monthlyGoalMaxHours": 130
+      },
+      "sessions": [],
+      "courses": [
+        {
+          "id": 1,
+          "name": "Artificial Intelligence",
+          "color": "#6C5CE7",
+          "ects": 5,
+          "semester": 1,
+          "group": null,
+          "topics": [
+            "KI-Grundlagen",
+            "Suchalgorithmen",
+            "Wissensrepräsentation",
+            "Planung",
+            "KI-Überblick"
+          ]
+        },
+        {
+          "id": 2,
+          "name": "Einführung in die Programmierung mit Python",
+          "color": "#00B894",
+          "ects": 5,
+          "semester": 1,
+          "group": null,
+          "topics": [
+            "Syntax",
+            "Datentypen",
+            "Kontrollstrukturen",
+            "Funktionen",
+            "OOP-Grundlagen"
+          ]
+        },
+        {
+          "id": 3,
+          "name": "Mathematik: Analysis",
+          "color": "#0984E3",
+          "ects": 5,
+          "semester": 1,
+          "group": null,
+          "topics": [
+            "Grenzwerte",
+            "Ableitungen",
+            "Integrale",
+            "Reihen",
+            "Differentialgleichungen"
+          ]
+        },
+        {
+          "id": 4,
+          "name": "Einführung in das wissenschaftliche Arbeiten für IT und Technik",
+          "color": "#FDCB6E",
+          "ects": 5,
+          "semester": 1,
+          "group": null,
+          "topics": [
+            "Literaturrecherche",
+            "Zitieren",
+            "Methodologie",
+            "Wissenschaftstheorie",
+            "Schreiben"
+          ]
+        },
+        {
+          "id": 5,
+          "name": "Projekt: Objektorientierte und funktionale Programmierung mit Python",
+          "color": "#E17055",
+          "ects": 5,
+          "semester": 1,
+          "group": null,
+          "topics": [
+            "OOP",
+            "Funktionale Programmierung",
+            "Lambda",
+            "Dekoratoren",
+            "Projektarbeit"
+          ]
+        },
+        {
+          "id": 6,
+          "name": "Mathematik: Lineare Algebra",
+          "color": "#6C5CE7",
+          "ects": 5,
+          "semester": 2,
+          "group": null,
+          "topics": [
+            "Vektoren",
+            "Matrizen",
+            "Eigenwerte",
+            "Lineare Gleichungssysteme",
+            "Transformationen"
+          ]
+        },
+        {
+          "id": 7,
+          "name": "Statistik - Wahrscheinlichkeit und deskriptive Statistik",
+          "color": "#00B894",
+          "ects": 5,
+          "semester": 2,
+          "group": null,
+          "topics": [
+            "Wahrscheinlichkeit",
+            "Verteilungen",
+            "Mittelwert",
+            "Varianz",
+            "Visualisierung"
+          ]
+        },
+        {
+          "id": 8,
+          "name": "Statistik - Induktive Statistik",
+          "color": "#0984E3",
+          "ects": 5,
+          "semester": 2,
+          "group": null,
+          "topics": [
+            "Hypothesentests",
+            "Konfidenzintervalle",
+            "Regression",
+            "ANOVA",
+            "Schätzung"
+          ]
+        },
+        {
+          "id": 9,
+          "name": "Cloud Computing",
+          "color": "#FDCB6E",
+          "ects": 5,
+          "semester": 2,
+          "group": null,
+          "topics": [
+            "AWS",
+            "Azure",
+            "GCP",
+            "Serverless",
+            "IaaS / PaaS / SaaS"
+          ]
+        },
+        {
+          "id": 10,
+          "name": "Projekt: Cloud Programming",
+          "color": "#E17055",
+          "ects": 5,
+          "semester": 2,
+          "group": null,
+          "topics": [
+            "Cloud-Architektur",
+            "Deployment",
+            "Container",
+            "CI/CD",
+            "Projektarbeit"
+          ]
+        },
+        {
+          "id": 11,
+          "name": "Maschinelles Lernen - Supervised Learning",
+          "color": "#E84393",
+          "ects": 5,
+          "semester": 3,
+          "group": null,
+          "topics": [
+            "Regression",
+            "Klassifikation",
+            "SVM",
+            "Decision Trees",
+            "Evaluation"
+          ]
+        },
+        {
+          "id": 12,
+          "name": "Maschinelles Lernen - Unsupervised Learning und Feature Engineering",
+          "color": "#A29BFE",
+          "ects": 5,
+          "semester": 3,
+          "group": null,
+          "topics": [
+            "Clustering",
+            "PCA",
+            "Dimensionsreduktion",
+            "Feature Engineering",
+            "Anomalieerkennung"
+          ]
+        },
+        {
+          "id": 13,
+          "name": "Neuronale Netze und Deep Learning",
+          "color": "#6C5CE7",
+          "ects": 5,
+          "semester": 3,
+          "group": null,
+          "topics": [
+            "Neuronale Netze",
+            "CNN",
+            "RNN",
+            "Backpropagation",
+            "Frameworks"
+          ]
+        },
+        {
+          "id": 14,
+          "name": "Einführung in Computer Vision",
+          "color": "#00CEC9",
+          "ects": 5,
+          "semester": 3,
+          "group": null,
+          "topics": [
+            "Bildverarbeitung",
+            "Objekterkennung",
+            "Segmentierung",
+            "OpenCV",
+            "GANs"
+          ]
+        },
+        {
+          "id": 15,
+          "name": "Projekt: Computer Vision",
+          "color": "#55EFC4",
+          "ects": 5,
+          "semester": 3,
+          "group": null,
+          "topics": [
+            "Computer-Vision-Projekt",
+            "Datenpipeline",
+            "Modelltraining",
+            "Deployment",
+            "Präsentation"
+          ]
+        },
+        {
+          "id": 16,
+          "name": "Einführung in das Reinforcement Learning",
+          "color": "#E17055",
+          "ects": 5,
+          "semester": 4,
+          "group": null,
+          "topics": [
+            "MDP",
+            "Q-Learning",
+            "Policy Gradient",
+            "Actor-Critic",
+            "OpenAI Gym"
+          ]
+        },
+        {
+          "id": 17,
+          "name": "Einführung in Datenschutz und IT-Sicherheit",
+          "color": "#FDCB6E",
+          "ects": 5,
+          "semester": 4,
+          "group": null,
+          "topics": [
+            "DSGVO",
+            "IT-Sicherheit",
+            "Kryptographie",
+            "Angriffe",
+            "Datenschutzrecht"
+          ]
+        },
+        {
+          "id": 18,
+          "name": "Ethische und rechtliche Aspekte in der KI",
+          "color": "#FD79A8",
+          "ects": 5,
+          "semester": 4,
+          "group": null,
+          "topics": [
+            "KI-Ethik",
+            "Bias & Fairness",
+            "Regulierung",
+            "Verantwortung",
+            "Erklärbarkeit"
+          ]
+        },
+        {
+          "id": 19,
+          "name": "Einführung in NLP",
+          "color": "#00B894",
+          "ects": 5,
+          "semester": 4,
+          "group": null,
+          "topics": [
+            "Tokenisierung",
+            "Embeddings",
+            "BERT",
+            "GPT",
+            "Sentiment-Analyse"
+          ]
+        },
+        {
+          "id": 20,
+          "name": "Projekt: NLP",
+          "color": "#0984E3",
+          "ects": 5,
+          "semester": 4,
+          "group": null,
+          "topics": [
+            "NLP-Projekt",
+            "Sprachmodelle",
+            "Fine-Tuning",
+            "Evaluation",
+            "Präsentation"
+          ]
+        },
+        {
+          "id": 21,
+          "name": "Projekt: Edge AI",
+          "color": "#6C5CE7",
+          "ects": 5,
+          "semester": 5,
+          "group": null,
+          "topics": [
+            "Edge Computing",
+            "TinyML",
+            "Embedded AI",
+            "Optimierung",
+            "Deployment"
+          ]
+        },
+        {
+          "id": 22,
+          "name": "Seminar: Ethische Innovation",
+          "color": "#A29BFE",
+          "ects": 5,
+          "semester": 5,
+          "group": null,
+          "topics": [
+            "Innovationsethik",
+            "Nachhaltigkeit",
+            "Gesellschaft & Technik",
+            "Diskurs",
+            "Seminar"
+          ]
+        },
+        {
+          "id": 24,
+          "name": "Einführung in die Robotik",
+          "color": "#E17055",
+          "ects": 5,
+          "semester": 5,
+          "group": "Wahlpflichtmodule A (5 ECTS)",
+          "topics": [
+            "Roboterkinematik",
+            "Sensorik",
+            "Aktuatoren",
+            "Programmierung",
+            "ROS"
+          ]
+        },
+        {
+          "id": 25,
+          "name": "Mechanik - Kinematik",
+          "color": "#00CEC9",
+          "ects": 5,
+          "semester": 5,
+          "group": "Wahlpflichtmodule A (5 ECTS)",
+          "topics": [
+            "Kinematik",
+            "Dynamik",
+            "Starrkörper",
+            "Bewegungsgleichungen",
+            "Simulation"
+          ]
+        },
+        {
+          "id": 26,
+          "name": "Augmented, Mixed, und Virtual Reality",
+          "color": "#6C5CE7",
+          "ects": 5,
+          "semester": 5,
+          "group": "Wahlpflichtmodule A (5 ECTS)",
+          "topics": [
+            "AR",
+            "VR",
+            "MR",
+            "Unity",
+            "Interaktion"
+          ]
+        },
+        {
+          "id": 27,
+          "name": "Data Engineering",
+          "color": "#00B894",
+          "ects": 5,
+          "semester": 5,
+          "group": "Wahlpflichtmodule A (5 ECTS)",
+          "topics": [
+            "Datenpipelines",
+            "ETL",
+            "Spark",
+            "Kafka",
+            "Datenarchitektur"
+          ]
+        },
+        {
+          "id": 28,
+          "name": "IT-Architekturmanagement",
+          "color": "#0984E3",
+          "ects": 5,
+          "semester": 5,
+          "group": "Wahlpflichtmodule A (5 ECTS)",
+          "topics": [
+            "Enterprise Architecture",
+            "TOGAF",
+            "Microservices",
+            "Systemdesign",
+            "Governance"
+          ]
+        },
+        {
+          "id": 29,
+          "name": "Ethik und Nachhaltigkeit in der IT",
+          "color": "#FDCB6E",
+          "ects": 5,
+          "semester": 5,
+          "group": "Wahlpflichtmodule A (5 ECTS)",
+          "topics": [
+            "IT-Ethik",
+            "Green IT",
+            "Nachhaltigkeit",
+            "Gesellschaft",
+            "Verantwortung"
+          ]
+        },
+        {
+          "id": 30,
+          "name": "Data Quality and Data Wrangling",
+          "color": "#55EFC4",
+          "ects": 5,
+          "semester": 5,
+          "group": "Wahlpflichtmodule A (5 ECTS)",
+          "topics": [
+            "Datenqualität",
+            "Bereinigung",
+            "Transformation",
+            "Validierung",
+            "Profiling"
+          ]
+        },
+        {
+          "id": 31,
+          "name": "Fertigungsverfahren Industrie 4.0",
+          "color": "#E84393",
+          "ects": 5,
+          "semester": 5,
+          "group": "Wahlpflichtmodule A (5 ECTS)",
+          "topics": [
+            "Industrie 4.0",
+            "Fertigung",
+            "CPS",
+            "IoT",
+            "Smart Factory"
+          ]
+        },
+        {
+          "id": 33,
+          "name": "Embedded Systems",
+          "color": "#D63031",
+          "ects": 5,
+          "semester": 5,
+          "group": "Wahlpflichtmodule B (10 ECTS)",
+          "topics": [
+            "Mikrocontroller",
+            "RTOS",
+            "Hardware-Programmierung",
+            "Interrupts",
+            "Peripherie"
+          ]
+        },
+        {
+          "id": 34,
+          "name": "User Experience",
+          "color": "#FD79A8",
+          "ects": 5,
+          "semester": 5,
+          "group": "Wahlpflichtmodule B (10 ECTS)",
+          "topics": [
+            "UX-Design",
+            "Usability",
+            "Prototyping",
+            "User Research",
+            "Evaluation"
+          ]
+        },
+        {
+          "id": 35,
+          "name": "UX-Projekt",
+          "color": "#E84393",
+          "ects": 5,
+          "semester": 5,
+          "group": "Wahlpflichtmodule B (10 ECTS)",
+          "topics": [
+            "UX-Projekt",
+            "Gestaltung",
+            "Testing",
+            "Iteration",
+            "Präsentation"
+          ]
+        },
+        {
+          "id": 36,
+          "name": "Project: AWS - Cloud Essentials",
+          "color": "#FDCB6E",
+          "ects": 5,
+          "semester": 5,
+          "group": "Wahlpflichtmodule B (10 ECTS)",
+          "topics": [
+            "AWS Grundlagen",
+            "EC2",
+            "S3",
+            "IAM",
+            "Netzwerk"
+          ]
+        },
+        {
+          "id": 37,
+          "name": "Project: AWS - Cloud Advanced",
+          "color": "#E17055",
+          "ects": 5,
+          "semester": 5,
+          "group": "Wahlpflichtmodule B (10 ECTS)",
+          "topics": [
+            "AWS Advanced",
+            "Lambda",
+            "RDS",
+            "CloudFormation",
+            "Security"
+          ]
+        },
+        {
+          "id": 38,
+          "name": "Experience Psychology",
+          "color": "#A29BFE",
+          "ects": 5,
+          "semester": 5,
+          "group": "Wahlpflichtmodule B (10 ECTS)",
+          "topics": [
+            "Wahrnehmung",
+            "Kognition",
+            "Emotion",
+            "User Behavior",
+            "Motivation"
+          ]
+        },
+        {
+          "id": 39,
+          "name": "Human-Computer Interaction",
+          "color": "#00CEC9",
+          "ects": 5,
+          "semester": 5,
+          "group": "Wahlpflichtmodule B (10 ECTS)",
+          "topics": [
+            "Interaktionsdesign",
+            "Accessibility",
+            "Evaluation",
+            "Menüführung",
+            "Gestaltgesetze"
+          ]
+        },
+        {
+          "id": 40,
+          "name": "Business Intelligence",
+          "color": "#00B894",
+          "ects": 5,
+          "semester": 5,
+          "group": "Wahlpflichtmodule B (10 ECTS)",
+          "topics": [
+            "BI-Grundlagen",
+            "Data Warehouse",
+            "Dashboards",
+            "KPIs",
+            "Reporting"
+          ]
+        },
+        {
+          "id": 41,
+          "name": "Projekt Business Intelligence",
+          "color": "#55EFC4",
+          "ects": 5,
+          "semester": 5,
+          "group": "Wahlpflichtmodule B (10 ECTS)",
+          "topics": [
+            "BI-Projekt",
+            "Analyse",
+            "Visualisierung",
+            "Reporting",
+            "Präsentation"
+          ]
+        },
+        {
+          "id": 42,
+          "name": "Mobile Robotik",
+          "color": "#0984E3",
+          "ects": 5,
+          "semester": 5,
+          "group": "Wahlpflichtmodule B (10 ECTS)",
+          "topics": [
+            "Autonome Systeme",
+            "Navigation",
+            "SLAM",
+            "Pfadplanung",
+            "Sensorfusion"
+          ]
+        },
+        {
+          "id": 43,
+          "name": "Projekt: X-Reality",
+          "color": "#6C5CE7",
+          "ects": 5,
+          "semester": 5,
+          "group": "Wahlpflichtmodule B (10 ECTS)",
+          "topics": [
+            "XR-Projekt",
+            "AR/VR-Entwicklung",
+            "3D-Modellierung",
+            "Interaktion",
+            "Präsentation"
+          ]
+        },
+        {
+          "id": 44,
+          "name": "Automatisierung und Robotics",
+          "color": "#E17055",
+          "ects": 5,
+          "semester": 5,
+          "group": "Wahlpflichtmodule B (10 ECTS)",
+          "topics": [
+            "Automatisierung",
+            "SPS",
+            "Roboterprogrammierung",
+            "Industrie 4.0",
+            "Aktorik"
+          ]
+        },
+        {
+          "id": 45,
+          "name": "Digitale Signalverarbeitung",
+          "color": "#0984E3",
+          "ects": 5,
+          "semester": 5,
+          "group": "Wahlpflichtmodule B (10 ECTS)",
+          "topics": [
+            "Fourier-Transformation",
+            "Filter",
+            "Abtastung",
+            "FFT",
+            "Signalanalyse"
+          ]
+        },
+        {
+          "id": 46,
+          "name": "Sensorik",
+          "color": "#00B894",
+          "ects": 5,
+          "semester": 5,
+          "group": "Wahlpflichtmodule B (10 ECTS)",
+          "topics": [
+            "Sensortechnologie",
+            "Messtechnik",
+            "Kalibrierung",
+            "IoT-Sensoren",
+            "Datenerfassung"
+          ]
+        },
+        {
+          "id": 47,
+          "name": "Datenmodellierung und Datenbanksysteme",
+          "color": "#6C5CE7",
+          "ects": 5,
+          "semester": 5,
+          "group": "Wahlpflichtmodule B (10 ECTS)",
+          "topics": [
+            "ER-Modell",
+            "Normalisierung",
+            "SQL",
+            "NoSQL",
+            "Datenbankdesign"
+          ]
+        },
+        {
+          "id": 48,
+          "name": "Big-Data-Technologien",
+          "color": "#D63031",
+          "ects": 5,
+          "semester": 5,
+          "group": "Wahlpflichtmodule B (10 ECTS)",
+          "topics": [
+            "Hadoop",
+            "Spark",
+            "Datenströme",
+            "Skalierung",
+            "Big-Data-Architektur"
+          ]
+        },
+        {
+          "id": 49,
+          "name": "Model Engineering",
+          "color": "#E84393",
+          "ects": 5,
+          "semester": 6,
+          "group": null,
+          "topics": [
+            "MLOps",
+            "Modellversionierung",
+            "Monitoring",
+            "Reproduzierbarkeit",
+            "Deployment"
+          ]
+        },
+        {
+          "id": 50,
+          "name": "Bachelorarbeit",
+          "color": "#E17055",
+          "ects": 10,
+          "semester": 6,
+          "group": null,
+          "topics": [
+            "Forschungsfrage",
+            "Methodologie",
+            "Implementierung",
+            "Evaluation",
+            "Abgabe"
+          ]
+        },
+        {
+          "id": 52,
+          "name": "Studium Generale I",
+          "color": "#00CEC9",
+          "ects": 5,
+          "semester": 6,
+          "group": "Wahlpflichtmodule C (10 ECTS)",
+          "topics": [
+            "Fächerübergreifend",
+            "Allgemeinbildung",
+            "Soft Skills",
+            "Interdisziplinär"
+          ]
+        },
+        {
+          "id": 53,
+          "name": "Studium Generale II",
+          "color": "#55EFC4",
+          "ects": 5,
+          "semester": 6,
+          "group": "Wahlpflichtmodule C (10 ECTS)",
+          "topics": [
+            "Fächerübergreifend",
+            "Allgemeinbildung",
+            "Soft Skills",
+            "Interdisziplinär"
+          ]
+        },
+        {
+          "id": 55,
+          "name": "Praktikum: Bachelor Data Science und KI",
+          "color": "#FDCB6E",
+          "ects": 30,
+          "semester": 6,
+          "group": "Wahlpflichtmodule D (30 ECTS)",
+          "topics": [
+            "Praxisprojekt",
+            "Unternehmen",
+            "Data Science",
+            "KI",
+            "Abschlusspräsentation"
+          ]
+        },
+        {
+          "id": 56,
+          "name": "Kollaboratives Arbeiten",
+          "color": "#00B894",
+          "ects": 5,
+          "semester": 6,
+          "group": "Wahlpflichtmodule D (30 ECTS)",
+          "topics": [
+            "Teamwork",
+            "Agile",
+            "Kommunikation",
+            "Kollaboration",
+            "Projektmanagement"
+          ]
+        },
+        {
+          "id": 57,
+          "name": "Projekt: KI-Exzellenz mit kreativen Prompt-Techniken",
+          "color": "#A29BFE",
+          "ects": 5,
+          "semester": 6,
+          "group": "Wahlpflichtmodule D (30 ECTS)",
+          "topics": [
+            "Prompt Engineering",
+            "Generative KI",
+            "Kreativität",
+            "LLMs",
+            "Projektarbeit"
+          ]
+        },
+        {
+          "id": 58,
+          "name": "Digitale Business-Modelle",
+          "color": "#0984E3",
+          "ects": 5,
+          "semester": 6,
+          "group": "Wahlpflichtmodule D (30 ECTS)",
+          "topics": [
+            "Geschäftsmodelle",
+            "Digitalisierung",
+            "Plattformökonomie",
+            "Innovation",
+            "Strategie"
+          ]
+        },
+        {
+          "id": 59,
+          "name": "Projekt: Digitale Business-Modelle",
+          "color": "#6C5CE7",
+          "ects": 5,
+          "semester": 6,
+          "group": "Wahlpflichtmodule D (30 ECTS)",
+          "topics": [
+            "Business-Modell-Projekt",
+            "Geschäftskonzept",
+            "Pitch",
+            "Umsetzung",
+            "Präsentation"
+          ]
+        },
+        {
+          "id": 60,
+          "name": "Projekt: Generative KI im Unternehmenskontext",
+          "color": "#FD79A8",
+          "ects": 5,
+          "semester": 6,
+          "group": "Wahlpflichtmodule D (30 ECTS)",
+          "topics": [
+            "Generative KI",
+            "Unternehmensanwendung",
+            "LLMs",
+            "Integration",
+            "Projektarbeit"
+          ]
+        },
+        {
+          "id": 61,
+          "name": "Personal Skills",
+          "color": "#55EFC4",
+          "ects": 5,
+          "semester": 6,
+          "group": "Wahlpflichtmodule D (30 ECTS)",
+          "topics": [
+            "Soft Skills",
+            "Kommunikation",
+            "Zeitmanagement",
+            "Präsentation",
+            "Persönlichkeit"
+          ]
+        },
+        {
+          "id": 62,
+          "name": "Projekt: AI Fluency - Einführung in die generative KI",
+          "color": "#E84393",
+          "ects": 5,
+          "semester": 6,
+          "group": "Wahlpflichtmodule D (30 ECTS)",
+          "topics": [
+            "AI Fluency",
+            "Generative KI",
+            "Grundlagen",
+            "Anwendung",
+            "Projektarbeit"
+          ]
+        }
+      ],
+      "courseGoals": [],
+      "completedCourseIds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        24,
+        25
+      ],
+      "expected": {
+        "streak": 0,
+        "longestStreak": 0,
+        "weekHours": 0.0,
+        "weekQuotaPercent": 0.0,
+        "weekQuotaWarning": true,
+        "weekQuotaMissingHours": 25.0,
+        "monthHours": 0.0,
+        "monthQuotaPercent": 0.0,
+        "monthQuotaWarning": true,
+        "monthQuotaMissingHours": 100.0,
+        "averageGrade": null,
+        "ectsEarned": 30,
+        "ectsTotal": 180,
+        "forecastAvailable": true,
+        "forecastDate": "2028-07-08T00:00:00",
+        "forecastRecentWeeklyHours": 0.0
+      }
+    },
+    {
+      "name": "custom_program_group_quota_not_embedded_in_name",
+      "description": "KNOWN DRIFT (see the task report, not fixed here): a CUSTOM study program's elective group named plain 'Electives' (no '(N ECTS)' substring), with a DB-configured quota of 5 ECTS (StudyProgramDetailDto.GroupEctsQuotas, set via CreateStudyProgramGroupDto.EctsQuota - a separate numeric field, never embedded in the group's display Name). Two members (3+4=7 ECTS raw) are both completed, OVER the 5-ECTS quota. The real C# app (Stats.Programs.razor.cs) fetches this quota from GET /api/studyprograms/{id} and correctly caps earned at 5 (expected values below: ectsEarned=10, ectsTotal=10 = 5 ungrouped + 5 capped-group). coordinator.py never calls that endpoint at all (see api.py) - its _calc_ects_progress/_group_quota can only regex-parse the group NAME for '(N ECTS)', which 'Electives' doesn't contain, so it falls back to an UNCAPPED raw member sum. It is expected to compute ectsEarned=12, ectsTotal=12 instead - the drift this scenario exists to surface, not paper over.",
+      "now": "2026-01-10T12:00:00",
+      "settings": {
+        "weeklyGoalMinHours": 25,
+        "weeklyGoalMaxHours": 30,
+        "monthlyGoalMinHours": 100,
+        "monthlyGoalMaxHours": 130
+      },
+      "sessions": [],
+      "courses": [
+        {
+          "id": 1,
+          "name": "C1",
+          "color": "#111111",
+          "ects": 5,
+          "semester": 0,
+          "group": null,
+          "topics": []
+        },
+        {
+          "id": 2,
+          "name": "C2",
+          "color": "#111111",
+          "ects": 3,
+          "semester": 0,
+          "group": "Electives",
+          "topics": []
+        },
+        {
+          "id": 3,
+          "name": "C3",
+          "color": "#111111",
+          "ects": 4,
+          "semester": 0,
+          "group": "Electives",
+          "topics": []
+        }
+      ],
+      "courseGoals": [],
+      "completedCourseIds": [
+        1,
+        2,
+        3
+      ],
+      "expected": {
+        "streak": 0,
+        "longestStreak": 0,
+        "weekHours": 0.0,
+        "weekQuotaPercent": 0.0,
+        "weekQuotaWarning": true,
+        "weekQuotaMissingHours": 25.0,
+        "monthHours": 0.0,
+        "monthQuotaPercent": 0.0,
+        "monthQuotaWarning": true,
+        "monthQuotaMissingHours": 100.0,
+        "averageGrade": null,
+        "ectsEarned": 10,
+        "ectsTotal": 10,
+        "forecastAvailable": false,
+        "forecastDate": null,
+        "forecastRecentWeeklyHours": null
+      }
+    },
+    {
+      "name": "weighted_grade_average",
+      "description": "ECTS-weighted mean grade across 2 graded courses (5 and 10 ECTS); a 3rd course goal with no grade set is excluded from the average entirely.",
+      "now": "2026-01-10T12:00:00",
+      "settings": {
+        "weeklyGoalMinHours": 25,
+        "weeklyGoalMaxHours": 30,
+        "monthlyGoalMinHours": 100,
+        "monthlyGoalMaxHours": 130
+      },
+      "sessions": [],
+      "courses": [
+        {
+          "id": 1,
+          "name": "C1",
+          "color": "#111111",
+          "ects": 5,
+          "semester": 0,
+          "group": null,
+          "topics": []
+        },
+        {
+          "id": 2,
+          "name": "C2",
+          "color": "#111111",
+          "ects": 10,
+          "semester": 0,
+          "group": null,
+          "topics": []
+        },
+        {
+          "id": 3,
+          "name": "C3",
+          "color": "#111111",
+          "ects": 5,
+          "semester": 0,
+          "group": null,
+          "topics": []
+        }
+      ],
+      "courseGoals": [
+        {
+          "courseId": 1,
+          "courseName": "C1",
+          "grade": 1.3,
+          "targetDate": null,
+          "completedAt": null,
+          "completedTopics": ""
+        },
+        {
+          "courseId": 2,
+          "courseName": "C2",
+          "grade": 2.7,
+          "targetDate": null,
+          "completedAt": null,
+          "completedTopics": ""
+        },
+        {
+          "courseId": 3,
+          "courseName": "C3",
+          "grade": null,
+          "targetDate": null,
+          "completedAt": null,
+          "completedTopics": ""
+        }
+      ],
+      "completedCourseIds": [],
+      "expected": {
+        "streak": 0,
+        "longestStreak": 0,
+        "weekHours": 0.0,
+        "weekQuotaPercent": 0.0,
+        "weekQuotaWarning": true,
+        "weekQuotaMissingHours": 25.0,
+        "monthHours": 0.0,
+        "monthQuotaPercent": 0.0,
+        "monthQuotaWarning": true,
+        "monthQuotaMissingHours": 100.0,
+        "averageGrade": 2.233333,
+        "ectsEarned": 0,
+        "ectsTotal": 20,
+        "forecastAvailable": false,
+        "forecastDate": null,
+        "forecastRecentWeeklyHours": null
+      }
+    },
+    {
+      "name": "average_grade_zero_ects_fallback",
+      "description": "Both graded courses have 0 ECTS - the weighted-average formula's denominator (total ECTS) is 0, so it must fall back to a plain unweighted mean instead of dividing by zero.",
+      "now": "2026-01-10T12:00:00",
+      "settings": {
+        "weeklyGoalMinHours": 25,
+        "weeklyGoalMaxHours": 30,
+        "monthlyGoalMinHours": 100,
+        "monthlyGoalMaxHours": 130
+      },
+      "sessions": [],
+      "courses": [
+        {
+          "id": 1,
+          "name": "C1",
+          "color": "#111111",
+          "ects": 0,
+          "semester": 0,
+          "group": null,
+          "topics": []
+        },
+        {
+          "id": 2,
+          "name": "C2",
+          "color": "#111111",
+          "ects": 0,
+          "semester": 0,
+          "group": null,
+          "topics": []
+        }
+      ],
+      "courseGoals": [
+        {
+          "courseId": 1,
+          "courseName": "C1",
+          "grade": 1.0,
+          "targetDate": null,
+          "completedAt": null,
+          "completedTopics": ""
+        },
+        {
+          "courseId": 2,
+          "courseName": "C2",
+          "grade": 3.0,
+          "targetDate": null,
+          "completedAt": null,
+          "completedTopics": ""
+        }
+      ],
+      "completedCourseIds": [],
+      "expected": {
+        "streak": 0,
+        "longestStreak": 0,
+        "weekHours": 0.0,
+        "weekQuotaPercent": 0.0,
+        "weekQuotaWarning": true,
+        "weekQuotaMissingHours": 25.0,
+        "monthHours": 0.0,
+        "monthQuotaPercent": 0.0,
+        "monthQuotaWarning": true,
+        "monthQuotaMissingHours": 100.0,
+        "averageGrade": 2.0,
+        "ectsEarned": 0,
+        "ectsTotal": 0,
+        "forecastAvailable": false,
+        "forecastDate": null,
+        "forecastRecentWeeklyHours": null
+      }
+    },
+    {
+      "name": "forecast_normal_pace",
+      "description": "Semester-based ECTS graduation forecast at exactly the reference pace: 90 of 180 ECTS remain, 4 semesters total (26 weeks each) -> 52-week baseline. The last 8 weeks show a single 220h studied session, i.e. 27.5h/week - exactly the midpoint of the 25-30h weekly goal - so the pace ratio is exactly 1.0 and the forecast date equals the unadjusted baseline.",
+      "now": "2026-03-01T12:00:00",
+      "settings": {
+        "weeklyGoalMinHours": 25,
+        "weeklyGoalMaxHours": 30,
+        "monthlyGoalMinHours": 100,
+        "monthlyGoalMaxHours": 130
+      },
+      "sessions": [
+        {
+          "id": 1,
+          "courseId": 1,
+          "courseName": "C1",
+          "courseColor": "#111111",
+          "startTime": "2026-02-19T00:00:00",
+          "endTime": "2026-02-28T04:00:00",
+          "topic": null,
+          "notes": null,
+          "isCompleted": true,
+          "timerModeId": 1,
+          "recurrenceGroupId": null
+        }
+      ],
+      "courses": [
+        {
+          "id": 1,
+          "name": "C1",
+          "color": "#111111",
+          "ects": 90,
+          "semester": 2,
+          "group": null,
+          "topics": []
+        },
+        {
+          "id": 2,
+          "name": "C2",
+          "color": "#111111",
+          "ects": 90,
+          "semester": 4,
+          "group": null,
+          "topics": []
+        }
+      ],
+      "courseGoals": [],
+      "completedCourseIds": [
+        1
+      ],
+      "expected": {
+        "streak": 0,
+        "longestStreak": 1,
+        "weekHours": 0.0,
+        "weekQuotaPercent": 0.0,
+        "weekQuotaWarning": true,
+        "weekQuotaMissingHours": 25.0,
+        "monthHours": 0.0,
+        "monthQuotaPercent": 0.0,
+        "monthQuotaWarning": true,
+        "monthQuotaMissingHours": 100.0,
+        "averageGrade": null,
+        "ectsEarned": 90,
+        "ectsTotal": 180,
+        "forecastAvailable": true,
+        "forecastDate": "2027-02-28T00:00:00",
+        "forecastRecentWeeklyHours": 27.5
+      }
+    },
+    {
+      "name": "forecast_already_done",
+      "description": "Every course already completed (earned == total ECTS) - the forecast must report unavailable instead of a graduation date, regardless of study history.",
+      "now": "2026-03-01T12:00:00",
+      "settings": {
+        "weeklyGoalMinHours": 25,
+        "weeklyGoalMaxHours": 30,
+        "monthlyGoalMinHours": 100,
+        "monthlyGoalMaxHours": 130
+      },
+      "sessions": [],
+      "courses": [
+        {
+          "id": 1,
+          "name": "C1",
+          "color": "#111111",
+          "ects": 90,
+          "semester": 2,
+          "group": null,
+          "topics": []
+        },
+        {
+          "id": 2,
+          "name": "C2",
+          "color": "#111111",
+          "ects": 90,
+          "semester": 4,
+          "group": null,
+          "topics": []
+        }
+      ],
+      "courseGoals": [],
+      "completedCourseIds": [
+        1,
+        2
+      ],
+      "expected": {
+        "streak": 0,
+        "longestStreak": 0,
+        "weekHours": 0.0,
+        "weekQuotaPercent": 0.0,
+        "weekQuotaWarning": true,
+        "weekQuotaMissingHours": 25.0,
+        "monthHours": 0.0,
+        "monthQuotaPercent": 0.0,
+        "monthQuotaWarning": true,
+        "monthQuotaMissingHours": 100.0,
+        "averageGrade": null,
+        "ectsEarned": 180,
+        "ectsTotal": 180,
+        "forecastAvailable": false,
+        "forecastDate": null,
+        "forecastRecentWeeklyHours": null
+      }
+    }
+  ]
+}
