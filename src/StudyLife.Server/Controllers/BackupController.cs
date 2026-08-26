@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using StudyLife.Server.Auth;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
 
@@ -7,8 +8,13 @@ namespace StudyLife.Server.Controllers;
 
 /// <summary>
 /// Backup &amp; export of user data. Sits under /api like every other controller and thus
-/// automatically inherits the optional Security:ApiKey protection from Program.cs (the
-/// middleware applies path-based to everything under /api, not controller-specific).
+/// automatically requires the default ApiAccess policy (any credential) - see
+/// StudyLifeAuthorizationPolicies. Deliberately does NOT additionally carry
+/// [Authorize(Policy = SessionOnly)]: IsOwnerAsync below needs to reject a merely-
+/// authenticated-but-not-owner request with 403 (not 401), which the automatic SessionOnly
+/// policy pipeline cannot express (it always challenges with 401, see
+/// AlwaysChallengeAuthorizationMiddlewareResultHandler) - so this stays a manual check that
+/// calls Forbid() itself.
 /// </summary>
 [ApiController]
 [Route("api/backup")]
@@ -24,10 +30,9 @@ public class BackupController : ControllerBase
     private readonly DatabaseRestoreService? _restoreService;
     private readonly SettingsCacheVersion _settingsCacheVersion;
     private readonly IHostApplicationLifetime _lifetime;
-    private readonly ICurrentUserAccessor _currentUser;
 
     public BackupController(StudyLifeDb db, SettingsCacheVersion settingsCacheVersion,
-        IHostApplicationLifetime lifetime, ICurrentUserAccessor currentUser,
+        IHostApplicationLifetime lifetime,
         DatabaseBackupService? backupService = null, DatabaseRestoreService? restoreService = null)
     {
         _db = db;
@@ -35,7 +40,6 @@ public class BackupController : ControllerBase
         _restoreService = restoreService;
         _settingsCacheVersion = settingsCacheVersion;
         _lifetime = lifetime;
-        _currentUser = currentUser;
     }
 
     /// <summary>Only registered in SQLite mode (Program.cs) - see the field comment above.</summary>
@@ -53,10 +57,9 @@ public class BackupController : ControllerBase
     /// </summary>
     private async Task<bool> IsOwnerAsync()
     {
-        if (!HttpContext.Items.ContainsKey(AuthSessionService.SessionItemKey)) return false;
-        if (_currentUser.AuthUserId is not > 0) return false;
+        if (HttpContext.SessionAuthUserId() is not int sessionUserId) return false;
         var firstUserId = await _db.AuthUsers.OrderBy(u => u.Id).Select(u => u.Id).FirstOrDefaultAsync();
-        return _currentUser.AuthUserId == firstUserId;
+        return sessionUserId == firstUserId;
     }
 
     /// <summary>
@@ -80,15 +83,18 @@ public class BackupController : ControllerBase
                 error = "Raw database backup/restore is not available in Postgres mode. Use the JSON export (GET /api/backup/export).",
             });
 
-        // 403, NOT 401/Forbid(): Forbid() crashes in this app with an InvalidOperationException
-        // (no ASP.NET Core authentication scheme registered - auth runs entirely through
-        // custom middleware). 401, in turn, is interpreted by the client (SessionHandler.cs) as
-        // "session dead, log out" - but this is a valid, merely unprivileged session (the user
-        // is genuinely logged in, just not the owner) and must NOT log the client out (observed
-        // live as a bug: a second user got kicked out when opening the setup page, because
-        // SetupRestoreCard fetches restore/status). StatusCode(403) sets the code directly,
-        // without the IAuthenticationService machinery of Forbid().
-        if (!await IsOwnerAsync()) return StatusCode(StatusCodes.Status403Forbidden);
+        // 403, NOT 401: Forbid() now works fine (a real AuthenticationHandler is registered,
+        // see StudyLifeAuthenticationHandler.HandleForbiddenAsync - it writes exactly the same
+        // bare 403 status, no body, that StatusCode(403) used to), but plain 401 would still be
+        // wrong here - the client (SessionHandler.cs) interprets 401 as "session dead, log out",
+        // and this is a valid, merely unprivileged session (the user is genuinely logged in,
+        // just not the owner), which must NOT log the client out (observed live as a bug: a
+        // second user got kicked out when opening the setup page, because SetupRestoreCard
+        // fetches restore/status). That's also why this stays a manual owner check instead of
+        // [Authorize(Policy = SessionOnly)]: that policy always challenges with 401 (see
+        // AlwaysChallengeAuthorizationMiddlewareResultHandler), which is exactly the response
+        // this endpoint must NOT give for "logged in, but not the owner".
+        if (!await IsOwnerAsync()) return Forbid();
 
         var tempPath = _backupService!.CreateTempBackup();
         try
@@ -125,15 +131,18 @@ public class BackupController : ControllerBase
                 error = "Raw database backup/restore is not available in Postgres mode. Use the JSON export (GET /api/backup/export).",
             });
 
-        // 403, NOT 401/Forbid(): Forbid() crashes in this app with an InvalidOperationException
-        // (no ASP.NET Core authentication scheme registered - auth runs entirely through
-        // custom middleware). 401, in turn, is interpreted by the client (SessionHandler.cs) as
-        // "session dead, log out" - but this is a valid, merely unprivileged session (the user
-        // is genuinely logged in, just not the owner) and must NOT log the client out (observed
-        // live as a bug: a second user got kicked out when opening the setup page, because
-        // SetupRestoreCard fetches restore/status). StatusCode(403) sets the code directly,
-        // without the IAuthenticationService machinery of Forbid().
-        if (!await IsOwnerAsync()) return StatusCode(StatusCodes.Status403Forbidden);
+        // 403, NOT 401: Forbid() now works fine (a real AuthenticationHandler is registered,
+        // see StudyLifeAuthenticationHandler.HandleForbiddenAsync - it writes exactly the same
+        // bare 403 status, no body, that StatusCode(403) used to), but plain 401 would still be
+        // wrong here - the client (SessionHandler.cs) interprets 401 as "session dead, log out",
+        // and this is a valid, merely unprivileged session (the user is genuinely logged in,
+        // just not the owner), which must NOT log the client out (observed live as a bug: a
+        // second user got kicked out when opening the setup page, because SetupRestoreCard
+        // fetches restore/status). That's also why this stays a manual owner check instead of
+        // [Authorize(Policy = SessionOnly)]: that policy always challenges with 401 (see
+        // AlwaysChallengeAuthorizationMiddlewareResultHandler), which is exactly the response
+        // this endpoint must NOT give for "logged in, but not the owner".
+        if (!await IsOwnerAsync()) return Forbid();
         if (string.IsNullOrEmpty(request.Password))
             return BadRequest(new { error = "A password is required to encrypt the backup." });
 
@@ -233,15 +242,18 @@ public class BackupController : ControllerBase
                 error = "Raw database backup/restore is not available in Postgres mode. Use the JSON export (GET /api/backup/export).",
             });
 
-        // 403, NOT 401/Forbid(): Forbid() crashes in this app with an InvalidOperationException
-        // (no ASP.NET Core authentication scheme registered - auth runs entirely through
-        // custom middleware). 401, in turn, is interpreted by the client (SessionHandler.cs) as
-        // "session dead, log out" - but this is a valid, merely unprivileged session (the user
-        // is genuinely logged in, just not the owner) and must NOT log the client out (observed
-        // live as a bug: a second user got kicked out when opening the setup page, because
-        // SetupRestoreCard fetches restore/status). StatusCode(403) sets the code directly,
-        // without the IAuthenticationService machinery of Forbid().
-        if (!await IsOwnerAsync()) return StatusCode(StatusCodes.Status403Forbidden);
+        // 403, NOT 401: Forbid() now works fine (a real AuthenticationHandler is registered,
+        // see StudyLifeAuthenticationHandler.HandleForbiddenAsync - it writes exactly the same
+        // bare 403 status, no body, that StatusCode(403) used to), but plain 401 would still be
+        // wrong here - the client (SessionHandler.cs) interprets 401 as "session dead, log out",
+        // and this is a valid, merely unprivileged session (the user is genuinely logged in,
+        // just not the owner), which must NOT log the client out (observed live as a bug: a
+        // second user got kicked out when opening the setup page, because SetupRestoreCard
+        // fetches restore/status). That's also why this stays a manual owner check instead of
+        // [Authorize(Policy = SessionOnly)]: that policy always challenges with 401 (see
+        // AlwaysChallengeAuthorizationMiddlewareResultHandler), which is exactly the response
+        // this endpoint must NOT give for "logged in, but not the owner".
+        if (!await IsOwnerAsync()) return Forbid();
         if (file == null || file.Length == 0)
             return BadRequest(new { error = "No backup file was uploaded." });
 
@@ -329,15 +341,18 @@ public class BackupController : ControllerBase
                 error = "Raw database backup/restore is not available in Postgres mode. Use the JSON export (GET /api/backup/export).",
             });
 
-        // 403, NOT 401/Forbid(): Forbid() crashes in this app with an InvalidOperationException
-        // (no ASP.NET Core authentication scheme registered - auth runs entirely through
-        // custom middleware). 401, in turn, is interpreted by the client (SessionHandler.cs) as
-        // "session dead, log out" - but this is a valid, merely unprivileged session (the user
-        // is genuinely logged in, just not the owner) and must NOT log the client out (observed
-        // live as a bug: a second user got kicked out when opening the setup page, because
-        // SetupRestoreCard fetches restore/status). StatusCode(403) sets the code directly,
-        // without the IAuthenticationService machinery of Forbid().
-        if (!await IsOwnerAsync()) return StatusCode(StatusCodes.Status403Forbidden);
+        // 403, NOT 401: Forbid() now works fine (a real AuthenticationHandler is registered,
+        // see StudyLifeAuthenticationHandler.HandleForbiddenAsync - it writes exactly the same
+        // bare 403 status, no body, that StatusCode(403) used to), but plain 401 would still be
+        // wrong here - the client (SessionHandler.cs) interprets 401 as "session dead, log out",
+        // and this is a valid, merely unprivileged session (the user is genuinely logged in,
+        // just not the owner), which must NOT log the client out (observed live as a bug: a
+        // second user got kicked out when opening the setup page, because SetupRestoreCard
+        // fetches restore/status). That's also why this stays a manual owner check instead of
+        // [Authorize(Policy = SessionOnly)]: that policy always challenges with 401 (see
+        // AlwaysChallengeAuthorizationMiddlewareResultHandler), which is exactly the response
+        // this endpoint must NOT give for "logged in, but not the owner".
+        if (!await IsOwnerAsync()) return Forbid();
         return Ok(new { pending = _restoreService!.IsRestorePending, stagedAt = _restoreService.StagedAtUtc });
     }
 
@@ -354,15 +369,18 @@ public class BackupController : ControllerBase
                 error = "Raw database backup/restore is not available in Postgres mode. Use the JSON export (GET /api/backup/export).",
             });
 
-        // 403, NOT 401/Forbid(): Forbid() crashes in this app with an InvalidOperationException
-        // (no ASP.NET Core authentication scheme registered - auth runs entirely through
-        // custom middleware). 401, in turn, is interpreted by the client (SessionHandler.cs) as
-        // "session dead, log out" - but this is a valid, merely unprivileged session (the user
-        // is genuinely logged in, just not the owner) and must NOT log the client out (observed
-        // live as a bug: a second user got kicked out when opening the setup page, because
-        // SetupRestoreCard fetches restore/status). StatusCode(403) sets the code directly,
-        // without the IAuthenticationService machinery of Forbid().
-        if (!await IsOwnerAsync()) return StatusCode(StatusCodes.Status403Forbidden);
+        // 403, NOT 401: Forbid() now works fine (a real AuthenticationHandler is registered,
+        // see StudyLifeAuthenticationHandler.HandleForbiddenAsync - it writes exactly the same
+        // bare 403 status, no body, that StatusCode(403) used to), but plain 401 would still be
+        // wrong here - the client (SessionHandler.cs) interprets 401 as "session dead, log out",
+        // and this is a valid, merely unprivileged session (the user is genuinely logged in,
+        // just not the owner), which must NOT log the client out (observed live as a bug: a
+        // second user got kicked out when opening the setup page, because SetupRestoreCard
+        // fetches restore/status). That's also why this stays a manual owner check instead of
+        // [Authorize(Policy = SessionOnly)]: that policy always challenges with 401 (see
+        // AlwaysChallengeAuthorizationMiddlewareResultHandler), which is exactly the response
+        // this endpoint must NOT give for "logged in, but not the owner".
+        if (!await IsOwnerAsync()) return Forbid();
         return _restoreService!.CancelPending()
             ? Ok(new { status = "cancelled" })
             : NotFound(new { error = "No staged restore to cancel." });
@@ -389,15 +407,18 @@ public class BackupController : ControllerBase
                 error = "Raw database backup/restore is not available in Postgres mode. Use the JSON export (GET /api/backup/export).",
             });
 
-        // 403, NOT 401/Forbid(): Forbid() crashes in this app with an InvalidOperationException
-        // (no ASP.NET Core authentication scheme registered - auth runs entirely through
-        // custom middleware). 401, in turn, is interpreted by the client (SessionHandler.cs) as
-        // "session dead, log out" - but this is a valid, merely unprivileged session (the user
-        // is genuinely logged in, just not the owner) and must NOT log the client out (observed
-        // live as a bug: a second user got kicked out when opening the setup page, because
-        // SetupRestoreCard fetches restore/status). StatusCode(403) sets the code directly,
-        // without the IAuthenticationService machinery of Forbid().
-        if (!await IsOwnerAsync()) return StatusCode(StatusCodes.Status403Forbidden);
+        // 403, NOT 401: Forbid() now works fine (a real AuthenticationHandler is registered,
+        // see StudyLifeAuthenticationHandler.HandleForbiddenAsync - it writes exactly the same
+        // bare 403 status, no body, that StatusCode(403) used to), but plain 401 would still be
+        // wrong here - the client (SessionHandler.cs) interprets 401 as "session dead, log out",
+        // and this is a valid, merely unprivileged session (the user is genuinely logged in,
+        // just not the owner), which must NOT log the client out (observed live as a bug: a
+        // second user got kicked out when opening the setup page, because SetupRestoreCard
+        // fetches restore/status). That's also why this stays a manual owner check instead of
+        // [Authorize(Policy = SessionOnly)]: that policy always challenges with 401 (see
+        // AlwaysChallengeAuthorizationMiddlewareResultHandler), which is exactly the response
+        // this endpoint must NOT give for "logged in, but not the owner".
+        if (!await IsOwnerAsync()) return Forbid();
         if (!_restoreService!.IsRestorePending)
             return Conflict(new { error = "No staged restore - refusing to restart the server." });
 

@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using StudyLife.Server.Auth;
 using StudyLife.Server.Services;
 
 namespace StudyLife.Server.Controllers;
@@ -7,14 +9,16 @@ namespace StudyLife.Server.Controllers;
 /// Proxies chat/agent requests from the Blazor client to the studylife-ai microservice on
 /// behalf of the logged-in user - see AiProxyClient for why this hop exists (the user's real
 /// AiApiKey can't be forwarded, only a short-lived signed identity token can). Session-only
-/// auth (same SessionUser pattern as SettingsController's ai-api-key group): an API key alone
-/// must not be enough to drive the AI agent as some other user's session.
+/// auth ([Authorize(Policy = SessionOnly)], same requirement as SettingsController's ai-api-key
+/// group): an API key alone must not be enough to drive the AI agent as some other user's
+/// session.
 ///
 /// Pure reverse proxy - request/response bodies pass through unparsed, including /chat's SSE
 /// stream, so this controller never needs to know studylife-ai's request/response shapes.
 /// </summary>
 [ApiController]
 [Route("api/ai")]
+[Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
 public class AiProxyController : ControllerBase
 {
     private readonly AiProxyClient _client;
@@ -37,11 +41,9 @@ public class AiProxyController : ControllerBase
 
     private async Task ProxyAsync(string path, CancellationToken ct)
     {
-        if (SessionUser is not int userId)
-        {
-            Response.StatusCode = StatusCodes.Status401Unauthorized;
-            return;
-        }
+        // No manual session check here anymore - [Authorize(Policy = SessionOnly)] on the
+        // class already rejected anything that isn't a real session before this method runs.
+        var userId = _currentUser.AuthUserId;
         if (!_client.Enabled)
         {
             Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
@@ -55,13 +57,4 @@ public class AiProxyController : ControllerBase
             Response.ContentType = contentType.ToString();
         await upstream.Content.CopyToAsync(Response.Body, ct);
     }
-
-    /// <summary>Same pattern as SettingsController.SessionUser: only a real validated passkey
-    /// session counts, not a bare API key - otherwise a leaked API key could drive the agent
-    /// as if it were an interactive user.</summary>
-    private int? SessionUser =>
-        HttpContext.Items.ContainsKey(AuthSessionService.SessionItemKey)
-        && _currentUser.AuthUserId is var userId and > 0
-            ? userId
-            : null;
 }
