@@ -181,6 +181,13 @@ builder.Services.AddRateLimiter(options =>
     };
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
     {
+        // Audit finding O6: this also covers /healthz/ready + /healthz/live (HealthController) -
+        // deliberately unlimited like every other non-/api path, not just incidentally. Probe
+        // traffic reaches the pod directly (kube-probe never goes through the ingress hop that
+        // populates X-Forwarded-For), so its "client IP" is the probing node's address - many
+        // pods on the same node would otherwise share one rate-limit partition and could throttle
+        // each other's probes. Living outside /api sidesteps that question entirely instead of
+        // needing a dedicated exemption.
         if (!context.Request.Path.StartsWithSegments("/api"))
             return RateLimitPartition.GetNoLimiter("no-limit");
 
@@ -693,7 +700,9 @@ app.MapRazorPages();
 // The default "needs a credential unless [AllowAnonymous]/a more specific policy" requirement
 // for every controller action comes from AuthorizationOptions.FallbackPolicy (ApiAccess),
 // configured in StudyLifeAuthorizationPolicies - not from an endpoint convention chained here,
-// see that file's comment for why.
+// see that file's comment for why. This also picks up HealthController's GET /healthz/ready and
+// /healthz/live (audit finding O6) - both routed outside /api and [AllowAnonymous] there, no
+// mapping needed here beyond the automatic controller discovery this call already does.
 app.MapControllers();
 // Unknown /api paths must NEVER fall through to the SPA fallback below: that would otherwise
 // deliver 200+index.html without cache headers for endpoints that don't (yet) exist on this

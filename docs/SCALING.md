@@ -457,6 +457,47 @@ proceeded with no reachability gap (`curl` against the ClusterIP service with `-
 immediately afterward: `200`), and the PDB (`studylife-gateway-nginx`, `minAvailable: 1`) remains
 meaningfully effective with `minReplicas: 2`.
 
+## DB-Aware Health Endpoints (Audit Finding O6)
+
+Every probe used to hit plain `GET /` - k8s readiness/liveness for both `studylife-web` and
+`studylife-worker`, `docker-compose.scale.yml`'s healthchecks, and (once added, see below)
+`src/StudyLife.Server/Dockerfile`'s own `HEALTHCHECK`. That only proves Kestrel itself answers
+HTTP - a pod whose Postgres connection (or the pooler, `k8s/11-pooler.yaml`) had died stayed
+"Ready" forever and kept receiving traffic that would just 500. Two endpoints replace it
+(`HealthController`, `src/StudyLife.Server/Controllers/HealthController.cs`):
+
+- **`GET /healthz/live`**: no dependencies at all, not even the DB - "is the process alive and
+  routing requests", the only question a *liveness* probe should ever ask. A dead DB connection
+  is deliberately NOT a liveness failure: restarting the pod doesn't revive the database, so that
+  class of failure must only ever affect readiness, never trigger a kill/restart loop.
+- **`GET /healthz/ready`**: a real `SELECT 1` through the already-configured `StudyLifeDb` (SQLite
+  or Postgres, whichever this process is actually wired for - no provider branching needed in the
+  controller), 503 on failure. This is what should gate whether a pod stays in rotation.
+
+Both are `[AllowAnonymous]` (required - `AuthorizationOptions.FallbackPolicy` in
+`StudyLifeAuthorizationPolicies` would otherwise 401 kube-probe's credential-less request) and
+routed OUTSIDE `/api` - which also means they're automatically exempt from the 300 req/min rate
+limiter (`Program.cs`'s `GlobalLimiter` only partitions `/api/*` paths at all) without needing a
+dedicated exemption. That exemption actually matters here: kube-probe traffic reaches a pod
+directly from its node, never through the ingress hop that populates `X-Forwarded-For`, so its
+"client IP" as the limiter would see it is the probing NODE's address - every pod scheduled on
+the same node would otherwise share one rate-limit partition key and could throttle each other's
+probes under load.
+
+**Probe matrix**:
+
+| Deployment/service | Readiness | Liveness | Why |
+|---|---|---|---|
+| `k8s/04-web.yaml` (`studylife-web`) | `/healthz/ready` | `/healthz/live` | Web serves real traffic behind a Service - a dead DB connection must take it out of rotation (readiness), but must never kill/restart the pod over it (liveness stays dependency-free). |
+| `k8s/05-worker.yaml` (`studylife-worker`) | `/healthz/live` | `/healthz/live` | The worker has no Service - "Ready" has no routing meaning for it, so gating it on the DB would only add a false-failure mode for zero benefit. More importantly: `Database__Migrate=false` (set only here) means this process BLOCKS in `WaitForPendingMigrationsAsync` (`Program.cs`) until the web role's migration lands, up to a hard 5-minute deadline, entirely BEFORE `app.Run()` - Kestrel isn't listening on ANY path yet, `/healthz/ready` included, so using the DB-aware endpoint here would misreport "not ready" for a condition that has nothing to do with this pod being unhealthy. |
+| `k8s/05-worker.yaml` `startupProbe` (new) | - | `/healthz/live`, `periodSeconds: 10`, `failureThreshold: 40` (400s budget) | The actual fix for the timing hazard the wait loop above creates: with the OLD flat `livenessProbe` defaults (`initialDelaySeconds: 20`, `periodSeconds: 10`, implicit `failureThreshold: 3`), liveness would start failing at t=20s and kill the pod by ~t=40-50s - long before a slow web-role migration could ever finish its own 5-minute budget, turning a legitimate wait into a perpetual `CrashLoopBackOff`. A `startupProbe` suspends BOTH readiness and liveness checks until it succeeds once, so the steady-state probes above can keep tight, normal timing. 400s was chosen as comfortably above the 300s `WaitForPendingMigrationsAsync` deadline plus headroom for Kestrel/JIT startup and scheduling jitter - if the web role's migration is ever genuinely stuck for the full 5 minutes, this pod gets killed and restarted (a fresh 400s budget) rather than left in permanent limbo, matching the crash-and-retry behavior the thrown `InvalidOperationException` already produces once `Program.cs` actually reaches that deadline. |
+| `docker-compose.scale.yml` `server` | `/healthz/ready` | (compose has no separate liveness concept) | Same DB-awareness reasoning as `studylife-web`. Timing unchanged (`start_period: 15s`) - `postgres`/`redis` are already gated via `depends_on: condition: service_healthy`. |
+| `docker-compose.scale.yml` `worker` (new) | `/healthz/live` | - | Same routing-irrelevance reasoning as `studylife-worker`. No `startupProbe`-equivalent needed: this compose service does NOT set `Database__Migrate=false` (that switch is k8s-only) - it still migrates itself on startup exactly as before, so the 5-minute wait-for-migrations hazard doesn't apply here. |
+| `src/StudyLife.Server/Dockerfile` `HEALTHCHECK` (new) | `/healthz/ready` | - | Didn't exist before this change. `docker-compose.scale.yml`'s own `healthcheck:` blocks always win over the image default, so this only actually matters for a plain `docker run` single container (README's Deployment section) - which combines the web AND worker roles (`Worker:Enabled` defaults `true`) and self-migrates (the k8s-only wait-for-migrations hazard doesn't apply there either), and genuinely serves real DB-backed traffic - so the DB-aware endpoint is the right default. |
+
+`GET /` itself is unchanged - still whatever it served before (the SPA shell) - nothing about this
+change touches it.
+
 ## Redis Cluster
 
 `k8s/03-redis.yaml` is a real Redis Cluster (3 masters + 3 replicas, hash slots distributed
@@ -521,6 +562,102 @@ value via a SealedSecret delete+reapply (the same trick used to force adoption, 
 change in the same file - work with targeted `kubectl patch`/`kubectl set env`/Sealed-Secret
 reapply, exactly as with the other placeholder files (`07-ingress.yaml`, `17-grafana.yaml`,
 `09-uptime-kuma.yaml`).
+
+### Redis AUTH (Opt-In, Audit Finding O6 Round 2)
+
+The client TLS above (`### Client TLS`) encrypts the App↔Redis hop against eavesdropping, but
+nothing has ever required a PASSWORD on it - any pod that can reach the client port at all (e.g.
+one already inside the `allow-app-and-self-to-redis` NetworkPolicy allowlist, or a compromised
+pod that has otherwise gained network access) can read/write every key with no credential check.
+
+**This is deliberately OPT-IN, not enabled by default.** Applying `k8s/03-redis.yaml` unchanged
+is a no-op for a running cluster - every piece of wiring below is a `#`-commented block in the
+manifest itself, inert until an operator follows this exact procedure. The app side needs no code
+change either: `Cache:ConnectionString` already flows through `StackExchange.Redis.
+ConfigurationOptions.Parse` (`Program.cs`), which natively understands a `password=...` key in the
+connection string - `RedisWorkerShardClaim`, the `SessionHistoryCacheVersion`/
+`SettingsCacheVersion` `RedisVersionCounter`s, and the DataProtection key ring
+(`PersistKeysToStackExchangeRedis`) all share the same `IConnectionMultiplexer`/
+`ConfigurationOptions`, so a password just works for all of them simultaneously, nothing to
+special-case. **Constraint**: the connection string format is comma-separated `key=value` pairs -
+pick a password with no comma or semicolon in it, or `ConfigurationOptions.Parse` misparses the
+string.
+
+**Why requirepass alone isn't enough in cluster mode** (the "if redis-cluster mode makes
+requirepass+cluster-bus tricky" question): a Redis Cluster replica connects to its master as a
+plain CLIENT - replication (`REPLCONF`/`PSYNC`) runs over the same regular data port `requirepass`
+just locked down, not over the cluster bus - so replication breaks the moment `requirepass` is set
+unless `masterauth` carries the identical password. The cluster BUS itself (port 16379,
+node-to-node gossip/topology) is unaffected either way: Redis has no AUTH mechanism for the bus
+protocol at all, with or without `requirepass`/`masterauth` set - it stays protected exactly as it
+already is today, via the `NetworkPolicy` restricting 16379 to `redis-cluster` pods only
+(`k8s/12-network-policies.yaml`), completely orthogonal to this change. The full required set for
+this cluster is therefore just `requirepass` + `masterauth` (same value) - no ACL users, no
+`masteruser`, nothing bus-related.
+
+**Ordered enable procedure** (targeted `kubectl` commands, matching this document's established
+"never bulk-apply a file with placeholders in it" discipline - see the near-incident above):
+
+1. **Create the secret** (real cluster, not the `k8s/dev/` placeholder pattern - this one has no
+   same-name prod counterpart to collide with, but still shouldn't be committed in plaintext):
+   ```bash
+   kubectl -n studylife-scale create secret generic redis-auth \
+     --from-literal=password=<a generated password, no comma/semicolon>
+   ```
+   (Or seal it via `kubeseal` into `k8s/sealed-secrets/studylife-scale/` alongside the existing
+   ones, if it should be Git-versioned like the Postgres/app secrets - see "Sealed Secrets" below.)
+2. **Uncomment the three commented blocks in `k8s/03-redis.yaml`** together (they only work as a
+   set): the `redis` container's `command`/`env` (adds `--requirepass`/`--masterauth`), its
+   `readinessProbe`/`livenessProbe` (switches to `redis-cli -a "$REDIS_PASSWORD"`), and the
+   `redis-exporter` container's `args`/`env` (adds `--redis.password`). Apply:
+   ```bash
+   kubectl apply -f k8s/03-redis.yaml
+   ```
+   This only changes the `StatefulSet`'s pod template - no pod restarts yet on its own.
+3. **Restart the Redis pods ONE BY ONE**, not a bulk `kubectl rollout restart` - this cluster's
+   data is pure disposable cache (`appendonly no`) with its own master/replica redundancy already,
+   and a sequential restart lets each node rejoin the (already-gossiping, unauthenticated-bus)
+   cluster before the next one goes down, the same caution already used for the Longhorn storage
+   migration (see the `volumeClaimTemplates` comment on the `StatefulSet` above):
+   ```bash
+   for i in 0 1 2 3 4 5; do
+     kubectl -n studylife-scale delete pod redis-cluster-$i
+     kubectl -n studylife-scale rollout status statefulset/redis-cluster --timeout=120s
+     # confirm cluster_state:ok before moving to the next pod:
+     kubectl -n studylife-scale exec redis-cluster-$i -- redis-cli -a <password> --no-auth-warning cluster info | grep cluster_state
+   done
+   ```
+4. **Update `Cache__ConnectionString`** (`k8s/01-config-and-secret.yaml`'s `studylife-config`
+   ConfigMap, or `k8s/dev/01-secrets.yaml` on the learning cluster) to append `password=<same
+   value>` to the existing comma-separated connection string - via a targeted `kubectl patch`, NOT
+   a bulk re-apply of the file (same discipline as "Prod Secret vs. Learning-Cluster Placeholder"
+   below - this file, while not credential-bearing itself, is still a shared ConfigMap other
+   fields of which shouldn't be blindly overwritten):
+   ```bash
+   kubectl -n studylife-scale patch configmap studylife-config --type merge -p \
+     '{"data":{"Cache__ConnectionString":"redis-cluster-0.redis-cluster:6380,redis-cluster-1.redis-cluster:6380,redis-cluster-2.redis-cluster:6380,redis-cluster-3.redis-cluster:6380,redis-cluster-4.redis-cluster:6380,redis-cluster-5.redis-cluster:6380,ssl=true,password=<same value>"}'
+   ```
+5. **Restart web and worker** so they pick up the changed ConfigMap (neither watches it live):
+   ```bash
+   kubectl -n studylife-scale rollout restart deployment/studylife-web deployment/studylife-worker
+   ```
+6. **Done** - verify with the existing `ApiVerify` script (registration + read/write + cache
+   consistency) and `kubectl -n studylife-scale logs -l app=studylife-web | grep -i redis` (no
+   `NOAUTH`/connection errors).
+
+**Rollback path**: revert step 4's ConfigMap patch (drop `password=...`) and restart web/worker
+BEFORE reverting the Redis pods themselves - the app must stop presenting a password before the
+server stops requiring one, otherwise the order is harmless either way in THIS direction (an app
+presenting no password against a server that now requires one simply fails to connect, exactly
+the state before step 1). Reverting the Redis side itself follows the same one-pod-at-a-time
+rollout as step 3, with the manifest's uncommented blocks re-commented (or `kubectl apply` of the
+pre-change file).
+
+**Not implemented, deliberately out of scope**: ACL-based per-application users (ha/ai/mcp/capture
+each get their own Postgres/API-key credential already via `ApiKeyScopes`, but Redis has always
+been a single shared cache with no per-caller isolation need - a single `requirepass` matches the
+actual threat model here, "any reachable pod" vs. "any reachable pod, but also without a
+password").
 
 ### Prod Secret vs. Learning-Cluster Placeholder (structural fix)
 
