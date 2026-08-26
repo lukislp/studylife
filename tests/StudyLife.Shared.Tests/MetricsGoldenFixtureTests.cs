@@ -135,7 +135,7 @@ public class MetricsGoldenFixtureTests
 
         var gradedCourses = s.CourseGoals
             .Where(g => g.Grade.HasValue)
-            .Select(g => (g.Grade!.Value, s.Courses.FirstOrDefault(c => c.Id == g.CourseId)?.Ects ?? 5))
+            .Select(g => new StudyMetrics.GradedCourse(g.Grade!.Value, s.Courses.FirstOrDefault(c => c.Id == g.CourseId)?.Ects ?? 5))
             .ToList();
         var averageGrade = StudyMetrics.CalcWeightedAverageGrade(gradedCourses);
 

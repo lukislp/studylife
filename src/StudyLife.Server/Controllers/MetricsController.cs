@@ -69,7 +69,7 @@ public class MetricsController : ControllerBase
 
         var averageGrade = StudyMetrics.CalcWeightedAverageGrade(goals
             .Where(g => g.Grade.HasValue)
-            .Select(g => (g.Grade!.Value, catalog.FirstOrDefault(c => c.Id == g.CourseId)?.Ects ?? 5)));
+            .Select(g => new StudyMetrics.GradedCourse(g.Grade!.Value, catalog.FirstOrDefault(c => c.Id == g.CourseId)?.Ects ?? 5)));
 
         var forecast = StudyMetrics.CalcForecast(
             ectsTotal, ectsEarned, catalog, settings.WeeklyGoalMinHours, settings.WeeklyGoalMaxHours, scoped, asOf);

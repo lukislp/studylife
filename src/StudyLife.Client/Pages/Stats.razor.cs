@@ -82,7 +82,7 @@ public partial class Stats
     private Task<List<StudySessionDto>?>? _historyAllTask;
     private Task<IReadOnlyDictionary<string, int>>? _groupQuotasTask;
     private Task<List<StudySessionDto>?>? _historyAllTimeTask;
-    private Task<IReadOnlyList<(DateTime Date, double Vo2Max)>?>? _cardioFitnessTask;
+    private Task<IReadOnlyList<StudyLife.Client.Services.CardioFitnessPoint>?>? _cardioFitnessTask;
 
     protected override Task OnInitializingAsync()
     {
@@ -95,8 +95,8 @@ public partial class Stats
         _groupQuotasTask = State.GetActiveGroupQuotasAsync();
         _historyAllTimeTask = State.GetJsonCachedAsync<List<StudySessionDto>>("api/sessions/history?days=3650");
         _cardioFitnessTask = Health.IsAvailable
-            ? Health.GetCardioFitnessHistoryAsync(365)
-            : Task.FromResult<IReadOnlyList<(DateTime Date, double Vo2Max)>?>(null);
+            ? Health.GetCardioFitnessPointsAsync(365)
+            : Task.FromResult<IReadOnlyList<StudyLife.Client.Services.CardioFitnessPoint>?>(null);
         return Task.CompletedTask;
     }
 
@@ -170,7 +170,7 @@ public partial class Stats
 
         var averageGrade = StudyMetrics.CalcWeightedAverageGrade(goals
             .Where(g => g.Grade.HasValue)
-            .Select(g => (g.Grade!.Value, allCourses.FirstOrDefault(c => c.Id == g.CourseId)?.Ects ?? 5)));
+            .Select(g => new StudyMetrics.GradedCourse(g.Grade!.Value, allCourses.FirstOrDefault(c => c.Id == g.CourseId)?.Ects ?? 5)));
         if (averageGrade.HasValue)
             _averageGradeLabel = StudyMetrics.FormatGrade(averageGrade.Value);
 

@@ -81,12 +81,12 @@ public class ProgressController : ControllerBase
         var goals = await _db.CourseGoals.AsNoTracking().ToListAsync();
         var goalsByCourseId = goals.ToDictionary(g => g.CourseId);
 
-        var gradedCourses = new List<(decimal Grade, int Ects)>();
+        var gradedCourses = new List<StudyMetrics.GradedCourse>();
         foreach (var c in courseList)
         {
             if (!completedIds.Contains(c.Id)) continue;
             if (goalsByCourseId.TryGetValue(c.Id, out var g) && g.Grade.HasValue)
-                gradedCourses.Add((g.Grade.Value, c.Ects));
+                gradedCourses.Add(new StudyMetrics.GradedCourse(g.Grade.Value, c.Ects));
         }
         var averageGrade = StudyMetrics.CalcWeightedAverageGrade(gradedCourses);
 
