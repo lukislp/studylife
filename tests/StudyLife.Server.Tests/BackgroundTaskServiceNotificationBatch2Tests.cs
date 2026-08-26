@@ -50,7 +50,7 @@ public class BackgroundTaskServiceComebackNudgeTriggerTests : IClassFixture<Cust
         var start = DateTime.Now.Date.AddDays(-2).AddHours(10);
         await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
         {
-            CourseId = 601,
+            CourseId = 1,
             CourseName = "DayBeforeYesterday",
             CourseColor = "#6C5CE7",
             StartTime = start,
@@ -110,7 +110,7 @@ public class BackgroundTaskServiceComebackNudgeStudiedYesterdayTests : IClassFix
         var yesterday = DateTime.Now.Date.AddDays(-1).AddHours(10);
         await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
         {
-            CourseId = 602,
+            CourseId = 1,
             CourseName = "Yesterday",
             CourseColor = "#6C5CE7",
             StartTime = yesterday,
@@ -150,7 +150,7 @@ public class BackgroundTaskServiceComebackNudgeStudiedTodayTests : IClassFixture
         var dayBeforeYesterday = DateTime.Now.Date.AddDays(-2).AddHours(10);
         await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
         {
-            CourseId = 603,
+            CourseId = 1,
             CourseName = "DayBeforeYesterday",
             CourseColor = "#6C5CE7",
             StartTime = dayBeforeYesterday,
@@ -161,7 +161,7 @@ public class BackgroundTaskServiceComebackNudgeStudiedTodayTests : IClassFixture
         var todayStart = DateTime.Now.AddMinutes(-5);
         await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
         {
-            CourseId = 603,
+            CourseId = 1,
             CourseName = "Today",
             CourseColor = "#6C5CE7",
             StartTime = todayStart,
@@ -201,7 +201,7 @@ public class BackgroundTaskServiceComebackNudgeLongerPauseTests : IClassFixture<
         var start = DateTime.Now.Date.AddDays(-3).AddHours(10);
         await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
         {
-            CourseId = 604,
+            CourseId = 1,
             CourseName = "ThreeDaysAgo",
             CourseColor = "#6C5CE7",
             StartTime = start,
@@ -242,7 +242,7 @@ public class BackgroundTaskServiceComebackNudgeToggleDisabledTests : IClassFixtu
         var start = DateTime.Now.Date.AddDays(-2).AddHours(10);
         await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
         {
-            CourseId = 605,
+            CourseId = 1,
             CourseName = "DayBeforeYesterday",
             CourseColor = "#6C5CE7",
             StartTime = start,
@@ -357,7 +357,7 @@ public class BackgroundTaskServiceComebackNudgeExpiredSubscriptionTests : IClass
         var start = DateTime.Now.Date.AddDays(-2).AddHours(10);
         await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
         {
-            CourseId = 606,
+            CourseId = 1,
             CourseName = "ComebackGone",
             CourseColor = "#6C5CE7",
             StartTime = start,

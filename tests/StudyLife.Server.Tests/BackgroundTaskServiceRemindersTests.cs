@@ -74,7 +74,7 @@ public class BackgroundTaskServicePushNotificationTests : IClassFixture<CustomWe
         });
         var endpoint = $"https://push.example.com/{Guid.NewGuid():N}";
         await SubscribeAsync(endpoint, "p256dh-key-value", "auth-key-value");
-        var sessionId = await CreateSessionAsync(301, DateTime.Now.AddMinutes(4));
+        var sessionId = await CreateSessionAsync(1, DateTime.Now.AddMinutes(4));
 
         // The endpoint is syntactically valid but unreachable - SendPushAsync catches the
         // error per subscription (WebPushClient fails at encryption with the placeholder keys,
@@ -102,7 +102,7 @@ public class BackgroundTaskServicePushNotificationTests : IClassFixture<CustomWe
         });
         var endpoint = $"https://push.example.com/{Guid.NewGuid():N}";
         await SubscribeAsync(endpoint, "p256dh-key-value", "auth-key-value");
-        var sessionId = await CreateSessionAsync(302, DateTime.Now.AddMinutes(4));
+        var sessionId = await CreateSessionAsync(2, DateTime.Now.AddMinutes(4));
 
         await InvokeAsync();
 
@@ -120,7 +120,7 @@ public class BackgroundTaskServicePushNotificationTests : IClassFixture<CustomWe
         using var gone = new GoneEndpoint();
         var (p256dh, auth) = FakePushKeys.Generate();
         await SubscribeAsync(gone.Url, p256dh, auth);
-        var sessionId = await CreateSessionAsync(303, DateTime.Now.AddMinutes(4));
+        var sessionId = await CreateSessionAsync(3, DateTime.Now.AddMinutes(4));
 
         await InvokeAsync();
 
@@ -141,7 +141,7 @@ public class BackgroundTaskServicePushNotificationTests : IClassFixture<CustomWe
         // Cleanup only runs if RunPushNotificationsAsync gets past the early "no session in the
         // window" return (line 25 in BackgroundTaskService.Reminders.cs) - hence a regular
         // due session as trigger.
-        await CreateSessionAsync(304, DateTime.Now.AddMinutes(4));
+        await CreateSessionAsync(4, DateTime.Now.AddMinutes(4));
 
         using (var scope = _factory.Services.CreateScope())
         {
@@ -172,7 +172,7 @@ public class BackgroundTaskServicePushNotificationTests : IClassFixture<CustomWe
         });
         var endpoint = $"https://push.example.com/{Guid.NewGuid():N}";
         await SubscribeAsync(endpoint, "p256dh-key-value", "auth-key-value");
-        var sessionId = await CreateSessionAsync(305, DateTime.Now.AddSeconds(30));
+        var sessionId = await CreateSessionAsync(5, DateTime.Now.AddSeconds(30));
 
         await InvokeAsync();
 
@@ -239,10 +239,10 @@ public class BackgroundTaskServiceCourseGoalReminderTests : IClassFixture<Custom
             s.CourseGoalReminderDays = "0";
         });
         await SubscribeAsync($"https://push.example.com/{Guid.NewGuid():N}");
-        await PutGoalAsync(401, DateTime.Today);
+        await PutGoalAsync(6, DateTime.Today);
 
         await InvokeAsync();
-        var key = "coursegoal:401:reminder0d";
+        var key = "coursegoal:6:reminder0d";
         Assert.Single(await GetSentRemindersAsync(key));
 
         await InvokeAsync();
@@ -258,11 +258,11 @@ public class BackgroundTaskServiceCourseGoalReminderTests : IClassFixture<Custom
             s.CourseGoalReminderDays = "14,7,3,1,0";
         });
         await SubscribeAsync($"https://push.example.com/{Guid.NewGuid():N}");
-        await PutGoalAsync(402, DateTime.Today.AddDays(30));
+        await PutGoalAsync(7, DateTime.Today.AddDays(30));
 
         await InvokeAsync();
 
-        Assert.Empty(await GetSentRemindersAsync("coursegoal:402:"));
+        Assert.Empty(await GetSentRemindersAsync("coursegoal:7:"));
     }
 
     [Fact]
@@ -274,11 +274,11 @@ public class BackgroundTaskServiceCourseGoalReminderTests : IClassFixture<Custom
             s.CourseGoalReminderDays = "0";
         });
         await SubscribeAsync($"https://push.example.com/{Guid.NewGuid():N}");
-        await PutGoalAsync(403, DateTime.Today);
+        await PutGoalAsync(8, DateTime.Today);
 
         await InvokeAsync();
 
-        Assert.Empty(await GetSentRemindersAsync("coursegoal:403:"));
+        Assert.Empty(await GetSentRemindersAsync("coursegoal:8:"));
     }
 }
 
@@ -348,7 +348,7 @@ public class BackgroundTaskServiceInactivityRecentSessionTests : IClassFixture<C
         var start = DateTime.Now.AddDays(-1);
         await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
         {
-            CourseId = 411,
+            CourseId = 9,
             CourseName = "Recent",
             CourseColor = "#6C5CE7",
             StartTime = start,
@@ -436,24 +436,24 @@ public class BackgroundTaskServicePerCourseInactivityNeglectedTests : IClassFixt
         {
             s.PerCourseInactivityRemindersEnabled = true;
             s.InactivityThresholdDays = 5;
-            s.SelectedCourseIds = new List<int> { 421, 422 };
+            s.SelectedCourseIds = new List<int> { 10, 11 };
         });
         await _client.PostAsJsonAsync("/api/push/subscribe",
             new PushSubscribeRequest($"https://push.example.com/{Guid.NewGuid():N}", "p256dh-key-value", "auth-key-value"));
 
-        // Course 421: still studied yesterday -> not neglected.
-        await PostSessionAsync(421, "Aktiv", DateTime.Now.AddDays(-1));
-        // Course 422: nothing for 12 days, threshold is 5 -> neglected.
-        await PostSessionAsync(422, "Vernachlaessigt", DateTime.Now.AddDays(-12));
+        // Course 10: still studied yesterday -> not neglected.
+        await PostSessionAsync(10, "Aktiv", DateTime.Now.AddDays(-1));
+        // Course 11: nothing for 12 days, threshold is 5 -> neglected.
+        await PostSessionAsync(11, "Vernachlaessigt", DateTime.Now.AddDays(-12));
 
         await InvokeAsync();
 
-        Assert.Empty(await GetSentRemindersAsync("courseinactivity:421:"));
-        Assert.Single(await GetSentRemindersAsync("courseinactivity:422:"));
+        Assert.Empty(await GetSentRemindersAsync("courseinactivity:10:"));
+        Assert.Single(await GetSentRemindersAsync("courseinactivity:11:"));
 
         // Second run on the same day must not fire a duplicate.
         await InvokeAsync();
-        Assert.Single(await GetSentRemindersAsync("courseinactivity:422:"));
+        Assert.Single(await GetSentRemindersAsync("courseinactivity:11:"));
     }
 }
 
@@ -483,17 +483,17 @@ public class BackgroundTaskServicePerCourseInactivityNotDistinctFromGlobalTests 
         {
             s.PerCourseInactivityRemindersEnabled = true;
             s.InactivityThresholdDays = 5;
-            s.SelectedCourseIds = new List<int> { 431, 432 };
+            s.SelectedCourseIds = new List<int> { 12, 13 };
         });
         await _client.PostAsJsonAsync("/api/push/subscribe",
             new PushSubscribeRequest($"https://push.example.com/{Guid.NewGuid():N}", "p256dh-key-value", "auth-key-value"));
 
-        // Course 431 is the only (and therefore also most recent) session overall - no other
+        // Course 12 is the only (and therefore also most recent) session overall - no other
         // activity that would mark this course as "neglected despite other activity".
         var start = DateTime.Now.AddDays(-12);
         await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
         {
-            CourseId = 431,
+            CourseId = 12,
             CourseName = "EinzigeSession",
             CourseColor = "#6C5CE7",
             StartTime = start,
@@ -501,7 +501,7 @@ public class BackgroundTaskServicePerCourseInactivityNotDistinctFromGlobalTests 
             IsCompleted = true,
             TimerModeId = 1,
         });
-        // Course 432 was never started -> also not a case of "neglected".
+        // Course 13 was never started -> also not a case of "neglected".
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<StudyLifeDb>();
@@ -531,7 +531,7 @@ public class BackgroundTaskServicePerCourseInactivityToggleDisabledTests : IClas
         {
             s.PerCourseInactivityRemindersEnabled = false;
             s.InactivityThresholdDays = 5;
-            s.SelectedCourseIds = new List<int> { 441, 442 };
+            s.SelectedCourseIds = new List<int> { 14, 15 };
         });
         await _client.PostAsJsonAsync("/api/push/subscribe",
             new PushSubscribeRequest($"https://push.example.com/{Guid.NewGuid():N}", "p256dh-key-value", "auth-key-value"));
@@ -539,7 +539,7 @@ public class BackgroundTaskServicePerCourseInactivityToggleDisabledTests : IClas
         var recent = DateTime.Now.AddDays(-1);
         await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
         {
-            CourseId = 441,
+            CourseId = 14,
             CourseName = "Aktiv",
             CourseColor = "#6C5CE7",
             StartTime = recent,
@@ -550,7 +550,7 @@ public class BackgroundTaskServicePerCourseInactivityToggleDisabledTests : IClas
         var stale = DateTime.Now.AddDays(-12);
         await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
         {
-            CourseId = 442,
+            CourseId = 15,
             CourseName = "Vernachlaessigt",
             CourseColor = "#6C5CE7",
             StartTime = stale,
@@ -613,9 +613,9 @@ public class BackgroundTaskServiceSessionReminderTitleArmsTests : IClassFixture<
         await _client.PostAsJsonAsync("/api/push/subscribe",
             new PushSubscribeRequest($"https://push.example.com/{Guid.NewGuid():N}", "p256dh-key-value", "auth-key-value"));
 
-        var s60 = await CreateSessionAsync(501, DateTime.Now.AddMinutes(50)); // only the 60 threshold is due
-        var s30 = await CreateSessionAsync(502, DateTime.Now.AddMinutes(25)); // 30 is nearest, 60 marked silently
-        var s1 = await CreateSessionAsync(503, DateTime.Now.AddSeconds(40)); // 1 is nearest, 30+60 marked silently
+        var s60 = await CreateSessionAsync(16, DateTime.Now.AddMinutes(50)); // only the 60 threshold is due
+        var s30 = await CreateSessionAsync(17, DateTime.Now.AddMinutes(25)); // 30 is nearest, 60 marked silently
+        var s1 = await CreateSessionAsync(18, DateTime.Now.AddSeconds(40)); // 1 is nearest, 30+60 marked silently
 
         await _factory.WithDbAsync(db => _service.RunPushNotificationsAsync(db, () => db.PushSubscriptions.ToListAsync()));
 
@@ -658,9 +658,9 @@ public class BackgroundTaskServiceCourseGoalExpiredSubscriptionTests : IClassFix
             s.CourseGoalRemindersEnabled = true;
             s.CourseGoalReminderDays = "0";
         });
-        var goalResponse = await _client.PutAsJsonAsync("/api/coursegoals/701", new CourseGoalDto
+        var goalResponse = await _client.PutAsJsonAsync("/api/coursegoals/20", new CourseGoalDto
         {
-            CourseId = 701,
+            CourseId = 20,
             CourseName = "Expired Sub Goal",
             TargetDate = DateTime.Today,
             CompletedTopics = "",
@@ -672,7 +672,7 @@ public class BackgroundTaskServiceCourseGoalExpiredSubscriptionTests : IClassFix
         await _factory.WithDbAsync(db => service.RunCourseGoalReminderCheckAsync(db, () => db.PushSubscriptions.ToListAsync()));
 
         Assert.Single(await _factory.WithDbAsync(db =>
-            db.SentReminders.AsNoTracking().Where(r => r.Key == "coursegoal:701:reminder0d").ToListAsync()));
+            db.SentReminders.AsNoTracking().Where(r => r.Key == "coursegoal:20:reminder0d").ToListAsync()));
         Assert.Empty(await _factory.WithDbAsync(db => db.PushSubscriptions.AsNoTracking().ToListAsync()));
     }
 }
@@ -741,17 +741,17 @@ public class BackgroundTaskServicePerCourseInactivityExpiredSubscriptionTests : 
         {
             s.PerCourseInactivityRemindersEnabled = true;
             s.InactivityThresholdDays = 5;
-            s.SelectedCourseIds = new List<int> { 901, 902 };
+            s.SelectedCourseIds = new List<int> { 21, 22 };
         });
-        await PostSessionAsync(901, "Aktiv", DateTime.Now.AddDays(-1));
-        await PostSessionAsync(902, "Vernachlaessigt", DateTime.Now.AddDays(-12));
+        await PostSessionAsync(21, "Aktiv", DateTime.Now.AddDays(-1));
+        await PostSessionAsync(22, "Vernachlaessigt", DateTime.Now.AddDays(-12));
         await ApnsSubscriptionSeeder.SeedAsync(_factory, "tok-percourse-expired");
         var service = BackgroundTaskServiceTestFactory.Create(_factory, ApnsStubSender.Create(HttpStatusCode.Gone));
 
         await _factory.WithDbAsync(db => service.RunPerCourseInactivityCheckAsync(db, () => db.PushSubscriptions.ToListAsync()));
 
         Assert.Single(await _factory.WithDbAsync(db =>
-            db.SentReminders.AsNoTracking().Where(r => r.Key.StartsWith("courseinactivity:902:")).ToListAsync()));
+            db.SentReminders.AsNoTracking().Where(r => r.Key.StartsWith("courseinactivity:22:")).ToListAsync()));
         Assert.Empty(await _factory.WithDbAsync(db => db.PushSubscriptions.AsNoTracking().ToListAsync()));
     }
 }
@@ -818,7 +818,7 @@ public class BackgroundTaskServicePushNotificationResourceLinkTests : IClassFixt
         await _client.PostAsJsonAsync("/api/push/subscribe",
             new PushSubscribeRequest($"https://push.example.com/{Guid.NewGuid():N}", "p256dh-key-value", "auth-key-value"));
 
-        const int courseId = 601;
+        const int courseId = 19;
         await _client.PostAsJsonAsync("/api/courseresources", new CourseResourceDto
         {
             CourseId = courseId,

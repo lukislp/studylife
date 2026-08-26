@@ -112,11 +112,15 @@ public class MultiTenantQueryFilterTests : IClassFixture<CustomWebApplicationFac
     /// DB (see usage comment in CustomWebApplicationFactory).</summary>
     private async Task SeedViaApiAsync(string marker)
     {
+        // The marker lives in Topic, not CourseName (audit finding M2: CourseName is now
+        // server-derived from the resolved catalog course, see CourseResolver - a client-
+        // supplied value there is ignored, so it can no longer carry this test's marker).
         var session = await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
         {
             CourseId = 11,
-            CourseName = $"Filter Course {marker}",
+            CourseName = "Filter Course",
             CourseColor = "#6C5CE7",
+            Topic = marker,
             StartTime = new DateTime(2026, 3, 2, 9, 0, 0),
             EndTime = new DateTime(2026, 3, 2, 10, 0, 0),
             IsCompleted = true,
@@ -152,7 +156,7 @@ public class MultiTenantQueryFilterTests : IClassFixture<CustomWebApplicationFac
         {
             var user = await db.AuthUsers.SingleAsync();
             var session = await db.Sessions.IgnoreQueryFilters()
-                .SingleAsync(s => s.CourseName == "Filter Course stamp");
+                .SingleAsync(s => s.Topic == "stamp");
             Assert.Equal(user.Id, session.AuthUserId);
             var note = await db.Notes.IgnoreQueryFilters()
                 .SingleAsync(n => n.Title == "Filter Note stamp");

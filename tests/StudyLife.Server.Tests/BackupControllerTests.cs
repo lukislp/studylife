@@ -85,14 +85,17 @@ public class BackupControllerTests : IClassFixture<CustomWebApplicationFactory>
     [Fact]
     public async Task Export_IncludesCreatedSessionAndExcludesTransientData()
     {
-        var uniqueCourseName = $"BackupExportTestCourse-{Guid.NewGuid():N}";
+        // CourseName is irrelevant here - audit finding M2: POST /api/sessions now derives it
+        // server-side from the resolved catalog course, so the unique marker for finding this
+        // session again below lives in Topic instead.
+        var uniqueTopic = $"Export-Test-{Guid.NewGuid():N}";
         var session = new StudySessionDto
         {
-            CourseId = 999,
-            CourseName = uniqueCourseName,
+            CourseId = 1,
+            CourseName = "irrelevant",
             StartTime = DateTime.Today.AddDays(-1).AddHours(10),
             EndTime = DateTime.Today.AddDays(-1).AddHours(11),
-            Topic = "Export-Test",
+            Topic = uniqueTopic,
             IsCompleted = false,
             TimerModeId = 1,
         };
@@ -138,10 +141,9 @@ public class BackupControllerTests : IClassFixture<CustomWebApplicationFactory>
 
         // camelCase, not the former PascalCase bug (audit finding M4(a)) - see ApiContractTests.cs.
         var matchingSessions = sessionsProp.EnumerateArray()
-            .Where(s => s.GetProperty("courseName").GetString() == uniqueCourseName)
+            .Where(s => s.GetProperty("topic").GetString() == uniqueTopic)
             .ToList();
         Assert.Single(matchingSessions);
-        Assert.Equal("Export-Test", matchingSessions[0].GetProperty("topic").GetString());
     }
 }
 

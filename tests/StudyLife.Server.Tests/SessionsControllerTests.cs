@@ -59,12 +59,22 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
         return created!;
     }
 
+    /// <summary>The name/color a valid write actually persists for a built-in catalog course -
+    /// audit finding M2: SessionsController now derives CourseName/CourseColor server-side from
+    /// the resolved course instead of trusting the client-supplied DTO values.</summary>
+    private static CourseDto ExpectedCourse(int courseId) =>
+        CourseCatalog.AppliedAICourses.First(c => c.Id == courseId);
+
     // ---------- POST /api/sessions ----------
 
     [Fact]
-    public async Task Create_ValidSession_ReturnsSessionWithAssignedId()
+    public async Task Create_ValidSession_CatalogCourse_DerivesNameAndColor_IgnoresClientJunk()
     {
-        var dto = ValidSession(courseId: 11, courseName: "Lineare Algebra");
+        // CourseName/CourseColor are deliberately wrong/arbitrary here - the server must ignore
+        // them and derive the real values from the resolved catalog course (audit finding M2).
+        var dto = ValidSession(courseId: 11, courseName: "Client-Supplied-Junk-Name");
+        dto.CourseColor = "#000000";
+        var expected = ExpectedCourse(11);
 
         var response = await _client.PostAsJsonAsync("/api/sessions", dto);
 
@@ -72,9 +82,36 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
         var created = await response.Content.ReadFromJsonAsync<StudySessionDto>();
         Assert.NotNull(created);
         Assert.True(created!.Id > 0);
-        Assert.Equal("Lineare Algebra", created.CourseName);
+        Assert.Equal(expected.Name, created.CourseName);
+        Assert.Equal(expected.Color, created.CourseColor);
         Assert.Equal(dto.StartTime, created.StartTime);
         Assert.Equal(dto.EndTime, created.EndTime);
+    }
+
+    [Fact]
+    public async Task Create_ValidSession_CustomCourse_DerivesNameAndColor()
+    {
+        var (courseId, courseName) = await CustomCourseTestHelper.CreateAsync(_client);
+        var dto = ValidSession(courseId: courseId, courseName: "Client-Supplied-Junk-Name");
+
+        var response = await _client.PostAsJsonAsync("/api/sessions", dto);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var created = await response.Content.ReadFromJsonAsync<StudySessionDto>();
+        Assert.Equal(courseId, created!.CourseId);
+        Assert.Equal(courseName, created.CourseName);
+    }
+
+    [Fact]
+    public async Task Create_UnknownCourseId_ReturnsBadRequestWithStableMessage()
+    {
+        var dto = ValidSession(courseId: 987654);
+
+        var response = await _client.PostAsJsonAsync("/api/sessions", dto);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("987654", body);
     }
 
     [Fact]
@@ -129,7 +166,7 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
         // just hid sessions outside it rather than limiting what the client requested.
         var nearby = await CreateAsync(ValidSession(courseId: 21, start: DateTime.UtcNow.AddDays(5)));
         var farInPast = await CreateAsync(ValidSession(courseId: 22, start: DateTime.UtcNow.AddDays(-400)));
-        var farInFuture = await CreateAsync(ValidSession(courseId: 23, start: DateTime.UtcNow.AddDays(400)));
+        var farInFuture = await CreateAsync(ValidSession(courseId: 24, start: DateTime.UtcNow.AddDays(400)));
 
         var response = await _client.GetAsync("/api/sessions");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -150,7 +187,7 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
         var completedPast = await CreateAsync(ValidSession(
             courseId: 31, start: now.AddHours(-3), end: now.AddHours(-2), isCompleted: true));
         var endedButNotFlagged = await CreateAsync(ValidSession(
-            courseId: 32, start: now.AddHours(-2), end: now.AddHours(-1), isCompleted: false));
+            courseId: 33, start: now.AddHours(-2), end: now.AddHours(-1), isCompleted: false));
         var futureNotCompleted = await CreateAsync(ValidSession(
             courseId: 33, start: now.AddHours(2), end: now.AddHours(3), isCompleted: false));
 
@@ -185,7 +222,7 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
     public async Task GetHistory_DaysParameter_ExcludesSessionsOlderThanWindow()
     {
         var inWindow = await CreateAsync(ValidSession(
-            courseId: 51, start: DateTime.UtcNow.AddDays(-1), end: DateTime.UtcNow.AddDays(-1).AddHours(1)));
+            courseId: 52, start: DateTime.UtcNow.AddDays(-1), end: DateTime.UtcNow.AddDays(-1).AddHours(1)));
         var outOfWindow = await CreateAsync(ValidSession(
             courseId: 52, start: DateTime.UtcNow.AddDays(-10), end: DateTime.UtcNow.AddDays(-10).AddHours(1)));
 
@@ -201,10 +238,15 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
     // ---------- PUT /api/sessions/{id} ----------
 
     [Fact]
-    public async Task Update_ValidChange_PersistsAndReturnsUpdatedDto()
+    public async Task Update_ValidChange_CourseIdUnchanged_PersistsOtherFieldsButKeepsCourseNameFrozen()
     {
-        var created = await CreateAsync(ValidSession(courseId: 61, courseName: "Statistik"));
+        var created = await CreateAsync(ValidSession(courseId: 61));
+        var expected = ExpectedCourse(61);
+        // CourseName/CourseColor are deliberately different from what was stored at creation -
+        // audit finding M2's frozen-at-creation exemption: an UNCHANGED CourseId never
+        // re-derives or accepts a new name/color, so these must be ignored.
         var updated = ValidSession(courseId: 61, courseName: "Statistik II", isCompleted: true);
+        updated.CourseColor = "#000000";
         updated.Id = created.Id;
 
         var response = await _client.PutAsJsonAsync($"/api/sessions/{created.Id}", updated);
@@ -212,21 +254,107 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var dto = await response.Content.ReadFromJsonAsync<StudySessionDto>();
         Assert.NotNull(dto);
-        Assert.Equal("Statistik II", dto!.CourseName);
+        Assert.Equal(expected.Name, dto!.CourseName);
+        Assert.Equal(expected.Color, dto.CourseColor);
         Assert.True(dto.IsCompleted);
 
         // Confirm persistence via a second request (not just the PUT response).
         var historyResponse = await _client.GetAsync("/api/sessions/history?days=400&onlyCompleted=false");
         var history = await historyResponse.Content.ReadFromJsonAsync<List<StudySessionDto>>();
         var persisted = Assert.Single(history!, s => s.Id == created.Id);
-        Assert.Equal("Statistik II", persisted.CourseName);
+        Assert.Equal(expected.Name, persisted.CourseName);
         Assert.True(persisted.IsCompleted);
+    }
+
+    [Fact]
+    public async Task Update_CourseIdChangedToAnotherValidCourse_ReDerivesNameAndColor()
+    {
+        var created = await CreateAsync(ValidSession(courseId: 21));
+        var newExpected = ExpectedCourse(22);
+        var updated = ValidSession(courseId: 22, courseName: "Client-Supplied-Junk-Name");
+        updated.Id = created.Id;
+
+        var response = await _client.PutAsJsonAsync($"/api/sessions/{created.Id}", updated);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var dto = await response.Content.ReadFromJsonAsync<StudySessionDto>();
+        Assert.Equal(22, dto!.CourseId);
+        Assert.Equal(newExpected.Name, dto.CourseName);
+        Assert.Equal(newExpected.Color, dto.CourseColor);
+    }
+
+    [Fact]
+    public async Task Update_CourseIdUnchanged_OrphanedCustomCourse_StillSucceeds()
+    {
+        // Audit finding M2, critical exemption: editing/completing a session of a since-deleted
+        // custom course (e.g. via the focus timer) must keep working - only a CHANGED CourseId
+        // is validated. Simulates the orphan by inserting the session directly with a custom-
+        // range CourseId that was never seeded as a real CustomCourseEntity.
+        var orphanCourseId = StudyLife.Server.Services.StudyProgramCatalog.CustomCourseIdOffset + 555_555;
+        var created = await CreateOrphanSessionDirectlyAsync(orphanCourseId, "Deleted Custom Course");
+
+        var updated = ValidSession(courseId: orphanCourseId, courseName: "Irrelevant", isCompleted: true);
+        updated.Id = created.Id;
+
+        var response = await _client.PutAsJsonAsync($"/api/sessions/{created.Id}", updated);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var dto = await response.Content.ReadFromJsonAsync<StudySessionDto>();
+        Assert.Equal(orphanCourseId, dto!.CourseId);
+        // Frozen: the name stamped when the row was inserted, untouched by resolution failure.
+        Assert.Equal("Deleted Custom Course", dto.CourseName);
+        Assert.True(dto.IsCompleted);
+    }
+
+    [Fact]
+    public async Task Update_CourseIdChangedToUnknownCourse_ReturnsBadRequestWithStableMessage()
+    {
+        var created = await CreateAsync(ValidSession(courseId: 24));
+        var updated = ValidSession(courseId: 987654);
+        updated.Id = created.Id;
+
+        var response = await _client.PutAsJsonAsync($"/api/sessions/{created.Id}", updated);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("987654", body);
+    }
+
+    /// <summary>Inserts a session directly via EF with a custom-range CourseId that has no
+    /// matching CustomCourseEntity - simulates "the custom course this session pointed at was
+    /// later deleted", bypassing SessionsController.Create's own (now enforced) validation on
+    /// purpose, exactly like a real deletion would leave the row behind.</summary>
+    private async Task<StudySessionDto> CreateOrphanSessionDirectlyAsync(int orphanCourseId, string courseName)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<StudyLife.Server.Data.StudyLifeDb>();
+        var entity = new StudyLife.Server.Data.StudySessionEntity
+        {
+            CourseId = orphanCourseId,
+            CourseName = courseName,
+            CourseColor = "#6C5CE7",
+            StartTime = DateTime.UtcNow.AddDays(1),
+            EndTime = DateTime.UtcNow.AddDays(1).AddHours(1),
+            TimerModeId = 1,
+        };
+        db.Sessions.Add(entity);
+        await db.SaveChangesAsync();
+        return new StudySessionDto
+        {
+            Id = entity.Id,
+            CourseId = entity.CourseId,
+            CourseName = entity.CourseName,
+            CourseColor = entity.CourseColor,
+            StartTime = entity.StartTime,
+            EndTime = entity.EndTime,
+            TimerModeId = entity.TimerModeId,
+        };
     }
 
     [Fact]
     public async Task Update_NonExistentId_ReturnsNotFound()
     {
-        var dto = ValidSession(courseId: 71);
+        var dto = ValidSession(courseId: 1);
 
         var response = await _client.PutAsJsonAsync("/api/sessions/999999", dto);
 
@@ -236,8 +364,8 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
     [Fact]
     public async Task Update_InvalidDto_ReturnsBadRequest()
     {
-        var created = await CreateAsync(ValidSession(courseId: 81));
-        var invalid = ValidSession(courseId: 81, start: created.StartTime, end: created.StartTime);
+        var created = await CreateAsync(ValidSession(courseId: 3));
+        var invalid = ValidSession(courseId: 3, start: created.StartTime, end: created.StartTime);
 
         var response = await _client.PutAsJsonAsync($"/api/sessions/{created.Id}", invalid);
 
@@ -247,11 +375,11 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
     [Fact]
     public async Task Update_StartTimeChanged_ClearsStaleSentReminders()
     {
-        var created = await CreateAsync(ValidSession(courseId: 51, start: DateTime.UtcNow.AddDays(3)));
+        var created = await CreateAsync(ValidSession(courseId: 52, start: DateTime.UtcNow.AddDays(3)));
         await SeedSentReminderAsync($"{created.Id}:reminder60");
         await SeedSentReminderAsync($"{created.Id}:reminder30");
 
-        var moved = ValidSession(courseId: 51, start: created.StartTime.AddHours(2));
+        var moved = ValidSession(courseId: 52, start: created.StartTime.AddHours(2));
         moved.Id = created.Id;
         var response = await _client.PutAsJsonAsync($"/api/sessions/{created.Id}", moved);
 
@@ -293,7 +421,7 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
     [Fact]
     public async Task Delete_ExistingSession_RemovesItFromSubsequentGet()
     {
-        var created = await CreateAsync(ValidSession(courseId: 91, start: DateTime.UtcNow.AddDays(2)));
+        var created = await CreateAsync(ValidSession(courseId: 4, start: DateTime.UtcNow.AddDays(2)));
 
         var getBefore = await _client.GetAsync("/api/sessions");
         var before = await getBefore.Content.ReadFromJsonAsync<List<StudySessionDto>>();
@@ -324,9 +452,9 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
     public async Task DeleteSeries_WithoutFromDate_RemovesAllOccurrences()
     {
         var groupId = Guid.NewGuid().ToString();
-        var occ1 = await CreateAsync(ValidSession(courseId: 101, start: DateTime.UtcNow.AddDays(2), recurrenceGroupId: groupId));
-        var occ2 = await CreateAsync(ValidSession(courseId: 101, start: DateTime.UtcNow.AddDays(9), recurrenceGroupId: groupId));
-        var occ3 = await CreateAsync(ValidSession(courseId: 101, start: DateTime.UtcNow.AddDays(16), recurrenceGroupId: groupId));
+        var occ1 = await CreateAsync(ValidSession(courseId: 5, start: DateTime.UtcNow.AddDays(2), recurrenceGroupId: groupId));
+        var occ2 = await CreateAsync(ValidSession(courseId: 5, start: DateTime.UtcNow.AddDays(9), recurrenceGroupId: groupId));
+        var occ3 = await CreateAsync(ValidSession(courseId: 5, start: DateTime.UtcNow.AddDays(16), recurrenceGroupId: groupId));
 
         var deleteResponse = await _client.DeleteAsync($"/api/sessions/series/{groupId}");
         Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
@@ -346,9 +474,9 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
         var day9 = DateTime.UtcNow.Date.AddDays(9);
         var day16 = DateTime.UtcNow.Date.AddDays(16);
 
-        var before = await CreateAsync(ValidSession(courseId: 111, start: day2.AddHours(10), recurrenceGroupId: groupId));
-        var onBoundary = await CreateAsync(ValidSession(courseId: 111, start: day9.AddHours(10), recurrenceGroupId: groupId));
-        var after = await CreateAsync(ValidSession(courseId: 111, start: day16.AddHours(10), recurrenceGroupId: groupId));
+        var before = await CreateAsync(ValidSession(courseId: 6, start: day2.AddHours(10), recurrenceGroupId: groupId));
+        var onBoundary = await CreateAsync(ValidSession(courseId: 6, start: day9.AddHours(10), recurrenceGroupId: groupId));
+        var after = await CreateAsync(ValidSession(courseId: 6, start: day16.AddHours(10), recurrenceGroupId: groupId));
 
         var fromDateParam = day9.ToString("yyyy-MM-dd");
         var deleteResponse = await _client.DeleteAsync($"/api/sessions/series/{groupId}?fromDate={fromDateParam}");
@@ -380,7 +508,10 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
     [Fact]
     public async Task GetIcs_WithValidCalendarToken_ReturnsCalendarContainingSessionWithinWindow()
     {
-        var created = await CreateAsync(ValidSession(courseId: 121, courseName: "ICS-Kurs", start: DateTime.UtcNow.AddDays(3)));
+        // CourseName is deliberately arbitrary - audit finding M2: the server derives it from
+        // the resolved catalog course (id 7), so the SUMMARY assertion below keys off that name.
+        var created = await CreateAsync(ValidSession(courseId: 7, courseName: "ICS-Kurs", start: DateTime.UtcNow.AddDays(3)));
+        var expectedName = ExpectedCourse(7).Name;
 
         var tokenResponse = await _client.GetAsync("/api/system/calendar-token");
         Assert.Equal(HttpStatusCode.OK, tokenResponse.StatusCode);
@@ -393,7 +524,7 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
         var body = await response.Content.ReadAsStringAsync();
         Assert.Contains("BEGIN:VCALENDAR", body);
         Assert.Contains($"UID:studylife-session-{created.Id}@studylife", body);
-        Assert.Contains("SUMMARY:ICS-Kurs", body);
+        Assert.Contains($"SUMMARY:{expectedName}", body);
     }
 
     [Fact]
@@ -520,6 +651,9 @@ public class SessionsControllerCalendarMultiUserTests : IClassFixture<CustomWebA
         using var secondKey = new FakePasskey();
         var annaToken = await PasskeyHttp.RegisterAsync(_factory, _client, "Anna", secondKey);
 
+        // CourseName is deliberately arbitrary/wrong here - audit finding M2: the server now
+        // derives it from the resolved catalog course (ids 1 and 2 chosen so Alex's and Anna's
+        // sessions still land under two DIFFERENT, distinguishable derived names).
         using (var alexCreate = new HttpRequestMessage(HttpMethod.Post, "/api/sessions"))
         {
             alexCreate.Headers.Add("X-Session-Token", alexToken);
@@ -558,8 +692,10 @@ public class SessionsControllerCalendarMultiUserTests : IClassFixture<CustomWebA
         Assert.Equal(HttpStatusCode.OK, icsResponse.StatusCode);
         var body = await icsResponse.Content.ReadAsStringAsync();
 
-        Assert.Contains("SUMMARY:Anna-Kurs", body);
-        Assert.DoesNotContain("SUMMARY:Alex-Kurs", body);
+        var alexCourseName = CourseCatalog.AppliedAICourses.First(c => c.Id == 1).Name;
+        var annaCourseName = CourseCatalog.AppliedAICourses.First(c => c.Id == 2).Name;
+        Assert.Contains($"SUMMARY:{annaCourseName}", body);
+        Assert.DoesNotContain($"SUMMARY:{alexCourseName}", body);
     }
 }
 
@@ -589,6 +725,8 @@ public class SessionsControllerCacheIsolationTests : IClassFixture<CustomWebAppl
         using var secondKey = new FakePasskey();
         var annaToken = await PasskeyHttp.RegisterAsync(_factory, _client, "Anna", secondKey);
 
+        // CourseName is deliberately arbitrary here - audit finding M2: the server derives it
+        // from the resolved catalog course (id 1), so the assertions below key off THAT name.
         using (var alexCreate = new HttpRequestMessage(HttpMethod.Post, "/api/sessions"))
         {
             alexCreate.Headers.Add("X-Session-Token", alexToken);
@@ -602,6 +740,7 @@ public class SessionsControllerCacheIsolationTests : IClassFixture<CustomWebAppl
             });
             Assert.Equal(HttpStatusCode.OK, (await _client.SendAsync(alexCreate)).StatusCode);
         }
+        var alexCourseName = CourseCatalog.AppliedAICourses.First(c => c.Id == 1).Name;
 
         // Populates the cache under Alex' version+user key.
         using (var alexGet = new HttpRequestMessage(HttpMethod.Get, "/api/sessions"))
@@ -609,7 +748,7 @@ public class SessionsControllerCacheIsolationTests : IClassFixture<CustomWebAppl
             alexGet.Headers.Add("X-Session-Token", alexToken);
             var alexResponse = await _client.SendAsync(alexGet);
             var alexSessions = await alexResponse.Content.ReadFromJsonAsync<List<StudySessionDto>>();
-            Assert.Contains(alexSessions!, s => s.CourseName == "Alex-Cache-Kurs");
+            Assert.Contains(alexSessions!, s => s.CourseName == alexCourseName);
         }
 
         // Without an intervening write (same cache version) - before the fix, this would have
@@ -619,7 +758,7 @@ public class SessionsControllerCacheIsolationTests : IClassFixture<CustomWebAppl
         var annaResponse = await _client.SendAsync(annaGet);
         Assert.Equal(HttpStatusCode.OK, annaResponse.StatusCode);
         var annaSessions = await annaResponse.Content.ReadFromJsonAsync<List<StudySessionDto>>();
-        Assert.DoesNotContain(annaSessions!, s => s.CourseName == "Alex-Cache-Kurs");
+        Assert.DoesNotContain(annaSessions!, s => s.CourseName == alexCourseName);
     }
 }
 
@@ -723,8 +862,8 @@ public class SessionsControllerIcsWindowBoundaryTests : IClassFixture<CustomWebA
             return (await response.Content.ReadFromJsonAsync<StudySessionDto>())!.Id;
         }
 
-        var justInsideId = await CreateAsync(71, "Ics-Inside", now.AddHours(-167)); // 1h inside the 7-day edge
-        var justOutsideId = await CreateAsync(72, "Ics-Outside", now.AddHours(-169)); // 1h beyond the 7-day edge
+        var justInsideId = await CreateAsync(1, "Ics-Inside", now.AddHours(-167)); // 1h inside the 7-day edge
+        var justOutsideId = await CreateAsync(2, "Ics-Outside", now.AddHours(-169)); // 1h beyond the 7-day edge
 
         var tokenDto = await _client.GetFromJsonAsync<CalendarTokenResponseDto>("/api/system/calendar-token");
         var response = await _client.GetAsync($"/api/sessions/ics?calendarToken={tokenDto!.CalendarToken}");

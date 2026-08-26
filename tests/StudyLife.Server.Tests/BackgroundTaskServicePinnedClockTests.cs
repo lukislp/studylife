@@ -98,11 +98,11 @@ public class BackgroundTaskServiceWeeklyReportPinnedRichDataTests : IClassFixtur
 
         // Week of the pinned "today" (2027-08-01, Sunday) is Mon 2027-07-26 .. Sun 2027-08-01.
         var weekStart = new DateTime(2027, 7, 26);
-        await SeedSessionAsync(9001, "TopCourse", weekStart.AddDays(1).AddHours(9), 2); // Tue Jul 27, 2h
-        await SeedSessionAsync(9001, "TopCourse", weekStart.AddDays(3).AddHours(9), 1); // Thu Jul 29, 1h -> 3h total
-        await SeedSessionAsync(9002, "OtherCourse", weekStart.AddDays(4).AddHours(9), 1); // Fri Jul 30, 1h
+        await SeedSessionAsync(1, "TopCourse", weekStart.AddDays(1).AddHours(9), 2); // Tue Jul 27, 2h
+        await SeedSessionAsync(1, "TopCourse", weekStart.AddDays(3).AddHours(9), 1); // Thu Jul 29, 1h -> 3h total
+        await SeedSessionAsync(2, "OtherCourse", weekStart.AddDays(4).AddHours(9), 1); // Fri Jul 30, 1h
         // Last week (Mon 2027-07-19 .. Sun 2027-07-25): non-zero so the delta branch computes a real value.
-        await SeedSessionAsync(9001, "TopCourse", weekStart.AddDays(-6).AddHours(9), 2); // Tue Jul 20, 2h
+        await SeedSessionAsync(1, "TopCourse", weekStart.AddDays(-6).AddHours(9), 2); // Tue Jul 20, 2h
 
         var service = PinnedClock.CreateService(_factory);
         using var scope = _factory.Services.CreateScope();
@@ -396,7 +396,7 @@ public class BackgroundTaskServiceComebackNudgePinnedClockTests : IClassFixture<
         var dayBeforeYesterday = PinnedClock.LocalDateTime.Date.AddDays(-2);
         await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
         {
-            CourseId = 9101,
+            CourseId = 1,
             CourseName = "ComebackCourse",
             CourseColor = "#6C5CE7",
             StartTime = dayBeforeYesterday.AddHours(10),
@@ -450,7 +450,7 @@ public class BackgroundTaskServiceStreakRiskPinnedClockTests : IClassFixture<Cus
             var start = PinnedClock.LocalDateTime.Date.AddDays(-daysAgo).AddHours(10);
             await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
             {
-                CourseId = 9201,
+                CourseId = 1,
                 CourseName = "StreakCourse",
                 CourseColor = "#6C5CE7",
                 StartTime = start,

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
+using StudyLife.Server.Services;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Controllers;
@@ -10,8 +11,13 @@ namespace StudyLife.Server.Controllers;
 public class CourseGoalsController : ControllerBase
 {
     private readonly StudyLifeDb _db;
+    private readonly ICourseResolver _courseResolver;
 
-    public CourseGoalsController(StudyLifeDb db) => _db = db;
+    public CourseGoalsController(StudyLifeDb db, ICourseResolver courseResolver)
+    {
+        _db = db;
+        _courseResolver = courseResolver;
+    }
 
     [HttpGet]
     public async Task<IEnumerable<CourseGoalDto>> GetAll() =>
@@ -26,10 +32,19 @@ public class CourseGoalsController : ControllerBase
         var entity = await _db.CourseGoals.FirstOrDefaultAsync(g => g.CourseId == courseId);
         if (entity == null)
         {
-            entity = new CourseGoalEntity { CourseId = courseId };
+            // Audit finding M2: a NEW goal binds a fresh CourseId, so it must resolve against
+            // the user's full course universe (see CourseResolver) - CourseName is then derived
+            // from the resolved course, not taken from the client. An UPDATE of an EXISTING
+            // goal, below, never re-validates or re-derives: the route parameter IS the goal's
+            // CourseId (there is no way to change it via this endpoint), so frozen-at-creation
+            // semantics apply automatically - editing a goal of a since-deleted custom course
+            // must keep working, and a later catalog rename must not rewrite it.
+            var course = await _courseResolver.ResolveAsync(courseId);
+            if (course == null) return BadRequest(CourseValidationMessages.UnknownCourseId(courseId));
+
+            entity = new CourseGoalEntity { CourseId = courseId, CourseName = course.Name };
             _db.CourseGoals.Add(entity);
         }
-        entity.CourseName = dto.CourseName;
         entity.TargetDate = dto.TargetDate;
         entity.CompletionNote = dto.CompletionNote;
         entity.CompletedAt = dto.CompletedAt;

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
+using StudyLife.Server.Services;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Controllers;
@@ -15,8 +16,13 @@ namespace StudyLife.Server.Controllers;
 public class CourseResourcesController : ControllerBase
 {
     private readonly StudyLifeDb _db;
+    private readonly ICourseResolver _courseResolver;
 
-    public CourseResourcesController(StudyLifeDb db) => _db = db;
+    public CourseResourcesController(StudyLifeDb db, ICourseResolver courseResolver)
+    {
+        _db = db;
+        _courseResolver = courseResolver;
+    }
 
     [HttpGet]
     public async Task<IEnumerable<CourseResourceDto>> GetByCourse([FromQuery] int courseId) =>
@@ -31,6 +37,13 @@ public class CourseResourcesController : ControllerBase
     {
         var error = Validate(dto);
         if (error != null) return BadRequest(error);
+
+        // Audit finding M2: unlike Sessions/CourseGoals/SessionTemplates, CourseResourceEntity
+        // has no CourseName/CourseColor of its own to derive - just the existence check against
+        // the user's full course universe (see CourseResolver). No PUT/update exists here (see
+        // the class doc comment), so there is no "unchanged CourseId" exemption to apply.
+        if (await _courseResolver.ResolveAsync(dto.CourseId) == null)
+            return BadRequest(CourseValidationMessages.UnknownCourseId(dto.CourseId));
 
         var entity = new CourseResourceEntity
         {
