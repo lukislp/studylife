@@ -16,8 +16,20 @@
          docs/api/openapi.json - the path three consumer repos pin their client generation
          against. See the "openapi-contract" CI job (.github/workflows/ci-cd.yml) for how CI
          verifies the committed file stays in sync with a fresh build. -->
+    <!-- RID guard: GetDocument loads the built assembly into the HOST process to render the
+         document, which blows up with FileNotFoundException on RID-specific output built for a
+         foreign architecture (broke the release pipeline's `dotnet publish -r linux-arm64` leg
+         on the x64 runner). Generation only happens on plain RID-less builds - which is exactly
+         where the committed spec is refreshed (local `dotnet build`, the openapi-contract CI
+         job); RID publishes ship the app, never the contract. -->
     <OpenApiGenerateDocuments>true</OpenApiGenerateDocuments>
     <OpenApiGenerateDocumentsOnBuild>true</OpenApiGenerateDocumentsOnBuild>
+    <!-- Explicit false, not merely "don't set true": referencing ApiDescription.Server enables
+         generation BY DEFAULT, so an unset property still generates (observed live - the first
+         version of this guard only conditioned the true assignment and the arm64 publish leg
+         kept crashing). -->
+    <OpenApiGenerateDocuments Condition="'$(RuntimeIdentifier)' != ''">false</OpenApiGenerateDocuments>
+    <OpenApiGenerateDocumentsOnBuild Condition="'$(RuntimeIdentifier)' != ''">false</OpenApiGenerateDocumentsOnBuild>
     <!-- $(IntermediateOutputPath) (obj\$(Configuration)\$(TargetFramework)\) isn't resolved yet
          this early in project evaluation and would silently fall back to an empty prefix,
          landing the staging directory at the project ROOT instead of under obj\ (observed live -
