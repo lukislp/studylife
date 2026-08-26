@@ -1,10 +1,14 @@
 # Horizontal Scalability (Learning Branch `feature/scalable-architecture`)
 
-In addition to the existing single-instance setup (SQLite, one process, Raspberry Pi via
-`docker-compose.yml` - **unchanged, remains the real production setup**), this branch makes it
-possible to run StudyLife as multiple simultaneously running instances distributed behind a load
-balancer. This is a pure learning project for scalable architecture - not a replacement for the
-Pi installation.
+In addition to the existing single-instance setup (SQLite, one process - the default when no
+`Database:Provider`/`Cache:Provider`/`Worker:Enabled` overrides are set, see the table below),
+this branch makes it possible to run StudyLife as multiple simultaneously running instances
+distributed behind a load balancer. **Audit finding O5:** this branch's own K3s/Flux setup has
+since BECOME the real production deployment (see "GitLab Integration: Kubernetes Agent + Flux
+Image Automation" below for the migration off the old Watchtower-polled single container) - the
+single-instance/SQLite CODE PATH itself is still fully supported (single-container `docker run`,
+`dotnet run` for local dev), just no longer via a dedicated root `Dockerfile`/`docker-compose.yml`
+pair, which were dead weight superseded by the k8s path documented here and removed.
 
 ## The Core Idea: Configuration Instead of Two Codebases
 
@@ -59,25 +63,33 @@ standard ASP.NET Core convention).
   `501 Not Implemented` in Postgres mode (see scope cuts below); `GET /api/backup/export` (JSON)
   remains available unchanged across providers.
 
-## Two Dockerfiles - Which One for What
+## One Dockerfile: `src/StudyLife.Server/Dockerfile`
 
-There are two completely separate Dockerfiles in this repo, and that's not an oversight:
-
-- **`src/StudyLife.Server/Dockerfile`** - the real production path, used by `.gitlab-ci.yml`'s
-  `docker:server` job. Expects finished `publish/{amd64,arm64}` folders (separate
-  `publish:server` CI job), only copies - no `dotnet restore`/`publish` of its own in the image
-  build.
-- **Root `Dockerfile`** - a standalone multi-stage Dockerfile used ONLY for the local Docker
-  Desktop test path below (runs `dotnet restore`/`publish` itself inside the container, a single
-  command with no prior publish step - convenient for fast local iteration). Not referenced by
-  the real CI pipeline.
+**Audit finding O5:** there used to be a second, standalone multi-stage Dockerfile at the repo
+root (ran `dotnet restore`/`publish` itself inside the container, no prior publish step needed -
+convenient for fast local iteration) - it was never updated after `StudyLife.Tts`/`StudyLife.Stt`
+were split out as their own projects, so its `COPY` step (only `Client`/`Server`/`Shared`
+`.csproj` files, before `dotnet restore`) silently stopped matching `StudyLife.Server.csproj`'s
+actual `ProjectReference`s and `docker build` had been provably broken - `dotnet restore` fails
+outright, since `Tts`/`Stt` project files were never copied in. Removed entirely, along with the
+matching root `docker-compose.yml`/`setup.sh` single-container-via-Watchtower path it served
+(superseded by the k8s path this document covers - see "GitLab Integration" below for the
+Watchtower-to-Flux migration on the real cluster).
+`src/StudyLife.Server/Dockerfile` - the real production path, used by `docker-server` in
+`.github/workflows/ci-cd.yml` - is now the ONLY Dockerfile in the repo, for local testing too (see
+below). It expects finished `publish/{amd64,arm64}` folders (a separate `dotnet publish` step,
+matching CI's own `publish-server` job) and only copies them in - no `dotnet restore`/`publish` of
+its own in the image build.
 
 ## Testing Locally: docker-compose.scale.yml
 
 ```bash
-# 1. Build the image (root Dockerfile, see above - NOT the CI Dockerfile, which expects a
-#    separate publish step).
-docker build -t studylife-server:scale-local .
+# 1. Publish, then build the image (src/StudyLife.Server/Dockerfile, see above - the same one CI
+#    uses; it expects a prior publish step, hence the separate command below rather than a plain
+#    "docker build .").
+dotnet publish src/StudyLife.Server/StudyLife.Server.csproj -c Release --runtime linux-x64 \
+  --no-self-contained -o publish/amd64
+docker build -f src/StudyLife.Server/Dockerfile -t studylife-server:scale-local .
 
 # 2. Start it, scale to 5 server replicas
 docker compose -f docker-compose.scale.yml up -d --scale server=5
@@ -111,6 +123,11 @@ docker compose -f docker-compose.scale.yml down -v
    # this same command against prod can never clobber the prod SealedSecret-managed secret of
    # the same name/namespace. See k8s/dev/README.md.
    kubectl apply -f k8s/dev/
+   # Audit finding O4: k8s/04-web.yaml/05-worker.yaml commit imagePullPolicy: Always (needed for
+   # the real registry pull in prod) - this cluster needs Never for the locally-imported image
+   # from step 4, so re-apply the two patched back, see "Pitfall" below.
+   sed 's/imagePullPolicy: Always/imagePullPolicy: Never/' k8s/04-web.yaml | kubectl apply -f -
+   sed 's/imagePullPolicy: Always/imagePullPolicy: Never/' k8s/05-worker.yaml | kubectl apply -f -
    ```
 6. `kubectl -n studylife-scale get pods` - wait until everything is `Running` (the Postgres
    cluster takes the longest, `kubectl -n studylife-scale get cluster studylife-pg` shows
@@ -193,14 +210,29 @@ docker save studylife-server:scale-local | \
 kubectl delete pod node-debugger-desktop-control-plane-xxxxx
 ```
 
-Once that's done, `image: studylife-server:<tag>` + `imagePullPolicy: Never` in the deployments
-works normally (`k8s/04-web.yaml`/`k8s/05-worker.yaml`) - the image now lives directly in
-containerd, no pull needed. This import step must be repeated after every `docker build` with
-changed code (no automatic reload). Since `imagePullPolicy: Never` + an unchanged tag is NOT
-recognized by Kubernetes as a change (no automatic pod restart), increment the tag on every
-rebuild (`scale-v2`, `scale-v3`, ...) and keep it consistent across the deployment YAMLs as well
-as the `docker save`/`ctr import` step - otherwise pods keep running unnoticed with the old
-image.
+Once that's done, `image: studylife-server:<tag>` + `imagePullPolicy: Never` means the image lives
+directly in containerd, no pull needed. **Audit finding O4:** `k8s/04-web.yaml`/`k8s/05-worker.yaml`
+now commit `imagePullPolicy: Always` directly (a direct `kubectl apply` during a prod incident must
+never silently fall back to `Never`, see the comment on `k8s/04-web.yaml`) - the exact opposite of
+what this "kind" cluster needs for a locally-imported image. Patch it back to `Never` for THIS
+cluster only (never committed) when applying those two files, instead of picking them up via the
+plain bulk `kubectl apply -f k8s/` in step 5 below:
+
+```bash
+sed 's/imagePullPolicy: Always/imagePullPolicy: Never/' k8s/04-web.yaml | kubectl apply -f -
+sed 's/imagePullPolicy: Always/imagePullPolicy: Never/' k8s/05-worker.yaml | kubectl apply -f -
+```
+
+Run this right after the bulk `kubectl apply -f k8s/` (step 5) - that step still applies the
+unpatched, `Always` versions of these same two files first (harmless: at worst a transient
+`ImagePullBackOff` until the patched re-apply above lands seconds later, since Kubernetes
+converges to whichever version was applied most recently).
+
+This import step must be repeated after every `docker build` with changed code (no automatic
+reload). Since `imagePullPolicy: Never` + an unchanged tag is NOT recognized by Kubernetes as a
+change (no automatic pod restart), increment the tag on every rebuild (`scale-v2`, `scale-v3`,
+...) and keep it consistent across the deployment YAMLs as well as the `docker save`/`ctr import`
+step - otherwise pods keep running unnoticed with the old image.
 
 ## Bugs Found Live (all fixed, with regression tests)
 
@@ -1655,15 +1687,17 @@ resource limits were reduced by hand to the ~2-3× request ratio usual here (Flu
   referenced there via `kustomization.yaml`.
 - `deploy/kustomization.yaml` - references `../../04-web.yaml`/`../../05-worker.yaml` via a
   relative path (the standard Flux base/overlay pattern, see fluxcd.io/flux/guides/repository-
-  structure) and patches `imagePullPolicy` on both deployments to a fixed `Always` - the
-  git-versioned original files permanently keep `Never` (only `bootstrap-cluster.ps1` writes
-  `Always` in memory before applying, never back into Git), so a direct apply without this patch
-  would break the prod pull. Cannot be tested directly locally with plain `kubectl kustomize`
+  structure). **Audit finding O4:** used to also patch `imagePullPolicy` on both deployments to a
+  fixed `Always` (the git-versioned original files permanently kept `Never`, only
+  `bootstrap-cluster.ps1` wrote `Always` in memory before applying, never back into Git - so a
+  direct apply without this patch would break the prod pull). `k8s/04-web.yaml`/
+  `k8s/05-worker.yaml` now commit `Always` directly instead, so the patch is gone - this file is
+  now a plain resource list. Cannot be tested directly locally with plain `kubectl kustomize`
   (its default safety restriction forbids `../` references outside the target directory) -
-  workaroundable with `kubectl kustomize --load-restrictor LoadRestrictionsNone k8s/flux/deploy/`,
-  needed only for local verification. Flux's `kustomize-controller` itself treats the entire Git
-  checkout as the root, so `../../04-web.yaml` stays within the repo and is allowed there without
-  restriction.
+  workaroundable with `kubectl kustomize --load-restrictor LoadRestrictionsNone k8s/flux/deploy/`
+  (the exact command `test-k8s-manifests` runs in CI, see `.github/workflows/ci-cd.yml`). Flux's
+  `kustomize-controller` itself treats the entire Git checkout as the root, so `../../04-web.yaml`
+  stays within the repo and is allowed there without restriction.
 - `06-reconciler-rbac.yaml` - least-privilege `ClusterRole`/`ClusterRoleBinding` for
   `kustomize-controller`, replacing `00-install.yaml`'s stock `cluster-reconciler-flux-system`
   binding to `cluster-admin`. Scoped to exactly the apiGroups/kinds that `deploy/kustomization.yaml`
@@ -1717,8 +1751,11 @@ next reconciliation immediately instead of waiting for the full `interval`.
 structurally correct, controllers process them and, as expected, only fail on the (deliberately
 wrong) authentication - no structural error. The deploy overlay build itself was additionally
 checked in isolation with `kubectl kustomize --load-restrictor LoadRestrictionsNone
-k8s/flux/deploy/`: `imagePullPolicy: Always` appears correctly in the result, all other fields
-carried over unchanged.
+k8s/flux/deploy/`: `imagePullPolicy: Always` appeared correctly in the result at the time (via the
+patch that existed back then, see the `deploy/kustomization.yaml` bullet above), all other fields
+carried over unchanged. (Audit finding O4 later removed that patch in favor of committing `Always`
+directly in `k8s/04-web.yaml`/`05-worker.yaml` - the same `kubectl kustomize` output is now
+checked continuously by `test-k8s-manifests` in CI instead of only this one-off local check.)
 
 **Verified live on the Pi cluster** (not just locally): GitRepository, ImageRepository,
 ImagePolicy (correctly resolved `1.13.3` as the latest tag), and ImageUpdateAutomation ran

@@ -343,11 +343,38 @@ if (workerEnabled)
 
 var app = builder.Build();
 
-// Auto-migrate on startup
-using (var scope = app.Services.CreateScope())
+// Skip every startup side effect below (migration, VAPID key generation, demo reseed, setup-
+// secret issuance) when EF Core's design-time tooling builds this same WebApplication just to
+// resolve the DbContext model - `dotnet ef migrations has-pending-model-changes` (the CI job
+// guarding audit finding O2b, see .github/workflows/ci-cd.yml) does exactly that for BOTH
+// StudyLifeDb and StudyLifeDbPostgres. EF Core's HostFactoryResolver only intercepts at
+// Run()/RunAsync() - every top-level statement between Build() and Run() (this whole block)
+// would otherwise execute for real, including a live Database.Migrate() against the Postgres
+// leg's deliberately fake/unreachable Database:ConnectionString. EF.IsDesignTime is set by the
+// tooling before it invokes this file, purely for this purpose.
+if (!EF.IsDesignTime)
 {
+    // Audit finding O2: migration OWNERSHIP. Every pod used to call Migrate() unconditionally on
+    // startup - harmless with a single replica, but wrong once the worker runs as its own
+    // Deployment (k8s/05-worker.yaml) alongside web (k8s/04-web.yaml): concurrent Migrate() calls
+    // race each other on every rolling restart, and a worker should never own schema changes in
+    // the first place. Database:Migrate (default true) is the switch - only the k8s worker
+    // Deployment sets it to "false"; every other flow (single-container default,
+    // docker-compose.scale.yml, the dev-cluster kind setup, and the k8s WEB Deployment itself)
+    // keeps calling Migrate() exactly as before, unchanged. A non-migrating process instead waits
+    // below until the migrating one has caught the schema up (WaitForPendingMigrationsAsync).
+    var shouldMigrate = builder.Configuration.GetValue("Database:Migrate", true);
+
+    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<StudyLifeDb>();
-    db.Database.Migrate();
+    if (shouldMigrate)
+    {
+        db.Database.Migrate();
+    }
+    else
+    {
+        await WaitForPendingMigrationsAsync(db);
+    }
     if (!isPostgres)
     {
         db.Database.ExecuteSqlRaw("PRAGMA journal_mode=WAL;");
@@ -689,6 +716,42 @@ app.MapFallback("api/{**rest}", (HttpResponse response) =>
 app.MapFallbackToFile("index.html").AllowAnonymous();
 
 app.Run();
+
+// Audit finding O2: a non-migrating process (the k8s worker, Database:Migrate=false) never calls
+// Migrate() itself - it instead polls GetPendingMigrationsAsync() until the migrating process
+// (web) has caught the schema up. Polling instead of blocking on EF Core's own migration lock:
+// the worker stays a pure spectator, so a stuck/failed web migration shows up here as a clear,
+// actionable timeout on the worker's own logs/exit code instead of an opaque hang shared with
+// whatever internal lock EF Core happens to use for the provider in play.
+static async Task WaitForPendingMigrationsAsync(StudyLifeDb db)
+{
+    var deadline = DateTime.UtcNow.AddMinutes(5);
+    var attempt = 0;
+    while (true)
+    {
+        attempt++;
+        var pending = new List<string>(await db.Database.GetPendingMigrationsAsync());
+        if (pending.Count == 0)
+        {
+            Console.WriteLine("[migrate] No pending migrations - schema already up to date, proceeding.");
+            return;
+        }
+        if (DateTime.UtcNow >= deadline)
+        {
+            throw new InvalidOperationException(
+                "[migrate] Timed out after 5 minutes waiting for pending migrations to be applied by "
+                + $"the web role (still pending: {string.Join(", ", pending)}). This process "
+                + "(Database:Migrate=false, see k8s/05-worker.yaml) never applies schema changes itself - "
+                + "either the web Deployment (k8s/04-web.yaml) hasn't started/migrated yet, or its "
+                + "migration is stuck/failed. Check 'kubectl -n studylife-scale logs deploy/studylife-web' "
+                + "before restarting this pod.");
+        }
+        Console.WriteLine(
+            $"[migrate] Waiting for {pending.Count} pending migration(s) to be applied by the web role "
+            + $"(attempt {attempt}): {string.Join(", ", pending)}");
+        await Task.Delay(TimeSpan.FromSeconds(5));
+    }
+}
 
 // Top-level statements only create an "internal" Program class - this empty partial declaration
 // makes it public, so StudyLife.Server.Tests can reference it as the WebApplicationFactory<Program>

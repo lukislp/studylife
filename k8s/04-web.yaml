@@ -43,12 +43,19 @@ spec:
 ---
 # Stateless web instances - Worker:Enabled=false (the 30s reminder/report tick runs ONLY in the
 # separate worker deployment, see 05-worker.yaml, otherwise multiple replicas would produce
-# duplicate push notifications). imagePullPolicy: Never + image loaded locally into the node's
-# containerd via "ctr images import": Docker Desktop's "kind" Kubernetes has an image store
-# separate from the Docker daemon, so a locally built image is NOT automatically known to the
-# cluster AND the built-in registry mirror proxy blocks (500) pulls from a local ad-hoc registry
-# under host.docker.internal - the import detour via a node debug pod is the reliable approach.
-# Exact procedure in docs/SCALING.md.
+# duplicate push notifications).
+#
+# Audit finding O4: imagePullPolicy: Always is committed here directly (used to be "Never" in
+# Git, with only k8s/flux/deploy/kustomization.yaml patching it to "Always" for the actual prod
+# apply path) - a human `kubectl apply -f k8s/04-web.yaml` during an incident, bypassing Flux,
+# silently fell back to "Never" and broke the pull. For the dev-cluster/"kind" local test flow
+# (docs/SCALING.md, "Testing on Kubernetes"), which still needs "Never" (the image is loaded
+# directly into the node's containerd via "ctr images import" - Docker Desktop's "kind" cluster
+# has an image store separate from the Docker daemon, so a locally built image isn't otherwise
+# known to it, and the built-in registry mirror proxy blocks (500) pulls from a local ad-hoc
+# registry under host.docker.internal), `kubectl apply` a copy with imagePullPolicy patched back
+# to "Never" instead (e.g. `sed 's/imagePullPolicy: Always/imagePullPolicy: Never/' k8s/04-web.yaml
+# | kubectl apply -f -`) - exact procedure in docs/SCALING.md.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -94,7 +101,7 @@ spec:
       containers:
         - name: studylife
           image: ghcr.io/lukislp/studylife-server:1.43.0 # {"$imagepolicy": "flux-system:studylife-server"}
-          imagePullPolicy: Never
+          imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: {drop: ["ALL"]}
