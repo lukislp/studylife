@@ -1,3 +1,10 @@
+# [1.44.0](https://github.com/lukislp/studylife/compare/v1.43.3...v1.44.0) (2026-08-26)
+
+
+### Features
+
+* metrics API - every calculation lives once in Shared ([55b7ad0](https://github.com/lukislp/studylife/commit/55b7ad000b38897596b15eacd90e285d77192f6a))
+
 ## [1.43.3](https://github.com/lukislp/studylife/compare/v1.43.2...v1.43.3) (2026-08-26)
 
 
