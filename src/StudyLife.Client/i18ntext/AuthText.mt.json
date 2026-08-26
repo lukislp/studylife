@@ -72,5 +72,8 @@
   "RecoveryCodesDownload": "Niżżel bħala fajl",
   "RegisterPageTitle": "StudyLife — Oħloq kont",
   "LinkPageTitle": "StudyLife — Għaqqad dan l-apparat",
-  "LoginPageTitle": "StudyLife — Idħol"
+  "LoginPageTitle": "StudyLife — Idħol",
+  "RegisterClosed": "Ir-reġistrazzjoni bħalissa hija magħluqa.",
+  "RegisterInviteRequiredHint": "Hija meħtieġa link ta' stedina biex tirreġistra. Uża l-link li ngħatajt.",
+  "RegisterInviteInvalid": "Din il-link ta' stedina mhijiex valida, skadiet, jew diġà ntużat."
 }

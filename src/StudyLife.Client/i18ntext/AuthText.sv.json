@@ -72,5 +72,8 @@
   "RecoveryCodesDownload": "Ladda ner som fil",
   "RegisterPageTitle": "StudyLife — Skapa konto",
   "LinkPageTitle": "StudyLife — Länka den här enheten",
-  "LoginPageTitle": "StudyLife — Logga in"
+  "LoginPageTitle": "StudyLife — Logga in",
+  "RegisterClosed": "Registrering är för närvarande stängd.",
+  "RegisterInviteRequiredHint": "En inbjudningslänk krävs för att registrera sig. Använd länken du har fått.",
+  "RegisterInviteInvalid": "Den här inbjudningslänken är ogiltig, har gått ut eller har redan använts."
 }

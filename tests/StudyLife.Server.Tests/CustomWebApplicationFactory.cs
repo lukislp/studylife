@@ -43,6 +43,20 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        // Registration gate (audit finding A10): production defaults to "invite" when unset, but
+        // dozens of pre-existing tests across this suite register a SECOND user (the "family
+        // signup" scenario, e.g. OwnershipRegistrationTests/AccountInfoTests/
+        // BackupControllerOwnerRestrictionTests/PasskeyApprovalTests/*CacheIsolationTests/
+        // *MultiUserTests) via PasskeyHttp.RegisterAsync without ever passing an invite token -
+        // exactly what "invite" mode would now reject. Defaulting the shared test factory to
+        // "open" preserves that established, widely-relied-upon assumption unchanged for every
+        // test that isn't specifically about the gate itself. RegistrationGateInviteModeTests/
+        // RegistrationGateClosedModeTests override this explicitly back to "invite"/"closed" (same
+        // per-factory-subclass override pattern as DEMO_MODE in AuthControllerEdgeTests.cs) -
+        // the actual "unset defaults to invite" production behavior is pinned separately by the
+        // pure unit test RegistrationModeConfigTests.Unset_DefaultsToInvite (no host needed there).
+        builder.UseSetting("Registration:Mode", "open");
+
         // Runs AFTER the registrations from Program.cs, but BEFORE the host starts - rerouting the
         // descriptors therefore takes effect before Program.cs's Migrate() block touches the DB for the first time.
         builder.ConfigureServices(services =>

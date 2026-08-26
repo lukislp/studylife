@@ -246,5 +246,15 @@
   "ProgressShareRegenerateConfirmWarning": "Это сразу же делает текущую ссылку прогресса недействительной. Любой, у кого есть старая ссылка (родители, наставник, учебный консультант), больше не сможет видеть ваш прогресс — вместо этого поделитесь с ними новой ссылкой.",
   "ProgressShareRegenerateConfirmCancel": "Отмена",
   "ProgressShareRegenerateConfirmYes": "Да, сгенерировать сейчас",
-  "ProgressShareRegenerateSuccess": "Сгенерирована новая"
+  "ProgressShareRegenerateSuccess": "Сгенерирована новая",
+  "InvitesHeading": "Приглашения",
+  "InvitesDesc": "Создайте ссылку-приглашение, чтобы кто-то другой мог создать свою учётную запись.",
+  "InvitesGenerateButton": "Создать ссылку-приглашение",
+  "InvitesOnceHint": "Скопируйте ссылку сейчас — повторно она показана не будет.",
+  "InvitesEmpty": "Пока нет приглашений.",
+  "InvitesCreatedFormat": "Создано: {0}",
+  "InvitesExpiresFormat": "Истекает: {0}",
+  "InvitesUsedLabel": "Использовано",
+  "InvitesExpiredLabel": "Истекло",
+  "InvitesRevoke": "Отозвать"
 }

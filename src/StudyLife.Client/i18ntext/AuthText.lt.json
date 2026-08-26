@@ -72,5 +72,8 @@
   "RecoveryCodesDownload": "Atsisiųsti kaip failą",
   "RegisterPageTitle": "StudyLife — Paskyros kūrimas",
   "LinkPageTitle": "StudyLife — Susieti šį įrenginį",
-  "LoginPageTitle": "StudyLife — Prisijungimas"
+  "LoginPageTitle": "StudyLife — Prisijungimas",
+  "RegisterClosed": "Registracija šiuo metu uždaryta.",
+  "RegisterInviteRequiredHint": "Registracijai reikalinga pakvietimo nuoroda. Naudokite gautą nuorodą.",
+  "RegisterInviteInvalid": "Ši pakvietimo nuoroda negalioja, baigėsi arba jau panaudota."
 }

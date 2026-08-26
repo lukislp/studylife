@@ -246,5 +246,15 @@
   "ProgressShareRegenerateConfirmWarning": "Detta ogiltigförklarar omedelbart den nuvarande framstegslänken. Alla som har den gamla länken (föräldrar, mentor, studievägledare) kan inte längre se dina framsteg — dela istället den nya länken med dem.",
   "ProgressShareRegenerateConfirmCancel": "Avbryt",
   "ProgressShareRegenerateConfirmYes": "Ja, generera ny nu",
-  "ProgressShareRegenerateSuccess": "Ny länk genererad"
+  "ProgressShareRegenerateSuccess": "Ny länk genererad",
+  "InvitesHeading": "Inbjudningar",
+  "InvitesDesc": "Skapa en inbjudningslänk så att någon annan kan skapa sitt eget konto.",
+  "InvitesGenerateButton": "Skapa inbjudningslänk",
+  "InvitesOnceHint": "Kopiera länken nu — den visas inte igen.",
+  "InvitesEmpty": "Inga inbjudningar än.",
+  "InvitesCreatedFormat": "Skapad: {0}",
+  "InvitesExpiresFormat": "Går ut: {0}",
+  "InvitesUsedLabel": "Använd",
+  "InvitesExpiredLabel": "Utgången",
+  "InvitesRevoke": "Återkalla"
 }

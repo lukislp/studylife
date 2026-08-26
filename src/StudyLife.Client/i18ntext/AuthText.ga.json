@@ -72,5 +72,8 @@
   "RecoveryCodesDownload": "Íoslódáil mar chomhad",
   "RegisterPageTitle": "StudyLife — Cruthaigh cuntas",
   "LinkPageTitle": "StudyLife — Nasc an gléas seo",
-  "LoginPageTitle": "StudyLife — Logáil isteach"
+  "LoginPageTitle": "StudyLife — Logáil isteach",
+  "RegisterClosed": "Tá an clárú dúnta faoi láthair.",
+  "RegisterInviteRequiredHint": "Tá nasc cuiridh ag teastáil chun clárú. Bain úsáid as an nasc a fuair tú.",
+  "RegisterInviteInvalid": "Tá an nasc cuiridh seo neamhbhailí, imithe in éag, nó úsáidte cheana."
 }

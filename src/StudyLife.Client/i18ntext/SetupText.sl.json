@@ -246,5 +246,15 @@
   "ProgressShareRegenerateConfirmWarning": "S tem takoj postane neveljavna trenutna povezava napredka. Kdorkoli ima staro povezavo (starši, mentor, študijski svetovalec), ne bo več mogel videti tvojega napredka — namesto tega jim deli novo povezavo.",
   "ProgressShareRegenerateConfirmCancel": "Prekliči",
   "ProgressShareRegenerateConfirmYes": "Da, ustvari zdaj",
-  "ProgressShareRegenerateSuccess": "Ustvarjena nova"
+  "ProgressShareRegenerateSuccess": "Ustvarjena nova",
+  "InvitesHeading": "Povabila",
+  "InvitesDesc": "Ustvari povezavo za povabilo, da lahko nekdo drug ustvari svoj račun.",
+  "InvitesGenerateButton": "Ustvari povezavo za povabilo",
+  "InvitesOnceHint": "Kopiraj povezavo zdaj — ponovno ne bo prikazana.",
+  "InvitesEmpty": "Še ni povabil.",
+  "InvitesCreatedFormat": "Ustvarjeno: {0}",
+  "InvitesExpiresFormat": "Poteče: {0}",
+  "InvitesUsedLabel": "Uporabljeno",
+  "InvitesExpiredLabel": "Poteklo",
+  "InvitesRevoke": "Prekliči"
 }

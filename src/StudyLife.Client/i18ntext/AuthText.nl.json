@@ -72,5 +72,8 @@
   "RecoveryCodesDownload": "Downloaden als bestand",
   "RegisterPageTitle": "StudyLife — Account aanmaken",
   "LinkPageTitle": "StudyLife — Dit apparaat koppelen",
-  "LoginPageTitle": "StudyLife — Inloggen"
+  "LoginPageTitle": "StudyLife — Inloggen",
+  "RegisterClosed": "Registratie is momenteel gesloten.",
+  "RegisterInviteRequiredHint": "Er is een uitnodigingslink nodig om je te registreren. Gebruik de link die je hebt gekregen.",
+  "RegisterInviteInvalid": "Deze uitnodigingslink is ongeldig, verlopen of al gebruikt."
 }

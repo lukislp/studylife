@@ -246,5 +246,15 @@
   "ProgressShareRegenerateConfirmWarning": "Dan jinvalida minnufih il-link tal-progress attwali. Kull min għandu l-link il-qadim (ġenituri, mentor, konsulent akkademiku) ma jibqax jista' jara l-progress tiegħek — aqsam magħhom il-link il-ġdid minflok.",
   "ProgressShareRegenerateConfirmCancel": "Ikkanċella",
   "ProgressShareRegenerateConfirmYes": "Iva, iġġenera issa",
-  "ProgressShareRegenerateSuccess": "Ġġenerat ġdid"
+  "ProgressShareRegenerateSuccess": "Ġġenerat ġdid",
+  "InvitesHeading": "Stediniet",
+  "InvitesDesc": "Iġġenera link ta' stedina biex ħaddieħor ikun jista' joħloq il-kont tiegħu stess.",
+  "InvitesGenerateButton": "Iġġenera link ta' stedina",
+  "InvitesOnceHint": "Ikkopja l-link issa — mhux se tintwera' għal darb'oħra.",
+  "InvitesEmpty": "L-ebda stedina s'issa.",
+  "InvitesCreatedFormat": "Maħluqa: {0}",
+  "InvitesExpiresFormat": "Tiskadi: {0}",
+  "InvitesUsedLabel": "Użata",
+  "InvitesExpiredLabel": "Skadiet",
+  "InvitesRevoke": "Irrevoka"
 }

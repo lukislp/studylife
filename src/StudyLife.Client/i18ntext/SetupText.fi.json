@@ -246,5 +246,15 @@
   "ProgressShareRegenerateConfirmWarning": "Tämä mitätöi nykyisen edistymislinkin välittömästi. Kuka tahansa, jolla on vanha linkki (vanhemmat, mentori, opinto-ohjaaja), ei voi enää nähdä edistymistäsi — jaa heille sen sijaan uusi linkki.",
   "ProgressShareRegenerateConfirmCancel": "Peruuta",
   "ProgressShareRegenerateConfirmYes": "Kyllä, luo uusi nyt",
-  "ProgressShareRegenerateSuccess": "Luotu uusi"
+  "ProgressShareRegenerateSuccess": "Luotu uusi",
+  "InvitesHeading": "Kutsut",
+  "InvitesDesc": "Luo kutsulinkki, jotta joku muu voi luoda oman tilinsä.",
+  "InvitesGenerateButton": "Luo kutsulinkki",
+  "InvitesOnceHint": "Kopioi linkki nyt — sitä ei näytetä uudelleen.",
+  "InvitesEmpty": "Ei vielä kutsuja.",
+  "InvitesCreatedFormat": "Luotu: {0}",
+  "InvitesExpiresFormat": "Vanhenee: {0}",
+  "InvitesUsedLabel": "Käytetty",
+  "InvitesExpiredLabel": "Vanhentunut",
+  "InvitesRevoke": "Peruuta"
 }
