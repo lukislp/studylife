@@ -77,4 +77,29 @@ public class WhoamiTests : IClassFixture<CustomWebApplicationFactory>
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
+
+    /// <summary>
+    /// Audit finding A12a: the ?apiKey= query-string fallback was removed from
+    /// StudyLifeAuthenticationHandler - a genuinely valid key must now ONLY authenticate via the
+    /// X-Api-Key header, never via the URL. Uses a real, freshly generated key (not a placeholder)
+    /// so this actually pins "the query string is never even consulted", not just "a bad key
+    /// fails" (which Whoami_WithInvalidApiKey_ReturnsUnauthorized already covers).
+    /// </summary>
+    [Fact]
+    public async Task Whoami_WithValidApiKeyAsQueryParam_ReturnsUnauthorized()
+    {
+        var sessionClient = _factory.CreateClient();
+        var generateResponse = await sessionClient.PostAsync("/api/settings/ha-api-key/generate", null);
+        Assert.Equal(HttpStatusCode.OK, generateResponse.StatusCode);
+        var apiKey = (await generateResponse.Content.ReadFromJsonAsync<System.Text.Json.JsonDocument>())!
+            .RootElement.GetProperty("apiKey").GetString();
+        Assert.False(string.IsNullOrEmpty(apiKey));
+
+        using var anon = ApiKeyTestHelpers.CreateClientWithKey(_factory, null);
+        var response = await anon.GetAsync($"/api/auth/whoami?apiKey={apiKey}");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+
+        await sessionClient.PostAsync("/api/settings/ha-api-key/revoke", null);
+    }
 }

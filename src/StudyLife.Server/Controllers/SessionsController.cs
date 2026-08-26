@@ -145,7 +145,13 @@ public class SessionsController : ControllerBase
         var cacheKey = $"history:{_currentUser.AuthUserId}:{days}:{onlyCompleted}:{_historyCacheVersion.Value}";
         return _cache.GetOrSetAsync<IEnumerable<StudySessionDto>>(this, cacheKey, TimeSpan.FromSeconds(60), async () =>
         {
-            var from = DateTime.UtcNow.AddDays(-Math.Abs(days));
+            // Audit finding Z1: StartTime/EndTime columns are naive local (see docs/ARCHITECTURE.md
+            // "Single-Timezone Invariant"), so the window boundary compared against them must be
+            // DateTime.Now too - it used to be DateTime.UtcNow here while the completed-cutoff
+            // below already correctly used DateTime.Now, silently shifting the window's edge by
+            // the container's UTC offset (e.g. a session from exactly "days" ago at 01:00 local
+            // in UTC+2 could fall just outside a from-boundary computed in UTC).
+            var from = DateTime.Now.AddDays(-Math.Abs(days));
             // "Completed" here means "counts as studied": either the Focus-Timer ran it to
             // completion, or its scheduled end has simply passed - not every study session
             // happens with the in-app timer running (e.g. reading offline), and those
@@ -168,8 +174,13 @@ public class SessionsController : ControllerBase
     [HttpGet("ics")]
     public async Task<IActionResult> GetIcs()
     {
-        var from = DateTime.UtcNow.AddDays(-7);
-        var to = DateTime.UtcNow.AddDays(90);
+        // Audit finding Z1: same fix as GetHistory above - StartTime is naive local, so the
+        // window boundaries compared against it must be DateTime.Now, not DateTime.UtcNow (which
+        // would silently shift the window edge by the container's UTC offset). The DTSTAMP value
+        // further below is a genuinely different case - RFC 5545 requires it in UTC - and is left
+        // untouched.
+        var from = DateTime.Now.AddDays(-7);
+        var to = DateTime.Now.AddDays(90);
         var sessions = await _db.Sessions
             .Where(s => s.StartTime >= from && s.StartTime <= to)
             .OrderBy(s => s.StartTime)
