@@ -1,3 +1,16 @@
+# [2.0.0](https://github.com/lukislp/studylife/compare/v1.44.1...v2.0.0) (2026-08-26)
+
+
+### Features
+
+* registration gate with owner invites ([fbf8962](https://github.com/lukislp/studylife/commit/fbf896262e923458d4b7fbf5b2bd77d33fe23ea3))
+
+
+### BREAKING CHANGES
+
+* self-registration on an already-bootstrapped instance
+now requires an invite link unless Registration__Mode=open is set.
+
 ## [1.44.1](https://github.com/lukislp/studylife/compare/v1.44.0...v1.44.1) (2026-08-26)
 
 
