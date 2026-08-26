@@ -402,6 +402,17 @@ public partial class BackgroundTaskService : BackgroundService
             // User-independent maintenance tasks deliberately run OUTSIDE the user loop:
             // VACUUM, backup dump, and key rotation affect the entire DB/instance and should
             // run exactly once per tick, regardless of how many users exist.
+
+            try
+            {
+                using var scope = _services.CreateScope();
+                await RunAiKeyOutboxAsync(scope.ServiceProvider.GetRequiredService<StudyLifeDb>());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error draining the AI key outbox");
+            }
+
             if (runDatabaseMaintenance)
             {
                 try

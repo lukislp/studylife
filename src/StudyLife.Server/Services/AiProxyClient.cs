@@ -71,17 +71,20 @@ public sealed class AiProxyClient
     }
 
     /// <summary>Registers `userId`'s real AiApiKey with studylife-ai, called the moment the
-    /// plaintext exists (SettingsController.GenerateAiApiKey). Never throws - a studylife-ai
-    /// outage must not fail key generation itself; the user just can't use /agent or get
-    /// their notes ingested until this succeeds (logged as a warning, not surfaced to them -
-    /// see docs/decisions.md "Deferred frontend UX notes" for the UI-side follow-up).</summary>
-    public Task RegisterKeyAsync(int userId, string aiApiKey, CancellationToken ct) =>
+    /// plaintext exists (SettingsController.GenerateAiApiKey) and retried from the AI key outbox
+    /// (BackgroundTaskService.RunAiKeyOutboxAsync, audit A7) until it is confirmed delivered.
+    /// Never throws - a studylife-ai outage must not fail key generation itself. Returns true on
+    /// confirmed delivery (including the "integration not configured" no-op, same as before the
+    /// outbox existed - nothing to retry there) or false on a genuine failure the outbox should
+    /// keep retrying.</summary>
+    public Task<bool> RegisterKeyAsync(int userId, string aiApiKey, CancellationToken ct) =>
         PostInternalAsync("/internal/register-key",
             new Dictionary<string, string> { ["user_id"] = userId.ToString(), ["ai_api_key"] = aiApiKey }, ct);
 
     /// <summary>Revokes `userId`'s key from studylife-ai's registry, called on
-    /// SettingsController.RevokeAiApiKey. Same never-throws reasoning as RegisterKeyAsync.</summary>
-    public Task RevokeKeyAsync(int userId, CancellationToken ct) =>
+    /// SettingsController.RevokeAiApiKey and retried from the AI key outbox. Same never-throws/
+    /// bool-success reasoning as RegisterKeyAsync.</summary>
+    public Task<bool> RevokeKeyAsync(int userId, CancellationToken ct) =>
         PostInternalAsync("/internal/revoke-key",
             new Dictionary<string, string> { ["user_id"] = userId.ToString() }, ct);
 
@@ -156,9 +159,14 @@ public sealed class AiProxyClient
         [JsonPropertyName("related_note_ids")] public List<int>? RelatedNoteIds { get; set; }
     }
 
-    private async Task PostInternalAsync(string path, Dictionary<string, string> body, CancellationToken ct)
+    /// <summary>Returns true if the call is considered "delivered" - either a genuine 2xx
+    /// response, or the integration simply isn't configured (!Enabled), which was already a
+    /// silent no-op before the outbox existed and must stay one (an install without
+    /// StudyLifeAi:* configured must not accumulate outbox rows forever). False only for an
+    /// actual reachability/response failure - that's what the outbox retries.</summary>
+    private async Task<bool> PostInternalAsync(string path, Dictionary<string, string> body, CancellationToken ct)
     {
-        if (!Enabled) return;
+        if (!Enabled) return true;
         try
         {
             var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}{path}")
@@ -168,11 +176,16 @@ public sealed class AiProxyClient
             request.Headers.Add("X-StudyLife-Shared-Secret", _sharedSecret);
             var response = await _http.SendAsync(request, ct);
             if (!response.IsSuccessStatusCode)
+            {
                 _logger.LogWarning("studylife-ai {Path} returned {Status}", path, response.StatusCode);
+                return false;
+            }
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "studylife-ai {Path} call failed", path);
+            return false;
         }
     }
 }

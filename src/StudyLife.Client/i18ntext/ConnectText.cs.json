@@ -1,0 +1,10 @@
+{
+  "ConnectPageTitle": "StudyLife — Připojení",
+  "ConnectHeading": "Připojit externí aplikaci",
+  "ConnectIntro": "Připojit StudyLife k externí aplikaci?",
+  "ConnectButton": "Připojit",
+  "ConnectCancelButton": "Zrušit",
+  "ConnectWorking": "Připojování…",
+  "ConnectFailed": "Připojení se nezdařilo. Zkuste to prosím znovu.",
+  "ConnectInvalidRequest": "Tento požadavek na připojení je neplatný nebo vypršel."
+}

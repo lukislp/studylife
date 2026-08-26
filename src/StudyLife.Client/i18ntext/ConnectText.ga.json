@@ -1,0 +1,10 @@
+{
+  "ConnectPageTitle": "StudyLife — Nasc",
+  "ConnectHeading": "Nasc aip sheachtrach",
+  "ConnectIntro": "An nasc StudyLife le haip sheachtrach?",
+  "ConnectButton": "Nasc",
+  "ConnectCancelButton": "Cealaigh",
+  "ConnectWorking": "Ag nascadh…",
+  "ConnectFailed": "Níor éirigh leis an nasc. Bain triail eile as.",
+  "ConnectInvalidRequest": "Tá an t-iarratas naisc seo neamhbhailí nó tá sé imithe in éag."
+}

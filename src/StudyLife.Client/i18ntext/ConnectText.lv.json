@@ -1,0 +1,10 @@
+{
+  "ConnectPageTitle": "StudyLife — Savienot",
+  "ConnectHeading": "Savienot ārēju lietotni",
+  "ConnectIntro": "Vai savienot StudyLife ar ārēju lietotni?",
+  "ConnectButton": "Savienot",
+  "ConnectCancelButton": "Atcelt",
+  "ConnectWorking": "Notiek savienošana…",
+  "ConnectFailed": "Savienojums neizdevās. Lūdzu, mēģiniet vēlreiz.",
+  "ConnectInvalidRequest": "Šis savienojuma pieprasījums nav derīgs vai ir beidzies."
+}

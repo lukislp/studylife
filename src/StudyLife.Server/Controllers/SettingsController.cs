@@ -264,9 +264,11 @@ public class SettingsController : ControllerBase
     /// studylife-ai (AiProxyClient.RegisterKeyAsync) at this one moment it exists - see
     /// docs/decisions.md "M4.5 Multi-user support" in the studylife-ai repo,
     /// "Registration-on-generate": studylife-ai cannot retrieve it later, only the hash is
-    /// ever stored here. A failed registration doesn't fail key generation itself (an
-    /// studylife-ai outage shouldn't block this StudyLife-native feature) - the user just
-    /// can't use /agent or get their notes ingested until it's retried.</summary>
+    /// ever stored here. AI key outbox (audit A7): the intent is durably enqueued BEFORE the
+    /// immediate delivery attempt, so a studylife-ai outage right now doesn't lose the plaintext
+    /// forever - on confirmed delivery the row is deleted immediately (fast path, identical
+    /// behavior to before the outbox existed); otherwise BackgroundTaskService.RunAiKeyOutboxAsync
+    /// retries it with backoff. Either way key generation itself never fails because of this.</summary>
     [HttpPost("ai-api-key/generate")]
     public async Task<ActionResult<AiApiKeyGenerateResponseDto>> GenerateAiApiKey(CancellationToken ct)
     {
@@ -277,15 +279,38 @@ public class SettingsController : ControllerBase
         var key = AuthSessionService.GenerateToken();
         user.AiApiKeyHash = AuthSessionService.HashToken(key);
         user.AiApiKeyCreatedAt = DateTime.UtcNow;
+        var outboxRow = new AiKeyOutboxEntity
+        {
+            AuthUserId = userId,
+            Action = AiKeyOutboxEntity.ActionRegister,
+            AiApiKeyPlaintext = key,
+            CreatedAt = DateTime.UtcNow,
+        };
+        _db.AiKeyOutbox.Add(outboxRow);
         await _db.SaveChangesAsync();
-        await _aiProxyClient.RegisterKeyAsync(userId, key, ct);
+
+        if (await _aiProxyClient.RegisterKeyAsync(userId, key, ct))
+        {
+            _db.AiKeyOutbox.Remove(outboxRow);
+        }
+        else
+        {
+            // Record this as the row's first attempt (same bookkeeping RunAiKeyOutboxAsync does
+            // for every retry), so the background drain's backoff starts counting from here
+            // instead of treating the fast-path attempt as if it never happened.
+            outboxRow.Attempts = 1;
+            outboxRow.LastAttemptAt = DateTime.UtcNow;
+        }
+        await _db.SaveChangesAsync();
         return new AiApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = user.AiApiKeyCreatedAt.Value };
     }
 
     /// <summary>Permanently revokes the studylife-ai API key (hash is deleted) - studylife-ai
     /// gets 401 from the next request onward. Home Assistant's key is untouched. Also tells
     /// studylife-ai to forget its registered copy (AiProxyClient.RevokeKeyAsync) - without
-    /// this, a revoked-here key would keep working there indefinitely.</summary>
+    /// this, a revoked-here key would keep working there indefinitely. Same outbox-first pattern
+    /// as GenerateAiApiKey above, so an unreachable studylife-ai doesn't leave the two databases
+    /// disagreeing forever (audit A7).</summary>
     [HttpPost("ai-api-key/revoke")]
     public async Task<IActionResult> RevokeAiApiKey(CancellationToken ct)
     {
@@ -295,8 +320,25 @@ public class SettingsController : ControllerBase
 
         user.AiApiKeyHash = null;
         user.AiApiKeyCreatedAt = null;
+        var outboxRow = new AiKeyOutboxEntity
+        {
+            AuthUserId = userId,
+            Action = AiKeyOutboxEntity.ActionRevoke,
+            CreatedAt = DateTime.UtcNow,
+        };
+        _db.AiKeyOutbox.Add(outboxRow);
         await _db.SaveChangesAsync();
-        await _aiProxyClient.RevokeKeyAsync(userId, ct);
+
+        if (await _aiProxyClient.RevokeKeyAsync(userId, ct))
+        {
+            _db.AiKeyOutbox.Remove(outboxRow);
+        }
+        else
+        {
+            outboxRow.Attempts = 1;
+            outboxRow.LastAttemptAt = DateTime.UtcNow;
+        }
+        await _db.SaveChangesAsync();
         return NoContent();
     }
 
@@ -327,11 +369,20 @@ public class SettingsController : ControllerBase
         var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
 
+        var key = RotateMcpKey(user, DateTime.UtcNow);
+        await _db.SaveChangesAsync();
+        return new McpApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = user.McpApiKeyCreatedAt!.Value };
+    }
+
+    /// <summary>Core of GenerateMcpApiKey above - also reused by AuthController.McpConnect (the
+    /// MCP OAuth connect flow, identity contract v1 §2 step 3) so the two code paths that rotate
+    /// the same key slot can't drift apart. Caller must SaveChanges.</summary>
+    internal static string RotateMcpKey(AuthUserEntity user, DateTime now)
+    {
         var key = AuthSessionService.GenerateToken();
         user.McpApiKeyHash = AuthSessionService.HashToken(key);
-        user.McpApiKeyCreatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
-        return new McpApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = user.McpApiKeyCreatedAt.Value };
+        user.McpApiKeyCreatedAt = now;
+        return key;
     }
 
     /// <summary>Permanently revokes the studylife-mcp API key (hash is deleted) - studylife-mcp
