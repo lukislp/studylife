@@ -19,6 +19,11 @@ public class StudySession
 public class UserSettings
 {
     public int Id { get; set; }
+    /// <summary>Optimistic-concurrency token mirrored from UserSettingsDto.Version (audit S4/S5)
+    /// - always the value last seen from the server (GET, or a successful/retried PUT response),
+    /// resent on the next SaveSettingsAsync so the server can detect a stale read-modify-write.
+    /// See AppStateService.SaveSettingsAsync for the 409 refetch-and-retry-once handling.</summary>
+    public int Version { get; set; }
     public string DefaultProgramme { get; set; } = "Applied Artificial Intelligence";
     public List<int> SelectedCourseIds { get; set; } = new();
     public List<int> CompletedCourseIds { get; set; } = new();

@@ -416,6 +416,25 @@ public class UserSettingsEntity
     public int Id { get; set; }
     /// <summary>No longer a singleton row since phase 1 of the multi-user rework, but one row PER user.</summary>
     public int AuthUserId { get; set; }
+    /// <summary>
+    /// Optimistic-concurrency counter (audit S4/S5): starts at 0 for a freshly created row and
+    /// increments by exactly 1 on every successful SettingsController.Save PUT. GET always
+    /// returns the current value (UserSettingsDto.Version); a PUT that supplies it back gets
+    /// rejected with 409 Conflict unless it still matches the row's current value - this is
+    /// what closes the "two devices doing full read-modify-write PUTs silently revert each
+    /// other's toggles" race (last-writer-wins across ~35 fields, worsened by the settings
+    /// GET cache's up-to-15s TTL, see SettingsController.Get). Deliberately a plain,
+    /// app-incremented int column - not an EF IsConcurrencyToken()/rowversion - specifically so
+    /// the precondition can stay OPTIONAL: a PUT that omits Version entirely (older clients,
+    /// Home Assistant, ad-hoc scripts against the API) must keep today's plain
+    /// last-writer-wins behavior untouched, see SettingsController.Save. Not bumped by
+    /// BackupController.TouchLastBackupDownloadAt or SettingsController's progress-share
+    /// endpoints - those already write only their own narrow field(s) outside the normal PUT
+    /// (same "set directly, not via the normal settings PUT" rationale as
+    /// LastBackupDownloadAt/ProgressShareEnabled below), so they don't participate in the
+    /// full-row race this field targets.
+    /// </summary>
+    public int Version { get; set; }
     public string SelectedCourseIds { get; set; } = "1,2,3,4"; // comma-separated
     public string CompletedCourseIds { get; set; } = ""; // comma-separated
     public string Theme { get; set; } = "dark";
