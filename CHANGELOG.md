@@ -1,3 +1,10 @@
+## [1.44.1](https://github.com/lukislp/studylife/compare/v1.44.0...v1.44.1) (2026-08-26)
+
+
+### Bug Fixes
+
+* stop accepting query-string api keys, mask share token for key auth, fix history time windows ([76222db](https://github.com/lukislp/studylife/commit/76222db3bafe07ae74b0815279e7dbf2c05e71e4))
+
 # [1.44.0](https://github.com/lukislp/studylife/compare/v1.43.3...v1.44.0) (2026-08-26)
 
 
