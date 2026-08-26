@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
+using StudyLife.Shared;
 
 namespace StudyLife.Server.Services;
 
@@ -15,7 +16,8 @@ public partial class BackgroundTaskService
     ///
     /// Independently recomputes the phase-transition state machine from TimerService.Tick()
     /// (client): the device is locked/suspended in the meantime, so the client itself can no
-    /// longer tick. Same formula, same round counting - any deviation would make the client and
+    /// longer tick. Both sides call TimerModeCatalog.AdvancePhase (StudyLife.Shared) for the
+    /// actual transition math (audit finding D5) - any deviation would make the client and
     /// server displays drift apart.
     /// </summary>
     internal async Task RunLiveActivityPushAsync(StudyLifeDb db)
@@ -39,23 +41,18 @@ public partial class BackgroundTaskService
         var round = state.CurrentRound;
         var endsAt = phaseEndsAt;
         var complete = false;
+        var modeData = new TimerModeCatalog.ModeData(mode.Id, mode.Name, mode.FocusMinutes, mode.BreakMinutes, mode.Rounds);
 
-        // Identical loop to TimerService.Tick(): also catches up on multiple entirely missed
-        // phases (e.g. if the worker tick itself was delayed).
+        // Same stepper as TimerService.Tick() (StudyLife.Shared.TimerModeCatalog.AdvancePhase):
+        // also catches up on multiple entirely missed phases (e.g. if the worker tick itself was
+        // delayed).
         while (now >= endsAt)
         {
-            if (isBreak)
-            {
-                round++;
-                if (round > mode.Rounds) { complete = true; break; }
-                isBreak = false;
-                endsAt = endsAt.AddSeconds(mode.FocusMinutes * 60);
-            }
-            else
-            {
-                isBreak = true;
-                endsAt = endsAt.AddSeconds(mode.BreakMinutes * 60);
-            }
+            var step = TimerModeCatalog.AdvancePhase(modeData, isBreak, round, endsAt);
+            isBreak = step.IsBreak;
+            round = step.Round;
+            endsAt = step.PhaseEndsAt;
+            if (step.Complete) { complete = true; break; }
         }
 
         if (complete)

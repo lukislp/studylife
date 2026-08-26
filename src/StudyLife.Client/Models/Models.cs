@@ -1,3 +1,5 @@
+using StudyLife.Shared;
+
 namespace StudyLife.Client.Models;
 
 public class StudySession
@@ -78,69 +80,54 @@ public class TimerMode
 /// Deliberately JSON instead of the otherwise usual comma-separated strings: mode names are
 /// free text and may contain commas/semicolons without breaking the format.
 /// IDs start at 100 and therefore never collide with the built-in modes (IDs 1-5).
+/// The actual parsing/clamping is StudyLife.Shared.TimerModeCatalog.ParseCustom (audit finding
+/// D5 - this used to duplicate the server's ServerTimerModes.Resolve, hand-copied and prone to
+/// drift, see AchievementCatalog.cs for the established centralization pattern); this class adds
+/// only the client-only presentation fields (Description/Style/Emoji/Gradient) on top.
 /// </summary>
 public static class CustomTimerModes
 {
-    public const int FirstCustomId = 100;
-
-    private static readonly System.Text.Json.JsonSerializerOptions JsonOptions =
-        new(System.Text.Json.JsonSerializerDefaults.Web);
-
-    /// <summary>Compact storage format: only the 5 user-defined fields, camelCase.</summary>
-    private class Entry
-    {
-        public int Id { get; set; }
-        public string Name { get; set; } = "";
-        public int FocusMinutes { get; set; }
-        public int BreakMinutes { get; set; }
-        public int Rounds { get; set; }
-    }
+    public const int FirstCustomId = TimerModeCatalog.FirstCustomId;
 
     /// <summary>Tolerant: empty/invalid JSON results in an empty list (fallback style used throughout the codebase).</summary>
     public static List<TimerMode> Parse(string? json)
     {
-        if (string.IsNullOrWhiteSpace(json)) return new List<TimerMode>();
-        try
+        var result = new List<TimerMode>();
+        foreach (var m in TimerModeCatalog.ParseCustom(json))
         {
-            var entries = System.Text.Json.JsonSerializer.Deserialize<List<Entry>>(json, JsonOptions) ?? new();
-            return entries
-                .Where(e => e.Id >= FirstCustomId && !string.IsNullOrWhiteSpace(e.Name))
-                .Select(e => new TimerMode
-                {
-                    Id = e.Id,
-                    Name = e.Name,
-                    Description = $"{Math.Clamp(e.FocusMinutes, 5, 180)} minutes focus, {Math.Clamp(e.BreakMinutes, 0, 60)} minute break. Your mode, your rhythm.",
-                    FocusMinutes = Math.Clamp(e.FocusMinutes, 5, 180),
-                    BreakMinutes = Math.Clamp(e.BreakMinutes, 0, 60),
-                    Rounds = Math.Clamp(e.Rounds, 1, 10),
-                    Style = "custom",
-                    Emoji = "⚙",
-                    GradientFrom = "#00B894",
-                    GradientTo = "#55EFC4",
-                })
-                .ToList();
-        }
-        catch
-        {
-            return new List<TimerMode>();
-        }
-    }
-
-    public static string Serialize(IEnumerable<TimerMode> modes) =>
-        System.Text.Json.JsonSerializer.Serialize(
-            modes.Select(m => new Entry
+            result.Add(new TimerMode
             {
                 Id = m.Id,
                 Name = m.Name,
+                Description = $"{m.FocusMinutes} minutes focus, {m.BreakMinutes} minute break. Your mode, your rhythm.",
                 FocusMinutes = m.FocusMinutes,
                 BreakMinutes = m.BreakMinutes,
                 Rounds = m.Rounds,
-            }),
-            JsonOptions);
+                Style = "custom",
+                Emoji = "⚙",
+                GradientFrom = "#00B894",
+                GradientTo = "#55EFC4",
+            });
+        }
+        return result;
+    }
+
+    public static string Serialize(IEnumerable<TimerMode> modes)
+    {
+        var data = new List<TimerModeCatalog.ModeData>();
+        foreach (var m in modes)
+            data.Add(new TimerModeCatalog.ModeData(m.Id, m.Name, m.FocusMinutes, m.BreakMinutes, m.Rounds));
+        return TimerModeCatalog.SerializeCustom(data);
+    }
 
     /// <summary>Next free id: max(existing custom ids, 99) + 1 - collision-free against the built-ins.</summary>
-    public static int NextId(IEnumerable<TimerMode> existing) =>
-        Math.Max(FirstCustomId - 1, existing.Select(m => m.Id).DefaultIfEmpty(0).Max()) + 1;
+    public static int NextId(IEnumerable<TimerMode> existing)
+    {
+        var data = new List<TimerModeCatalog.ModeData>();
+        foreach (var m in existing)
+            data.Add(new TimerModeCatalog.ModeData(m.Id, m.Name, m.FocusMinutes, m.BreakMinutes, m.Rounds));
+        return TimerModeCatalog.NextCustomId(data);
+    }
 
     /// <summary>Built-in modes + parsed custom modes, e.g. for the focus page.</summary>
     public static List<TimerMode> Combined(string? json) =>
