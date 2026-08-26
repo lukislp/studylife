@@ -1,0 +1,10 @@
+{
+  "ConnectPageTitle": "StudyLife — Підключення",
+  "ConnectHeading": "Підключити зовнішній застосунок",
+  "ConnectIntro": "Підключити StudyLife до зовнішнього застосунку?",
+  "ConnectButton": "Підключити",
+  "ConnectCancelButton": "Скасувати",
+  "ConnectWorking": "Підключення…",
+  "ConnectFailed": "Не вдалося підключитися. Спробуйте ще раз.",
+  "ConnectInvalidRequest": "Цей запит на підключення недійсний або застарів."
+}

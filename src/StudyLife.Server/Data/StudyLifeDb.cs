@@ -33,6 +33,7 @@ public class StudyLifeDb : DbContext
     public DbSet<UserSettingsEntity> Settings => Set<UserSettingsEntity>();
     public DbSet<PushSubscriptionEntity> PushSubscriptions => Set<PushSubscriptionEntity>();
     public DbSet<SentReminderEntity> SentReminders => Set<SentReminderEntity>();
+    public DbSet<AiKeyOutboxEntity> AiKeyOutbox => Set<AiKeyOutboxEntity>();
     public DbSet<NoteEntity> Notes => Set<NoteEntity>();
     public DbSet<CourseGoalEntity> CourseGoals => Set<CourseGoalEntity>();
     public DbSet<TimerStateEntity> TimerState => Set<TimerStateEntity>();
@@ -113,6 +114,11 @@ public class StudyLifeDb : DbContext
         // Per-user API key for the studylife-capture browser extension: separate slot from the
         // three above (see AuthUserEntity.CaptureApiKeyHash), same uniqueness reasoning.
         modelBuilder.Entity<AuthUserEntity>().HasIndex(u => u.CaptureApiKeyHash).IsUnique();
+        // AI key outbox (audit A7): drained table-wide by BackgroundTaskService across all
+        // users in one query (see RunAiKeyOutboxAsync), not per-user - the index supports the
+        // per-user CreatedAt ordering that drain does in memory.
+        modelBuilder.Entity<AiKeyOutboxEntity>().HasIndex(o => o.AuthUserId);
+
         // Calendar feed (security fix): resolves the user analogous to the API key, instead of
         // (as before, global CalendarTokenProvider) giving every caller the same,
         // user-independent token - see AuthUserEntity.CalendarToken.
@@ -561,6 +567,40 @@ public class SentReminderEntity
     /// <summary>e.g. "42:reminder5" - SessionId:reminderAt</summary>
     public string Key { get; set; } = "";
     public DateTime SentAt { get; set; }
+}
+
+/// <summary>
+/// Outbox for the studylife-ai key registration (audit A7): SettingsController's ai-api-key
+/// generate/revoke enqueue a row here BEFORE attempting immediate delivery via AiProxyClient -
+/// if studylife-ai is unreachable at that moment, the plaintext (register) or the intent
+/// (revoke) would otherwise be lost forever and the two databases would silently disagree.
+/// BackgroundTaskService.RunAiKeyOutboxAsync drains it with backoff; a row is deleted only once
+/// AiProxyClient confirms delivery. Deliberately NO query filter (like AuthSessionEntity/
+/// RecoveryCodeEntity/SystemSecretsEntity) - the drain runs table-wide across all users in one
+/// tick, not scoped to a single request's current user.
+/// </summary>
+public class AiKeyOutboxEntity
+{
+    public const string ActionRegister = "register";
+    public const string ActionRevoke = "revoke";
+
+    public int Id { get; set; }
+    /// <summary>No FK - same loose pattern as everywhere else in this file.</summary>
+    public int AuthUserId { get; set; }
+    /// <summary>ActionRegister or ActionRevoke - which SettingsController endpoint enqueued this row.</summary>
+    public string Action { get; set; } = "";
+    /// <summary>
+    /// Plaintext of the newly generated AI key, ONLY for Action="register" (null for "revoke").
+    /// Transient by design: studylife-ai can't retrieve the key later (only its hash lives in
+    /// AuthUserEntity.AiApiKeyHash), so the plaintext must be carried somewhere until delivery
+    /// confirms - the row (and thus the plaintext) is deleted immediately on success. The
+    /// trade-off: an undelivered row keeps the plaintext at rest in this table for as long as
+    /// studylife-ai stays unreachable, instead of only existing in-memory for one request.
+    /// </summary>
+    public string? AiApiKeyPlaintext { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public int Attempts { get; set; }
+    public DateTime? LastAttemptAt { get; set; }
 }
 
 public class NoteEntity

@@ -1,0 +1,10 @@
+{
+  "ConnectPageTitle": "StudyLife — Свързване",
+  "ConnectHeading": "Свързване на външно приложение",
+  "ConnectIntro": "Да се свърже ли StudyLife с външно приложение?",
+  "ConnectButton": "Свързване",
+  "ConnectCancelButton": "Отказ",
+  "ConnectWorking": "Свързване…",
+  "ConnectFailed": "Свързването не бе успешно. Моля, опитайте отново.",
+  "ConnectInvalidRequest": "Заявката за свързване е невалидна или е изтекла."
+}

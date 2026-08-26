@@ -1,0 +1,10 @@
+{
+  "ConnectPageTitle": "StudyLife — Ühenda",
+  "ConnectHeading": "Ühenda väline rakendus",
+  "ConnectIntro": "Kas ühendada StudyLife välise rakendusega?",
+  "ConnectButton": "Ühenda",
+  "ConnectCancelButton": "Loobu",
+  "ConnectWorking": "Ühendamine…",
+  "ConnectFailed": "Ühendamine ebaõnnestus. Palun proovi uuesti.",
+  "ConnectInvalidRequest": "See ühendustaotlus on kehtetu või aegunud."
+}

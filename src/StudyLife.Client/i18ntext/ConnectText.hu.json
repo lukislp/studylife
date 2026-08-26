@@ -1,0 +1,10 @@
+{
+  "ConnectPageTitle": "StudyLife — Csatlakozás",
+  "ConnectHeading": "Külső alkalmazás csatlakoztatása",
+  "ConnectIntro": "Csatlakoztatod a StudyLife-ot egy külső alkalmazáshoz?",
+  "ConnectButton": "Csatlakozás",
+  "ConnectCancelButton": "Mégse",
+  "ConnectWorking": "Csatlakozás…",
+  "ConnectFailed": "A csatlakozás nem sikerült. Próbáld újra.",
+  "ConnectInvalidRequest": "Ez a csatlakozási kérés érvénytelen vagy lejárt."
+}
