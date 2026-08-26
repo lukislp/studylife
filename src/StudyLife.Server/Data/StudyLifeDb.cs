@@ -737,6 +737,13 @@ public class TimerStateEntity
     public DateTime? PhaseEndsAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
+    /// <summary>Last accepted TimerStateDto.ClientSequence (audit S6), so a stale/out-of-order PUT
+    /// (see TimerStateController.Save) can be detected across separate requests, not just within
+    /// one process's memory. Null = no sequence-carrying PUT has ever landed yet (fresh row, or
+    /// every PUT so far came from a non-sequence-aware pusher like Home Assistant) - the very
+    /// next sequence-carrying PUT is then always accepted (nothing to compare against).</summary>
+    public long? LastClientSequence { get; set; }
+
     /// <summary>ActivityKit push token of the currently running live activity (native iOS app,
     /// paid profile) - hex-encoded like ApnsToken. Deliberately NOT part of TimerStateDto/
     /// Save(): this field is set exclusively via its own liveactivity-token endpoint,

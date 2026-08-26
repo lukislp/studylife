@@ -128,6 +128,127 @@ public class TimerStateControllerTests : IClassFixture<CustomWebApplicationFacto
         AssertMatches(implausible, getResult);
     }
 
+    // ── ClientSequence semantics (audit S6) ─────────────────────────────────────
+    // All four tests below share ONE singleton row with every other test in this class (see the
+    // class doc comment) and xUnit does not guarantee method execution order - so each test's
+    // "baseline" sequence is derived from the WALL CLOCK (FreshSequence) instead of a small
+    // literal, guaranteeing it's always >= whatever any OTHER test in the class (running earlier
+    // in real time, regardless of source order) could have stored, and "stale" is always
+    // computed RELATIVE to that same test's own baseline. This makes every test self-contained
+    // and order-independent, without needing per-test DB isolation.
+
+    /// <summary>A fresh, always-increasing-over-real-time sequence value - see the class comment
+    /// above for why every test computes its own instead of using small literals.</summary>
+    private static long FreshSequence() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+    [Fact]
+    public async Task Put_WithStaleSequence_IsIgnored_ReturnsCurrentState()
+    {
+        var baseline = RunningFocusState();
+        var baselineSeq = FreshSequence();
+        baseline.ClientSequence = baselineSeq;
+        var baselinePut = await _client.PutAsJsonAsync("/api/timerstate", baseline);
+        Assert.Equal(HttpStatusCode.OK, baselinePut.StatusCode);
+
+        // Simulates the out-of-order case (audit S6): TimerService fires PUTs unawaited, so an
+        // OLDER transition's request can land on the server AFTER a newer one already did.
+        var stale = RunningFocusState();
+        stale.SessionId = 999;
+        stale.CurrentRound = 99;
+        stale.ClientSequence = baselineSeq - 1000; // clearly older than the baseline just written
+
+        var staleResponse = await _client.PutAsJsonAsync("/api/timerstate", stale);
+        Assert.Equal(HttpStatusCode.OK, staleResponse.StatusCode); // dropped silently, not 409 - see TimerStateController.Save
+        var staleResult = await staleResponse.Content.ReadFromJsonAsync<TimerStateDto>();
+
+        // The response reflects the CURRENT (baseline) row, not the stale payload that was sent.
+        AssertMatches(baseline, staleResult);
+        Assert.Equal(baselineSeq, staleResult!.ClientSequence);
+
+        // A follow-up GET confirms the stale PUT never actually got persisted.
+        var getResponse = await _client.GetAsync("/api/timerstate");
+        var getResult = await getResponse.Content.ReadFromJsonAsync<TimerStateDto>();
+        AssertMatches(baseline, getResult);
+    }
+
+    [Fact]
+    public async Task Put_WithNewerSequence_IsApplied()
+    {
+        var baseline = RunningFocusState();
+        var baselineSeq = FreshSequence();
+        baseline.ClientSequence = baselineSeq;
+        await _client.PutAsJsonAsync("/api/timerstate", baseline);
+
+        var newer = RunningFocusState();
+        newer.SessionId = 555;
+        newer.CurrentRound = 3;
+        newer.ClientSequence = baselineSeq + 1;
+
+        var response = await _client.PutAsJsonAsync("/api/timerstate", newer);
+        var result = await response.Content.ReadFromJsonAsync<TimerStateDto>();
+
+        AssertMatches(newer, result);
+        Assert.Equal(baselineSeq + 1, result!.ClientSequence);
+    }
+
+    /// <summary>
+    /// A pusher that doesn't know about sequence numbers at all (Home Assistant, or any client
+    /// predating this field) sends no ClientSequence - that PUT must still overwrite
+    /// unconditionally (plain last-write-wins, the exact behavior before ClientSequence existed),
+    /// regardless of whatever sequence a sequence-aware pusher (TimerService) last recorded.
+    /// </summary>
+    [Fact]
+    public async Task Put_WithoutSequence_AlwaysOverwrites_LastWriteWinsForHaCompat()
+    {
+        var sequenced = RunningFocusState();
+        var seq = FreshSequence();
+        sequenced.ClientSequence = seq;
+        await _client.PutAsJsonAsync("/api/timerstate", sequenced);
+
+        var unsequenced = RunningFocusState();
+        unsequenced.SessionId = 777;
+        unsequenced.IsRunning = false;
+        unsequenced.ClientSequence = null;
+
+        var response = await _client.PutAsJsonAsync("/api/timerstate", unsequenced);
+        var result = await response.Content.ReadFromJsonAsync<TimerStateDto>();
+
+        AssertMatches(unsequenced, result);
+        // The previously stored sequence is left untouched (not cleared) by the unsequenced
+        // write - see the next test for why that matters.
+        Assert.Equal(seq, result!.ClientSequence);
+    }
+
+    /// <summary>
+    /// Companion to the previous test: an unsequenced write in between two sequenced ones must
+    /// NOT reset the server's staleness tracking - otherwise a single HA/legacy write landing
+    /// between two TimerService pushes would make the server accept an out-of-order TimerService
+    /// push it should have rejected.
+    /// </summary>
+    [Fact]
+    public async Task Put_WithSequence_AfterAnUnsequencedWrite_StillDetectsStaleness()
+    {
+        var sequenced = RunningFocusState();
+        var seq = FreshSequence();
+        sequenced.ClientSequence = seq;
+        await _client.PutAsJsonAsync("/api/timerstate", sequenced);
+
+        var unsequenced = RunningFocusState();
+        unsequenced.SessionId = 111;
+        unsequenced.ClientSequence = null;
+        await _client.PutAsJsonAsync("/api/timerstate", unsequenced);
+
+        var stale = RunningFocusState();
+        stale.SessionId = 888;
+        stale.ClientSequence = seq - 1000; // older than seq, even though the LAST accepted write had no sequence at all
+
+        var response = await _client.PutAsJsonAsync("/api/timerstate", stale);
+        var result = await response.Content.ReadFromJsonAsync<TimerStateDto>();
+
+        AssertMatches(unsequenced, result); // still the unsequenced write's state, not the stale one
+        Assert.Equal(seq, result!.ClientSequence);
+    }
+
     private static void AssertMatches(TimerStateDto expected, TimerStateDto? actual)
     {
         Assert.NotNull(actual);

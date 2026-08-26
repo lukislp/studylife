@@ -27,6 +27,18 @@ public sealed class SessionTokenStore
     /// MainLayout then redirects to the login page.</summary>
     public event Action? OnSessionInvalidated;
 
+    /// <summary>
+    /// Set by AppStateService's constructor (plain composition, not DI - AppStateService already
+    /// depends on SessionTokenStore, so the reverse would be circular) to purge every
+    /// account-scoped offline cache (S7: read caches + write queue, all namespaced per account -
+    /// see AppStateService) on EITHER logout path below, not just one of them. Both ClearAsync
+    /// and NotifySessionInvalidated used to only ever discard the auth token, leaving a shared
+    /// browser's next user free to offline-cold-start straight into the previous user's stale
+    /// cached data - see the "-v2" cache key comment history in AppStateService for how that bug
+    /// was first found.
+    /// </summary>
+    public Func<Task>? OnLoggedOutAsync { get; set; }
+
     public async Task InitializeAsync()
     {
         try
@@ -52,6 +64,11 @@ public sealed class SessionTokenStore
         Token = null;
         try { await _js.InvokeVoidAsync("localStorage.removeItem", StorageKey); }
         catch { /* best effort */ }
+        // Awaited (S7): the only caller (PasskeyDeviceManager.LogoutAsync) immediately does a
+        // forceLoad navigation right after this returns - the cache/queue/marker purge MUST be
+        // written to localStorage before that reload discards this whole WASM instance, or it
+        // never happens at all.
+        if (OnLoggedOutAsync != null) await OnLoggedOutAsync();
     }
 
     /// <summary>Called by the SessionHandler on an explicit 401 response: immediately clear the
@@ -61,6 +78,14 @@ public sealed class SessionTokenStore
     {
         Token = null;
         _ = ClearStorageBestEffortAsync();
+        // Best-effort/fire-and-forget here too (S7), same as the token cleanup above: this is a
+        // synchronous void method (called from deep inside the HTTP pipeline, SessionHandler),
+        // so there is no caller left to await. MainLayout's forceLoad redirect (OnSessionInvalidated
+        // below) can in theory race ahead of this purge finishing - accepted, documented residual
+        // risk (see the AppStateService S7 class comment): the per-account cache NAMESPACING is
+        // the primary defense against cross-account leakage, this purge is defense-in-depth on
+        // top of it, so a lost race here doesn't reopen the original bug.
+        if (OnLoggedOutAsync != null) _ = OnLoggedOutAsync();
         OnSessionInvalidated?.Invoke();
     }
 

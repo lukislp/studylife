@@ -254,10 +254,11 @@
         {
             // Independent of each other and of CheckActive/Notifications/UpdateAppBadge below -
             // start them now, await at first use (same pattern as Index.razor.cs/Setup.razor).
-            // Deliberately NOT starting GetSessionsAsync-based calls (CheckActive, further down
-            // UpdateAppBadgeAsync) any earlier than they already run: GetSessionsAsync has no
-            // in-flight dedup, so racing two of its callers against each other would fire two
-            // requests instead of the current one-then-cache-hit shape.
+            // CheckActive/UpdateAppBadgeAsync (both GetSessionsAsync-based) stay sequential below
+            // regardless: GetSessionsAsync now dedupes concurrent in-flight callers (audit S8),
+            // so racing them against each other would no longer cost a second request either way -
+            // there's just no benefit to parallelizing them here, and doing so is out of scope for
+            // that fix (restructuring this event-driven flow further, not attempted).
             var settingsTask = State.GetSettingsAsync();
             var i18nTask = I18nText.GetTextTableAsync<I18nText.MainLayoutText>(this);
             var currentLanguageTask = I18nText.GetCurrentLanguageAsync();

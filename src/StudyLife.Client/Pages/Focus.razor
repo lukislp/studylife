@@ -131,10 +131,11 @@
     protected override async Task OnInitializedAsync()
     {
         // Independent of each other - start them all immediately instead of await-ing one after
-        // another (same pattern as Index.razor.cs/Setup.razor). GetActiveSessionAsync/
-        // GetUpcomingSessionAsync both wrap GetSessionsAsync internally (no in-flight dedup
-        // there, unlike GetSettingsAsync) - fetch sessions once ourselves instead of calling
-        // both wrappers, to avoid firing two api/sessions requests on a cold cache.
+        // another (same pattern as Index.razor.cs/Setup.razor). GetSessionsAsync now dedupes
+        // concurrent in-flight callers (audit S8), so GetActiveSessionAsync/GetUpcomingSessionAsync
+        // (both wrap it internally) would no longer cost a second request even if called
+        // separately - kept as one manual fetch anyway, unchanged from before that fix, simply to
+        // avoid the two extra list scans of calling both wrappers.
         var i18nTask = I18nText.GetTextTableAsync<I18nText.FocusText>(this);
         var sessionsTask = State.GetSessionsAsync();
         var remoteTimerTask = RefreshRemoteTimerAsync();
