@@ -388,6 +388,7 @@ public class DtoContractSnapshotTests : IClassFixture<CustomWebApplicationFactor
         // Mirrors StudyLife.Shared.Dtos.UserSettingsDto (src/StudyLife.Shared/Dtos.cs).
         var expected = new HashSet<string>
         {
+            "version",
             "selectedCourseIds", "completedCourseIds", "theme", "accentColor", "autoSwitchFocus",
             "autoSwitchMinutesBefore", "motivationalStyle", "sessionReminderMinutes",
             "courseGoalReminderDays", "inactivityThresholdDays", "studyWindowStartHour",

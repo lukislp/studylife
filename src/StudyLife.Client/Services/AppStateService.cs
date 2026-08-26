@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using StudyLife.Client.Models;
@@ -204,10 +205,10 @@ public class AppStateService : IAsyncDisposable
             var dto = await _http.GetFromJsonAsync<UserSettingsDto>("api/settings");
             if (dto != null)
             {
-                var incoming = FromDto(dto);
-                var incomingHash = ComputeSettingsHash(incoming);
+                var incomingHash = ComputeSettingsHash(dto);
                 if (incomingHash != _settingsHash)
                 {
+                    var incoming = FromDto(dto);
                     _settingsHash = incomingHash;
                     _settingsCache = incoming;
                     settingsChanged = true;
@@ -223,8 +224,26 @@ public class AppStateService : IAsyncDisposable
         if (sessionsChanged || settingsChanged) NotifyStateChanged();
     }
 
-    private static string ComputeSettingsHash(UserSettings s)
-        => $"{string.Join(",", s.SelectedCourseIds.OrderBy(x => x))}|{string.Join(",", s.CompletedCourseIds.OrderBy(x => x))}|{s.Theme}|{s.AccentColor}|{s.AutoSwitchFocus}|{s.AutoSwitchMinutesBefore}|{s.MotivationalStyle}|{s.SessionReminderMinutes}|{s.CourseGoalReminderDays}|{s.InactivityThresholdDays}|{s.StudyWindowStartHour}|{s.StudyWindowEndHour}|{s.StudyDays}|{s.TargetGraduationDate:yyyy-MM-dd}|{s.CustomTimerModes}|{s.WeeklyGoalMinHours}|{s.WeeklyGoalMaxHours}|{s.MonthlyGoalMinHours}|{s.MonthlyGoalMaxHours}|{s.SessionRemindersEnabled}|{s.CourseGoalRemindersEnabled}|{s.InactivityRemindersEnabled}|{s.AchievementNotificationsEnabled}|{s.WeeklyReportEnabled}|{s.DailyMotivationEnabled}|{s.PerCourseInactivityRemindersEnabled}|{s.StreakRiskRemindersEnabled}|{s.WeeklyGoalNudgeEnabled}|{s.CourseAlmostDoneRemindersEnabled}|{s.BestStudyTimeRemindersEnabled}|{s.ComebackNudgeEnabled}|{s.NewRecordNotificationsEnabled}|{s.MonthlyReportEnabled}|{s.LastBackupDownloadAt:yyyy-MM-dd}|{s.ActiveStudyProgramId}|{s.ProgressShareEnabled}|{s.ProgressShareToken}";
+    // Structural comparison over the wire DTO (audit S4/S5), same pattern as
+    // ComputeHash(List&lt;StudySessionDto&gt;) below: the previous version of this method was a
+    // hand-maintained string of ~35 fields that silently stopped detecting a change whenever a
+    // new settings field was added here without also being added there - proven in practice by
+    // UserSettings.DefaultProgramme, which to this day isn't threaded through FromDto/ToDto at
+    // all (see the comment on that field). Serializing the whole DTO instead makes that entire
+    // class of bug structurally impossible: every field participates by construction.
+    //
+    // Version is deliberately the ONE exception, removed from the JSON before comparing: it
+    // increments on EVERY successful PUT, including this same device's own save (see
+    // SaveSettingsAsync) - if it were part of the compared payload, this device's OWN next poll
+    // (up to 30s later) would see a "changed" hash purely because Version moved, firing
+    // OnSettingsChanged/re-applying the accent color for no user-visible reason. Every other
+    // field still fully participates in the comparison.
+    private static string ComputeSettingsHash(UserSettingsDto dto)
+    {
+        var node = JsonSerializer.SerializeToNode(dto)!.AsObject();
+        node.Remove(nameof(UserSettingsDto.Version));
+        return node.ToJsonString();
+    }
 
     // Serializes the full DTOs (ordered by Id) so EVERY field change is detected - a
     // hand-picked field subset here silently breaks cross-device sync for the omitted fields.
@@ -592,6 +611,16 @@ public class AppStateService : IAsyncDisposable
                 case TypeSaveSettings:
                     var settingsDto = JsonSerializer.Deserialize<UserSettingsDto>(entry.Payload);
                     if (settingsDto == null) return true;
+                    // Version precondition intentionally dropped for offline replay (audit
+                    // S4/S5): this write already survived being queued while offline, so
+                    // whatever Version it captured back then is very likely stale by replay
+                    // time - and unlike the live SaveSettingsAsync path, there is no interactive
+                    // caller left here to refetch-and-retry against. Sending no Version keeps
+                    // the write queue's existing, unchanged resolution strategy: last write
+                    // (now) wins, exactly like every other queued write type already behaves
+                    // (see the class comment above / EnqueueSaveSettingsAsync). This also means
+                    // a replayed settings write can never itself 409.
+                    settingsDto.Version = null;
                     var settingsResponse = await _http.PutAsJsonAsync("api/settings", settingsDto);
                     return IsEntryDone(settingsResponse);
                 case TypeSaveNote:
@@ -717,7 +746,7 @@ public class AppStateService : IAsyncDisposable
         {
             var dto = await _http.GetFromJsonAsync<UserSettingsDto>("api/settings");
             _settingsCache = FromDto(dto!);
-            _settingsHash = ComputeSettingsHash(_settingsCache);
+            _settingsHash = ComputeSettingsHash(dto!);
             await StoreReadCacheAsync(ReadCacheKeySettings, dto!);
         }
         catch
@@ -727,7 +756,7 @@ public class AppStateService : IAsyncDisposable
                 && await LoadReadCacheAsync<UserSettingsDto>(ReadCacheKeySettings) is { } cachedDto)
             {
                 _settingsCache = FromDto(cachedDto);
-                _settingsHash = ComputeSettingsHash(_settingsCache);
+                _settingsHash = ComputeSettingsHash(cachedDto);
             }
             _settingsCache ??= new UserSettings { SelectedCourseIds = new List<int> { 1, 2, 3, 4 } };
         }
@@ -735,18 +764,65 @@ public class AppStateService : IAsyncDisposable
         return _settingsCache;
     }
 
+    /// <summary>
+    /// Every call site mutates the FULL UserSettings object it last read (e.g. Setup.razor's
+    /// _settings field) and resends it whole - there is no per-field patch anywhere in this
+    /// path. On success, the response is applied back into the cache so Version reflects the
+    /// server's post-increment value (otherwise the NEXT SaveSettingsAsync call would keep
+    /// sending an already-stale Version and spuriously 409 against its own previous write). On
+    /// 409 (audit S4/S5: another device/tab saved in between), see HandleSaveConflictAsync.
+    /// </summary>
     public async Task SaveSettingsAsync(UserSettings settings)
     {
         _settingsCache = settings;
-        _settingsHash = ComputeSettingsHash(settings);
+        _settingsHash = ComputeSettingsHash(ToDto(settings));
         try
         {
-            await _http.PutAsJsonAsync("api/settings", ToDto(settings));
+            var response = await _http.PutAsJsonAsync("api/settings", ToDto(settings));
+            if (response.StatusCode == HttpStatusCode.Conflict)
+                await HandleSaveConflictAsync(settings);
+            else
+                await ApplySaveResponseAsync(response);
         }
         catch { await EnqueueSaveSettingsAsync(ToDto(settings)); /* offline: replay later */ }
         await ApplyAccentColorAsync(settings.AccentColor);
         OnSettingsChanged?.Invoke();
         NotifyStateChanged();
+    }
+
+    /// <summary>
+    /// 409 handling for SaveSettingsAsync (audit S4/S5 concurrency semantics): our Version was
+    /// stale, meaning another device/tab saved settings after this client last fetched. Chosen
+    /// semantics: refetch the server's current state (this also updates the local cache/hash and
+    /// - via the caller's own OnSettingsChanged/NotifyStateChanged right after - surfaces
+    /// whatever the OTHER device changed, exactly as a normal 30s poll eventually would have),
+    /// then re-send the SAME mutated object the caller originally built, now stamped with the
+    /// fresh Version, exactly ONCE more ("reapply the user's change on top of the fresh state" -
+    /// since this API is a full-row replace rather than a per-field patch, "reapplying" the
+    /// caller's change IS resending their full object against the now-current Version). If that
+    /// retry ALSO conflicts (a second write landed in the same instant), give up silently for
+    /// this call: looping further here risks fighting a genuinely fast-moving concurrent writer
+    /// forever, and the next 30s poll will reconcile the final state either way.
+    /// </summary>
+    private async Task HandleSaveConflictAsync(UserSettings settings)
+    {
+        var fresh = await FetchSettingsFromServerAsync(); // refreshes _settingsCache/_settingsHash as a side effect
+        settings.Version = fresh.Version;
+        try
+        {
+            var retryResponse = await _http.PutAsJsonAsync("api/settings", ToDto(settings));
+            await ApplySaveResponseAsync(retryResponse); // no-ops on a repeat 409 or other failure
+        }
+        catch { await EnqueueSaveSettingsAsync(ToDto(settings)); /* went offline mid-retry */ }
+    }
+
+    private async Task ApplySaveResponseAsync(HttpResponseMessage response)
+    {
+        if (!response.IsSuccessStatusCode) return;
+        var dto = await response.Content.ReadFromJsonAsync<UserSettingsDto>();
+        if (dto == null) return;
+        _settingsCache = FromDto(dto);
+        _settingsHash = ComputeSettingsHash(dto);
     }
 
     private IJSObjectReference? _accentModule;
@@ -951,6 +1027,7 @@ public class AppStateService : IAsyncDisposable
 
     private static UserSettings FromDto(UserSettingsDto d) => new()
     {
+        Version = d.Version ?? 0, // GET/a successful PUT response always populate this; 0 is a defensive fallback only
         SelectedCourseIds = d.SelectedCourseIds,
         CompletedCourseIds = d.CompletedCourseIds,
         Theme = d.Theme,
@@ -992,6 +1069,7 @@ public class AppStateService : IAsyncDisposable
 
     private static UserSettingsDto ToDto(UserSettings s) => new()
     {
+        Version = s.Version, // always sent - see UserSettingsDto.Version and SaveSettingsAsync
         SelectedCourseIds = s.SelectedCourseIds,
         CompletedCourseIds = s.CompletedCourseIds,
         Theme = s.Theme,
