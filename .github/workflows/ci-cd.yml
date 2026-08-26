@@ -218,9 +218,17 @@ jobs:
       next_version: ${{ steps.semrel.outputs.new_release_version }}
       published: ${{ steps.semrel.outputs.new_release_published }}
     steps:
+      # ref: main (branch tip), NOT the push-event SHA: Flux's image-update automation commits
+      # "[skip ci]" bumps to main that can land between the triggering push and this job actually
+      # running (the concurrency group can queue it behind a whole release chain). semantic-release
+      # then sees "local branch is behind the remote" on the event SHA and silently publishes
+      # nothing - the entire release chain skips even though a releasable fix was just merged
+      # (happened live: PR #64's fix produced no release). Analyzing the branch tip makes the
+      # verdict immune to that race; the tip only ever differs by those [skip ci] yaml commits.
       - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
+          ref: main
       - id: semrel
         uses: cycjimmy/semantic-release-action@b12c8f6015dc215fe37bc154d4ad456dd3833c90 # v6.0.0
         with:
@@ -246,7 +254,12 @@ jobs:
     env:
       NEXT_VERSION: ${{ needs.get-version.outputs.next_version }}
     steps:
+      # ref: main to match get-version's analysis target (see its checkout comment) - the
+      # binaries stamped with NEXT_VERSION must be built from the same tree that version was
+      # computed for, not from an event SHA that may be a [skip ci] Flux bump behind it.
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: main
       - uses: actions/setup-dotnet@v6.0.0
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
@@ -433,9 +446,14 @@ jobs:
       issues: write
       pull-requests: write
     steps:
+      # ref: main for the same reason as get-version's checkout (see there): the real release
+      # must be cut from the branch tip get-version analyzed, or the "behind the remote" guard
+      # trips on the event SHA whenever a Flux [skip ci] bump raced in. The retry below still
+      # covers pushes landing DURING this job.
       - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
+          ref: main
       - uses: actions/download-artifact@v8.0.1
         with:
           name: publish-output
