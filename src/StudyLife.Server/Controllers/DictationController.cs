@@ -14,9 +14,13 @@ namespace StudyLife.Server.Controllers;
 [Route("api/dictate")]
 public class DictationController : ControllerBase
 {
-    private readonly WhisperTranscriber _transcriber;
+    // Null when Speech:Enabled=false (Program.cs) - only the k8s worker Deployment sets that
+    // (audit finding O6: the worker never serves user traffic, so it never legitimately reaches
+    // this controller). Same optional-service pattern as BackupController's
+    // DatabaseBackupService?/DatabaseRestoreService? for the Postgres case.
+    private readonly WhisperTranscriber? _transcriber;
 
-    public DictationController(WhisperTranscriber transcriber)
+    public DictationController(WhisperTranscriber? transcriber = null)
     {
         _transcriber = transcriber;
     }
@@ -31,10 +35,13 @@ public class DictationController : ControllerBase
     [RequestFormLimits(MultipartBodyLengthLimit = 50L * 1024 * 1024)]
     public async Task<ActionResult<DictationResponseDto>> Transcribe(IFormFile? audio, [FromQuery] string? lang)
     {
+        // Covers both "Speech:Enabled=false, never registered" and "registered but the model
+        // file isn't baked into this image" with the same response - a caller has no legitimate
+        // way to tell those apart, and shouldn't need to.
+        if (_transcriber is null || !_transcriber.IsModelAvailable)
+            return NotFound(new { error = "no speech-to-text model available on this server" });
         if (audio == null || audio.Length == 0)
             return BadRequest(new { error = "audio file is required" });
-        if (!_transcriber.IsModelAvailable)
-            return NotFound(new { error = "no speech-to-text model available on this server" });
 
         await using var stream = audio.OpenReadStream();
         var text = await _transcriber.TranscribeAsync(stream, lang, HttpContext.RequestAborted);
