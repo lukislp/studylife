@@ -821,6 +821,9 @@ namespace StudyLife.Server.Migrations.Postgres
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("Version")
+                        .HasColumnType("integer");
+
                     b.Property<int>("WeeklyGoalMaxHours")
                         .HasColumnType("integer");
 
