@@ -19,13 +19,15 @@ namespace StudyLife.Server.Tests;
 /// </summary>
 public class BackupControllerEncryptedTests
 {
-    private static StudySessionDto MakeSession(string courseName) => new()
+    // The marker lives in Topic, not CourseName (audit finding M2: POST /api/sessions now
+    // derives CourseName server-side from the resolved catalog course).
+    private static StudySessionDto MakeSession(string topicMarker) => new()
     {
-        CourseId = 999,
-        CourseName = courseName,
+        CourseId = 1,
+        CourseName = "irrelevant",
         StartTime = DateTime.Today.AddDays(-1).AddHours(10),
         EndTime = DateTime.Today.AddDays(-1).AddHours(11),
-        Topic = "Encrypted-Restore-Test",
+        Topic = topicMarker,
         IsCompleted = false,
         TimerModeId = 1,
     };
@@ -95,9 +97,9 @@ public class BackupControllerEncryptedTests
     {
         using var factory = new CustomWebApplicationFactory();
         var client = factory.CreateClient();
-        var courseName = $"EncRestoreCourse-{Guid.NewGuid():N}";
+        var topicMarker = $"EncRestoreCourse-{Guid.NewGuid():N}";
 
-        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/api/sessions", MakeSession(courseName))).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/api/sessions", MakeSession(topicMarker))).StatusCode);
 
         var download = await client.PostAsJsonAsync("/api/backup/database/encrypted", new { password = "hunter2" });
         Assert.Equal(HttpStatusCode.OK, download.StatusCode);
@@ -118,8 +120,8 @@ public class BackupControllerEncryptedTests
         {
             connection.Open();
             using var command = connection.CreateCommand();
-            command.CommandText = "SELECT COUNT(*) FROM Sessions WHERE CourseName = $name;";
-            command.Parameters.AddWithValue("$name", courseName);
+            command.CommandText = "SELECT COUNT(*) FROM Sessions WHERE Topic = $topic;";
+            command.Parameters.AddWithValue("$topic", topicMarker);
             Assert.Equal(1L, (long)(command.ExecuteScalar() ?? 0L));
         }
         SqliteConnection.ClearAllPools();

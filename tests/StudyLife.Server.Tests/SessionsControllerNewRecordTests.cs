@@ -73,10 +73,10 @@ public class SessionsControllerNewRecordLongerSessionTests : IClassFixture<Custo
         // Baseline: a "normal" 1h session, so there's a comparison basis at all
         // (the very first session deliberately doesn't count as a record, see the
         // CheckNewRecordAsync comment).
-        await CreateCompletedAsync(701, DateTime.Now.AddDays(-3), TimeSpan.FromHours(1));
+        await CreateCompletedAsync(1, DateTime.Now.AddDays(-3), TimeSpan.FromHours(1));
 
         // Significantly longer session -> new record.
-        var record = await CreateCompletedAsync(701, DateTime.Now.AddDays(-1), TimeSpan.FromHours(5));
+        var record = await CreateCompletedAsync(1, DateTime.Now.AddDays(-1), TimeSpan.FromHours(5));
 
         Assert.Single(await GetSentRemindersAsync($"newrecord:{record.Id}"));
     }
@@ -133,8 +133,8 @@ public class SessionsControllerNewRecordEditSameSessionTests : IClassFixture<Cus
         await PutSettingsAsync(newRecordEnabled: true);
         await SubscribeAsync();
 
-        await CreateCompletedAsync(702, DateTime.Now.AddDays(-3), TimeSpan.FromHours(1));
-        var record = await CreateCompletedAsync(702, DateTime.Now.AddDays(-1), TimeSpan.FromHours(5));
+        await CreateCompletedAsync(1, DateTime.Now.AddDays(-3), TimeSpan.FromHours(1));
+        var record = await CreateCompletedAsync(1, DateTime.Now.AddDays(-1), TimeSpan.FromHours(5));
         Assert.Single(await GetSentRemindersAsync($"newrecord:{record.Id}"));
 
         // Edit the same session afterward (e.g. change the note) - must not trigger a second
@@ -198,8 +198,8 @@ public class SessionsControllerNewRecordShorterSessionTests : IClassFixture<Cust
         await PutSettingsAsync(newRecordEnabled: true);
         await SubscribeAsync();
 
-        await CreateCompletedAsync(711, DateTime.Now.AddDays(-3), TimeSpan.FromHours(4));
-        var shorter = await CreateCompletedAsync(711, DateTime.Now.AddDays(-1), TimeSpan.FromHours(1));
+        await CreateCompletedAsync(1, DateTime.Now.AddDays(-3), TimeSpan.FromHours(4));
+        var shorter = await CreateCompletedAsync(1, DateTime.Now.AddDays(-1), TimeSpan.FromHours(1));
 
         Assert.Empty(await GetSentRemindersAsync($"newrecord:{shorter.Id}"));
     }
@@ -259,7 +259,7 @@ public class SessionsControllerNewRecordVeryFirstSessionTests : IClassFixture<Cu
         // Trivial "record" without any comparison basis - deliberately no push, see the
         // CheckNewRecordAsync comment in SessionsController.cs. Own factory/DB, so this is
         // guaranteed to really be the very first session in the database.
-        var first = await CreateCompletedAsync(712, DateTime.Now.AddDays(-1), TimeSpan.FromHours(3));
+        var first = await CreateCompletedAsync(1, DateTime.Now.AddDays(-1), TimeSpan.FromHours(3));
 
         Assert.Empty(await GetSentRemindersAsync($"newrecord:{first.Id}"));
     }
@@ -316,8 +316,8 @@ public class SessionsControllerNewRecordToggleDisabledTests : IClassFixture<Cust
         await PutSettingsAsync(newRecordEnabled: false);
         await SubscribeAsync();
 
-        await CreateCompletedAsync(713, DateTime.Now.AddDays(-3), TimeSpan.FromHours(1));
-        var record = await CreateCompletedAsync(713, DateTime.Now.AddDays(-1), TimeSpan.FromHours(5));
+        await CreateCompletedAsync(1, DateTime.Now.AddDays(-3), TimeSpan.FromHours(1));
+        var record = await CreateCompletedAsync(1, DateTime.Now.AddDays(-1), TimeSpan.FromHours(5));
 
         Assert.Empty(await GetSentRemindersAsync($"newrecord:{record.Id}"));
     }

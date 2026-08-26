@@ -17,6 +17,7 @@ public class SessionsController : ControllerBase
     private readonly SessionHistoryCacheVersion _historyCacheVersion;
     private readonly VapidKeys _vapidKeys;
     private readonly ICurrentUserAccessor _currentUser;
+    private readonly ICourseResolver _courseResolver;
 
     private static readonly Func<StudyLifeDb, IAsyncEnumerable<StudySessionDto>> _compiledGetAll =
         EF.CompileAsyncQuery((StudyLifeDb db) =>
@@ -31,7 +32,7 @@ public class SessionsController : ControllerBase
     private readonly ApnsSender _apnsSender;
 
     public SessionsController(StudyLifeDb db, IDistributedCache cache, SessionHistoryCacheVersion historyCacheVersion, VapidKeysHolder vapidKeysHolder,
-        ICurrentUserAccessor currentUser, ApnsSender apnsSender)
+        ICurrentUserAccessor currentUser, ApnsSender apnsSender, ICourseResolver courseResolver)
     {
         _db = db;
         _cache = cache;
@@ -39,6 +40,7 @@ public class SessionsController : ControllerBase
         _vapidKeys = vapidKeysHolder.Keys!; // always set - see VapidKeysHolder comment
         _currentUser = currentUser;
         _apnsSender = apnsSender;
+        _courseResolver = courseResolver;
     }
 
     [HttpGet]
@@ -66,8 +68,18 @@ public class SessionsController : ControllerBase
         var error = Validate(dto);
         if (error != null) return BadRequest(error);
 
+        // Audit finding M2: CourseId must resolve against the user's full course universe
+        // (built-in catalog + all their custom courses, see CourseResolver), and
+        // CourseName/CourseColor are derived from it server-side - the client-supplied values
+        // in dto are ignored from here on (still required to be non-empty above for backward
+        // compatibility, but no longer trusted for their content).
+        var course = await _courseResolver.ResolveAsync(dto.CourseId);
+        if (course == null) return BadRequest(CourseValidationMessages.UnknownCourseId(dto.CourseId));
+
         var entity = ToEntity(dto);
         entity.Id = 0;
+        entity.CourseName = course.Name;
+        entity.CourseColor = course.Color;
         _db.Sessions.Add(entity);
         await _db.SaveChangesAsync();
         _historyCacheVersion.Value++;
@@ -83,6 +95,22 @@ public class SessionsController : ControllerBase
 
         var entity = await _db.Sessions.FindAsync(id);
         if (entity == null) return NotFound();
+
+        // Audit finding M2, exemption: a CourseId UNCHANGED from the stored row is never
+        // re-validated and its CourseName/CourseColor stay exactly as stamped at creation -
+        // editing/completing a session of a since-deleted custom course (e.g. via the focus
+        // timer) must keep working, and a later catalog rename must not silently rewrite
+        // already-frozen rows. Only an ACTUALLY CHANGED CourseId goes through resolution again,
+        // which re-derives (and re-freezes) CourseName/CourseColor from the newly bound course.
+        if (dto.CourseId != entity.CourseId)
+        {
+            var course = await _courseResolver.ResolveAsync(dto.CourseId);
+            if (course == null) return BadRequest(CourseValidationMessages.UnknownCourseId(dto.CourseId));
+            entity.CourseId = dto.CourseId;
+            entity.CourseName = course.Name;
+            entity.CourseColor = course.Color;
+        }
+
         var oldStartTime = entity.StartTime;
         Apply(dto, entity);
 
@@ -397,11 +425,11 @@ public class SessionsController : ControllerBase
         RecurrenceGroupId = d.RecurrenceGroupId,
     };
 
+    // Deliberately does NOT touch CourseId/CourseName/CourseColor: Update() above already
+    // decided those explicitly (re-resolved on an actual CourseId change, left untouched -
+    // frozen - otherwise, see the audit finding M2 comment there).
     private static void Apply(StudySessionDto d, StudySessionEntity e)
     {
-        e.CourseId = d.CourseId;
-        e.CourseName = d.CourseName;
-        e.CourseColor = d.CourseColor;
         e.StartTime = d.StartTime;
         e.EndTime = d.EndTime;
         e.Topic = d.Topic;
