@@ -1,3 +1,10 @@
+## [2.1.1](https://github.com/lukislp/studylife/compare/v2.1.0...v2.1.1) (2026-08-26)
+
+
+### Bug Fixes
+
+* address ai internal calls via StudyLifeAi InternalBaseUrl ([3d8b0a2](https://github.com/lukislp/studylife/commit/3d8b0a2cbf07242dec6a6dd00da11fff4819a611))
+
 # [2.1.0](https://github.com/lukislp/studylife/compare/v2.0.1...v2.1.0) (2026-08-26)
 
 
