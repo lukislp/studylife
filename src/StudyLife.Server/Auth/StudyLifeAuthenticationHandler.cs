@@ -21,8 +21,14 @@ public class StudyLifeAuthenticationSchemeOptions : AuthenticationSchemeOptions;
 /// 2. X-Session-Token header - if present, it EXCLUSIVELY applies (an invalid/expired token
 ///    fails authentication even if a valid API key is ALSO present), extending the session on
 ///    a sliding basis via AuthSessionService.ValidateAndRefreshAsync exactly as before.
-/// 3. X-Api-Key header or ?apiKey= query string, matched against the four independent hash
-///    slots on AuthUserEntity (ApiKeyHash/AiApiKeyHash/McpApiKeyHash/CaptureApiKeyHash).
+/// 3. X-Api-Key header ONLY, matched against the four independent hash slots on AuthUserEntity
+///    (ApiKeyHash/AiApiKeyHash/McpApiKeyHash/CaptureApiKeyHash). The former ?apiKey= query
+///    string fallback was removed (audit finding A12a): a credential in the URL ends up in
+///    server access logs, browser history, and Referer headers of any outbound request the
+///    page makes, none of which apply to a header. No known consumer ever used the query
+///    form (see the removal commit for the cross-repo grep); the ICS feed's ?calendarToken=
+///    above and the progress-share token in the URL PATH (ProgressController) are unrelated,
+///    intentionally-URL-borne mechanisms and are untouched by this.
 ///
 /// HttpContext.Items keeps being populated exactly like before (CurrentUserAccessor.
 /// HttpContextItemKey, AuthSessionService.SessionItemKey, AuthSessionService.ApiKeySlotItemKey) -
@@ -119,9 +125,9 @@ public class StudyLifeAuthenticationHandler : AuthenticationHandler<StudyLifeAut
 
         // Without a session token: per-user API key, matched against all four independent
         // slots in one step (see AuthUserEntity.ApiKeyHash/AiApiKeyHash/McpApiKeyHash/
-        // CaptureApiKeyHash) - any one of them authenticates AND identifies the user.
-        var providedKey = request.Headers["X-Api-Key"].FirstOrDefault()
-            ?? request.Query["apiKey"].FirstOrDefault();
+        // CaptureApiKeyHash) - any one of them authenticates AND identifies the user. Header
+        // only (audit finding A12a) - a ?apiKey= query string is deliberately NOT accepted.
+        var providedKey = request.Headers["X-Api-Key"].FirstOrDefault();
         if (!string.IsNullOrEmpty(providedKey))
         {
             var keyHash = AuthSessionService.HashToken(providedKey);
