@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Auth;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
+using StudyLife.Shared;
 
 namespace StudyLife.Server.Controllers;
 
@@ -330,7 +331,7 @@ public class BackupController : ControllerBase
 
     /// <summary>Is a staged restore currently ready for the next restart?</summary>
     [HttpGet("restore/status")]
-    public async Task<IActionResult> RestoreStatus()
+    public async Task<ActionResult<RestoreStatusResponseDto>> RestoreStatus()
     {
         // Postgres mode: raw backup/restore not available (see IsRawBackupAvailable comment) -
         // before the owner check, because this can never work structurally here, regardless of
@@ -353,12 +354,12 @@ public class BackupController : ControllerBase
         // AlwaysChallengeAuthorizationMiddlewareResultHandler), which is exactly the response
         // this endpoint must NOT give for "logged in, but not the owner".
         if (!await IsOwnerAsync()) return Forbid();
-        return Ok(new { pending = _restoreService!.IsRestorePending, stagedAt = _restoreService.StagedAtUtc });
+        return Ok(new RestoreStatusResponseDto { Pending = _restoreService!.IsRestorePending, StagedAt = _restoreService.StagedAtUtc });
     }
 
     /// <summary>Discards a staged restore before it was applied. Live DB untouched.</summary>
     [HttpPost("restore/cancel")]
-    public async Task<IActionResult> CancelRestore()
+    public async Task<ActionResult<RestoreCancelResponseDto>> CancelRestore()
     {
         // Postgres mode: raw backup/restore not available (see IsRawBackupAvailable comment) -
         // before the owner check, because this can never work structurally here, regardless of
@@ -382,7 +383,7 @@ public class BackupController : ControllerBase
         // this endpoint must NOT give for "logged in, but not the owner".
         if (!await IsOwnerAsync()) return Forbid();
         return _restoreService!.CancelPending()
-            ? Ok(new { status = "cancelled" })
+            ? Ok(new RestoreCancelResponseDto())
             : NotFound(new { error = "No staged restore to cancel." });
     }
 

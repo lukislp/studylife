@@ -160,6 +160,34 @@ jobs:
           path: nuget-vulnerabilities.json
           retention-days: 7
 
+  # Audit finding D2: the REST API's formal contract. docs/api/openapi.json is the fixed path
+  # three consumer repos pin their generated clients against (see StudyLife.Server.csproj's
+  # OpenApiDocumentsDirectory/CopyOpenApiDocumentToCommittedSpec target for exactly what
+  # refreshes it: a plain `dotnet build` of the Server project) - this job is the freshness
+  # gate that keeps it honest: a schema/route change without a regenerated, re-committed spec
+  # fails the PR, the same way test-lint fails an unformatted diff.
+  test-openapi-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-dotnet@v6.0.0
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - uses: actions/cache@v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'StudyLife.sln') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+      - run: dotnet restore src/StudyLife.Server/StudyLife.Server.csproj
+      - run: dotnet build src/StudyLife.Server/StudyLife.Server.csproj --configuration ${{ env.CONFIGURATION }} --no-restore
+      - name: Fail if docs/api/openapi.json is stale
+        run: |
+          git diff --exit-code docs/api/openapi.json || {
+            echo "::error::docs/api/openapi.json is out of sync with the built API - a controller/DTO change was made without regenerating the committed OpenAPI contract. Run 'dotnet build src/StudyLife.Server/StudyLife.Server.csproj' locally and commit the resulting docs/api/openapi.json.";
+            exit 1;
+          }
+
   test-k8s-manifests:
     runs-on: ubuntu-latest
     container:
