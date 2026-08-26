@@ -1,9 +1,11 @@
 using System.Security.Cryptography;
 using Fido2NetLib;
 using Fido2NetLib.Objects;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
+using StudyLife.Server.Auth;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
 using StudyLife.Shared;
@@ -16,11 +18,15 @@ namespace StudyLife.Server.Controllers;
 /// this class only handles orchestration: caching challenges (IMemoryCache, 5 minutes),
 /// persisting credentials/sessions, and the "who is actually being registered" decision.
 ///
-/// All /api/auth paths are exempt from both the API key AND session requirement in the gate
-/// in Program.cs (you can't authenticate before you're logged in) - the session-required
-/// endpoints here (logout, device list, additional passkey) therefore check themselves via
-/// HttpContext.Items[AuthSessionService.SessionItemKey] that a REAL validated session
-/// is present and not just the shared API key.
+/// Almost every action here carries [AllowAnonymous] - you can't authenticate before you're
+/// logged in (audit finding A3: this used to be one blanket "/api/auth is exempt" path-string
+/// check in Program.cs; now each action states its own requirement). The session-required
+/// endpoints (logout, device list, additional passkey, mcp-connect) are guarded either by
+/// [Authorize(Policy = SessionOnly)] or, where the requirement is conditional (RegisterComplete
+/// only needs a session on ONE of its paths), by the shared HttpContext.SessionAuthUserId()
+/// read. Whoami is the one action with no attribute at all - it needs the default ApiAccess
+/// policy (any credential, not just a session), since its whole purpose is reporting back
+/// which credential kind actually matched.
 /// </summary>
 [ApiController]
 [Route("api/auth")]
@@ -100,6 +106,7 @@ public class AuthController : ControllerBase
 
     // ── Registration (openly accessible) ─────────────────────────────────────
 
+    [AllowAnonymous]
     [HttpPost("register/begin")]
     public async Task<ActionResult<PasskeyBeginResponseDto>> RegisterBegin([FromBody] PasskeyRegisterBeginRequestDto request)
     {
@@ -127,10 +134,11 @@ public class AuthController : ControllerBase
     /// THIS (already logged-in) device itself generates the new passkey - for a physically
     /// DIFFERENT, not-yet-logged-in device see register/begin-linked.
     /// </summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("register/begin-additional")]
     public async Task<ActionResult<PasskeyBeginResponseDto>> RegisterBeginAdditional()
     {
-        if (SessionAuthUserId is not int userId) return Unauthorized();
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
 
@@ -155,6 +163,7 @@ public class AuthController : ControllerBase
     /// generate. Registers its own, LOCAL passkey on this device (no cross-device ceremony);
     /// like begin-additional it ends up PENDING and still requires an explicit approval.
     /// </summary>
+    [AllowAnonymous]
     [HttpPost("register/begin-linked")]
     public async Task<ActionResult<PasskeyBeginResponseDto>> RegisterBeginLinked([FromBody] DeviceLinkRedeemRequestDto request)
     {
@@ -214,6 +223,7 @@ public class AuthController : ControllerBase
         return new PasskeyBeginResponseDto { OptionsId = optionsId, OptionsJson = options.ToJson() };
     }
 
+    [AllowAnonymous]
     [HttpPost("register/complete")]
     public async Task<ActionResult<PasskeyCompleteResponseDto>> RegisterComplete([FromBody] PasskeyRegisterCompleteRequest request)
     {
@@ -227,8 +237,10 @@ public class AuthController : ControllerBase
         // Additional-passkey path via begin-additional: the session must still be valid at
         // the time of Complete AND belong to the same user for whom Begin issued the challenge.
         // The begin-linked path (RequiresSessionAtComplete=false) has no session at all -
-        // there the link code already verified the authorization in Begin.
-        if (pending.ForAuthUserId is int forUserId && pending.RequiresSessionAtComplete && SessionAuthUserId != forUserId)
+        // there the link code already verified the authorization in Begin. Conditional, so this
+        // stays a manual check instead of an [Authorize(SessionOnly)] attribute (the action must
+        // remain reachable WITHOUT a session on the other two registration paths).
+        if (pending.ForAuthUserId is int forUserId && pending.RequiresSessionAtComplete && HttpContext.SessionAuthUserId() != forUserId)
             return Unauthorized();
 
         RegisteredPublicKeyCredential credential;
@@ -321,6 +333,7 @@ public class AuthController : ControllerBase
 
     // ── Login ────────────────────────────────────────────────────────────────
 
+    [AllowAnonymous]
     [HttpPost("login/begin")]
     public async Task<ActionResult<PasskeyBeginResponseDto>> LoginBegin()
     {
@@ -345,6 +358,7 @@ public class AuthController : ControllerBase
         return new PasskeyBeginResponseDto { OptionsId = optionsId, OptionsJson = options.ToJson() };
     }
 
+    [AllowAnonymous]
     [HttpPost("login/complete")]
     public async Task<ActionResult<PasskeyCompleteResponseDto>> LoginComplete([FromBody] PasskeyLoginCompleteRequest request)
     {
@@ -434,6 +448,7 @@ public class AuthController : ControllerBase
     /// loopback port, could otherwise turn interception of the redirect into a full account
     /// takeover with no further step needed).
     /// </summary>
+    [AllowAnonymous]
     [HttpPost("handoff")]
     public async Task<ActionResult<AuthHandoffResponseDto>> Handoff([FromBody] AuthHandoffRequestDto request)
     {
@@ -460,6 +475,7 @@ public class AuthController : ControllerBase
     /// benefit (guessing the correct 256-bit verifier isn't something repeated attempts make
     /// meaningfully more likely). Found live during production testing of this exact flow.
     /// </summary>
+    [AllowAnonymous]
     [HttpPost("exchange")]
     public async Task<ActionResult<AuthExchangeResponseDto>> Exchange([FromBody] AuthExchangeRequestDto request)
     {
@@ -503,13 +519,15 @@ public class AuthController : ControllerBase
     /// duplicated) and stakes out a single-use assertion the browser carries back to
     /// studylife-mcp's own callback, so the plaintext key never appears in a URL/browser
     /// history/redirect chain - only the opaque assertion does. Session-required like the other
-    /// privileged endpoints below (SessionAuthUserId), NOT exempt from anything - reachable
-    /// because it's still under /api/auth, same blanket carve-out as logout/link/begin.
+    /// privileged endpoints (now [Authorize(Policy = SessionOnly)] instead of a manual check) -
+    /// the ONE action in this controller that is NOT [AllowAnonymous], since it needs the
+    /// framework to actually reject non-session requests before the action runs.
     /// </summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("mcp-connect")]
     public async Task<ActionResult<McpConnectResponseDto>> McpConnect([FromBody] McpConnectRequestDto request)
     {
-        if (SessionAuthUserId is not int userId) return Unauthorized();
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
 
         // No open-redirect surface beyond this: the assertion is single-use, short-lived, and
         // only ever exchangeable server-to-server (see McpAssertionExchange) - an attacker who
@@ -543,6 +561,7 @@ public class AuthController : ControllerBase
     /// silently fall back to "user 1", and this endpoint never touches it in the first place.
     /// Uniformly 401 for "unknown"/"expired"/garbage, same non-distinguishing pattern as Exchange.
     /// </summary>
+    [AllowAnonymous]
     [HttpPost("mcp-assertion-exchange")]
     public async Task<ActionResult<McpAssertionExchangeResponseDto>> McpAssertionExchange([FromBody] McpAssertionExchangeRequestDto request)
     {
@@ -564,10 +583,11 @@ public class AuthController : ControllerBase
     /// Lets a satellite (studylife-mcp, studylife-ai, Home Assistant, studylife-capture) resolve
     /// the REAL AuthUserId behind whatever credential it holds, instead of inventing its own
     /// identity (e.g. studylife-mcp's former sha256(api key) OAuth subject - audit finding A1).
-    /// Unlike the rest of this controller, this endpoint deliberately goes through the NORMAL
-    /// gate resolution in Program.cs (see the /api/auth/whoami carve-out there) instead of being
-    /// exempt - both to require a real credential (session OR any of the four key slots) and to
-    /// pick up AuthSessionService.ApiKeySlotItemKey, which only the gate's key branch sets.
+    /// Unlike the rest of this controller, this endpoint deliberately does NOT carry
+    /// [AllowAnonymous] - it requires the default ApiAccess policy (a real credential, session
+    /// OR any of the four key slots) so it can report which one actually matched, via
+    /// AuthSessionService.ApiKeySlotItemKey (only the API-key branch of the AuthenticationHandler
+    /// sets that item).
     /// </summary>
     [HttpGet("whoami")]
     public ActionResult<WhoamiResponseDto> Whoami()
@@ -593,10 +613,11 @@ public class AuthController : ControllerBase
     /// explicit approval via the device list - the code only proves "which account", not
     /// "this is genuinely trustworthy" (see RegisterComplete/LoginComplete).
     /// </summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("link/begin")]
     public async Task<ActionResult<DeviceLinkCodeResponseDto>> LinkBegin()
     {
-        if (SessionAuthUserId is not int userId) return Unauthorized();
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
 
         var displayCode = GenerateLinkCode();
         await CacheSetAsync(LinkCodeCacheKey(displayCode), new PendingDeviceLink(userId), LinkCodeLifetime);
@@ -615,10 +636,11 @@ public class AuthController : ControllerBase
     /// able to construct emergency access for itself (same rationale as for ha-api-key/calendar
     /// token). The user's existing codes are fully invalidated in the process.
     /// </summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("recovery/generate")]
     public async Task<ActionResult<RecoveryCodesResponseDto>> GenerateRecoveryCodes()
     {
-        if (SessionAuthUserId is not int userId) return Unauthorized();
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
 
         await _db.RecoveryCodes.Where(c => c.AuthUserId == userId).ExecuteDeleteAsync();
 
@@ -641,10 +663,11 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>Status for the setup card: how many codes are still unused, when they were created.</summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpGet("recovery/status")]
     public async Task<ActionResult<RecoveryStatusDto>> GetRecoveryStatus()
     {
-        if (SessionAuthUserId is not int userId) return Unauthorized();
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var codes = await _db.RecoveryCodes.AsNoTracking()
             .Where(c => c.AuthUserId == userId).ToListAsync();
         return new RecoveryStatusDto
@@ -661,6 +684,7 @@ public class AuthController : ControllerBase
     /// (unique index); uniformly 401 for both "unknown" and "already used". Brute force is
     /// throttled via its own strict rate-limit partition in Program.cs.
     /// </summary>
+    [AllowAnonymous]
     [HttpPost("recovery/login")]
     public async Task<ActionResult<PasskeyCompleteResponseDto>> RecoveryLogin([FromBody] RecoveryLoginRequestDto request)
     {
@@ -690,6 +714,7 @@ public class AuthController : ControllerBase
     /// instance (Login.razor then auto-signs-in via demo-login instead of showing the
     /// passkey UI). Deliberately reveals nothing else - on a normal instance this simply
     /// returns demo:false and the login page behaves exactly as before.</summary>
+    [AllowAnonymous]
     [HttpGet("demo")]
     public ActionResult<DemoInfoDto> GetDemoInfo() => new DemoInfoDto { Demo = DemoModeEnabled };
 
@@ -703,6 +728,7 @@ public class AuthController : ControllerBase
     /// can create themselves an account on the demo) is rejected with 403.
     /// The demo user is the first AuthUser row - seeded once at deployment time.
     /// </summary>
+    [AllowAnonymous]
     [HttpPost("demo-login")]
     public async Task<ActionResult<PasskeyCompleteResponseDto>> DemoLogin()
     {
@@ -727,28 +753,31 @@ public class AuthController : ControllerBase
     /// (Setup.razor, Index.razor reminder) to any other user in the first place, instead of
     /// letting them hit a 403 from BackupController.IsOwnerAsync on click.
     /// </summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpGet("account-info")]
     public async Task<ActionResult<AccountInfoDto>> GetAccountInfo()
     {
-        if (SessionAuthUserId is not int userId) return Unauthorized();
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var firstUserId = await _db.AuthUsers.OrderBy(u => u.Id).Select(u => u.Id).FirstOrDefaultAsync();
         return new AccountInfoDto { IsOwner = userId == firstUserId };
     }
 
     /// <summary>Server-side invalidation of one's own session ("device lost" case) -
     /// the row is deleted, making the token immediately and permanently worthless.</summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("logout")]
     public async Task<IActionResult> Logout()
     {
-        if (HttpContext.Items[AuthSessionService.SessionItemKey] is not int sessionId) return Unauthorized();
+        var sessionId = (int)HttpContext.Items[AuthSessionService.SessionItemKey]!; // guaranteed by [Authorize(SessionOnly)]
         await _db.AuthSessions.Where(s => s.Id == sessionId).ExecuteDeleteAsync();
         return NoContent();
     }
 
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpGet("credentials")]
     public async Task<ActionResult<List<PasskeyListItemDto>>> ListCredentials()
     {
-        if (SessionAuthUserId is not int userId) return Unauthorized();
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         return await _db.PasskeyCredentials.AsNoTracking()
             .Where(c => c.AuthUserId == userId)
             .OrderBy(c => c.CreatedAt)
@@ -769,10 +798,11 @@ public class AuthController : ControllerBase
     /// (SessionAuthUserId must match the target credential). Afterward the new device can log
     /// in normally via login/begin+complete.
     /// </summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("credentials/{id:int}/approve")]
     public async Task<IActionResult> ApproveCredential(int id)
     {
-        if (SessionAuthUserId is not int userId) return Unauthorized();
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var credential = await _db.PasskeyCredentials.FirstOrDefaultAsync(c => c.Id == id && c.AuthUserId == userId);
         if (credential is null) return NotFound();
         if (credential.ApprovedAt is not null) return NoContent(); // already approved, idempotent
@@ -782,10 +812,11 @@ public class AuthController : ControllerBase
         return NoContent();
     }
 
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPut("credentials/{id:int}/label")]
     public async Task<IActionResult> RenameCredential(int id, [FromBody] PasskeyRenameRequestDto request)
     {
-        if (SessionAuthUserId is not int userId) return Unauthorized();
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var credential = await _db.PasskeyCredentials.FirstOrDefaultAsync(c => c.Id == id && c.AuthUserId == userId);
         if (credential is null) return NotFound();
 
@@ -796,10 +827,11 @@ public class AuthController : ControllerBase
         return NoContent();
     }
 
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpDelete("credentials/{id:int}")]
     public async Task<IActionResult> DeleteCredential(int id)
     {
-        if (SessionAuthUserId is not int userId) return Unauthorized();
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var credential = await _db.PasskeyCredentials.FirstOrDefaultAsync(c => c.Id == id && c.AuthUserId == userId);
         if (credential is null) return NotFound();
 
@@ -818,16 +850,6 @@ public class AuthController : ControllerBase
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
-
-    /// <summary>AuthUserId of this request's validated session, or null if the request came
-    /// without a (valid) X-Session-Token. Both items are set exclusively by the middleware in
-    /// Program.cs after successful token validation - the SessionItemKey distinguishes a "real
-    /// session" from the API-key fallback resolution, which only sets the user key.</summary>
-    private int? SessionAuthUserId =>
-        HttpContext.Items.ContainsKey(AuthSessionService.SessionItemKey)
-        && HttpContext.Items[CurrentUserAccessor.HttpContextItemKey] is int userId
-            ? userId
-            : null;
 
     /// <summary>
     /// Configure Fido2NetLib per request: RP-id/origin come from the request itself (already
