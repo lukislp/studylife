@@ -79,6 +79,18 @@ public class SettingsController : ControllerBase
             return BadRequest("TargetGraduationDate must not be in the past.");
 
         var entity = await _db.Settings.GetOrCreateAsync(_db);
+
+        // Optimistic concurrency (audit S4/S5): only enforced when the caller actually sends a
+        // Version - see UserSettingsDto.Version for why null must mean "no precondition" rather
+        // than "version 0". This check has a narrow, non-atomic window against
+        // entity.Version++/SaveChangesAsync below within THIS request (not closed via an EF
+        // IsConcurrencyToken/ExecuteUpdate WHERE clause) - deliberately accepted for this app's
+        // actual threat model (a couple of personal devices racing across the up-to-30s
+        // poll/cache window, not sub-millisecond concurrent writers); closing that residual
+        // window is out of scope for this fix.
+        if (dto.Version.HasValue && dto.Version.Value != entity.Version)
+            return Conflict(ToDto(entity));
+
         entity.SelectedCourseIds = string.Join(",", dto.SelectedCourseIds);
         entity.CompletedCourseIds = string.Join(",", dto.CompletedCourseIds);
         entity.Theme = dto.Theme;
@@ -112,14 +124,22 @@ public class SettingsController : ControllerBase
         entity.ComebackNudgeEnabled = dto.ComebackNudgeEnabled;
         entity.NewRecordNotificationsEnabled = dto.NewRecordNotificationsEnabled;
         entity.MonthlyReportEnabled = dto.MonthlyReportEnabled;
-        entity.LastBackupDownloadAt = dto.LastBackupDownloadAt;
         entity.ActiveStudyProgramId = dto.ActiveStudyProgramId;
+        // LastBackupDownloadAt deliberately NOT set here (audit F1): it is documented on
+        // UserSettingsEntity as "set directly in BackupController, not via the normal settings
+        // PUT" - but until this fix, this full-row-replace endpoint quietly overwrote it from
+        // whatever the client's DTO happened to carry anyway (typically its own last-fetched
+        // copy, but a stale/offline client could just as easily send an old or null value and
+        // silently revert the backup-reminder state, or forge it outright). Same rationale as
+        // the ProgressShareEnabled/ProgressShareToken exclusion below - a field with its own
+        // dedicated write path must not also be reachable through the generic PUT.
         // ProgressShareEnabled/ProgressShareToken deliberately NOT set here - they have their
         // own write path via the three endpoints below (same rationale as LastBackupDownloadAt:
         // "set directly, not via the normal settings PUT"). Reason: Enable must atomically
         // generate a cryptographically strong token if none exists yet - a client roundtrip via
         // the generic PUT could otherwise persist a "half-activated" state (Enabled=true,
         // Token=null).
+        entity.Version++;
         await _db.SaveChangesAsync();
         _settingsCacheVersion.Value++;
         return ToDto(entity);
@@ -474,6 +494,7 @@ public class SettingsController : ControllerBase
     // projection doesn't have to duplicate the same mapping a second time.
     internal static UserSettingsDto ToDto(UserSettingsEntity e) => new()
     {
+        Version = e.Version,
         SelectedCourseIds = string.IsNullOrEmpty(e.SelectedCourseIds)
             ? new List<int> { 1, 2, 3, 4 }
             : CommaSeparatedIds.Parse(e.SelectedCourseIds),

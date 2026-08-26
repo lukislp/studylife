@@ -561,6 +561,174 @@ public class SettingsControllerApiKeySlotsAreIndependentTests : IClassFixture<Cu
 }
 
 /// <summary>
+/// Audit finding F1: LastBackupDownloadAt is documented on UserSettingsEntity as "set directly
+/// in BackupController, not via the normal settings PUT" - but until this fix, SettingsController.
+/// Save quietly wrote whatever the client's DTO carried for it anyway, so a stale/offline client
+/// could silently revert (or forge) the backup-reminder state on its next save. Own class/factory:
+/// seeds LastBackupDownloadAt directly via the DbContext (mirrors BackupController.
+/// TouchLastBackupDownloadAt without needing a real backup round-trip), then proves a PUT can't
+/// move it in either direction.
+/// </summary>
+public class SettingsControllerLastBackupDownloadAtTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+
+    public SettingsControllerLastBackupDownloadAtTests(CustomWebApplicationFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient();
+    }
+
+    [Fact]
+    public async Task Put_CannotClobberOrForgeLastBackupDownloadAt()
+    {
+        var seeded = new DateTime(2026, 1, 1, 12, 0, 0);
+        await _factory.WithDbAsync(async db =>
+        {
+            var entity = await db.Settings.GetOrCreateAsync(db);
+            entity.LastBackupDownloadAt = seeded;
+            await db.SaveChangesAsync();
+        });
+
+        // A stale/offline client sends its own (older or null) idea of the field, alongside an
+        // otherwise valid full settings object - as every real client always does.
+        var dto = new UserSettingsDto { LastBackupDownloadAt = null, WeeklyGoalMinHours = 40, WeeklyGoalMaxHours = 60 };
+        var putResponse = await _client.PutAsJsonAsync("/api/settings", dto);
+        Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
+
+        var putDto = await putResponse.Content.ReadFromJsonAsync<UserSettingsDto>();
+        Assert.Equal(seeded, putDto!.LastBackupDownloadAt); // untouched by the client's null
+
+        // Forging an arbitrary (future/fabricated) value must be equally impossible.
+        var forged = new UserSettingsDto { LastBackupDownloadAt = DateTime.UtcNow.AddDays(30) };
+        var forgeResponse = await _client.PutAsJsonAsync("/api/settings", forged);
+        Assert.Equal(HttpStatusCode.OK, forgeResponse.StatusCode);
+        var forgeDto = await forgeResponse.Content.ReadFromJsonAsync<UserSettingsDto>();
+        Assert.Equal(seeded, forgeDto!.LastBackupDownloadAt); // still the value BackupController set, not the forged one
+
+        var getResponse = await _client.GetFromJsonAsync<UserSettingsDto>("/api/settings");
+        Assert.Equal(seeded, getResponse!.LastBackupDownloadAt);
+    }
+}
+
+/// <summary>
+/// Audit findings S4/S5: optimistic concurrency for the settings PUT. GET always returns the
+/// row's current Version; PUT rejects a stale one with 409 Conflict (and bumps on success), but
+/// - compatibility requirement - a PUT that omits Version entirely must behave exactly like
+/// before this fix (unconditional last-writer-wins), so older clients/Home Assistant/scripts
+/// against the API keep working unchanged. Each scenario below gets its OWN class/factory
+/// (same isolation rule as SettingsControllerFreshDbTests/SettingsControllerCacheIsolationTests
+/// above): they all depend on the row's Version starting at a known, predictable value, which
+/// only holds on a pristine, untouched DB - sharing a factory with any other mutating PUT would
+/// make the expected Version (and thus OK-vs-409) depend on xUnit's unspecified execution order.
+/// </summary>
+public class SettingsControllerVersioningFreshDbTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly HttpClient _client;
+
+    public SettingsControllerVersioningFreshDbTests(CustomWebApplicationFactory factory)
+        => _client = factory.CreateClient();
+
+    [Fact]
+    public async Task Get_OnFreshRow_ReturnsVersionZero()
+    {
+        var dto = await _client.GetFromJsonAsync<UserSettingsDto>("/api/settings");
+        Assert.Equal(0, dto!.Version);
+    }
+}
+
+public class SettingsControllerVersioningMatchTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly HttpClient _client;
+
+    public SettingsControllerVersioningMatchTests(CustomWebApplicationFactory factory)
+        => _client = factory.CreateClient();
+
+    [Fact]
+    public async Task Put_WithMatchingVersion_SucceedsAndBumpsVersion()
+    {
+        var initial = await _client.GetFromJsonAsync<UserSettingsDto>("/api/settings");
+        Assert.Equal(0, initial!.Version);
+
+        initial.Version = 0; // matches the row's actual current value
+        initial.WeeklyGoalMinHours = 12;
+        initial.WeeklyGoalMaxHours = 20;
+        var response = await _client.PutAsJsonAsync("/api/settings", initial);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var updated = await response.Content.ReadFromJsonAsync<UserSettingsDto>();
+        Assert.Equal(1, updated!.Version); // bumped by exactly 1
+        Assert.Equal(12, updated.WeeklyGoalMinHours);
+
+        var getAfter = await _client.GetFromJsonAsync<UserSettingsDto>("/api/settings");
+        Assert.Equal(1, getAfter!.Version);
+    }
+}
+
+public class SettingsControllerVersioningStaleTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly HttpClient _client;
+
+    public SettingsControllerVersioningStaleTests(CustomWebApplicationFactory factory)
+        => _client = factory.CreateClient();
+
+    [Fact]
+    public async Task Put_WithStaleVersion_ReturnsConflictAndDoesNotWrite()
+    {
+        var initial = await _client.GetFromJsonAsync<UserSettingsDto>("/api/settings");
+        initial!.Version = 0;
+        initial.WeeklyGoalMinHours = 12;
+        initial.WeeklyGoalMaxHours = 20;
+        // First writer succeeds and moves the row to Version 1.
+        Assert.Equal(HttpStatusCode.OK, (await _client.PutAsJsonAsync("/api/settings", initial)).StatusCode);
+
+        // Second writer still believes Version 0 (e.g. it fetched before the first writer's PUT,
+        // simulating the classic "two devices read-modify-write" race) - must be rejected, not
+        // silently overwrite the first writer's change.
+        var stale = new UserSettingsDto { Version = 0, WeeklyGoalMinHours = 77, WeeklyGoalMaxHours = 88 };
+        var conflictResponse = await _client.PutAsJsonAsync("/api/settings", stale);
+
+        Assert.Equal(HttpStatusCode.Conflict, conflictResponse.StatusCode);
+        // The row must still reflect the first writer's change, not the rejected second one.
+        var afterConflict = await _client.GetFromJsonAsync<UserSettingsDto>("/api/settings");
+        Assert.Equal(1, afterConflict!.Version);
+        Assert.Equal(12, afterConflict.WeeklyGoalMinHours);
+    }
+}
+
+public class SettingsControllerVersioningAbsentTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly HttpClient _client;
+
+    public SettingsControllerVersioningAbsentTests(CustomWebApplicationFactory factory)
+        => _client = factory.CreateClient();
+
+    [Fact]
+    public async Task Put_WithoutVersion_BehavesLikeLastWriterWinsRegardlessOfCurrentVersion()
+    {
+        var initial = await _client.GetFromJsonAsync<UserSettingsDto>("/api/settings");
+        initial!.Version = 0;
+        initial.WeeklyGoalMinHours = 12;
+        initial.WeeklyGoalMaxHours = 20;
+        // Moves the row to Version 1.
+        Assert.Equal(HttpStatusCode.OK, (await _client.PutAsJsonAsync("/api/settings", initial)).StatusCode);
+
+        // A caller that never sends Version at all (compatibility: older client / Home Assistant /
+        // an ad-hoc script) must succeed unconditionally, exactly like before this fix - even
+        // though its own idea of the row is stale.
+        var legacyWrite = new UserSettingsDto { WeeklyGoalMinHours = 33, WeeklyGoalMaxHours = 44 };
+        Assert.Null(legacyWrite.Version);
+        var response = await _client.PutAsJsonAsync("/api/settings", legacyWrite);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var updated = await response.Content.ReadFromJsonAsync<UserSettingsDto>();
+        Assert.Equal(33, updated!.WeeklyGoalMinHours);
+        Assert.Equal(2, updated.Version); // still incremented - just never CHECKED against the caller's (absent) value
+    }
+}
+
+/// <summary>
 /// M1 regression: SelectedCourseIds/CompletedCourseIds used to be parsed with bare
 /// int.Parse in SettingsController.ToDto - one malformed entry (e.g. planted by a bug
 /// elsewhere, or by the external studylife-ai capture-enrichment path for other comma-int-list

@@ -17,6 +17,18 @@ public class StudySessionDto
 
 public class UserSettingsDto
 {
+    /// <summary>
+    /// Optimistic-concurrency token (audit S4/S5), mirrors UserSettingsEntity.Version 1:1. GET
+    /// ALWAYS returns the row's actual current value (never null). On PUT, this is nullable so
+    /// "the field is simply absent from the request JSON" can be told apart from "the client
+    /// explicitly sent version 0": null = no precondition, the server accepts the write
+    /// unconditionally and keeps today's last-writer-wins behavior (compatibility for older
+    /// clients, Home Assistant, and ad-hoc scripts against the API that don't know this field
+    /// exists). Non-null = the write is rejected with 409 Conflict unless it still equals the
+    /// row's current Version; on success the server increments it and returns the new value.
+    /// The Blazor client always sends the Version it last fetched (see AppStateService).
+    /// </summary>
+    public int? Version { get; set; }
     public List<int> SelectedCourseIds { get; set; } = new() { 1, 2, 3, 4 };
     public List<int> CompletedCourseIds { get; set; } = new();
     public string Theme { get; set; } = "dark";
