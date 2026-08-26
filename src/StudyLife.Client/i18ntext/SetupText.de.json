@@ -246,5 +246,15 @@
   "ProgressShareRegenerateConfirmWarning": "Das macht den aktuellen Fortschritts-Link sofort ungültig. Wer den alten Link hat (Eltern, Mentor, Studienberatung), kann deinen Fortschritt danach nicht mehr sehen — teile stattdessen den neuen Link.",
   "ProgressShareRegenerateConfirmCancel": "Abbrechen",
   "ProgressShareRegenerateConfirmYes": "Ja, jetzt neu generieren",
-  "ProgressShareRegenerateSuccess": "Neu generiert"
+  "ProgressShareRegenerateSuccess": "Neu generiert",
+  "InvitesHeading": "Einladungen",
+  "InvitesDesc": "Erzeuge einen Einladungslink, damit jemand anderes ein eigenes Konto anlegen kann.",
+  "InvitesGenerateButton": "Einladungslink erzeugen",
+  "InvitesOnceHint": "Kopiere den Link jetzt — er wird nicht erneut angezeigt.",
+  "InvitesEmpty": "Noch keine Einladungen.",
+  "InvitesCreatedFormat": "Erstellt: {0}",
+  "InvitesExpiresFormat": "Läuft ab: {0}",
+  "InvitesUsedLabel": "Verwendet",
+  "InvitesExpiredLabel": "Abgelaufen",
+  "InvitesRevoke": "Widerrufen"
 }

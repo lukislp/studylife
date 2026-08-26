@@ -246,5 +246,15 @@
   "ProgressShareRegenerateConfirmWarning": "Ez azonnal érvényteleníti a jelenlegi előrehaladás-linket. Aki a régi linkkel rendelkezik (szülő, mentor, tanulmányi tanácsadó), többé nem láthatja az előrehaladásodat — oszd meg vele inkább az új linket.",
   "ProgressShareRegenerateConfirmCancel": "Mégse",
   "ProgressShareRegenerateConfirmYes": "Igen, generálj újat most",
-  "ProgressShareRegenerateSuccess": "Új link generálva"
+  "ProgressShareRegenerateSuccess": "Új link generálva",
+  "InvitesHeading": "Meghívók",
+  "InvitesDesc": "Hozz létre egy meghívólinket, hogy valaki más létrehozhassa saját fiókját.",
+  "InvitesGenerateButton": "Meghívólink létrehozása",
+  "InvitesOnceHint": "Másold ki a linket most — később már nem jelenik meg.",
+  "InvitesEmpty": "Még nincs meghívó.",
+  "InvitesCreatedFormat": "Létrehozva: {0}",
+  "InvitesExpiresFormat": "Lejár: {0}",
+  "InvitesUsedLabel": "Felhasználva",
+  "InvitesExpiredLabel": "Lejárt",
+  "InvitesRevoke": "Visszavonás"
 }

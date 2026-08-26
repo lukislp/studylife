@@ -246,5 +246,15 @@
   "ProgressShareRegenerateConfirmWarning": "Cela invalide immédiatement le lien de progression actuel. Quiconque possède l'ancien lien (parents, mentor, conseiller pédagogique) ne pourra plus voir ta progression — partage-lui plutôt le nouveau lien.",
   "ProgressShareRegenerateConfirmCancel": "Annuler",
   "ProgressShareRegenerateConfirmYes": "Oui, régénérer maintenant",
-  "ProgressShareRegenerateSuccess": "Régénéré"
+  "ProgressShareRegenerateSuccess": "Régénéré",
+  "InvitesHeading": "Invitations",
+  "InvitesDesc": "Générez un lien d'invitation pour permettre à quelqu'un d'autre de créer son propre compte.",
+  "InvitesGenerateButton": "Générer un lien d'invitation",
+  "InvitesOnceHint": "Copiez ce lien maintenant — il ne sera plus jamais affiché.",
+  "InvitesEmpty": "Aucune invitation pour le moment.",
+  "InvitesCreatedFormat": "Créée le {0}",
+  "InvitesExpiresFormat": "Expire le {0}",
+  "InvitesUsedLabel": "Utilisée",
+  "InvitesExpiredLabel": "Expirée",
+  "InvitesRevoke": "Révoquer"
 }

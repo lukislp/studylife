@@ -72,5 +72,8 @@
   "RecoveryCodesDownload": "Завантажити як файл",
   "RegisterPageTitle": "StudyLife — Створення облікового запису",
   "LinkPageTitle": "StudyLife — Прив'язати цей пристрій",
-  "LoginPageTitle": "StudyLife — Вхід"
+  "LoginPageTitle": "StudyLife — Вхід",
+  "RegisterClosed": "Наразі реєстрація закрита.",
+  "RegisterInviteRequiredHint": "Для реєстрації потрібне запрошення. Скористайтеся посиланням, яке ви отримали.",
+  "RegisterInviteInvalid": "Це посилання-запрошення недійсне, прострочене або вже використане."
 }

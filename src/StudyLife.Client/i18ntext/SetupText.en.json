@@ -246,5 +246,15 @@
   "ProgressShareRegenerateConfirmWarning": "This immediately invalidates the current progress link. Anyone who has the old link (parents, mentor, advisor) will no longer be able to view your progress — share the new link with them instead.",
   "ProgressShareRegenerateConfirmCancel": "Cancel",
   "ProgressShareRegenerateConfirmYes": "Yes, regenerate now",
-  "ProgressShareRegenerateSuccess": "Regenerated"
+  "ProgressShareRegenerateSuccess": "Regenerated",
+  "InvitesHeading": "Invites",
+  "InvitesDesc": "Generate an invite link so someone else can create their own account.",
+  "InvitesGenerateButton": "Generate invite link",
+  "InvitesOnceHint": "Copy this link now — it will not be shown again.",
+  "InvitesEmpty": "No invites yet.",
+  "InvitesCreatedFormat": "Created {0}",
+  "InvitesExpiresFormat": "Expires {0}",
+  "InvitesUsedLabel": "Used",
+  "InvitesExpiredLabel": "Expired",
+  "InvitesRevoke": "Revoke"
 }

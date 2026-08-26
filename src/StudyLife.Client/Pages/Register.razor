@@ -61,10 +61,17 @@
     // up in server logs), the token goes back via redirect (details in AppReturnContext).
     private AppReturnContext _app = AppReturnContext.FromUri(new Uri("https://unused.invalid/"));
 
+    // Registration gate (audit finding A10): the invite token travels as a URL query parameter
+    // ("/register?invite=<token>", see AuthController.CreateInvite/InviteListItemDto) so the
+    // link is a single thing to share - no separate "enter this code" step. Read once here and
+    // forwarded unchanged through both begin and complete.
+    private string? _inviteToken;
+
     protected override async Task OnInitializedAsync()
     {
         var uri = Nav.ToAbsoluteUri(Nav.Uri);
         _app = AppReturnContext.FromUri(uri);
+        _inviteToken = System.Web.HttpUtility.ParseQueryString(uri.Query)["invite"];
         if (_app.IsActive && uri.Fragment is { Length: > 1 } fragment)
         {
             foreach (var pair in fragment.TrimStart('#').Split('&'))
@@ -76,6 +83,25 @@
             }
         }
         T = await I18nText.GetTextTableAsync<I18nText.AuthText>(this);
+    }
+
+    /// <summary>Maps RegistrationGateErrorDto.Reason (audit A10) to the matching localized
+    /// message - "invite_required" reuses the same text as "closed" (from the user's point of
+    /// view both mean "you can't just sign up here"), only "invite_invalid" gets its own,
+    /// more actionable message since the user DID follow a link.</summary>
+    private string GateErrorMessage(string? reason) => reason switch
+    {
+        "invite_invalid" => T.RegisterInviteInvalid ?? T.RegisterFailed,
+        "invite_required" => T.RegisterInviteRequiredHint ?? T.RegisterFailed,
+        _ => T.RegisterClosed ?? T.RegisterFailed,
+    };
+
+    private async Task<bool> TryHandleGateErrorAsync(HttpResponseMessage response)
+    {
+        if (response.StatusCode != System.Net.HttpStatusCode.Forbidden) return false;
+        var gate = await response.Content.ReadFromJsonAsync<RegistrationGateErrorDto>();
+        _error = GateErrorMessage(gate?.Reason);
+        return true;
     }
 
     private async Task RegisterAsync()
@@ -108,8 +134,9 @@
             }
 
             var begin = await Http.PostAsJsonAsync("api/auth/register/begin",
-                new PasskeyRegisterBeginRequestDto { DisplayName = displayName, SetupSecret = _setupSecret.Trim() });
+                new PasskeyRegisterBeginRequestDto { DisplayName = displayName, SetupSecret = _setupSecret.Trim(), InviteToken = _inviteToken });
             if (begin.StatusCode == System.Net.HttpStatusCode.Unauthorized) { _error = T.SetupSecretInvalid; return; }
+            if (await TryHandleGateErrorAsync(begin)) return;
             if (!begin.IsSuccessStatusCode) { _error = T.RegisterFailed; return; }
             var options = await begin.Content.ReadFromJsonAsync<PasskeyBeginResponseDto>();
             if (options == null) { _error = T.RegisterFailed; return; }
@@ -125,6 +152,7 @@
             };
             var complete = await Http.PostAsync("api/auth/register/complete",
                 new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json"));
+            if (await TryHandleGateErrorAsync(complete)) return;
             if (!complete.IsSuccessStatusCode) { _error = T.RegisterFailed; return; }
 
             var result = await complete.Content.ReadFromJsonAsync<PasskeyCompleteResponseDto>();

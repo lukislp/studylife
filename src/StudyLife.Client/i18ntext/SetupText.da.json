@@ -246,5 +246,15 @@
   "ProgressShareRegenerateConfirmWarning": "Dette gør øjeblikkeligt det nuværende fremskridtslink ugyldigt. Alle, der har det gamle link (forældre, mentor, studievejleder), kan ikke længere se dine fremskridt — del i stedet det nye link med dem.",
   "ProgressShareRegenerateConfirmCancel": "Annuller",
   "ProgressShareRegenerateConfirmYes": "Ja, generér ny nu",
-  "ProgressShareRegenerateSuccess": "Genereret"
+  "ProgressShareRegenerateSuccess": "Genereret",
+  "InvitesHeading": "Invitationer",
+  "InvitesDesc": "Generer et invitationslink, så en anden person kan oprette sin egen konto.",
+  "InvitesGenerateButton": "Generer invitationslink",
+  "InvitesOnceHint": "Kopiér linket nu — det vises ikke igen.",
+  "InvitesEmpty": "Ingen invitationer endnu.",
+  "InvitesCreatedFormat": "Oprettet: {0}",
+  "InvitesExpiresFormat": "Udløber: {0}",
+  "InvitesUsedLabel": "Brugt",
+  "InvitesExpiredLabel": "Udløbet",
+  "InvitesRevoke": "Tilbagekald"
 }

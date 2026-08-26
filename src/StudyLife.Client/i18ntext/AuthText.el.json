@@ -72,5 +72,8 @@
   "RecoveryCodesDownload": "Λήψη ως αρχείο",
   "RegisterPageTitle": "StudyLife — Δημιουργία λογαριασμού",
   "LinkPageTitle": "StudyLife — Σύνδεση αυτής της συσκευής",
-  "LoginPageTitle": "StudyLife — Σύνδεση"
+  "LoginPageTitle": "StudyLife — Σύνδεση",
+  "RegisterClosed": "Οι εγγραφές είναι προσωρινά κλειστές.",
+  "RegisterInviteRequiredHint": "Απαιτείται σύνδεσμος πρόσκλησης για εγγραφή. Χρησιμοποίησε τον σύνδεσμο που έλαβες.",
+  "RegisterInviteInvalid": "Αυτός ο σύνδεσμος πρόσκλησης δεν είναι έγκυρος, έχει λήξει ή έχει ήδη χρησιμοποιηθεί."
 }

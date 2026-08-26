@@ -72,5 +72,8 @@
   "RecoveryCodesDownload": "Download som fil",
   "RegisterPageTitle": "StudyLife — Opret konto",
   "LinkPageTitle": "StudyLife — Tilknyt denne enhed",
-  "LoginPageTitle": "StudyLife — Log ind"
+  "LoginPageTitle": "StudyLife — Log ind",
+  "RegisterClosed": "Registrering er i øjeblikket lukket.",
+  "RegisterInviteRequiredHint": "Der kræves et invitationslink for at registrere sig. Brug det link, du har fået.",
+  "RegisterInviteInvalid": "Dette invitationslink er ugyldigt, udløbet eller allerede brugt."
 }

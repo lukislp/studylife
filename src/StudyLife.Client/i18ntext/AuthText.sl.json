@@ -72,5 +72,8 @@
   "RecoveryCodesDownload": "Prenesi kot datoteko",
   "RegisterPageTitle": "StudyLife — Ustvari račun",
   "LinkPageTitle": "StudyLife — Poveži to napravo",
-  "LoginPageTitle": "StudyLife — Prijava"
+  "LoginPageTitle": "StudyLife — Prijava",
+  "RegisterClosed": "Registracija je trenutno zaprta.",
+  "RegisterInviteRequiredHint": "Za registracijo je potrebna povezava za povabilo. Uporabi povezavo, ki si jo prejel/a.",
+  "RegisterInviteInvalid": "Ta povezava za povabilo je neveljavna, potekla ali že uporabljena."
 }

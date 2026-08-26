@@ -246,5 +246,15 @@
   "ProgressShareRegenerateConfirmWarning": "Aceasta invalidează imediat linkul de progres curent. Oricine are linkul vechi (părinți, mentor, consilier academic) nu va mai putea vedea progresul tău — trimite-le în schimb noul link.",
   "ProgressShareRegenerateConfirmCancel": "Anulează",
   "ProgressShareRegenerateConfirmYes": "Da, regenerează acum",
-  "ProgressShareRegenerateSuccess": "Regenerat"
+  "ProgressShareRegenerateSuccess": "Regenerat",
+  "InvitesHeading": "Invitații",
+  "InvitesDesc": "Generează un link de invitație pentru ca altcineva să își poată crea propriul cont.",
+  "InvitesGenerateButton": "Generează link de invitație",
+  "InvitesOnceHint": "Copiază linkul acum — nu va mai fi afișat din nou.",
+  "InvitesEmpty": "Încă nu există invitații.",
+  "InvitesCreatedFormat": "Creat: {0}",
+  "InvitesExpiresFormat": "Expiră: {0}",
+  "InvitesUsedLabel": "Folosit",
+  "InvitesExpiredLabel": "Expirat",
+  "InvitesRevoke": "Revocă"
 }

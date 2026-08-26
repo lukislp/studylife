@@ -72,5 +72,8 @@
   "RecoveryCodesDownload": "Scarica come file",
   "RegisterPageTitle": "StudyLife — Crea account",
   "LinkPageTitle": "StudyLife — Collega questo dispositivo",
-  "LoginPageTitle": "StudyLife — Accedi"
+  "LoginPageTitle": "StudyLife — Accedi",
+  "RegisterClosed": "La registrazione è attualmente chiusa.",
+  "RegisterInviteRequiredHint": "Per registrarsi è necessario un link di invito. Usa il link che ti è stato fornito.",
+  "RegisterInviteInvalid": "Questo link di invito non è valido, è scaduto o è già stato utilizzato."
 }

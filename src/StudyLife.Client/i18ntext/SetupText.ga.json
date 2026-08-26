@@ -246,5 +246,15 @@
   "ProgressShareRegenerateConfirmWarning": "Cuireann sé seo neamhbhailí ar an nasc dul chun cinn reatha láithreach. Ní bheidh aon duine a bhfuil an seannasc acu (tuismitheoirí, meantóir, comhairleoir acadúil) in ann do dhul chun cinn a fheiceáil a thuilleadh — roinn an nasc nua leo ina ionad sin.",
   "ProgressShareRegenerateConfirmCancel": "Cealaigh",
   "ProgressShareRegenerateConfirmYes": "Tá, athghin anois",
-  "ProgressShareRegenerateSuccess": "Athghinte"
+  "ProgressShareRegenerateSuccess": "Athghinte",
+  "InvitesHeading": "Cuirí",
+  "InvitesDesc": "Gin nasc cuiridh ionas gur féidir le duine eile a chuntas féin a chruthú.",
+  "InvitesGenerateButton": "Gin nasc cuiridh",
+  "InvitesOnceHint": "Cóipeáil an nasc anois — ní thaispeánfar arís é.",
+  "InvitesEmpty": "Níl aon chuireadh ann fós.",
+  "InvitesCreatedFormat": "Cruthaithe: {0}",
+  "InvitesExpiresFormat": "Rachaidh in éag: {0}",
+  "InvitesUsedLabel": "Úsáidte",
+  "InvitesExpiredLabel": "Imithe in éag",
+  "InvitesRevoke": "Cúlghairm"
 }

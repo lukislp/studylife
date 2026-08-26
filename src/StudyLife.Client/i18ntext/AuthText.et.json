@@ -72,5 +72,8 @@
   "RecoveryCodesDownload": "Laadi alla failina",
   "RegisterPageTitle": "StudyLife — Konto loomine",
   "LinkPageTitle": "StudyLife — Selle seadme ühendamine",
-  "LoginPageTitle": "StudyLife — Sisselogimine"
+  "LoginPageTitle": "StudyLife — Sisselogimine",
+  "RegisterClosed": "Registreerimine on praegu suletud.",
+  "RegisterInviteRequiredHint": "Registreerimiseks on vaja kutselinki. Kasuta linki, mille said.",
+  "RegisterInviteInvalid": "See kutselink on kehtetu, aegunud või juba kasutatud."
 }

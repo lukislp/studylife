@@ -72,5 +72,8 @@
   "RecoveryCodesDownload": "Descarcă drept fișier",
   "RegisterPageTitle": "StudyLife — Creează cont",
   "LinkPageTitle": "StudyLife — Conectează acest dispozitiv",
-  "LoginPageTitle": "StudyLife — Autentificare"
+  "LoginPageTitle": "StudyLife — Autentificare",
+  "RegisterClosed": "Înregistrarea este momentan închisă.",
+  "RegisterInviteRequiredHint": "Este necesar un link de invitație pentru înregistrare. Folosește linkul primit.",
+  "RegisterInviteInvalid": "Acest link de invitație este invalid, expirat sau deja folosit."
 }

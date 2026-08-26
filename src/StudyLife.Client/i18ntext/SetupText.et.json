@@ -246,5 +246,15 @@
   "ProgressShareRegenerateConfirmWarning": "See muudab praeguse edenemise lingi kohe kehtetuks. Igaüks, kellel on vana link (vanemad, mentor, õppenõustaja), ei saa enam sinu edenemist vaadata — jaga nendega selle asemel uut linki.",
   "ProgressShareRegenerateConfirmCancel": "Tühista",
   "ProgressShareRegenerateConfirmYes": "Jah, genereeri kohe uus",
-  "ProgressShareRegenerateSuccess": "Uus genereeritud"
+  "ProgressShareRegenerateSuccess": "Uus genereeritud",
+  "InvitesHeading": "Kutsed",
+  "InvitesDesc": "Loo kutselink, et keegi teine saaks luua oma konto.",
+  "InvitesGenerateButton": "Loo kutselink",
+  "InvitesOnceHint": "Kopeeri link kohe — seda ei kuvata enam uuesti.",
+  "InvitesEmpty": "Kutseid pole veel.",
+  "InvitesCreatedFormat": "Loodud: {0}",
+  "InvitesExpiresFormat": "Aegub: {0}",
+  "InvitesUsedLabel": "Kasutatud",
+  "InvitesExpiredLabel": "Aegunud",
+  "InvitesRevoke": "Tühista"
 }

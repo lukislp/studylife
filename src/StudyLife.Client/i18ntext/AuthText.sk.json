@@ -72,5 +72,8 @@
   "RecoveryCodesDownload": "Stiahnuť ako súbor",
   "RegisterPageTitle": "StudyLife — Vytvoriť účet",
   "LinkPageTitle": "StudyLife — Prepojiť toto zariadenie",
-  "LoginPageTitle": "StudyLife — Prihlásenie"
+  "LoginPageTitle": "StudyLife — Prihlásenie",
+  "RegisterClosed": "Registrácia je momentálne uzavretá.",
+  "RegisterInviteRequiredHint": "Na registráciu je potrebný pozvánkový odkaz. Použi odkaz, ktorý si dostal/a.",
+  "RegisterInviteInvalid": "Tento pozvánkový odkaz je neplatný, vypršal alebo už bol použitý."
 }

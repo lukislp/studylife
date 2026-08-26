@@ -28,6 +28,7 @@ public class StudyLifeDb : DbContext
     public DbSet<PasskeyCredentialEntity> PasskeyCredentials => Set<PasskeyCredentialEntity>();
     public DbSet<AuthSessionEntity> AuthSessions => Set<AuthSessionEntity>();
     public DbSet<RecoveryCodeEntity> RecoveryCodes => Set<RecoveryCodeEntity>();
+    public DbSet<AuthInviteEntity> AuthInvites => Set<AuthInviteEntity>();
     public DbSet<SystemSecretsEntity> SystemSecrets => Set<SystemSecretsEntity>();
     public DbSet<StudySessionEntity> Sessions => Set<StudySessionEntity>();
     public DbSet<UserSettingsEntity> Settings => Set<UserSettingsEntity>();
@@ -160,6 +161,13 @@ public class StudyLifeDb : DbContext
         // User-specific accesses (device list, recovery/generate) filter explicitly in the
         // controller.
         modelBuilder.Entity<RecoveryCodeEntity>().HasIndex(e => e.CodeHash).IsUnique();
+        // Registration invites (audit A10): TryConsumeInviteAsync's atomic
+        // "UPDATE ... WHERE TokenHash = @hash AND UsedAt IS NULL" (see RegistrationGateService)
+        // relies on this being unique - two concurrent register/complete calls racing on the same
+        // token can then never both succeed. No query filter (same reasoning as
+        // RecoveryCodeEntity/AuthSessionEntity above) - invite validation/consumption resolves
+        // the row directly by TokenHash, before any AuthUserId is known.
+        modelBuilder.Entity<AuthInviteEntity>().HasIndex(i => i.TokenHash).IsUnique();
         // SystemSecretsEntity likewise without a filter (and without AuthUserId) - it is not a
         // user-data table but instance-wide configuration (VAPID keys, setup code,
         // see SystemSecretsService), exactly one row for the entire installation.
@@ -389,6 +397,35 @@ public class RecoveryCodeEntity
     public string CodeHash { get; set; } = "";
     public DateTime CreatedAt { get; set; }
     public DateTime? UsedAt { get; set; }
+}
+
+/// <summary>
+/// Single-use registration invite (audit finding A10 - registration gate). Only ever created by
+/// the instance owner (POST /api/auth/invites, see AuthController), and only meaningful when
+/// Registration:Mode=invite (RegistrationGateService) - a leftover row from before a mode switch
+/// is simply never looked up in "open"/"closed" mode. Like every other credential in this schema
+/// (AuthSessionEntity.TokenHash, AuthUserEntity.ApiKeyHash, RecoveryCodeEntity.CodeHash), only the
+/// SHA-256 hash is stored - the plaintext token leaves the server exactly once, in the create
+/// response, and travels to the invitee as a "/register?invite=&lt;token&gt;" link.
+/// UsedAt/UsedByUserId are set together, atomically, by RegistrationGateService.TryConsumeInviteAsync
+/// (a single "UPDATE ... WHERE UsedAt IS NULL" against the unique TokenHash index) at
+/// register/complete, not at register/begin - so an abandoned/failed registration attempt never
+/// burns the invite, and two concurrent register/complete calls racing on the same token can
+/// never both succeed.
+/// </summary>
+public class AuthInviteEntity
+{
+    public int Id { get; set; }
+    public string TokenHash { get; set; } = "";
+    /// <summary>The owner who generated this invite (no FK, same loose pattern as everywhere else).</summary>
+    public int CreatedByUserId { get; set; }
+    public DateTime CreatedAt { get; set; }
+    /// <summary>Defaults to CreatedAt + 7 days (RegistrationGateService.InviteLifetime).</summary>
+    public DateTime ExpiresAt { get; set; }
+    /// <summary>Null = not yet used. Set exactly once, together with UsedByUserId.</summary>
+    public DateTime? UsedAt { get; set; }
+    /// <summary>The newly created AuthUser that consumed this invite - null until UsedAt is set.</summary>
+    public int? UsedByUserId { get; set; }
 }
 
 /// <summary>
