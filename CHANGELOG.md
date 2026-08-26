@@ -1,3 +1,10 @@
+# [1.40.0](https://github.com/lukislp/studylife/compare/v1.39.12...v1.40.0) (2026-08-26)
+
+
+### Features
+
+* make StudyLife the identity authority for its satellites ([9c46b57](https://github.com/lukislp/studylife/commit/9c46b5771560a4723d22ae64273b8876f268c3dd))
+
 ## [1.39.12](https://github.com/lukislp/studylife/compare/v1.39.11...v1.39.12) (2026-08-25)
 
 
