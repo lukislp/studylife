@@ -246,5 +246,15 @@
   "ProgressShareRegenerateConfirmWarning": "Αυτό ακυρώνει αμέσως τον τρέχοντα σύνδεσμο προόδου. Όποιος έχει τον παλιό σύνδεσμο (γονείς, μέντορας, σύμβουλος σπουδών) δεν θα μπορεί πλέον να βλέπει την πρόοδό σας — μοιραστείτε μαζί τους τον νέο σύνδεσμο.",
   "ProgressShareRegenerateConfirmCancel": "Ακύρωση",
   "ProgressShareRegenerateConfirmYes": "Ναι, δημιουργία νέου τώρα",
-  "ProgressShareRegenerateSuccess": "Δημιουργήθηκε νέο"
+  "ProgressShareRegenerateSuccess": "Δημιουργήθηκε νέο",
+  "InvitesHeading": "Προσκλήσεις",
+  "InvitesDesc": "Δημιούργησε έναν σύνδεσμο πρόσκλησης ώστε κάποιος άλλος να δημιουργήσει τον δικό του λογαριασμό.",
+  "InvitesGenerateButton": "Δημιουργία συνδέσμου πρόσκλησης",
+  "InvitesOnceHint": "Αντέγραψε τον σύνδεσμο τώρα — δεν θα εμφανιστεί ξανά.",
+  "InvitesEmpty": "Δεν υπάρχουν ακόμη προσκλήσεις.",
+  "InvitesCreatedFormat": "Δημιουργήθηκε: {0}",
+  "InvitesExpiresFormat": "Λήγει: {0}",
+  "InvitesUsedLabel": "Χρησιμοποιήθηκε",
+  "InvitesExpiredLabel": "Έληξε",
+  "InvitesRevoke": "Ανάκληση"
 }

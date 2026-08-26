@@ -72,5 +72,8 @@
   "RecoveryCodesDownload": "Изтегли като файл",
   "RegisterPageTitle": "StudyLife — Създаване на акаунт",
   "LinkPageTitle": "StudyLife — Свързване на това устройство",
-  "LoginPageTitle": "StudyLife — Вход"
+  "LoginPageTitle": "StudyLife — Вход",
+  "RegisterClosed": "Регистрацията в момента е затворена.",
+  "RegisterInviteRequiredHint": "За регистрация е необходима покана. Използвайте връзката, която сте получили.",
+  "RegisterInviteInvalid": "Тази покана е невалидна, изтекла или вече използвана."
 }

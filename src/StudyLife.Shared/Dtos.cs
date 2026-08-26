@@ -564,6 +564,27 @@ public class PasskeyRegisterBeginRequestDto
     /// every subsequent one deliberately stays open (family signup). Null/empty for all later
     /// registrations.</summary>
     public string? SetupSecret { get; set; }
+    /// <summary>
+    /// Registration invite token (audit finding A10, Registration:Mode=invite) - optional, so
+    /// existing clients/callers that never send it keep working unchanged in "open" mode (and
+    /// during bootstrap, where the gate doesn't apply at all, see RegistrationGateService). Read
+    /// by the client from the "/register?invite=&lt;token&gt;" link's query string. Validated at
+    /// register/begin (RegistrationGateService.CheckBeginAsync) but only CONSUMED at
+    /// register/complete, so a begin alone never burns it.
+    /// </summary>
+    public string? InviteToken { get; set; }
+}
+
+/// <summary>
+/// 403 payload for a gated register/begin or register/complete call (audit finding A10) -
+/// Reason is one of three stable strings the client switches on to show the right localized
+/// message instead of a generic failure: "closed" (Registration:Mode=closed), "invite_required"
+/// (Registration:Mode=invite, no token given), "invite_invalid" (token unknown/expired/already
+/// used). Never returned during bootstrap (RegistrationGateService is skipped entirely then).
+/// </summary>
+public class RegistrationGateErrorDto
+{
+    public string Reason { get; set; } = "";
 }
 
 /// <summary>
@@ -747,6 +768,35 @@ public class AccountInfoDto
     /// with).
     /// </summary>
     public int UserId { get; set; }
+}
+
+/// <summary>
+/// Response of POST /api/auth/invites (owner-only, audit finding A10): the PLAINTEXT invite
+/// token, shown exactly once - only its SHA-256 hash is stored server-side (AuthInviteEntity),
+/// same pattern as HaApiKeyGenerateResponseDto/RecoveryCodesResponseDto. The client builds the
+/// shareable link itself as "{origin}/register?invite={Token}".
+/// </summary>
+public class CreateInviteResponseDto
+{
+    public int Id { get; set; }
+    public string Token { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
+    public DateTime ExpiresAt { get; set; }
+}
+
+/// <summary>
+/// Entry of GET /api/auth/invites (owner-only, audit finding A10) - deliberately never the token
+/// itself (like PasskeyListItemDto never carries CredentialId/PublicKey). UsedAt/UsedByUserId let
+/// the client show "used" vs. "expired" vs. still-active without a separate status enum; expiry
+/// is derived client-side from ExpiresAt against the current time (no server round trip needed to
+/// keep the list's expired/active split up to date while it's open).
+/// </summary>
+public class InviteListItemDto
+{
+    public int Id { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime ExpiresAt { get; set; }
+    public DateTime? UsedAt { get; set; }
 }
 
 /// <summary>

@@ -246,5 +246,15 @@
   "ProgressShareRegenerateConfirmWarning": "Tas nekavējoties padara pašreizējo progresa saiti nederīgu. Ikviens, kam ir vecā saite (vecāki, mentors, studiju konsultants), vairs nevarēs redzēt tavu progresu — kopīgo ar viņiem jauno saiti.",
   "ProgressShareRegenerateConfirmCancel": "Atcelt",
   "ProgressShareRegenerateConfirmYes": "Jā, ģenerēt tagad",
-  "ProgressShareRegenerateSuccess": "Izveidota jauna"
+  "ProgressShareRegenerateSuccess": "Izveidota jauna",
+  "InvitesHeading": "Uzaicinājumi",
+  "InvitesDesc": "Izveido uzaicinājuma saiti, lai kāds cits varētu izveidot savu kontu.",
+  "InvitesGenerateButton": "Izveidot uzaicinājuma saiti",
+  "InvitesOnceHint": "Nokopē saiti tagad — tā vairs netiks parādīta.",
+  "InvitesEmpty": "Vēl nav uzaicinājumu.",
+  "InvitesCreatedFormat": "Izveidots: {0}",
+  "InvitesExpiresFormat": "Beidzas: {0}",
+  "InvitesUsedLabel": "Izmantots",
+  "InvitesExpiredLabel": "Beidzies",
+  "InvitesRevoke": "Atsaukt"
 }

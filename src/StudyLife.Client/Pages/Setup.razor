@@ -281,6 +281,16 @@
              generated/revoked, see SetupCaptureIntegrationCard. -->
         <SetupCaptureIntegrationCard />
 
+        @if (_isOwner)
+        {
+            <!-- Registration invites (audit finding A10): generate "/register?invite=<token>"
+                 links so someone else can create their own account when Registration:Mode=invite.
+                 Self-contained card (own SetupText table + HTTP calls), see SetupInvitesCard.
+                 Entirely owner-only, same client-side gate as SetupRestoreCard below - the server
+                 independently enforces this via AuthController's own IsOwnerAsync()/Forbid(). -->
+            <SetupInvitesCard />
+        }
+
         @if (_rawBackupSupported)
         {
             <!-- Backup & export. DownloadDatabaseButtonText/PasswordPlaceholder/-Hint only apply to

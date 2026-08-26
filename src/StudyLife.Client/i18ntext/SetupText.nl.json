@@ -246,5 +246,15 @@
   "ProgressShareRegenerateConfirmWarning": "Dit maakt de huidige voortgangslink onmiddellijk ongeldig. Iedereen die de oude link heeft (ouders, mentor, studieadviseur) kan je voortgang niet meer bekijken — deel in plaats daarvan de nieuwe link met hen.",
   "ProgressShareRegenerateConfirmCancel": "Annuleren",
   "ProgressShareRegenerateConfirmYes": "Ja, nu opnieuw genereren",
-  "ProgressShareRegenerateSuccess": "Opnieuw gegenereerd"
+  "ProgressShareRegenerateSuccess": "Opnieuw gegenereerd",
+  "InvitesHeading": "Uitnodigingen",
+  "InvitesDesc": "Genereer een uitnodigingslink zodat iemand anders een eigen account kan aanmaken.",
+  "InvitesGenerateButton": "Uitnodigingslink genereren",
+  "InvitesOnceHint": "Kopieer de link nu — hij wordt niet opnieuw getoond.",
+  "InvitesEmpty": "Nog geen uitnodigingen.",
+  "InvitesCreatedFormat": "Aangemaakt: {0}",
+  "InvitesExpiresFormat": "Verloopt: {0}",
+  "InvitesUsedLabel": "Gebruikt",
+  "InvitesExpiredLabel": "Verlopen",
+  "InvitesRevoke": "Intrekken"
 }

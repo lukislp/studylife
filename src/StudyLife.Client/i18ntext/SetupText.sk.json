@@ -246,5 +246,15 @@
   "ProgressShareRegenerateConfirmWarning": "Týmto sa okamžite zneplatní aktuálny odkaz na pokrok. Ktokoľvek má starý odkaz (rodičia, mentor, študijný poradca), už nebude môcť vidieť tvoj pokrok — namiesto toho mu pošli nový odkaz.",
   "ProgressShareRegenerateConfirmCancel": "Zrušiť",
   "ProgressShareRegenerateConfirmYes": "Áno, vygenerovať nový teraz",
-  "ProgressShareRegenerateSuccess": "Vygenerovaný nový"
+  "ProgressShareRegenerateSuccess": "Vygenerovaný nový",
+  "InvitesHeading": "Pozvánky",
+  "InvitesDesc": "Vygeneruj pozvánkový odkaz, aby si niekto iný mohol vytvoriť vlastný účet.",
+  "InvitesGenerateButton": "Vygenerovať pozvánkový odkaz",
+  "InvitesOnceHint": "Skopíruj odkaz teraz — znova sa už nezobrazí.",
+  "InvitesEmpty": "Zatiaľ žiadne pozvánky.",
+  "InvitesCreatedFormat": "Vytvorené: {0}",
+  "InvitesExpiresFormat": "Vyprší: {0}",
+  "InvitesUsedLabel": "Použité",
+  "InvitesExpiredLabel": "Vypršané",
+  "InvitesRevoke": "Zrušiť"
 }

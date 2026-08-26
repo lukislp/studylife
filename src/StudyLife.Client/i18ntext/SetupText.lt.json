@@ -246,5 +246,15 @@
   "ProgressShareRegenerateConfirmWarning": "Tai iškart panaikina dabartinės pažangos nuorodos galiojimą. Kiekvienas, kas turi seną nuorodą (tėvai, mentorius, studijų konsultantas), nebegalės matyti tavo pažangos — pasidalink su jais nauja nuoroda.",
   "ProgressShareRegenerateConfirmCancel": "Atšaukti",
   "ProgressShareRegenerateConfirmYes": "Taip, sugeneruoti dabar",
-  "ProgressShareRegenerateSuccess": "Sugeneruota nauja"
+  "ProgressShareRegenerateSuccess": "Sugeneruota nauja",
+  "InvitesHeading": "Pakvietimai",
+  "InvitesDesc": "Sukurkite pakvietimo nuorodą, kad kitas asmuo galėtų susikurti savo paskyrą.",
+  "InvitesGenerateButton": "Sukurti pakvietimo nuorodą",
+  "InvitesOnceHint": "Nukopijuokite nuorodą dabar — ji daugiau nebus rodoma.",
+  "InvitesEmpty": "Kol kas nėra pakvietimų.",
+  "InvitesCreatedFormat": "Sukurta: {0}",
+  "InvitesExpiresFormat": "Baigiasi: {0}",
+  "InvitesUsedLabel": "Panaudota",
+  "InvitesExpiredLabel": "Nebegalioja",
+  "InvitesRevoke": "Atšaukti"
 }
