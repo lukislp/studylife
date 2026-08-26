@@ -1,3 +1,10 @@
+## [1.43.3](https://github.com/lukislp/studylife/compare/v1.43.2...v1.43.3) (2026-08-26)
+
+
+### Bug Fixes
+
+* FormatGrade must not construct a culture under invariant globalization ([73ae5ca](https://github.com/lukislp/studylife/commit/73ae5cae1fc67c3e841b178601eb5120522f0348))
+
 ## [1.43.2](https://github.com/lukislp/studylife/compare/v1.43.1...v1.43.2) (2026-08-26)
 
 
