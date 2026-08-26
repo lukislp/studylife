@@ -68,8 +68,14 @@ public static class StudyMetrics
             : grades.Average(g => g.Grade);
     }
 
-    private static readonly System.Globalization.CultureInfo GradeDisplayCulture =
-        new("de-DE");
+    // A bare NumberFormatInfo, NOT `new CultureInfo("de-DE")`: the Blazor WASM client publishes
+    // with InvariantGlobalization=true, where constructing any non-invariant culture throws
+    // CultureNotFoundException - and because this is a static field, that exception became a
+    // TypeInitializationException killing EVERY StudyMetrics call on the dashboard/stats pages
+    // (hit live in 1.43.2). All we need is the comma decimal separator; NumberFormatInfo carries
+    // no culture lookup and can never throw here.
+    private static readonly System.Globalization.NumberFormatInfo GradeDisplayFormat =
+        new() { NumberDecimalSeparator = "," };
 
     /// <summary>
     /// Formats a grade with a comma decimal separator (e.g. "1,70") - the documented
@@ -80,7 +86,7 @@ public static class StudyMetrics
     /// visible in the code, and it lives in exactly one place instead of being hand-rolled at
     /// every call site (Index.razor.cs/Stats.razor.cs both used to duplicate the Replace() call).
     /// </summary>
-    public static string FormatGrade(decimal grade) => grade.ToString("0.00", GradeDisplayCulture);
+    public static string FormatGrade(decimal grade) => grade.ToString("0.00", GradeDisplayFormat);
 
     /// <summary>
     /// Result of <see cref="CalcForecast"/>. BaselineWeeksNeeded / RecentWeeklyHours /
