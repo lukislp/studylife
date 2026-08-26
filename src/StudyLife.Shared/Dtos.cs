@@ -304,6 +304,17 @@ public class TimerStateDto
     /// to compute the remaining time against the server clock instead of their local one - clock drift
     /// between devices thus doesn't show up in the display (remote timer banner on the focus page).</summary>
     public DateTime? ServerNow { get; set; }
+    /// <summary>
+    /// Optional client-assigned send order (audit S6): TimerService fires a PUT on every state
+    /// transition without awaiting the previous one, so two rapid transitions (e.g. Start
+    /// immediately followed by a phase change) can arrive at the server out of order and would
+    /// otherwise leave a stale state visible until the next transition. A monotonically
+    /// increasing value (the client uses unix milliseconds) lets TimerStateController.Save
+    /// silently drop an out-of-order PUT instead of applying it. Null = no ordering info
+    /// (older clients, or a non-sequence-aware pusher like Home Assistant) - the server then
+    /// falls back to plain last-write-wins, exactly as before this field existed.
+    /// </summary>
+    public long? ClientSequence { get; set; }
 }
 
 /// <summary>PUT api/timerstate/liveactivity-token - body for the app-only reporting of an
@@ -725,6 +736,17 @@ public class AccountInfoDto
     /// client hides the corresponding UI for all other users, instead of letting them
     /// run into an unusable 403.</summary>
     public bool IsOwner { get; set; }
+    /// <summary>
+    /// The caller's own AuthUserId (audit S7): lets AppStateService learn which account is
+    /// currently active WITHOUT a dedicated round trip - this endpoint is already fetched via
+    /// GetIsOwnerAsync, so the client's offline-read-cache namespacing (S7: cache keys are
+    /// per-account, to stop a shared-browser user B from cold-starting offline into user A's
+    /// leftover data) piggybacks on the same request instead of also calling
+    /// GET /api/auth/whoami (that endpoint accepts API keys too, which this client never uses -
+    /// account-info's SessionOnly policy already matches exactly what the client authenticates
+    /// with).
+    /// </summary>
+    public int UserId { get; set; }
 }
 
 /// <summary>

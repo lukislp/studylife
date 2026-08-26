@@ -3295,12 +3295,21 @@
     "schemas": {
       "AccountInfoDto": {
         "required": [
-          "isOwner"
+          "isOwner",
+          "userId"
         ],
         "type": "object",
         "properties": {
           "isOwner": {
             "type": "boolean"
+          },
+          "userId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -5258,6 +5267,15 @@
               "string"
             ],
             "format": "date-time"
+          },
+          "clientSequence": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int64"
           }
         }
       },

@@ -682,6 +682,9 @@ namespace StudyLife.Server.Migrations.Postgres
                     b.Property<bool>("IsRunning")
                         .HasColumnType("boolean");
 
+                    b.Property<long?>("LastClientSequence")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("LiveActivityPushToken")
                         .HasColumnType("text");
 
