@@ -1,3 +1,10 @@
+# [1.43.0](https://github.com/lukislp/studylife/compare/v1.42.1...v1.43.0) (2026-08-26)
+
+
+### Features
+
+* complete JSON export and per-user import with id remapping ([8addaef](https://github.com/lukislp/studylife/commit/8addaef8e784e3634be6a76f1927e25251059f64))
+
 ## [1.42.1](https://github.com/lukislp/studylife/compare/v1.42.0...v1.42.1) (2026-08-26)
 
 
