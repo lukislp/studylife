@@ -68,6 +68,12 @@ public static class DemoSeeder
             ApiKeyHash = null, // see class summary - API keys must stay unusable on the demo
             AiApiKeyHash = null,
             McpApiKeyHash = null,
+            // Set explicitly instead of relying on OwnershipService's self-heal fallback: the sole
+            // demo user is always the "first/only" user by definition, and setting it directly
+            // avoids a self-heal warning log on every container restart. account-info's isOwner
+            // must stay stable across reseeds (it feeds the setup UI) even though the demo user's
+            // Id itself changes every restart - see AuthControllerEdgeTests's demo owner test.
+            IsOwner = true,
         };
         db.AuthUsers.Add(user);
         await db.SaveChangesAsync(); // materialize user.Id for all rows below

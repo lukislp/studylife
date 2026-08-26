@@ -31,9 +31,10 @@ public class BackupController : ControllerBase
     private readonly DatabaseRestoreService? _restoreService;
     private readonly SettingsCacheVersion _settingsCacheVersion;
     private readonly IHostApplicationLifetime _lifetime;
+    private readonly IOwnershipService _ownership;
 
     public BackupController(StudyLifeDb db, SettingsCacheVersion settingsCacheVersion,
-        IHostApplicationLifetime lifetime,
+        IHostApplicationLifetime lifetime, IOwnershipService ownership,
         DatabaseBackupService? backupService = null, DatabaseRestoreService? restoreService = null)
     {
         _db = db;
@@ -41,27 +42,28 @@ public class BackupController : ControllerBase
         _restoreService = restoreService;
         _settingsCacheVersion = settingsCacheVersion;
         _lifetime = lifetime;
+        _ownership = ownership;
     }
 
     /// <summary>Only registered in SQLite mode (Program.cs) - see the field comment above.</summary>
     private bool IsRawBackupAvailable => _backupService is not null && _restoreService is not null;
 
     /// <summary>
-    /// Only the first registered user (owner of the installation) may download/replace/
-    /// restart the RAW database file - unlike every other /api endpoint, this one affects
-    /// ALL users at once (DatabaseBackupService/-RestoreService operate on the SQLite file
-    /// itself, not through the filtered EF queries; a second/third account could otherwise
-    /// pull the data of EVERY other user or replace the entire DB). Additionally requires a
-    /// REAL session (no per-user API key) - the key is meant for Home Assistant, not for
-    /// database operations. GET /api/backup/export is deliberately left out: it runs through
+    /// Only the owner of the installation (AuthUserEntity.IsOwner, see OwnershipService) may
+    /// download/replace/restart the RAW database file - unlike every other /api endpoint, this
+    /// one affects ALL users at once (DatabaseBackupService/-RestoreService operate on the
+    /// SQLite file itself, not through the filtered EF queries; a second/third account could
+    /// otherwise pull the data of EVERY other user or replace the entire DB). Additionally
+    /// requires a REAL session (no per-user API key) - the key is meant for Home Assistant, not
+    /// for database operations. GET /api/backup/export is deliberately left out: it runs through
     /// the normal query filters and only ever returns the calling user's own data anyway.
+    /// Ownership itself is an explicit, persisted flag (audit A15/A2 fix) rather than derived
+    /// from insertion order at check time - that is exactly what makes a raw restore (this very
+    /// controller) deterministic: the restored DB carries its own owner along with it, instead of
+    /// "whoever's row happens to have the lowest Id after the swap" silently taking over.
     /// </summary>
-    private async Task<bool> IsOwnerAsync()
-    {
-        if (HttpContext.SessionAuthUserId() is not int sessionUserId) return false;
-        var firstUserId = await _db.AuthUsers.OrderBy(u => u.Id).Select(u => u.Id).FirstOrDefaultAsync();
-        return sessionUserId == firstUserId;
-    }
+    private Task<bool> IsOwnerAsync()
+        => HttpContext.SessionAuthUserId() is int sessionUserId ? _ownership.IsOwnerAsync(sessionUserId) : Task.FromResult(false);
 
     /// <summary>
     /// Returns a consistent copy of the live SQLite DB as a download. Uses the same online

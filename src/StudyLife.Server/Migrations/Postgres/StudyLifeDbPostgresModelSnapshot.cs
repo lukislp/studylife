@@ -130,6 +130,9 @@ namespace StudyLife.Server.Migrations.Postgres
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<bool>("IsOwner")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTime?>("McpApiKeyCreatedAt")
                         .HasColumnType("timestamp without time zone");
 
