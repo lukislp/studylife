@@ -186,6 +186,63 @@
             return document.hidden;
         }
 
+        // ── Cross-tab write-queue lock (Web Locks API) ───────────────────────────
+        // Every tab is its own Blazor WASM runtime with its own in-memory copy of
+        // AppStateService's offline write queue, all persisting to the same
+        // localStorage key - navigator.locks lets tabs coordinate a named critical
+        // section instead of blindly clobbering each other. .NET's work happens in
+        // a separate invokeMethodAsync round trip from the lock's own JS callback,
+        // so the lock is kept held via a deferred promise: the callback returns a
+        // promise that only resolves once studylifeLockRelease(handle) is called
+        // with the handle acquire handed back. navigator.locks is undefined in some
+        // exotic WebViews - callers must treat a 0 handle as "no lock available"
+        // and fall back to running unguarded (today's single-tab-only behavior).
+        let _lockHandleSeq = 0;
+        const _lockResolvers = {};
+
+        // Blocking acquire: waits up to timeoutMs. Resolves to a handle (>= 1) once
+        // acquired - pass it to studylifeLockRelease when done - or 0 if
+        // navigator.locks doesn't exist or the wait timed out (both cases: proceed
+        // unguarded rather than lose or block the write forever).
+        function studylifeLockAcquire(name, timeoutMs) {
+            if (!('locks' in navigator)) return Promise.resolve(0);
+            return new Promise(function (resolveAcquire) {
+                navigator.locks.request(name, { signal: AbortSignal.timeout(timeoutMs) }, function () {
+                    return new Promise(function (resolveHold) {
+                        var handle = ++_lockHandleSeq;
+                        _lockResolvers[handle] = resolveHold;
+                        resolveAcquire(handle);
+                    });
+                }).catch(function () { resolveAcquire(0); });
+            });
+        }
+
+        // Non-blocking try-acquire (one replay owner across tabs at a time).
+        // Resolves to a handle if acquired, null if another tab already holds the
+        // lock right now (caller should skip this cycle), or 0 if navigator.locks
+        // doesn't exist (proceed unguarded, same as studylifeLockAcquire).
+        function studylifeLockTryAcquire(name) {
+            if (!('locks' in navigator)) return Promise.resolve(0);
+            return new Promise(function (resolveAcquire) {
+                navigator.locks.request(name, { ifAvailable: true }, function (lock) {
+                    if (!lock) { resolveAcquire(null); return; }
+                    return new Promise(function (resolveHold) {
+                        var handle = ++_lockHandleSeq;
+                        _lockResolvers[handle] = resolveHold;
+                        resolveAcquire(handle);
+                    });
+                }).catch(function () { resolveAcquire(null); });
+            });
+        }
+
+        function studylifeLockRelease(handle) {
+            var resolve = _lockResolvers[handle];
+            if (resolve) {
+                delete _lockResolvers[handle];
+                resolve();
+            }
+        }
+
         function playCompletionSound() {
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
