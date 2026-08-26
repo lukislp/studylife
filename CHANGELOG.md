@@ -1,3 +1,10 @@
+# [1.41.0](https://github.com/lukislp/studylife/compare/v1.40.6...v1.41.0) (2026-08-26)
+
+
+### Features
+
+* scope each API-key slot to the endpoints its integration uses ([273c324](https://github.com/lukislp/studylife/commit/273c324a29626ecd4b57f52be7447ff41e5361f9))
+
 ## [1.40.6](https://github.com/lukislp/studylife/compare/v1.40.5...v1.40.6) (2026-08-26)
 
 
