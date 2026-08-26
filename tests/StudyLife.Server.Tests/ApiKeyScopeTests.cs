@@ -66,6 +66,35 @@ public class ApiKeyScopeTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task Ha_AllowedEndpoint_GetStudyProgramDetail_ReturnsOk()
+    {
+        // Audit finding D4 (studylife-hacs fix/coordinator-week-bound-and-ects): the coordinator
+        // now fetches this endpoint once per poll cycle for the currently active CUSTOM study
+        // programme, to get the authoritative elective-group ECTS quotas instead of regex-parsing
+        // the group's display name. Needs a real custom programme to fetch the detail of - created
+        // via the (unscoped) session client, then read back with the ha key.
+        var createResponse = await _sessionClient.PostAsJsonAsync("/api/studyprograms", new CreateStudyProgramRequestDto
+        {
+            Name = $"Scope test {Guid.NewGuid():N}",
+            Courses = new List<CreateStudyProgramCourseDto>
+            {
+                new() { Semester = 1, Name = "Grundlagenkurs", Ects = 5 },
+            },
+        });
+        Assert.Equal(HttpStatusCode.OK, createResponse.StatusCode);
+        var created = await createResponse.Content.ReadFromJsonAsync<StudyProgramSummaryDto>();
+        Assert.NotNull(created?.Id);
+
+        var apiKey = await GenerateKeyAsync("ha");
+        using var client = ApiKeyTestHelpers.CreateClientWithKey(_factory, apiKey);
+
+        var response = await client.GetAsync($"/api/studyprograms/{created!.Id}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await RevokeKeyAsync("ha");
+    }
+
+    [Fact]
     public async Task Ha_OutOfScopeEndpoint_CreateNote_ReturnsForbidden()
     {
         // The HA integration never creates notes (that's capture's job, see api.py/services.py) -
