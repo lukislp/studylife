@@ -1,3 +1,10 @@
+## [1.40.4](https://github.com/lukislp/studylife/compare/v1.40.3...v1.40.4) (2026-08-26)
+
+
+### Bug Fixes
+
+* single timer-mode catalog and phase math in Shared ([3c3bc59](https://github.com/lukislp/studylife/commit/3c3bc599df80ad04b8e12b1676c81bb97d4b12d5))
+
 ## [1.40.3](https://github.com/lukislp/studylife/compare/v1.40.2...v1.40.3) (2026-08-26)
 
 
