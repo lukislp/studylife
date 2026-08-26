@@ -1,0 +1,10 @@
+{
+  "ConnectPageTitle": "StudyLife — Povezivanje",
+  "ConnectHeading": "Poveži vanjsku aplikaciju",
+  "ConnectIntro": "Povezati StudyLife s vanjskom aplikacijom?",
+  "ConnectButton": "Poveži",
+  "ConnectCancelButton": "Odustani",
+  "ConnectWorking": "Povezivanje…",
+  "ConnectFailed": "Povezivanje nije uspjelo. Pokušajte ponovno.",
+  "ConnectInvalidRequest": "Ovaj zahtjev za povezivanje nije valjan ili je istekao."
+}

@@ -67,9 +67,16 @@
     // changes for the normal web flow.
     private AppReturnContext _app = AppReturnContext.FromUri(new Uri("https://unused.invalid/"));
 
+    // Where to send a successfully-logged-in web visitor instead of "/" (e.g. /connect/mcp,
+    // which redirects here when there's no session yet - see ConnectMcp.razor). Only ever used
+    // on the plain web flow, never when _app.IsActive (the native return redirect always wins).
+    private string? _returnUrl;
+
     protected override async Task OnInitializedAsync()
     {
-        _app = AppReturnContext.FromUri(Nav.ToAbsoluteUri(Nav.Uri));
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
+        _app = AppReturnContext.FromUri(uri);
+        _returnUrl = ValidateReturnUrl(System.Web.HttpUtility.ParseQueryString(uri.Query)["returnUrl"]);
         T = await I18nText.GetTextTableAsync<I18nText.AuthText>(this);
 
         // Public demo instance (server started with DEMO_MODE=true): skip the passkey UI
@@ -193,7 +200,7 @@
             await TokenStore.SetTokenAsync(token);
             // forceLoad: full restart of the WASM app so AppStateService & co. don't keep
             // showing cached data from another (previously resolved) account.
-            Nav.NavigateTo("/", forceLoad: true);
+            Nav.NavigateTo(_returnUrl ?? "/", forceLoad: true);
         }
         catch (JSException)
         {
@@ -267,7 +274,7 @@
                 await TokenStore.SetTokenAsync(token);
                 // forceLoad for the same reason as in the web flow: full restart so no
                 // cached data from another account lives on.
-                Nav.NavigateTo("/", forceLoad: true);
+                Nav.NavigateTo(_returnUrl ?? "/", forceLoad: true);
                 return;
             }
             _error = T.LoginFailed; // cancelled or failed - same message as on the web
@@ -287,4 +294,11 @@
             _busy = false;
         }
     }
+
+    /// <summary>Only a same-origin relative path+query is accepted (must start with exactly one
+    /// "/", never "//..." which browsers treat as protocol-relative) - anything else is dropped
+    /// silently and login falls back to "/", so a crafted ?returnUrl= can't turn a successful
+    /// sign-in into an open redirect to an attacker-controlled origin.</summary>
+    private static string? ValidateReturnUrl(string? url) =>
+        !string.IsNullOrEmpty(url) && url[0] == '/' && (url.Length == 1 || url[1] != '/') ? url : null;
 }

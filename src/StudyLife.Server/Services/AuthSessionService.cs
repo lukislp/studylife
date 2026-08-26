@@ -30,6 +30,13 @@ public static class AuthSessionService
     /// <summary>Header through which the client sends its session token (sibling of X-Api-Key).</summary>
     public const string TokenHeaderName = "X-Session-Token";
 
+    /// <summary>HttpContext.Items key: which of the four API-key slots matched (see
+    /// AuthUserEntity.ApiKeyHash/AiApiKeyHash/McpApiKeyHash/CaptureApiKeyHash), as "ha"/"ai"/
+    /// "mcp"/"capture" - set by the gate in Program.cs ONLY on the key-authenticated branch (a
+    /// session request never sets this). Consumed by AuthController.Whoami so satellites can
+    /// learn which credential type they authenticated with without re-deriving it.</summary>
+    public const string ApiKeySlotItemKey = "ApiKeySlot";
+
     // 32 bytes CSPRNG as base64url - exactly the same format as ApiKeyProvider.GenerateKey,
     // so tokens are header-safe without escaping.
     public static string GenerateToken() =>

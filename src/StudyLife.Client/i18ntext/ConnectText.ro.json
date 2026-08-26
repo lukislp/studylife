@@ -1,0 +1,10 @@
+{
+  "ConnectPageTitle": "StudyLife — Conectare",
+  "ConnectHeading": "Conectează aplicație externă",
+  "ConnectIntro": "Conectezi StudyLife cu o aplicație externă?",
+  "ConnectButton": "Conectează",
+  "ConnectCancelButton": "Anulează",
+  "ConnectWorking": "Se conectează…",
+  "ConnectFailed": "Conectarea nu a reușit. Te rugăm să încerci din nou.",
+  "ConnectInvalidRequest": "Această cerere de conectare este invalidă sau a expirat."
+}

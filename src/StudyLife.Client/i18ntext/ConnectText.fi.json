@@ -1,0 +1,10 @@
+{
+  "ConnectPageTitle": "StudyLife — Yhdistä",
+  "ConnectHeading": "Yhdistä ulkoinen sovellus",
+  "ConnectIntro": "Yhdistetäänkö StudyLife ulkoiseen sovellukseen?",
+  "ConnectButton": "Yhdistä",
+  "ConnectCancelButton": "Peruuta",
+  "ConnectWorking": "Yhdistetään…",
+  "ConnectFailed": "Yhdistäminen epäonnistui. Yritä uudelleen.",
+  "ConnectInvalidRequest": "Tämä yhdistämispyyntö on virheellinen tai vanhentunut."
+}

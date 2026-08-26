@@ -488,6 +488,101 @@ public class AuthController : ControllerBase
 
     private static string HandoffCacheKey(string code) => $"auth-handoff:{code}";
 
+    // ── MCP OAuth connect flow (identity contract v1 §2) ─────────────────────
+
+    private static readonly TimeSpan McpAssertionLifetime = TimeSpan.FromSeconds(120);
+
+    /// <summary>Cached under a single-use assertion token, exactly like PendingHandoff -
+    /// McpApiKey is the ONE moment the plaintext exists after rotation until studylife-mcp's
+    /// server-to-server exchange picks it up (or the 120s expiry silently drops it).</summary>
+    private sealed record PendingMcpAssertion(int UserId, string McpApiKey);
+
+    /// <summary>
+    /// Step 3 of the MCP connect flow: rotates the caller's studylife-mcp API key (same code
+    /// path as SettingsController.GenerateMcpApiKey, see RotateMcpKey - deliberately not
+    /// duplicated) and stakes out a single-use assertion the browser carries back to
+    /// studylife-mcp's own callback, so the plaintext key never appears in a URL/browser
+    /// history/redirect chain - only the opaque assertion does. Session-required like the other
+    /// privileged endpoints below (SessionAuthUserId), NOT exempt from anything - reachable
+    /// because it's still under /api/auth, same blanket carve-out as logout/link/begin.
+    /// </summary>
+    [HttpPost("mcp-connect")]
+    public async Task<ActionResult<McpConnectResponseDto>> McpConnect([FromBody] McpConnectRequestDto request)
+    {
+        if (SessionAuthUserId is not int userId) return Unauthorized();
+
+        // No open-redirect surface beyond this: the assertion is single-use, short-lived, and
+        // only ever exchangeable server-to-server (see McpAssertionExchange) - an attacker who
+        // could steer redirectUri anywhere https could still only make the BROWSER navigate
+        // there with an assertion that only studylife-mcp's own backend can redeem for a key.
+        if (!Uri.TryCreate(request.RedirectUri, UriKind.Absolute, out var redirectUri)
+            || redirectUri.Scheme != Uri.UriSchemeHttps)
+            return BadRequest("redirectUri must be an absolute https URL.");
+
+        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+
+        var mcpKey = SettingsController.RotateMcpKey(user, DateTime.UtcNow);
+        await _db.SaveChangesAsync();
+
+        var assertion = GenerateHandoffCode(); // same 256-bit CSPRNG base64url shape as the PKCE handoff code
+        await CacheSetAsync(McpAssertionCacheKey(assertion), new PendingMcpAssertion(userId, mcpKey), McpAssertionLifetime);
+
+        var separator = request.RedirectUri.Contains('?') ? "&" : "?";
+        var redirectTo = $"{request.RedirectUri}{separator}assertion={Uri.EscapeDataString(assertion)}&state={Uri.EscapeDataString(request.State)}";
+        return new McpConnectResponseDto { RedirectTo = redirectTo };
+    }
+
+    /// <summary>
+    /// Step 4 of the MCP connect flow: exchanges a single-use assertion for the real AuthUserId
+    /// and the plaintext MCP key - called server-to-server by studylife-mcp against the
+    /// cluster-internal StudyLife URL, never by the browser. EXEMPT from the API gate (see the
+    /// /api/auth blanket carve-out in Program.cs) and needs NO resolved user of its own: the
+    /// assertion IS the credential, the userId it returns comes entirely from the cache entry
+    /// McpConnect wrote - post-A2, an unresolved CurrentUserAccessor.AuthUserId must never
+    /// silently fall back to "user 1", and this endpoint never touches it in the first place.
+    /// Uniformly 401 for "unknown"/"expired"/garbage, same non-distinguishing pattern as Exchange.
+    /// </summary>
+    [HttpPost("mcp-assertion-exchange")]
+    public async Task<ActionResult<McpAssertionExchangeResponseDto>> McpAssertionExchange([FromBody] McpAssertionExchangeRequestDto request)
+    {
+        if (string.IsNullOrEmpty(request.Assertion)) return Unauthorized();
+
+        var key = McpAssertionCacheKey(request.Assertion);
+        var pending = await CacheGetAsync<PendingMcpAssertion>(key);
+        if (pending is null) return Unauthorized();
+        await _cache.RemoveAsync(key); // single-use: consumed on first successful exchange only
+
+        return new McpAssertionExchangeResponseDto { UserId = pending.UserId, McpApiKey = pending.McpApiKey };
+    }
+
+    private static string McpAssertionCacheKey(string assertion) => $"mcp-assertion:{assertion}";
+
+    // ── Identity resolution (identity contract v1 §1) ───────────────────────
+
+    /// <summary>
+    /// Lets a satellite (studylife-mcp, studylife-ai, Home Assistant, studylife-capture) resolve
+    /// the REAL AuthUserId behind whatever credential it holds, instead of inventing its own
+    /// identity (e.g. studylife-mcp's former sha256(api key) OAuth subject - audit finding A1).
+    /// Unlike the rest of this controller, this endpoint deliberately goes through the NORMAL
+    /// gate resolution in Program.cs (see the /api/auth/whoami carve-out there) instead of being
+    /// exempt - both to require a real credential (session OR any of the four key slots) and to
+    /// pick up AuthSessionService.ApiKeySlotItemKey, which only the gate's key branch sets.
+    /// </summary>
+    [HttpGet("whoami")]
+    public ActionResult<WhoamiResponseDto> Whoami()
+    {
+        if (HttpContext.Items[CurrentUserAccessor.HttpContextItemKey] is not int userId)
+            return Unauthorized(); // defensive only - the gate already rejects anything without a resolved user
+
+        var credential = HttpContext.Items.ContainsKey(AuthSessionService.SessionItemKey)
+            ? "session"
+            : HttpContext.Items[AuthSessionService.ApiKeySlotItemKey] as string;
+        if (credential is null) return Unauthorized();
+
+        return new WhoamiResponseDto { UserId = userId, Credential = credential };
+    }
+
     // ── Session-required management ────────────────────────────────────────
 
     /// <summary>

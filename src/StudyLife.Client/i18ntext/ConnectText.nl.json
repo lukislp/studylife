@@ -1,0 +1,10 @@
+{
+  "ConnectPageTitle": "StudyLife — Verbinden",
+  "ConnectHeading": "Externe app verbinden",
+  "ConnectIntro": "StudyLife verbinden met een externe app?",
+  "ConnectButton": "Verbinden",
+  "ConnectCancelButton": "Annuleren",
+  "ConnectWorking": "Verbinden…",
+  "ConnectFailed": "Verbinden is niet gelukt. Probeer het opnieuw.",
+  "ConnectInvalidRequest": "Dit verbindingsverzoek is ongeldig of verlopen."
+}
