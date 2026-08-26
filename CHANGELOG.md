@@ -1,3 +1,12 @@
+## [1.43.1](https://github.com/lukislp/studylife/compare/v1.43.0...v1.43.1) (2026-08-26)
+
+
+### Bug Fixes
+
+* account-scoped caches, ordered timer pushes, session fetch dedup ([73c72a4](https://github.com/lukislp/studylife/commit/73c72a47a7ce14a0e31b1caee0606fb4051ffa37))
+* allow the ha key slot to read study-program details ([acb8abb](https://github.com/lukislp/studylife/commit/acb8abb55e918f4cca5470eff8c8c4fdbc98488b))
+* single migration owner, honest pull policy, dead legacy path removed ([cca2627](https://github.com/lukislp/studylife/commit/cca262769bdafb8eac064873853defb1c9f06e6e))
+
 # [1.43.0](https://github.com/lukislp/studylife/compare/v1.42.1...v1.43.0) (2026-08-26)
 
 
