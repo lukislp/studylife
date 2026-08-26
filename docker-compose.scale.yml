@@ -1,10 +1,12 @@
 # Horizontally scalable test setup (Postgres + Redis + multiple server replicas + load balancer +
-# a standalone worker) - NOT the Pi production setup (which stays on the unchanged docker-compose.yml,
-# SQLite, everything in a single process). Details/background: docs/SCALING.md.
+# a standalone worker) - a local, disposable stand-in for the real production topology (a K3s
+# cluster, see k8s/ + docs/SCALING.md), not a separate single-instance setup of its own (that one
+# is just `docker run`/`dotnet run`, no compose file needed - see README.md's Deployment section).
+# Details/background: docs/SCALING.md.
 #
 # Prerequisite before "docker compose -f docker-compose.scale.yml up": build the server image locally.
 # The existing src/StudyLife.Server/Dockerfile only copies finished binaries from publish/<arch>
-# (that's how the real CI builds it too, see .gitlab-ci.yml) - so publish first, then build:
+# (that's how the real CI builds it too, see .github/workflows/ci-cd.yml) - so publish first, then build:
 #
 #   dotnet publish src/StudyLife.Server/StudyLife.Server.csproj -c Release --runtime linux-x64 \
 #     --no-self-contained -o publish/amd64

@@ -188,14 +188,64 @@ jobs:
             exit 1;
           }
 
-  test-k8s-manifests:
+  # Audit finding O2: guards migration TWINNING. StudyLifeDb (SQLite) and StudyLifeDbPostgres
+  # each need their OWN migration for every model change (separate migration histories, see
+  # docs/SCALING.md "Deliberate Scope Cuts" - `Migrations/Postgres/`) - `dotnet ef migrations
+  # has-pending-model-changes` compares the current model against the last migration's snapshot
+  # WITHOUT touching a real database, so the fake Postgres connection string below only needs to
+  # parse, never to connect. Same freshness-gate shape as test-openapi-contract above: a schema
+  # change with a missing twin migration fails the PR instead of surfacing later as a runtime
+  # `PendingModelChangesWarning`/drift between SQLite and Postgres. See Program.cs's
+  # `EF.IsDesignTime` guard for why this doesn't also try to run this app's own startup
+  # migration/seeding side effects.
+  test-ef-migrations:
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/yannh/kubeconform:latest-alpine
     steps:
       - uses: actions/checkout@v7.0.1
-      # The binary sits at /kubeconform in the image, not on PATH.
-      - run: /kubeconform -summary -ignore-missing-schemas k8s/
+      - uses: actions/setup-dotnet@v6.0.0
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - uses: actions/cache@v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'StudyLife.sln') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+      - run: dotnet restore src/StudyLife.Server/StudyLife.Server.csproj
+      # dotnet-ef is a local tool (.config/dotnet-tools.json), same pattern as reportgenerator in
+      # test-unit above - restoring the manifest hits the NuGet cache instead of a fresh global install.
+      - run: dotnet tool restore
+      - name: Fail if StudyLifeDb (SQLite) has model changes with no migration
+        run: dotnet tool run dotnet-ef migrations has-pending-model-changes --project src/StudyLife.Server/StudyLife.Server.csproj --context StudyLifeDb
+      - name: Fail if StudyLifeDbPostgres has model changes with no migration
+        run: dotnet tool run dotnet-ef migrations has-pending-model-changes --project src/StudyLife.Server/StudyLife.Server.csproj --context StudyLifeDbPostgres
+        env:
+          Database__Provider: Postgres
+          # Never actually connected to (see the job comment above) - only needs to parse as a
+          # valid Npgsql connection string so service registration in Program.cs doesn't throw.
+          Database__ConnectionString: "Host=localhost;Port=5432;Database=studylife-ci-dummy;Username=studylife;Password=studylife-ci-dummy"
+
+  test-k8s-manifests:
+    # No longer runs INSIDE the kubeconform container (that left no way to also reach `kubectl`,
+    # needed for the kustomize-output check below) - kubeconform is invoked via `docker run`
+    # instead, on the plain runner image, which already ships `kubectl` (used for `kubectl
+    # kustomize`, no separate `kustomize` CLI install needed).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - run: docker run --rm -v "${{ github.workspace }}:/repo" -w /repo ghcr.io/yannh/kubeconform:latest-alpine -summary -ignore-missing-schemas k8s/
+      # Audit finding O4: also validate what actually gets applied via Flux's Kustomization
+      # (k8s/flux/deploy/), not just the raw files above - historically these differed (a patch
+      # forced imagePullPolicy to "Always" there while the git-versioned files kept "Never"), and
+      # even now that both commit "Always" directly, this keeps the two paths honest against each
+      # other for any future divergence.
+      # --load-restrictor LoadRestrictionsNone: k8s/flux/deploy/kustomization.yaml's resources
+      # reference ../../04-web.yaml/../../05-worker.yaml (outside its own directory) - kustomize's
+      # default safety restriction forbids that for a standalone `kubectl kustomize` invocation
+      # (Flux's in-cluster kustomize-controller treats the whole Git checkout as its root instead,
+      # so it never hits this - see docs/SCALING.md). Same workaround documented there for local
+      # manual verification.
+      - run: kubectl kustomize --load-restrictor LoadRestrictionsNone k8s/flux/deploy | docker run --rm -i ghcr.io/yannh/kubeconform:latest-alpine -summary -ignore-missing-schemas -
 
   test-compose-scale:
     runs-on: ubuntu-latest
