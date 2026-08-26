@@ -16,9 +16,9 @@ public sealed record CaptureEnrichmentResult(
 /// Talks to the studylife-ai microservice on the logged-in user's behalf - both the live
 /// /chat, /agent, /agent/confirm proxy (AiProxyController) and the key-registration
 /// callbacks (SettingsController's ai-api-key group). "Enabled" gate mirrors ApnsSender: as
-/// long as StudyLifeAi:BaseUrl/SharedSecret aren't both configured, the AI integration stays
-/// off rather than failing the whole app - it's an optional integration, same as Home
-/// Assistant/APNs.
+/// long as StudyLifeAi:BaseUrl and a usable proxy-token-signing + internal-API secret aren't
+/// all configured, the AI integration stays off rather than failing the whole app - it's an
+/// optional integration, same as Home Assistant/APNs.
 ///
 /// See studylife-ai's docs/decisions.md "M4.5 Multi-user support" for the design this
 /// implements: a short-lived signed proxy token (AiProxyTokenService) proves identity for
@@ -27,28 +27,78 @@ public sealed record CaptureEnrichmentResult(
 /// registration callbacks separately hand studylife-ai the plaintext AiApiKey at the one
 /// moment it exists (generation), so it can build a real StudyLifeClient for /agent's tool
 /// calls without this backend ever forwarding it per request.
+///
+/// Audit A5 split the single StudyLifeAi:SharedSecret (which used to both sign proxy tokens
+/// AND authenticate /internal/*, letting anyone holding it mint a token for any user_id and
+/// also administer registrations) into two secrets:
+///   - StudyLifeAi:TokenSigningSecret - one or more comma-separated "kid:secret" entries (see
+///     AiProxyTokenService); the FIRST entry signs new proxy tokens.
+///   - StudyLifeAi:InternalApiSecret - the raw bearer sent as X-StudyLife-Shared-Secret to
+///     /internal/*; may itself be a comma-separated list, but this side always SENDS the
+///     first value (studylife-ai's own STUDYLIFE_INTERNAL_API_SECRET is what holds multiple
+///     accepted values during a rotation - see studylife-ai's docs/decisions.md).
+/// Both fall back to the legacy StudyLifeAi:SharedSecret when unset, with a one-time
+/// deprecation warning, so this side and studylife-ai can deploy the split in either order.
 /// </summary>
 public sealed class AiProxyClient
 {
     private readonly ILogger<AiProxyClient> _logger;
     private readonly HttpClient _http;
     private readonly string? _baseUrl;
-    private readonly string? _sharedSecret;
+    private readonly IReadOnlyList<AiProxyTokenService.SigningKey>? _signingKeys;
+    private readonly string? _legacySharedSecret;
+    private readonly string? _internalApiSecret;
 
     public AiProxyClient(IConfiguration configuration, ILogger<AiProxyClient> logger, HttpClient? httpClient = null)
     {
         _logger = logger;
         _http = httpClient ?? new HttpClient();
         _baseUrl = configuration["StudyLifeAi:BaseUrl"]?.TrimEnd('/');
-        _sharedSecret = configuration["StudyLifeAi:SharedSecret"];
+
+        var legacySharedSecret = NullIfEmpty(configuration["StudyLifeAi:SharedSecret"]);
+        var tokenSigningSecretConfig = NullIfEmpty(configuration["StudyLifeAi:TokenSigningSecret"]);
+        var internalApiSecretConfig = NullIfEmpty(configuration["StudyLifeAi:InternalApiSecret"]);
+        _legacySharedSecret = legacySharedSecret;
+
+        var usingLegacyFallback = false;
+        if (tokenSigningSecretConfig is not null)
+        {
+            _signingKeys = AiProxyTokenService.ParseSigningKeys(tokenSigningSecretConfig);
+        }
+        else if (legacySharedSecret is not null)
+        {
+            usingLegacyFallback = true;
+        }
+
+        if (internalApiSecretConfig is not null)
+        {
+            _internalApiSecret = FirstCommaValue(internalApiSecretConfig);
+        }
+        else if (legacySharedSecret is not null)
+        {
+            _internalApiSecret = legacySharedSecret;
+            usingLegacyFallback = true;
+        }
+
+        if (usingLegacyFallback)
+        {
+            _logger.LogWarning(
+                "StudyLifeAi:TokenSigningSecret/InternalApiSecret not fully configured - falling back to " +
+                "the legacy StudyLifeAi:SharedSecret (audit A5). Set both before removing SharedSecret.");
+        }
 
         if (Enabled)
             _logger.LogInformation("studylife-ai integration active (BaseUrl {BaseUrl})", _baseUrl);
-        else if (!string.IsNullOrEmpty(_baseUrl) || !string.IsNullOrEmpty(_sharedSecret))
-            _logger.LogWarning("studylife-ai configuration incomplete (BaseUrl/SharedSecret must both be set) - integration stays off");
+        else if (!string.IsNullOrEmpty(_baseUrl) || _signingKeys is not null || legacySharedSecret is not null || _internalApiSecret is not null)
+            _logger.LogWarning("studylife-ai configuration incomplete (BaseUrl and a usable signing + internal-API secret must all be set) - integration stays off");
     }
 
-    public bool Enabled => !string.IsNullOrEmpty(_baseUrl) && !string.IsNullOrEmpty(_sharedSecret);
+    public bool Enabled =>
+        !string.IsNullOrEmpty(_baseUrl) && (_signingKeys is not null || _legacySharedSecret is not null) && _internalApiSecret is not null;
+
+    private static string? NullIfEmpty(string? value) => string.IsNullOrEmpty(value) ? null : value;
+
+    private static string FirstCommaValue(string value) => value.Split(',')[0].Trim();
 
     /// <summary>
     /// Pure reverse proxy: forwards the caller's raw request body to studylife-ai's `path`
@@ -66,7 +116,10 @@ public sealed class AiProxyClient
             Content = new StreamContent(requestBody),
         };
         request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
-        request.Headers.Add("X-StudyLife-Proxy-Token", AiProxyTokenService.Mint(userId, _sharedSecret!, DateTime.UtcNow));
+        var token = _signingKeys is not null
+            ? AiProxyTokenService.Mint(userId, _signingKeys, DateTime.UtcNow)
+            : AiProxyTokenService.MintLegacy(userId, _legacySharedSecret!, DateTime.UtcNow);
+        request.Headers.Add("X-StudyLife-Proxy-Token", token);
         return await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
     }
 
@@ -115,7 +168,7 @@ public sealed class AiProxyClient
             {
                 Content = JsonContent.Create(requestBody),
             };
-            request.Headers.Add("X-StudyLife-Shared-Secret", _sharedSecret);
+            request.Headers.Add("X-StudyLife-Shared-Secret", _internalApiSecret);
             var response = await _http.SendAsync(request, ct);
             if (!response.IsSuccessStatusCode)
             {
@@ -173,7 +226,7 @@ public sealed class AiProxyClient
             {
                 Content = new StringContent(JsonSerializer.Serialize(body), System.Text.Encoding.UTF8, "application/json"),
             };
-            request.Headers.Add("X-StudyLife-Shared-Secret", _sharedSecret);
+            request.Headers.Add("X-StudyLife-Shared-Secret", _internalApiSecret);
             var response = await _http.SendAsync(request, ct);
             if (!response.IsSuccessStatusCode)
             {

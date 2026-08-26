@@ -17,12 +17,16 @@ public class AiProxyClientTests
     private static AiProxyClient CreateClient(
         StubHttpHandler? handler = null,
         string? baseUrl = "https://ai.test",
-        string? sharedSecret = "shared-secret")
+        string? sharedSecret = "shared-secret",
+        string? tokenSigningSecret = null,
+        string? internalApiSecret = null)
     {
         var config = new Dictionary<string, string?>
         {
             ["StudyLifeAi:BaseUrl"] = baseUrl,
             ["StudyLifeAi:SharedSecret"] = sharedSecret,
+            ["StudyLifeAi:TokenSigningSecret"] = tokenSigningSecret,
+            ["StudyLifeAi:InternalApiSecret"] = internalApiSecret,
         };
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(config).Build();
         var httpClient = handler != null ? new HttpClient(handler) : null;
@@ -208,6 +212,83 @@ public class AiProxyClientTests
         var result = await client.EnrichCaptureAsync(7, 99, "Title", "Content", null, new List<int>(), CancellationToken.None);
 
         Assert.Null(result);
+    }
+
+    // --- Audit A5: split TokenSigningSecret/InternalApiSecret, with a legacy SharedSecret fallback ---
+
+    [Fact]
+    public async Task ProxyAsync_WithTokenSigningSecret_MintsTheNewKeyIdTaggedFormat()
+    {
+        var handler = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
+        var client = CreateClient(handler, sharedSecret: null, tokenSigningSecret: "v1:secret-one,v2:secret-two", internalApiSecret: "internal-secret");
+
+        await client.ProxyAsync("/agent", 42, new MemoryStream(), "application/json", CancellationToken.None);
+
+        var token = Assert.Single(handler.Requests).Headers["x-studylife-proxy-token"];
+        var parts = token.Split('.');
+        Assert.Equal(4, parts.Length);
+        Assert.Equal("42", parts[0]);
+        Assert.Equal("v1", parts[2]);
+    }
+
+    [Fact]
+    public async Task ProxyAsync_WithoutTokenSigningSecret_FallsBackToLegacyThreePartFormat()
+    {
+        var handler = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
+        var client = CreateClient(handler, sharedSecret: "legacy-secret", tokenSigningSecret: null, internalApiSecret: null);
+
+        await client.ProxyAsync("/agent", 42, new MemoryStream(), "application/json", CancellationToken.None);
+
+        var token = Assert.Single(handler.Requests).Headers["x-studylife-proxy-token"];
+        Assert.Equal(3, token.Split('.').Length);
+    }
+
+    [Fact]
+    public async Task RegisterKeyAsync_WithInternalApiSecret_SendsOnlyTheFirstCommaSeparatedValue()
+    {
+        var handler = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
+        var client = CreateClient(handler, sharedSecret: null, tokenSigningSecret: "v1:secret", internalApiSecret: "new-secret,old-secret");
+
+        await client.RegisterKeyAsync(7, "key", CancellationToken.None);
+
+        var request = Assert.Single(handler.Requests);
+        Assert.Equal("new-secret", request.Headers["x-studylife-shared-secret"]);
+    }
+
+    [Fact]
+    public async Task RegisterKeyAsync_WithoutInternalApiSecret_FallsBackToLegacySharedSecret()
+    {
+        var handler = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
+        var client = CreateClient(handler, sharedSecret: "legacy-secret", tokenSigningSecret: "v1:secret", internalApiSecret: null);
+
+        await client.RegisterKeyAsync(7, "key", CancellationToken.None);
+
+        var request = Assert.Single(handler.Requests);
+        Assert.Equal("legacy-secret", request.Headers["x-studylife-shared-secret"]);
+    }
+
+    [Fact]
+    public void WithTokenSigningSecretButNoInternalSecretOrLegacyFallback_StaysDisabled()
+    {
+        var client = CreateClient(sharedSecret: null, tokenSigningSecret: "v1:secret", internalApiSecret: null);
+
+        Assert.False(client.Enabled);
+    }
+
+    [Fact]
+    public void WithFullNewConfiguration_IsEnabled()
+    {
+        var client = CreateClient(sharedSecret: null, tokenSigningSecret: "v1:secret", internalApiSecret: "internal-secret");
+
+        Assert.True(client.Enabled);
+    }
+
+    [Fact]
+    public void WithOnlyLegacySharedSecret_IsEnabled()
+    {
+        var client = CreateClient(sharedSecret: "legacy-secret", tokenSigningSecret: null, internalApiSecret: null);
+
+        Assert.True(client.Enabled);
     }
 
     /// <summary>Records all requests (including headers/body) and returns predefined responses -
