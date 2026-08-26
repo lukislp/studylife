@@ -29,9 +29,71 @@ spec:
     - studylife.heim.lan
     - studylife.lukas2311-homelab.com
   rules:
+    # Audit finding O8: during a rolling update, a request for a NEW fingerprinted asset can
+    # land on an OLD pod that doesn't have the file -> 404 -> SRI failure for open SPA
+    # sessions until the rollout finishes. Gateway-side cache for the immutable fingerprinted
+    # /_framework/* assets: once ANY new pod has served a file, the gateway answers from cache
+    # regardless of which pod a later request would have hit. Recreate strategy was measured
+    # and rejected (14-17s full outage per deploy); the SnippetsFilter below is scoped to
+    # exactly this one route rule (ExtensionRef), so the shared gateway's other services see
+    # zero config change.
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /_framework
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: gateway.nginx.org
+            kind: SnippetsFilter
+            name: studylife-web-asset-cache
+      backendRefs:
+        - name: studylife-web
+          port: 443
     - backendRefs:
         - name: studylife-web
           port: 443
+---
+# The cache config for the /_framework rule above (NGF v2.6.7 SnippetsFilter - route-scoped
+# via ExtensionRef, deliberately NOT a Gateway-scoped SnippetsPolicy, which would inject into
+# every service behind the shared gateway). Two safety properties:
+# - The stable-NAMED, mutable loader files under /_framework (blazor.webassembly.js,
+#   dotnet.js, blazor.boot.json) are excluded via the map below - caching those for days
+#   would pin clients to an old boot manifest across releases. Everything else under
+#   /_framework carries a content hash in its filename and is immutable by construction.
+# - 200-only, 7d TTL (bounded staleness even if an unexpected mutable file slips through),
+#   cookies ignored/stripped, X-Cache-Status exposed for the rollout observation
+#   (expect MISS then HITs on a new asset while old pods still receive traffic).
+# Rollback if the gateway rejects the snippet (watch: kubectl -n nginx-gateway logs
+# deploy/studylife-gateway-nginx and this HTTPRoute's status conditions): revert this commit -
+# while the filter is unresolved only /_framework requests are affected, never other routes.
+apiVersion: gateway.nginx.org/v1alpha1
+kind: SnippetsFilter
+metadata:
+  name: studylife-web-asset-cache
+  namespace: studylife-scale
+spec:
+  snippets:
+    - context: http
+      value: |
+        proxy_cache_path /var/cache/nginx/studylife_assets levels=1:2 keys_zone=studylife_assets:10m max_size=200m inactive=24h use_temp_path=off;
+        map $uri $studylife_asset_nocache {
+            default 0;
+            ~/_framework/blazor\.webassembly\.js$ 1;
+            ~/_framework/blazor\.boot\.json$ 1;
+            ~/_framework/dotnet\.js$ 1;
+        }
+    - context: http.server.location
+      value: |
+        proxy_cache studylife_assets;
+        proxy_cache_valid 200 7d;
+        proxy_no_cache $studylife_asset_nocache;
+        proxy_cache_bypass $studylife_asset_nocache;
+        proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
+        proxy_cache_key $scheme$host$request_uri;
+        proxy_ignore_headers Cache-Control Expires Set-Cookie;
+        proxy_hide_header Set-Cookie;
+        add_header X-Cache-Status $upstream_cache_status always;
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: BackendTLSPolicy
