@@ -772,7 +772,7 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<AccountInfoDto>> GetAccountInfo()
     {
         var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        return new AccountInfoDto { IsOwner = await _ownership.IsOwnerAsync(userId) };
+        return new AccountInfoDto { IsOwner = await _ownership.IsOwnerAsync(userId), UserId = userId };
     }
 
     /// <summary>Server-side invalidation of one's own session ("device lost" case) -

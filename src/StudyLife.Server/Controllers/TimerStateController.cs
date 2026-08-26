@@ -26,10 +26,34 @@ public class TimerStateController : ControllerBase
         return dto;
     }
 
+    /// <summary>
+    /// Best effort, last-write-wins by default: no server-side plausibility check between the
+    /// fields, and a stale PUT (below) is silently dropped rather than rejected.
+    /// </summary>
     [HttpPut]
     public async Task<TimerStateDto> Save(TimerStateDto dto)
     {
         var entity = await _db.TimerState.GetOrCreateAsync(_db);
+
+        // Sequence-based out-of-order rejection (audit S6): TimerService fires this PUT
+        // unawaited on every transition, so two rapid transitions can arrive reversed on the
+        // wire. A PRESENT ClientSequence smaller than the last one we accepted means this PUT
+        // is the OLDER of the two - drop it and hand back the row as it currently stands. This
+        // deliberately returns 200 with the current state instead of 409: unlike the settings
+        // conflict path (audit S4/S5), there is no interactive caller here to retry against -
+        // TimerService's push is fire-and-forget - so a 409 would just be an error nobody looks
+        // at. Returning the current row instead is actually MORE useful to a caller like the
+        // remote-timer banner (Focus.razor), which polls this same GET/PUT shape and can treat
+        // any response uniformly. A MISSING ClientSequence is unconditionally accepted (plain
+        // last-write-wins, exactly the behavior before this field existed) - needed for Home
+        // Assistant and any other pusher that doesn't know about sequence numbers.
+        if (dto.ClientSequence is { } incomingSeq
+            && entity.LastClientSequence is { } storedSeq
+            && incomingSeq < storedSeq)
+        {
+            return ToDto(entity);
+        }
+
         entity.SessionId = dto.SessionId;
         entity.IsRunning = dto.IsRunning;
         entity.IsBreak = dto.IsBreak;
@@ -37,6 +61,7 @@ public class TimerStateController : ControllerBase
         entity.TimerModeId = dto.TimerModeId;
         entity.PhaseEndsAt = dto.PhaseEndsAt;
         entity.UpdatedAt = DateTime.Now;
+        if (dto.ClientSequence is { } newSeq) entity.LastClientSequence = newSeq;
         await _db.SaveChangesAsync();
         return ToDto(entity);
     }
@@ -50,6 +75,7 @@ public class TimerStateController : ControllerBase
         TimerModeId = e.TimerModeId,
         PhaseEndsAt = e.PhaseEndsAt,
         UpdatedAt = e.UpdatedAt,
+        ClientSequence = e.LastClientSequence,
     };
 
     /// <summary>Deliberately a SEPARATE endpoint instead of a field on TimerStateDto/Save(): the

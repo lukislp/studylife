@@ -35,6 +35,31 @@ public class TimerService
     private int _focusMilestonesFired;
     public const int FocusMilestoneIntervalMinutes = 25;
 
+    // ── State push: single-flight, latest-wins queue (audit S6) ─────────────────────────────
+    // Every call site below used to fire `_ = PushStateAsync()` unawaited on every transition -
+    // two rapid transitions (e.g. Start immediately followed by a phase change) could then race
+    // on the wire and arrive at the server in either order, leaving a stale state visible until
+    // the NEXT transition finally pushed a fresh one. Fix: SchedulePush() never lets two sends
+    // run concurrently (a send already in flight just means the next one waits), and a state
+    // that arrives while a send is in flight REPLACES whatever was queued rather than queuing
+    // a second one - only the single latest state is ever sent next, so sends both never overlap
+    // AND never fall behind by more than the one in-flight request. This alone guarantees
+    // in-order delivery from a single tab; the ClientSequence sent with every push (below) is
+    // what lets the SERVER also reject a stale write if two tabs/devices race each other
+    // (TimerStateController.Save - see StudyLife.Shared.TimerStateDto.ClientSequence).
+    //
+    // Deliberately a SEPARATE lock from _lock: _lock only ever guards building the DTO snapshot
+    // (fast, no I/O); _pushLock guards this queue's bookkeeping across the actual PUT (which DOES
+    // await network I/O) - sharing _lock here would mean a slow/offline PUT blocks Tick() from
+    // ever reading the timer's live state.
+    private readonly object _pushLock = new();
+    private TimerStateDto? _pendingPush;
+    private bool _pushInFlight;
+    // Monotonic send order (unix ms) - guarded against clock jumps (DST, NTP correction, a
+    // suspended device waking up with a corrected clock) by never going backwards: if the wall
+    // clock ever produces a value <= the last one sent, the counter just increments by 1 instead.
+    private long _lastSentSequence;
+
     public event Action<int, bool, int, bool>? OnTick; // secondsLeft, isBreak, round, isRunning
     public event Action? OnSessionComplete;
     public event Action? OnBreakStarted;
@@ -75,7 +100,7 @@ public class TimerService
         // LoadMode when opening the focus page would otherwise overwrite the running
         // state of ANOTHER device on the server with IsRunning=false (remote banner/Home
         // Assistant would then sporadically see the timer as finished).
-        if (wasRunning) _ = PushStateAsync();
+        if (wasRunning) SchedulePush();
         OnModeChanged?.Invoke(mode);
     }
 
@@ -90,7 +115,7 @@ public class TimerService
             _timer = new System.Threading.Timer(_ => Tick(), null, 1000, 1000);
         }
         OnTick?.Invoke(SecondsLeft, IsBreak, CurrentRound, IsRunning);
-        _ = PushStateAsync();
+        SchedulePush();
     }
 
     public void Pause()
@@ -108,13 +133,13 @@ public class TimerService
         }
         OnPaused?.Invoke();
         OnTick?.Invoke(SecondsLeft, IsBreak, CurrentRound, IsRunning);
-        _ = PushStateAsync();
+        SchedulePush();
     }
 
     public void Stop()
     {
         lock (_lock) { StopInternal(); }
-        _ = PushStateAsync();
+        SchedulePush();
     }
 
     private void StopInternal()
@@ -155,7 +180,7 @@ public class TimerService
         OnTick?.Invoke(SecondsLeft, IsBreak, CurrentRound, IsRunning);
         // Same as LoadMode: a reset on a device where nothing was running at all must not
         // overwrite the running state of another device on the server.
-        if (wasRunning) _ = PushStateAsync();
+        if (wasRunning) SchedulePush();
     }
 
     private void Tick()
@@ -231,22 +256,22 @@ public class TimerService
         if (complete)
         {
             OnSessionComplete?.Invoke();
-            _ = PushStateAsync();
+            SchedulePush();
             return;
         }
         extraEvent?.Invoke();
         OnTick?.Invoke(SecondsLeft, IsBreak, CurrentRound, IsRunning);
         if (milestoneReached) OnFocusMilestone?.Invoke();
-        if (phaseChanged) _ = PushStateAsync();
+        if (phaseChanged) SchedulePush();
     }
 
     /// <summary>
-    /// Reports the current state to the server (only on state changes, not
-    /// every second), so external consumers (e.g. Home Assistant) can see whether
-    /// a focus session is currently running. Errors are swallowed, analogous to the
-    /// offline fallback in AppStateService.
+    /// Reports the current state to the server (only on state changes, not every second), so
+    /// external consumers (e.g. Home Assistant) can see whether a focus session is currently
+    /// running. Builds the DTO synchronously (fast, no I/O, under _lock) and hands it to the
+    /// single-flight push queue below - the caller never awaits the actual network call.
     /// </summary>
-    private async Task PushStateAsync()
+    private void SchedulePush()
     {
         TimerStateDto dto;
         lock (_lock)
@@ -263,7 +288,54 @@ public class TimerService
                 PhaseEndsAt = _isRunning ? _phaseEndsAtUtc?.ToLocalTime() : null,
             };
         }
-        try { await _http.PutAsJsonAsync("api/timerstate", dto); }
-        catch { /* offline fallback */ }
+
+        lock (_pushLock)
+        {
+            dto.ClientSequence = NextSequence();
+            // Replaces whatever was queued but not yet sent - only the single latest state
+            // survives, regardless of how many transitions fired while a send was in flight.
+            _pendingPush = dto;
+            if (_pushInFlight) return; // a send is already running; it will pick this up when it loops
+            _pushInFlight = true;
+        }
+        _ = DrainPushQueueAsync();
+    }
+
+    /// <summary>
+    /// Sends _pendingPush, then loops: if ANOTHER SchedulePush arrived while that PUT was in
+    /// flight, _pendingPush is non-null again by the time the loop re-checks - that gets sent
+    /// next before going idle, so sends never overlap (single-flight) but the very latest state
+    /// is still guaranteed to eventually reach the server (never silently dropped just because
+    /// it arrived mid-send, only ever superseded by something even newer).
+    /// </summary>
+    private async Task DrainPushQueueAsync()
+    {
+        while (true)
+        {
+            TimerStateDto next;
+            lock (_pushLock)
+            {
+                if (_pendingPush == null) { _pushInFlight = false; return; }
+                next = _pendingPush;
+                _pendingPush = null;
+            }
+            // Errors are swallowed here exactly as before this fix (no retry queue for timer
+            // state, unlike AppStateService's write queue) - if this PUT fails, `next` is simply
+            // lost; the next real transition's SchedulePush call will push a fresh state anyway.
+            try { await _http.PutAsJsonAsync("api/timerstate", next); }
+            catch { /* offline fallback */ }
+        }
+    }
+
+    /// <summary>Monotonically increasing send order for TimerStateDto.ClientSequence (audit S6):
+    /// unix milliseconds, floored at last-sent+1 so a backward clock jump (DST, NTP correction)
+    /// can never produce a value the server would see as "older" than a push it already
+    /// accepted. Must be called under _pushLock (see SchedulePush) so concurrent callers can't
+    /// interleave and momentarily hand out the same value twice.</summary>
+    private long NextSequence()
+    {
+        var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        _lastSentSequence = now > _lastSentSequence ? now : _lastSentSequence + 1;
+        return _lastSentSequence;
     }
 }
