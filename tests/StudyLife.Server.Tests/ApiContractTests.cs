@@ -8,13 +8,16 @@ namespace StudyLife.Server.Tests;
 /// <summary>
 /// These tests do NOT check business logic (that's covered elsewhere), but the exact
 /// JSON WIRE FORM of the API: property names, casing, presence/absence of fields. The reason
-/// was a real, documented bug in BackupController.Export(): the outer wrapper is
-/// serialized camelCase, but the nested DTOs in the arrays come out PascalCase,
-/// because this one code path manually calls JsonSerializer.Serialize() without a naming
-/// policy and thereby bypasses the ASP.NET Core convention that otherwise applies everywhere.
-/// No normal assertion test ever noticed this, because nobody checked the exact JSON shape -
-/// only that values survived the roundtrip. This file is meant to catch exactly this class of
-/// bug and prevent it going forward.
+/// was a real, documented bug in BackupController.Export() (audit finding M4(a)): the outer
+/// wrapper was serialized camelCase, but the nested DTOs in the arrays came out PascalCase,
+/// because that one code path manually called JsonSerializer.Serialize() with a hand-rolled
+/// JsonSerializerOptions (no naming policy) instead of reusing the app's shared MVC JsonOptions,
+/// bypassing the ASP.NET Core convention that otherwise applies everywhere. No normal assertion
+/// test ever noticed this, because nobody checked the exact JSON shape - only that values
+/// survived the roundtrip. Now fixed (Export() serializes with the same JsonSerializerOptions
+/// instance the framework itself uses, see BackupController._jsonOptions) - see
+/// <see cref="BackupExportCasingTests"/> for the export-specific regression test. This file is
+/// meant to catch exactly this class of bug and prevent it going forward.
 /// </summary>
 public class ApiContractCasingTests : IClassFixture<CustomWebApplicationFactory>
 {
@@ -28,9 +31,10 @@ public class ApiContractCasingTests : IClassFixture<CustomWebApplicationFactory>
     /// in arrays) must start with a lowercase letter - that's what ASP.NET Core's
     /// default System.Text.Json configuration produces (CamelCase naming policy), which is
     /// never overridden anywhere in Program.cs, and that's exactly what the Blazor client
-    /// expects everywhere except the one known-broken Export() endpoint (see <see cref="BackupExportCasingTests"/>).
+    /// expects everywhere, INCLUDING the export endpoint now (see <see cref="BackupExportCasingTests"/>).
+    /// Internal instead of private: reused by BackupExportCasingTests below.
     /// </summary>
-    private static void AssertAllPropertiesCamelCase(JsonElement element, string path = "$")
+    internal static void AssertAllPropertiesCamelCase(JsonElement element, string path = "$")
     {
         switch (element.ValueKind)
         {
@@ -55,7 +59,8 @@ public class ApiContractCasingTests : IClassFixture<CustomWebApplicationFactory>
         }
     }
 
-    private static async Task<JsonElement> GetJsonAsync(HttpClient client, string url)
+    // Internal instead of private: reused by BackupExportCasingTests below.
+    internal static async Task<JsonElement> GetJsonAsync(HttpClient client, string url)
     {
         var response = await client.GetAsync(url);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -201,22 +206,20 @@ public class ApiContractCasingTests : IClassFixture<CustomWebApplicationFactory>
 }
 
 /// <summary>
-/// Documents an existing bug, not a design decision: BackupController.Export()
-/// builds the outer wrapper as an anonymous object with fields already named camelCase
-/// (exportedAt, sessions, notes, courseGoals, settings) and serializes it manually via
-/// JsonSerializer.Serialize(export, new JsonSerializerOptions { WriteIndented = true }) - WITHOUT
-/// a PropertyNamingPolicy. The outer level therefore looks "accidentally" camelCase (because the
-/// C# field names in the anonymous object were already written camelCase), but the nested
-/// DTO instances (StudySessionDto, NoteDto, CourseGoalDto, UserSettingsDto) have PascalCase
-/// C# properties and are serialized exactly as such WITHOUT a naming policy: PascalCase.
+/// Regression test for a FIXED bug (audit finding M4(a), formerly a deliberate tripwire pinning
+/// the broken behavior): BackupController.Export() used to build the outer wrapper as an
+/// anonymous object with fields already named camelCase (exportedAt, sessions, notes,
+/// courseGoals, settings) and serialize it manually via JsonSerializer.Serialize(export, new
+/// JsonSerializerOptions { WriteIndented = true }) - WITHOUT a PropertyNamingPolicy. The outer
+/// level therefore looked "accidentally" camelCase (the C# field names in the anonymous object
+/// were already written camelCase), but the nested DTO instances (StudySessionDto, NoteDto,
+/// CourseGoalDto, UserSettingsDto) have PascalCase C# properties and were serialized exactly as
+/// such: PascalCase - a wire-format divergence from every other endpoint in the app.
 ///
-/// This test deliberately pins the CURRENT (broken) behavior as a tripwire: if the
-/// bug is ever fixed (e.g. by passing the same JsonSerializerOptions used elsewhere in the app
-/// into this Serialize() call), this test MUST fail and be updated -
-/// it should not silently "just turn green again".
-///
-/// Deliberately NOT touched: BackupController.cs itself (see the task description - another
-/// agent is working in parallel on backup/restore code in this area).
+/// Fixed by reusing the exact JsonSerializerOptions instance the MVC pipeline itself uses for
+/// every other controller (BackupController._jsonOptions, injected via IOptions&lt;JsonOptions&gt;)
+/// instead of constructing a divergent one. This test now pins the FIXED behavior: every
+/// property, at every nesting level, must be camelCase - if this regresses, the test fails.
 /// </summary>
 public class BackupExportCasingTests : IClassFixture<CustomWebApplicationFactory>
 {
@@ -226,16 +229,16 @@ public class BackupExportCasingTests : IClassFixture<CustomWebApplicationFactory
         => _client = factory.CreateClient();
 
     [Fact]
-    public async Task Export_KnownBug_NestedDtosAreNotCamelCase()
+    public async Task Export_AllPropertiesAreCamelCase()
     {
-        var uniqueCourseName = $"ExportCasingBugCourse-{Guid.NewGuid():N}";
+        var uniqueCourseName = $"ExportCasingCourse-{Guid.NewGuid():N}";
         var session = new StudySessionDto
         {
             CourseId = 999,
             CourseName = uniqueCourseName,
             StartTime = DateTime.Today.AddDays(-1).AddHours(10),
             EndTime = DateTime.Today.AddDays(-1).AddHours(11),
-            Topic = "Export-Casing-Bug-Test",
+            Topic = "Export-Casing-Test",
             IsCompleted = false,
             TimerModeId = 1,
         };
@@ -257,40 +260,42 @@ public class BackupExportCasingTests : IClassFixture<CustomWebApplicationFactory
         var settingsPutResponse = await _client.PutAsJsonAsync("/api/settings", settings);
         Assert.Equal(HttpStatusCode.OK, settingsPutResponse.StatusCode);
 
-        var exportResponse = await _client.GetAsync("/api/backup/export");
-        Assert.Equal(HttpStatusCode.OK, exportResponse.StatusCode);
-
-        var json = await exportResponse.Content.ReadAsStringAsync();
-        using var document = JsonDocument.Parse(json);
-        var root = document.RootElement;
+        var root = await ApiContractCasingTests.GetJsonAsync(_client, "/api/backup/export");
 
         // Outer wrapper: camelCase, like everywhere else in the API.
-        foreach (var expectedTopLevelKey in new[] { "exportedAt", "sessions", "notes", "courseGoals", "settings" })
+        foreach (var expectedTopLevelKey in new[]
+        {
+            "formatVersion", "exportedAt", "appVersion", "sessions", "notes", "courseGoals",
+            "courseResources", "settings", "studyPrograms", "courseGroups", "customCourses",
+            "sessionTemplates",
+        })
         {
             Assert.True(
                 root.TryGetProperty(expectedTopLevelKey, out _),
-                $"Erwarte camelCase Top-Level-Key '{expectedTopLevelKey}'.");
+                $"Expected camelCase top-level key '{expectedTopLevelKey}'.");
         }
 
-        // KNOWN BUG: the session DTOs in the "sessions" array are PascalCase, not camelCase.
+        // FIXED: the session DTOs in the "sessions" array are camelCase now, not PascalCase.
         var matchingSession = root.GetProperty("sessions").EnumerateArray()
-            .First(s => s.GetProperty("CourseName").GetString() == uniqueCourseName);
-        Assert.True(matchingSession.TryGetProperty("CourseName", out _));
-        Assert.True(matchingSession.TryGetProperty("Topic", out _));
-        Assert.True(matchingSession.TryGetProperty("IsCompleted", out _));
-        Assert.True(matchingSession.TryGetProperty("TimerModeId", out _));
+            .First(s => s.GetProperty("courseName").GetString() == uniqueCourseName);
+        Assert.True(matchingSession.TryGetProperty("courseName", out _));
+        Assert.True(matchingSession.TryGetProperty("topic", out _));
+        Assert.True(matchingSession.TryGetProperty("isCompleted", out _));
+        Assert.True(matchingSession.TryGetProperty("timerModeId", out _));
         Assert.False(
-            matchingSession.TryGetProperty("courseName", out _),
-            "courseName (camelCase) is unexpectedly present - looks like the casing bug " +
-            "got fixed. This tripwire test then needs to be updated, not just deleted.");
+            matchingSession.TryGetProperty("CourseName", out _),
+            "CourseName (PascalCase) is unexpectedly present - the casing bug is back.");
 
-        // KNOWN BUG: applies the same way to the nested "settings" object.
+        // FIXED: applies the same way to the nested "settings" object.
         var settingsElement = root.GetProperty("settings");
-        Assert.True(settingsElement.TryGetProperty("Theme", out _));
+        Assert.True(settingsElement.TryGetProperty("theme", out _));
         Assert.False(
-            settingsElement.TryGetProperty("theme", out _),
-            "theme (camelCase) is unexpectedly present - looks like the casing bug " +
-            "got fixed. This tripwire test then needs to be updated, not just deleted.");
+            settingsElement.TryGetProperty("Theme", out _),
+            "Theme (PascalCase) is unexpectedly present - the casing bug is back.");
+
+        // Full recursive audit, including the newly added tables (studyPrograms/courseGroups/
+        // customCourses/sessionTemplates) - not just the two spot-checked objects above.
+        ApiContractCasingTests.AssertAllPropertiesCamelCase(root);
     }
 }
 
