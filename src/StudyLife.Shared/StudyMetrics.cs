@@ -85,16 +85,6 @@ public static partial class StudyMetrics
             : grades.Average(g => g.Grade);
     }
 
-    /// <summary>
-    /// Value-tuple overload kept for backward compatibility with cross-repo consumers still
-    /// mid-migration (see the MAUI app's ProjectReference to this repo's main branch in CI) -
-    /// delegates to the <see cref="GradedCourse"/> overload above. Do not add new callers of
-    /// this overload; it exists purely so old call sites keep compiling until they're migrated.
-    /// </summary>
-    [Obsolete("Use the CalcWeightedAverageGrade(IEnumerable<GradedCourse>) overload instead - value tuples in LINQ pipelines can crash iOS AOT compilation.", error: false)]
-    public static decimal? CalcWeightedAverageGrade(IEnumerable<(decimal Grade, int Ects)> gradedCourses) =>
-        CalcWeightedAverageGrade(gradedCourses.Select(g => new GradedCourse(g.Grade, g.Ects)));
-
     // A bare NumberFormatInfo, NOT `new CultureInfo("de-DE")`: the Blazor WASM client publishes
     // with InvariantGlobalization=true, where constructing any non-invariant culture throws
     // CultureNotFoundException - and because this is a static field, that exception became a
