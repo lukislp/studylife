@@ -1,5 +1,8 @@
+using System.Reflection;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using StudyLife.Server.Auth;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
@@ -32,9 +35,18 @@ public class BackupController : ControllerBase
     private readonly SettingsCacheVersion _settingsCacheVersion;
     private readonly IHostApplicationLifetime _lifetime;
     private readonly IOwnershipService _ownership;
+    // Same JsonSerializerOptions instance the MVC pipeline itself uses for every other
+    // controller's [FromBody]/ActionResult<T> (de)serialization (camelCase, case-insensitive -
+    // ASP.NET Core's JsonSerializerDefaults.Web, never overridden in Program.cs). Export() uses
+    // it explicitly (it returns a downloadable File(), not a plain ActionResult<T>, so it can't
+    // just rely on the framework's own output formatter) - this is exactly the fix for the
+    // divergent-casing bug (audit finding M4(a)): no more `new JsonSerializerOptions { ... }`
+    // without a naming policy.
+    private readonly System.Text.Json.JsonSerializerOptions _jsonOptions;
 
     public BackupController(StudyLifeDb db, SettingsCacheVersion settingsCacheVersion,
         IHostApplicationLifetime lifetime, IOwnershipService ownership,
+        IOptions<Microsoft.AspNetCore.Mvc.JsonOptions> jsonOptions,
         DatabaseBackupService? backupService = null, DatabaseRestoreService? restoreService = null)
     {
         _db = db;
@@ -43,6 +55,7 @@ public class BackupController : ControllerBase
         _settingsCacheVersion = settingsCacheVersion;
         _lifetime = lifetime;
         _ownership = ownership;
+        _jsonOptions = jsonOptions.Value.JsonSerializerOptions;
     }
 
     /// <summary>Only registered in SQLite mode (Program.cs) - see the field comment above.</summary>
@@ -179,12 +192,23 @@ public class BackupController : ControllerBase
     public record EncryptedBackupRequest(string Password);
 
     /// <summary>
-    /// Human-readable JSON export of the actual user data. Deliberately excluded:
-    /// PushSubscriptions (this browser's endpoint registrations, not transferable user data),
-    /// SentReminders (internal dedup bookkeeping), and TimerState (transient live state of the
-    /// focus timer). Uses the same ToDto projections as the respective controllers
-    /// (NotesController/CourseGoalsController/SessionsController/SettingsController/
-    /// CourseResourcesController), so the export format doesn't drift from the normal API.
+    /// Human-readable JSON export of the actual user data ("v2" format, audit finding M4 - was
+    /// previously incomplete: only 5 of the now 9 user-owned tables, and serialized with a
+    /// manually constructed JsonSerializerOptions without a naming policy, so the nested DTOs
+    /// came out PascalCase instead of matching the rest of the API's camelCase wire format - see
+    /// docs/ARCHITECTURE.md). Deliberately still excluded: PushSubscriptions (this browser's
+    /// endpoint registrations, not transferable user data), SentReminders (internal dedup
+    /// bookkeeping), TimerState (transient live state of the focus timer), and every auth/
+    /// infrastructure table (AuthUsers/PasskeyCredentials/AuthSessions/RecoveryCodes/
+    /// SystemSecrets/AiKeyOutbox - not user data, and re-importing a session/passkey/setup-code
+    /// row would be either meaningless across accounts or a security hole). Uses the same ToDto
+    /// projections as the respective controllers (NotesController/CourseGoalsController/
+    /// SessionsController/SettingsController/CourseResourcesController/SessionTemplatesController),
+    /// plus three export-only DTOs for the tables that have no id-carrying API DTO of their own
+    /// (StudyProgramExportDto/CourseGroupExportDto/CustomCourseExportDto - see their doc comments),
+    /// so the export format doesn't drift from the normal API beyond what round-tripping requires.
+    /// Serialized with the SAME JsonSerializerOptions the framework itself uses for every other
+    /// endpoint (_jsonOptions) - the fix for the casing bug.
     /// </summary>
     [HttpGet("export")]
     public async Task<IActionResult> Export()
@@ -201,21 +225,415 @@ public class BackupController : ControllerBase
             .Select(r => CourseResourcesController.ToDto(r)).ToListAsync();
         var settingsEntity = await _db.Settings.AsNoTracking().FirstOrDefaultAsync();
         var settings = SettingsController.ToDto(settingsEntity ?? new UserSettingsEntity());
+        var studyPrograms = await _db.StudyPrograms.AsNoTracking()
+            .OrderBy(p => p.CreatedAt)
+            .Select(p => new StudyProgramExportDto
+            {
+                Id = p.Id,
+                Name = p.Name,
+                CreatedAt = p.CreatedAt,
+                IsCompleted = p.IsCompleted,
+            }).ToListAsync();
+        var courseGroups = await _db.CourseGroups.AsNoTracking()
+            .Select(g => new CourseGroupExportDto
+            {
+                Id = g.Id,
+                StudyProgramId = g.StudyProgramId,
+                Name = g.Name,
+                EctsQuota = g.EctsQuota,
+            }).ToListAsync();
+        var customCourses = await _db.CustomCourses.AsNoTracking()
+            .OrderBy(c => c.Semester).ThenBy(c => c.Id)
+            .Select(c => new CustomCourseExportDto
+            {
+                Id = c.Id,
+                StudyProgramId = c.StudyProgramId,
+                Semester = c.Semester,
+                Name = c.Name,
+                Code = c.Code,
+                Color = c.Color,
+                Icon = c.Icon,
+                Ects = c.Ects,
+                CourseGroupId = c.CourseGroupId,
+                Topics = c.Topics,
+            }).ToListAsync();
+        var sessionTemplates = await _db.SessionTemplates.AsNoTracking()
+            .OrderBy(t => t.Name)
+            .Select(t => SessionTemplatesController.ToDto(t)).ToListAsync();
 
-        var export = new
+        var export = new BackupExportDto
         {
-            exportedAt = DateTime.UtcNow,
-            sessions,
-            notes,
-            courseGoals,
-            courseResources,
-            settings,
+            FormatVersion = 2,
+            ExportedAt = DateTime.UtcNow,
+            AppVersion = Assembly.GetExecutingAssembly()
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                ?.InformationalVersion ?? "dev",
+            Sessions = sessions,
+            Notes = notes,
+            CourseGoals = courseGoals,
+            CourseResources = courseResources,
+            Settings = settings,
+            StudyPrograms = studyPrograms,
+            CourseGroups = courseGroups,
+            CustomCourses = customCourses,
+            SessionTemplates = sessionTemplates,
         };
 
-        var json = System.Text.Json.JsonSerializer.Serialize(export,
-            new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
-        var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+        var bytes = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(export, _jsonOptions);
         return File(bytes, "application/json", $"studylife-export-{DateTime.UtcNow:yyyyMMdd}.json");
+    }
+
+    // A JSON export is text and far smaller than the raw 512MB SQLite backup (Restore below) -
+    // 64MB is generous headroom even for a very large multi-year account while still bounding
+    // worst-case memory use of the [FromBody] deserialization.
+    internal const long MaxImportJsonBytes = 64L * 1024 * 1024;
+
+    /// <summary>
+    /// Imports a JSON export (this instance's own, or another StudyLife instance's - v2 or
+    /// legacy v1 shape, see BackupExportDto) as a FULL REPLACE of the calling user's own data:
+    /// every row this user owns in every exported table is deleted, then the file's rows are
+    /// inserted with freshly assigned ids, all inside one transaction. SessionOnly, but
+    /// deliberately NOT owner-gated like the six raw endpoints above: this only ever touches the
+    /// caller's own rows (same reasoning as GET .../export already being open to every user) -
+    /// a real passkey session is still required so a bare API key (e.g. Home Assistant's) can't
+    /// wipe an account on its own.
+    ///
+    /// Id remapping is the reason this isn't a naive bulk insert: CustomCourseEntity rows get a
+    /// NEW database id on insert, so every place that references the externally shifted id
+    /// (StudyProgramCatalog.CustomCourseIdOffset + old id) - Sessions/CourseGoals/
+    /// CourseResources/SessionTemplates' CourseId, Settings' SelectedCourseIds/
+    /// CompletedCourseIds - must be rewritten to the NEW shifted id (RemapCourseId below).
+    /// Likewise CourseGroup→StudyProgram, CustomCourse→StudyProgram/CourseGroup, Settings.
+    /// ActiveStudyProgramId→StudyProgram, Note.SessionId→Session, and Note.RelatedNoteIds→Note
+    /// (the last two only exist AFTER their target table's own insert pass, hence the ordering
+    /// below: StudyPrograms → CourseGroups → CustomCourses → SessionTemplates → Sessions →
+    /// Notes (two passes) → CourseGoals → CourseResources → Settings). A reference this file's
+    /// data can't resolve (unknown custom course id, a group missing from a partial export, ...)
+    /// is dropped tolerantly - either the whole referencing row for a required, non-nullable
+    /// field (e.g. Session.CourseId) or just the one dangling entry for an optional field/a
+    /// comma-separated list (e.g. Settings.SelectedCourseIds, same tolerance as
+    /// CommaSeparatedIds) - never a hard failure of the whole import. Every drop is counted in
+    /// the response instead of silently vanishing.
+    /// </summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpPost("import-json")]
+    [RequestSizeLimit(MaxImportJsonBytes)]
+    public async Task<ActionResult<BackupImportResponseDto>> ImportJson([FromBody] BackupExportDto import)
+    {
+        // Defense in depth alongside [RequestSizeLimit] above (which only takes full effect
+        // under a real Kestrel transport, enforced while reading the body stream): an explicit
+        // Content-Length check here catches the same case in-process too, with a clearer error
+        // than a raw aborted connection.
+        if (Request.ContentLength is { } contentLength && contentLength > MaxImportJsonBytes)
+            return StatusCode(StatusCodes.Status413PayloadTooLarge,
+                new { error = $"Import file is too large (max {MaxImportJsonBytes / (1024 * 1024)} MB)." });
+
+        // 0 = no formatVersion property in the file at all (legacy v1 - handled below by simply
+        // leaving the newer collections at their empty-list default). Anything else that isn't
+        // the current version is a file this server version doesn't understand.
+        if (import.FormatVersion is not (0 or 2))
+            return BadRequest(new { error = $"Unsupported export formatVersion {import.FormatVersion}." });
+
+        var imported = new Dictionary<string, int>();
+        var dropped = new Dictionary<string, int>();
+        void Drop(string key) => dropped[key] = dropped.GetValueOrDefault(key) + 1;
+
+        const int offset = StudyProgramCatalog.CustomCourseIdOffset;
+
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+
+        // ── Full replace: delete every row this user owns in every exported table ───────────
+        // (the global query filters in StudyLifeDb.OnModelCreating already scope every one of
+        // these DbSets to the caller, so this can never touch another user's data - no
+        // IgnoreQueryFilters() anywhere here, unlike DemoSeeder's table-wide wipe). Settings is
+        // a singleton-per-user row (unique index on AuthUserId): deleted and freshly re-inserted
+        // below like everything else, instead of the usual GetOrCreateAsync upsert.
+        await _db.Sessions.ExecuteDeleteAsync();
+        await _db.Notes.ExecuteDeleteAsync();
+        await _db.CourseGoals.ExecuteDeleteAsync();
+        await _db.CourseResources.ExecuteDeleteAsync();
+        await _db.SessionTemplates.ExecuteDeleteAsync();
+        await _db.CustomCourses.ExecuteDeleteAsync();
+        await _db.CourseGroups.ExecuteDeleteAsync();
+        await _db.StudyPrograms.ExecuteDeleteAsync();
+        await _db.Settings.ExecuteDeleteAsync();
+
+        // ── Study programs ───────────────────────────────────────────────────────────────────
+        var programIdMap = new Dictionary<int, int>();
+        foreach (var dto in import.StudyPrograms)
+        {
+            var entity = new StudyProgramEntity { Name = dto.Name, CreatedAt = dto.CreatedAt, IsCompleted = dto.IsCompleted };
+            _db.StudyPrograms.Add(entity);
+            await _db.SaveChangesAsync();
+            programIdMap[dto.Id] = entity.Id;
+        }
+        imported["studyPrograms"] = programIdMap.Count;
+
+        // ── Elective groups ──────────────────────────────────────────────────────────────────
+        var groupIdMap = new Dictionary<int, int>();
+        foreach (var dto in import.CourseGroups)
+        {
+            if (!programIdMap.TryGetValue(dto.StudyProgramId, out var newProgramId)) { Drop("courseGroups"); continue; }
+            var entity = new CourseGroupEntity { StudyProgramId = newProgramId, Name = dto.Name, EctsQuota = dto.EctsQuota };
+            _db.CourseGroups.Add(entity);
+            await _db.SaveChangesAsync();
+            groupIdMap[dto.Id] = entity.Id;
+        }
+        imported["courseGroups"] = groupIdMap.Count;
+
+        // ── Custom courses ───────────────────────────────────────────────────────────────────
+        // courseIdMap works in the EXTERNALLY SHIFTED id space (offset + raw id), matching every
+        // consumer below (Sessions/CourseGoals/CourseResources/SessionTemplates' CourseId,
+        // Settings' id lists) - built-in catalog ids (< offset) never appear here and pass
+        // through unchanged wherever referenced, exactly like every other part of the app that
+        // resolves a CourseId (no catalog membership check anywhere else either).
+        var courseIdMap = new Dictionary<int, int>();
+        foreach (var dto in import.CustomCourses)
+        {
+            if (!programIdMap.TryGetValue(dto.StudyProgramId, out var newProgramId)) { Drop("customCourses"); continue; }
+            int? newGroupId = null;
+            if (dto.CourseGroupId.HasValue)
+            {
+                if (groupIdMap.TryGetValue(dto.CourseGroupId.Value, out var mappedGroupId)) newGroupId = mappedGroupId;
+                else Drop("customCourseGroupRefs"); // course still imported, just without its elective group
+            }
+            var entity = new CustomCourseEntity
+            {
+                StudyProgramId = newProgramId,
+                Semester = dto.Semester,
+                Name = dto.Name,
+                Code = dto.Code,
+                Color = dto.Color,
+                Icon = dto.Icon,
+                Ects = dto.Ects,
+                CourseGroupId = newGroupId,
+                Topics = dto.Topics,
+            };
+            _db.CustomCourses.Add(entity);
+            await _db.SaveChangesAsync();
+            courseIdMap[offset + dto.Id] = offset + entity.Id;
+        }
+        imported["customCourses"] = courseIdMap.Count;
+
+        // Remaps a single externally-shifted-or-built-in CourseId. Built-in ids (< offset) pass
+        // through unchanged and unvalidated. A custom id (>= offset) not found in courseIdMap is
+        // dangling (dropped above, or simply never existed in the file) -> null.
+        int? RemapCourseId(int oldCourseId) =>
+            oldCourseId < offset ? oldCourseId : courseIdMap.TryGetValue(oldCourseId, out var v) ? v : null;
+
+        // ── Session templates ────────────────────────────────────────────────────────────────
+        var templateCount = 0;
+        foreach (var dto in import.SessionTemplates)
+        {
+            var newCourseId = RemapCourseId(dto.CourseId);
+            if (newCourseId is null) { Drop("sessionTemplates"); continue; }
+            _db.SessionTemplates.Add(new SessionTemplateEntity
+            {
+                Name = dto.Name,
+                CourseId = newCourseId.Value,
+                CourseName = dto.CourseName,
+                CourseColor = dto.CourseColor,
+                DurationMinutes = dto.DurationMinutes,
+                Topic = dto.Topic,
+                DefaultWeekday = dto.DefaultWeekday,
+                DefaultStartTime = dto.DefaultStartTime,
+                CreatedAt = dto.CreatedAt,
+            });
+            templateCount++;
+        }
+        await _db.SaveChangesAsync();
+        imported["sessionTemplates"] = templateCount;
+
+        // ── Sessions ─────────────────────────────────────────────────────────────────────────
+        // sessionIdMap (old StudySessionDto.Id -> new StudySessionEntity.Id) is needed below for
+        // Note.SessionId - sessions must exist before notes can reference them.
+        var sessionIdMap = new Dictionary<int, int>();
+        foreach (var dto in import.Sessions)
+        {
+            var newCourseId = RemapCourseId(dto.CourseId);
+            if (newCourseId is null) { Drop("sessions"); continue; }
+            var entity = new StudySessionEntity
+            {
+                CourseId = newCourseId.Value,
+                CourseName = dto.CourseName,
+                CourseColor = dto.CourseColor,
+                StartTime = dto.StartTime,
+                EndTime = dto.EndTime,
+                Topic = dto.Topic,
+                Notes = dto.Notes,
+                IsCompleted = dto.IsCompleted,
+                TimerModeId = dto.TimerModeId,
+                RecurrenceGroupId = dto.RecurrenceGroupId,
+            };
+            _db.Sessions.Add(entity);
+            await _db.SaveChangesAsync();
+            sessionIdMap[dto.Id] = entity.Id;
+        }
+        imported["sessions"] = sessionIdMap.Count;
+
+        // ── Notes ────────────────────────────────────────────────────────────────────────────
+        // Two passes: RelatedNoteIds references OTHER notes in the same file, whose new ids are
+        // only known once EVERY note has been inserted at least once.
+        var noteIdMap = new Dictionary<int, int>();
+        var noteEntities = new List<(NoteDto Dto, NoteEntity Entity)>();
+        foreach (var dto in import.Notes)
+        {
+            int? newCourseId = null;
+            if (dto.CourseId.HasValue)
+            {
+                newCourseId = RemapCourseId(dto.CourseId.Value);
+                if (newCourseId is null) Drop("noteCourseRefs"); // note kept, just unlinked from the course
+            }
+            int? newSessionId = null;
+            if (dto.SessionId.HasValue)
+            {
+                if (sessionIdMap.TryGetValue(dto.SessionId.Value, out var mappedSessionId)) newSessionId = mappedSessionId;
+                else Drop("noteSessionRefs"); // note kept, just unlinked from the session
+            }
+            var entity = new NoteEntity
+            {
+                Title = dto.Title,
+                Content = dto.Content,
+                CreatedAt = dto.CreatedAt,
+                UpdatedAt = dto.UpdatedAt,
+                CourseId = newCourseId,
+                SessionId = newSessionId,
+                IsMarkdown = dto.IsMarkdown,
+                SourceUrl = dto.SourceUrl,
+                Tags = dto.Tags,
+                Summary = dto.Summary,
+                // RelatedNoteIds filled in the second pass below, once every note has an id.
+            };
+            _db.Notes.Add(entity);
+            noteEntities.Add((dto, entity));
+        }
+        await _db.SaveChangesAsync();
+        foreach (var (dto, entity) in noteEntities) noteIdMap[dto.Id] = entity.Id;
+
+        foreach (var (dto, entity) in noteEntities)
+        {
+            var remapped = new List<int>();
+            foreach (var oldRelatedId in dto.RelatedNoteIds)
+            {
+                if (noteIdMap.TryGetValue(oldRelatedId, out var newRelatedId)) remapped.Add(newRelatedId);
+                else Drop("noteRelatedIds");
+            }
+            entity.RelatedNoteIds = remapped.Count > 0 ? string.Join(",", remapped) : null;
+        }
+        await _db.SaveChangesAsync();
+        imported["notes"] = noteEntities.Count;
+
+        // ── Course goals ─────────────────────────────────────────────────────────────────────
+        var goalCount = 0;
+        foreach (var dto in import.CourseGoals)
+        {
+            var newCourseId = RemapCourseId(dto.CourseId);
+            if (newCourseId is null) { Drop("courseGoals"); continue; }
+            _db.CourseGoals.Add(new CourseGoalEntity
+            {
+                CourseId = newCourseId.Value,
+                CourseName = dto.CourseName,
+                TargetDate = dto.TargetDate,
+                CompletionNote = dto.CompletionNote,
+                CompletedAt = dto.CompletedAt,
+                Grade = dto.Grade,
+                CompletedTopics = dto.CompletedTopics,
+                Tag = dto.Tag,
+            });
+            goalCount++;
+        }
+        await _db.SaveChangesAsync();
+        imported["courseGoals"] = goalCount;
+
+        // ── Course resources ─────────────────────────────────────────────────────────────────
+        var resourceCount = 0;
+        foreach (var dto in import.CourseResources)
+        {
+            var newCourseId = RemapCourseId(dto.CourseId);
+            if (newCourseId is null) { Drop("courseResources"); continue; }
+            _db.CourseResources.Add(new CourseResourceEntity
+            {
+                CourseId = newCourseId.Value,
+                Title = dto.Title,
+                Url = dto.Url,
+                CreatedAt = dto.CreatedAt,
+            });
+            resourceCount++;
+        }
+        await _db.SaveChangesAsync();
+        imported["courseResources"] = resourceCount;
+
+        // ── Settings (singleton row) ─────────────────────────────────────────────────────────
+        var selectedCourseIds = new List<int>();
+        foreach (var oldId in import.Settings.SelectedCourseIds)
+        {
+            if (RemapCourseId(oldId) is int v) selectedCourseIds.Add(v);
+            else Drop("settingsSelectedCourseIds");
+        }
+        var completedCourseIds = new List<int>();
+        foreach (var oldId in import.Settings.CompletedCourseIds)
+        {
+            if (RemapCourseId(oldId) is int v) completedCourseIds.Add(v);
+            else Drop("settingsCompletedCourseIds");
+        }
+        int? newActiveStudyProgramId = null;
+        if (import.Settings.ActiveStudyProgramId.HasValue)
+        {
+            if (programIdMap.TryGetValue(import.Settings.ActiveStudyProgramId.Value, out var mappedProgramId))
+                newActiveStudyProgramId = mappedProgramId;
+            else
+                // Falls back to the built-in program (null), same as when an active program is
+                // deleted elsewhere (StudyProgramsController.Delete).
+                Drop("settingsActiveStudyProgramRef");
+        }
+        _db.Settings.Add(new UserSettingsEntity
+        {
+            SelectedCourseIds = string.Join(",", selectedCourseIds),
+            CompletedCourseIds = string.Join(",", completedCourseIds),
+            Theme = import.Settings.Theme,
+            AccentColor = import.Settings.AccentColor,
+            AutoSwitchFocus = import.Settings.AutoSwitchFocus,
+            AutoSwitchMinutesBefore = import.Settings.AutoSwitchMinutesBefore,
+            MotivationalStyle = import.Settings.MotivationalStyle,
+            SessionReminderMinutes = import.Settings.SessionReminderMinutes,
+            CourseGoalReminderDays = import.Settings.CourseGoalReminderDays,
+            InactivityThresholdDays = import.Settings.InactivityThresholdDays,
+            StudyWindowStartHour = import.Settings.StudyWindowStartHour,
+            StudyWindowEndHour = import.Settings.StudyWindowEndHour,
+            StudyDays = import.Settings.StudyDays,
+            TargetGraduationDate = import.Settings.TargetGraduationDate,
+            CustomTimerModes = import.Settings.CustomTimerModes,
+            WeeklyGoalMinHours = import.Settings.WeeklyGoalMinHours,
+            WeeklyGoalMaxHours = import.Settings.WeeklyGoalMaxHours,
+            MonthlyGoalMinHours = import.Settings.MonthlyGoalMinHours,
+            MonthlyGoalMaxHours = import.Settings.MonthlyGoalMaxHours,
+            SessionRemindersEnabled = import.Settings.SessionRemindersEnabled,
+            CourseGoalRemindersEnabled = import.Settings.CourseGoalRemindersEnabled,
+            InactivityRemindersEnabled = import.Settings.InactivityRemindersEnabled,
+            AchievementNotificationsEnabled = import.Settings.AchievementNotificationsEnabled,
+            WeeklyReportEnabled = import.Settings.WeeklyReportEnabled,
+            DailyMotivationEnabled = import.Settings.DailyMotivationEnabled,
+            PerCourseInactivityRemindersEnabled = import.Settings.PerCourseInactivityRemindersEnabled,
+            StreakRiskRemindersEnabled = import.Settings.StreakRiskRemindersEnabled,
+            WeeklyGoalNudgeEnabled = import.Settings.WeeklyGoalNudgeEnabled,
+            CourseAlmostDoneRemindersEnabled = import.Settings.CourseAlmostDoneRemindersEnabled,
+            BestStudyTimeRemindersEnabled = import.Settings.BestStudyTimeRemindersEnabled,
+            ComebackNudgeEnabled = import.Settings.ComebackNudgeEnabled,
+            NewRecordNotificationsEnabled = import.Settings.NewRecordNotificationsEnabled,
+            MonthlyReportEnabled = import.Settings.MonthlyReportEnabled,
+            // LastBackupDownloadAt/ProgressShareEnabled/ProgressShareToken deliberately NOT
+            // carried over - same "not part of the normal settings write path" rationale as
+            // SettingsController.Save (see UserSettingsEntity): a fresh import shouldn't
+            // silently re-activate a public progress-share link or backdate the reminder.
+            ActiveStudyProgramId = newActiveStudyProgramId,
+        });
+        await _db.SaveChangesAsync();
+        imported["settings"] = 1;
+
+        _settingsCacheVersion.Value++;
+        await transaction.CommitAsync();
+
+        return Ok(new BackupImportResponseDto { Imported = imported, Dropped = dropped });
     }
 
     /// <summary>

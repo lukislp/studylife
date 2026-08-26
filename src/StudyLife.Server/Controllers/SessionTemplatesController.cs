@@ -65,7 +65,9 @@ public class SessionTemplatesController : ControllerBase
         return null;
     }
 
-    private static SessionTemplateDto ToDto(SessionTemplateEntity e) => new()
+    // internal instead of private: reused by BackupController (JSON export/import), same
+    // pattern as SessionsController.ToDto.
+    internal static SessionTemplateDto ToDto(SessionTemplateEntity e) => new()
     {
         Id = e.Id,
         Name = e.Name,
