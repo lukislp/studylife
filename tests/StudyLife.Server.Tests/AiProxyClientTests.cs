@@ -19,11 +19,13 @@ public class AiProxyClientTests
         string? baseUrl = "https://ai.test",
         string? sharedSecret = "shared-secret",
         string? tokenSigningSecret = null,
-        string? internalApiSecret = null)
+        string? internalApiSecret = null,
+        string? internalBaseUrl = null)
     {
         var config = new Dictionary<string, string?>
         {
             ["StudyLifeAi:BaseUrl"] = baseUrl,
+            ["StudyLifeAi:InternalBaseUrl"] = internalBaseUrl,
             ["StudyLifeAi:SharedSecret"] = sharedSecret,
             ["StudyLifeAi:TokenSigningSecret"] = tokenSigningSecret,
             ["StudyLifeAi:InternalApiSecret"] = internalApiSecret,
@@ -289,6 +291,75 @@ public class AiProxyClientTests
         var client = CreateClient(sharedSecret: "legacy-secret", tokenSigningSecret: null, internalApiSecret: null);
 
         Assert.True(client.Enabled);
+    }
+
+    // --- Phase A of the /internal port cutover: StudyLifeAi:InternalBaseUrl ---
+
+    [Fact]
+    public async Task ProxyAsync_AlwaysUsesBaseUrl_EvenWhenInternalBaseUrlDiffers()
+    {
+        var handler = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
+        var client = CreateClient(handler, baseUrl: "https://ai.test:8000", internalBaseUrl: "https://ai.test:8001");
+
+        await client.ProxyAsync("/agent", 42, new MemoryStream(), "application/json", CancellationToken.None);
+
+        var request = Assert.Single(handler.Requests);
+        Assert.Equal("https://ai.test:8000/agent", request.Uri);
+    }
+
+    [Fact]
+    public async Task RegisterKeyAsync_UsesInternalBaseUrl_WhenConfigured()
+    {
+        var handler = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
+        var client = CreateClient(handler, baseUrl: "https://ai.test:8000", internalBaseUrl: "https://ai.test:8001");
+
+        await client.RegisterKeyAsync(7, "key", CancellationToken.None);
+
+        var request = Assert.Single(handler.Requests);
+        Assert.Equal("https://ai.test:8001/internal/register-key", request.Uri);
+    }
+
+    [Fact]
+    public async Task RevokeKeyAsync_UsesInternalBaseUrl_WhenConfigured()
+    {
+        var handler = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
+        var client = CreateClient(handler, baseUrl: "https://ai.test:8000", internalBaseUrl: "https://ai.test:8001");
+
+        await client.RevokeKeyAsync(7, CancellationToken.None);
+
+        var request = Assert.Single(handler.Requests);
+        Assert.Equal("https://ai.test:8001/internal/revoke-key", request.Uri);
+    }
+
+    [Fact]
+    public async Task EnrichCaptureAsync_UsesInternalBaseUrl_WhenConfigured()
+    {
+        var handler = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("{\"course_id\":null,\"course_confidence\":null,\"tags\":[],\"summary\":null}"),
+        });
+        var client = CreateClient(handler, baseUrl: "https://ai.test:8000", internalBaseUrl: "https://ai.test:8001");
+
+        await client.EnrichCaptureAsync(7, 99, "Title", "Content", null, new List<int>(), CancellationToken.None);
+
+        var request = Assert.Single(handler.Requests);
+        Assert.Equal("https://ai.test:8001/internal/enrich-capture", request.Uri);
+    }
+
+    [Fact]
+    public async Task InternalCalls_FallBackToBaseUrl_WhenInternalBaseUrlUnset()
+    {
+        // Backward compatibility for single-port studylife-ai (self-hosters, docker-compose,
+        // or any deployment that hasn't rolled out the dual-port release) - not setting
+        // StudyLifeAi:InternalBaseUrl at all must keep every call, public and /internal/* alike,
+        // going to BaseUrl.
+        var handler = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
+        var client = CreateClient(handler, baseUrl: "https://ai.test", internalBaseUrl: null);
+
+        await client.RegisterKeyAsync(7, "key", CancellationToken.None);
+
+        var request = Assert.Single(handler.Requests);
+        Assert.Equal("https://ai.test/internal/register-key", request.Uri);
     }
 
     /// <summary>Records all requests (including headers/body) and returns predefined responses -

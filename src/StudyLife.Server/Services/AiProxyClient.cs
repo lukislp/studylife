@@ -39,12 +39,24 @@ public sealed record CaptureEnrichmentResult(
 ///     accepted values during a rotation - see studylife-ai's docs/decisions.md).
 /// Both fall back to the legacy StudyLifeAi:SharedSecret when unset, with a one-time
 /// deprecation warning, so this side and studylife-ai can deploy the split in either order.
+///
+/// Phase A of the /internal port cutover (2026-08-26): studylife-ai now also serves /internal/*
+/// on a separate port (8001) alongside the public port (8000) it has always used for
+/// /chat|/agent|/agent/confirm. StudyLifeAi:InternalBaseUrl, when set, is used for every
+/// /internal/* call (RegisterKeyAsync/RevokeKeyAsync/EnrichCaptureAsync via PostInternalAsync);
+/// ProxyAsync (the public /chat|/agent|/agent/confirm proxy) always keeps using BaseUrl.
+/// InternalBaseUrl falls back to BaseUrl when unset - a single-port studylife-ai (self-hosters,
+/// docker-compose, or any deployment that hasn't rolled out the dual-port release) keeps working
+/// unchanged with just BaseUrl configured. Phase B (a separate studylife-ai release removing
+/// /internal from the public port entirely) can only happen once every deployment has set
+/// InternalBaseUrl to the dedicated port.
 /// </summary>
 public sealed class AiProxyClient
 {
     private readonly ILogger<AiProxyClient> _logger;
     private readonly HttpClient _http;
     private readonly string? _baseUrl;
+    private readonly string? _internalBaseUrl;
     private readonly IReadOnlyList<AiProxyTokenService.SigningKey>? _signingKeys;
     private readonly string? _legacySharedSecret;
     private readonly string? _internalApiSecret;
@@ -54,6 +66,9 @@ public sealed class AiProxyClient
         _logger = logger;
         _http = httpClient ?? new HttpClient();
         _baseUrl = configuration["StudyLifeAi:BaseUrl"]?.TrimEnd('/');
+        // Falls back to BaseUrl when unset (see class doc, "Phase A of the /internal port
+        // cutover") - NullIfEmpty so an explicitly blank env value doesn't win over the fallback.
+        _internalBaseUrl = NullIfEmpty(configuration["StudyLifeAi:InternalBaseUrl"])?.TrimEnd('/') ?? _baseUrl;
 
         var legacySharedSecret = NullIfEmpty(configuration["StudyLifeAi:SharedSecret"]);
         var tokenSigningSecretConfig = NullIfEmpty(configuration["StudyLifeAi:TokenSigningSecret"]);
@@ -88,7 +103,9 @@ public sealed class AiProxyClient
         }
 
         if (Enabled)
-            _logger.LogInformation("studylife-ai integration active (BaseUrl {BaseUrl})", _baseUrl);
+            _logger.LogInformation(
+                "studylife-ai integration active (BaseUrl {BaseUrl}, InternalBaseUrl {InternalBaseUrl})",
+                _baseUrl, _internalBaseUrl);
         else if (!string.IsNullOrEmpty(_baseUrl) || _signingKeys is not null || legacySharedSecret is not null || _internalApiSecret is not null)
             _logger.LogWarning("studylife-ai configuration incomplete (BaseUrl and a usable signing + internal-API secret must all be set) - integration stays off");
     }
@@ -164,7 +181,7 @@ public sealed class AiProxyClient
                 SourceUrl = sourceUrl,
                 ActiveCourseIds = activeCourseIds,
             };
-            var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/internal/enrich-capture")
+            var request = new HttpRequestMessage(HttpMethod.Post, $"{_internalBaseUrl}/internal/enrich-capture")
             {
                 Content = JsonContent.Create(requestBody),
             };
@@ -222,7 +239,7 @@ public sealed class AiProxyClient
         if (!Enabled) return true;
         try
         {
-            var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}{path}")
+            var request = new HttpRequestMessage(HttpMethod.Post, $"{_internalBaseUrl}{path}")
             {
                 Content = new StringContent(JsonSerializer.Serialize(body), System.Text.Encoding.UTF8, "application/json"),
             };
