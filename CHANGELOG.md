@@ -1,3 +1,10 @@
+## [2.0.1](https://github.com/lukislp/studylife/compare/v2.0.0...v2.0.1) (2026-08-26)
+
+
+### Bug Fixes
+
+* serve all client script from external files, drop script-src unsafe-inline ([f8abb0f](https://github.com/lukislp/studylife/commit/f8abb0feae1c10b0e2360f65285207760093baf0))
+
 # [2.0.0](https://github.com/lukislp/studylife/compare/v1.44.1...v2.0.0) (2026-08-26)
 
 
