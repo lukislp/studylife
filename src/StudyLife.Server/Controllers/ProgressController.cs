@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using StudyLife.Server.Auth;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
 using StudyLife.Shared;
@@ -38,7 +40,11 @@ public class ProgressController : ControllerBase
     /// against the wrong, ambiently resolved settings row). The found token uniquely
     /// identifies its owner (32-byte CSPRNG, practically collision-free) - that's the actual
     /// authorization here, not a substitute for it.
+    /// PublicUnlessInvalidSession (not plain [AllowAnonymous]): reachable without any
+    /// credential, but an X-Session-Token that IS present and invalid is still rejected -
+    /// matches the former resolution middleware's behavior for this exempt path.
     /// </summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.PublicUnlessInvalidSession)]
     [HttpGet("shared/{token}")]
     public async Task<ActionResult<ProgressShareDto>> GetShared(string token)
     {

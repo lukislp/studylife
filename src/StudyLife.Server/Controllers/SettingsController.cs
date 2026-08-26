@@ -1,7 +1,9 @@
 using System.Security.Cryptography;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
+using StudyLife.Server.Auth;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
 using StudyLife.Shared;
@@ -128,6 +130,12 @@ public class SettingsController : ControllerBase
     /// generates a new token while doing so - Disable now also deletes the token (see there),
     /// so there's never an "old" token left that could be reused.
     /// </summary>
+    // SessionOnly (audit finding A3 cleanup): a leaked API key must not be able to activate a
+    // public read-only link to the account's data on its own, same rationale as the ha-api-key
+    // group above. Disable/Regenerate below are intentionally left at the plain ApiAccess level
+    // they already had - narrowing only the specific gap this refactor's audit called out
+    // (activating a NEW public link) without changing the two endpoints nobody flagged.
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("progress-share/enable")]
     public async Task<ActionResult<UserSettingsDto>> EnableProgressShare()
     {
@@ -188,10 +196,11 @@ public class SettingsController : ControllerBase
 
     /// <summary>Status for the setup card: does a key exist, and since when? Deliberately NO
     /// plaintext access - the key, like a password, is only visible once at generation.</summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpGet("ha-api-key")]
     public async Task<ActionResult<HaApiKeyStatusDto>> GetHaApiKeyStatus()
     {
-        if (SessionUser is not int userId) return Unauthorized();
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
         return new HaApiKeyStatusDto { HasKey = user.ApiKeyHash != null, CreatedAt = user.ApiKeyCreatedAt };
@@ -205,10 +214,11 @@ public class SettingsController : ControllerBase
     /// decision ("long lived"), because Home Assistant has no live session that could react
     /// to a rotation.
     /// </summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("ha-api-key/generate")]
     public async Task<ActionResult<HaApiKeyGenerateResponseDto>> GenerateHaApiKey()
     {
-        if (SessionUser is not int userId) return Unauthorized();
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
 
@@ -221,10 +231,11 @@ public class SettingsController : ControllerBase
 
     /// <summary>Permanently revokes the per-user API key (hash is deleted) - Home Assistant
     /// gets 401 from the next request onward and shows its reauth flow.</summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("ha-api-key/revoke")]
     public async Task<IActionResult> RevokeHaApiKey()
     {
-        if (SessionUser is not int userId) return Unauthorized();
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
 
@@ -243,10 +254,11 @@ public class SettingsController : ControllerBase
 
     /// <summary>Status for the setup card: does an AI-integration key exist, and since when?
     /// Same "never the plaintext" rule as GetHaApiKeyStatus.</summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpGet("ai-api-key")]
     public async Task<ActionResult<AiApiKeyStatusDto>> GetAiApiKeyStatus()
     {
-        if (SessionUser is not int userId) return Unauthorized();
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
         return new AiApiKeyStatusDto { HasKey = user.AiApiKeyHash != null, CreatedAt = user.AiApiKeyCreatedAt };
@@ -263,10 +275,11 @@ public class SettingsController : ControllerBase
     /// forever - on confirmed delivery the row is deleted immediately (fast path, identical
     /// behavior to before the outbox existed); otherwise BackgroundTaskService.RunAiKeyOutboxAsync
     /// retries it with backoff. Either way key generation itself never fails because of this.</summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("ai-api-key/generate")]
     public async Task<ActionResult<AiApiKeyGenerateResponseDto>> GenerateAiApiKey(CancellationToken ct)
     {
-        if (SessionUser is not int userId) return Unauthorized();
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
 
@@ -305,10 +318,11 @@ public class SettingsController : ControllerBase
     /// this, a revoked-here key would keep working there indefinitely. Same outbox-first pattern
     /// as GenerateAiApiKey above, so an unreachable studylife-ai doesn't leave the two databases
     /// disagreeing forever (audit A7).</summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("ai-api-key/revoke")]
     public async Task<IActionResult> RevokeAiApiKey(CancellationToken ct)
     {
-        if (SessionUser is not int userId) return Unauthorized();
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
 
@@ -344,10 +358,11 @@ public class SettingsController : ControllerBase
 
     /// <summary>Status for the setup card: does an MCP-integration key exist, and since when?
     /// Same "never the plaintext" rule as GetHaApiKeyStatus.</summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpGet("mcp-api-key")]
     public async Task<ActionResult<McpApiKeyStatusDto>> GetMcpApiKeyStatus()
     {
-        if (SessionUser is not int userId) return Unauthorized();
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
         return new McpApiKeyStatusDto { HasKey = user.McpApiKeyHash != null, CreatedAt = user.McpApiKeyCreatedAt };
@@ -356,10 +371,11 @@ public class SettingsController : ControllerBase
     /// <summary>Generates a new long-lived per-user API key for studylife-mcp (immediately
     /// replaces any existing one in this slot only - ApiKeyHash/AiApiKeyHash are untouched).
     /// Same one-time-plaintext shape as GenerateHaApiKey.</summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("mcp-api-key/generate")]
     public async Task<ActionResult<McpApiKeyGenerateResponseDto>> GenerateMcpApiKey()
     {
-        if (SessionUser is not int userId) return Unauthorized();
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
 
@@ -381,10 +397,11 @@ public class SettingsController : ControllerBase
 
     /// <summary>Permanently revokes the studylife-mcp API key (hash is deleted) - studylife-mcp
     /// gets 401 from the next request onward. The other two slots are untouched.</summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("mcp-api-key/revoke")]
     public async Task<IActionResult> RevokeMcpApiKey()
     {
-        if (SessionUser is not int userId) return Unauthorized();
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
 
@@ -402,10 +419,11 @@ public class SettingsController : ControllerBase
 
     /// <summary>Status for the setup card: does a Capture-extension key exist, and since when?
     /// Same "never the plaintext" rule as GetHaApiKeyStatus.</summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpGet("capture-api-key")]
     public async Task<ActionResult<CaptureApiKeyStatusDto>> GetCaptureApiKeyStatus()
     {
-        if (SessionUser is not int userId) return Unauthorized();
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
         return new CaptureApiKeyStatusDto { HasKey = user.CaptureApiKeyHash != null, CreatedAt = user.CaptureApiKeyCreatedAt };
@@ -414,10 +432,11 @@ public class SettingsController : ControllerBase
     /// <summary>Generates a new long-lived per-user API key for studylife-capture (immediately
     /// replaces any existing one in this slot only - the other three slots are untouched).
     /// Same one-time-plaintext shape as GenerateHaApiKey.</summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("capture-api-key/generate")]
     public async Task<ActionResult<CaptureApiKeyGenerateResponseDto>> GenerateCaptureApiKey()
     {
-        if (SessionUser is not int userId) return Unauthorized();
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
 
@@ -430,10 +449,11 @@ public class SettingsController : ControllerBase
 
     /// <summary>Permanently revokes the studylife-capture API key (hash is deleted) - the
     /// extension gets 401 from the next request onward. The other three slots are untouched.</summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("capture-api-key/revoke")]
     public async Task<IActionResult> RevokeCaptureApiKey()
     {
-        if (SessionUser is not int userId) return Unauthorized();
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
 
@@ -442,15 +462,6 @@ public class SettingsController : ControllerBase
         await _db.SaveChangesAsync();
         return NoContent();
     }
-
-    /// <summary>AuthUserId of the request, but ONLY if it came via a real validated passkey
-    /// session (same pattern as AuthController.SessionAuthUserId) - API-key requests
-    /// don't set the SessionItemKey and are rejected here.</summary>
-    private int? SessionUser =>
-        HttpContext.Items.ContainsKey(AuthSessionService.SessionItemKey)
-        && _currentUser.AuthUserId is var userId and > 0
-            ? userId
-            : null;
 
     // Same CSPRNG technique as CalendarTokenProvider.GenerateToken: 32 bytes, base64url
     // without padding - already URL-safe, because the token travels as part of the client

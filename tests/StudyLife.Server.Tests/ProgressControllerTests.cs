@@ -123,6 +123,27 @@ public class ProgressControllerTests : IClassFixture<CustomWebApplicationFactory
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    /// <summary>
+    /// New pinning test (audit finding A3 refactor): the share link is reachable WITHOUT any
+    /// credential (every other fact in this class proves that), but an X-Session-Token that IS
+    /// present and invalid must still be rejected with 401, not fall through to the normal
+    /// token-lookup-based 404 - see the "PublicUnlessInvalidSession" policy
+    /// (Auth/StudyLifeAuthorizationPolicies.cs), which exists specifically to reproduce this
+    /// quirk of the former resolution middleware. Previously untested.
+    /// </summary>
+    [Fact]
+    public async Task GetShared_WithInvalidSessionToken_ReturnsUnauthorized()
+    {
+        await SeedSettingsAsync(progressShareEnabled: true, progressShareToken: "share-token-real");
+
+        using var client = ApiKeyTestHelpers.CreateClientWithKey(_factory, null);
+        client.DefaultRequestHeaders.Add("X-Session-Token", "not-a-real-token");
+
+        var response = await client.GetAsync("/api/progress/shared/share-token-real");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
 }
 
 /// <summary>

@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace StudyLife.Server.Tests;
 
@@ -42,5 +43,30 @@ public class AiProxyControllerTests : IClassFixture<CustomWebApplicationFactory>
         var response = await client.PostAsJsonAsync(path, new { });
 
         Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+    }
+
+    /// <summary>
+    /// New pinning test (audit finding A3 refactor): the manual "SessionUser" check this
+    /// controller used to do is now [Authorize(Policy = "SessionOnly")] on the whole class - a
+    /// VALID API key (genuinely authenticated, just not via a passkey session) must still be
+    /// rejected with 401, not the framework's normal "authenticated but not permitted" 403 (see
+    /// AlwaysChallengeAuthorizationMiddlewareResultHandler). Otherwise identical to the former
+    /// manual check's observable behavior, but previously untested with a REAL key (only the
+    /// fully-anonymous case above was covered).
+    /// </summary>
+    [Fact]
+    public async Task Proxy_WithValidApiKeyButNoSession_ReturnsUnauthorized_NotForbidden()
+    {
+        var sessionClient = _factory.CreateClient();
+        var generateResponse = await sessionClient.PostAsync("/api/settings/ha-api-key/generate", null);
+        var apiKey = (await generateResponse.Content.ReadFromJsonAsync<JsonDocument>())!
+            .RootElement.GetProperty("apiKey").GetString();
+
+        using var keyClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, apiKey);
+        var response = await keyClient.PostAsJsonAsync("/api/ai/chat", new { });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+
+        await sessionClient.PostAsync("/api/settings/ha-api-key/revoke", null); // cleanup, like WhoamiTests
     }
 }
