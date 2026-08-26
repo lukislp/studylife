@@ -1,3 +1,10 @@
+## [2.1.4](https://github.com/lukislp/studylife/compare/v2.1.3...v2.1.4) (2026-08-26)
+
+
+### Bug Fixes
+
+* migrate shared tuple contracts to record structs ([bd429f6](https://github.com/lukislp/studylife/commit/bd429f6795bfbd7a886278985e7136f7ae71a54b))
+
 ## [2.1.3](https://github.com/lukislp/studylife/compare/v2.1.2...v2.1.3) (2026-08-26)
 
 
