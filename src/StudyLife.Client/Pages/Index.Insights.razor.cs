@@ -101,8 +101,8 @@ public partial class Index
         var pick = ranked.First();
         _neglectedCourse = new DashboardNeglectedCourseCard.NeglectedCourse(pick.Course.Name, pick.Course.Icon, pick.Course.Color);
         _neglectedCourseHint = pick.LastStudied.HasValue
-            ? string.Format(T.LastStudiedDaysAgo, (today - pick.LastStudied.Value.Date).Days)
-            : string.Format(T.NotStudiedYet, NeglectHistoryDays);
+            ? string.Format(T.LastStudiedDaysAgo ?? "", (today - pick.LastStudied.Value.Date).Days)
+            : string.Format(T.NotStudiedYet ?? "", NeglectHistoryDays);
     }
 
     // Productivity hint: sums the studied hours (same "studied" definition as
@@ -297,7 +297,7 @@ public partial class Index
         foreach (var (courseId, hours) in top)
         {
             var course = allCourses.FirstOrDefault(c => c.Id == courseId);
-            slices.Add(new DashboardCourseDonutCard.DonutSlice(course?.Name ?? string.Format(T.CourseFallbackName, courseId), course?.Color ?? "#888888", hours, hours / total * 100));
+            slices.Add(new DashboardCourseDonutCard.DonutSlice(course?.Name ?? string.Format(T.CourseFallbackName ?? "", courseId), course?.Color ?? "#888888", hours, hours / total * 100));
         }
         if (otherHours > 0)
             slices.Add(new DashboardCourseDonutCard.DonutSlice(T.OtherCoursesSlice, "#7a7a8c", otherHours, otherHours / total * 100));

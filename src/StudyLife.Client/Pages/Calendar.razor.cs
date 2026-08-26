@@ -22,7 +22,6 @@ public partial class Calendar
     private List<CourseDto> _courses = new();
     private List<CourseGoalDto> _goals = new();
     private string _weekLabel = "";
-    private I18nText.CalendarText T = new();
 
     // Scroll-to-"now": fire once on initial load, not on every subsequent
     // re-render (would constantly override the user's manual scrolling) - same
@@ -30,31 +29,40 @@ public partial class Calendar
     // so a deliberate jump to "today" re-centers again.
     private bool _scrolledToNow;
 
-    protected override async Task OnInitializedAsync()
-    {
-        // All fetches below are independent of each other - start them all immediately instead
-        // of await-ing one after another (same pattern as Index.razor.cs/Setup.razor). The
-        // templates fetch is duplicated inline (same shape as LoadTemplatesAsync, used unchanged
-        // by its other call site) rather than started through that method, since its own fetch
-        // can't be started this early without touching its signature.
-        var i18nTask = I18nText.GetTextTableAsync<I18nText.CalendarText>(this);
-        var settingsTask = State.GetSettingsAsync();
-        var coursesTask = State.GetCoursesAsync();
-        var sessionsTask = State.GetSessionsAsync();
-        var goalsTask = State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals");
-        var templatesTask = State.GetJsonCachedAsync<List<SessionTemplateDto>>("api/sessiontemplates");
+    // All fetches below are independent of each other, and of the text-table fetch that
+    // LocalizedComponentBase starts in parallel - kicked off here (OnInitializingAsync, runs
+    // alongside that fetch) instead of await-ing one after another, same pattern as
+    // Index.razor.cs/Setup.razor. The templates fetch is duplicated inline (same shape as
+    // LoadTemplatesAsync, used unchanged by its other call site) rather than started through that
+    // method, since its own fetch can't be started this early without touching its signature.
+    private Task<UserSettings>? _settingsTask;
+    private Task<List<CourseDto>>? _coursesTask;
+    private Task<List<StudySession>>? _sessionsTask;
+    private Task<List<CourseGoalDto>?>? _goalsTask;
+    private Task<List<SessionTemplateDto>?>? _templatesTask;
 
-        T = await i18nTask;
+    protected override Task OnInitializingAsync()
+    {
+        _settingsTask = State.GetSettingsAsync();
+        _coursesTask = State.GetCoursesAsync();
+        _sessionsTask = State.GetSessionsAsync();
+        _goalsTask = State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals");
+        _templatesTask = State.GetJsonCachedAsync<List<SessionTemplateDto>>("api/sessiontemplates");
+        return Task.CompletedTask;
+    }
+
+    protected override async Task OnTextLoadedAsync()
+    {
         State.OnChange += OnStateChanged;
-        var settings = await settingsTask;
-        var allCourses = await coursesTask;
+        var settings = await _settingsTask!;
+        var allCourses = await _coursesTask!;
         _courses = allCourses
             .Where(c => settings.SelectedCourseIds.Contains(c.Id) && !settings.CompletedCourseIds.Contains(c.Id))
             .ToList();
-        _sessions = await sessionsTask;
+        _sessions = await _sessionsTask!;
         try
         {
-            _goals = await goalsTask ?? new();
+            _goals = await _goalsTask! ?? new();
         }
         catch
         {
@@ -64,7 +72,7 @@ public partial class Calendar
         }
         try
         {
-            _templates = await templatesTask ?? new();
+            _templates = await _templatesTask! ?? new();
         }
         catch
         {

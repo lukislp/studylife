@@ -24,7 +24,7 @@ Since the multi-user overhaul (phases 1–3, see the dedicated sections below), 
 | `SentReminderEntity` | Prevents duplicate push reminders after a server restart (key format `"{sessionId}:reminder{minutes}"`) |
 | `NoteEntity` | Free-text notes, optionally tied to a course |
 | `CourseGoalEntity` | Study goal per course: optional `TargetDate` + `CompletionNote`/`CompletedAt`/`Grade` (decimal, German grading scale 1.0–5.0, validated server-side). `CourseId` is unique (one record per course), upserted via `PUT /api/coursegoals/{courseId}`. As with sessions, `CourseName` is stored duplicated, since the course id is not bound to the catalog by a DB foreign key (the catalog lives in `StudyLife.Shared`, not in the DB, see below) |
-| `TimerStateEntity` | Singleton row (like `UserSettingsEntity`) holding the last focus-timer state reported by the client (`SessionId`, `IsRunning`, `IsBreak`, `CurrentRound`, `TimerModeId`, `PhaseEndsAt`). Only pushed on state transitions (start/pause/phase change/completion), not every second — see TimerService below |
+| `TimerStateEntity` | One row per user (`AuthUserId`), holding the last focus-timer state reported by that user's client (`SessionId`, `IsRunning`, `IsBreak`, `CurrentRound`, `TimerModeId`, `PhaseEndsAt`). Only pushed on state transitions (start/pause/phase change/completion), not every second — see TimerService below |
 
 **The course catalog lives in `StudyLife.Shared`, not in the DB.** The list of all courses (name, code, icon, color, topics, `Ects` points per semester) is static code in [`StudyLife.Shared/CourseCatalog.cs`](../src/StudyLife.Shared/CourseCatalog.cs) (`CourseCatalog.AppliedAICourses`, type `CourseDto`) and is served via `GET /api/courses` (`CoursesController`, no DB access — a pure in-memory constant). Client and server reference the same assembly, so there is now only **one** source for the catalog. `StudySessionDto`/`CourseGoalDto` still freeze `CourseName`/`CourseColor` at creation time on the respective row (as before) — that doesn't change, since sessions/goals should keep their historical name even after a future catalog change. Anyone changing the study program/course list now does so exclusively in `CourseCatalog.cs`. The `Ects` values (default 5, projects 10, semester 5/6 modules 15 — totaling 180 across all 6 semesters) are **placeholders** for a fictional example curriculum and should be adjusted for the real program; they feed into the weighted grade average and the ECTS progress (see the evaluation page).
 
@@ -34,7 +34,7 @@ A session's `StartTime`/`EndTime` are **naive local timestamps** (no UTC, no off
 
 ## API (`Controllers/`)
 
-All routes live under `/api`, return/expect JSON, no auth.
+All routes live under `/api`, return/expect JSON, and require a passkey session token (`X-Session-Token`) or a per-user API key (`X-Api-Key`) — see [Security](#security) — except the handful of endpoints explicitly marked `[AllowAnonymous]` (login/registration, the public progress-share link, `/api/system/version`).
 
 | Route | Method | DTO | Note |
 |---|---|---|---|

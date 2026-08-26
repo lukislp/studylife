@@ -1614,6 +1614,53 @@
         "forecastDate": null,
         "forecastRecentWeeklyHours": null
       }
+    },
+    {
+      "name": "zero_target_no_goal_configured",
+      "description": "All four goal fields (weekly/monthly min/max) are 0 - a user who hasn't configured a study goal yet. Pins the CalcQuota/_calc_week_quota/_calc_month_quota zero-target guard: maxBar (targetMax * 1.15) is 0, which used to divide-by-zero into NaN/Infinity on the C# side (not JSON-serializable, and rendered as invalid 'width: NaN%' CSS on the dashboard's quota bars). Both sides now short-circuit to a flat 0% / no-warning instead, even though 2h were actually studied - there's nothing to measure progress against.",
+      "now": "2026-01-08T18:00:00",
+      "settings": {
+        "weeklyGoalMinHours": 0,
+        "weeklyGoalMaxHours": 0,
+        "monthlyGoalMinHours": 0,
+        "monthlyGoalMaxHours": 0
+      },
+      "sessions": [
+        {
+          "id": 1,
+          "courseId": 1,
+          "courseName": "C1",
+          "courseColor": "#111111",
+          "startTime": "2026-01-08T09:00:00",
+          "endTime": "2026-01-08T11:00:00",
+          "topic": null,
+          "notes": null,
+          "isCompleted": true,
+          "timerModeId": 1,
+          "recurrenceGroupId": null
+        }
+      ],
+      "courses": [],
+      "courseGoals": [],
+      "completedCourseIds": [],
+      "expected": {
+        "streak": 1,
+        "longestStreak": 1,
+        "weekHours": 2.0,
+        "weekQuotaPercent": 0.0,
+        "weekQuotaWarning": false,
+        "weekQuotaMissingHours": 0.0,
+        "monthHours": 2.0,
+        "monthQuotaPercent": 0.0,
+        "monthQuotaWarning": false,
+        "monthQuotaMissingHours": 0.0,
+        "averageGrade": null,
+        "ectsEarned": 0,
+        "ectsTotal": 0,
+        "forecastAvailable": false,
+        "forecastDate": null,
+        "forecastRecentWeeklyHours": null
+      }
     }
   ]
 }

@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using Microsoft.JSInterop;
 using StudyLife.Client.Components.Stats;
+using StudyLife.Client.Models;
 using StudyLife.Client.Services;
 using StudyLife.Shared;
 
@@ -8,6 +9,13 @@ namespace StudyLife.Client.Pages;
 
 public partial class Stats
 {
+    /// <summary>Per-course aggregate hours/session-count for the current filter set. Record
+    /// struct instead of a value tuple - LINQ over a List<(...)> of value tuples has triggered a
+    /// Mono AOT crash at compile time (not call time) in the native app shell (studylife-app,
+    /// BlazorWebView) that links this same Client project - see
+    /// project_studylife_app_ios_aot_linq_tuple_crash.</summary>
+    internal readonly record struct CourseHoursRow(CourseDto Course, double Hours, int Count);
+
     private List<StatsCourseListCard.CourseStatRow> _courseRows = new();
     private string _totalHoursLabel = "0h";
     private int _totalSessions;
@@ -15,9 +23,8 @@ public partial class Stats
     private int _ectsEarned;
     private int _ectsTotal;
     private double _ectsPercent;
-    private I18nText.StatsText T = new();
     private I18nLanguageWatcher _langWatcher = null!;
-    // Active-programme course list from OnInitializedAsync, kept around so the OnAfterRenderAsync
+    // Active-programme course list from OnTextLoadedAsync, kept around so the OnAfterRenderAsync
     // language-switch relocalization below can re-resolve course names (incl. T.CourseFallback for
     // since-deleted courses) without re-fetching or re-running the expensive Build* pipeline.
     private List<CourseDto> _allCourses = new();
@@ -28,7 +35,7 @@ public partial class Stats
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // Not gated on firstRender: OnInitializedAsync's data load means the component
+        // Not gated on firstRender: OnTextLoadedAsync's data load means the component
         // renders once before _heatmapWeeks is populated (established Blazor lifecycle
         // gotcha in this codebase) - wait until the heatmap actually has data to scroll.
         if (!_heatmapScrolled && _heatmapWeeks.Count > 0)
@@ -41,11 +48,11 @@ public partial class Stats
 
         // Toolbelt.Blazor.I18nText auto-updates T's own fields and re-renders this component when
         // the active language changes, but text baked from T into stored chart data at
-        // OnInitializedAsync time doesn't recompute on its own - same root cause/fix shape as
+        // OnTextLoadedAsync time doesn't recompute on its own - same root cause/fix shape as
         // Planner.razor/Index.razor.cs. Gated on !firstRender (unlike the heatmap-scroll block
         // above, this has nothing to do with waiting for data to arrive). _langWatcher can still be
         // null on an early render pass - same established gotcha as the heatmap-scroll comment
-        // above, just for OnInitializedAsync's own not-yet-finished state this time.
+        // above, just for OnTextLoadedAsync's own not-yet-finished state this time.
         if (!firstRender && _langWatcher != null && await _langWatcher.CheckChangedAsync())
         {
             RefreshWeekdayHours();
@@ -60,31 +67,46 @@ public partial class Stats
         }
     }
 
-    protected override async Task OnInitializedAsync()
+    // All fetches below are independent of each other, and of the text-table fetch that
+    // LocalizedComponentBase starts in parallel - kicked off here (OnInitializingAsync, runs
+    // alongside that fetch) instead of await-ing one after another once text has loaded, same
+    // pattern as Index.razor.cs/Setup.razor. Safe to start GetCoursesAsync/
+    // GetActiveGroupQuotasAsync alongside GetSettingsAsync: their internal settings lookup shares
+    // the same de-duplicated in-flight task (AppStateService.GetSettingsAsync) instead of firing
+    // a second request.
+    private Task<UserSettings>? _settingsTask;
+    private Task<List<CourseGoalDto>?>? _goalsUnfilteredTask;
+    private Task<List<CourseDto>>? _coursesTask;
+    private Task<List<StudySession>>? _sessionsTask;
+    private Task<List<NoteDto>?>? _notesTask;
+    private Task<List<StudySessionDto>?>? _historyAllTask;
+    private Task<IReadOnlyDictionary<string, int>>? _groupQuotasTask;
+    private Task<List<StudySessionDto>?>? _historyAllTimeTask;
+    private Task<IReadOnlyList<(DateTime Date, double Vo2Max)>?>? _cardioFitnessTask;
+
+    protected override Task OnInitializingAsync()
     {
-        // All fetches below are independent of each other - start them all immediately instead
-        // of await-ing one after another (same pattern as Index.razor.cs/Setup.razor). Safe to
-        // start GetCoursesAsync/GetActiveGroupQuotasAsync alongside GetSettingsAsync: their
-        // internal settings lookup shares the same de-duplicated in-flight task
-        // (AppStateService.GetSettingsAsync) instead of firing a second request.
-        var settingsTask = State.GetSettingsAsync();
-        var goalsUnfilteredTask = State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals");
-        var coursesTask = State.GetCoursesAsync();
-        var sessionsTask = State.GetSessionsAsync();
-        var notesTask = State.GetJsonCachedAsync<List<NoteDto>>("api/notes");
-        var historyAllTask = State.GetJsonCachedAsync<List<StudySessionDto>>($"api/sessions/history?days={HistoryDays}");
-        var groupQuotasTask = State.GetActiveGroupQuotasAsync();
-        var historyAllTimeTask = State.GetJsonCachedAsync<List<StudySessionDto>>("api/sessions/history?days=3650");
-        var cardioFitnessTask = Health.IsAvailable
+        _settingsTask = State.GetSettingsAsync();
+        _goalsUnfilteredTask = State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals");
+        _coursesTask = State.GetCoursesAsync();
+        _sessionsTask = State.GetSessionsAsync();
+        _notesTask = State.GetJsonCachedAsync<List<NoteDto>>("api/notes");
+        _historyAllTask = State.GetJsonCachedAsync<List<StudySessionDto>>($"api/sessions/history?days={HistoryDays}");
+        _groupQuotasTask = State.GetActiveGroupQuotasAsync();
+        _historyAllTimeTask = State.GetJsonCachedAsync<List<StudySessionDto>>("api/sessions/history?days=3650");
+        _cardioFitnessTask = Health.IsAvailable
             ? Health.GetCardioFitnessHistoryAsync(365)
             : Task.FromResult<IReadOnlyList<(DateTime Date, double Vo2Max)>?>(null);
+        return Task.CompletedTask;
+    }
 
-        T = await I18nText.GetTextTableAsync<I18nText.StatsText>(this);
+    protected override async Task OnTextLoadedAsync()
+    {
         _langWatcher = new I18nLanguageWatcher(I18nText);
         await _langWatcher.InitAsync();
-        var settings = await settingsTask;
-        var goalsUnfiltered = await goalsUnfilteredTask ?? new();
-        var allCourses = await coursesTask;
+        var settings = await _settingsTask!;
+        var goalsUnfiltered = await _goalsUnfilteredTask! ?? new();
+        var allCourses = await _coursesTask!;
         _allCourses = allCourses;
         // Active-programme scope: allCourses is already limited to the active programme
         // (AppStateService.GetCoursesAsync). `sessions` (near-term, course rows above), `history`
@@ -94,10 +116,10 @@ public partial class Stats
         // programmes'. General (course-less) notes always stay visible.
         var activeCourseIds = allCourses.Select(c => c.Id).ToHashSet();
         var goals = goalsUnfiltered.Where(g => activeCourseIds.Contains(g.CourseId)).ToList();
-        var sessions = (await sessionsTask).Where(s => activeCourseIds.Contains(s.CourseId)).ToList();
+        var sessions = (await _sessionsTask!).Where(s => activeCourseIds.Contains(s.CourseId)).ToList();
         // For the notes/study-time correlation card - its own fetch because otherwise no
         // notes data would be needed on this page (see Stats.Comparisons.razor.cs).
-        var notes = (await notesTask ?? new())
+        var notes = (await _notesTask! ?? new())
             .Where(n => !n.CourseId.HasValue || activeCourseIds.Contains(n.CourseId.Value))
             .ToList();
         // Shared long-term history (12 months) for the heatmap, donut, weekday/time-of-day, and
@@ -105,7 +127,7 @@ public partial class Stats
         // from `sessions` above (AppStateService, ±7/90-day window) - see /api/sessions/history.
         // historyAll stays unfiltered for the programme comparison (Stats.Programs.razor.cs),
         // the only card that looks beyond the active programme.
-        var historyAll = await historyAllTask ?? new();
+        var historyAll = await _historyAllTask! ?? new();
         var history = historyAll
             .Where(s => activeCourseIds.Contains(s.CourseId))
             .ToList();
@@ -115,7 +137,7 @@ public partial class Stats
             .Concat(sessions.Select(s => s.CourseId))
             .Distinct();
 
-        var raw = new List<(CourseDto Course, double Hours, int Count)>();
+        var raw = new List<CourseHoursRow>();
         foreach (var id in relevantIds)
         {
             var course = allCourses.FirstOrDefault(c => c.Id == id);
@@ -125,7 +147,7 @@ public partial class Stats
             var completedSessions = sessions.Where(s => s.CourseId == id && (s.IsCompleted || s.EndTime <= DateTime.Now)).ToList();
             if (completedSessions.Count == 0) continue;
             var hours = completedSessions.Sum(s => s.Duration.TotalHours);
-            raw.Add((course, hours, completedSessions.Count));
+            raw.Add(new CourseHoursRow(course, hours, completedSessions.Count));
         }
 
         var maxHours = raw.Count == 0 ? 1 : Math.Max(1, raw.Max(r => r.Hours));
@@ -159,17 +181,17 @@ public partial class Stats
             .Where(g => g.Grade.HasValue)
             .Select(g => (g.Grade!.Value, allCourses.FirstOrDefault(c => c.Id == g.CourseId)?.Ects ?? 5)));
         if (averageGrade.HasValue)
-            _averageGradeLabel = averageGrade.Value.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ',');
+            _averageGradeLabel = StudyMetrics.FormatGrade(averageGrade.Value);
 
         BuildGradeHistory(goals, allCourses);
         BuildGradeTimeline(goals, allCourses);
         BuildHoursGradeScatter(goals, allCourses, raw);
         BuildHoursEctsScatter(allCourses, raw, settings);
         BuildGradeDistribution(goals);
-        BuildCardioFitnessTrend(await cardioFitnessTask);
+        BuildCardioFitnessTrend(await _cardioFitnessTask!);
 
         // Programme-aware: quotas of the ACTIVE programme (built-in: static, otherwise via fetch).
-        var groupQuotas = await groupQuotasTask;
+        var groupQuotas = await _groupQuotasTask!;
         _ectsTotal = CourseCatalog.CalcTotalEcts(allCourses, groupQuotas);
         _ectsEarned = CourseCatalog.CalcEctsEarned(allCourses, settings.CompletedCourseIds, groupQuotas);
         _ectsPercent = _ectsTotal > 0 ? Math.Min(100.0, _ectsEarned / (double)_ectsTotal * 100) : 0;
@@ -194,7 +216,7 @@ public partial class Stats
         // Separate all-time fetch ONLY for the semester comparison: its average-hours figure for
         // earlier semesters needs sessions beyond the 371-day window above - the same
         // 10-year convention as Index.Achievements' AchievementHistoryDays.
-        var historyAllTime = (await historyAllTimeTask ?? new())
+        var historyAllTime = (await _historyAllTimeTask! ?? new())
             .Where(s => activeCourseIds.Contains(s.CourseId))
             .ToList();
         BuildSemesterComparison(historyAllTime, goals, allCourses, settings);

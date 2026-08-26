@@ -68,6 +68,20 @@ public static class StudyMetrics
             : grades.Average(g => g.Grade);
     }
 
+    private static readonly System.Globalization.CultureInfo GradeDisplayCulture =
+        new("de-DE");
+
+    /// <summary>
+    /// Formats a grade with a comma decimal separator (e.g. "1,70") - the documented
+    /// convention for grade display regardless of which language/culture the rest of the UI is
+    /// shown in (German-style grading scale, see CalcWeightedAverageGrade). Explicit via a fixed
+    /// "de-DE" CultureInfo rather than ".ToString(...).Replace('.', ',')" - same output, but the
+    /// intention (a specific display convention, not an accident of the current locale) is
+    /// visible in the code, and it lives in exactly one place instead of being hand-rolled at
+    /// every call site (Index.razor.cs/Stats.razor.cs both used to duplicate the Replace() call).
+    /// </summary>
+    public static string FormatGrade(decimal grade) => grade.ToString("0.00", GradeDisplayCulture);
+
     /// <summary>
     /// Result of <see cref="CalcForecast"/>. BaselineWeeksNeeded / RecentWeeklyHours /
     /// ReferenceWeeklyHours are only populated when Available=true - Index.razor additionally
@@ -133,33 +147,22 @@ public static class StudyMetrics
     /// <summary>
     /// Quota progress against a min/max hours goal (weekly as well as monthly). The bar
     /// scales to 115% of the maximum goal, so that "goal reached" doesn't already fill the
-    /// entire bar; warning as long as the minimum goal is not yet met.
+    /// entire bar; warning as long as the minimum goal is not yet met. A zero max goal (no
+    /// goal configured) has no bar to fill against, so it reads as 0%/no-warning rather than
+    /// the NaN/Infinity a 0/0 division would otherwise produce - matches the Python Home
+    /// Assistant port (coordinator.py), which returns 0% for this case, and keeps the result
+    /// JSON-serializable (NaN isn't valid JSON).
     /// </summary>
     public static QuotaResult CalcQuota(double hours, double targetMinHours, double targetMaxHours)
     {
         var maxBar = targetMaxHours * 1.15;
+        if (maxBar <= 0)
+            return new QuotaResult(0, 0, false, 0);
+
         var percent = Math.Min(100, hours / maxBar * 100);
         var minPercent = Math.Min(100, targetMinHours / maxBar * 100);
         var warning = hours < targetMinHours;
         return new QuotaResult(percent, minPercent, warning, warning ? targetMinHours - hours : 0);
-    }
-
-    /// <summary>
-    /// Prorated monthly goal: absolute monthly goal prorated by elapsed weeks, so that
-    /// the start of the month doesn't misleadingly look "behind". Both week counts via
-    /// ceil(days/7), weeksElapsed capped at totalWeeksInMonth - mirrors _calc_month_quota
-    /// in the Home Assistant integration (coordinator.py) exactly.
-    /// </summary>
-    public static (int TargetMinHours, int TargetMaxHours) ProrateMonthlyTarget(
-        int monthlyGoalMinHours, int monthlyGoalMaxHours, DateTime today)
-    {
-        var monthStart = new DateTime(today.Year, today.Month, 1);
-        var daysInMonth = DateTime.DaysInMonth(today.Year, today.Month);
-        var totalWeeksInMonth = Math.Max(1, Math.Ceiling(daysInMonth / 7.0));
-        var weeksElapsed = Math.Min(totalWeeksInMonth, Math.Max(1, Math.Ceiling((today - monthStart).TotalDays / 7.0)));
-        return (
-            (int)Math.Round(monthlyGoalMinHours * weeksElapsed / totalWeeksInMonth),
-            (int)Math.Round(monthlyGoalMaxHours * weeksElapsed / totalWeeksInMonth));
     }
 
     /// <summary>

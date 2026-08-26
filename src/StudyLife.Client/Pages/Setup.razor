@@ -2,13 +2,15 @@
 @using StudyLife.Client.Models
 @using StudyLife.Client.Services
 @using StudyLife.Shared
+@inherits LocalizedComponentBase<I18nText.SetupText>
 @inject AppStateService State
 @inject NotificationService NotificationSvc
 @inject HttpClient Http
 @inject NavigationManager Nav
 @inject IJSRuntime JS
-@inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
+@if (IsTextLoaded)
+{
 <PageTitle>@T.PageTitleTag</PageTitle>
 
 <div class="setup-page">
@@ -97,7 +99,7 @@
             <div class="course-grid">
                 @foreach (var semester in _allCourses.GroupBy(c => c.Semester).OrderBy(g => g.Key))
                 {
-                    <div class="semester-header">@string.Format(T.SemesterLabel, semester.Key)</div>
+                    <div class="semester-header">@string.Format(T.SemesterLabel ?? "", semester.Key)</div>
                     @foreach (var group in semester.GroupBy(c => c.Group ?? "").OrderBy(g => g.Key == "" ? 0 : 1).ThenBy(g => g.Key))
                     {
                         @if (!string.IsNullOrEmpty(group.Key))
@@ -349,6 +351,7 @@
                               OnClose="() => _resourcesCourseId = null" />
     }
 </div>
+}
 
 @code {
     private UserSettings _settings = new();
@@ -396,8 +399,6 @@
     // immediately, but only saved via the Save button (deferred, like study window & co).
     private List<TimerMode> _customModes = new();
 
-    private I18nText.SetupText T = new();
-
     // Only the first registered user (owner of the installation) may use the raw
     // backup/restore endpoints (BackupController.IsOwnerAsync) - hides the
     // corresponding UI for all other users instead of letting them hit a 403.
@@ -434,27 +435,40 @@
     // default - the right way around for a raw-database-access feature.
     private bool _rawBackupSupported;
 
-    protected override async Task OnInitializedAsync()
-    {
-        // All fetches below are independent of each other - start them all immediately instead
-        // of await-ing one after another (the previous shape), so the wall-clock cost becomes
-        // roughly the slowest single request instead of the sum of ~7 sequential round trips
-        // (same pattern/rationale as Index.razor.cs's LoadDataAsync). GetCoursesAsync is
-        // deliberately NOT started here: it internally awaits the CACHED GetSettingsAsync (not
-        // the direct FetchSettingsFromServerAsync below), and starting both concurrently on a
-        // cold cache would fire two independent api/settings requests instead of one - it stays
-        // sequential, right after _settings resolves, so its internal call is a cache hit.
-        var isOwnerTask = State.GetIsOwnerAsync();
-        var capabilitiesTask = Http.GetAsync($"api/system/capabilities?nocache={DateTime.UtcNow.Ticks}");
-        var settingsTask = State.FetchSettingsFromServerAsync();
-        var programsTask = State.GetJsonCachedAsync<List<StudyProgramSummaryDto>>("api/studyprograms");
-        var notifStatusTask = NotificationSvc.GetPermissionStatusAsync();
-        var calendarTokenTask = Http.GetFromJsonAsync<CalendarTokenResponseDto>("api/system/calendar-token");
-        var i18nTask = I18nText.GetTextTableAsync<I18nText.SetupText>(this);
-        var versionTask = Http.GetFromJsonAsync<VersionResponseDto>($"api/system/version?nocache={DateTime.UtcNow.Ticks}");
-        var goalsTask = State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals");
+    // All fetches below are independent of each other, and of the text-table fetch that
+    // LocalizedComponentBase starts in parallel - kicked off here (OnInitializingAsync, runs
+    // alongside that fetch) instead of await-ing one after another, so the wall-clock cost
+    // becomes roughly the slowest single request instead of the sum of ~7 sequential round trips
+    // (same pattern/rationale as Index.razor.cs's LoadDataAsync). GetCoursesAsync is deliberately
+    // NOT started here: it internally awaits the CACHED GetSettingsAsync (not the direct
+    // FetchSettingsFromServerAsync below), and starting both concurrently on a cold cache would
+    // fire two independent api/settings requests instead of one - it stays sequential, right
+    // after _settings resolves in OnTextLoadedAsync, so its internal call is a cache hit.
+    private Task<bool>? _isOwnerTask;
+    private Task<HttpResponseMessage>? _capabilitiesTask;
+    private Task<UserSettings>? _settingsTask;
+    private Task<List<StudyProgramSummaryDto>?>? _programsTask;
+    private Task<string>? _notifStatusTask;
+    private Task<CalendarTokenResponseDto?>? _calendarTokenTask;
+    private Task<VersionResponseDto?>? _versionTask;
+    private Task<List<CourseGoalDto>?>? _goalsTask;
 
-        _isOwner = await isOwnerTask;
+    protected override Task OnInitializingAsync()
+    {
+        _isOwnerTask = State.GetIsOwnerAsync();
+        _capabilitiesTask = Http.GetAsync($"api/system/capabilities?nocache={DateTime.UtcNow.Ticks}");
+        _settingsTask = State.FetchSettingsFromServerAsync();
+        _programsTask = State.GetJsonCachedAsync<List<StudyProgramSummaryDto>>("api/studyprograms");
+        _notifStatusTask = NotificationSvc.GetPermissionStatusAsync();
+        _calendarTokenTask = Http.GetFromJsonAsync<CalendarTokenResponseDto>("api/system/calendar-token");
+        _versionTask = Http.GetFromJsonAsync<VersionResponseDto>($"api/system/version?nocache={DateTime.UtcNow.Ticks}");
+        _goalsTask = State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals");
+        return Task.CompletedTask;
+    }
+
+    protected override async Task OnTextLoadedAsync()
+    {
+        _isOwner = await _isOwnerTask!;
         try
         {
             // Deliberately JsonDocument instead of GetFromJsonAsync<T>: the native app (MAUI,
@@ -466,7 +480,7 @@
             // native app's NSURLCache, which survives reinstalls) were allowed to cache that
             // heuristically and then permanently served HTML instead of JSON. A fresh query URL
             // reliably bypasses any such stale entry on every HTTP stack.
-            using var capsResponse = await capabilitiesTask;
+            using var capsResponse = await _capabilitiesTask!;
             if (capsResponse.IsSuccessStatusCode)
             {
                 using var caps = System.Text.Json.JsonDocument.Parse(
@@ -475,7 +489,7 @@
             }
         }
         catch { /* fail-open, see above */ }
-        _settings = await settingsTask;
+        _settings = await _settingsTask!;
         _customModes = CustomTimerModes.Parse(_settings.CustomTimerModes);
         _allCourses = await State.GetCoursesAsync();
         // Same fetch+fallback shape as LoadProgramsAsync (used unchanged by the other call
@@ -483,18 +497,18 @@
         // own fetch can't be started this early without touching its signature.
         try
         {
-            _programs = await programsTask ?? new();
+            _programs = await _programsTask! ?? new();
         }
         catch { /* offline: fallback below */ }
         if (_programs.Count == 0)
             _programs = new() { new StudyProgramSummaryDto { Id = null, Name = _settings.DefaultProgramme, IsBuiltIn = true } };
-        _notifStatus = await notifStatusTask;
+        _notifStatus = await _notifStatusTask!;
         string? calendarToken = null;
         try
         {
             // Session-authenticated fetch (replaces the former bootstrap-key endpoint,
             // which was removed together with the global API key).
-            var tokenDto = await calendarTokenTask;
+            var tokenDto = await _calendarTokenTask!;
             calendarToken = tokenDto?.CalendarToken;
         }
         catch { /* offline: subscription URL stays without a token, card shows the base URL */ }
@@ -507,17 +521,16 @@
         // with that couldn't be fetched by any calendar client in the world.
         _icsUrl = $"{Http.BaseAddress}api/sessions/ics";
         if (!string.IsNullOrEmpty(calendarToken)) _icsUrl += $"?calendarToken={calendarToken}";
-        T = await i18nTask;
         try
         {
             // Cache buster like the update check in MainLayout - the response carries no
             // cache headers and could otherwise be served heuristically from the HTTP cache.
-            var versionDto = await versionTask;
+            var versionDto = await _versionTask!;
             _appVersion = versionDto?.Version;
         }
         catch { /* offline/network error: version line simply stays empty */ }
         DetectClientVersion();
-        var goals = await goalsTask ?? new();
+        var goals = await _goalsTask! ?? new();
         _goals = goals.ToDictionary(g => g.CourseId);
     }
 

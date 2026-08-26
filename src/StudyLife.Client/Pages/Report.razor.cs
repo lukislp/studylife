@@ -14,6 +14,12 @@ namespace StudyLife.Client.Pages;
 /// </summary>
 public partial class Report
 {
+    /// <summary>Record struct instead of a value tuple for the `raw` list in OnInitializedAsync
+    /// below - LINQ over a List<(...)> of value tuples has triggered a Mono AOT crash at compile
+    /// time (not call time) in the native app shell (studylife-app, BlazorWebView) that links this
+    /// same Client project - see project_studylife_app_ios_aot_linq_tuple_crash.</summary>
+    private readonly record struct CourseHoursRow(CourseDto Course, double Hours, int Count);
+
     private I18nText.ReportText T = new();
     private bool _loaded;
 
@@ -73,7 +79,7 @@ public partial class Report
             .Concat(history.Select(s => s.CourseId))
             .Distinct();
 
-        var raw = new List<(CourseDto Course, double Hours, int Count)>();
+        var raw = new List<CourseHoursRow>();
         foreach (var id in relevantIds)
         {
             var course = allCourses.FirstOrDefault(c => c.Id == id);
@@ -81,7 +87,7 @@ public partial class Report
             var completedSessions = history.Where(s => s.CourseId == id && StudyMetrics.IsStudied(s, DateTime.Now)).ToList();
             if (completedSessions.Count == 0) continue;
             var hours = completedSessions.Sum(s => (s.EndTime - s.StartTime).TotalHours);
-            raw.Add((course, hours, completedSessions.Count));
+            raw.Add(new CourseHoursRow(course, hours, completedSessions.Count));
         }
 
         // Sorted by semester instead of by hours (as on the stats page) - for a

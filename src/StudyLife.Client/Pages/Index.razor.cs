@@ -9,7 +9,10 @@ namespace StudyLife.Client.Pages;
 
 public partial class Index
 {
-    private I18nText.IndexText T = new();
+    /// <summary>One point of the weekly-trend chart data. Record struct instead of a plain value
+    /// tuple - see the trendData comment in LoadDataAsync for why.</summary>
+    private readonly record struct WeekTrendPoint(DateTime Start, double Hours);
+
     private string _greeting = "";
     private string _motivation = "";
     private List<StudySession> _todaySessions = new();
@@ -65,7 +68,7 @@ public partial class Index
         _weekQuotaMinPercent,
         T.ZeroHours,
         string.Format(T.WeekTargetLegend ?? "", _weekQuotaMin, _weekQuotaMax),
-        _weekQuotaWarning ? (MarkupString?)new MarkupString(string.Format(T.WeeklyGoalMissingText, $"<strong>{_weekQuotaMissing}</strong>")) : null);
+        _weekQuotaWarning ? (MarkupString?)new MarkupString(string.Format(T.WeeklyGoalMissingText ?? "", $"<strong>{_weekQuotaMissing}</strong>")) : null);
 
     private DashboardQuotaCard.QuotaCardData MonthQuotaData => new(
         "card-quota",
@@ -77,7 +80,7 @@ public partial class Index
         _quotaMinPercent,
         T.ZeroHours,
         string.Format(T.MonthTargetLegend ?? "", _monthTargetMin, _monthTargetMax),
-        _quotaWarning ? (MarkupString?)new MarkupString(string.Format(T.MonthlyGoalMissingText, $"<strong>{_quotaMissing}</strong>")) : null);
+        _quotaWarning ? (MarkupString?)new MarkupString(string.Format(T.MonthlyGoalMissingText ?? "", $"<strong>{_quotaMissing}</strong>")) : null);
 
     private string FocusScoreStatusText => _focusScorePercent >= 100
         ? T.FocusScoreAllOnPlan ?? ""
@@ -163,16 +166,21 @@ public partial class Index
     private double _topicsPercent;
 
     private I18nLanguageWatcher _langWatcher = null!;
+    private Task<bool>? _isOwnerTask;
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializingAsync()
     {
         State.OnSessionsChanged += OnSessionsChanged;
         State.OnSettingsChanged += OnSettingsChanged;
-        var isOwnerTask = State.GetIsOwnerAsync();
-        T = await I18nText.GetTextTableAsync<I18nText.IndexText>(this);
+        _isOwnerTask = State.GetIsOwnerAsync();
+        return Task.CompletedTask;
+    }
+
+    protected override async Task OnTextLoadedAsync()
+    {
         _langWatcher = new I18nLanguageWatcher(I18nText);
         await _langWatcher.InitAsync();
-        _isOwner = await isOwnerTask;
+        _isOwner = await _isOwnerTask!;
         RefreshGreeting();
         _motivation = GetRandomMotivation();
         _insightVariant = new Random().Next(2);
@@ -194,9 +202,11 @@ public partial class Index
     {
         if (firstRender) return;
 
-        // _langWatcher can still be null here: OnInitializedAsync's first await doesn't complete
-        // synchronously, so Blazor renders once - firstRender=true - before the rest of
-        // OnInitializedAsync (incl. _langWatcher's assignment) has run; a later render catches up.
+        // _langWatcher can still be null here: LocalizedComponentBase's OnInitializedAsync awaits
+        // the text-table fetch before this component's own OnTextLoadedAsync (where _langWatcher
+        // is assigned) even starts, and that first await doesn't complete synchronously, so Blazor
+        // renders once - firstRender=true - before OnTextLoadedAsync has run; a later render
+        // catches up once it's set.
         if (_langWatcher != null && await _langWatcher.CheckChangedAsync())
         {
             RefreshGreeting();
@@ -380,8 +390,13 @@ public partial class Index
         }
 
         // Weekly trend (last 8 weeks, same "all sessions" semantics as the week_hours tile above)
+        // Record struct instead of a value tuple: LINQ (.Max/.Select below) over a List<(...)> of
+        // value tuples has triggered a Mono AOT crash at compile time (not call time) in the
+        // native app shell (studylife-app, BlazorWebView) that links this same Client project -
+        // see project_studylife_app_ios_aot_linq_tuple_crash. A record struct sidesteps it while
+        // keeping the same positional-deconstruction ergonomics.
         const int trendWeeks = 8;
-        var trendData = new List<(DateTime Start, double Hours)>();
+        var trendData = new List<WeekTrendPoint>();
         for (var i = trendWeeks - 1; i >= 0; i--)
         {
             var wStart = weekStart.AddDays(-7 * i);
@@ -389,7 +404,7 @@ public partial class Index
             var hours = history
                 .Where(s => s.StartTime.Date >= wStart && s.StartTime.Date < wEnd)
                 .Sum(s => (s.EndTime - s.StartTime).TotalMinutes) / 60.0;
-            trendData.Add((wStart, hours));
+            trendData.Add(new WeekTrendPoint(wStart, hours));
         }
         var maxTrendHours = Math.Max(1, trendData.Max(t => t.Hours));
         _weeklyTrend = trendData
@@ -446,7 +461,7 @@ public partial class Index
         var averageGrade = StudyMetrics.CalcWeightedAverageGrade(goals
             .Where(g => g.Grade.HasValue)
             .Select(g => (g.Grade!.Value, allCourses.FirstOrDefault(c => c.Id == g.CourseId)?.Ects ?? 5)));
-        _averageGradeLabel = averageGrade?.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ',') ?? "–";
+        _averageGradeLabel = averageGrade.HasValue ? StudyMetrics.FormatGrade(averageGrade.Value) : "–";
 
         _topicsCompleted = 0;
         _topicsTotal = 0;
