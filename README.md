@@ -60,9 +60,10 @@ flowchart LR
 ```
 
 `API` and `Worker` are the same container image, just started with a different `Worker:Enabled`
-flag — the default single-container deployment (`docker-compose.yml`) runs both roles combined
-in one process; the horizontally-scalable setup (`docker-compose.scale.yml`/Kubernetes, see
-[docs/SCALING.md](docs/SCALING.md)) splits them into separately scaled replicas so that N web
+flag — a single-container deployment (`docker run`/`dotnet run`, `Worker:Enabled` defaulting to
+`true`) runs both roles combined in one process; production and the horizontally-scalable setup
+(Kubernetes/K3s via GitOps, see [docs/SCALING.md](docs/SCALING.md); `docker-compose.scale.yml` for
+local testing of that same split) run them as separately scaled replicas instead, so that N web
 replicas never fire the same push reminder N times — exactly one `Worker` shard set (coordinated
 via Redis once it scales past a single replica) owns the 30s reminder/report tick.
 
@@ -230,7 +231,7 @@ the native app and the browser/PWA client are always pixel-identical.
 | Backend | ASP.NET Core (.NET 10) |
 | Login | Passkey/WebAuthn (Fido2NetLib) |
 | Database | SQLite via Entity Framework Core (default) - optionally PostgreSQL for horizontally scalable operation, see below |
-| Deployment | Docker + Watchtower (default) - optionally Kubernetes/K3s for horizontal scaling, see below |
+| Deployment | Kubernetes/K3s via GitOps (Flux), see below - `docker-compose.scale.yml` for local testing of that same setup |
 | CI/CD | GitHub Actions with Semantic Release |
 
 ---
@@ -238,47 +239,35 @@ the native app and the browser/PWA client are always pixel-identical.
 ## Deployment
 
 ### Prerequisites
-- Docker and Docker Compose
+- A Kubernetes cluster ([K3s](https://k3s.io/) is what production actually runs on; any conformant cluster works) with `kubectl` configured against it
 
 ### Quick Start
 
 ```bash
 git clone https://github.com/lukislp/studylife.git
 cd studylife
-chmod +x setup.sh
-./setup.sh
+kubectl apply -f k8s/
 ```
 
-The setup script:
-1. Creates `.env` from `.env.example`
-2. Pulls the public `ghcr.io/lukislp/studylife-server` image (no login needed)
-3. Starts all services via `docker compose up -d`
+The manifests under `k8s/` deploy the full stack (web + worker, Postgres via CloudNativePG, Redis, ingress) pulling the public `ghcr.io/lukislp/studylife-server` image - no registry login needed. `k8s/bootstrap-cluster.ps1` automates this end-to-end (your own Postgres password substituted in place of the repo's test placeholder, plus the one-time Redis cluster bootstrap and, optionally, Flux GitOps for automatic image updates - see [Automatic Updates](#automatic-updates) below) - see its header comment and [docs/SCALING.md](docs/SCALING.md) for the full walkthrough, including a from-scratch reference setup (MetalLB, ingress, TLS, monitoring) on a Raspberry Pi K3s cluster.
 
-Running your own fork on your own registry instead? Set `SERVER_IMAGE` (and, if that registry is private, `REGISTRY_URL`/`REGISTRY_USER`/`REGISTRY_PASSWORD`) in `.env` - see `.env.example`.
+On the very first start (no user registered yet), the server outputs a one-time setup code to its logs (`kubectl -n studylife-scale logs -l app=studylife-web`) - this code is requested during the first passkey registration and protects against someone else on the same network claiming the initial registration before the actual operator. Every subsequent registration (e.g. family members) does not need this code.
 
-On the very first start (no user registered yet), the server outputs a one-time setup code to the logs (`docker compose logs`) - this code is requested during the first passkey registration and protects against someone else on the same network claiming the initial registration before the actual operator. Every subsequent registration (e.g. family members) does not need this code.
+A single-container deployment (`docker run ghcr.io/lukislp/studylife-server`, or plain `dotnet run` for local dev) works too and needs no Kubernetes at all - `Worker:Enabled` defaults to `true`, so one process/container handles both web traffic and the background reminder/report tick, same as it always has.
 
-### Environment Variables
+### Configuration
 
-| Variable | Default | Description |
-|---|---|---|
-| `PORT` | `8080` | Public port |
-| `SERVER_IMAGE` | `ghcr.io/lukislp/studylife-server:latest` | Server image to pull - override only if running your own fork on your own registry |
-| `REGISTRY_URL` | - | Only needed with a private `SERVER_IMAGE`: registry to log into |
-| `REGISTRY_USER` | - | Only needed with a private `SERVER_IMAGE`: registry username |
-| `REGISTRY_PASSWORD` | - | Only needed with a private `SERVER_IMAGE`: registry password |
+Server configuration is the ConfigMap/Secret pair in `k8s/01-config-and-secret.yaml` (prod manages the real values as an encrypted-in-Git SealedSecret instead, see [docs/SCALING.md](docs/SCALING.md), "Sealed Secrets") - the same `appsettings`/environment-variable keys documented in [docs/SCALING.md](docs/SCALING.md#the-core-idea-configuration-instead-of-two-codebases) (`Database:Provider`, `Cache:Provider`, `Worker:Enabled`, ...) apply to every deployment shape, k8s included.
 
-### Horizontally Scalable Operation (optional)
+### Horizontally Scalable Operation
 
-For more than a handful of users/higher load, the same server can also be run against PostgreSQL (instead of SQLite) and Redis (instead of the in-memory cache) and scaled horizontally across multiple pods/containers (`Database:Provider=Postgres`, `Cache:Provider=Redis`, see `docker-compose.scale.yml`). A complete, production-operated reference architecture for this (2-node K3s cluster on Raspberry Pi, Postgres HA via CloudNativePG, Redis Cluster, NGINX Gateway Fabric, HorizontalPodAutoscaler, monitoring stack), including all lessons learned, is documented in [docs/SCALING.md](docs/SCALING.md).
+The k8s setup above already runs this way by default: PostgreSQL instead of SQLite, Redis instead of the in-memory cache, web and worker as separately scaled replicas (`Database:Provider=Postgres`, `Cache:Provider=Redis`). `docker-compose.scale.yml` reproduces the same topology locally, disposably, for testing/learning without a real cluster - see [docs/SCALING.md](docs/SCALING.md) for both. A complete, production-operated reference architecture (2-node K3s cluster on Raspberry Pi, Postgres HA via CloudNativePG, Redis Cluster, NGINX Gateway Fabric, HorizontalPodAutoscaler, monitoring stack), including all lessons learned, is documented there too.
 
 ---
 
 ## Automatic Updates
 
-Watchtower is integrated in `docker-compose.yml` and checks every 5 minutes whether a new image is available. As soon as the CI/CD pipeline publishes a new image, the container is restarted automatically.
-
-Only containers with the label `com.centurylinklabs.watchtower.enable=true` are updated.
+Production uses GitOps, not a polling updater: Flux (`k8s/flux/`) watches the public `ghcr.io/lukislp/studylife-server` package for new SemVer tags, commits the new tag directly into `k8s/04-web.yaml`/`k8s/05-worker.yaml`, and applies it to the cluster - no manual step, and the exact deployed manifest is always what's checked into Git. This replaced an older single-container setup where Watchtower polled for new images and restarted the container itself; see [docs/SCALING.md](docs/SCALING.md), "GitLab Integration: Kubernetes Agent + Flux Image Automation" for the full setup and that migration.
 
 ---
 
