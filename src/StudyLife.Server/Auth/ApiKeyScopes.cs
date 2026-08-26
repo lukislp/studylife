@@ -42,7 +42,8 @@ public static class ApiKeyScopes
     /// <summary>
     /// Home Assistant (github.com/lukislp/studylife-hacs, not in this repo - fetched and read
     /// directly from GitHub for this audit). `custom_components/studylife/api.py` polls
-    /// sessions/settings/notes/coursegoals/courses/studyprograms/timerstate every scan interval,
+    /// sessions/settings/notes/coursegoals/courses/studyprograms/timerstate every scan interval
+    /// (plus the active custom programme's studyprograms/{id} detail, added for audit finding D4),
     /// and `services.py` additionally issues writes for all six `studylife.*` HA services
     /// (create/update/delete_session, set_course_goal, generate_exam_plan, set_active_program -
     /// the last one PUTs the full settings DTO via `async_update_settings`). This is by far the
@@ -64,6 +65,12 @@ public static class ApiKeyScopes
         new("CourseGoals", "Save"), // PUT /api/coursegoals/{courseId} - api.py async_set_course_goal <- services.py handle_set_course_goal
         new("Courses", "GetAll"), // GET /api/courses(?program=) - api.py async_get_courses (coordinator poll + course resolution)
         new("StudyPrograms", "GetAll"), // GET /api/studyprograms - api.py async_get_study_programs (coordinator poll)
+        new("StudyPrograms", "Get"), // GET /api/studyprograms/{id} - api.py async_get_study_program(), called once per poll
+        // cycle by coordinator.py's _async_update_data for the currently ACTIVE study programme when it's a custom one -
+        // the authoritative source (StudyProgramDetailDto.GroupEctsQuotas) for a custom programme's elective-group ECTS
+        // quota, replacing a "(N ECTS)"-in-the-name regex parse that silently produced an uncapped sum whenever a
+        // group's display name didn't embed that convention (audit finding D4; studylife-hacs
+        // fix/coordinator-week-bound-and-ects).
         new("TimerState", "Get"), // GET /api/timerstate - api.py async_get_timer_state (coordinator poll)
         new("Planner", "GenerateExamPlan"), // POST /api/planner/exam-plan - api.py async_generate_exam_plan <- services.py handle_generate_exam_plan
     ];
