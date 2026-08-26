@@ -1,3 +1,15 @@
+# [1.42.0](https://github.com/lukislp/studylife/compare/v1.41.0...v1.42.0) (2026-08-26)
+
+
+### Bug Fixes
+
+* skip OpenAPI generation on RID-specific publishes ([65b7d0c](https://github.com/lukislp/studylife/commit/65b7d0cea0357a08a2db2b49a4ca8a1ca244ca02))
+
+
+### Features
+
+* publish the API contract as generated OpenAPI ([b187115](https://github.com/lukislp/studylife/commit/b187115224d78a248df7279cb8b3cf72408c7236))
+
 # [1.41.0](https://github.com/lukislp/studylife/compare/v1.40.6...v1.41.0) (2026-08-26)
 
 
