@@ -31,18 +31,34 @@ public class SettingsController : ControllerBase
     }
 
     [HttpGet]
-    public Task<ActionResult<UserSettingsDto>> Get()
+    public async Task<ActionResult<UserSettingsDto>> Get()
     {
         var cacheKey = $"settings:{_currentUser.AuthUserId}:{_settingsCacheVersion.Value}";
         // 15s TTL - half the 30s client poll interval, so near-simultaneous polls from
         // multiple open clients collapse onto one query while real changes still show
         // up within about one poll cycle.
-        return _cache.GetOrSetAsync(this, cacheKey, TimeSpan.FromSeconds(15), async () =>
+        var result = await _cache.GetOrSetAsync(this, cacheKey, TimeSpan.FromSeconds(15), async () =>
         {
             var entity = await _db.Settings.AsNoTracking().FirstOrDefaultAsync()
                 ?? new UserSettingsEntity();
             return ToDto(entity);
         });
+
+        // Audit finding A12b: ProgressShareToken is a bearer credential (it alone grants read
+        // access to GET /api/progress/shared/{token}) and must only ever reach the browser's
+        // own real passkey session, never an API-key caller (this endpoint is in the "ha" slot's
+        // ApiKeyScopes, so Home Assistant CAN reach GET /api/settings for its own poll). Masking
+        // is applied HERE, after the cache lookup above, rather than inside the cached factory:
+        // the cache entry is keyed only by user+version (shared across auth types for the SAME
+        // user - see CacheHelper), so a session request's cache miss would otherwise populate the
+        // 15s-TTL cache with the real token, and a same-user API-key request landing within that
+        // window would receive it straight from cache without ever re-running ToDto. Checking
+        // result.Value (not the request's own success/failure) means a 304 short-circuit (no
+        // body at all) is untouched - there's nothing to mask on an empty response.
+        if (result.Value is not null && HttpContext.Items.ContainsKey(AuthSessionService.ApiKeySlotItemKey))
+            result.Value.ProgressShareToken = null;
+
+        return result;
     }
 
     [HttpPut]
