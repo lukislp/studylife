@@ -805,3 +805,107 @@ public class SystemCapabilitiesResponseDto
 {
     public bool RawBackupSupported { get; set; }
 }
+
+// Audit finding M4: JSON export/import ("v2") - BackupController.Export/ImportJson. Unlike the
+// original v1 export (5 of 9 user-owned tables, nested DTOs serialized PascalCase because that
+// code path bypassed the app's shared JsonSerializerOptions), this covers every user-owned
+// table and is serialized with the exact same options as the rest of the API. StudyProgramDto/
+// CourseGroupDto/CustomCourseDto don't exist as API-facing DTOs with raw ids (StudyProgramSummaryDto/
+// StudyProgramDetailDto are deliberately id-light for the client), so the three export-only DTOs
+// below carry the real database ids - required to remap cross-references (CourseGroup.StudyProgramId,
+// CustomCourse.StudyProgramId/CourseGroupId, and everywhere a shifted CustomCourseIdOffset id is
+// used) onto freshly assigned ids on import.
+
+/// <summary>Export/import shape of a custom study program row. Id is the real database id,
+/// re-assigned on import - see BackupController.ImportJson.</summary>
+public class StudyProgramExportDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
+    public bool IsCompleted { get; set; }
+}
+
+/// <summary>Export/import shape of an elective group row. StudyProgramId points at a
+/// StudyProgramExportDto.Id in the SAME export file - remapped to the newly assigned study
+/// program id on import.</summary>
+public class CourseGroupExportDto
+{
+    public int Id { get; set; }
+    public int StudyProgramId { get; set; }
+    public string Name { get; set; } = "";
+    public int EctsQuota { get; set; }
+}
+
+/// <summary>Export/import shape of a custom course row. StudyProgramId/CourseGroupId point at
+/// ids in the same export file (the latter nullable - "no elective group"), both remapped on
+/// import; Id itself is the RAW database id (not the externally shifted CourseDto.Id =
+/// StudyProgramCatalog.CustomCourseIdOffset + Id) - the shift is re-applied wherever a shifted
+/// id is referenced (sessions/goals/resources/templates CourseId, settings' comma-separated id
+/// lists) using the NEW id after import.</summary>
+public class CustomCourseExportDto
+{
+    public int Id { get; set; }
+    public int StudyProgramId { get; set; }
+    public int Semester { get; set; } = 1;
+    public string Name { get; set; } = "";
+    public string Code { get; set; } = "";
+    public string Color { get; set; } = "#6C5CE7";
+    public string Icon { get; set; } = "📚";
+    public int Ects { get; set; } = 5;
+    public int? CourseGroupId { get; set; }
+    /// <summary>Comma-separated, same raw format as CustomCourseEntity.Topics (unlike
+    /// CourseDto.Topics, which is already split into a List&lt;string&gt; for API clients).</summary>
+    public string Topics { get; set; } = "";
+}
+
+/// <summary>
+/// GET /api/backup/export response envelope ("v2", audit finding M4) and POST
+/// /api/backup/import-json request body. FormatVersion distinguishes this from a v1 file (a bare
+/// object without this property, which deserializes FormatVersion as 0 thanks to case-insensitive/
+/// tolerant JSON binding) - BackupController.ImportJson accepts both: a v1 file simply leaves the
+/// newer collections (StudyPrograms/CourseGroups/CustomCourses/SessionTemplates) at their default
+/// empty list, so those tables just import nothing instead of failing the whole request.
+/// Deliberately excluded from every table below: PushSubscriptions (this browser's endpoint
+/// registrations, not transferable), SentReminders (internal dedup bookkeeping), TimerState
+/// (transient live state), and everything under AuthUserEntity/PasskeyCredentialEntity/
+/// AuthSessionEntity/RecoveryCodeEntity/SystemSecretsEntity/AiKeyOutboxEntity (auth/session/
+/// infrastructure rows, not user data - importing these would either be meaningless across
+/// accounts or a security hole, e.g. re-planting a session token hash).
+/// </summary>
+public class BackupExportDto
+{
+    // Deliberately NO "= 2" default here: [FromBody] model binding constructs this via the
+    // parameterless constructor FIRST (running property initializers) and only THEN overwrites
+    // whatever properties are actually present in the JSON - a default of 2 would make a legacy
+    // v1 file (no formatVersion property at all) silently look like v2. The plain int default
+    // (0) is exactly the "no formatVersion property present" signal BackupController.ImportJson
+    // checks for. Export() sets this explicitly to 2 when building a fresh envelope.
+    public int FormatVersion { get; set; }
+    public DateTime ExportedAt { get; set; }
+    /// <summary>Server version at export time (same source as VersionResponseDto) - purely
+    /// informational, never checked on import.</summary>
+    public string AppVersion { get; set; } = "";
+    public List<StudySessionDto> Sessions { get; set; } = new();
+    public List<NoteDto> Notes { get; set; } = new();
+    public List<CourseGoalDto> CourseGoals { get; set; } = new();
+    public List<CourseResourceDto> CourseResources { get; set; } = new();
+    public UserSettingsDto Settings { get; set; } = new();
+    public List<StudyProgramExportDto> StudyPrograms { get; set; } = new();
+    public List<CourseGroupExportDto> CourseGroups { get; set; } = new();
+    public List<CustomCourseExportDto> CustomCourses { get; set; } = new();
+    public List<SessionTemplateDto> SessionTemplates { get; set; } = new();
+}
+
+/// <summary>
+/// Response of POST /api/backup/import-json: per-table counts of rows actually inserted, and of
+/// rows/references dropped because they pointed at something not found in the file (a dangling
+/// custom-course/study-program/group/note/session reference - tolerant like CommaSeparatedIds,
+/// never a hard failure of the whole import). Both dictionaries are keyed by a short, stable
+/// name per table/reference kind - see BackupController.ImportJson for the exact key list.
+/// </summary>
+public class BackupImportResponseDto
+{
+    public Dictionary<string, int> Imported { get; set; } = new();
+    public Dictionary<string, int> Dropped { get; set; } = new();
+}
