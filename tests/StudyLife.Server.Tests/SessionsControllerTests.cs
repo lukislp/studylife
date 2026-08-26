@@ -154,8 +154,8 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
         var futureNotCompleted = await CreateAsync(ValidSession(
             courseId: 33, start: now.AddHours(2), end: now.AddHours(3), isCompleted: false));
 
-        // days chosen large enough that the day window (based on UtcNow) reliably covers
-        // the hour-based offsets above regardless of time zone.
+        // days chosen large enough that the day window reliably covers the hour-based
+        // offsets above regardless of time zone.
         var response = await _client.GetAsync("/api/sessions/history?days=30");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var sessions = await response.Content.ReadFromJsonAsync<List<StudySessionDto>>();
@@ -413,11 +413,13 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
     [Fact]
     public async Task GetIcs_WithApiKeyQueryParam_DoesNotAuthenticate()
     {
-        // Proves that the two secret spaces are separate: the perfectly normal ?apiKey= query
-        // parameter (which works on every other /api route) does NOT authenticate this route -
-        // only ?calendarToken= counts here. The concrete value is irrelevant for this
-        // proof (the route simply never checks ?apiKey=), so a placeholder is enough instead of
-        // a real, per-user generated API key.
+        // Proves that the two secret spaces are separate: a ?apiKey= query parameter does NOT
+        // authenticate this route - only ?calendarToken= counts here. This holds even more
+        // trivially now that ?apiKey= authenticates NO route at all (audit finding A12a removed
+        // the query-string fallback everywhere), but the test is kept as an explicit pin on this
+        // route specifically. The concrete value is irrelevant for this proof (the route simply
+        // never checks ?apiKey=), so a placeholder is enough instead of a real, per-user
+        // generated API key.
         var client = ApiKeyTestHelpers.CreateClientWithKey(_factory, null);
         var response = await client.GetAsync("/api/sessions/ics?apiKey=some-arbitrary-value");
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -618,5 +620,118 @@ public class SessionsControllerCacheIsolationTests : IClassFixture<CustomWebAppl
         Assert.Equal(HttpStatusCode.OK, annaResponse.StatusCode);
         var annaSessions = await annaResponse.Content.ReadFromJsonAsync<List<StudySessionDto>>();
         Assert.DoesNotContain(annaSessions!, s => s.CourseName == "Alex-Cache-Kurs");
+    }
+}
+
+/// <summary>
+/// Audit finding Z1: GetHistory's window boundary used to be computed as
+/// DateTime.UtcNow.AddDays(-days), then compared against the naive-LOCAL StartTime column,
+/// while the completed-cutoff in the very same query already correctly used DateTime.Now - a
+/// mixed-clock bug that silently shifted the window edge by the container's UTC offset (see
+/// docs/ARCHITECTURE.md "Single-Timezone Invariant"). Both boundaries are now DateTime.Now.
+///
+/// What this test pins: with a "days=2" (48h) window, a session that started 49 hours ago must
+/// be OUTSIDE it, and one that started 47 hours ago must be INSIDE it - by a comfortable 1-hour
+/// margin either side of the 48h edge, so ordinary test execution latency (milliseconds) can
+/// never flip the result. Under the OLD bug, in any timezone AHEAD of UTC (e.g. Europe/Berlin,
+/// UTC+1/+2, where this suite runs locally - see MEMORY.md), UtcNow lags LocalNow by the offset,
+/// so the buggy "from" boundary reached further back in time than intended and would have
+/// wrongly INCLUDED the 49-hours-ago session - i.e. this test would have failed under the old
+/// code specifically when TZ != UTC. In UTC (offset 0, e.g. a CI runner), old and new code
+/// compute an identical boundary, so this test does not by itself distinguish them there - it
+/// still asserts the semantics that must hold everywhere, which is what actually matters for
+/// correctness regardless of which timezone CI happens to run in.
+/// Own class/factory so no sessions from other test classes fall inside the narrow 48h window.
+/// </summary>
+public class SessionsControllerHistoryWindowBoundaryTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly HttpClient _client;
+
+    public SessionsControllerHistoryWindowBoundaryTests(CustomWebApplicationFactory factory)
+        => _client = factory.CreateClient();
+
+    [Fact]
+    public async Task GetHistory_TwoDayWindow_BoundaryIsLocalNowNotUtcNow()
+    {
+        var now = DateTime.Now;
+
+        async Task<StudySessionDto> CreateAsync(int courseId, DateTime start)
+        {
+            var dto = new StudySessionDto
+            {
+                CourseId = courseId,
+                CourseName = "Boundary-Test",
+                CourseColor = "#6C5CE7",
+                StartTime = start,
+                EndTime = start.AddMinutes(30),
+                TimerModeId = 1,
+                IsCompleted = true,
+            };
+            var response = await _client.PostAsJsonAsync("/api/sessions", dto);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            return (await response.Content.ReadFromJsonAsync<StudySessionDto>())!;
+        }
+
+        var justInsideWindow = await CreateAsync(61, now.AddHours(-47)); // 1h inside the 48h edge
+        var justOutsideWindow = await CreateAsync(62, now.AddHours(-49)); // 1h beyond the 48h edge
+
+        var response = await _client.GetAsync("/api/sessions/history?days=2&onlyCompleted=false");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var sessions = await response.Content.ReadFromJsonAsync<List<StudySessionDto>>();
+        Assert.NotNull(sessions);
+
+        Assert.Contains(sessions!, s => s.Id == justInsideWindow.Id);
+        Assert.DoesNotContain(sessions!, s => s.Id == justOutsideWindow.Id);
+    }
+}
+
+/// <summary>
+/// Same fix, same rationale, applied to the ICS export's -7/+90 day window (SessionsController.
+/// GetIcs) - see SessionsControllerHistoryWindowBoundaryTests for the full explanation of the
+/// bug and why the assertions below hold in both a UTC and a non-UTC test environment.
+/// What this test pins: with the fixed -7 day past edge, a session that started 169 hours (7
+/// days + 1h) ago must be excluded from the feed, and one that started 167 hours (7 days - 1h)
+/// ago must be included - a 1-hour margin either side of the edge. Own class/factory to keep the
+/// narrow window free of sessions created by other tests.
+/// </summary>
+public class SessionsControllerIcsWindowBoundaryTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly HttpClient _client;
+
+    public SessionsControllerIcsWindowBoundaryTests(CustomWebApplicationFactory factory)
+        => _client = factory.CreateClient();
+
+    [Fact]
+    public async Task GetIcs_SevenDayPastEdge_IsLocalNowNotUtcNow()
+    {
+        var now = DateTime.Now;
+
+        async Task<int> CreateAsync(int courseId, string courseName, DateTime start)
+        {
+            var dto = new StudySessionDto
+            {
+                CourseId = courseId,
+                CourseName = courseName,
+                CourseColor = "#6C5CE7",
+                StartTime = start,
+                EndTime = start.AddMinutes(30),
+                TimerModeId = 1,
+                IsCompleted = true,
+            };
+            var response = await _client.PostAsJsonAsync("/api/sessions", dto);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            return (await response.Content.ReadFromJsonAsync<StudySessionDto>())!.Id;
+        }
+
+        var justInsideId = await CreateAsync(71, "Ics-Inside", now.AddHours(-167)); // 1h inside the 7-day edge
+        var justOutsideId = await CreateAsync(72, "Ics-Outside", now.AddHours(-169)); // 1h beyond the 7-day edge
+
+        var tokenDto = await _client.GetFromJsonAsync<CalendarTokenResponseDto>("/api/system/calendar-token");
+        var response = await _client.GetAsync($"/api/sessions/ics?calendarToken={tokenDto!.CalendarToken}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains($"UID:studylife-session-{justInsideId}@studylife", body);
+        Assert.DoesNotContain($"UID:studylife-session-{justOutsideId}@studylife", body);
     }
 }

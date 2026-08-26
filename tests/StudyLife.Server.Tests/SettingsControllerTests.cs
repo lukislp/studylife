@@ -561,6 +561,55 @@ public class SettingsControllerApiKeySlotsAreIndependentTests : IClassFixture<Cu
 }
 
 /// <summary>
+/// Audit finding A12b: ProgressShareToken is a bearer credential for the public
+/// GET /api/progress/shared/{token} link - GET /api/settings must only hand it to the browser's
+/// own real passkey session, never to any API-key holder (Settings.Get is in the "ha" slot's
+/// ApiKeyScopes, since Home Assistant polls it every cycle). Own class/factory: mutates the
+/// singleton settings row (enables progress-share) and generates a real HA key, neither of which
+/// should leak into other test classes.
+/// </summary>
+public class SettingsControllerProgressShareTokenLeakTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+
+    public SettingsControllerProgressShareTokenLeakTests(CustomWebApplicationFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient(); // carries the seeded test user's session token
+    }
+
+    [Fact]
+    public async Task Get_SessionSeesRealToken_ApiKeySeesNull()
+    {
+        var enableResponse = await _client.PostAsync("/api/settings/progress-share/enable", null);
+        Assert.Equal(HttpStatusCode.OK, enableResponse.StatusCode);
+        var enabled = await enableResponse.Content.ReadFromJsonAsync<UserSettingsDto>();
+        Assert.True(enabled!.ProgressShareEnabled);
+        Assert.False(string.IsNullOrEmpty(enabled.ProgressShareToken));
+
+        // The browser's own session sees the real token on a plain GET too (not just on the
+        // dedicated enable/disable/regenerate responses) - this also populates the 15s GET
+        // cache with the real token under the current settings-cache-version key.
+        var sessionGet = await _client.GetFromJsonAsync<UserSettingsDto>("/api/settings");
+        Assert.Equal(enabled.ProgressShareToken, sessionGet!.ProgressShareToken);
+
+        // Generating the HA key does NOT bump the settings cache version, so this next GET
+        // deliberately lands on the SAME cache entry the session request above just populated -
+        // exactly the shared-cache leak vector the fix in SettingsController.Get addresses.
+        var generateResponse = await _client.PostAsync("/api/settings/ha-api-key/generate", null);
+        var generated = await generateResponse.Content.ReadFromJsonAsync<HaApiKeyGenerateResponseDto>();
+
+        using var keyClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, generated!.ApiKey);
+        var apiKeyGet = await keyClient.GetFromJsonAsync<UserSettingsDto>("/api/settings");
+        Assert.NotNull(apiKeyGet);
+        Assert.Null(apiKeyGet!.ProgressShareToken);
+        // Only the secret field is masked - the rest of the response is unaffected.
+        Assert.True(apiKeyGet.ProgressShareEnabled);
+    }
+}
+
+/// <summary>
 /// Audit finding F1: LastBackupDownloadAt is documented on UserSettingsEntity as "set directly
 /// in BackupController, not via the normal settings PUT" - but until this fix, SettingsController.
 /// Save quietly wrote whatever the client's DTO carried for it anyway, so a stale/offline client

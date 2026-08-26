@@ -28,9 +28,16 @@ Since the multi-user overhaul (phases 1–3, see the dedicated sections below), 
 
 **The course catalog lives in `StudyLife.Shared`, not in the DB.** The list of all courses (name, code, icon, color, topics, `Ects` points per semester) is static code in [`StudyLife.Shared/CourseCatalog.cs`](../src/StudyLife.Shared/CourseCatalog.cs) (`CourseCatalog.AppliedAICourses`, type `CourseDto`) and is served via `GET /api/courses` (`CoursesController`, no DB access — a pure in-memory constant). Client and server reference the same assembly, so there is now only **one** source for the catalog. `StudySessionDto`/`CourseGoalDto` still freeze `CourseName`/`CourseColor` at creation time on the respective row (as before) — that doesn't change, since sessions/goals should keep their historical name even after a future catalog change. Anyone changing the study program/course list now does so exclusively in `CourseCatalog.cs`. The `Ects` values (default 5, projects 10, semester 5/6 modules 15 — totaling 180 across all 6 semesters) are **placeholders** for a fictional example curriculum and should be adjusted for the real program; they feed into the weighted grade average and the ECTS progress (see the evaluation page).
 
-## Time zones / DateTime handling
+## Single-Timezone Invariant
 
-A session's `StartTime`/`EndTime` are **naive local timestamps** (no UTC, no offset). Client and server consistently compare against `DateTime.Now` (local server time), never `DateTime.UtcNow` — the exception is the generous loading window in `SessionsController.GetAll()` (7 days back / 90 days ahead, where UTC vs. local is irrelevant because the buffer is large enough). Important for any new consumer app (e.g. Home Assistant): treat times as if they came from the same time zone as the server host, don't parse them as UTC.
+Every persisted time that represents "when something happens for the user" — `StudySessionEntity.StartTime`/`EndTime`, `TimerStateEntity.PhaseEndsAt`, the reminder/streak/week-boundary calculations derived from them — is a **naive local timestamp** (no UTC, no offset), not a genuinely timezone-aware one. This works today because there is exactly ONE timezone in play end to end:
+
+- The container pins the OS timezone via `ENV TZ=Europe/Berlin` (`src/StudyLife.Server/Dockerfile`), so `DateTime.Now` on the server means the same wall-clock time a user in that timezone would read off a clock.
+- The Blazor client (browser or the MAUI shell) reads/writes the same naive values and pushes its OWN local time back for anything time-sensitive — e.g. `TimerStateEntity.PhaseEndsAt` is sent by `TimerService.cs` as the client's local wall-clock time (`ToLocalTime()` on its internally-tracked instant), not something the server computes independently — so both sides agree only because both sides run in the same timezone.
+- Any code comparing a boundary against one of these columns (history windows, the ICS export range, streak/week cutoffs) must use `DateTime.Now`, never `DateTime.UtcNow` — mixing the two silently shifts the boundary by the host's UTC offset (audit finding Z1; see `SessionsController.GetHistory`/`GetIcs`). Genuinely UTC-based values — session/auth tokens, `CreatedAt`/`ExpiresAt` audit columns, anything with no relation to a specific user's wall clock — are unaffected and correctly stay on `DateTime.UtcNow`.
+- `SessionsController.GetAll()` returns the user's full session history unbounded (no date window at all, since the client does its own week/day navigation over the complete set) — the -7d/+90d window described below applies only to the ICS feed (`GetIcs`), not to `GetAll`.
+
+**What a real multi-timezone future would require** (not planned, but the shape of the change if it ever is): store all of these columns as genuine UTC instants instead of naive local values, add a per-user timezone setting (there is currently nowhere to even record one — the app has exactly one implicit timezone, the server's), and convert at every edge that currently assumes "local" today — the ICS export, push/reminder scheduling, streak/week-boundary math, and the client's own `PhaseEndsAt` computation. Until then, treat any StudyLife time value (in the DB, in the API, in an ICS export) as if it came from the same timezone as the server host — never parse it as UTC.
 
 ## API (`Controllers/`)
 
@@ -38,12 +45,12 @@ All routes live under `/api`, return/expect JSON, and require a passkey session 
 
 | Route | Method | DTO | Note |
 |---|---|---|---|
-| `/api/sessions` | GET | `StudySessionDto[]` | Window: `UtcNow-7d` to `UtcNow+90d` |
+| `/api/sessions` | GET | `StudySessionDto[]` | No date window — returns the user's full session history; the client does its own week/day navigation over the complete set |
 | `/api/sessions` | POST | `StudySessionDto` → `StudySessionDto` | `Id` is ignored/overwritten. Validated: `CourseId > 0`, `CourseName` not empty, `EndTime > StartTime` (otherwise `400 BadRequest`) |
 | `/api/sessions/{id}` | PUT | `StudySessionDto` | 404 if unknown; same validation as POST |
 | `/api/sessions/{id}` | DELETE | – | 404 if unknown |
-| `/api/sessions/ics` | GET | `text/calendar` | Hand-rolled iCalendar feed (RFC 5545) of the same sessions as `GetAll` (same time window), for subscribing in Google/Apple Calendar. Times are written as "floating" (no `Z`, no `TZID`), see the time zone section |
-| `/api/sessions/history` | GET | `StudySessionDto[]` | `?days=N` (default 365) `&onlyCompleted=` (default `true`). Deliberately separate from `GetAll`, since its ±7/90-day window is too narrow for evaluation charts and dashboard calculations (monthly quota, trend, streak). `onlyCompleted=false` also returns not-yet-completed sessions, for calculations that count "all sessions" rather than only completed ones |
+| `/api/sessions/ics` | GET | `text/calendar` | Hand-rolled iCalendar feed (RFC 5545), windowed to `Now-7d`..`Now+90d` (local, see [Single-Timezone Invariant](#single-timezone-invariant)), for subscribing in Google/Apple Calendar. Times are written as "floating" (no `Z`, no `TZID`) |
+| `/api/sessions/history` | GET | `StudySessionDto[]` | `?days=N` (default 365) `&onlyCompleted=` (default `true`). Deliberately separate from `GetAll`, for evaluation charts and dashboard calculations (monthly quota, trend, streak) that need a caller-chosen lookback instead of the full history. `onlyCompleted=false` also returns not-yet-completed sessions, for calculations that count "all sessions" rather than only completed ones |
 | `/api/settings` | GET | `UserSettingsDto` | Does not create a DB entry on first call (default object if the table is empty) |
 | `/api/settings` | PUT | `UserSettingsDto` → `UserSettingsDto` | Upsert of the singleton row |
 | `/api/notes` | GET | `NoteDto[]` | Sorted by `UpdatedAt` descending |
