@@ -1,3 +1,10 @@
+## [2.1.3](https://github.com/lukislp/studylife/compare/v2.1.2...v2.1.3) (2026-08-26)
+
+
+### Bug Fixes
+
+* route all grade formatting through StudyMetrics.FormatGrade ([ad0998a](https://github.com/lukislp/studylife/commit/ad0998ae83e83040bf80d8ed158461d17626c490))
+
 ## [2.1.2](https://github.com/lukislp/studylife/compare/v2.1.1...v2.1.2) (2026-08-26)
 
 
