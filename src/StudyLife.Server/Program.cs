@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.EntityFrameworkCore;
+using StudyLife.Server.Auth;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
 
@@ -13,6 +14,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
+
+// Real AuthenticationHandler + authorization policies (audit finding A3) replacing the former
+// hand-rolled inline middleware - see StudyLifeAuthorizationPolicies for the policy design and
+// StudyLifeAuthenticationHandler for credential resolution (session token / API key / ICS
+// calendar token, in that priority). Registered here so it's available for
+// app.MapControllers().RequireAuthorization(...) etc. further below.
+builder.Services.AddStudyLifeAuthentication();
 
 // Kestrel itself only ever listens on plain HTTP:8080 (nginx/NPM terminate TLS in front of
 // it, see the UseHttpsRedirection() comment below) - UseHttpsRedirection() can't infer an
@@ -594,208 +602,17 @@ if (DemoModeGuard.IsEnabled(app.Configuration))
     });
 }
 
-// API gate, always active (phase 3): every /api request needs EITHER a valid
-// passkey session token (X-Session-Token, phase 2 - the normal path of the browser client)
-// OR a per-user API key (X-Api-Key header or ?apiKey= query string for URL-only
-// consumers) - the latter is a long-lived key, NEVER automatically rotated, for non-interactive
-// integrations. Four independent slots exist per user: AuthUserEntity.ApiKeyHash (Home
-// Assistant), AuthUserEntity.AiApiKeyHash (studylife-ai), AuthUserEntity.McpApiKeyHash
-// (studylife-mcp), and AuthUserEntity.CaptureApiKeyHash (studylife-capture browser extension),
-// all generated via the setup page - separate slots so one integration's key leaking/rotating
-// never affects the others.
-// The former global, monthly-rotating key (ApiKeyProvider) and its
-// unauthenticated bootstrap-key endpoint have been completely removed - the browser client
-// authenticates exclusively via its session, an API key always identifies
-// exactly ONE user (no more "first user" fallback for key requests).
-// Exceptions below unchanged: ICS feed (own permanent token), public
-// progress-share link, /api/auth (login/registration).
-app.Use(async (context, next) =>
-{
-    if (context.Request.Path.StartsWithSegments("/api"))
-    {
-        // First exception: the ICS calendar feed needs its own permanent token
-        // (AuthUserEntity.CalendarToken), because subscribing calendar apps can neither set headers
-        // nor go through a login. Deliberately limited to GET + exact path, so
-        // no other /api/sessions/... endpoint is accidentally exempted too - and deliberately
-        // a separate query parameter name (calendarToken instead of apiKey), so the two
-        // secret spaces aren't interchangeable. Unlike the former global
-        // CalendarTokenProvider, the token here resolves the OWNING user (like
-        // the per-user API key below) - otherwise every calendar token would show the same
-        // (the first-registered) user, regardless of who it actually belongs to.
-        if (HttpMethods.IsGet(context.Request.Method)
-            && context.Request.Path.StartsWithSegments("/api/sessions/ics", out var icsRemainder)
-            && string.IsNullOrEmpty(icsRemainder.Value))
-        {
-            var calendarToken = context.Request.Query["calendarToken"].FirstOrDefault();
-            if (string.IsNullOrEmpty(calendarToken))
-            {
-                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                return;
-            }
-            var icsDb = context.RequestServices.GetRequiredService<StudyLifeDb>();
-            var calendarOwner = await icsDb.AuthUsers.AsNoTracking()
-                .FirstOrDefaultAsync(u => u.CalendarToken == calendarToken);
-            if (calendarOwner is null)
-            {
-                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                return;
-            }
-            context.Items[CurrentUserAccessor.HttpContextItemKey] = calendarOwner.Id;
-            await next();
-            return;
-        }
-
-        // Second exception: the public read-only progress link (ProgressController),
-        // for sharing with parents/mentor/study advisor without an API key. Unlike the ICS token
-        // (permanent in-memory singleton, CalendarTokenProvider), the progress-share token
-        // lives per settings row in the DB (UserSettingsEntity.ProgressShareToken) and can be
-        // toggled on/off via the setup page - the check therefore needs a DB access and deliberately
-        // does NOT happen here in the middleware-singleton style, but in the controller itself (ProgressController.
-        // GetShared returns 404 instead of 401 for an invalid/missing/disabled token, so a
-        // scanner doesn't even learn whether the path exists). Deliberately limited to GET + a non-empty
-        // remaining path, so no other /api/progress/... endpoint is accidentally exempted too.
-        if (HttpMethods.IsGet(context.Request.Method)
-            && context.Request.Path.StartsWithSegments("/api/progress/shared", out var progressRemainder)
-            && !string.IsNullOrEmpty(progressRemainder.Value) && progressRemainder.Value != "/")
-        {
-            await next();
-            return;
-        }
-
-        // Third exception (phase 2, passkey login): /api/auth must be reachable without any
-        // existing secret - registration/login are exactly the path through which one gets a
-        // secret in the first place. The session-required subpaths (logout,
-        // device list, additional passkey) check within AuthController itself via the
-        // AuthSessionService.SessionItemKey item set by the resolution middleware below.
-        // EXCEPT /api/auth/whoami (identity contract v1 §1): unlike every other /api/auth path,
-        // whoami's whole purpose is to report which credential the gate matched, so it must
-        // actually run the normal session-or-key resolution below instead of bypassing it -
-        // otherwise there would be nothing to report on.
-        if (context.Request.Path.StartsWithSegments("/api/auth")
-            && !(context.Request.Path.StartsWithSegments("/api/auth/whoami", out var whoamiRemainder)
-                 && string.IsNullOrEmpty(whoamiRemainder.Value)))
-        {
-            await next();
-            return;
-        }
-
-        // Fourth exception: /api/system/version only shows the build version number (setup page),
-        // no user context, no sensitive data - needs no session/no API key. Deliberately
-        // limited to GET + exact path like the ICS/progress exceptions above.
-        if (HttpMethods.IsGet(context.Request.Method)
-            && context.Request.Path.StartsWithSegments("/api/system/version", out var versionRemainder)
-            && string.IsNullOrEmpty(versionRemainder.Value))
-        {
-            await next();
-            return;
-        }
-
-        // Priority order (phase 3): session token has highest priority - if one is present,
-        // it EXCLUSIVELY applies, and an invalid/expired token leads to 401 even alongside a
-        // valid API key (rationale at the resolution middleware below). The
-        // validation extends the session with a sliding window at the same time and stores the user +
-        // session id in Items, so the resolution middleware doesn't validate twice.
-        var gateToken = context.Request.Headers[AuthSessionService.TokenHeaderName].FirstOrDefault();
-        if (!string.IsNullOrEmpty(gateToken))
-        {
-            var gateDb = context.RequestServices.GetRequiredService<StudyLifeDb>();
-            var gateSession = await AuthSessionService.ValidateAndRefreshAsync(gateDb, gateToken, DateTime.UtcNow);
-            if (gateSession is null)
-            {
-                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                return;
-            }
-            context.Items[CurrentUserAccessor.HttpContextItemKey] = gateSession.AuthUserId;
-            context.Items[AuthSessionService.SessionItemKey] = gateSession.Id;
-        }
-        else
-        {
-            // Without a session token: per-user API key. The hash of the submitted plaintext
-            // key is matched against AuthUsers.ApiKeyHash (Home Assistant & co), OR
-            // AuthUsers.AiApiKeyHash (studylife-ai), OR AuthUsers.McpApiKeyHash
-            // (studylife-mcp), OR AuthUsers.CaptureApiKeyHash (studylife-capture) - four
-            // separate slots (see AuthUserEntity.AiApiKeyHash / McpApiKeyHash /
-            // CaptureApiKeyHash) so revoking/rotating one integration's key can never affect the
-            // others, but any one of them authenticates AND identifies the user in one step
-            // here, there is no more "first user" fallback for key requests.
-            // Deliberately NO SessionItemKey item: session-required endpoints (passkey
-            // management, ha-api-key/*, ai-api-key/*, mcp-api-key/*, capture-api-key/*) remain
-            // off-limits for pure key consumers.
-            var provided = context.Request.Headers["X-Api-Key"].FirstOrDefault()
-                ?? context.Request.Query["apiKey"].FirstOrDefault();
-            if (string.IsNullOrEmpty(provided))
-            {
-                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                return;
-            }
-            var keyHash = AuthSessionService.HashToken(provided);
-            var keyDb = context.RequestServices.GetRequiredService<StudyLifeDb>();
-            var keyOwner = await keyDb.AuthUsers.AsNoTracking()
-                .FirstOrDefaultAsync(u => u.ApiKeyHash == keyHash || u.AiApiKeyHash == keyHash
-                    || u.McpApiKeyHash == keyHash || u.CaptureApiKeyHash == keyHash);
-            if (keyOwner is null)
-            {
-                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                return;
-            }
-            context.Items[CurrentUserAccessor.HttpContextItemKey] = keyOwner.Id;
-            // Which slot matched (identity contract v1 §1) - only consumed by whoami today, but
-            // cheap to set unconditionally here instead of re-deriving it per caller.
-            context.Items[AuthSessionService.ApiKeySlotItemKey] = keyOwner.ApiKeyHash == keyHash ? "ha"
-                : keyOwner.AiApiKeyHash == keyHash ? "ai"
-                : keyOwner.McpApiKeyHash == keyHash ? "mcp"
-                : "capture";
-        }
-    }
-    await next();
-});
-
-// "Current user" resolution, deliberately AFTER the API gate above. Since phase 3, the gate already
-// sets the items for session, API key, AND (since the security fix) calendar-token requests
-// itself - here, only the public progress-share link and /api/auth arrive without a resolved
-// user. Priority order:
-// 1. If an X-Session-Token came along (possible even on the exception paths), its user
-//    EXCLUSIVELY applies - including sliding extension (ExpiresAt = now + 90 days, hard
-//    capped at HardExpiresAt). An INVALID/expired token leads to 401: silently falling back
-//    to an ambient user would show the wrong user's data, and the
-//    explicit 401 is exactly the signal that makes the client discard its token and redirect to
-//    login. Exception /api/auth: there the request continues unauthenticated,
-//    otherwise one could never log in again with an expired token in localStorage.
-// 2. Without any header (e.g. anonymous progress-share request): NO fallback user is assigned
-//    (audit finding A2 - the former "first AuthUser" fallback here was harmless only because
-//    ProgressController.GetShared resolves the actual token owner itself via
-//    IgnoreQueryFilters()+BeginBackgroundScope, but any FUTURE gate exemption that forgot to do
-//    the same would otherwise have silently run as user #1 with full access to their data).
-//    CurrentUserAccessor.AuthUserId then stays 0 (its documented "no user resolved" value),
-//    which every tenant-filtered query filter compares against - 0 never matches a real
-//    AuthUserId (they start at 1), so such a request simply sees no data instead of user #1's.
-app.Use(async (context, next) =>
-{
-    if (context.Request.Path.StartsWithSegments("/api"))
-    {
-        var isAuthPath = context.Request.Path.StartsWithSegments("/api/auth");
-        if (!context.Items.ContainsKey(CurrentUserAccessor.HttpContextItemKey))
-        {
-            var db = context.RequestServices.GetRequiredService<StudyLifeDb>();
-            var token = context.Request.Headers[AuthSessionService.TokenHeaderName].FirstOrDefault();
-            if (!string.IsNullOrEmpty(token))
-            {
-                var session = await AuthSessionService.ValidateAndRefreshAsync(db, token, DateTime.UtcNow);
-                if (session is not null)
-                {
-                    context.Items[CurrentUserAccessor.HttpContextItemKey] = session.AuthUserId;
-                    context.Items[AuthSessionService.SessionItemKey] = session.Id;
-                }
-                else if (!isAuthPath)
-                {
-                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                    return;
-                }
-            }
-        }
-    }
-    await next();
-});
+// Real ASP.NET Core authentication/authorization (audit finding A3) replacing the former two
+// hand-rolled inline middleware lambdas ("API gate" + "current user resolution", ~140 lines
+// combined). Credential resolution (session token / API key / ICS calendar token, in that
+// priority) now lives in StudyLifeAuthenticationHandler; which endpoints need which credential
+// is expressed per-action via [Authorize(Policy = ...)]/[AllowAnonymous] instead of the
+// path-string checks that used to live here - see StudyLifeAuthorizationPolicies for the full
+// policy design (ApiAccess/SessionOnly/PublicUnlessInvalidSession) and the exemption mapping.
+// MUST run in this exact order (UseAuthentication before UseAuthorization) and AFTER the demo
+// write-block above / BEFORE the endpoints mapped below, exactly where the former gate sat.
+app.UseAuthentication();
+app.UseAuthorization();
 
 // Apple App Site Association: enables the native in-app passkey dialog (AppleSigningInfo
 // doesn't check this JSON server-side itself - iOS fetches it on first app launch independently
@@ -803,6 +620,9 @@ app.Use(async (context, next) =>
 // under /api (Apple fetches it without any header/token) and placed outside the API gate -
 // a completely normal static path. Without Apple:TeamId config (free signing, no paid team), 404
 // instead of a useless/potentially wrong response - behavior only changes with config.
+// .AllowAnonymous(): AuthorizationOptions.FallbackPolicy (ApiAccess) below applies to every
+// endpoint that states no requirement of its own, so this - having none - would otherwise
+// suddenly need a credential too.
 var appleTeamId = builder.Configuration["Apple:TeamId"];
 app.MapGet("/.well-known/apple-app-site-association", (HttpResponse response) =>
 {
@@ -812,22 +632,33 @@ app.MapGet("/.well-known/apple-app-site-association", (HttpResponse response) =>
     {
         webcredentials = new { apps = new[] { $"{appleTeamId}.app.studylife.mobile" } },
     });
-});
+}).AllowAnonymous();
 
 app.MapRazorPages();
+// The default "needs a credential unless [AllowAnonymous]/a more specific policy" requirement
+// for every controller action comes from AuthorizationOptions.FallbackPolicy (ApiAccess),
+// configured in StudyLifeAuthorizationPolicies - not from an endpoint convention chained here,
+// see that file's comment for why.
 app.MapControllers();
 // Unknown /api paths must NEVER fall through to the SPA fallback below: that would otherwise
 // deliver 200+index.html without cache headers for endpoints that don't (yet) exist on this
 // server version - and HTTP caches (especially the native app's NSURLCache, which survives
 // reinstalls) were allowed to heuristically cache this HTML and keep serving it to the client
 // even after a server update (actually happened with api/system/capabilities on 1.21). 404 is the
-// honest answer; the more specific fallback pattern wins over MapFallbackToFile.
+// honest answer; the more specific fallback pattern wins over MapFallbackToFile. This endpoint
+// also carries no explicit policy, so it too falls under FallbackPolicy (ApiAccess) - an
+// unmatched /api/* path without a valid credential must still 401 (matching the former gate,
+// which ran before routing even decided a path was unmatched), not leak a 404 that would let an
+// unauthenticated caller distinguish "wrong path" from "not logged in".
 app.MapFallback("api/{**rest}", (HttpResponse response) =>
 {
     response.Headers.CacheControl = "no-store";
     return Results.NotFound();
 });
-app.MapFallbackToFile("index.html");
+// .AllowAnonymous(): the SPA shell itself (index.html) must stay reachable by anyone, including
+// a browser with no session yet - it's what LOADS the login screen in the first place. Without
+// this it would fall under FallbackPolicy (ApiAccess) like every other bare endpoint above.
+app.MapFallbackToFile("index.html").AllowAnonymous();
 
 app.Run();
 

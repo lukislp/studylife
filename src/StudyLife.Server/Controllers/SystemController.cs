@@ -1,6 +1,8 @@
 using System.Reflection;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using StudyLife.Server.Auth;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
 using StudyLife.Shared;
@@ -64,10 +66,11 @@ public class SystemController : ControllerBase
     /// Returns the setup page's permanent calendar token - lazily created on first fetch,
     /// so a user who never uses the feature doesn't have a token sitting in the DB either.
     /// </summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpGet("calendar-token")]
     public async Task<ActionResult<CalendarTokenResponseDto>> GetCalendarToken()
     {
-        if (SessionAuthUserId is not int userId) return Unauthorized();
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
 
@@ -85,10 +88,11 @@ public class SystemController : ControllerBase
     /// leak). Immediately breaks every existing calendar subscription of this user; the user
     /// must resubscribe to the ICS URL afterward.
     /// </summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("regenerate-calendar-token")]
     public async Task<ActionResult<RegenerateCalendarTokenResponseDto>> RegenerateCalendarToken()
     {
-        if (SessionAuthUserId is not int userId) return Unauthorized();
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
 
@@ -103,19 +107,14 @@ public class SystemController : ControllerBase
     /// setup page which version is actually running. InformationalVersion instead of the
     /// numeric AssemblyVersion, because "-p:Version=$NEXT_VERSION" (.gitlab-ci.yml) sets
     /// exactly this attribute (e.g. "1.16.0"), not the AssemblyVersion, which is usually
-    /// padded to x.x.0.0.
+    /// padded to x.x.0.0. PublicUnlessInvalidSession (not plain [AllowAnonymous]): reachable
+    /// without any credential, but an X-Session-Token that IS present and invalid is still
+    /// rejected - matches the former resolution middleware's behavior for this exempt path.
     /// </summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.PublicUnlessInvalidSession)]
     [HttpGet("version")]
     public ActionResult<VersionResponseDto> GetVersion() => new VersionResponseDto
     {
         Version = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "dev",
     };
-
-    /// <summary>Same pattern as AuthController.SessionAuthUserId/SettingsController.SessionUser:
-    /// AuthUserId only for a REAL validated session, API-key requests are rejected.</summary>
-    private int? SessionAuthUserId =>
-        HttpContext.Items.ContainsKey(AuthSessionService.SessionItemKey)
-        && HttpContext.Items[CurrentUserAccessor.HttpContextItemKey] is int userId
-            ? userId
-            : null;
 }

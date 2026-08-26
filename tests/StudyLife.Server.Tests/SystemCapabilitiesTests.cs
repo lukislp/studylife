@@ -90,7 +90,8 @@ public class SystemCapabilitiesTests : IClassFixture<CustomWebApplicationFactory
     [Fact]
     public async Task Version_IsPubliclyReachable_AndReturnsNonEmptyVersion()
     {
-        // GET /api/system/version is one of the few explicit gate exceptions in Program.cs
+        // GET /api/system/version is one of the few explicit auth exemptions
+        // ([Authorize(Policy = "PublicUnlessInvalidSession")], see Auth/StudyLifeAuthorizationPolicies.cs)
         // (pure build metadata for the setup page, no user context) - reachable without any
         // session token or API key.
         using var raw = _factory.CreateClient();
@@ -104,6 +105,26 @@ public class SystemCapabilitiesTests : IClassFixture<CustomWebApplicationFactory
         // Locally/in CI without -p:Version the InformationalVersion attribute still exists
         // (SDK default) - the contract is only "never null/empty" ("dev" fallback otherwise).
         Assert.False(string.IsNullOrEmpty(dto!.Version));
+    }
+
+    /// <summary>
+    /// New pinning test (audit finding A3 refactor): version is reachable WITHOUT any
+    /// credential, but an X-Session-Token that IS present and invalid must still be rejected -
+    /// this is the one behavior the "PublicUnlessInvalidSession" policy exists to reproduce
+    /// (StudyLifeAuthenticationHandler.InvalidSessionTokenItemKey) from the former resolution
+    /// middleware, which is otherwise untested (no test previously exercised an invalid token on
+    /// an exempt GET route).
+    /// </summary>
+    [Fact]
+    public async Task Version_WithInvalidSessionToken_ReturnsUnauthorized()
+    {
+        using var raw = _factory.CreateClient();
+        raw.DefaultRequestHeaders.Clear();
+        raw.DefaultRequestHeaders.Add("X-Session-Token", "not-a-real-token");
+
+        var response = await raw.GetAsync("/api/system/version");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
