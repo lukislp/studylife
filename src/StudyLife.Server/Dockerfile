@@ -62,4 +62,16 @@ COPY publish/${TARGETARCH} .
 RUN mkdir -p /app/app_data && chown -R app:app /app/app_data
 VOLUME ["/app/app_data"]
 USER app
+# Audit finding O6: no HEALTHCHECK existed here before - docker-compose.scale.yml's own
+# "healthcheck:" blocks always take precedence over this per-service, so this default only
+# actually matters for the ONE deploy shape that has no orchestrator-level probe of its own at
+# all: a plain "docker run" single container (README's Deployment section), which combines the
+# web AND worker roles (Worker:Enabled defaults true, self-migrating - the k8s-only
+# wait-for-migrations startup hazard documented on k8s/05-worker.yaml's startupProbe doesn't
+# apply here). That container genuinely serves real DB-backed traffic, so /healthz/ready
+# (HealthController, real SELECT 1) is the right default - not the dependency-free /healthz/live
+# (that distinction only matters for the worker-only k8s Deployment, which never consults this
+# image-level default anyway, see k8s/05-worker.yaml). curl is already installed above.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD curl -f http://localhost:8080/healthz/ready || exit 1
 ENTRYPOINT ["dotnet", "StudyLife.Server.dll"]
