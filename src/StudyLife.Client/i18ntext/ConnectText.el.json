@@ -1,0 +1,10 @@
+{
+  "ConnectPageTitle": "StudyLife — Σύνδεση",
+  "ConnectHeading": "Σύνδεση εξωτερικής εφαρμογής",
+  "ConnectIntro": "Σύνδεση του StudyLife με μια εξωτερική εφαρμογή;",
+  "ConnectButton": "Σύνδεση",
+  "ConnectCancelButton": "Ακύρωση",
+  "ConnectWorking": "Σύνδεση σε εξέλιξη…",
+  "ConnectFailed": "Η σύνδεση απέτυχε. Δοκιμάστε ξανά.",
+  "ConnectInvalidRequest": "Αυτό το αίτημα σύνδεσης δεν είναι έγκυρο ή έχει λήξει."
+}

@@ -603,6 +603,51 @@ public class AuthExchangeResponseDto
     public string Token { get; set; } = "";
 }
 
+/// <summary>
+/// Response of GET /api/auth/whoami - lets a satellite (studylife-mcp, studylife-ai, ...)
+/// resolve the REAL AuthUserId behind whatever credential it was just given, instead of
+/// inventing its own identity from a hash of the credential (identity contract v1, audit A1).
+/// Credential names which of the four API-key slots matched, or "session" for a passkey
+/// session token - see AuthController.Whoami.
+/// </summary>
+public class WhoamiResponseDto
+{
+    public int UserId { get; set; }
+    public string Credential { get; set; } = "";
+}
+
+/// <summary>Body of POST /api/auth/mcp-connect (identity contract v1 §2, session-required):
+/// the browser page /connect/mcp forwards the redirect_uri/state it received from studylife-mcp's
+/// OAuth authorize redirect unchanged.</summary>
+public class McpConnectRequestDto
+{
+    public string RedirectUri { get; set; } = "";
+    public string State { get; set; } = "";
+}
+
+/// <summary>Response of POST /api/auth/mcp-connect: the URL the Blazor page navigates to next,
+/// carrying the single-use assertion back to studylife-mcp's own callback.</summary>
+public class McpConnectResponseDto
+{
+    public string RedirectTo { get; set; } = "";
+}
+
+/// <summary>Body of POST /api/auth/mcp-assertion-exchange (identity contract v1 §2 step 4,
+/// exempt from the API gate - the assertion itself is the credential).</summary>
+public class McpAssertionExchangeRequestDto
+{
+    public string Assertion { get; set; } = "";
+}
+
+/// <summary>Response of POST /api/auth/mcp-assertion-exchange: the real AuthUserId and the
+/// plaintext MCP key studylife-mcp needs to build its own StudyLife client for this user -
+/// this is the only place the plaintext leaves the server for this flow.</summary>
+public class McpAssertionExchangeResponseDto
+{
+    public int UserId { get; set; }
+    public string McpApiKey { get; set; } = "";
+}
+
 /// <summary>Response of POST /api/auth/recovery/generate - the plaintext codes only exist
 /// in this one response, server-side only hashes are stored.</summary>
 public class RecoveryCodesResponseDto

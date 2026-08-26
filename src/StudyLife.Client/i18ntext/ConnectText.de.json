@@ -1,0 +1,10 @@
+{
+  "ConnectPageTitle": "StudyLife — Verbinden",
+  "ConnectHeading": "Externe App verbinden",
+  "ConnectIntro": "StudyLife mit einer externen App verbinden?",
+  "ConnectButton": "Verbinden",
+  "ConnectCancelButton": "Abbrechen",
+  "ConnectWorking": "Verbindung wird hergestellt…",
+  "ConnectFailed": "Die Verbindung hat nicht funktioniert. Bitte versuche es erneut.",
+  "ConnectInvalidRequest": "Diese Verbindungsanfrage ist ungültig oder abgelaufen."
+}

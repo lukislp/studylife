@@ -1,0 +1,10 @@
+{
+  "ConnectPageTitle": "StudyLife — Prisijungimas",
+  "ConnectHeading": "Prijungti išorinę programėlę",
+  "ConnectIntro": "Prijungti „StudyLife“ prie išorinės programėlės?",
+  "ConnectButton": "Prijungti",
+  "ConnectCancelButton": "Atšaukti",
+  "ConnectWorking": "Jungiamasi…",
+  "ConnectFailed": "Prisijungti nepavyko. Bandykite dar kartą.",
+  "ConnectInvalidRequest": "Šis prijungimo užklausimas negalioja arba baigėsi jo galiojimo laikas."
+}

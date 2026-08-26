@@ -667,7 +667,13 @@ app.Use(async (context, next) =>
         // secret in the first place. The session-required subpaths (logout,
         // device list, additional passkey) check within AuthController itself via the
         // AuthSessionService.SessionItemKey item set by the resolution middleware below.
-        if (context.Request.Path.StartsWithSegments("/api/auth"))
+        // EXCEPT /api/auth/whoami (identity contract v1 §1): unlike every other /api/auth path,
+        // whoami's whole purpose is to report which credential the gate matched, so it must
+        // actually run the normal session-or-key resolution below instead of bypassing it -
+        // otherwise there would be nothing to report on.
+        if (context.Request.Path.StartsWithSegments("/api/auth")
+            && !(context.Request.Path.StartsWithSegments("/api/auth/whoami", out var whoamiRemainder)
+                 && string.IsNullOrEmpty(whoamiRemainder.Value)))
         {
             await next();
             return;
@@ -733,6 +739,12 @@ app.Use(async (context, next) =>
                 return;
             }
             context.Items[CurrentUserAccessor.HttpContextItemKey] = keyOwner.Id;
+            // Which slot matched (identity contract v1 §1) - only consumed by whoami today, but
+            // cheap to set unconditionally here instead of re-deriving it per caller.
+            context.Items[AuthSessionService.ApiKeySlotItemKey] = keyOwner.ApiKeyHash == keyHash ? "ha"
+                : keyOwner.AiApiKeyHash == keyHash ? "ai"
+                : keyOwner.McpApiKeyHash == keyHash ? "mcp"
+                : "capture";
         }
     }
     await next();

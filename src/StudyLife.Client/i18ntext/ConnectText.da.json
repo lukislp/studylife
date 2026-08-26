@@ -1,0 +1,10 @@
+{
+  "ConnectPageTitle": "StudyLife — Tilslut",
+  "ConnectHeading": "Tilslut ekstern app",
+  "ConnectIntro": "Vil du forbinde StudyLife med en ekstern app?",
+  "ConnectButton": "Tilslut",
+  "ConnectCancelButton": "Annuller",
+  "ConnectWorking": "Forbinder…",
+  "ConnectFailed": "Forbindelsen mislykkedes. Prøv igen.",
+  "ConnectInvalidRequest": "Denne forbindelsesanmodning er ugyldig eller udløbet."
+}
