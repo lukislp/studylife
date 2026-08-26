@@ -443,10 +443,7 @@ public partial class Index
             .Select(g => new { g.CourseId, Days = (g.TargetDate!.Value.Date - today).Days })
             .Where(x => x.Days <= CourseDeadlineCutoffDays)
             .ToDictionary(x => x.CourseId, x => x.Days);
-        _upcomingGoals = goals
-            .Where(g => g.TargetDate.HasValue && g.CompletedAt == null)
-            .OrderBy(g => g.TargetDate)
-            .Take(5)
+        _upcomingGoals = StudyMetrics.CalcUpcomingCourseGoals(goals, today)
             .Select(g => new DashboardUpcomingGoalsCard.UpcomingGoal(g.CourseName, g.TargetDate))
             .ToList();
 
@@ -463,19 +460,10 @@ public partial class Index
             .Select(g => (g.Grade!.Value, allCourses.FirstOrDefault(c => c.Id == g.CourseId)?.Ects ?? 5)));
         _averageGradeLabel = averageGrade.HasValue ? StudyMetrics.FormatGrade(averageGrade.Value) : "–";
 
-        _topicsCompleted = 0;
-        _topicsTotal = 0;
-        foreach (var course in allCourses.Where(c => settings.SelectedCourseIds.Contains(c.Id)))
-        {
-            if (course.Topics.Count == 0) continue;
-            _topicsTotal += course.Topics.Count;
-            var goal = goals.FirstOrDefault(g => g.CourseId == course.Id);
-            var completedTopics = string.IsNullOrWhiteSpace(goal?.CompletedTopics)
-                ? new HashSet<string>()
-                : goal.CompletedTopics.Split(',', StringSplitOptions.RemoveEmptyEntries).ToHashSet();
-            _topicsCompleted += course.Topics.Count(t => completedTopics.Contains(t));
-        }
-        _topicsPercent = _topicsTotal > 0 ? Math.Min(100.0, _topicsCompleted / (double)_topicsTotal * 100) : 0;
+        var topics = StudyMetrics.CalcTopicsProgress(allCourses, settings.SelectedCourseIds, goals);
+        _topicsCompleted = topics.Completed;
+        _topicsTotal = topics.Total;
+        _topicsPercent = topics.Percent;
 
         // Today's ring - same "all sessions, not IsCompleted-filtered" semantics as the week/trend tiles above.
         // Daily target derived from the weekly quota (25-30h/week ÷ 7).

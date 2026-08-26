@@ -40,7 +40,6 @@ public partial class Index
     private int _insightVariant;
     private bool _weekdayInsightAvailable;
     private string _weekdayInsightText = "";
-    private const int NeglectHistoryDays = 180;
     private const int MiniDonutDays = 30;
 
     // Anomaly hint ("noticeably less this week than usual"): see BuildAnomalyHint.
@@ -77,32 +76,19 @@ public partial class Index
 
     private void BuildNeglectedCourse(UserSettings settings, List<CourseDto> allCourses, List<StudySessionDto> completedHistory)
     {
-        var activeCourses = allCourses
-            .Where(c => settings.SelectedCourseIds.Contains(c.Id) && !settings.CompletedCourseIds.Contains(c.Id))
-            .ToList();
-        if (activeCourses.Count < 2)
+        var today = DateTime.Today;
+        var pick = StudyMetrics.CalcNeglectedCourse(
+            allCourses, settings.SelectedCourseIds, settings.CompletedCourseIds, completedHistory, today);
+        if (pick == null)
         {
             _neglectedCourse = null;
             return;
         }
 
-        var cutoff = DateTime.Today.AddDays(-NeglectHistoryDays);
-        var lastStudiedByCourse = completedHistory
-            .Where(s => s.StartTime.Date >= cutoff)
-            .GroupBy(s => s.CourseId)
-            .ToDictionary(g => g.Key, g => g.Max(s => s.StartTime));
-
-        var today = DateTime.Today;
-        var ranked = activeCourses
-            .Select(c => (Course: c, LastStudied: lastStudiedByCourse.TryGetValue(c.Id, out var d) ? (DateTime?)d : null))
-            .OrderBy(x => x.LastStudied ?? DateTime.MinValue)
-            .ToList();
-
-        var pick = ranked.First();
-        _neglectedCourse = new DashboardNeglectedCourseCard.NeglectedCourse(pick.Course.Name, pick.Course.Icon, pick.Course.Color);
-        _neglectedCourseHint = pick.LastStudied.HasValue
-            ? string.Format(T.LastStudiedDaysAgo ?? "", (today - pick.LastStudied.Value.Date).Days)
-            : string.Format(T.NotStudiedYet ?? "", NeglectHistoryDays);
+        _neglectedCourse = new DashboardNeglectedCourseCard.NeglectedCourse(pick.Value.Course.Name, pick.Value.Course.Icon, pick.Value.Course.Color);
+        _neglectedCourseHint = pick.Value.LastStudied.HasValue
+            ? string.Format(T.LastStudiedDaysAgo ?? "", (today - pick.Value.LastStudied.Value.Date).Days)
+            : string.Format(T.NotStudiedYet ?? "", StudyMetrics.NeglectedCourseHistoryDays);
     }
 
     // Productivity hint: sums the studied hours (same "studied" definition as

@@ -1494,6 +1494,100 @@
         }
       }
     },
+    "/api/metrics/summary": {
+      "get": {
+        "tags": [
+          "Metrics"
+        ],
+        "parameters": [
+          {
+            "name": "program",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "now",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsSummaryDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsSummaryDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsSummaryDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/metrics/achievements": {
+      "get": {
+        "tags": [
+          "Metrics"
+        ],
+        "parameters": [
+          {
+            "name": "program",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsAchievementsDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsAchievementsDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsAchievementsDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/notes": {
       "get": {
         "tags": [
@@ -4519,6 +4613,606 @@
           }
         }
       },
+      "MetricsAchievementsDto": {
+        "required": [
+          "unlocked",
+          "total",
+          "tiers"
+        ],
+        "type": "object",
+        "properties": {
+          "unlocked": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "total": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "tiers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MetricsAchievementTierDto"
+            }
+          }
+        }
+      },
+      "MetricsAchievementTierDto": {
+        "required": [
+          "category",
+          "threshold",
+          "unlocked",
+          "current"
+        ],
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string"
+          },
+          "threshold": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "unlocked": {
+            "type": "boolean"
+          },
+          "current": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "MetricsCourseHoursDto": {
+        "required": [
+          "courseId",
+          "courseName",
+          "courseColor",
+          "hours",
+          "sessionCount"
+        ],
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "courseName": {
+            "type": "string"
+          },
+          "courseColor": {
+            "type": "string"
+          },
+          "hours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "sessionCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "MetricsEctsDto": {
+        "required": [
+          "earned",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "earned": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "total": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "MetricsForecastDto": {
+        "required": [
+          "available",
+          "alreadyDone",
+          "recentWeeklyHours"
+        ],
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "alreadyDone": {
+            "type": "boolean"
+          },
+          "date": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "recentWeeklyHours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "MetricsHoursDto": {
+        "required": [
+          "week",
+          "month",
+          "total",
+          "totalSessions"
+        ],
+        "type": "object",
+        "properties": {
+          "week": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "month": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "total": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "totalSessions": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "MetricsMonthComparisonDto": {
+        "required": [
+          "currentMonthHours",
+          "previousMonthHours",
+          "deltaVsPreviousMonth",
+          "hasYearData"
+        ],
+        "type": "object",
+        "properties": {
+          "currentMonthHours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "previousMonthHours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "deltaVsPreviousMonth": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "hasYearData": {
+            "type": "boolean"
+          },
+          "sameMonthLastYearHours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "deltaVsLastYear": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "MetricsNeglectedCourseDto": {
+        "required": [
+          "courseId",
+          "courseName"
+        ],
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "courseName": {
+            "type": "string"
+          },
+          "lastStudied": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "daysSince": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "MetricsProgramDto": {
+        "required": [
+          "name",
+          "isBuiltIn"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          },
+          "isBuiltIn": {
+            "type": "boolean"
+          }
+        }
+      },
+      "MetricsQuotaDto": {
+        "required": [
+          "hours",
+          "targetMin",
+          "targetMax",
+          "percent",
+          "minPercent",
+          "warning",
+          "missingHours"
+        ],
+        "type": "object",
+        "properties": {
+          "hours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "targetMin": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "targetMax": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "percent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "minPercent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "warning": {
+            "type": "boolean"
+          },
+          "missingHours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "MetricsStreakDto": {
+        "required": [
+          "current",
+          "longest"
+        ],
+        "type": "object",
+        "properties": {
+          "current": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "longest": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "MetricsSummaryDto": {
+        "required": [
+          "asOf",
+          "program",
+          "streak",
+          "hours",
+          "weekQuota",
+          "monthQuota",
+          "ects",
+          "forecast",
+          "monthComparison",
+          "weeklyReport",
+          "courseHours",
+          "topics",
+          "upcomingCourseGoals"
+        ],
+        "type": "object",
+        "properties": {
+          "asOf": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "program": {
+            "$ref": "#/components/schemas/MetricsProgramDto"
+          },
+          "streak": {
+            "$ref": "#/components/schemas/MetricsStreakDto"
+          },
+          "hours": {
+            "$ref": "#/components/schemas/MetricsHoursDto"
+          },
+          "weekQuota": {
+            "$ref": "#/components/schemas/MetricsQuotaDto"
+          },
+          "monthQuota": {
+            "$ref": "#/components/schemas/MetricsQuotaDto"
+          },
+          "ects": {
+            "$ref": "#/components/schemas/MetricsEctsDto"
+          },
+          "averageGrade": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "forecast": {
+            "$ref": "#/components/schemas/MetricsForecastDto"
+          },
+          "monthComparison": {
+            "$ref": "#/components/schemas/MetricsMonthComparisonDto"
+          },
+          "neglectedCourse": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MetricsNeglectedCourseDto"
+              }
+            ]
+          },
+          "weeklyReport": {
+            "$ref": "#/components/schemas/MetricsWeeklyReportDto"
+          },
+          "courseHours": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MetricsCourseHoursDto"
+            }
+          },
+          "topics": {
+            "$ref": "#/components/schemas/MetricsTopicsDto"
+          },
+          "upcomingCourseGoals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MetricsUpcomingGoalDto"
+            }
+          }
+        }
+      },
+      "MetricsTopicsDto": {
+        "required": [
+          "completed",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "completed": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "total": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "MetricsUpcomingGoalDto": {
+        "required": [
+          "courseId",
+          "courseName",
+          "targetDate",
+          "daysLeft"
+        ],
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "courseName": {
+            "type": "string"
+          },
+          "targetDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "daysLeft": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "MetricsWeeklyReportDto": {
+        "required": [
+          "weekId",
+          "hours",
+          "deltaVsPreviousWeek",
+          "sessionCount"
+        ],
+        "type": "object",
+        "properties": {
+          "weekId": {
+            "type": "string"
+          },
+          "hours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "deltaVsPreviousWeek": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "topCourseName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "sessionCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "NoteDto": {
         "required": [
           "id",
@@ -5610,6 +6304,9 @@
     },
     {
       "name": "Health"
+    },
+    {
+      "name": "Metrics"
     },
     {
       "name": "Notes"

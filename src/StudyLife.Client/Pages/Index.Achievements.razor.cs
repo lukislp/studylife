@@ -38,59 +38,48 @@ public partial class Index
     // leak completed-course tallies from other programmes into a freshly switched, empty one.
     private void BuildAchievements(UserSettings settings, HashSet<int> activeCourseIds)
     {
-        var totalHours = _allTimeHistory.Sum(s => (s.EndTime - s.StartTime).TotalHours);
-        var totalSessions = _allTimeHistory.Count;
-        var longestStreak = StudyMetrics.CalcLongestStreak(_allTimeHistory.Select(s => s.StartTime));
-        var coursesCompleted = settings.CompletedCourseIds.Count(id => activeCourseIds.Contains(id));
-        var allCoursesDone = _ectsTotal > 0 && _ectsEarned >= _ectsTotal;
-
-        var earlyBirdCount = _allTimeHistory.Count(s => s.StartTime.Hour < 7);
-        var nightOwlCount = _allTimeHistory.Count(s => s.StartTime.Hour >= 22);
-        var weekendCount = _allTimeHistory.Count(s => s.StartTime.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday);
-        var longestSessionHours = _allTimeHistory.Count > 0 ? _allTimeHistory.Max(s => (s.EndTime - s.StartTime).TotalHours) : 0;
-
-        var weeklyGroups = _allTimeHistory.GroupBy(s => StudyMetrics.WeekStartOf(s.StartTime)).ToList();
-        var perfectWeeks = settings.WeeklyGoalMinHours > 0
-            ? weeklyGroups.Count(g => g.Sum(s => (s.EndTime - s.StartTime).TotalHours) >= settings.WeeklyGoalMinHours)
-            : 0;
-        var maxCourseDiversity = weeklyGroups.Count > 0
-            ? weeklyGroups.Max(g => g.Select(s => s.CourseId).Distinct().Count())
-            : 0;
+        // Raw per-category counts: previously computed independently here AND (for the first 5)
+        // in BackgroundTaskService.Reports's RunAchievementCheckAsync - both now share one
+        // implementation (AchievementCatalog.BuildInputs), also used by the metrics API
+        // (MetricsController, GET /api/metrics/achievements).
+        var inputs = AchievementCatalog.BuildInputs(
+            _allTimeHistory, settings.CompletedCourseIds, activeCourseIds,
+            settings.WeeklyGoalMinHours, _ectsTotal, _ectsEarned, _notesCount, _programsCompleted);
 
         // Thresholds + unlock computation come from the shared AchievementCatalog (StudyLife.Shared) -
         // this partial only keeps the i18n names/icons/UI. See AchievementCatalog's doc comment for
-        // the other two consumers that must stay in sync (StudyMetrics.CountUnlockedAchievements,
-        // BackgroundTaskService.Reports's RunAchievementCheckAsync).
+        // the other consumers that must stay in sync (StudyMetrics.CountUnlockedAchievements,
+        // BackgroundTaskService.Reports's RunAchievementCheckAsync, MetricsController).
         var achievements = new List<DashboardAchievementsCard.Achievement>();
-        foreach (var tier in AchievementCatalog.BuildTiers(AchievementCatalog.HoursTiers, totalHours))
+        foreach (var tier in AchievementCatalog.BuildTiers(AchievementCatalog.HoursTiers, inputs.TotalHours))
             achievements.Add(new DashboardAchievementsCard.Achievement("⏱", string.Format(T.AchievementHoursName ?? "", tier.Threshold), tier.Unlocked, tier.Current, tier.Threshold));
-        foreach (var tier in AchievementCatalog.BuildTiers(AchievementCatalog.StreakTiers, longestStreak))
+        foreach (var tier in AchievementCatalog.BuildTiers(AchievementCatalog.StreakTiers, inputs.LongestStreak))
             achievements.Add(new DashboardAchievementsCard.Achievement("🔥", string.Format(T.AchievementStreakName ?? "", tier.Threshold), tier.Unlocked, tier.Current, tier.Threshold));
-        foreach (var tier in AchievementCatalog.BuildTiers(AchievementCatalog.SessionsTiers, totalSessions))
+        foreach (var tier in AchievementCatalog.BuildTiers(AchievementCatalog.SessionsTiers, inputs.TotalSessions))
             achievements.Add(new DashboardAchievementsCard.Achievement("✅", string.Format(T.AchievementSessionsName ?? "", tier.Threshold), tier.Unlocked, tier.Current, tier.Threshold));
-        foreach (var tier in AchievementCatalog.BuildTiers(AchievementCatalog.CoursesTiers, coursesCompleted))
+        foreach (var tier in AchievementCatalog.BuildTiers(AchievementCatalog.CoursesTiers, inputs.CoursesCompleted))
             achievements.Add(new DashboardAchievementsCard.Achievement("🎓", string.Format(T.AchievementCoursesName ?? "", tier.Threshold), tier.Unlocked, tier.Current, tier.Threshold));
-        achievements.Add(new DashboardAchievementsCard.Achievement("🏆", T.AchievementAllCoursesName ?? "", allCoursesDone, allCoursesDone ? 1 : 0, 1));
-        foreach (var tier in AchievementCatalog.BuildTiers(AchievementCatalog.EarlyBirdTiers, earlyBirdCount))
+        achievements.Add(new DashboardAchievementsCard.Achievement("🏆", T.AchievementAllCoursesName ?? "", inputs.AllCoursesDone, inputs.AllCoursesDone ? 1 : 0, 1));
+        foreach (var tier in AchievementCatalog.BuildTiers(AchievementCatalog.EarlyBirdTiers, inputs.EarlyBirdCount))
             achievements.Add(new DashboardAchievementsCard.Achievement("🌅", string.Format(T.AchievementEarlyBirdName ?? "", tier.Threshold), tier.Unlocked, tier.Current, tier.Threshold));
-        foreach (var tier in AchievementCatalog.BuildTiers(AchievementCatalog.NightOwlTiers, nightOwlCount))
+        foreach (var tier in AchievementCatalog.BuildTiers(AchievementCatalog.NightOwlTiers, inputs.NightOwlCount))
             achievements.Add(new DashboardAchievementsCard.Achievement("🦉", string.Format(T.AchievementNightOwlName ?? "", tier.Threshold), tier.Unlocked, tier.Current, tier.Threshold));
-        foreach (var tier in AchievementCatalog.BuildTiers(AchievementCatalog.WeekendTiers, weekendCount))
+        foreach (var tier in AchievementCatalog.BuildTiers(AchievementCatalog.WeekendTiers, inputs.WeekendCount))
             achievements.Add(new DashboardAchievementsCard.Achievement("🏖", string.Format(T.AchievementWeekendWarriorName ?? "", tier.Threshold), tier.Unlocked, tier.Current, tier.Threshold));
-        foreach (var tier in AchievementCatalog.BuildTiers(AchievementCatalog.MarathonTiers, longestSessionHours))
+        foreach (var tier in AchievementCatalog.BuildTiers(AchievementCatalog.MarathonTiers, inputs.LongestSessionHours))
             achievements.Add(new DashboardAchievementsCard.Achievement("🏃", string.Format(T.AchievementMarathonName ?? "", tier.Threshold), tier.Unlocked, tier.Current, tier.Threshold));
-        foreach (var tier in AchievementCatalog.BuildTiers(AchievementCatalog.PerfectWeekTiers, perfectWeeks))
+        foreach (var tier in AchievementCatalog.BuildTiers(AchievementCatalog.PerfectWeekTiers, inputs.PerfectWeeks))
             achievements.Add(new DashboardAchievementsCard.Achievement("📅", string.Format(T.AchievementPerfectWeekName ?? "", tier.Threshold), tier.Unlocked, tier.Current, tier.Threshold));
-        foreach (var tier in AchievementCatalog.BuildTiers(AchievementCatalog.NotesTiers, _notesCount))
+        foreach (var tier in AchievementCatalog.BuildTiers(AchievementCatalog.NotesTiers, inputs.NotesCount))
             achievements.Add(new DashboardAchievementsCard.Achievement("📝", string.Format(T.AchievementNotesName ?? "", tier.Threshold), tier.Unlocked, tier.Current, tier.Threshold));
-        foreach (var tier in AchievementCatalog.BuildTiers(AchievementCatalog.CourseDiversityTiers, maxCourseDiversity))
+        foreach (var tier in AchievementCatalog.BuildTiers(AchievementCatalog.CourseDiversityTiers, inputs.MaxCourseDiversity))
             achievements.Add(new DashboardAchievementsCard.Achievement("🎯", string.Format(T.AchievementCourseDiversityName ?? "", tier.Threshold), tier.Unlocked, tier.Current, tier.Threshold));
         // Whole-Studiengang completions (_programsCompleted, fetched via GET api/studyprograms in
         // LoadDataAsync): a much rarer, bigger milestone than finishing one course, so only 3 tiers
         // rather than the 4-5 used above. IsCompleted is a purely manual per-programme flag (see
         // StudyProgramsController), never derived from ECTS, so this is intentionally independent of
         // allCoursesDone/coursesCompleted above.
-        foreach (var tier in AchievementCatalog.BuildTiers(AchievementCatalog.ProgramsTiers, _programsCompleted))
+        foreach (var tier in AchievementCatalog.BuildTiers(AchievementCatalog.ProgramsTiers, inputs.ProgramsCompleted))
             achievements.Add(new DashboardAchievementsCard.Achievement("🏅", string.Format(T.AchievementProgramsName ?? "", tier.Threshold), tier.Unlocked, tier.Current, tier.Threshold));
 
         _achievements = achievements;
