@@ -1,3 +1,11 @@
+## [1.40.2](https://github.com/lukislp/studylife/compare/v1.40.1...v1.40.2) (2026-08-26)
+
+
+### Bug Fixes
+
+* **ci:** release from the branch tip, immune to Flux [skip ci] bump race ([5295d15](https://github.com/lukislp/studylife/commit/5295d15a7179646354839cd87ecbddf372eea0d5)), closes [#64](https://github.com/lukislp/studylife/issues/64) [#64](https://github.com/lukislp/studylife/issues/64)
+* coordinate the offline write queue across browser tabs ([1fc43b8](https://github.com/lukislp/studylife/commit/1fc43b83e606be8cb042603c7bdae5dcd85f22d1))
+
 ## [1.40.1](https://github.com/lukislp/studylife/compare/v1.40.0...v1.40.1) (2026-08-26)
 
 
