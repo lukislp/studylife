@@ -62,7 +62,7 @@ public partial class Stats
 
             var avgGrade = StudyMetrics.CalcWeightedAverageGrade(goalsAll
                 .Where(g => g.Grade.HasValue && courseIds.Contains(g.CourseId))
-                .Select(g => (g.Grade!.Value, courses.First(c => c.Id == g.CourseId).Ects)));
+                .Select(g => new StudyMetrics.GradedCourse(g.Grade!.Value, courses.First(c => c.Id == g.CourseId).Ects)));
 
             return new StatsProgramComparisonCard.ProgramRow(
                 program.Name,
