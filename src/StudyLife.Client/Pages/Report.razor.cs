@@ -106,7 +106,7 @@ public partial class Report
             .Where(g => g.Grade.HasValue)
             .Select(g => (g.Grade!.Value, allCourses.FirstOrDefault(c => c.Id == g.CourseId)?.Ects ?? 5)));
         _averageGradeLabel = averageGrade.HasValue
-            ? averageGrade.Value.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ',')
+            ? StudyMetrics.FormatGrade(averageGrade.Value)
             : null;
 
         var groupQuotas = await groupQuotasTask;
