@@ -158,12 +158,7 @@ public class BackupController : ControllerBase
     /// </summary>
     private async Task TouchLastBackupDownloadAt()
     {
-        var settingsEntity = await _db.Settings.FirstOrDefaultAsync();
-        if (settingsEntity == null)
-        {
-            settingsEntity = new UserSettingsEntity();
-            _db.Settings.Add(settingsEntity);
-        }
+        var settingsEntity = await _db.Settings.GetOrCreateAsync(_db);
         settingsEntity.LastBackupDownloadAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
         _settingsCacheVersion.Value++;

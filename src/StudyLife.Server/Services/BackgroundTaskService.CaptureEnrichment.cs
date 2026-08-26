@@ -98,8 +98,6 @@ public partial class BackgroundTaskService
         var selectedCourseIds = await db.Settings
             .Select(s => s.SelectedCourseIds)
             .FirstOrDefaultAsync();
-        return string.IsNullOrEmpty(selectedCourseIds)
-            ? new List<int>()
-            : selectedCourseIds.Split(',').Select(int.Parse).ToList();
+        return CommaSeparatedIds.Parse(selectedCourseIds);
     }
 }

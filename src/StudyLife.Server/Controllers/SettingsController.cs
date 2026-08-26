@@ -64,20 +64,19 @@ public class SettingsController : ControllerBase
             && !await _db.StudyPrograms.AsNoTracking().AnyAsync(p => p.Id == dto.ActiveStudyProgramId.Value))
             return BadRequest("ActiveStudyProgramId does not reference an existing study program.");
 
-        var entity = await _db.Settings.FirstOrDefaultAsync();
+        // AsNoTracking probe first: get-or-create below already saves a freshly created row, which
+        // would otherwise commit before the TargetGraduationDate check below can still reject it.
+        var existingTargetGraduationDate = await _db.Settings.AsNoTracking()
+            .Select(s => (DateTime?)s.TargetGraduationDate).FirstOrDefaultAsync();
         // Only reject *newly set* past dates: an already stored date may continue to be
         // stored after it has elapsed (the client always sends the complete settings object
         // on PUT - otherwise, e.g., a theme change would suddenly fail).
         if (dto.TargetGraduationDate.HasValue
             && dto.TargetGraduationDate.Value.Date < DateTime.Today
-            && dto.TargetGraduationDate != entity?.TargetGraduationDate)
+            && dto.TargetGraduationDate != existingTargetGraduationDate)
             return BadRequest("TargetGraduationDate must not be in the past.");
 
-        if (entity == null)
-        {
-            entity = new UserSettingsEntity();
-            _db.Settings.Add(entity);
-        }
+        var entity = await _db.Settings.GetOrCreateAsync(_db);
         entity.SelectedCourseIds = string.Join(",", dto.SelectedCourseIds);
         entity.CompletedCourseIds = string.Join(",", dto.CompletedCourseIds);
         entity.Theme = dto.Theme;
@@ -132,12 +131,7 @@ public class SettingsController : ControllerBase
     [HttpPost("progress-share/enable")]
     public async Task<ActionResult<UserSettingsDto>> EnableProgressShare()
     {
-        var entity = await _db.Settings.FirstOrDefaultAsync();
-        if (entity == null)
-        {
-            entity = new UserSettingsEntity();
-            _db.Settings.Add(entity);
-        }
+        var entity = await _db.Settings.GetOrCreateAsync(_db);
         entity.ProgressShareEnabled = true;
         entity.ProgressShareToken = GenerateShareToken();
         await _db.SaveChangesAsync();
@@ -471,10 +465,8 @@ public class SettingsController : ControllerBase
     {
         SelectedCourseIds = string.IsNullOrEmpty(e.SelectedCourseIds)
             ? new List<int> { 1, 2, 3, 4 }
-            : e.SelectedCourseIds.Split(',').Select(int.Parse).ToList(),
-        CompletedCourseIds = string.IsNullOrEmpty(e.CompletedCourseIds)
-            ? new List<int>()
-            : e.CompletedCourseIds.Split(',').Select(int.Parse).ToList(),
+            : CommaSeparatedIds.Parse(e.SelectedCourseIds),
+        CompletedCourseIds = CommaSeparatedIds.Parse(e.CompletedCourseIds),
         Theme = e.Theme,
         AccentColor = string.IsNullOrWhiteSpace(e.AccentColor) ? "coral" : e.AccentColor,
         AutoSwitchFocus = e.AutoSwitchFocus,

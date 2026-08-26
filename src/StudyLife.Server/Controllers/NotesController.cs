@@ -96,8 +96,6 @@ public class NotesController : ControllerBase
         SourceUrl = e.SourceUrl,
         Tags = e.Tags,
         Summary = e.Summary,
-        RelatedNoteIds = string.IsNullOrEmpty(e.RelatedNoteIds)
-            ? new List<int>()
-            : e.RelatedNoteIds.Split(',').Select(int.Parse).ToList()
+        RelatedNoteIds = CommaSeparatedIds.Parse(e.RelatedNoteIds)
     };
 }
