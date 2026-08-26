@@ -47,21 +47,31 @@ public class TtsController : ControllerBase
     private static readonly ConcurrentDictionary<string, Task<byte[]>> InFlightSyntheses = new();
 
     private readonly StudyLifeDb _db;
-    private readonly PiperVoiceRegistry _voices;
-    private readonly EspeakPhonemizer _phonemizer;
+    // Null when Speech:Enabled=false (Program.cs) - only the k8s worker Deployment sets that
+    // (audit finding O6: the worker never serves user traffic, so it never legitimately reaches
+    // this controller). Same optional-service pattern as BackupController's
+    // DatabaseBackupService?/DatabaseRestoreService? for the Postgres case.
+    private readonly PiperVoiceRegistry? _voices;
+    private readonly EspeakPhonemizer? _phonemizer;
     private readonly IDistributedCache _cache;
 
-    public TtsController(StudyLifeDb db, PiperVoiceRegistry voices, EspeakPhonemizer phonemizer, IDistributedCache cache)
+    public TtsController(StudyLifeDb db, IDistributedCache cache,
+        PiperVoiceRegistry? voices = null, EspeakPhonemizer? phonemizer = null)
     {
         _db = db;
+        _cache = cache;
         _voices = voices;
         _phonemizer = phonemizer;
-        _cache = cache;
     }
 
     [HttpGet("{id}/tts")]
     public async Task<IActionResult> Synthesize(int id, [FromQuery] string? lang)
     {
+        // Speech:Enabled=false (Program.cs) - checked first, before any DB/argument work, same
+        // as BackupController's IsRawBackupAvailable check.
+        if (_voices is null || _phonemizer is null)
+            return NotFound(new { error = "text-to-speech is not available on this server" });
+
         if (string.IsNullOrWhiteSpace(lang))
             return BadRequest(new { error = "lang query parameter is required" });
 

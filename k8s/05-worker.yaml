@@ -76,6 +76,19 @@ spec:
               value: "Kubernetes"
             - name: Worker__ReplicaCount
               value: "1" # fallback only, in case the Kubernetes API is ever unreachable
+            # Audit finding O6: this pod runs the same image as k8s/04-web.yaml but never serves
+            # user traffic (no Service in front of it, see the class comment above) - it has no
+            # legitimate way to reach TtsController/DictationController, and no BackgroundTaskService
+            # job calls into either speech stack (confirmed: no BackgroundTaskService*.cs file
+            # references Tts/Stt/Piper/Whisper). Speech:Enabled=false (Program.cs) skips registering
+            # PiperVoiceRegistry/EspeakPhonemizer/WhisperTranscriber here entirely. Both already load
+            # their actual ONNX/ggml model bytes LAZILY on first use rather than at startup (see
+            # their class comments), so this is defense-in-depth against any future/accidental call
+            # path rather than a fix for a measured eager-startup memory cost. Deliberately NOT set
+            # on k8s/04-web.yaml, docker-compose.scale.yml's worker service, or the single-container
+            # default - those flows keep serving "read note aloud"/dictation unchanged.
+            - name: Speech__Enabled
+              value: "false"
             # APNs channel (ApnsSender) - identical config to k8s/04-web.yaml, see the comment
             # there. The worker sends most push notifications (30s tick), so it's just as
             # necessary here as in the web pod (which e.g. sends new personal-best pushes

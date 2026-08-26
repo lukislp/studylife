@@ -291,19 +291,37 @@ if (!isPostgres)
 }
 builder.Services.AddScoped<SystemSecretsService>();
 builder.Services.AddSingleton<VapidKeysHolder>();
-// "Read note aloud": voices are ONNX files baked into the image (see Dockerfile), not
-// checked into this repo - loading one is real work (ONNX Runtime session init), so the
-// registry caches loaded voices process-wide instead of per-request. Which languages are
-// actually shipped is a Dockerfile concern, not a code concern - TryGet just returns null
-// for anything not present on disk, which the controller turns into a 404.
-builder.Services.AddSingleton(new StudyLife.Tts.PiperVoiceRegistry(
-    builder.Configuration["Tts:VoicesDirectory"] ?? Path.Combine(builder.Environment.ContentRootPath, "tts-voices")));
-builder.Services.AddSingleton<StudyLife.Tts.EspeakPhonemizer>();
-// Voice dictation: one multilingual Whisper model (see Dockerfile), unlike PiperVoiceRegistry's
-// per-language voices - loaded once at startup instead of lazily, since (unlike TTS voices)
-// there's only ever the one model to load, no "which languages are actually present" question.
-builder.Services.AddSingleton(new StudyLife.Stt.WhisperTranscriber(
-    builder.Configuration["Stt:ModelPath"] ?? Path.Combine(builder.Environment.ContentRootPath, "stt-model", "ggml-base.bin")));
+// Speech:Enabled gates TTS (PiperVoiceRegistry/EspeakPhonemizer) and STT (WhisperTranscriber)
+// registration entirely - default true, unchanged behavior for the single-container Pi,
+// docker-compose, and the k8s WEB Deployment. Only the k8s WORKER Deployment
+// (k8s/05-worker.yaml) sets this to "false" (audit finding O6): it runs the same image as web
+// but never serves user traffic (no Service in front of it, see that file's comment), so it has
+// no legitimate way to reach TtsController/DictationController in the first place. Both
+// PiperVoiceRegistry and WhisperTranscriber already load their actual model bytes LAZILY on
+// first use, not in their constructors (see their class comments) - registering them here only
+// ever allocates a lightweight wrapper holding a path string, no ONNX/ggml bytes read into
+// memory yet. Gating the registration off is therefore defense-in-depth against any
+// future/accidental call path on the worker (confirmed today: no BackgroundTaskService*.cs file
+// references Tts/Stt/Piper/Whisper - only the two controllers do) rather than a fix for a
+// measured eager-startup memory cost.
+var speechEnabled = builder.Configuration.GetValue("Speech:Enabled", true);
+if (speechEnabled)
+{
+    // "Read note aloud": voices are ONNX files baked into the image (see Dockerfile), not
+    // checked into this repo - loading one is real work (ONNX Runtime session init), so the
+    // registry caches loaded voices process-wide instead of per-request. Which languages are
+    // actually shipped is a Dockerfile concern, not a code concern - TryGet just returns null
+    // for anything not present on disk, which the controller turns into a 404.
+    builder.Services.AddSingleton(new StudyLife.Tts.PiperVoiceRegistry(
+        builder.Configuration["Tts:VoicesDirectory"] ?? Path.Combine(builder.Environment.ContentRootPath, "tts-voices")));
+    builder.Services.AddSingleton<StudyLife.Tts.EspeakPhonemizer>();
+    // Voice dictation: one multilingual Whisper model (see Dockerfile), unlike PiperVoiceRegistry's
+    // per-language voices - covers all of StudyLife's languages, so no per-language registry is
+    // needed here. Loaded lazily on first use, same as PiperVoiceRegistry (see WhisperTranscriber's
+    // class comment) - registering the wrapper here does not read the model into memory.
+    builder.Services.AddSingleton(new StudyLife.Stt.WhisperTranscriber(
+        builder.Configuration["Stt:ModelPath"] ?? Path.Combine(builder.Environment.ContentRootPath, "stt-model", "ggml-base.bin")));
+}
 // Worker:Enabled disables BackgroundTaskService (30s tick loop: push reminders, reports, maintenance)
 // when this process is a stateless web pod in scaled operation (docker-
 // compose.scale.yml/k8s/) - there the worker runs as its OWN deployment. Default true =
