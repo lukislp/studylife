@@ -172,38 +172,43 @@ public class TimerService
             // Wall clock instead of tick counting (see the _phaseEndsAtUtc comment). The loop
             // also catches up on multiple entirely missed phases after a suspension -
             // each subsequent phase starts at the END of the previous one (not at "now"), so
-            // the total duration stays exact.
+            // the total duration stays exact. TimerModeCatalog.AdvancePhase (StudyLife.Shared)
+            // owns the actual transition math, shared with the server's Live Activity push
+            // worker (audit finding D5) - this loop only adds the client-only bookkeeping
+            // (focus streak, OnBreakStarted) around each step.
             var now = DateTime.UtcNow;
+            var modeData = new TimerModeCatalog.ModeData(_mode!.Id, _mode.Name, _mode.FocusMinutes, _mode.BreakMinutes, _mode.Rounds);
             while (_phaseEndsAtUtc is { } endsAt && now >= endsAt)
             {
                 phaseChanged = true;
+                var step = TimerModeCatalog.AdvancePhase(modeData, _isBreak, _currentRound, endsAt);
+                _currentRound = step.Round;
+                if (step.Complete)
+                {
+                    StopInternal();
+                    complete = true;
+                    break;
+                }
+                _isBreak = step.IsBreak;
+                _phaseEndsAtUtc = step.PhaseEndsAt;
                 if (_isBreak)
                 {
-                    _currentRound++;
-                    if (_mode != null && _currentRound > _mode.Rounds)
-                    {
-                        StopInternal();
-                        complete = true;
-                        break;
-                    }
-                    _isBreak = false;
-                    _phaseEndsAtUtc = endsAt.AddSeconds(_mode!.FocusMinutes * 60);
-                    // New focus phase begins exactly at the previous phase's end (endsAt), not
-                    // "now" - keeps the streak's total accurate across a missed-phase catch-up.
-                    _focusStreakSegmentStartUtc = endsAt;
-                }
-                else
-                {
-                    _isBreak = true;
-                    _phaseEndsAtUtc = endsAt.AddSeconds(_mode!.BreakMinutes * 60);
                     extraEvent = () => OnBreakStarted?.Invoke();
                     // A break interrupts the streak - fold in what was accumulated up to
-                    // endsAt (the segment's real end, not "now") and reset for the next streak.
+                    // step.PreviousPhaseEndsAt (the segment's real end, not "now") and reset for
+                    // the next streak.
                     if (_focusStreakSegmentStartUtc is { } segStart)
-                        _focusStreakSeconds += (int)(endsAt - segStart).TotalSeconds;
+                        _focusStreakSeconds += (int)(step.PreviousPhaseEndsAt - segStart).TotalSeconds;
                     _focusStreakSegmentStartUtc = null;
                     _focusStreakSeconds = 0;
                     _focusMilestonesFired = 0;
+                }
+                else
+                {
+                    // New focus phase begins exactly at the previous phase's end
+                    // (step.PreviousPhaseEndsAt), not "now" - keeps the streak's total accurate
+                    // across a missed-phase catch-up.
+                    _focusStreakSegmentStartUtc = step.PreviousPhaseEndsAt;
                 }
             }
 
