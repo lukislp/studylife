@@ -50,7 +50,7 @@ public class BackgroundTaskServiceStreakRiskTriggerTests : IClassFixture<CustomW
             var start = DateTime.Now.Date.AddDays(-daysAgo).AddHours(10);
             await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
             {
-                CourseId = 501,
+                CourseId = 1,
                 CourseName = "StreakCourse",
                 CourseColor = "#6C5CE7",
                 StartTime = start,
@@ -109,7 +109,7 @@ public class BackgroundTaskServiceStreakRiskShortStreakTests : IClassFixture<Cus
         var start = DateTime.Now.Date.AddDays(-1).AddHours(10);
         await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
         {
-            CourseId = 502,
+            CourseId = 1,
             CourseName = "SingleDay",
             CourseColor = "#6C5CE7",
             StartTime = start,
@@ -156,7 +156,7 @@ public class BackgroundTaskServiceStreakRiskToggleDisabledTests : IClassFixture<
             var start = DateTime.Now.Date.AddDays(-daysAgo).AddHours(10);
             await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
             {
-                CourseId = 503,
+                CourseId = 1,
                 CourseName = "LongStreak",
                 CourseColor = "#6C5CE7",
                 StartTime = start,
@@ -256,7 +256,7 @@ public class BackgroundTaskServiceWeeklyGoalNudgeOnPaceTests : IClassFixture<Cus
         var start = DateTime.Now.AddHours(-3);
         await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
         {
-            CourseId = 511,
+            CourseId = 1,
             CourseName = "AheadOfPace",
             CourseColor = "#6C5CE7",
             StartTime = start,
@@ -523,7 +523,7 @@ public class BackgroundTaskServiceBestStudyTimeTriggerTests : IClassFixture<Cust
             var start = now.Date.AddDays(-daysAgo).AddHours(bucketStartHour).AddMinutes(15);
             await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
             {
-                CourseId = 521,
+                CourseId = 1,
                 CourseName = "BestTimeCourse",
                 CourseColor = "#6C5CE7",
                 StartTime = start,
@@ -581,7 +581,7 @@ public class BackgroundTaskServiceBestStudyTimeInsufficientHistoryTests : IClass
             var start = DateTime.Now.Date.AddDays(-daysAgo).AddHours(10);
             await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
             {
-                CourseId = 522,
+                CourseId = 1,
                 CourseName = "TooFewSessions",
                 CourseColor = "#6C5CE7",
                 StartTime = start,
@@ -625,7 +625,7 @@ public class BackgroundTaskServiceBestStudyTimeAlreadyStudiedTodayTests : IClass
             var start = DateTime.Now.Date.AddDays(-daysAgo).AddHours(10);
             await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
             {
-                CourseId = 523,
+                CourseId = 1,
                 CourseName = "EnoughHistory",
                 CourseColor = "#6C5CE7",
                 StartTime = start,
@@ -639,7 +639,7 @@ public class BackgroundTaskServiceBestStudyTimeAlreadyStudiedTodayTests : IClass
         var todayStart = DateTime.Now.AddHours(-1);
         await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
         {
-            CourseId = 523,
+            CourseId = 1,
             CourseName = "EnoughHistory",
             CourseColor = "#6C5CE7",
             StartTime = todayStart,
@@ -771,7 +771,7 @@ public class BackgroundTaskServiceStreakRiskExpiredSubscriptionTests : IClassFix
             var start = DateTime.Now.Date.AddDays(-daysAgo).AddHours(10);
             await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
             {
-                CourseId = 531,
+                CourseId = 1,
                 CourseName = "StreakGone",
                 CourseColor = "#6C5CE7",
                 StartTime = start,
@@ -921,7 +921,7 @@ public class BackgroundTaskServiceBestStudyTimeExpiredSubscriptionTests : IClass
             var start = seedNow.Date.AddDays(-daysAgo).AddHours(bucketStartHour).AddMinutes(15);
             await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
             {
-                CourseId = 532,
+                CourseId = 1,
                 CourseName = "BestTimeGone",
                 CourseColor = "#6C5CE7",
                 StartTime = start,

@@ -22,13 +22,16 @@ public class BackupRestoreTests
 {
     // ---------- Helpers ----------
 
-    private static StudySessionDto MakeSession(string courseName) => new()
+    // The marker lives in Topic, not CourseName (audit finding M2: POST /api/sessions now
+    // derives CourseName server-side from the resolved catalog course, so a client-supplied
+    // value there can no longer distinguish sessions for this raw-backup round-trip test).
+    private static StudySessionDto MakeSession(string topicMarker) => new()
     {
-        CourseId = 999,
-        CourseName = courseName,
+        CourseId = 1,
+        CourseName = "irrelevant",
         StartTime = DateTime.Today.AddDays(-1).AddHours(10),
         EndTime = DateTime.Today.AddDays(-1).AddHours(11),
-        Topic = "Restore-Test",
+        Topic = topicMarker,
         IsCompleted = false,
         TimerModeId = 1,
     };
@@ -53,13 +56,13 @@ public class BackupRestoreTests
         return memory.ToArray();
     }
 
-    private static long CountSessionsByName(string dbPath, string courseName)
+    private static long CountSessionsByName(string dbPath, string topicMarker)
     {
         using var connection = new SqliteConnection($"Data Source={dbPath};Mode=ReadOnly;Pooling=False");
         connection.Open();
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT COUNT(*) FROM Sessions WHERE CourseName = $name;";
-        command.Parameters.AddWithValue("$name", courseName);
+        command.CommandText = "SELECT COUNT(*) FROM Sessions WHERE Topic = $topic;";
+        command.Parameters.AddWithValue("$topic", topicMarker);
         return (long)(command.ExecuteScalar() ?? 0L);
     }
 
@@ -158,8 +161,8 @@ public class BackupRestoreTests
         Assert.Equal(1, CountSessionsByName(factory.DbPath, courseB));
         var sessions = await client.GetFromJsonAsync<List<StudySessionDto>>("/api/sessions");
         Assert.NotNull(sessions);
-        Assert.Contains(sessions!, s => s.CourseName == courseA);
-        Assert.Contains(sessions!, s => s.CourseName == courseB);
+        Assert.Contains(sessions!, s => s.Topic == courseA);
+        Assert.Contains(sessions!, s => s.Topic == courseB);
 
         // 8. Status endpoint reports the pending restore (basis for the UI banner).
         using (var status = JsonDocument.Parse(await client.GetStringAsync("/api/backup/restore/status")))
