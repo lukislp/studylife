@@ -3,15 +3,17 @@
 @using StudyLife.Client.Models
 @using StudyLife.Client.Services
 @using StudyLife.Shared
+@inherits LocalizedComponentBase<I18nText.FocusText>
 @inject AppStateService State
 @inject TimerService Timer
 @inject NotificationService Notifications
 @inject INativeHealthData Health
-@inject Toolbelt.Blazor.I18nText.I18nText I18nText
 @inject IJSRuntime JS
 @inject HttpClient Http
 @implements IDisposable
 
+@if (IsTextLoaded)
+{
 <PageTitle>@T.FocusPageTitle</PageTitle>
 
 <div class="focus-page" style="--g1: @_gradientFrom; --g2: @_gradientTo">
@@ -80,6 +82,7 @@
 
     <FocusModeSwitcher Modes="_allModes" CurrentModeId="_currentMode?.Id" OnSelectMode="m => SelectMode(m)" />
 </div>
+}
 
 @code {
     private StudySession? _activeSession;
@@ -109,7 +112,6 @@
     private bool _isBreak;
     private int _currentRound;
     private bool _isRunning;
-    private I18nText.FocusText T = new();
 
     // Ambient background sound (white/brown noise), generated purely client-side via the Web
     // Audio API (see Focus.razor.js). Preference lives in localStorage, not on the
@@ -128,33 +130,40 @@
 
     private I18nLanguageWatcher _langWatcher = null!;
 
-    protected override async Task OnInitializedAsync()
-    {
-        // Independent of each other - start them all immediately instead of await-ing one after
-        // another (same pattern as Index.razor.cs/Setup.razor). GetSessionsAsync now dedupes
-        // concurrent in-flight callers (audit S8), so GetActiveSessionAsync/GetUpcomingSessionAsync
-        // (both wrap it internally) would no longer cost a second request even if called
-        // separately - kept as one manual fetch anyway, unchanged from before that fix, simply to
-        // avoid the two extra list scans of calling both wrappers.
-        var i18nTask = I18nText.GetTextTableAsync<I18nText.FocusText>(this);
-        var sessionsTask = State.GetSessionsAsync();
-        var remoteTimerTask = RefreshRemoteTimerAsync();
-        var settingsTask = State.GetSettingsAsync();
+    // Independent of each other and of the text-table fetch that LocalizedComponentBase starts
+    // in parallel - kicked off here (OnInitializingAsync, runs alongside that fetch) instead of
+    // await-ing one after another once text has loaded, same pattern as Index.razor.cs/Setup.razor.
+    // GetSessionsAsync now dedupes concurrent in-flight callers (audit S8), so
+    // GetActiveSessionAsync/GetUpcomingSessionAsync (both wrap it internally) would no longer cost
+    // a second request even if called separately - kept as one manual fetch anyway, unchanged from
+    // before that fix, simply to avoid the two extra list scans of calling both wrappers.
+    private Task<List<StudySession>>? _sessionsTask;
+    private Task? _remoteTimerTask;
+    private Task<UserSettings>? _settingsTask;
 
-        T = await i18nTask;
+    protected override Task OnInitializingAsync()
+    {
+        _sessionsTask = State.GetSessionsAsync();
+        _remoteTimerTask = RefreshRemoteTimerAsync();
+        _settingsTask = State.GetSettingsAsync();
+        return Task.CompletedTask;
+    }
+
+    protected override async Task OnTextLoadedAsync()
+    {
         _langWatcher = new I18nLanguageWatcher(I18nText);
         await _langWatcher.InitAsync();
-        var sessions = await sessionsTask;
+        var sessions = await _sessionsTask!;
         var nowForSessions = DateTime.Now;
         _activeSession = sessions.FirstOrDefault(s => !s.IsCompleted && s.StartTime <= nowForSessions && s.EndTime >= nowForSessions);
         _upcomingSession = sessions
             .Where(s => !s.IsCompleted && s.StartTime > nowForSessions)
             .OrderBy(s => s.StartTime)
             .FirstOrDefault();
-        await remoteTimerTask;
+        await _remoteTimerTask!;
 
         // Built-in + user-defined modes (from settings) in the same switcher
-        var settings = await settingsTask;
+        var settings = await _settingsTask!;
         _allModes = CustomTimerModes.Combined(settings.CustomTimerModes);
         RefreshLocalizedModeNames();
 
@@ -268,9 +277,10 @@
 
         // Catches a live language switch (no page reload) one render after it happens - see
         // RefreshLocalizedModeNames's doc comment for why this can't just be automatic.
-        // _langWatcher can still be null here: OnInitializedAsync's first await (GetTextTableAsync)
-        // doesn't complete synchronously, so Blazor renders once - firstRender=true - before the
-        // rest of OnInitializedAsync (incl. _langWatcher's assignment) has run; a later render
+        // _langWatcher can still be null here: LocalizedComponentBase's OnInitializedAsync awaits
+        // the text-table fetch before this component's own OnTextLoadedAsync (where _langWatcher
+        // is assigned) even starts, and that first await doesn't complete synchronously, so Blazor
+        // renders once - firstRender=true - before OnTextLoadedAsync has run; a later render
         // catches up once it's set (same established gotcha as Stats.razor.cs's heatmap-scroll comment).
         if (_langWatcher != null && await _langWatcher.CheckChangedAsync())
         {
@@ -392,7 +402,7 @@
         var modeName = _currentMode?.Name ?? T.PhaseFocus;
         await Notifications.ShowLocalNotificationAsync(
             T.BreakStartedTitle,
-            string.Format(T.BreakStartedBody, modeName));
+            string.Format(T.BreakStartedBody ?? "", modeName));
         await InvokeAsync(StateHasChanged);
     }
 
@@ -423,7 +433,7 @@
         var phase = _isBreak ? T.PhaseBreak : T.PhaseFocus;
         await Notifications.ShowLocalNotificationAsync(
             T.TimerPausedTitle,
-            string.Format(T.TimerPausedBody, phase, FormatTime(_secondsLeft)));
+            string.Format(T.TimerPausedBody ?? "", phase, FormatTime(_secondsLeft)));
     }
 
     private async void OnSessionComplete()
@@ -432,7 +442,7 @@
         await SyncAmbientPlayback(); // Timer.IsRunning is already false at this point
         await Notifications.ShowLocalNotificationAsync(
             T.SessionCompletedTitle,
-            string.Format(T.SessionCompletedBody, _activeSession?.CourseName ?? "Session"));
+            string.Format(T.SessionCompletedBody ?? "", _activeSession?.CourseName ?? "Session"));
         if (_activeSession != null)
         {
             _activeSession.IsCompleted = true;

@@ -5,13 +5,15 @@
 @using StudyLife.Client.Models
 @using StudyLife.Client.Services
 @using StudyLife.Shared
+@inherits LocalizedComponentBase<I18nText.NotesText>
 @inject HttpClient Http
 @inject AppStateService State
-@inject Toolbelt.Blazor.I18nText.I18nText I18nText
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 @implements IDisposable
 
+@if (IsTextLoaded)
+{
 <PageTitle>@T.PageTitle</PageTitle>
 
 @if (_printView)
@@ -338,6 +340,7 @@ else
         }
     </div>
 }
+}
 
 @code {
     private List<NoteDto> _notes = new();
@@ -363,7 +366,6 @@ else
     private bool _confirmingDelete;
     private System.Threading.Timer? _debounce;
     private System.Threading.Timer? _searchDebounce;
-    private I18nText.NotesText T = new();
     private string _searchQuery = "";
     private int _filterCourseId = 0;
     private List<NoteDto>? _searchResults; // null = no active search, otherwise server FTS hits
@@ -394,14 +396,20 @@ else
             .Where(n => !string.IsNullOrWhiteSpace(n.Title) || !string.IsNullOrWhiteSpace(n.Content))
             .ToList();
 
+    /// <summary>Record struct instead of a value tuple for PrintGroups below - LINQ over a
+    /// List<(...)> of value tuples has triggered a Mono AOT crash at compile time (not call time)
+    /// in the native app shell (studylife-app, BlazorWebView) that links this same Client project -
+    /// see project_studylife_app_ios_aot_linq_tuple_crash.</summary>
+    private readonly record struct NotePrintGroup(CourseDto? Course, List<NoteDto> Notes);
+
     // Grouped by course for the print view (general notes without a course first, then
     // the courses alphabetically) - reads much better as a document than a flat list.
-    private List<(CourseDto? Course, List<NoteDto> Notes)> PrintGroups =>
+    private List<NotePrintGroup> PrintGroups =>
         PrintCandidateNotes
             .GroupBy(n => n.CourseId)
-            .Select(g => (
-                Course: g.Key.HasValue ? _courses.FirstOrDefault(c => c.Id == g.Key.Value) : null,
-                Notes: g.OrderByDescending(n => n.UpdatedAt).ToList()))
+            .Select(g => new NotePrintGroup(
+                g.Key.HasValue ? _courses.FirstOrDefault(c => c.Id == g.Key.Value) : null,
+                g.OrderByDescending(n => n.UpdatedAt).ToList()))
             .OrderBy(g => g.Course == null ? 0 : 1)
             .ThenBy(g => g.Course?.Name ?? "")
             .ToList();
@@ -429,23 +437,30 @@ else
         try { await JS.InvokeVoidAsync("printPage"); } catch { /* best-effort, ignore */ }
     }
 
-    protected override async Task OnInitializedAsync()
-    {
-        // Independent of each other - start them all immediately instead of await-ing one after
-        // another (same pattern as Index.razor.cs/Setup.razor).
-        var settingsTask = State.GetSettingsAsync();
-        var coursesTask = State.GetCoursesAsync();
-        var loadNotesTask = LoadNotes();
-        var i18nTask = I18nText.GetTextTableAsync<I18nText.NotesText>(this);
+    // Independent of each other, and of the text-table fetch that LocalizedComponentBase starts
+    // in parallel - kicked off here (OnInitializingAsync, runs alongside that fetch) instead of
+    // await-ing one after another once text has loaded, same pattern as Index.razor.cs/Setup.razor.
+    private Task<UserSettings>? _settingsTask;
+    private Task<List<CourseDto>>? _coursesTask;
+    private Task? _loadNotesTask;
 
-        var settings = await settingsTask;
-        var allCourses = await coursesTask;
+    protected override Task OnInitializingAsync()
+    {
+        _settingsTask = State.GetSettingsAsync();
+        _coursesTask = State.GetCoursesAsync();
+        _loadNotesTask = LoadNotes();
+        return Task.CompletedTask;
+    }
+
+    protected override async Task OnTextLoadedAsync()
+    {
+        var settings = await _settingsTask!;
+        var allCourses = await _coursesTask!;
         _allProgramCourseIds = allCourses.Select(c => c.Id).ToHashSet();
         _courses = allCourses
             .Where(c => settings.SelectedCourseIds.Contains(c.Id) || settings.CompletedCourseIds.Contains(c.Id))
             .ToList();
-        await loadNotesTask;
-        T = await i18nTask;
+        await _loadNotesTask!;
 
         // PWA app-icon shortcut ("New note") links here with ?new=1 to jump straight into a fresh note.
         var uri = Nav.ToAbsoluteUri(Nav.Uri);
@@ -957,9 +972,9 @@ else
     {
         var diff = DateTime.Now - dt;
         if (diff.TotalMinutes < 1) return T.JustNow;
-        if (diff.TotalHours < 1) return string.Format(T.MinAgo, (int)diff.TotalMinutes);
-        if (diff.TotalDays < 1) return string.Format(T.HourAgo, (int)diff.TotalHours);
-        if (diff.TotalDays < 7) return string.Format(T.DayAgo, (int)diff.TotalDays);
+        if (diff.TotalHours < 1) return string.Format(T.MinAgo ?? "", (int)diff.TotalMinutes);
+        if (diff.TotalDays < 1) return string.Format(T.HourAgo ?? "", (int)diff.TotalHours);
+        if (diff.TotalDays < 7) return string.Format(T.DayAgo ?? "", (int)diff.TotalDays);
         return dt.ToString("dd.MM.yyyy");
     }
 

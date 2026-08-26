@@ -65,7 +65,7 @@ public partial class Stats
                 var avg = StudyMetrics.CalcWeightedAverageGrade(g.Select(x => (x.Grade, x.Course!.Ects)))!.Value;
                 // German grading scale: 1.0 = best grade -> inverted, so better grades yield taller bars.
                 var percent = Math.Clamp((5.0 - (double)avg) / 4.0 * 100, 0, 100);
-                return new StatsGradeChartCard.GradePoint(string.Format(T.SemesterShortFormat, g.Key), avg, g.Count(), percent);
+                return new StatsGradeChartCard.GradePoint(string.Format(T.SemesterShortFormat ?? "", g.Key), avg, g.Count(), percent);
             })
             .ToList();
     }
@@ -99,7 +99,14 @@ public partial class Stats
             .ToList();
     }
 
-    private void BuildHoursEctsScatter(List<CourseDto> allCourses, List<(CourseDto Course, double Hours, int Count)> perCourseHours, UserSettings settings)
+    /// <summary>Record struct instead of a value tuple for BuildHoursEctsScatter's materialized
+    /// `points` list below - LINQ over a List<(...)> of value tuples has triggered a Mono AOT
+    /// crash at compile time (not call time) in the native app shell (studylife-app,
+    /// BlazorWebView) that links this same Client project - see
+    /// project_studylife_app_ios_aot_linq_tuple_crash.</summary>
+    private readonly record struct HoursEctsPoint(CourseDto Course, double Hours, int EctsEarned);
+
+    private void BuildHoursEctsScatter(List<CourseDto> allCourses, List<CourseHoursRow> perCourseHours, UserSettings settings)
     {
         // "What did the time actually earn?": hours per course (same raw aggregate as the
         // hours-vs-grade scatter) against the ECTS harvested. Course ECTS are all-or-nothing,
@@ -114,10 +121,10 @@ public partial class Stats
             .ToList();
 
         var points = candidates
-            .Select(c => (
-                Course: c,
-                Hours: perCourseHours.FirstOrDefault(r => r.Course.Id == c.Id).Hours,
-                EctsEarned: settings.CompletedCourseIds.Contains(c.Id) ? c.Ects : 0))
+            .Select(c => new HoursEctsPoint(
+                c,
+                perCourseHours.FirstOrDefault(r => r.Course.Id == c.Id).Hours,
+                settings.CompletedCourseIds.Contains(c.Id) ? c.Ects : 0))
             .ToList();
 
         var maxHours = Math.Max(1.0, points.Count == 0 ? 0 : Math.Ceiling(points.Max(p => p.Hours)));
@@ -135,7 +142,11 @@ public partial class Stats
             .ToList();
     }
 
-    private void BuildHoursGradeScatter(List<CourseGoalDto> goals, List<CourseDto> allCourses, List<(CourseDto Course, double Hours, int Count)> perCourseHours)
+    /// <summary>Record struct instead of a value tuple for BuildHoursGradeScatter's materialized
+    /// `points` list below - see HoursEctsPoint's doc comment above for why.</summary>
+    private readonly record struct HoursGradePoint(CourseDto Course, decimal Grade, double Hours);
+
+    private void BuildHoursGradeScatter(List<CourseGoalDto> goals, List<CourseDto> allCourses, List<CourseHoursRow> perCourseHours)
     {
         // "Does more studying pay off?": hours per course (same source as _courseRows, the
         // `raw` aggregate from the AppStateService sessions) against the grade achieved. Graded
@@ -144,7 +155,7 @@ public partial class Stats
             .Where(g => g.Grade.HasValue)
             .Select(g => (Grade: g.Grade!.Value, Course: allCourses.FirstOrDefault(c => c.Id == g.CourseId)))
             .Where(x => x.Course != null)
-            .Select(x => (Course: x.Course!, x.Grade, perCourseHours.FirstOrDefault(r => r.Course.Id == x.Course!.Id).Hours))
+            .Select(x => new HoursGradePoint(x.Course!, x.Grade, perCourseHours.FirstOrDefault(r => r.Course.Id == x.Course!.Id).Hours))
             .ToList();
 
         var maxHours = Math.Max(1.0, points.Count == 0 ? 0 : Math.Ceiling(points.Max(p => p.Hours)));
