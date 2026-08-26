@@ -95,6 +95,13 @@ public static partial class StudyMetrics
     public static string FormatGrade(decimal grade) => grade.ToString("0.00", GradeDisplayFormat);
 
     /// <summary>
+    /// Same comma-decimal convention as <see cref="FormatGrade(decimal)"/>, for the handful of
+    /// call sites that need a different precision (e.g. "0.0" for a compact chart label) than
+    /// the default "0.00" - still just one place owning the separator choice.
+    /// </summary>
+    public static string FormatGrade(decimal grade, string format) => grade.ToString(format, GradeDisplayFormat);
+
+    /// <summary>
     /// Result of <see cref="CalcForecast"/>. BaselineWeeksNeeded / RecentWeeklyHours /
     /// ReferenceWeeklyHours are only populated when Available=true - Index.razor additionally
     /// needs them for the graduation goal card (reverse calculation), Stats.razor only the date.

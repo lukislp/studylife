@@ -72,7 +72,7 @@ public partial class Stats
                 studied.Count,
                 ectsEarned,
                 ectsTotal,
-                avgGrade?.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ','),
+                avgGrade.HasValue ? StudyMetrics.FormatGrade(avgGrade.Value) : null,
                 0);
         }));
 
