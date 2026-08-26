@@ -61,16 +61,29 @@ public static class StudyLifeAuthorizationPolicies
                 StudyLifeAuthenticationHandler.SchemeName, _ => { });
 
         services.AddSingleton<IAuthorizationHandler, PublicUnlessInvalidSessionHandler>();
+        // Audit finding A6 round 2: per-slot (ha/ai/mcp/capture) endpoint scoping for API keys -
+        // see ApiKeyScopes for the map and ApiKeyScopeAuthorizationHandler for the enforcement
+        // (session/calendar-token credentials are untouched by it, only api-key auth is scoped).
+        services.AddSingleton<IAuthorizationHandler, ApiKeyScopeAuthorizationHandler>();
         // Every automatic authorization failure (ApiAccess/SessionOnly/PublicUnlessInvalidSession)
         // challenges (401) instead of the ASP.NET Core default of forbidding (403) an already-
         // authenticated-but-not-permitted principal - see the handler's own comment for why:
         // an API-key credential IS "authenticated" in ASP.NET Core's sense, but every one of the
-        // properties this replaces returned 401, not 403, for exactly that case.
+        // properties this replaces returned 401, not 403, for exactly that case. The ONE
+        // exception is a scope-only failure from ApiKeyScopeAuthorizationHandler (audit finding
+        // A6 round 2), which the handler below deliberately still answers with 403 - see its
+        // own comment.
         services.AddSingleton<IAuthorizationMiddlewareResultHandler, AlwaysChallengeAuthorizationMiddlewareResultHandler>();
 
         services.AddAuthorization(options =>
         {
-            var apiAccessPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
+            var apiAccessPolicy = new AuthorizationPolicyBuilder()
+                .RequireAuthenticatedUser()
+                // Audit finding A6 round 2: narrows a bare API key to its slot's allowed
+                // endpoints (ApiKeyScopes) - a no-op for session/calendar-token credentials,
+                // which ApiKeyScopeAuthorizationHandler always succeeds unconditionally.
+                .AddRequirements(new ApiKeyScopeRequirement())
+                .Build();
             options.AddPolicy(ApiAccess, apiAccessPolicy);
             // The default for every endpoint that states no requirement of its own - see the
             // class comment for why this MUST be FallbackPolicy and not a chained
@@ -116,10 +129,22 @@ public sealed class PublicUnlessInvalidSessionHandler(IHttpContextAccessor httpC
 /// <summary>
 /// Overrides ASP.NET Core's default "authenticated-but-not-permitted -> Forbid (403),
 /// unauthenticated -> Challenge (401)" split: here EVERY automatic policy failure challenges,
-/// regardless of authentication state. See StudyLifeAuthorizationPolicies for why (this app's
+/// regardless of authentication state - WITH ONE EXCEPTION (audit finding A6 round 2, see
+/// below). See StudyLifeAuthorizationPolicies for why the general case is 401 (this app's
 /// former per-controller session checks always answered 401, never 403, and BackupController -
 /// the one place that genuinely needs 403 - never goes through the automatic policy pipeline
 /// for that decision, it calls Forbid() explicitly from its own manual owner check instead).
+///
+/// Exception: a VALID API key that is merely out of scope for the endpoint it hit
+/// (ApiKeyScopeAuthorizationHandler/ApiKeyScopes) answers 403, not 401 - a scope rejection is
+/// a genuine "authenticated, but not permitted to do THIS" the caller can react to (fix its own
+/// key usage), unlike every other case this handler exists to flatten (a bare API key failing
+/// SessionOnly, where the framework's default would be a MISLEADING "authenticated" 403 for what
+/// every existing client actually treats as "not logged in"). Detected precisely: only when
+/// EVERY failed requirement in the policy is ApiKeyScopeRequirement - i.e. RequireAuthenticatedUser's
+/// own requirement already succeeded (a real credential was presented and matched) - does this
+/// count as a scope-only failure; a request that fails for some other reason too (e.g. no
+/// credential at all) keeps the blanket 401 below.
 /// </summary>
 public sealed class AlwaysChallengeAuthorizationMiddlewareResultHandler : IAuthorizationMiddlewareResultHandler
 {
@@ -130,6 +155,13 @@ public sealed class AlwaysChallengeAuthorizationMiddlewareResultHandler : IAutho
     {
         if (authorizeResult.Forbidden)
         {
+            var failedRequirements = authorizeResult.AuthorizationFailure?.FailedRequirements.ToList();
+            if (failedRequirements is { Count: > 0 } && failedRequirements.All(r => r is ApiKeyScopeRequirement))
+            {
+                await context.ForbidAsync();
+                return;
+            }
+
             await context.ChallengeAsync();
             return;
         }
