@@ -72,12 +72,29 @@ public class CalcQuotaTests
     }
 
     [Fact]
-    public void ZeroTargets_DoesNotThrow_AndTreatsAnyHoursAsAboveTarget()
+    public void ZeroTargets_ReturnsZeroPercentAndNoWarning_InsteadOfNaN()
     {
-        // maxBar = 0 -> division by zero -> percent becomes NaN or Infinity, capped by Math.Min(100, ...).
-        // hours=0 vs targetMin=0 means warning should be false (0 < 0 is false).
+        // maxBar = 0 -> no goal configured. Previously this fell through to a 0/0 division,
+        // producing NaN/Infinity (not JSON-serializable, and "width: NaN%" in the dashboard's
+        // progress bar CSS). Now it short-circuits to a flat 0%/no-warning result, matching the
+        // Python Home Assistant port (coordinator.py), which returns 0% for this case.
         var result = StudyMetrics.CalcQuota(0, 0, 0);
 
+        Assert.Equal(0, result.Percent);
+        Assert.Equal(0, result.MinPercent);
+        Assert.False(result.Warning);
+        Assert.Equal(0, result.MissingHours);
+    }
+
+    [Fact]
+    public void ZeroTargets_WithHoursStudied_StillReturnsZeroPercentAndNoWarning()
+    {
+        // Same no-goal-configured case, but with hours already logged - still nothing to
+        // divide by, so it stays at a flat 0%/no-warning rather than NaN or a spurious 100%.
+        var result = StudyMetrics.CalcQuota(5, 0, 0);
+
+        Assert.Equal(0, result.Percent);
+        Assert.Equal(0, result.MinPercent);
         Assert.False(result.Warning);
         Assert.Equal(0, result.MissingHours);
     }

@@ -60,7 +60,7 @@ public partial class Stats
             {
                 var course = allCourses.FirstOrDefault(x => x.Id == c.CourseId);
                 return new StatsHeatmapCard.CourseHours(
-                    course?.Name ?? string.Format(T.CourseFallback, c.CourseId),
+                    course?.Name ?? string.Format(T.CourseFallback ?? "", c.CourseId),
                     course?.Color ?? "#888888",
                     c.Hours);
             }).ToList());

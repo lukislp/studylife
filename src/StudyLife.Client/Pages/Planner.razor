@@ -215,7 +215,13 @@
     private bool _weekGenerated;
     private string? _weekAcceptedMessage;
     private int? _weekAcceptedCount;
-    private List<(string Name, string Icon, string Color, string Hint)> _weekCourseHints = new();
+    /// <summary>Record struct instead of a value tuple for _weekCourseHints - LINQ over a
+    /// List<(...)> of value tuples has triggered a Mono AOT crash at compile time (not call time)
+    /// in the native app shell (studylife-app, BlazorWebView) that links this same Client project -
+    /// see project_studylife_app_ios_aot_linq_tuple_crash.</summary>
+    private readonly record struct WeekCourseHint(string Name, string Icon, string Color, string Hint);
+
+    private List<WeekCourseHint> _weekCourseHints = new();
     // Raw facts behind _weekCourseHints' Hint text (which of ExamInDays/LastStudiedDaysAgo/NeverStudied,
     // and the number involved) - kept around so a live language switch can rebuild the hint TEXT
     // without re-running the whole weighted-pick/slot-finding generator.
@@ -229,7 +235,7 @@
         : T.NeverStudied ?? "";
 
     private void RefreshWeekCourseHints() =>
-        _weekCourseHints = _weekHintFacts.Select(f => (f.Name, f.Icon, f.Color, BuildHintText(f))).ToList();
+        _weekCourseHints = _weekHintFacts.Select(f => new WeekCourseHint(f.Name, f.Icon, f.Color, BuildHintText(f))).ToList();
 
     /// <summary>Toolbelt.Blazor.I18nText auto-updates T's own fields and re-renders this component
     /// when the active language changes, but text baked from T onto proposal/hint objects at plan-
