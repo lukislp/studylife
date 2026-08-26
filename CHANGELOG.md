@@ -1,3 +1,10 @@
+## [1.40.1](https://github.com/lukislp/studylife/compare/v1.40.0...v1.40.1) (2026-08-26)
+
+
+### Bug Fixes
+
+* tolerant id-list parsing and per-user uniqueness for Settings/TimerState ([fa0ad38](https://github.com/lukislp/studylife/commit/fa0ad381c93acdbfc5cf91ae007ad01603ed2ecd))
+
 # [1.40.0](https://github.com/lukislp/studylife/compare/v1.39.12...v1.40.0) (2026-08-26)
 
 
