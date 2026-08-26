@@ -21,6 +21,20 @@ public static class AchievementCatalog
     public const string CoursesKey = "courses";
     public const string AllCoursesKey = "allcourses";
 
+    // Stable keys for the 8 categories that are display-only (client/Wrapped/metrics API) and
+    // never push a server notification (see BackgroundTaskService.Reports's RunAchievementCheckAsync
+    // comment for why) - added for the metrics API's GET /api/metrics/achievements (MetricsController),
+    // so every one of the 44 tiers has a single-sourced, stable category key, matching the 5
+    // push-capable categories above.
+    public const string EarlyBirdKey = "earlybird";
+    public const string NightOwlKey = "nightowl";
+    public const string WeekendKey = "weekend";
+    public const string MarathonKey = "marathon";
+    public const string PerfectWeekKey = "perfectweek";
+    public const string NotesKey = "notes";
+    public const string CourseDiversityKey = "coursediversity";
+    public const string ProgramsKey = "programs";
+
     public static readonly int[] HoursTiers = { 25, 100, 500, 1000, 2000 };
     public static readonly int[] StreakTiers = { 7, 30, 100, 365 };
     public static readonly int[] SessionsTiers = { 50, 200, 500, 1000 };
@@ -45,5 +59,63 @@ public static class AchievementCatalog
         for (var i = 0; i < thresholds.Length; i++)
             tiers[i] = new Tier(thresholds[i], current >= thresholds[i], current);
         return tiers;
+    }
+
+    /// <summary>
+    /// The 13 raw per-category counts that feed <see cref="BuildTiers"/> across every achievement
+    /// category - see <see cref="BuildInputs"/>.
+    /// </summary>
+    public readonly record struct AchievementInputs(
+        double TotalHours, int TotalSessions, int LongestStreak,
+        int CoursesCompleted, bool AllCoursesDone,
+        int EarlyBirdCount, int NightOwlCount, int WeekendCount, double LongestSessionHours,
+        int PerfectWeeks, int NotesCount, int MaxCourseDiversity, int ProgramsCompleted);
+
+    /// <summary>
+    /// Gathers the raw achievement-tier inputs from studied session history - extracted from the
+    /// two previously independent copies of this exact aggregation (client: Index.Achievements.
+    /// razor.cs's BuildAchievements; server: BackgroundTaskService.Reports's
+    /// RunAchievementCheckAsync, which only ever needed the first 5 fields for its 5 push-capable
+    /// categories). Both call sites now share this one implementation; the metrics API
+    /// (MetricsController, GET /api/metrics/achievements) uses it for all 13.
+    /// <paramref name="studiedHistory"/> must already be "studied" (StudyMetrics.IsStudied).
+    /// <paramref name="completedCourseIds"/>/<paramref name="activeCourseIds"/>: coursesCompleted
+    /// is scoped to the active study programme's catalog (completedCourseIds ∩ activeCourseIds) -
+    /// completedCourseIds itself spans every programme the user has ever had, see the two call
+    /// sites' own comments on why an unscoped count would leak other programmes' completions in.
+    /// <paramref name="notesCount"/>/<paramref name="programsCompleted"/> come from outside session
+    /// history entirely (note count, IsCompleted-flagged study programs) - callers that don't need
+    /// those two tiers (the server's push check) may pass 0.
+    /// </summary>
+    public static AchievementInputs BuildInputs(
+        IReadOnlyList<StudySessionDto> studiedHistory,
+        IReadOnlyCollection<int> completedCourseIds,
+        IReadOnlyCollection<int> activeCourseIds,
+        int weeklyGoalMinHours,
+        int ectsTotal, int ectsEarned,
+        int notesCount, int programsCompleted)
+    {
+        var totalHours = studiedHistory.Sum(s => (s.EndTime - s.StartTime).TotalHours);
+        var totalSessions = studiedHistory.Count;
+        var longestStreak = StudyMetrics.CalcLongestStreak(studiedHistory.Select(s => s.StartTime));
+        var coursesCompleted = completedCourseIds.Count(id => activeCourseIds.Contains(id));
+        var allCoursesDone = ectsTotal > 0 && ectsEarned >= ectsTotal;
+
+        var earlyBirdCount = studiedHistory.Count(s => s.StartTime.Hour < 7);
+        var nightOwlCount = studiedHistory.Count(s => s.StartTime.Hour >= 22);
+        var weekendCount = studiedHistory.Count(s => s.StartTime.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday);
+        var longestSessionHours = studiedHistory.Count > 0 ? studiedHistory.Max(s => (s.EndTime - s.StartTime).TotalHours) : 0;
+
+        var weeklyGroups = studiedHistory.GroupBy(s => StudyMetrics.WeekStartOf(s.StartTime)).ToList();
+        var perfectWeeks = weeklyGoalMinHours > 0
+            ? weeklyGroups.Count(g => g.Sum(s => (s.EndTime - s.StartTime).TotalHours) >= weeklyGoalMinHours)
+            : 0;
+        var maxCourseDiversity = weeklyGroups.Count > 0
+            ? weeklyGroups.Max(g => g.Select(s => s.CourseId).Distinct().Count())
+            : 0;
+
+        return new AchievementInputs(totalHours, totalSessions, longestStreak, coursesCompleted, allCoursesDone,
+            earlyBirdCount, nightOwlCount, weekendCount, longestSessionHours,
+            perfectWeeks, notesCount, maxCourseDiversity, programsCompleted);
     }
 }

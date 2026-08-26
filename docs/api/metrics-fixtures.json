@@ -106,6 +106,17 @@
       "courses": [],
       "courseGoals": [],
       "completedCourseIds": [],
+      "selectedCourseIds": [1],
+      "newMetrics": {
+        "$description": "courseHours/topics/neglectedCourse/upcomingCourseGoals are trivially empty here (courses/courseGoals are both empty in this scenario, regardless of selectedCourseIds) - only monthComparison/weeklyReport are meaningfully exercised. monthComparison uses the 'studied' filter (session 4's end is after 'now', so it's excluded even from raw month hours here) - 1h (01-04) + 2h (01-05) + 1h (01-07) = 4h, all in January 2026. weeklyReport reports on the last COMPLETED Mon-Sun week (2025-12-29..2026-01-04, one week before 'now''s current week) - only session 1 (01-04) falls in it.",
+        "courseHours": [],
+        "topicsCompleted": 0,
+        "topicsTotal": 0,
+        "neglectedCourse": null,
+        "upcomingCourseGoals": [],
+        "monthComparison": { "currentMonthHours": 4.0, "previousMonthHours": 0.0, "deltaVsPreviousMonth": 4.0, "hasYearData": false, "sameMonthLastYearHours": null, "deltaVsLastYear": null },
+        "weeklyReport": { "weekId": "2026-W01", "hours": 1.0, "deltaVsPreviousWeek": 1.0, "topCourseName": "C1", "sessionCount": 1 }
+      },
       "expected": {
         "streak": 1,
         "longestStreak": 2,
@@ -1253,6 +1264,17 @@
         24,
         25
       ],
+      "selectedCourseIds": [1, 2, 3, 4, 5, 24, 25, 6, 7],
+      "newMetrics": {
+        "$description": "selectedCourseIds adds two more active (selected, not completed) courses (6, 7) on top of the 7 completed ones, to exercise the neglected-course 2+-active-courses gate: with sessions empty, both are 'never studied' and the tie resolves to the first one in catalog order (course 6). courseHours is trivially empty (no sessions). topicsTotal=45 sums CourseDto.Topics.Count (5 each) across the 9 selected courses (5 completed with topics + course 6 + course 7 = 7 of the 9 selected ids actually exist in this scenario's course list; the other two selected ids, 24/25, ARE present too - all 9 selected ids resolve to a real course here, 9*5=45).",
+        "courseHours": [],
+        "topicsCompleted": 0,
+        "topicsTotal": 45,
+        "neglectedCourse": { "courseId": 6, "courseName": "Mathematik: Lineare Algebra", "lastStudied": null, "daysSince": null },
+        "upcomingCourseGoals": [],
+        "monthComparison": { "currentMonthHours": 0.0, "previousMonthHours": 0.0, "deltaVsPreviousMonth": 0.0, "hasYearData": false, "sameMonthLastYearHours": null, "deltaVsLastYear": null },
+        "weeklyReport": { "weekId": "2026-W01", "hours": 0.0, "deltaVsPreviousWeek": 0.0, "topCourseName": null, "sessionCount": 0 }
+      },
       "expected": {
         "streak": 0,
         "longestStreak": 0,
@@ -1541,6 +1563,19 @@
       "completedCourseIds": [
         1
       ],
+      "selectedCourseIds": [1, 2],
+      "newMetrics": {
+        "$description": "courseHours: the single 220h session (course 1, IsCompleted=true) is the only studied session, course 2 has none so it's omitted entirely (not a zero row). neglectedCourse: selected{1,2} minus completed{1} leaves only course 2 active - below the 2+-courses gate, so null (a genuinely exercised null, not an untested field). topics: both courses have empty Topics arrays in this scenario, so 0/0. monthComparison: the session (2026-02-19..02-28) falls entirely in February, 'now' is March 1 - previousMonthHours=220, currentMonthHours=0. weeklyReport: 'now' (2026-03-01) is a Sunday, so the CURRENT week starts 2026-02-23 and the last COMPLETED week is 2026-02-16..02-23 - the session (02-19) falls inside it.",
+        "courseHours": [
+          { "courseId": 1, "courseName": "C1", "courseColor": "#111111", "hours": 220.0, "sessionCount": 1 }
+        ],
+        "topicsCompleted": 0,
+        "topicsTotal": 0,
+        "neglectedCourse": null,
+        "upcomingCourseGoals": [],
+        "monthComparison": { "currentMonthHours": 0.0, "previousMonthHours": 220.0, "deltaVsPreviousMonth": -220.0, "hasYearData": false, "sameMonthLastYearHours": null, "deltaVsLastYear": null },
+        "weeklyReport": { "weekId": "2026-W08", "hours": 220.0, "deltaVsPreviousWeek": 220.0, "topCourseName": "C1", "sessionCount": 1 }
+      },
       "expected": {
         "streak": 0,
         "longestStreak": 1,
