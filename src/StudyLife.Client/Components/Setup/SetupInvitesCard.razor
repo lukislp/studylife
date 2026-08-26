@@ -1,0 +1,145 @@
+@using StudyLife.Shared
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+@* Registration invites (owner-only, audit finding A10): generates a "/register?invite=<token>"
+   link so someone else can create their own account when Registration:Mode=invite. Self-contained
+   component (own SetupText instance + own HTTP calls), modeled after SetupHomeAssistantCard for
+   the "generate, show plaintext exactly once, copy" part and PasskeyDeviceManager's pdm-list/
+   pdm-row classes (shared.css, not component-scoped) for the list. Setup.razor only renders this
+   behind "@if (_isOwner)" (same client-side gate as SetupRestoreCard) - the server independently
+   enforces owner-only (AuthController.CreateInvite/ListInvites/DeleteInvite all call
+   IsOwnerAsync() and Forbid() themselves), so hiding the card here is purely UX, not the actual
+   access control. *@
+
+<div class="setup-section">
+    <div class="ss-label">@T.InvitesHeading</div>
+    <p class="ss-desc">@T.InvitesDesc</p>
+
+    @if (_generatedLink != null)
+    {
+        <div class="field-row" style="flex-wrap:wrap">
+            <input class="input" readonly value="@_generatedLink" />
+            <button type="button" class="btn-secondary" style="flex-shrink:0" @onclick="CopyLink">
+                @(_copied ? $"✓ {T.Copied}" : T.Copy)
+            </button>
+        </div>
+        <p class="ss-desc" style="font-weight:600">⚠️ @T.InvitesOnceHint</p>
+    }
+
+    <button type="button" class="btn-secondary" @onclick="Generate" disabled="@_busy">
+        @(_busy ? "…" : T.InvitesGenerateButton)
+    </button>
+
+    @if (_invites.Count > 0)
+    {
+        <div class="pdm-list" style="margin-top:0.75rem;">
+            @foreach (var invite in _invites)
+            {
+                <div class="pdm-row">
+                    <div class="pdm-row-main">
+                        <div class="pdm-row-label">
+                            <span>@string.Format(T.InvitesCreatedFormat ?? "", invite.CreatedAt.ToLocalTime().ToString("g"))</span>
+                            @if (invite.UsedAt != null)
+                            {
+                                <span class="pdm-pending-badge">@T.InvitesUsedLabel</span>
+                            }
+                            else if (invite.ExpiresAt <= DateTime.UtcNow)
+                            {
+                                <span class="pdm-pending-badge">@T.InvitesExpiredLabel</span>
+                            }
+                        </div>
+                        <div class="pdm-row-meta">@string.Format(T.InvitesExpiresFormat ?? "", invite.ExpiresAt.ToLocalTime().ToString("g"))</div>
+                    </div>
+                    <div style="display:flex; gap:0.4rem; flex-shrink:0;">
+                        <button type="button" class="btn-danger" @onclick="() => RevokeAsync(invite)" disabled="@_busy">@T.InvitesRevoke</button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else if (!_loading)
+    {
+        <p class="ss-desc">@T.InvitesEmpty</p>
+    }
+</div>
+
+@code {
+    private I18nText.SetupText T = new();
+    private readonly List<InviteListItemDto> _invites = new();
+    private bool _loading;
+    private bool _busy;
+    // Plaintext only visible right after a generation within this page load - the server never
+    // gives it out again (only the hash lives in the DB, see AuthInviteEntity.TokenHash).
+    private string? _generatedLink;
+    private bool _copied;
+
+    protected override async Task OnInitializedAsync()
+    {
+        T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var invites = await Http.GetFromJsonAsync<List<InviteListItemDto>>("api/auth/invites");
+            _invites.Clear();
+            if (invites != null) _invites.AddRange(invites);
+        }
+        catch { /* offline/non-owner: card just shows an empty list */ }
+        finally { _loading = false; }
+    }
+
+    private async Task Generate()
+    {
+        _busy = true;
+        _copied = false;
+        try
+        {
+            var response = await Http.PostAsync("api/auth/invites", null);
+            if (response.IsSuccessStatusCode)
+            {
+                var dto = await response.Content.ReadFromJsonAsync<CreateInviteResponseDto>();
+                if (!string.IsNullOrEmpty(dto?.Token))
+                {
+                    // GetLeftPart(Authority) = scheme://host[:port], exactly the "{origin}" half of
+                    // the "/register?invite=<token>" link format.
+                    var origin = Nav.ToAbsoluteUri("/").GetLeftPart(UriPartial.Authority);
+                    _generatedLink = $"{origin}/register?invite={Uri.EscapeDataString(dto.Token)}";
+                    await LoadAsync();
+                }
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task RevokeAsync(InviteListItemDto invite)
+    {
+        _busy = true;
+        try
+        {
+            var response = await Http.DeleteAsync($"api/auth/invites/{invite.Id}");
+            if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _invites.RemoveAll(i => i.Id == invite.Id);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task CopyLink()
+    {
+        if (string.IsNullOrEmpty(_generatedLink)) return;
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", _generatedLink);
+        _copied = true;
+        StateHasChanged();
+        await Task.Delay(2000);
+        _copied = false;
+        StateHasChanged();
+    }
+}

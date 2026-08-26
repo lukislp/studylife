@@ -246,5 +246,15 @@
   "ProgressShareRegenerateConfirmWarning": "Time se trenutačna poveznica napretka odmah poništava. Svatko tko ima staru poveznicu (roditelji, mentor, studijski savjetnik) više neće moći vidjeti tvoj napredak — podijeli s njima novu poveznicu umjesto toga.",
   "ProgressShareRegenerateConfirmCancel": "Odustani",
   "ProgressShareRegenerateConfirmYes": "Da, generiraj novu sada",
-  "ProgressShareRegenerateSuccess": "Generirana nova"
+  "ProgressShareRegenerateSuccess": "Generirana nova",
+  "InvitesHeading": "Pozivnice",
+  "InvitesDesc": "Generiraj poveznicu s pozivnicom kako bi netko drugi mogao izraditi vlastiti račun.",
+  "InvitesGenerateButton": "Generiraj poveznicu s pozivnicom",
+  "InvitesOnceHint": "Kopiraj poveznicu odmah — neće se ponovno prikazati.",
+  "InvitesEmpty": "Još nema pozivnica.",
+  "InvitesCreatedFormat": "Izrađeno: {0}",
+  "InvitesExpiresFormat": "Ističe: {0}",
+  "InvitesUsedLabel": "Iskorišteno",
+  "InvitesExpiredLabel": "Isteklo",
+  "InvitesRevoke": "Opozovi"
 }

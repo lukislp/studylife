@@ -246,5 +246,15 @@
   "ProgressShareRegenerateConfirmWarning": "Це негайно робить поточне посилання прогресу недійсним. Будь-хто, у кого є старе посилання (батьки, наставник, навчальний консультант), більше не зможе бачити ваш прогрес — натомість поділіться з ними новим посиланням.",
   "ProgressShareRegenerateConfirmCancel": "Скасувати",
   "ProgressShareRegenerateConfirmYes": "Так, згенерувати зараз",
-  "ProgressShareRegenerateSuccess": "Згенеровано нове"
+  "ProgressShareRegenerateSuccess": "Згенеровано нове",
+  "InvitesHeading": "Запрошення",
+  "InvitesDesc": "Створіть посилання-запрошення, щоб інша людина могла створити власний акаунт.",
+  "InvitesGenerateButton": "Створити посилання-запрошення",
+  "InvitesOnceHint": "Скопіюйте посилання зараз — повторно воно показане не буде.",
+  "InvitesEmpty": "Поки що немає запрошень.",
+  "InvitesCreatedFormat": "Створено: {0}",
+  "InvitesExpiresFormat": "Спливає: {0}",
+  "InvitesUsedLabel": "Використано",
+  "InvitesExpiredLabel": "Прострочено",
+  "InvitesRevoke": "Відкликати"
 }

@@ -246,5 +246,15 @@
   "ProgressShareRegenerateConfirmWarning": "To natychmiast unieważnia bieżący link postępów. Każdy, kto ma stary link (rodzice, mentor, doradca akademicki), nie będzie już mógł zobaczyć Twoich postępów — udostępnij im zamiast tego nowy link.",
   "ProgressShareRegenerateConfirmCancel": "Anuluj",
   "ProgressShareRegenerateConfirmYes": "Tak, wygeneruj teraz",
-  "ProgressShareRegenerateSuccess": "Wygenerowano nowy"
+  "ProgressShareRegenerateSuccess": "Wygenerowano nowy",
+  "InvitesHeading": "Zaproszenia",
+  "InvitesDesc": "Wygeneruj link z zaproszeniem, aby ktoś inny mógł założyć własne konto.",
+  "InvitesGenerateButton": "Wygeneruj link z zaproszeniem",
+  "InvitesOnceHint": "Skopiuj link teraz — nie zostanie on ponownie wyświetlony.",
+  "InvitesEmpty": "Brak zaproszeń.",
+  "InvitesCreatedFormat": "Utworzono: {0}",
+  "InvitesExpiresFormat": "Wygasa: {0}",
+  "InvitesUsedLabel": "Wykorzystane",
+  "InvitesExpiredLabel": "Wygasłe",
+  "InvitesRevoke": "Odwołaj"
 }

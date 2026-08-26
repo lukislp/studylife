@@ -269,6 +269,9 @@ builder.Services.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>();
 // Shared owner check (audit A15/A2 fix) - see OwnershipService for the AuthUserEntity.IsOwner
 // rationale; scoped like StudyLifeDb itself since it queries it directly.
 builder.Services.AddScoped<IOwnershipService, OwnershipService>();
+// Registration gate (audit finding A10) - Registration:Mode (env Registration__Mode); see
+// RegistrationGateService for the open/invite/closed semantics and the bootstrap bypass.
+builder.Services.AddScoped<IRegistrationGateService, RegistrationGateService>();
 // APNs channel for the native app shell - permanently inactive without Apns:* configuration
 // (see the ApnsSender comment), web push/VAPID is unaffected by this.
 builder.Services.AddSingleton<ApnsSender>();

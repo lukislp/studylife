@@ -72,5 +72,8 @@
   "RecoveryCodesDownload": "Скачать файлом",
   "RegisterPageTitle": "StudyLife — Создание аккаунта",
   "LinkPageTitle": "StudyLife — Привязать это устройство",
-  "LoginPageTitle": "StudyLife — Вход"
+  "LoginPageTitle": "StudyLife — Вход",
+  "RegisterClosed": "Регистрация сейчас закрыта.",
+  "RegisterInviteRequiredHint": "Для регистрации нужна ссылка-приглашение. Используйте ссылку, которую вам прислали.",
+  "RegisterInviteInvalid": "Эта ссылка-приглашение недействительна, истекла или уже использована."
 }

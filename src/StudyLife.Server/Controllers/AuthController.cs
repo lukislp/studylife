@@ -39,15 +39,17 @@ public class AuthController : ControllerBase
     private readonly IConfiguration _config;
     private readonly SystemSecretsService _systemSecrets;
     private readonly IOwnershipService _ownership;
+    private readonly IRegistrationGateService _registrationGate;
 
     public AuthController(StudyLifeDb db, IDistributedCache cache, IConfiguration config,
-        SystemSecretsService systemSecrets, IOwnershipService ownership)
+        SystemSecretsService systemSecrets, IOwnershipService ownership, IRegistrationGateService registrationGate)
     {
         _db = db;
         _cache = cache;
         _config = config;
         _systemSecrets = systemSecrets;
         _ownership = ownership;
+        _registrationGate = registrationGate;
     }
 
     // WebAuthn challenge cache on IDistributedCache instead of IMemoryCache: with multiple
@@ -82,7 +84,12 @@ public class AuthController : ControllerBase
     /// false = via link code (begin-linked already verified authorization via the code itself -
     /// the calling device has no session at all). LinkCode is only set on the code path, so
     /// Complete can mark it as consumed after success.</summary>
-    private sealed record PendingRegistration(CredentialCreateOptions Options, string DisplayName, int? ForAuthUserId, bool RequiresSessionAtComplete, string? LinkCode = null);
+    /// <summary>InviteToken (audit finding A10): only ever set on the self-registration path
+    /// (ForAuthUserId == null) once RegisterBegin's RegistrationGateService check required and
+    /// validated one (Registration:Mode=invite, past bootstrap) - carried forward to Complete so
+    /// TryConsumeInviteAsync consumes the SAME token that was validated at Begin, atomically with
+    /// user/credential creation, never at Begin itself (see RegisterComplete).</summary>
+    private sealed record PendingRegistration(CredentialCreateOptions Options, string DisplayName, int? ForAuthUserId, bool RequiresSessionAtComplete, string? LinkCode = null, string? InviteToken = null);
 
     private sealed record PendingLogin(AssertionOptions Options);
 
@@ -117,17 +124,38 @@ public class AuthController : ControllerBase
         if (displayName.Length is 0 or > 100)
             return BadRequest("DisplayName must be between 1 and 100 characters long.");
 
-        // The first registration (not a single passkey exists yet) requires the setup secret
-        // generated at startup and printed to the container logs - this prevents anyone who
-        // reaches the open registration endpoint before the actual operator from automatically
-        // becoming owner (inheriting existing data + backup/restore rights, see
-        // BackupController.IsOwnerAsync). Every subsequent registration deliberately stays open
-        // (family signup, unchanged). Same predicate as below in RegisterComplete for taking
-        // over the legacy user.
-        if (!await _db.PasskeyCredentials.AnyAsync() && !await _systemSecrets.ValidateSetupSecretAsync(request.SetupSecret))
+        // Bootstrap flag: shared by the pre-existing setup-secret check below AND the
+        // RegistrationGateService check further down (audit A10) - "not a single passkey exists
+        // yet" is this app's established notion of "the instance hasn't been claimed/set up yet"
+        // (RegisterComplete uses the exact same predicate for the legacy-user-claim decision).
+        // The registration-mode gate is deliberately skipped entirely while this is true: a fresh
+        // (or restored-empty) install must never be bricked by Registration:Mode=invite/closed
+        // before an owner has even had the chance to log in and generate an invite in the first
+        // place (nobody could - invite creation is owner-only, see the /api/auth/invites group).
+        var anyPasskeyExists = await _db.PasskeyCredentials.AnyAsync();
+
+        // The first registration ever requires the setup secret generated at startup and printed
+        // to the container logs - this prevents anyone who reaches the open registration endpoint
+        // before the actual operator from automatically becoming owner (inheriting existing data +
+        // backup/restore rights, see BackupController.IsOwnerAsync). Unaffected by
+        // Registration:Mode - unlike "family signup" below, this check ITSELF already gates the
+        // one case Registration:Mode:closed would otherwise also want to block.
+        if (!anyPasskeyExists && !await _systemSecrets.ValidateSetupSecretAsync(request.SetupSecret))
             return Unauthorized("Setup code required or invalid - see server logs.");
 
-        return await BeginRegistration(displayName, forAuthUserId: null, requiresSessionAtComplete: true, excludeCredentials: []);
+        var inviteToken = request.InviteToken?.Trim();
+        if (anyPasskeyExists)
+        {
+            // Past bootstrap: Registration:Mode now governs whether "family signup" may still
+            // happen at all, and if so, whether it needs a valid invite (audit A10 - this used to
+            // be unconditionally open once the setup-secret gate above no longer applied).
+            var decision = await _registrationGate.CheckBeginAsync(inviteToken);
+            if (decision != RegistrationGateDecision.Allowed)
+                return StatusCode(StatusCodes.Status403Forbidden, new RegistrationGateErrorDto { Reason = ReasonFor(decision) });
+        }
+
+        return await BeginRegistration(displayName, forAuthUserId: null, requiresSessionAtComplete: true,
+            excludeCredentials: [], inviteToken: inviteToken);
     }
 
     /// <summary>
@@ -189,7 +217,7 @@ public class AuthController : ControllerBase
 
     private async Task<ActionResult<PasskeyBeginResponseDto>> BeginRegistration(
         string displayName, int? forAuthUserId, bool requiresSessionAtComplete,
-        IReadOnlyList<PublicKeyCredentialDescriptor> excludeCredentials, string? linkCode = null)
+        IReadOnlyList<PublicKeyCredentialDescriptor> excludeCredentials, string? linkCode = null, string? inviteToken = null)
     {
         // The user handle is an opaque random handle ONLY for the browser's WebAuthn dialog.
         // Account resolution at login relies exclusively on the (unique) CredentialId,
@@ -221,10 +249,21 @@ public class AuthController : ControllerBase
 
         var optionsId = Guid.NewGuid().ToString("N");
         await CacheSetAsync(RegistrationCacheKey(optionsId),
-            new PendingRegistration(options, displayName, forAuthUserId, requiresSessionAtComplete, linkCode), ChallengeLifetime);
+            new PendingRegistration(options, displayName, forAuthUserId, requiresSessionAtComplete, linkCode, inviteToken), ChallengeLifetime);
 
         return new PasskeyBeginResponseDto { OptionsId = optionsId, OptionsJson = options.ToJson() };
     }
+
+    /// <summary>Maps a RegistrationGateDecision to the stable Reason string the client switches on
+    /// (RegistrationGateErrorDto) - never called with Allowed (the caller only invokes this for a
+    /// rejection).</summary>
+    private static string ReasonFor(RegistrationGateDecision decision) => decision switch
+    {
+        RegistrationGateDecision.Closed => "closed",
+        RegistrationGateDecision.InviteRequired => "invite_required",
+        RegistrationGateDecision.InviteInvalid => "invite_invalid",
+        _ => "closed",
+    };
 
     [AllowAnonymous]
     [HttpPost("register/complete")]
@@ -268,6 +307,11 @@ public class AuthController : ControllerBase
         // don't both claim the same legacy user or create users on top of each other.
         await using var transaction = await _db.Database.BeginTransactionAsync();
 
+        // Shared by the legacy-user-claim decision below AND the invite-consumption check further
+        // down (audit A10) - hoisted out of the `else` branch so both can read it. Same predicate
+        // RegisterBegin used to decide whether its RegistrationGateService check even ran.
+        var anyPasskeyExists = await _db.PasskeyCredentials.AnyAsync();
+
         AuthUserEntity targetUser;
         if (pending.ForAuthUserId is int ownUserId)
         {
@@ -281,7 +325,6 @@ public class AuthController : ControllerBase
             // data - only its DisplayName is updated to the input. Once at least one passkey
             // exists, the legacy user is taken and every further registration creates a
             // brand-new, empty user (open signup, intentional).
-            var anyPasskeyExists = await _db.PasskeyCredentials.AnyAsync();
             var legacyUser = anyPasskeyExists
                 ? null
                 : await _db.AuthUsers.OrderBy(u => u.Id).FirstOrDefaultAsync();
@@ -307,6 +350,30 @@ public class AuthController : ControllerBase
                 targetUser = new AuthUserEntity { DisplayName = pending.DisplayName, CreatedAt = now, IsOwner = !anyPasskeyExists };
                 _db.AuthUsers.Add(targetUser);
                 await _db.SaveChangesAsync(); // Id is needed for the credential row
+            }
+        }
+
+        // Registration gate (audit A10): consume the invite that gated this self-registration at
+        // Begin - deliberately HERE, inside the same transaction as the user/credential creation,
+        // and only NOW (not at Begin) so a failed/abandoned attestation attempt never burns it.
+        // Guarded by the CURRENT mode (not just "a token happens to be present") so a stray/garbage
+        // InviteToken from an "open"-mode client (e.g. a leftover ?invite= query param from a
+        // previous invite-mode deployment) can never accidentally fail an otherwise-legitimate
+        // open registration. Only for self-registration past bootstrap - RegisterBegin only ever
+        // required and validated a token in exactly that case (see its own comment); the
+        // additional-passkey/link paths (pending.ForAuthUserId != null) never carry one at all.
+        // The single "UPDATE ... WHERE UsedAt IS NULL" this compiles to (see
+        // RegistrationGateService.TryConsumeInviteAsync) is what makes a concurrent double-complete
+        // race using the same token resolve cleanly: the loser's affected-rows is 0, so it rolls
+        // back and returns a clean 403 instead of also creating a second user.
+        if (pending.ForAuthUserId is null && anyPasskeyExists
+            && RegistrationGateService.GetMode(_config) == RegistrationMode.Invite
+            && pending.InviteToken is { Length: > 0 } inviteToken)
+        {
+            if (!await _registrationGate.TryConsumeInviteAsync(inviteToken, targetUser.Id, now))
+            {
+                await transaction.RollbackAsync();
+                return StatusCode(StatusCodes.Status403Forbidden, new RegistrationGateErrorDto { Reason = "invite_invalid" });
             }
         }
 
@@ -343,6 +410,80 @@ public class AuthController : ControllerBase
         if (pending.LinkCode is { } usedCode) await _cache.RemoveAsync(LinkCodeCacheKey(usedCode));
 
         return new PasskeyCompleteResponseDto { Token = token, DisplayName = targetUser.DisplayName, Pending = isAdditionalDevice };
+    }
+
+    // ── Registration invites (owner-only, audit finding A10) ────────────────────
+
+    /// <summary>
+    /// Owner-only, session-only, deliberately NOT [Authorize(Policy = SessionOnly)] - same
+    /// reasoning as BackupController.IsOwnerAsync (mirrored here verbatim): a merely-authenticated-
+    /// but-not-owner session must get 403 (not 401), which the automatic SessionOnly policy
+    /// pipeline can't express (it always challenges with 401, see
+    /// AlwaysChallengeAuthorizationMiddlewareResultHandler), so this stays a manual check that
+    /// calls Forbid() itself. Falls through to the default ApiAccess policy (no attribute at all)
+    /// like BackupController - and, just as importantly, these three actions are deliberately NOT
+    /// added to ApiKeyScopes for any slot (ha/ai/mcp/capture): a bare API key hitting them fails
+    /// ONLY the ApiKeyScopeRequirement, which AlwaysChallengeAuthorizationMiddlewareResultHandler's
+    /// one documented exception turns into 403 automatically, before this method (or the action)
+    /// ever runs - so "api key -> 403" and "non-owner session -> 403" both hold, via two different
+    /// mechanisms, without an explicit [Authorize] attribute getting in the way of either.
+    /// </summary>
+    private Task<bool> IsOwnerAsync() =>
+        HttpContext.SessionAuthUserId() is int sessionUserId ? _ownership.IsOwnerAsync(sessionUserId) : Task.FromResult(false);
+
+    /// <summary>
+    /// Generates a new invite (owner-only): returns the PLAINTEXT token exactly once, only its
+    /// SHA-256 hash is persisted (AuthInviteEntity.TokenHash) - same one-time-visibility pattern as
+    /// HaApiKeyGenerateResponseDto/RecoveryCodesResponseDto. The client builds the shareable
+    /// "/register?invite=&lt;token&gt;" link itself from Token plus its own origin.
+    /// </summary>
+    [HttpPost("invites")]
+    public async Task<ActionResult<CreateInviteResponseDto>> CreateInvite()
+    {
+        if (!await IsOwnerAsync()) return Forbid();
+        var userId = HttpContext.SessionAuthUserId()!.Value;
+
+        var now = DateTime.UtcNow;
+        var token = AuthSessionService.GenerateToken();
+        var invite = new AuthInviteEntity
+        {
+            TokenHash = AuthSessionService.HashToken(token),
+            CreatedByUserId = userId,
+            CreatedAt = now,
+            ExpiresAt = now + RegistrationGateService.InviteLifetime,
+        };
+        _db.AuthInvites.Add(invite);
+        await _db.SaveChangesAsync();
+
+        return new CreateInviteResponseDto { Id = invite.Id, Token = token, CreatedAt = invite.CreatedAt, ExpiresAt = invite.ExpiresAt };
+    }
+
+    /// <summary>Lists every invite (owner-only) - never the token itself, only enough for the
+    /// setup UI to show created/expires/used state per row (InviteListItemDto).</summary>
+    [HttpGet("invites")]
+    public async Task<ActionResult<List<InviteListItemDto>>> ListInvites()
+    {
+        if (!await IsOwnerAsync()) return Forbid();
+
+        return await _db.AuthInvites.AsNoTracking()
+            .OrderByDescending(i => i.CreatedAt)
+            .Select(i => new InviteListItemDto { Id = i.Id, CreatedAt = i.CreatedAt, ExpiresAt = i.ExpiresAt, UsedAt = i.UsedAt })
+            .ToListAsync();
+    }
+
+    /// <summary>Permanently deletes an invite (owner-only) - works on unused, used, and expired
+    /// rows alike (simple cleanup/revoke, no separate "revoke" vs. "delete" distinction).</summary>
+    [HttpDelete("invites/{id:int}")]
+    public async Task<IActionResult> DeleteInvite(int id)
+    {
+        if (!await IsOwnerAsync()) return Forbid();
+
+        var invite = await _db.AuthInvites.FirstOrDefaultAsync(i => i.Id == id);
+        if (invite is null) return NotFound();
+
+        _db.AuthInvites.Remove(invite);
+        await _db.SaveChangesAsync();
+        return NoContent();
     }
 
     // ── Login ────────────────────────────────────────────────────────────────

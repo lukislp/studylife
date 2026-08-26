@@ -72,5 +72,8 @@
   "RecoveryCodesDownload": "Transferir como ficheiro",
   "RegisterPageTitle": "StudyLife — Criar conta",
   "LinkPageTitle": "StudyLife — Associar este dispositivo",
-  "LoginPageTitle": "StudyLife — Iniciar sessão"
+  "LoginPageTitle": "StudyLife — Iniciar sessão",
+  "RegisterClosed": "O registo está atualmente fechado.",
+  "RegisterInviteRequiredHint": "É necessário um link de convite para se registar. Utiliza o link que te foi fornecido.",
+  "RegisterInviteInvalid": "Este link de convite é inválido, expirou ou já foi utilizado."
 }

@@ -72,5 +72,8 @@
   "RecoveryCodesDownload": "Letöltés fájlként",
   "RegisterPageTitle": "StudyLife — Fiók létrehozása",
   "LinkPageTitle": "StudyLife — Ezen eszköz összekapcsolása",
-  "LoginPageTitle": "StudyLife — Bejelentkezés"
+  "LoginPageTitle": "StudyLife — Bejelentkezés",
+  "RegisterClosed": "A regisztráció jelenleg zárva van.",
+  "RegisterInviteRequiredHint": "A regisztrációhoz meghívólink szükséges. Használd a kapott linket.",
+  "RegisterInviteInvalid": "Ez a meghívólink érvénytelen, lejárt, vagy már felhasználták."
 }

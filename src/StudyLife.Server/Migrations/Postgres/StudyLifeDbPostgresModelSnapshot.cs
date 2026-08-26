@@ -56,6 +56,41 @@ namespace StudyLife.Server.Migrations.Postgres
                     b.ToTable("AiKeyOutbox");
                 });
 
+            modelBuilder.Entity("StudyLife.Server.Data.AuthInviteEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("CreatedByUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int?>("UsedByUserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.ToTable("AuthInvites");
+                });
+
             modelBuilder.Entity("StudyLife.Server.Data.AuthSessionEntity", b =>
                 {
                     b.Property<int>("Id")

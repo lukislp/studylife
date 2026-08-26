@@ -246,5 +246,15 @@
   "ProgressShareRegenerateConfirmWarning": "Това веднага прави невалиден текущия линк за напредъка. Всеки, който има стария линк (родители, ментор, учебен съветник), вече няма да може да вижда напредъка ви — споделете новия линк с тях вместо това.",
   "ProgressShareRegenerateConfirmCancel": "Отказ",
   "ProgressShareRegenerateConfirmYes": "Да, генерирай нов сега",
-  "ProgressShareRegenerateSuccess": "Генериран е нов"
+  "ProgressShareRegenerateSuccess": "Генериран е нов",
+  "InvitesHeading": "Покани",
+  "InvitesDesc": "Генерирайте покана, за да може друг човек да си създаде собствен акаунт.",
+  "InvitesGenerateButton": "Генериране на покана",
+  "InvitesOnceHint": "Копирайте връзката сега — тя няма да бъде показана отново.",
+  "InvitesEmpty": "Все още няма покани.",
+  "InvitesCreatedFormat": "Създадена: {0}",
+  "InvitesExpiresFormat": "Изтича: {0}",
+  "InvitesUsedLabel": "Използвана",
+  "InvitesExpiredLabel": "Изтекла",
+  "InvitesRevoke": "Отмяна"
 }

@@ -72,5 +72,8 @@
   "RecoveryCodesDownload": "Lataa tiedostona",
   "RegisterPageTitle": "StudyLife — Luo tili",
   "LinkPageTitle": "StudyLife — Yhdistä tämä laite",
-  "LoginPageTitle": "StudyLife — Kirjaudu sisään"
+  "LoginPageTitle": "StudyLife — Kirjaudu sisään",
+  "RegisterClosed": "Rekisteröityminen on tällä hetkellä suljettu.",
+  "RegisterInviteRequiredHint": "Rekisteröitymiseen tarvitaan kutsulinkki. Käytä linkkiä, jonka sait.",
+  "RegisterInviteInvalid": "Tämä kutsulinkki on virheellinen, vanhentunut tai jo käytetty."
 }
