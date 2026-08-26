@@ -35,7 +35,22 @@ public class AppStateService : IAsyncDisposable
     // rejection is discarded, but a 401/403/408/429/5xx is treated like a network
     // error - the entry is kept and replay stops, so an expired session or a
     // transient server hiccup can never drain the queue.
+    //
+    // Cross-tab: every tab is its own WASM runtime with its own in-memory copy of
+    // this queue, all persisting to the SAME localStorage key. Every read-modify-
+    // write (enqueue, replay) goes through MutateQueueAsync/ReplayQueueAsync, which
+    // both (a) serialize with _queueGate so two operations in THIS tab can never
+    // race even without lock support, and (b) acquire the Web Locks API lock
+    // (index.html: studylifeLockAcquire/TryAcquire/Release) named QueueLockName so
+    // OTHER tabs can't interleave either. Under that lock, the queue is always
+    // re-read fresh from localStorage (never the possibly-stale in-memory copy)
+    // before a mutation is applied and persisted - so tab B's write is applied on
+    // top of whatever tab A already persisted, instead of clobbering it, and only
+    // one tab ever replays (and POSTs) the queue per cycle. If navigator.locks
+    // doesn't exist (exotic WebView), the JS helper returns handle 0 and this
+    // degrades to today's single-tab-only behavior automatically.
     private const string QueueStorageKey = "studylife-write-queue";
+    private const string QueueLockName = "studylife-write-queue-lock";
     private const string TypeSaveSession = "saveSession";
     private const string TypeDeleteSession = "deleteSession";
     private const string TypeDeleteSeries = "deleteSeries";
@@ -46,6 +61,10 @@ public class AppStateService : IAsyncDisposable
     private List<QueuedWrite> _writeQueue = new();
     private bool _queueLoaded;
     private bool _replaying;
+    // Serializes queue read-modify-write within THIS tab (MutateQueueAsync,
+    // ReplayQueueAsync) - in addition to, not instead of, the cross-tab Web Locks
+    // API lock, since that lock degrades to a no-op when navigator.locks is
+    // unavailable.
     private readonly SemaphoreSlim _queueGate = new(1, 1);
 
     private sealed record QueuedWrite
@@ -236,16 +255,26 @@ public class AppStateService : IAsyncDisposable
         try
         {
             if (_queueLoaded) return;
-            try
-            {
-                var json = await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", QueueStorageKey);
-                if (!string.IsNullOrWhiteSpace(json))
-                    _writeQueue = JsonSerializer.Deserialize<List<QueuedWrite>>(json) ?? new List<QueuedWrite>();
-            }
-            catch { _writeQueue = new List<QueuedWrite>(); /* corrupt or interop not available */ }
+            _writeQueue = await ReadQueueFromStorageAsync();
             _queueLoaded = true;
         }
         finally { _queueGate.Release(); }
+    }
+
+    /// <summary>Reads the queue straight from localStorage, bypassing the in-memory
+    /// copy - used under the cross-tab lock, where the point is to see whatever
+    /// another tab may have written since this tab last loaded/persisted. Corrupt
+    /// JSON → empty queue, same as EnsureQueueLoadedAsync.</summary>
+    private async Task<List<QueuedWrite>> ReadQueueFromStorageAsync()
+    {
+        try
+        {
+            var json = await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", QueueStorageKey);
+            return string.IsNullOrWhiteSpace(json)
+                ? new List<QueuedWrite>()
+                : JsonSerializer.Deserialize<List<QueuedWrite>>(json) ?? new List<QueuedWrite>();
+        }
+        catch { return new List<QueuedWrite>(); /* corrupt or interop not available */ }
     }
 
     private async Task PersistQueueAsync()
@@ -258,9 +287,70 @@ public class AppStateService : IAsyncDisposable
         catch { /* localStorage not available - queue lives in memory only, silent degradation */ }
     }
 
+    /// <summary>Blocking cross-tab lock acquire (see index.html: studylifeLockAcquire).
+    /// Returns a handle (&gt;= 1) to pass to ReleaseQueueLockAsync, or 0 if there's
+    /// nothing to release - either navigator.locks doesn't exist (exotic WebView)
+    /// or the wait timed out; both fall back to proceeding unguarded rather than
+    /// losing or indefinitely blocking the write.</summary>
+    private async Task<int> AcquireQueueLockAsync(int timeoutMs = 5000)
+    {
+        try { return await _jsRuntime.InvokeAsync<int>("studylifeLockAcquire", QueueLockName, timeoutMs); }
+        catch { return 0; } // JS interop unavailable (e.g. prerendering) - proceed unguarded
+    }
+
+    /// <summary>Non-blocking cross-tab lock try-acquire (see index.html:
+    /// studylifeLockTryAcquire), so only one tab replays per cycle. Returns a
+    /// handle if acquired, 0 if navigator.locks doesn't exist (proceed unguarded),
+    /// or null if another tab already holds the lock right now (caller should skip
+    /// this cycle).</summary>
+    private async Task<int?> TryAcquireQueueLockAsync()
+    {
+        try { return await _jsRuntime.InvokeAsync<int?>("studylifeLockTryAcquire", QueueLockName); }
+        catch { return 0; } // JS interop unavailable - proceed unguarded, same as above
+    }
+
+    private async Task ReleaseQueueLockAsync(int handle)
+    {
+        if (handle == 0) return; // nothing was actually acquired
+        try { await _jsRuntime.InvokeVoidAsync("studylifeLockRelease", handle); }
+        catch { /* connection already gone (e.g. tab closing) - nothing left to release on our side either */ }
+    }
+
+    /// <summary>
+    /// Cross-tab-safe queue mutation: serializes with same-tab callers via
+    /// _queueGate, acquires the cross-tab lock, re-reads the queue FRESH from
+    /// localStorage under it (not the possibly-stale in-memory copy), lets
+    /// `mutate` apply its usual replacement rule to that fresh list, persists the
+    /// result, and syncs the in-memory queue to match. Because `mutate` is the same
+    /// self-contained rule as before (id-0 replace, per-note-id replace, settings/
+    /// course-goal replace-all-for-key, ...), running it against the freshest list
+    /// instead of a stale one is what stops tab B's write from clobbering tab A's:
+    /// whatever A already persisted is exactly what B's mutation is applied on top
+    /// of. Always fires OnPendingWritesChanged afterwards, matching every call
+    /// site's previous unconditional-fire behavior.
+    /// </summary>
+    private async Task MutateQueueAsync(Action<List<QueuedWrite>> mutate)
+    {
+        await _queueGate.WaitAsync();
+        try
+        {
+            var handle = await AcquireQueueLockAsync();
+            try
+            {
+                var fresh = await ReadQueueFromStorageAsync();
+                mutate(fresh);
+                _writeQueue = fresh;
+                _queueLoaded = true;
+                await PersistQueueAsync();
+            }
+            finally { await ReleaseQueueLockAsync(handle); }
+        }
+        finally { _queueGate.Release(); }
+        OnPendingWritesChanged?.Invoke();
+    }
+
     private async Task EnqueueSaveSessionAsync(StudySessionDto dto)
     {
-        await EnsureQueueLoadedAsync();
         // Known limitation: a session created offline has no server id, so a later
         // offline edit/delete of the same session can't be correlated (the queue replays
         // the create; another offline save of the same logical session would produce a
@@ -272,54 +362,49 @@ public class AppStateService : IAsyncDisposable
         // id > 0 (Calendar.razor only deletes when `_editSession?.Id > 0`), and sessions
         // created offline never even show up with id 0 in the UI, for lack of a
         // successful refetch.
-        if (dto.Id == 0)
+        await MutateQueueAsync(queue =>
         {
-            _writeQueue.RemoveAll(e =>
+            if (dto.Id == 0)
             {
-                if (e.Type != TypeSaveSession) return false;
-                try
+                queue.RemoveAll(e =>
                 {
-                    var existing = JsonSerializer.Deserialize<StudySessionDto>(e.Payload);
-                    return existing != null && existing.Id == 0
-                        && existing.StartTime == dto.StartTime && existing.CourseId == dto.CourseId;
-                }
-                catch { return false; }
+                    if (e.Type != TypeSaveSession) return false;
+                    try
+                    {
+                        var existing = JsonSerializer.Deserialize<StudySessionDto>(e.Payload);
+                        return existing != null && existing.Id == 0
+                            && existing.StartTime == dto.StartTime && existing.CourseId == dto.CourseId;
+                    }
+                    catch { return false; }
+                });
+            }
+            queue.Add(new QueuedWrite
+            {
+                Type = TypeSaveSession,
+                Payload = JsonSerializer.Serialize(dto),
+                QueuedAt = DateTime.UtcNow,
             });
-        }
-        _writeQueue.Add(new QueuedWrite
-        {
-            Type = TypeSaveSession,
-            Payload = JsonSerializer.Serialize(dto),
-            QueuedAt = DateTime.UtcNow,
         });
-        await PersistQueueAsync();
-        OnPendingWritesChanged?.Invoke();
     }
 
     private async Task EnqueueDeleteSessionAsync(int id)
     {
-        await EnsureQueueLoadedAsync();
-        _writeQueue.Add(new QueuedWrite
+        await MutateQueueAsync(queue => queue.Add(new QueuedWrite
         {
             Type = TypeDeleteSession,
             Payload = id.ToString(),
             QueuedAt = DateTime.UtcNow,
-        });
-        await PersistQueueAsync();
-        OnPendingWritesChanged?.Invoke();
+        }));
     }
 
     private async Task EnqueueDeleteSeriesAsync(string groupId, DateTime? fromDate)
     {
-        await EnsureQueueLoadedAsync();
-        _writeQueue.Add(new QueuedWrite
+        await MutateQueueAsync(queue => queue.Add(new QueuedWrite
         {
             Type = TypeDeleteSeries,
             Payload = JsonSerializer.Serialize(new DeleteSeriesPayload(groupId, fromDate)),
             QueuedAt = DateTime.UtcNow,
-        });
-        await PersistQueueAsync();
-        OnPendingWritesChanged?.Invoke();
+        }));
     }
 
     /// <summary>
@@ -329,17 +414,17 @@ public class AppStateService : IAsyncDisposable
     /// </summary>
     public async Task EnqueueNoteSaveAsync(NoteDto dto)
     {
-        await EnsureQueueLoadedAsync();
-        if (dto.Id != 0)
-            _writeQueue.RemoveAll(e => e.Type == TypeSaveNote && QueuedNoteId(e) == dto.Id);
-        _writeQueue.Add(new QueuedWrite
+        await MutateQueueAsync(queue =>
         {
-            Type = TypeSaveNote,
-            Payload = JsonSerializer.Serialize(dto),
-            QueuedAt = DateTime.UtcNow,
+            if (dto.Id != 0)
+                queue.RemoveAll(e => e.Type == TypeSaveNote && QueuedNoteId(e) == dto.Id);
+            queue.Add(new QueuedWrite
+            {
+                Type = TypeSaveNote,
+                Payload = JsonSerializer.Serialize(dto),
+                QueuedAt = DateTime.UtcNow,
+            });
         });
-        await PersistQueueAsync();
-        OnPendingWritesChanged?.Invoke();
     }
 
     /// <summary>
@@ -348,40 +433,40 @@ public class AppStateService : IAsyncDisposable
     /// </summary>
     public async Task EnqueueNoteDeleteAsync(int id)
     {
-        await EnsureQueueLoadedAsync();
-        _writeQueue.RemoveAll(e => e.Type == TypeSaveNote && QueuedNoteId(e) == id);
-        if (id > 0)
+        await MutateQueueAsync(queue =>
         {
-            _writeQueue.Add(new QueuedWrite
+            queue.RemoveAll(e => e.Type == TypeSaveNote && QueuedNoteId(e) == id);
+            if (id > 0)
             {
-                Type = TypeDeleteNote,
-                Payload = id.ToString(),
-                QueuedAt = DateTime.UtcNow,
-            });
-        }
-        await PersistQueueAsync();
-        OnPendingWritesChanged?.Invoke();
+                queue.Add(new QueuedWrite
+                {
+                    Type = TypeDeleteNote,
+                    Payload = id.ToString(),
+                    QueuedAt = DateTime.UtcNow,
+                });
+            }
+        });
     }
 
     /// <summary>Offline case of course goal saving (Setup.razor): only the last state counts
     /// per course - the endpoint is an idempotent full upsert anyway.</summary>
     public async Task EnqueueCourseGoalSaveAsync(CourseGoalDto dto)
     {
-        await EnsureQueueLoadedAsync();
-        _writeQueue.RemoveAll(e =>
+        await MutateQueueAsync(queue =>
         {
-            if (e.Type != TypeSaveCourseGoal) return false;
-            try { return JsonSerializer.Deserialize<CourseGoalDto>(e.Payload)?.CourseId == dto.CourseId; }
-            catch { return false; }
+            queue.RemoveAll(e =>
+            {
+                if (e.Type != TypeSaveCourseGoal) return false;
+                try { return JsonSerializer.Deserialize<CourseGoalDto>(e.Payload)?.CourseId == dto.CourseId; }
+                catch { return false; }
+            });
+            queue.Add(new QueuedWrite
+            {
+                Type = TypeSaveCourseGoal,
+                Payload = JsonSerializer.Serialize(dto),
+                QueuedAt = DateTime.UtcNow,
+            });
         });
-        _writeQueue.Add(new QueuedWrite
-        {
-            Type = TypeSaveCourseGoal,
-            Payload = JsonSerializer.Serialize(dto),
-            QueuedAt = DateTime.UtcNow,
-        });
-        await PersistQueueAsync();
-        OnPendingWritesChanged?.Invoke();
     }
 
     private static int? QueuedNoteId(QueuedWrite entry)
@@ -392,17 +477,17 @@ public class AppStateService : IAsyncDisposable
 
     private async Task EnqueueSaveSettingsAsync(UserSettingsDto dto)
     {
-        await EnsureQueueLoadedAsync();
         // Settings: only the last state counts - replace any existing entry.
-        _writeQueue.RemoveAll(e => e.Type == TypeSaveSettings);
-        _writeQueue.Add(new QueuedWrite
+        await MutateQueueAsync(queue =>
         {
-            Type = TypeSaveSettings,
-            Payload = JsonSerializer.Serialize(dto),
-            QueuedAt = DateTime.UtcNow,
+            queue.RemoveAll(e => e.Type == TypeSaveSettings);
+            queue.Add(new QueuedWrite
+            {
+                Type = TypeSaveSettings,
+                Payload = JsonSerializer.Serialize(dto),
+                QueuedAt = DateTime.UtcNow,
+            });
         });
-        await PersistQueueAsync();
-        OnPendingWritesChanged?.Invoke();
     }
 
     /// <summary>
@@ -410,6 +495,13 @@ public class AppStateService : IAsyncDisposable
     /// success or a definitive rejection (network error, or a 401/403/408/429/5xx response -
     /// see TryReplayEntryAsync), replay is aborted - the rest, including that entry, stays
     /// queued and is retried on the next poll.
+    ///
+    /// Cross-tab: the whole cycle runs under the same _queueGate + Web Locks pair as
+    /// MutateQueueAsync (single replay owner, and no interleaving with a same-tab
+    /// enqueue) via TryAcquireQueueLockAsync (ifAvailable) - if another TAB is
+    /// already mid-replay, this tab's cycle is skipped silently instead of
+    /// replaying (and duplicate-POSTing) the same entries; that other tab's own
+    /// persist makes the drained queue visible to this tab on its next poll.
     /// </summary>
     private async Task ReplayQueueAsync()
     {
@@ -424,25 +516,42 @@ public class AppStateService : IAsyncDisposable
             // entirely and wait for a token to show up on a later poll.
             if (string.IsNullOrEmpty(_sessionTokenStore.Token)) return;
 
-            var flushed = 0;
-            while (_writeQueue.Count > 0)
+            await _queueGate.WaitAsync();
+            try
             {
-                if (!await TryReplayEntryAsync(_writeQueue[0])) break;
-                _writeQueue.RemoveAt(0);
-                flushed++;
-            }
+                var handle = await TryAcquireQueueLockAsync();
+                if (handle == null) return; // another tab is replaying right now - skip this cycle
+                try
+                {
+                    // Re-read fresh: another tab may have enqueued or replayed since
+                    // this tab last loaded/persisted the queue.
+                    _writeQueue = await ReadQueueFromStorageAsync();
+                    _queueLoaded = true;
+                    if (_writeQueue.Count == 0) return;
 
-            if (flushed > 0)
-            {
-                await PersistQueueAsync();
-                OnPendingWritesChanged?.Invoke();
-                // Re-fetch the server's ground truth: invalidate the cache and reset the hash,
-                // so the poll fetch immediately following is guaranteed to be recognized as a
-                // change and the granular events fire.
-                _sessionsCache = null;
-                _sessionsHash = "";
-                _settingsHash = "";
+                    var flushed = 0;
+                    while (_writeQueue.Count > 0)
+                    {
+                        if (!await TryReplayEntryAsync(_writeQueue[0])) break;
+                        _writeQueue.RemoveAt(0);
+                        flushed++;
+                    }
+
+                    if (flushed > 0)
+                    {
+                        await PersistQueueAsync();
+                        OnPendingWritesChanged?.Invoke();
+                        // Re-fetch the server's ground truth: invalidate the cache and reset the hash,
+                        // so the poll fetch immediately following is guaranteed to be recognized as a
+                        // change and the granular events fire.
+                        _sessionsCache = null;
+                        _sessionsHash = "";
+                        _settingsHash = "";
+                    }
+                }
+                finally { await ReleaseQueueLockAsync(handle.Value); }
             }
+            finally { _queueGate.Release(); }
         }
         finally { _replaying = false; }
     }
