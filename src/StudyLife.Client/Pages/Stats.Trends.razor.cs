@@ -18,6 +18,12 @@ public partial class Stats
     private List<StatsSessionLengthHistogramCard.LengthBucket> _sessionLengthBuckets = new();
     private List<StatsEctsPlanCard.PlanPoint> _ectsPlanPoints = new();
 
+    /// <summary>Record struct instead of a value tuple for BuildEctsTimeline's materialized `raw`
+    /// list below - LINQ over a List<(...)> of value tuples has triggered a Mono AOT crash at
+    /// compile time (not call time) in the native app shell (studylife-app, BlazorWebView) that
+    /// links this same Client project - see project_studylife_app_ios_aot_linq_tuple_crash.</summary>
+    private readonly record struct EctsTimelineRaw(DateTime Date, int Cumulative);
+
     private void BuildEctsTimeline(List<CourseGoalDto> goals, List<CourseDto> allCourses)
     {
         // Cumulative ECTS over time ("progress timeline"): each point is a completed goal with
@@ -32,12 +38,12 @@ public partial class Stats
         }
 
         var running = 0;
-        var raw = new List<(DateTime Date, int Cumulative)>();
+        var raw = new List<EctsTimelineRaw>();
         foreach (var g in completed)
         {
             var ects = allCourses.FirstOrDefault(c => c.Id == g.CourseId)?.Ects ?? 5;
             running += ects;
-            raw.Add((g.CompletedAt!.Value, running));
+            raw.Add(new EctsTimelineRaw(g.CompletedAt!.Value, running));
         }
         var max = Math.Max(1, raw.Max(r => r.Cumulative));
         _ectsTimelinePoints = raw
@@ -53,6 +59,10 @@ public partial class Stats
     /// graduation-goal card (Index.Forecast.razor.cs), just in ECTS instead of weekly hours.
     /// Monthly grid, horizontally scrollable like the other wide charts on this page.
     /// </summary>
+    /// <summary>Record struct instead of a value tuple for BuildEctsPlan's materialized
+    /// `completed` list below - see EctsTimelineRaw's doc comment above for why.</summary>
+    private readonly record struct EctsPlanCompletion(DateTime Date, int Ects);
+
     private void BuildEctsPlan(List<CourseGoalDto> goals, List<CourseDto> allCourses, UserSettings settings)
     {
         _ectsPlanPoints = new();
@@ -61,7 +71,7 @@ public partial class Stats
         var completed = goals
             .Where(g => g.CompletedAt.HasValue)
             .OrderBy(g => g.CompletedAt!.Value)
-            .Select(g => (Date: g.CompletedAt!.Value.Date, Ects: allCourses.FirstOrDefault(c => c.Id == g.CourseId)?.Ects ?? 5))
+            .Select(g => new EctsPlanCompletion(g.CompletedAt!.Value.Date, allCourses.FirstOrDefault(c => c.Id == g.CourseId)?.Ects ?? 5))
             .ToList();
         if (completed.Count == 0) return;
 

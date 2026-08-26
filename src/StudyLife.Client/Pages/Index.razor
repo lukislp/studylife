@@ -2,12 +2,14 @@
 @using StudyLife.Client.Models
 @using StudyLife.Client.Services
 @using StudyLife.Shared
+@inherits LocalizedComponentBase<I18nText.IndexText>
 @inject AppStateService State
 @inject HttpClient Http
-@inject Toolbelt.Blazor.I18nText.I18nText I18nText
 @inject INativeHealthData Health
 @implements IDisposable
 
+@if (IsTextLoaded)
+{
 <PageTitle>@T.DashboardPageTitle</PageTitle>
 
 <div class="dashboard">
@@ -116,7 +118,7 @@
 
         <DashboardUpcomingGoalsCard Label="@T.UpcomingCourseGoals" Goals="@_upcomingGoals" InDaysFormat="@T.InDays" OverdueByDaysFormat="@T.OverdueByDays" EmptyText="@T.NoOpenCourseGoals" SetAGoalText="@T.SetAGoal" />
 
-        <DashboardProgressCard Label="@T.StudyProgress" EctsEarned="@_ectsEarned" EctsTotal="@_ectsTotal" EctsPercent="@_ectsPercent" AvgGradeWeightedLabel="@T.AvgGradeWeighted" AverageGradeLabel="@_averageGradeLabel" ForecastLabel="@T.ForecastLabel" ForecastText="@(_forecastAlreadyDone ? T.ForecastAlreadyDone : _forecastAvailable ? string.Format(T.ForecastCompletionText, _forecastDateLabel) : T.ForecastNotEnoughData)" />
+        <DashboardProgressCard Label="@T.StudyProgress" EctsEarned="@_ectsEarned" EctsTotal="@_ectsTotal" EctsPercent="@_ectsPercent" AvgGradeWeightedLabel="@T.AvgGradeWeighted" AverageGradeLabel="@_averageGradeLabel" ForecastLabel="@T.ForecastLabel" ForecastText="@(_forecastAlreadyDone ? T.ForecastAlreadyDone : _forecastAvailable ? string.Format(T.ForecastCompletionText ?? "", _forecastDateLabel) : T.ForecastNotEnoughData)" />
 
         @if (_gradGoalVisible)
         {
@@ -199,3 +201,4 @@
                                   NewRecordText="@T.BestRecordNewRecordText" />
     </div>
 </div>
+}

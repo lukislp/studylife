@@ -95,6 +95,12 @@
         public string HoursLabel(string noSessionText) => Hours <= 0 ? noSessionText : $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
     }
 
+    /// <summary>Record struct instead of a value tuple for DistinctCourses below - LINQ over a
+    /// List<(...)> of value tuples has triggered a Mono AOT crash at compile time (not call time)
+    /// in the native app shell (studylife-app, BlazorWebView) that links this same Client
+    /// project - see project_studylife_app_ios_aot_linq_tuple_crash.</summary>
+    private readonly record struct DistinctCourseEntry(string Name, string Color);
+
     [Parameter] public string Label { get; set; } = "";
     [Parameter] public List<List<HeatDay>> Weeks { get; set; } = new();
     [Parameter] public List<string> MonthLabels { get; set; } = new();
@@ -110,11 +116,11 @@
     // Distinct courses that appear anywhere in the heatmap's data, derived straight from the
     // per-day Courses lists already embedded in Weeks - no extra parameter/pipeline needed.
     // Keyed by name (CourseHours carries no CourseId) since names are effectively unique here.
-    private List<(string Name, string Color)> DistinctCourses =>
+    private List<DistinctCourseEntry> DistinctCourses =>
         Weeks.SelectMany(w => w)
             .SelectMany(d => d.Courses)
             .GroupBy(c => c.Name)
-            .Select(g => (Name: g.Key, Color: g.First().Color))
+            .Select(g => new DistinctCourseEntry(g.Key, g.First().Color))
             .OrderBy(c => c.Name, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
 

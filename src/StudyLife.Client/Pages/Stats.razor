@@ -2,12 +2,14 @@
 @using StudyLife.Client.Models
 @using StudyLife.Client.Services
 @using StudyLife.Shared
+@inherits LocalizedComponentBase<I18nText.StatsText>
 @inject AppStateService State
 @inject HttpClient Http
-@inject Toolbelt.Blazor.I18nText.I18nText I18nText
 @inject IJSRuntime JS
 @inject INativeHealthData Health
 
+@if (IsTextLoaded)
+{
 <PageTitle>StudyLife — @T.Stats</PageTitle>
 
 <div class="setup-page">
@@ -27,7 +29,7 @@
 
         <StatsProgressCard Label="@T.StudyProgress" EctsEarned="@_ectsEarned" EctsTotal="@_ectsTotal" EctsPercent="@_ectsPercent"
             PercentCompletedSuffix="@T.PercentCompleted" ForecastLabel="@T.ForecastLabel"
-            ForecastText="@(_forecastAlreadyDone ? T.ForecastAlreadyDone : _forecastAvailable ? string.Format(T.ForecastCompletionText, _forecastDateLabel) : T.ForecastNotEnoughData)" />
+            ForecastText="@(_forecastAlreadyDone ? T.ForecastAlreadyDone : _forecastAvailable ? string.Format(T.ForecastCompletionText ?? "", _forecastDateLabel) : T.ForecastNotEnoughData)" />
 
         <StatsEctsTimelineCard Label="@T.EctsTimeline" Points="@_ectsTimelinePoints"
             TooltipFormat="@T.EctsTimelineTooltip" EmptyText="@T.EctsTimelineEmpty" />
@@ -126,4 +128,5 @@
             SparkTooltip="@T.CourseSparkTooltip" EctsRingFormat="@T.CourseEctsRingFormat" />
     </div>
 </div>
+}
 

@@ -94,7 +94,7 @@ public partial class Calendar
                 s.StartTime < _formEnd && s.EndTime > _formStart);
             if (conflict != null)
             {
-                _formWarning = string.Format(T.SessionOverlapWarning,
+                _formWarning = string.Format(T.SessionOverlapWarning ?? "",
                     $"{conflict.CourseName} ({conflict.StartTime:HH:mm}–{conflict.EndTime:HH:mm})");
                 _warningAcknowledged = true;
                 return;
