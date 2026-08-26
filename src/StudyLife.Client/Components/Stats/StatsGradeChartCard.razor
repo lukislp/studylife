@@ -1,3 +1,4 @@
+@using StudyLife.Shared
 <div class="setup-section">
     <div class="ss-label">@Label</div>
     <div class="mini-bar-chart grade-chart">
@@ -18,7 +19,7 @@
 @code {
     public record GradePoint(string Label, decimal AvgGrade, int CourseCount, double BarPercent)
     {
-        public string GradeLabel => AvgGrade.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ',');
+        public string GradeLabel => StudyMetrics.FormatGrade(AvgGrade);
     }
 
     [Parameter] public string Label { get; set; } = "";

@@ -240,7 +240,7 @@ public partial class Stats
 
         static string HoursLabel(double h) => $"{(int)h}h {(int)((h - (int)h) * 60)}m";
         static string GradeLabel(double? g) => g.HasValue
-            ? g.Value.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ',')
+            ? StudyMetrics.FormatGrade((decimal)g.Value)
             : "–";
         // Grade bar inverted like everywhere else on this page (1.0 fills, 5.0 stays empty);
         // missing grade = "–" with an empty bar instead of a misleading zero value.

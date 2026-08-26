@@ -93,7 +93,7 @@
 
         public string HoursLabel => $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
         public string GradeLabel => Grade.HasValue
-            ? Grade.Value.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ',')
+            ? StudyMetrics.FormatGrade(Grade.Value, "0.0")
             : "";
 
         // +/-5% counts as "flat" so tiny noise doesn't flash an arrow either way.

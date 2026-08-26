@@ -88,6 +88,6 @@
 
     private static string FormatGrade(decimal? grade) =>
         grade.HasValue
-            ? grade.Value.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ',')
+            ? StudyMetrics.FormatGrade(grade.Value, "0.0")
             : "";
 }
