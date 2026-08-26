@@ -38,13 +38,16 @@ public class AuthController : ControllerBase
     private readonly IDistributedCache _cache;
     private readonly IConfiguration _config;
     private readonly SystemSecretsService _systemSecrets;
+    private readonly IOwnershipService _ownership;
 
-    public AuthController(StudyLifeDb db, IDistributedCache cache, IConfiguration config, SystemSecretsService systemSecrets)
+    public AuthController(StudyLifeDb db, IDistributedCache cache, IConfiguration config,
+        SystemSecretsService systemSecrets, IOwnershipService ownership)
     {
         _db = db;
         _cache = cache;
         _config = config;
         _systemSecrets = systemSecrets;
+        _ownership = ownership;
     }
 
     // WebAuthn challenge cache on IDistributedCache instead of IMemoryCache: with multiple
@@ -285,12 +288,23 @@ public class AuthController : ControllerBase
 
             if (legacyUser is not null)
             {
+                // Claiming the legacy user (created by the phase-1 migration, or - on a normal,
+                // never-emptied instance - the true first-ever user): IsOwner already sits on
+                // this row from the AddAuthUserIsOwner backfill (lowest Id) or an earlier first
+                // registration, so nothing to set here.
                 legacyUser.DisplayName = pending.DisplayName;
                 targetUser = legacyUser;
             }
             else
             {
-                targetUser = new AuthUserEntity { DisplayName = pending.DisplayName, CreatedAt = now };
+                // Reached either for open family signup (anyPasskeyExists == true, a legacy/
+                // owner user already exists - IsOwner stays false, the entity default) or for the
+                // genuine "zero AuthUsers exist at all" edge case (anyPasskeyExists == false AND
+                // the query above still found nothing - e.g. a restored empty/wiped DB): only the
+                // latter is the true first-ever user and becomes owner (audit A15/A2 fix - this
+                // used to be re-derived implicitly as "lowest Id" at every check instead of
+                // decided once, here, at creation time).
+                targetUser = new AuthUserEntity { DisplayName = pending.DisplayName, CreatedAt = now, IsOwner = !anyPasskeyExists };
                 _db.AuthUsers.Add(targetUser);
                 await _db.SaveChangesAsync(); // Id is needed for the credential row
             }
@@ -748,18 +762,17 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Client info about one's own account, currently only IsOwner (true for the first
-    /// registered user). The client uses this to avoid showing the backup/restore UI
-    /// (Setup.razor, Index.razor reminder) to any other user in the first place, instead of
-    /// letting them hit a 403 from BackupController.IsOwnerAsync on click.
+    /// Client info about one's own account, currently only IsOwner (the explicit
+    /// AuthUserEntity.IsOwner flag, see OwnershipService). The client uses this to avoid showing
+    /// the backup/restore UI (Setup.razor, Index.razor reminder) to any other user in the first
+    /// place, instead of letting them hit a 403 from BackupController.IsOwnerAsync on click.
     /// </summary>
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpGet("account-info")]
     public async Task<ActionResult<AccountInfoDto>> GetAccountInfo()
     {
         var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var firstUserId = await _db.AuthUsers.OrderBy(u => u.Id).Select(u => u.Id).FirstOrDefaultAsync();
-        return new AccountInfoDto { IsOwner = userId == firstUserId };
+        return new AccountInfoDto { IsOwner = await _ownership.IsOwnerAsync(userId) };
     }
 
     /// <summary>Server-side invalidation of one's own session ("device lost" case) -

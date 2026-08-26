@@ -315,6 +315,17 @@ public class AuthUserEntity
     /// </summary>
     public string? CalendarToken { get; set; }
     public DateTime? CalendarTokenCreatedAt { get; set; }
+    /// <summary>
+    /// Explicit owner flag (audit finding A15/A2 fix) - the only user who may use the raw
+    /// backup/restore/restart endpoints (BackupController) and sees the corresponding setup UI
+    /// (AuthController.GetAccountInfo). Previously derived implicitly as "the AuthUser with the
+    /// lowest Id" in two separate places - a restore of a foreign backup, demo seeding, or a
+    /// future user-deletion feature could silently move it. See
+    /// Services/OwnershipService.cs for assignment (registration, demo seeding) and the
+    /// self-healing fallback if no row has this set (e.g. a restored pre-flag backup).
+    /// Default false; the migration AddAuthUserIsOwner backfills the existing lowest-Id user.
+    /// </summary>
+    public bool IsOwner { get; set; }
 }
 
 /// <summary>
