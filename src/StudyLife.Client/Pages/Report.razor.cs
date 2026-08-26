@@ -14,10 +14,11 @@ namespace StudyLife.Client.Pages;
 /// </summary>
 public partial class Report
 {
-    /// <summary>Record struct instead of a value tuple for the `raw` list in OnInitializedAsync
-    /// below - LINQ over a List<(...)> of value tuples has triggered a Mono AOT crash at compile
-    /// time (not call time) in the native app shell (studylife-app, BlazorWebView) that links this
-    /// same Client project - see project_studylife_app_ios_aot_linq_tuple_crash.</summary>
+    /// <summary>Alias for StudyMetrics.CourseHoursResult (SessionCount renamed to Count) - kept
+    /// local so the rest of this file doesn't need the fully qualified Shared type. The actual
+    /// computation (previously an identical, independently hand-written copy of Stats.razor.cs's
+    /// same loop) now lives in StudyMetrics.CalcCourseHours (metrics API, see MetricsController) -
+    /// one implementation for both pages.</summary>
     private readonly record struct CourseHoursRow(CourseDto Course, double Hours, int Count);
 
     private I18nText.ReportText T = new();
@@ -72,23 +73,13 @@ public partial class Report
         _programmeName = programs.FirstOrDefault(p => p.Id == settings.ActiveStudyProgramId)?.Name
             ?? CourseCatalog.BuiltInProgramName;
 
-        // Same composition of relevant course ids as Stats.razor.cs (selected +
-        // completed + courses that actually have sessions).
-        var relevantIds = settings.SelectedCourseIds
-            .Concat(settings.CompletedCourseIds)
-            .Concat(history.Select(s => s.CourseId))
-            .Distinct();
-
-        var raw = new List<CourseHoursRow>();
-        foreach (var id in relevantIds)
-        {
-            var course = allCourses.FirstOrDefault(c => c.Id == id);
-            if (course == null) continue;
-            var completedSessions = history.Where(s => s.CourseId == id && StudyMetrics.IsStudied(s, DateTime.Now)).ToList();
-            if (completedSessions.Count == 0) continue;
-            var hours = completedSessions.Sum(s => (s.EndTime - s.StartTime).TotalHours);
-            raw.Add(new CourseHoursRow(course, hours, completedSessions.Count));
-        }
+        // Same StudyMetrics.CalcCourseHours call as Stats.razor.cs (selected + completed +
+        // courses that actually have sessions) - `history` is already StudySessionDto here
+        // (unlike Stats.razor.cs's client-model `sessions`), so no mapping is needed.
+        var raw = StudyMetrics.CalcCourseHours(
+                allCourses, settings.SelectedCourseIds, settings.CompletedCourseIds, history, DateTime.Now)
+            .Select(r => new CourseHoursRow(r.Course, r.Hours, r.SessionCount))
+            .ToList();
 
         // Sorted by semester instead of by hours (as on the stats page) - for a
         // record, the chronological order of the study progression is the more natural reading.

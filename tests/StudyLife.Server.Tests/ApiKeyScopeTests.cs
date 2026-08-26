@@ -95,6 +95,33 @@ public class ApiKeyScopeTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task Ha_AllowedEndpoint_GetMetricsSummary_ReturnsOk()
+    {
+        // Metrics API (docs/api/metrics-contract-v1): the coordinator polls this once per cycle
+        // instead of computing streak/quota/forecast/... itself - see ApiKeyScopes.Ha's
+        // Metrics.GetSummary entry.
+        var apiKey = await GenerateKeyAsync("ha");
+        using var client = ApiKeyTestHelpers.CreateClientWithKey(_factory, apiKey);
+
+        var response = await client.GetAsync("/api/metrics/summary");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await RevokeKeyAsync("ha");
+    }
+
+    [Fact]
+    public async Task Ha_AllowedEndpoint_GetMetricsAchievements_ReturnsOk()
+    {
+        var apiKey = await GenerateKeyAsync("ha");
+        using var client = ApiKeyTestHelpers.CreateClientWithKey(_factory, apiKey);
+
+        var response = await client.GetAsync("/api/metrics/achievements");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await RevokeKeyAsync("ha");
+    }
+
+    [Fact]
     public async Task Ha_OutOfScopeEndpoint_CreateNote_ReturnsForbidden()
     {
         // The HA integration never creates notes (that's capture's job, see api.py/services.py) -
@@ -188,6 +215,21 @@ public class ApiKeyScopeTests : IClassFixture<CustomWebApplicationFactory>
         using var client = ApiKeyTestHelpers.CreateClientWithKey(_factory, apiKey);
 
         var response = await client.GetAsync("/api/sessions");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        await RevokeKeyAsync("capture");
+    }
+
+    [Fact]
+    public async Task Capture_OutOfScopeEndpoint_GetMetricsSummary_ReturnsForbidden()
+    {
+        // The browser extension never needs streak/quota/forecast/etc. - only ha's ApiKeyScopes
+        // entry includes the metrics endpoints (see the Ha_AllowedEndpoint_GetMetricsSummary/
+        // GetMetricsAchievements tests above).
+        var apiKey = await GenerateKeyAsync("capture");
+        using var client = ApiKeyTestHelpers.CreateClientWithKey(_factory, apiKey);
+
+        var response = await client.GetAsync("/api/metrics/summary");
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         await RevokeKeyAsync("capture");

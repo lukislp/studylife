@@ -77,33 +77,17 @@ public partial class Index
 
     private void BuildMonthComparison()
     {
-        var today = DateTime.Today;
-        double HoursInMonth(int year, int month) => _allTimeHistory
-            .Where(s => s.StartTime.Year == year && s.StartTime.Month == month)
-            .Sum(s => (s.EndTime - s.StartTime).TotalHours);
+        var result = StudyMetrics.CalcMonthComparison(_allTimeHistory, DateTime.Today);
 
-        var thisMonthHours = HoursInMonth(today.Year, today.Month);
-        var lastMonthDate = today.AddMonths(-1);
-        var lastMonthHours = HoursInMonth(lastMonthDate.Year, lastMonthDate.Month);
-        var lastYearDate = today.AddYears(-1);
-        var lastYearHours = HoursInMonth(lastYearDate.Year, lastYearDate.Month);
+        _monthCompCurrentLabel = FormatHoursLabel(result.CurrentMonthHours);
+        _monthCompVsLastMonthUp = result.DeltaVsPreviousMonth >= 0;
+        _monthCompVsLastMonthLabel = FormatHoursLabel(Math.Abs(result.DeltaVsPreviousMonth));
 
-        _monthCompCurrentLabel = FormatHoursLabel(thisMonthHours);
-
-        var momDelta = thisMonthHours - lastMonthHours;
-        _monthCompVsLastMonthUp = momDelta >= 0;
-        _monthCompVsLastMonthLabel = FormatHoursLabel(Math.Abs(momDelta));
-
-        // Only show the year-over-year line once history actually reaches back over the whole
-        // same calendar month last year - otherwise a "0h" comparison would be misleading, not informative.
-        var earliestSession = _allTimeHistory.Count > 0 ? _allTimeHistory.Min(s => s.StartTime) : (DateTime?)null;
-        var lastYearMonthStart = new DateTime(lastYearDate.Year, lastYearDate.Month, 1);
-        _monthCompHasYearData = earliestSession.HasValue && earliestSession.Value.Date <= lastYearMonthStart;
-        if (_monthCompHasYearData)
+        _monthCompHasYearData = result.HasYearData;
+        if (result.HasYearData)
         {
-            var yoyDelta = thisMonthHours - lastYearHours;
-            _monthCompVsLastYearUp = yoyDelta >= 0;
-            _monthCompVsLastYearLabel = FormatHoursLabel(Math.Abs(yoyDelta));
+            _monthCompVsLastYearUp = result.DeltaVsLastYear!.Value >= 0;
+            _monthCompVsLastYearLabel = FormatHoursLabel(Math.Abs(result.DeltaVsLastYear!.Value));
         }
     }
 
