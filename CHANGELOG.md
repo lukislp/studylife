@@ -1,3 +1,10 @@
+## [2.1.5](https://github.com/lukislp/studylife/compare/v2.1.4...v2.1.5) (2026-08-26)
+
+
+### Bug Fixes
+
+* cache immutable framework assets at the gateway during rollouts ([62fecfc](https://github.com/lukislp/studylife/commit/62fecfc9e334e708f187b8b4a1888030c5859333))
+
 ## [2.1.4](https://github.com/lukislp/studylife/compare/v2.1.3...v2.1.4) (2026-08-26)
 
 
