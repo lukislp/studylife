@@ -66,8 +66,8 @@ public class ProgressController : ControllerBase
             groupQuotas = CourseCatalog.GroupEctsQuotas;
         }
 
-        var selectedIds = ParseIds(settings.SelectedCourseIds);
-        var completedIds = ParseIds(settings.CompletedCourseIds);
+        var selectedIds = CommaSeparatedIds.Parse(settings.SelectedCourseIds);
+        var completedIds = CommaSeparatedIds.Parse(settings.CompletedCourseIds);
 
         var totalEcts = CourseCatalog.CalcTotalEcts(courseList, groupQuotas);
         var earnedEcts = CourseCatalog.CalcEctsEarned(courseList, completedIds, groupQuotas);
@@ -111,11 +111,6 @@ public class ProgressController : ControllerBase
             GeneratedAt = DateTime.UtcNow,
         };
     }
-
-    private static List<int> ParseIds(string? commaSeparated) =>
-        string.IsNullOrEmpty(commaSeparated)
-            ? new List<int>()
-            : commaSeparated.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList();
 
     /// <summary>Share of checked-off topics (CourseGoalEntity.CompletedTopics) out of CourseDto.Topics, 0-100. No topics recorded → 0.</summary>
     private static int ComputeTopicProgressPercent(CourseDto course, CourseGoalEntity? goal)

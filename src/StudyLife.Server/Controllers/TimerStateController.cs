@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
+using StudyLife.Server.Services;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Controllers;
@@ -28,12 +29,7 @@ public class TimerStateController : ControllerBase
     [HttpPut]
     public async Task<TimerStateDto> Save(TimerStateDto dto)
     {
-        var entity = await _db.TimerState.FirstOrDefaultAsync();
-        if (entity == null)
-        {
-            entity = new TimerStateEntity();
-            _db.TimerState.Add(entity);
-        }
+        var entity = await _db.TimerState.GetOrCreateAsync(_db);
         entity.SessionId = dto.SessionId;
         entity.IsRunning = dto.IsRunning;
         entity.IsBreak = dto.IsBreak;
@@ -63,12 +59,7 @@ public class TimerStateController : ControllerBase
     [HttpPut("liveactivity-token")]
     public async Task<IActionResult> SetLiveActivityPushToken(LiveActivityPushTokenDto dto)
     {
-        var entity = await _db.TimerState.FirstOrDefaultAsync();
-        if (entity == null)
-        {
-            entity = new TimerStateEntity();
-            _db.TimerState.Add(entity);
-        }
+        var entity = await _db.TimerState.GetOrCreateAsync(_db);
         entity.LiveActivityPushToken = dto.Token;
         await _db.SaveChangesAsync();
         return Ok();
