@@ -761,3 +761,47 @@ public class PushSubscriptionListItemDto
     public string? UserAgent { get; set; }
     public string EndpointHash { get; set; } = "";
 }
+
+// Audit finding D2: the five small response DTOs below replace bare `Ok(new { ... })` anonymous
+// objects in BackupController/DictationController/PushController/SystemController - those
+// compiled fine, but a plain `IActionResult` return type gives the OpenAPI generator nothing to
+// introspect (no component schema, no documented response body at all; every other controller
+// action already returns ActionResult<T> and gets a real schema "for free"). Property names/
+// casing are unchanged from the anonymous objects they replace - this is a pure typing change,
+// byte-identical on the wire (verified against StudyLife.Client's own hand-mirrored records for
+// these same endpoints, e.g. SetupRestoreCard.razor's RestoreStatusResponse and
+// NotificationService.cs's VapidPublicKeyResponse - exactly the kind of drift-prone duplication
+// this whole audit finding exists to eliminate).
+
+/// <summary>Response of GET /api/backup/restore/status.</summary>
+public class RestoreStatusResponseDto
+{
+    public bool Pending { get; set; }
+    public DateTime? StagedAt { get; set; }
+}
+
+/// <summary>Response of a successful POST /api/backup/restore/cancel (a staged restore existed
+/// and was discarded). The "nothing to cancel" case answers 404 instead, with a plain
+/// <c>{ error }</c> body - not worth its own schema for a single string field.</summary>
+public class RestoreCancelResponseDto
+{
+    public string Status { get; set; } = "cancelled";
+}
+
+/// <summary>Response of POST /api/dictate.</summary>
+public class DictationResponseDto
+{
+    public string Text { get; set; } = "";
+}
+
+/// <summary>Response of GET /api/push/publickey.</summary>
+public class PushPublicKeyResponseDto
+{
+    public string PublicKey { get; set; } = "";
+}
+
+/// <summary>Response of GET /api/system/capabilities.</summary>
+public class SystemCapabilitiesResponseDto
+{
+    public bool RawBackupSupported { get; set; }
+}

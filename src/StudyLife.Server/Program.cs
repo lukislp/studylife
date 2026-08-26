@@ -8,12 +8,30 @@ using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Auth;
 using StudyLife.Server.Data;
+using StudyLife.Server.OpenApi;
 using StudyLife.Server.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
+
+// Audit finding D2: formal API contract. Serves the live document at /openapi/v1.json
+// (app.MapOpenApi() below) - controllers return typed ActionResult<T>, so DTO component schemas
+// (StudySessionDto, NoteDto, ...) fall out with their real names for free. The security-scheme
+// document transformer documents the two real header credentials (X-Session-Token/X-Api-Key) -
+// see StudyLifeOpenApiSecuritySchemeTransformer. This is the RUNTIME endpoint only; the
+// COMMITTED contract artifact consumers pin against (docs/api/openapi.json) is a separate
+// build-time generation step - see StudyLife.Server.csproj's OpenApiDocumentsDirectory.
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer<StudyLifeOpenApiSecuritySchemeTransformer>();
+    // Audit finding D2 follow-up: the default generation leaves every DTO's "required" array
+    // empty (it derives required-ness from C# `required`-keyword/constructor-parameter syntax,
+    // which no DTO in StudyLife.Shared/Dtos.cs uses) - see
+    // StudyLifeOpenApiRequiredPropertiesTransformer for the CLR-nullability-based fix and why.
+    options.AddSchemaTransformer<StudyLifeOpenApiRequiredPropertiesTransformer>();
+});
 
 // Real AuthenticationHandler + authorization policies (audit finding A3) replacing the former
 // hand-rolled inline middleware - see StudyLifeAuthorizationPolicies for the policy design and
@@ -633,6 +651,13 @@ app.MapGet("/.well-known/apple-app-site-association", (HttpResponse response) =>
         webcredentials = new { apps = new[] { $"{appleTeamId}.app.studylife.mobile" } },
     });
 }).AllowAnonymous();
+
+// Audit finding D2: the generated OpenAPI document is not sensitive (public repo, no secrets in
+// route/schema metadata) and needs to be fetchable by tooling/consumer CI without a credential -
+// same reasoning and same .AllowAnonymous() pattern as the Apple site-association endpoint right
+// above: AuthorizationOptions.FallbackPolicy (ApiAccess) applies to every endpoint with no
+// authorization metadata of its own, so without this the endpoint would 401.
+app.MapOpenApi().AllowAnonymous();
 
 app.MapRazorPages();
 // The default "needs a credential unless [AllowAnonymous]/a more specific policy" requirement

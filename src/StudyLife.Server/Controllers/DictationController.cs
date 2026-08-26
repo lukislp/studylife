@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using StudyLife.Shared;
 using StudyLife.Stt;
 
 namespace StudyLife.Server.Controllers;
@@ -28,7 +29,7 @@ public class DictationController : ControllerBase
     [HttpPost]
     [RequestSizeLimit(50L * 1024 * 1024)]
     [RequestFormLimits(MultipartBodyLengthLimit = 50L * 1024 * 1024)]
-    public async Task<IActionResult> Transcribe(IFormFile? audio, [FromQuery] string? lang)
+    public async Task<ActionResult<DictationResponseDto>> Transcribe(IFormFile? audio, [FromQuery] string? lang)
     {
         if (audio == null || audio.Length == 0)
             return BadRequest(new { error = "audio file is required" });
@@ -37,6 +38,6 @@ public class DictationController : ControllerBase
 
         await using var stream = audio.OpenReadStream();
         var text = await _transcriber.TranscribeAsync(stream, lang, HttpContext.RequestAborted);
-        return Ok(new { text });
+        return Ok(new DictationResponseDto { Text = text });
     }
 }

@@ -53,13 +53,13 @@ public class SystemController : ControllerBase
     /// backup runs externally there).
     /// </summary>
     [HttpGet("capabilities")]
-    public IActionResult GetCapabilities()
+    public ActionResult<SystemCapabilitiesResponseDto> GetCapabilities()
     {
         // no-store: this response must never end up in an HTTP cache - a client with
         // stale capability info would otherwise show/hide UI incorrectly (see the
         // /api fallback comment in Program.cs about NSURLCache poisoning).
         Response.Headers.CacheControl = "no-store";
-        return Ok(new { rawBackupSupported = _rawBackupSupported });
+        return Ok(new SystemCapabilitiesResponseDto { RawBackupSupported = _rawBackupSupported });
     }
 
     /// <summary>
