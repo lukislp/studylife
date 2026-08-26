@@ -103,12 +103,45 @@ spec:
           resources:
             requests: {cpu: 50m, memory: 128Mi}
             limits: {cpu: 300m, memory: 256Mi}
+          # Audit finding O6: both probes now point at /healthz/live (HealthController), NOT
+          # /healthz/ready - deliberately, for two independent reasons:
+          # 1. This Deployment has no Service (see the class comment above) - "Ready" has no
+          #    routing meaning for the worker, and gating it on the DB adds a false-failure mode
+          #    (a rolling update pauses on "not Ready" even though the worker can happily wait) for
+          #    no actual benefit.
+          # 2. Database__Migrate=false above means this process does NOT migrate itself - it
+          #    BLOCKS in WaitForPendingMigrationsAsync (Program.cs) until the web Deployment's
+          #    migration lands, up to a hard 5-minute (300s) deadline, ALL of it before app.Run()
+          #    is even reached - so Kestrel isn't listening on ANY path, /healthz/ready included,
+          #    for however long that wait takes. Using the DB-aware endpoint here would make
+          #    readiness fail for a reason that has nothing to do with THIS pod being unhealthy.
+          #
+          # The startupProbe below is the actual fix for the timing hazard this wait loop
+          # creates: without it, the old defaults (livenessProbe initialDelaySeconds: 20,
+          # periodSeconds: 10, the implicit default failureThreshold: 3) would start failing at
+          # t=20s and kill/restart the pod by ~t=40-50s - LONG before a slow web migration could
+          # ever finish waiting out its 5-minute budget, turning a legitimate wait into a
+          # perpetual CrashLoopBackOff. A startupProbe suspends BOTH readiness and liveness
+          # checking until it succeeds once (or the pod is killed after its own failureThreshold),
+          # so liveness/readiness below can keep their normal, tight timing for steady-state
+          # operation once the wait is over.
+          startupProbe:
+            httpGet: {path: /healthz/live, port: 8080}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            # 40 * 10s = 400s of budget - comfortably above the 300s WaitForPendingMigrationsAsync
+            # deadline plus headroom for Kestrel/JIT startup and container scheduling jitter. If
+            # the web role's migration is ever stuck/failed for the full 5 minutes, this pod is
+            # killed and restarted (fresh 400s budget) rather than left in permanent limbo -
+            # matching the crash-and-retry behavior WaitForPendingMigrationsAsync's own thrown
+            # InvalidOperationException already produces once Program.cs actually reaches it.
+            failureThreshold: 40
           readinessProbe:
-            httpGet: {path: /, port: 8080}
+            httpGet: {path: /healthz/live, port: 8080}
             initialDelaySeconds: 10
             periodSeconds: 5
           livenessProbe:
-            httpGet: {path: /, port: 8080}
+            httpGet: {path: /healthz/live, port: 8080}
             initialDelaySeconds: 20
             periodSeconds: 10
           volumeMounts:

@@ -179,12 +179,22 @@ spec:
           resources:
             requests: {cpu: 100m, memory: 300Mi}
             limits: {cpu: 500m, memory: 1200Mi}
+          # Audit finding O6: both probes used to hit plain "/" - which only proves Kestrel is up,
+          # not that this pod can actually reach Postgres/the pooler. A pod with a dead DB
+          # connection stayed "Ready" forever and kept receiving (failing) traffic. Readiness now
+          # runs a real SELECT 1 (HealthController.Ready) - the ONLY probe DB-awareness belongs
+          # on: a dead DB is a "take me out of rotation" condition, never a "kill and restart me"
+          # one (restarting the pod doesn't revive the database), so liveness stays dependency-free
+          # (HealthController.Live). Timing unchanged from before - web calls Database.Migrate()
+          # itself before Kestrel starts listening (Program.cs), so these delays already accounted
+          # for that; no wait-for-migrations loop applies here (that's worker-only, see
+          # k8s/05-worker.yaml).
           readinessProbe:
-            httpGet: {path: /, port: 8080}
+            httpGet: {path: /healthz/ready, port: 8080}
             initialDelaySeconds: 10
             periodSeconds: 5
           livenessProbe:
-            httpGet: {path: /, port: 8080}
+            httpGet: {path: /healthz/live, port: 8080}
             initialDelaySeconds: 20
             periodSeconds: 10
           volumeMounts:

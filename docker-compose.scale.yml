@@ -61,8 +61,14 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    # Audit finding O6: was plain GET / (only proves Kestrel is up) - now /healthz/ready
+    # (HealthController), which runs a real SELECT 1 through the DB, so a dead Postgres/pooler
+    # connection actually shows up here instead of curl happily reporting "healthy" while every
+    # real request 500s. Timing unchanged: postgres/redis are already gated via the
+    # service_healthy depends_on above, so this pod's own DB should be reachable well within the
+    # existing 15s start_period.
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/ || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/healthz/ready || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -88,6 +94,19 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    # Audit finding O6: /healthz/live (HealthController), not /healthz/ready - deliberately, for
+    # consistency with k8s/05-worker.yaml's probes (see the comment there): the worker has no
+    # routing role, so DB-awareness here would only add a false-failure mode. Unlike the k8s
+    # worker, this one does NOT set Database__Migrate=false (that switch is k8s-only, see
+    # Program.cs) - it still migrates itself on startup exactly like before this change, so the
+    # 5-minute wait-for-migrations timing hazard that needed k8s's startupProbe doesn't apply
+    # here; the same start_period as the server service above is enough.
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/healthz/live || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     networks:
       - studylife-scale-net
 
