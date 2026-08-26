@@ -258,6 +258,35 @@ public class AuthControllerDemoModeTests : IClassFixture<AuthControllerDemoModeT
         Assert.Equal(HttpStatusCode.ServiceUnavailable, brokenLogin.StatusCode);
         Assert.Contains("demo user not seeded", await brokenLogin.Content.ReadAsStringAsync());
     }
+
+    /// <summary>
+    /// Audit finding M4 follow-up: the new JSON import endpoint (POST /api/backup/import-json)
+    /// must be just as unreachable on a public demo instance as every other /api/backup
+    /// endpoint - it sits under the SAME path prefix the write-block middleware blocks
+    /// unconditionally (any method, before the request even reaches routing/auth, see
+    /// Program.cs), so this is a straight regression test, not new blocking logic. Uses a real
+    /// demo session token (not just an anonymous request) to prove the block applies even to a
+    /// genuinely logged-in demo user - the same "backups are disabled" 403 as the raw DB
+    /// endpoints, NOT the generic "read-only demo instance" write-block message, because /api/backup
+    /// is intercepted by its own, earlier branch in the middleware (see Program.cs).
+    /// </summary>
+    [Fact]
+    public async Task ImportJson_IsBlockedOnDemoInstance()
+    {
+        var login = await _client.PostAsync("/api/auth/demo-login", null);
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+        var token = (await login.Content.ReadFromJsonAsync<PasskeyCompleteResponseDto>())!.Token!;
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/backup/import-json")
+        {
+            Content = JsonContent.Create(new BackupExportDto()),
+        };
+        request.Headers.Add("X-Session-Token", token);
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Contains("backups are disabled", await response.Content.ReadAsStringAsync());
+    }
 }
 
 /// <summary>

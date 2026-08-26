@@ -111,26 +111,37 @@ public class BackupControllerTests : IClassFixture<CustomWebApplicationFactory>
         using var document = JsonDocument.Parse(json);
         var root = document.RootElement;
 
-        // Documented export structure: exportedAt + sessions/notes/courseGoals/settings.
+        // Documented v2 export structure (audit finding M4): formatVersion/exportedAt/appVersion
+        // plus every user-owned table, all camelCase.
+        Assert.True(root.TryGetProperty("formatVersion", out var formatVersionProp));
+        Assert.Equal(2, formatVersionProp.GetInt32());
         Assert.True(root.TryGetProperty("exportedAt", out var exportedAtProp));
         var exportedAt = exportedAtProp.GetDateTime();
         Assert.True(exportedAt >= DateTime.UtcNow.AddMinutes(-2));
+        Assert.True(root.TryGetProperty("appVersion", out _));
 
         Assert.True(root.TryGetProperty("sessions", out var sessionsProp));
         Assert.True(root.TryGetProperty("notes", out _));
         Assert.True(root.TryGetProperty("courseGoals", out _));
+        Assert.True(root.TryGetProperty("courseResources", out _));
         Assert.True(root.TryGetProperty("settings", out _));
+        // Previously missing tables (audit finding M4(b)) - now part of every export.
+        Assert.True(root.TryGetProperty("studyPrograms", out _));
+        Assert.True(root.TryGetProperty("courseGroups", out _));
+        Assert.True(root.TryGetProperty("customCourses", out _));
+        Assert.True(root.TryGetProperty("sessionTemplates", out _));
 
         // Deliberately excluded per the BackupController docs: PushSubscriptions/SentReminders/TimerState.
         Assert.False(root.TryGetProperty("pushSubscriptions", out _));
         Assert.False(root.TryGetProperty("sentReminders", out _));
         Assert.False(root.TryGetProperty("timerState", out _));
 
+        // camelCase, not the former PascalCase bug (audit finding M4(a)) - see ApiContractTests.cs.
         var matchingSessions = sessionsProp.EnumerateArray()
-            .Where(s => s.GetProperty("CourseName").GetString() == uniqueCourseName)
+            .Where(s => s.GetProperty("courseName").GetString() == uniqueCourseName)
             .ToList();
         Assert.Single(matchingSessions);
-        Assert.Equal("Export-Test", matchingSessions[0].GetProperty("Topic").GetString());
+        Assert.Equal("Export-Test", matchingSessions[0].GetProperty("topic").GetString());
     }
 }
 

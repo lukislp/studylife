@@ -953,6 +953,55 @@
         }
       }
     },
+    "/api/backup/import-json": {
+      "post": {
+        "tags": [
+          "Backup"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackupExportDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackupExportDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackupExportDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupImportResponseDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupImportResponseDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupImportResponseDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/backup/restore": {
       "post": {
         "tags": [
@@ -3601,6 +3650,122 @@
           }
         }
       },
+      "BackupExportDto": {
+        "required": [
+          "formatVersion",
+          "exportedAt",
+          "appVersion",
+          "sessions",
+          "notes",
+          "courseGoals",
+          "courseResources",
+          "settings",
+          "studyPrograms",
+          "courseGroups",
+          "customCourses",
+          "sessionTemplates"
+        ],
+        "type": "object",
+        "properties": {
+          "formatVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "exportedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "appVersion": {
+            "type": "string"
+          },
+          "sessions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StudySessionDto"
+            }
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NoteDto"
+            }
+          },
+          "courseGoals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CourseGoalDto"
+            }
+          },
+          "courseResources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CourseResourceDto"
+            }
+          },
+          "settings": {
+            "$ref": "#/components/schemas/UserSettingsDto"
+          },
+          "studyPrograms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StudyProgramExportDto"
+            }
+          },
+          "courseGroups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CourseGroupExportDto"
+            }
+          },
+          "customCourses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomCourseExportDto"
+            }
+          },
+          "sessionTemplates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionTemplateDto"
+            }
+          }
+        }
+      },
+      "BackupImportResponseDto": {
+        "required": [
+          "imported",
+          "dropped"
+        ],
+        "type": "object",
+        "properties": {
+          "imported": {
+            "type": "object",
+            "additionalProperties": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          "dropped": {
+            "type": "object",
+            "additionalProperties": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        }
+      },
       "CalendarTokenResponseDto": {
         "required": [
           "calendarToken"
@@ -3768,6 +3933,44 @@
           }
         }
       },
+      "CourseGroupExportDto": {
+        "required": [
+          "id",
+          "studyProgramId",
+          "name",
+          "ectsQuota"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "studyProgramId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          },
+          "ectsQuota": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "CourseResourceDto": {
         "required": [
           "id",
@@ -3923,6 +4126,78 @@
         }
       },
       "CredentialProtectionPolicy": { },
+      "CustomCourseExportDto": {
+        "required": [
+          "id",
+          "studyProgramId",
+          "semester",
+          "name",
+          "code",
+          "color",
+          "icon",
+          "ects",
+          "topics"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "studyProgramId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "semester": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "ects": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "courseGroupId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "topics": {
+            "type": "string"
+          }
+        }
+      },
       "DemoInfoDto": {
         "required": [
           "demo"
@@ -4780,6 +5055,35 @@
               ],
               "format": "int32"
             }
+          }
+        }
+      },
+      "StudyProgramExportDto": {
+        "required": [
+          "id",
+          "name",
+          "createdAt",
+          "isCompleted"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "isCompleted": {
+            "type": "boolean"
           }
         }
       },
