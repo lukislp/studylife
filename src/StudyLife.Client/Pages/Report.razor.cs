@@ -104,7 +104,7 @@ public partial class Report
 
         var averageGrade = StudyMetrics.CalcWeightedAverageGrade(goals
             .Where(g => g.Grade.HasValue)
-            .Select(g => (g.Grade!.Value, allCourses.FirstOrDefault(c => c.Id == g.CourseId)?.Ects ?? 5)));
+            .Select(g => new StudyMetrics.GradedCourse(g.Grade!.Value, allCourses.FirstOrDefault(c => c.Id == g.CourseId)?.Ects ?? 5)));
         _averageGradeLabel = averageGrade.HasValue
             ? StudyMetrics.FormatGrade(averageGrade.Value)
             : null;

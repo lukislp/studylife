@@ -61,10 +61,21 @@ public static partial class StudyMetrics
     }
 
     /// <summary>
+    /// A single course's grade + ECTS weight, as consumed by <see cref="CalcWeightedAverageGrade(IEnumerable{GradedCourse})"/>.
+    /// A record struct rather than a value tuple: LINQ generic-instantiated over a value-tuple
+    /// element type has reproducibly crashed the MAUI app's Mono AOT compiler on iOS (SIGABRT at
+    /// startup, from the method merely being AOT-compiled, not from ever being called - see
+    /// INativeHealthData/Stats.Health.razor.cs for the same class of bug and the full writeup).
+    /// A record struct doesn't hit that gsharedvt code-generation bug, so callers of this overload
+    /// are free to use normal LINQ (Select/Where/etc.) again.
+    /// </summary>
+    public readonly record struct GradedCourse(decimal Grade, int Ects);
+
+    /// <summary>
     /// ECTS-weighted average grade (Grade × Ects / sum of Ects), falls back to the
     /// unweighted mean when the Ects sum is 0. Null for empty input.
     /// </summary>
-    public static decimal? CalcWeightedAverageGrade(IEnumerable<(decimal Grade, int Ects)> gradedCourses)
+    public static decimal? CalcWeightedAverageGrade(IEnumerable<GradedCourse> gradedCourses)
     {
         var grades = gradedCourses.ToList();
         if (grades.Count == 0) return null;
@@ -73,6 +84,16 @@ public static partial class StudyMetrics
             ? grades.Sum(g => g.Grade * g.Ects) / totalEcts
             : grades.Average(g => g.Grade);
     }
+
+    /// <summary>
+    /// Value-tuple overload kept for backward compatibility with cross-repo consumers still
+    /// mid-migration (see the MAUI app's ProjectReference to this repo's main branch in CI) -
+    /// delegates to the <see cref="GradedCourse"/> overload above. Do not add new callers of
+    /// this overload; it exists purely so old call sites keep compiling until they're migrated.
+    /// </summary>
+    [Obsolete("Use the CalcWeightedAverageGrade(IEnumerable<GradedCourse>) overload instead - value tuples in LINQ pipelines can crash iOS AOT compilation.", error: false)]
+    public static decimal? CalcWeightedAverageGrade(IEnumerable<(decimal Grade, int Ects)> gradedCourses) =>
+        CalcWeightedAverageGrade(gradedCourses.Select(g => new GradedCourse(g.Grade, g.Ects)));
 
     // A bare NumberFormatInfo, NOT `new CultureInfo("de-DE")`: the Blazor WASM client publishes
     // with InvariantGlobalization=true, where constructing any non-invariant culture throws
