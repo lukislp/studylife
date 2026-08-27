@@ -39,6 +39,19 @@ public interface ICourseResolver
     /// <see cref="CustomCourseEntity.AuthUserId"/> - no explicit user check needed here.
     /// </summary>
     Task<CourseDto?> ResolveAsync(int courseId);
+
+    /// <summary>
+    /// Deliberate contrast with <see cref="ResolveAsync"/>: scoped to only the caller's currently
+    /// ACTIVE study program (falling back to the built-in catalog if none is active), and with
+    /// Topics/Group populated - narrower scope, wider payload, both on purpose. Used by the
+    /// Planner (PlannerController.GenerateExamPlan), which only ever creates NEW work (sessions)
+    /// for the program the user is actively studying right now; unlike ResolveAsync's write paths
+    /// (session/goal/note edits, etc.) it never needs to keep referencing a course from a program
+    /// the caller has since switched away from, and it needs Topics to pick which ones are still
+    /// open (ResolveAsync omits Topics/Group - its callers only ever stamp Name/Color onto a row,
+    /// so the extra lookup would be pure overhead there).
+    /// </summary>
+    Task<CourseDto?> ResolveInActiveProgramAsync(int courseId, UserSettingsEntity settings);
 }
 
 public class CourseResolver : ICourseResolver
@@ -71,6 +84,25 @@ public class CourseResolver : ICourseResolver
             Icon = entity.Icon,
             Ects = entity.Ects,
         };
+    }
+
+    public async Task<CourseDto?> ResolveInActiveProgramAsync(int courseId, UserSettingsEntity settings)
+    {
+        // Course resolution is program-aware like ProgressController/CoursesController: an
+        // active custom study program → its courses (tenant-separated), otherwise the built-in
+        // catalog. Previously this endpoint (Home Assistant service "generate_exam_plan") only
+        // knew CourseCatalog.AppliedAICourses.
+        List<CourseDto> catalog;
+        if (settings.ActiveStudyProgramId is int programId
+            && await _db.StudyPrograms.AsNoTracking().AnyAsync(p => p.Id == programId))
+        {
+            catalog = await StudyProgramCatalog.LoadCoursesAsync(_db, programId);
+        }
+        else
+        {
+            catalog = CourseCatalog.AppliedAICourses;
+        }
+        return catalog.FirstOrDefault(c => c.Id == courseId);
     }
 }
 
