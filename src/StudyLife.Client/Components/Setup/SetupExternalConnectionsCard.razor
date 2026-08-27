@@ -1,0 +1,89 @@
+@using StudyLife.Shared
+@inject HttpClient Http
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+@* Consolidated status/disconnect card for the two integrations that no longer provision a key
+   through this Setup page: studylife-mcp (AuthUserEntity.McpApiKeyHash) and studylife-capture
+   (CaptureApiKeyHash). UNLIKE the Home Assistant and studylife-ai cards, this one never
+   generates a key here - provisioning happens exclusively through each integration's own
+   consent flow (the studylife-capture browser extension's own "Connect" action against its
+   already-authenticated session; the MCP OAuth connect flow behind AuthController.McpConnect,
+   plus the CLI login, for stdio-based MCP clients). The only thing a user ever needs from THIS
+   page for either integration is an emergency disconnect, so the card is reduced to a status
+   line plus a revoke button per slot - no generate, no one-time plaintext reveal, no advanced
+   disclosure, no manual paste path. Self-contained component (own SetupText instance + own
+   HTTP calls), reusing the existing mcp-api-key/capture-api-key status and revoke endpoints
+   (SettingsController) completely unchanged - this is a client-only UI simplification. *@
+
+<div class="setup-section">
+    <div class="ss-label">@T.ExternalConnectionsHeading</div>
+    <p class="ss-desc">@T.ExternalConnectionsDesc</p>
+
+    <div class="toggle-row" style="justify-content:space-between;flex-wrap:wrap">
+        <span>@T.McpConnectionLabel — <strong>@(_mcpConnected ? T.ConnectionConnected : T.ConnectionNotConnected)</strong></span>
+        @if (_mcpConnected)
+        {
+            <button type="button" class="btn-danger" @onclick="DisconnectMcp" disabled="@_mcpBusy">
+                @(_mcpBusy ? "…" : T.DisconnectButton)
+            </button>
+        }
+    </div>
+
+    <div class="toggle-row" style="justify-content:space-between;flex-wrap:wrap">
+        <span>@T.CaptureConnectionLabel — <strong>@(_captureConnected ? T.ConnectionConnected : T.ConnectionNotConnected)</strong></span>
+        @if (_captureConnected)
+        {
+            <button type="button" class="btn-danger" @onclick="DisconnectCapture" disabled="@_captureBusy">
+                @(_captureBusy ? "…" : T.DisconnectButton)
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    private I18nText.SetupText T = new();
+
+    private bool _mcpConnected;
+    private bool _captureConnected;
+    private bool _mcpBusy;
+    private bool _captureBusy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
+        try
+        {
+            var mcpStatus = await Http.GetFromJsonAsync<McpApiKeyStatusDto>("api/settings/mcp-api-key");
+            _mcpConnected = mcpStatus?.HasKey ?? false;
+        }
+        catch { /* offline: card shows the "not connected" default */ }
+        try
+        {
+            var captureStatus = await Http.GetFromJsonAsync<CaptureApiKeyStatusDto>("api/settings/capture-api-key");
+            _captureConnected = captureStatus?.HasKey ?? false;
+        }
+        catch { /* offline: card shows the "not connected" default */ }
+    }
+
+    private async Task DisconnectMcp()
+    {
+        _mcpBusy = true;
+        try
+        {
+            var response = await Http.PostAsync("api/settings/mcp-api-key/revoke", null);
+            if (response.IsSuccessStatusCode) _mcpConnected = false;
+        }
+        finally { _mcpBusy = false; }
+    }
+
+    private async Task DisconnectCapture()
+    {
+        _captureBusy = true;
+        try
+        {
+            var response = await Http.PostAsync("api/settings/capture-api-key/revoke", null);
+            if (response.IsSuccessStatusCode) _captureConnected = false;
+        }
+        finally { _captureBusy = false; }
+    }
+}

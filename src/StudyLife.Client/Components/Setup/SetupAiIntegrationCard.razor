@@ -1,92 +1,65 @@
 @using StudyLife.Shared
 @inject HttpClient Http
-@inject IJSRuntime JS
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
 @* Long-lived per-user API key for the studylife-ai integration - a SEPARATE slot from the
    Home Assistant key (AuthUserEntity.AiApiKeyHash vs ApiKeyHash, see SettingsController's
-   ai-api-key group), same reasoning and shape otherwise: the plaintext key is ONLY visible
-   right after generation (the server stores exclusively the SHA-256 hash) - after that the
-   card just shows "active since ...". Deliberately no rotation, same as HA: studylife-ai has
-   no live session that could pick up a rotation. Self-contained component, structurally a
-   copy of SetupHomeAssistantCard (its own SetupText instance + its own HTTP calls) with the
-   ai-api-key endpoints and Ai-prefixed i18n keys instead. *@
+   ai-api-key group). UNLIKE the Home Assistant/MCP/Capture cards, this is a plain on/off
+   toggle, not a reveal-once-plaintext lifecycle: nothing external ever needs the raw key -
+   the server hands it to studylife-ai itself at generation time (AiProxyClient.
+   RegisterKeyAsync via the AI key outbox) and only ever stores the SHA-256 hash locally, so
+   the user has nothing to copy or paste anywhere. Same discard-immediately pattern as
+   AgentChatModal's ActivateAsync: call generate, ignore the plaintext in the response.
+   Deliberately no rotation warning/confirmation on "Reconnect" either - regenerating doesn't
+   break anything the user configured by hand, it just asks the server to mint+register a
+   fresh key, so it's framed as a lightweight recovery action, not a destructive one. Self-
+   contained component (own SetupText instance + own HTTP calls), modeled after
+   SetupProgressShareCard's enable/disable/regenerate-with-success-flash shape. *@
 
 <div class="setup-section">
     <div class="ss-label">@T.AiIntegrationHeading</div>
     <p class="ss-desc">@T.AiIntegrationDesc</p>
 
-    @if (!string.IsNullOrEmpty(_generatedKey))
-    {
-        <div class="field-row" style="flex-wrap:wrap">
-            <input class="input" readonly value="@_generatedKey" />
-            <button type="button" class="btn-secondary" style="flex-shrink:0" @onclick="CopyKey">
-                @(_copied ? $"✓ {T.Copied}" : T.Copy)
-            </button>
-        </div>
-        <p class="ss-desc" style="font-weight:600">⚠️ @T.AiKeyOnceHint</p>
-    }
-
     @if (_hasKey)
     {
-        <p class="ss-desc">@string.Format(T.AiKeyActiveSince ?? "", _createdAt?.ToLocalTime().ToString("g") ?? "")</p>
+        <p class="ss-desc" style="font-weight:600">
+            ✅ @T.Enabled — @string.Format(T.AiKeyActiveSince ?? "", _createdAt?.ToLocalTime().ToString("g") ?? "")
+        </p>
         <div class="toggle-row" style="gap:0.75rem;flex-wrap:wrap">
-            <button type="button" class="btn-secondary" @onclick="() => _confirmingRegenerate = true" disabled="@_busy">
-                @T.AiKeyRegenerateButton
+            <button type="button" class="btn-secondary" @onclick="Reconnect" disabled="@_busy">
+                @(_reconnectSuccess ? $"✓ {T.AiKeyReconnectSuccess}" : (_reconnecting ? "…" : T.AiKeyReconnectButton))
             </button>
-            <button type="button" class="btn-danger" @onclick="() => _confirmingRevoke = true" disabled="@_busy">
-                @T.AiKeyRevokeButton
+            <button type="button" class="btn-danger" @onclick="() => _confirmingDisable = true" disabled="@_busy">
+                @T.AiKeyDisableButton
             </button>
         </div>
     }
     else
     {
-        <button type="button" class="btn-secondary" @onclick="Generate" disabled="@_busy">
-            @(_busy ? "…" : T.AiKeyGenerateButton)
+        <p class="ss-desc">@T.Disabled</p>
+        <button type="button" class="btn-secondary" @onclick="Enable" disabled="@_busy">
+            @(_busy ? "…" : T.AiKeyEnableButton)
         </button>
     }
 </div>
 
-@if (_confirmingRegenerate)
+@if (_confirmingDisable)
 {
-    <div class="modal-overlay" @onclick="() => _confirmingRegenerate = false">
+    <div class="modal-overlay" @onclick="() => _confirmingDisable = false">
         <div class="modal" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h3>@T.AiKeyRegenerateConfirmTitle</h3>
-                <button type="button" class="modal-close" @onclick="() => _confirmingRegenerate = false">✕</button>
+                <h3>@T.AiKeyDisableConfirmTitle</h3>
+                <button type="button" class="modal-close" @onclick="() => _confirmingDisable = false">✕</button>
             </div>
             <div class="modal-body">
-                <p>⚠️ @T.AiKeyRegenerateConfirmWarning</p>
+                <p>⚠️ @T.AiKeyDisableConfirmWarning</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn-secondary" @onclick="() => _confirmingRegenerate = false" disabled="@_busy">
+                <button type="button" class="btn-secondary" @onclick="() => _confirmingDisable = false" disabled="@_busy">
                     @T.AiKeyConfirmCancel
                 </button>
-                <button type="button" class="btn-danger" @onclick="ConfirmRegenerate" disabled="@_busy">
-                    @(_busy ? "…" : T.AiKeyRegenerateConfirmYes)
-                </button>
-            </div>
-        </div>
-    </div>
-}
-
-@if (_confirmingRevoke)
-{
-    <div class="modal-overlay" @onclick="() => _confirmingRevoke = false">
-        <div class="modal" @onclick:stopPropagation="true">
-            <div class="modal-header">
-                <h3>@T.AiKeyRevokeConfirmTitle</h3>
-                <button type="button" class="modal-close" @onclick="() => _confirmingRevoke = false">✕</button>
-            </div>
-            <div class="modal-body">
-                <p>⚠️ @T.AiKeyRevokeConfirmWarning</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn-secondary" @onclick="() => _confirmingRevoke = false" disabled="@_busy">
-                    @T.AiKeyConfirmCancel
-                </button>
-                <button type="button" class="btn-danger" @onclick="ConfirmRevoke" disabled="@_busy">
-                    @(_busy ? "…" : T.AiKeyRevokeConfirmYes)
+                <button type="button" class="btn-danger" @onclick="ConfirmDisable" disabled="@_busy">
+                    @(_busy ? "…" : T.AiKeyDisableConfirmYes)
                 </button>
             </div>
         </div>
@@ -98,13 +71,10 @@
 
     private bool _hasKey;
     private DateTime? _createdAt;
-    // Plaintext only visible right after a generation within this page load - the server
-    // never gives it out again (only the hash lives in the DB).
-    private string? _generatedKey;
-    private bool _copied;
     private bool _busy;
-    private bool _confirmingRegenerate;
-    private bool _confirmingRevoke;
+    private bool _reconnecting;
+    private bool _reconnectSuccess;
+    private bool _confirmingDisable;
 
     protected override async Task OnInitializedAsync()
     {
@@ -115,10 +85,13 @@
             _hasKey = status?.HasKey ?? false;
             _createdAt = status?.CreatedAt;
         }
-        catch { /* offline: card shows the "no key" default */ }
+        catch { /* offline: card shows the "disabled" default */ }
     }
 
-    private async Task Generate()
+    // Enable: generate a key and immediately discard the plaintext, same as AgentChatModal's
+    // ActivateAsync - the server already registered it with studylife-ai by the time this
+    // returns (or queued that registration in the outbox for retry), the user never sees it.
+    private async Task Enable()
     {
         _busy = true;
         try
@@ -127,26 +100,46 @@
             if (response.IsSuccessStatusCode)
             {
                 var dto = await response.Content.ReadFromJsonAsync<AiApiKeyGenerateResponseDto>();
-                if (!string.IsNullOrEmpty(dto?.ApiKey))
-                {
-                    _generatedKey = dto!.ApiKey;
-                    _hasKey = true;
-                    _createdAt = dto.CreatedAt;
-                }
+                _hasKey = true;
+                _createdAt = dto?.CreatedAt;
             }
         }
         finally { _busy = false; }
     }
 
-    private async Task ConfirmRegenerate()
+    // Recovery affordance for a broken registration (e.g. studylife-ai's copy of the key got
+    // lost) - mints and registers a fresh key the same way Enable does, no confirmation since
+    // there is nothing the user set up by hand that this could break.
+    private async Task Reconnect()
     {
-        _confirmingRegenerate = false;
-        await Generate();
+        _busy = true;
+        _reconnecting = true;
+        StateHasChanged();
+        try
+        {
+            var response = await Http.PostAsync("api/settings/ai-api-key/generate", null);
+            if (response.IsSuccessStatusCode)
+            {
+                var dto = await response.Content.ReadFromJsonAsync<AiApiKeyGenerateResponseDto>();
+                _hasKey = true;
+                _createdAt = dto?.CreatedAt;
+                _reconnectSuccess = true;
+                StateHasChanged();
+                await Task.Delay(2000);
+                _reconnectSuccess = false;
+            }
+        }
+        finally
+        {
+            _reconnecting = false;
+            _busy = false;
+            StateHasChanged();
+        }
     }
 
-    private async Task ConfirmRevoke()
+    private async Task ConfirmDisable()
     {
-        _confirmingRevoke = false;
+        _confirmingDisable = false;
         _busy = true;
         try
         {
@@ -155,20 +148,8 @@
             {
                 _hasKey = false;
                 _createdAt = null;
-                _generatedKey = null;
             }
         }
         finally { _busy = false; }
-    }
-
-    private async Task CopyKey()
-    {
-        if (string.IsNullOrEmpty(_generatedKey)) return;
-        await JS.InvokeVoidAsync("navigator.clipboard.writeText", _generatedKey);
-        _copied = true;
-        StateHasChanged();
-        await Task.Delay(2000);
-        _copied = false;
-        StateHasChanged();
     }
 }
