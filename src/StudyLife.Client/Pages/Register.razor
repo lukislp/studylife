@@ -3,12 +3,12 @@
 @using System.Text
 @using System.Text.Json.Nodes
 @using StudyLife.Shared
+@inherits LocalizedComponentBase<I18nText.AuthText>
 @inject HttpClient Http
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 @inject SessionTokenStore TokenStore
 @inject INativeAppAuth NativeAuth
-@inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
 @* Passkey registration (phase 2), same layout/style pattern as Login.razor. The very first
    registration "claims" the existing phase-1 user server-side, including all existing data
@@ -16,6 +16,8 @@
    on the client both are the same flow. Imports the login page's collocated JS module
    (./Pages/Login.razor.js) instead of duplicating the WebAuthn conversion. *@
 
+@if (IsTextLoaded)
+{
 <PageTitle>@T.RegisterPageTitle</PageTitle>
 
 <div class="progress-share-page">
@@ -47,9 +49,9 @@
         <p class="ss-desc" style="margin-top:1.5rem; font-size:0.8rem; color:var(--text3);">@T.InstallHint</p>
     </div>
 </div>
+}
 
 @code {
-    private I18nText.AuthText T = new();
     private string _displayName = "";
     private string _setupSecret = "";
     private bool _busy;
@@ -67,8 +69,10 @@
     // forwarded unchanged through both begin and complete.
     private string? _inviteToken;
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializingAsync()
     {
+        // Pure, T-independent computation - safe to run alongside the text-table fetch
+        // (same "start work immediately" idiom as Index.razor.cs/Setup.razor).
         var uri = Nav.ToAbsoluteUri(Nav.Uri);
         _app = AppReturnContext.FromUri(uri);
         _inviteToken = System.Web.HttpUtility.ParseQueryString(uri.Query)["invite"];
@@ -82,7 +86,7 @@
                 else if (kv[0] == "secret") _setupSecret = Uri.UnescapeDataString(kv[1]);
             }
         }
-        T = await I18nText.GetTextTableAsync<I18nText.AuthText>(this);
+        return Task.CompletedTask;
     }
 
     /// <summary>Maps RegistrationGateErrorDto.Reason (audit A10) to the matching localized
