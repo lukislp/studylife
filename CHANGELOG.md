@@ -1,3 +1,10 @@
+## [2.3.2](https://github.com/lukislp/studylife/compare/v2.3.1...v2.3.2) (2026-08-27)
+
+
+### Bug Fixes
+
+* document consent-assertion provisioning in ARCHITECTURE.md ([0f76391](https://github.com/lukislp/studylife/commit/0f763914e78d644660483c53948c359e33b0870d))
+
 ## [2.3.1](https://github.com/lukislp/studylife/compare/v2.3.0...v2.3.1) (2026-08-27)
 
 
