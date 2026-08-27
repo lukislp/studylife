@@ -1,3 +1,10 @@
+## [2.1.9](https://github.com/lukislp/studylife/compare/v2.1.8...v2.1.9) (2026-08-27)
+
+
+### Bug Fixes
+
+* enable Redis AUTH (requirepass + masterauth) ([1dde58f](https://github.com/lukislp/studylife/commit/1dde58f8875ed67d32d08eff2ba5e0f1c7c06980))
+
 ## [2.1.8](https://github.com/lukislp/studylife/compare/v2.1.7...v2.1.8) (2026-08-27)
 
 
