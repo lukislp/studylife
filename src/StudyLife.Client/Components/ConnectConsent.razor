@@ -1,8 +1,8 @@
 @using StudyLife.Shared
+@inherits LocalizedComponentBase<I18nText.ConnectText>
 @inject HttpClient Http
 @inject NavigationManager Nav
 @inject SessionTokenStore TokenStore
-@inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
 @* Shared consent UI behind BOTH /connect/mcp and /connect/capture (see ConnectMcp.razor/
    ConnectCapture.razor - thin @@page wrappers that just set Audience and render this).
@@ -15,6 +15,8 @@
    the consumer's own callback, carrying a single-use, audience-bound assertion. The plaintext key
    itself never appears in this browser at all. *@
 
+@if (IsTextLoaded)
+{
 <PageTitle>@PageTitle</PageTitle>
 
 <div class="progress-share-page">
@@ -42,13 +44,13 @@
         }
     </div>
 </div>
+}
 
 @code {
     /// <summary>"mcp" or "capture" - selects both the audience-appropriate copy below and the
     /// actual endpoint pair (api/auth/{Audience}-connect / the DTO type used to call it).</summary>
     [Parameter, EditorRequired] public string Audience { get; set; } = "";
 
-    private I18nText.ConnectText T = new();
     private bool _busy;
     private string? _error;
     private bool _invalidRequest;
@@ -60,10 +62,12 @@
     private string Heading => IsCapture ? T.ConnectCaptureHeading : T.ConnectMcpHeading;
     private string Intro => IsCapture ? T.ConnectCaptureIntro : T.ConnectMcpIntro;
 
-    protected override async Task OnInitializedAsync()
+    // LocalizedComponentBase lifecycle (the pattern rolled out to every page in the straggler
+    // migration): the base class loads T, markup is gated on IsTextLoaded, and everything that
+    // used to live in a hand-rolled OnInitializedAsync runs post-load here - same relative order
+    // (text first, then query parsing / the login bounce) as the pre-generalization ConnectMcp.
+    protected override Task OnTextLoadedAsync()
     {
-        T = await I18nText.GetTextTableAsync<I18nText.ConnectText>(this);
-
         var uri = Nav.ToAbsoluteUri(Nav.Uri);
         var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
         _redirectUri = query["redirect_uri"] ?? "";
@@ -74,7 +78,7 @@
         if (!IsAllowedRedirectUri(_redirectUri))
         {
             _invalidRequest = true;
-            return;
+            return Task.CompletedTask;
         }
 
         if (string.IsNullOrEmpty(TokenStore.Token))
@@ -84,6 +88,7 @@
             var self = $"/connect/{Audience}?redirect_uri={Uri.EscapeDataString(_redirectUri)}&state={Uri.EscapeDataString(_state)}";
             Nav.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(self)}", forceLoad: true);
         }
+        return Task.CompletedTask;
     }
 
     /// <summary>Mirrors AuthController.IsAllowedRedirectUri exactly - see there for the full
