@@ -1,3 +1,10 @@
+## [2.1.7](https://github.com/lukislp/studylife/compare/v2.1.6...v2.1.7) (2026-08-27)
+
+
+### Bug Fixes
+
+* validate note course and session references, degrade gracefully elsewhere ([8982c36](https://github.com/lukislp/studylife/commit/8982c3606e4a5d08dd75e70bee194839f2a00bb7)), closes [hi#frequency](https://github.com/hi/issues/frequency)
+
 ## [2.1.6](https://github.com/lukislp/studylife/compare/v2.1.5...v2.1.6) (2026-08-27)
 
 
