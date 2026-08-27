@@ -1,6 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using StudyLife.Server.Data;
+using StudyLife.Server.Services;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Tests;
@@ -52,10 +55,14 @@ public class NotesControllerFreshDbTests : IClassFixture<CustomWebApplicationFac
 
 public class NotesControllerTests : IClassFixture<CustomWebApplicationFactory>
 {
+    private readonly CustomWebApplicationFactory _factory;
     private readonly HttpClient _client;
 
     public NotesControllerTests(CustomWebApplicationFactory factory)
-        => _client = factory.CreateClient();
+    {
+        _factory = factory;
+        _client = factory.CreateClient();
+    }
 
     private static NoteDto ValidNote() => new()
     {
@@ -147,6 +154,190 @@ public class NotesControllerTests : IClassFixture<CustomWebApplicationFactory>
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    // ── CourseId/SessionId validation (audit finding M2 follow-up: the two write paths PR #86 missed) ──
+
+    [Fact]
+    public async Task Create_UnknownCourseId_ReturnsBadRequestWithStableMessage()
+    {
+        var note = ValidNote();
+        note.CourseId = 987654;
+
+        var response = await _client.PostAsJsonAsync("/api/notes", note);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("987654", body);
+    }
+
+    [Fact]
+    public async Task Create_UnknownSessionId_ReturnsBadRequestWithStableMessage()
+    {
+        var note = ValidNote();
+        note.SessionId = 987654;
+
+        var response = await _client.PostAsJsonAsync("/api/notes", note);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("987654", body);
+    }
+
+    [Fact]
+    public async Task Create_WithoutSessionId_PersistsNullSessionId()
+    {
+        var note = ValidNote();
+        note.SessionId = null;
+
+        var response = await _client.PostAsJsonAsync("/api/notes", note);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var dto = await response.Content.ReadFromJsonAsync<NoteDto>();
+        Assert.NotNull(dto);
+        Assert.Null(dto!.SessionId);
+    }
+
+    [Fact]
+    public async Task Create_ValidSessionId_PersistsIt()
+    {
+        var sessionId = await SeedSessionDirectlyAsync();
+        var note = ValidNote();
+        note.SessionId = sessionId;
+
+        var response = await _client.PostAsJsonAsync("/api/notes", note);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var dto = await response.Content.ReadFromJsonAsync<NoteDto>();
+        Assert.NotNull(dto);
+        Assert.Equal(sessionId, dto!.SessionId);
+    }
+
+    [Fact]
+    public async Task Update_CourseIdChangedToUnknown_ReturnsBadRequest()
+    {
+        var created = await (await _client.PostAsJsonAsync("/api/notes", ValidNote()))
+            .Content.ReadFromJsonAsync<NoteDto>();
+        Assert.NotNull(created);
+
+        var updated = created!;
+        updated.CourseId = 987654;
+
+        var response = await _client.PutAsJsonAsync($"/api/notes/{created.Id}", updated);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("987654", body);
+    }
+
+    [Fact]
+    public async Task Update_SessionIdChangedToUnknown_ReturnsBadRequest()
+    {
+        var created = await (await _client.PostAsJsonAsync("/api/notes", ValidNote()))
+            .Content.ReadFromJsonAsync<NoteDto>();
+        Assert.NotNull(created);
+
+        var updated = created!;
+        updated.SessionId = 987654;
+
+        var response = await _client.PutAsJsonAsync($"/api/notes/{created.Id}", updated);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("987654", body);
+    }
+
+    /// <summary>
+    /// Frozen-at-creation exemption (mirrors SessionsController's
+    /// Update_CourseIdUnchanged_OrphanedCustomCourse_StillSucceeds): editing an old note still
+    /// bound to a since-deleted custom course must keep working - only a CHANGED CourseId is
+    /// validated. Simulates the orphan by inserting the note directly with a custom-range CourseId
+    /// that was never seeded as a real CustomCourseEntity.
+    /// </summary>
+    [Fact]
+    public async Task Update_CourseIdUnchanged_OrphanedCustomCourse_StillSucceeds()
+    {
+        var orphanCourseId = StudyProgramCatalog.CustomCourseIdOffset + 555_555;
+        var created = await SeedNoteDirectlyAsync(courseId: orphanCourseId);
+
+        var updated = ValidNote();
+        updated.Id = created.Id;
+        updated.CourseId = orphanCourseId;
+        updated.Title = "Aktualisiert trotz gelöschtem Kurs";
+
+        var response = await _client.PutAsJsonAsync($"/api/notes/{created.Id}", updated);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var dto = await response.Content.ReadFromJsonAsync<NoteDto>();
+        Assert.NotNull(dto);
+        Assert.Equal(orphanCourseId, dto!.CourseId);
+        Assert.Equal("Aktualisiert trotz gelöschtem Kurs", dto.Title);
+    }
+
+    /// <summary>
+    /// Same frozen-at-creation exemption as above, for SessionId: a note bound to a session that
+    /// was later deleted must still be editable as long as SessionId is left unchanged.
+    /// </summary>
+    [Fact]
+    public async Task Update_SessionIdUnchanged_DeletedSession_StillSucceeds()
+    {
+        var sessionId = await SeedSessionDirectlyAsync();
+        var created = await SeedNoteDirectlyAsync(sessionId: sessionId);
+        await _factory.WithDbAsync(async db =>
+        {
+            var session = await db.Sessions.FirstAsync(s => s.Id == sessionId);
+            db.Sessions.Remove(session);
+            await db.SaveChangesAsync();
+        });
+
+        var updated = ValidNote();
+        updated.Id = created.Id;
+        updated.SessionId = sessionId;
+        updated.Title = "Aktualisiert trotz gelöschter Session";
+
+        var response = await _client.PutAsJsonAsync($"/api/notes/{created.Id}", updated);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var dto = await response.Content.ReadFromJsonAsync<NoteDto>();
+        Assert.NotNull(dto);
+        Assert.Equal(sessionId, dto!.SessionId);
+        Assert.Equal("Aktualisiert trotz gelöschter Session", dto.Title);
+    }
+
+    /// <summary>Inserts a session directly via EF (bypassing SessionsController's own CourseId
+    /// validation, irrelevant here) so tests have a real SessionId to reference.</summary>
+    private Task<int> SeedSessionDirectlyAsync() => _factory.WithDbAsync(async db =>
+    {
+        var session = new StudySessionEntity
+        {
+            CourseId = 1,
+            CourseName = "Seeded Session Course",
+            CourseColor = "#6C5CE7",
+            StartTime = DateTime.Now,
+            EndTime = DateTime.Now.AddHours(1),
+        };
+        db.Sessions.Add(session);
+        await db.SaveChangesAsync();
+        return session.Id;
+    });
+
+    /// <summary>Inserts a note directly via EF, bypassing NotesController's own Create validation -
+    /// used to set up rows with an orphaned CourseId/SessionId that could never be created through
+    /// the normal write path in the first place.</summary>
+    private Task<NoteDto> SeedNoteDirectlyAsync(int? courseId = null, int? sessionId = null) => _factory.WithDbAsync(async db =>
+    {
+        var entity = new NoteEntity
+        {
+            Title = "Seeded note",
+            Content = "Seeded content",
+            CourseId = courseId,
+            SessionId = sessionId,
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now,
+        };
+        db.Notes.Add(entity);
+        await db.SaveChangesAsync();
+        return new NoteDto { Id = entity.Id, Title = entity.Title, Content = entity.Content, CourseId = entity.CourseId, SessionId = entity.SessionId };
+    });
 
     [Fact]
     public async Task Delete_ExistingNote_RemovesItFromGetAll()
