@@ -592,6 +592,104 @@
         }
       }
     },
+    "/api/auth/capture-connect": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaptureConnectRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaptureConnectRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaptureConnectRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaptureConnectResponseDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaptureConnectResponseDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaptureConnectResponseDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/capture-assertion-exchange": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaptureAssertionExchangeRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaptureAssertionExchangeRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaptureAssertionExchangeRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaptureAssertionExchangeResponseDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaptureAssertionExchangeResponseDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaptureAssertionExchangeResponseDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/auth/whoami": {
       "get": {
         "tags": [
@@ -4024,6 +4122,63 @@
               "string"
             ],
             "format": "date-time"
+          }
+        }
+      },
+      "CaptureAssertionExchangeRequestDto": {
+        "required": [
+          "assertion"
+        ],
+        "type": "object",
+        "properties": {
+          "assertion": {
+            "type": "string"
+          }
+        }
+      },
+      "CaptureAssertionExchangeResponseDto": {
+        "required": [
+          "userId",
+          "captureApiKey"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "captureApiKey": {
+            "type": "string"
+          }
+        }
+      },
+      "CaptureConnectRequestDto": {
+        "required": [
+          "redirectUri",
+          "state"
+        ],
+        "type": "object",
+        "properties": {
+          "redirectUri": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          }
+        }
+      },
+      "CaptureConnectResponseDto": {
+        "required": [
+          "redirectTo"
+        ],
+        "type": "object",
+        "properties": {
+          "redirectTo": {
+            "type": "string"
           }
         }
       },

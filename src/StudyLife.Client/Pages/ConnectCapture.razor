@@ -1,0 +1,11 @@
+@page "/connect/capture"
+@layout PublicLayout
+
+@* Thin wrapper: the actual consent UI/logic lives in Components/ConnectConsent.razor, shared with
+   /connect/mcp (see ConnectMcp.razor) - see that component for the full flow writeup (identity
+   contract v1 §2, generalized to the studylife-capture browser extension as a second audience).
+   The extension's own chrome.identity.launchWebAuthFlow redirects the browser here with
+   redirect_uri/state (an ordinary https://<id>.chromiumapp.org/ callback - no loopback exception
+   needed for this audience, but the shared validator still tolerates one). *@
+
+<ConnectConsent Audience="capture" />

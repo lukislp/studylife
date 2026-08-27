@@ -1,7 +1,10 @@
 {
-  "ConnectPageTitle": "StudyLife — Nasc",
-  "ConnectHeading": "Nasc aip sheachtrach",
-  "ConnectIntro": "An nasc StudyLife le haip sheachtrach?",
+  "ConnectMcpPageTitle": "StudyLife — Nasc",
+  "ConnectMcpHeading": "Nasc aip sheachtrach",
+  "ConnectMcpIntro": "An nasc StudyLife le haip sheachtrach?",
+  "ConnectCapturePageTitle": "StudyLife — Nasc eisínteacht",
+  "ConnectCaptureHeading": "Nasc eisínteacht brabhsálaí",
+  "ConnectCaptureIntro": "An nasc eisínteacht brabhsálaí studylife-capture le do chuntas StudyLife?",
   "ConnectButton": "Nasc",
   "ConnectCancelButton": "Cealaigh",
   "ConnectWorking": "Ag nascadh…",

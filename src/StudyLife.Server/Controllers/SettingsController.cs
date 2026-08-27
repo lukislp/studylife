@@ -476,11 +476,21 @@ public class SettingsController : ControllerBase
         var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
 
+        var key = RotateCaptureKey(user, DateTime.UtcNow);
+        await _db.SaveChangesAsync();
+        return new CaptureApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = user.CaptureApiKeyCreatedAt!.Value };
+    }
+
+    /// <summary>Core of GenerateCaptureApiKey above - also reused by AuthController.CaptureConnect
+    /// (the capture browser-consent connect flow, identity contract v1 §2 generalized to a second
+    /// audience) so the two code paths that rotate the same key slot can't drift apart. Same
+    /// pattern as RotateMcpKey. Caller must SaveChanges.</summary>
+    internal static string RotateCaptureKey(AuthUserEntity user, DateTime now)
+    {
         var key = AuthSessionService.GenerateToken();
         user.CaptureApiKeyHash = AuthSessionService.HashToken(key);
-        user.CaptureApiKeyCreatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
-        return new CaptureApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = user.CaptureApiKeyCreatedAt.Value };
+        user.CaptureApiKeyCreatedAt = now;
+        return key;
     }
 
     /// <summary>Permanently revokes the studylife-capture API key (hash is deleted) - the
