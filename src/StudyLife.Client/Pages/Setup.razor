@@ -264,22 +264,19 @@
              HTTP calls), see SetupHomeAssistantCard. -->
         <SetupHomeAssistantCard />
 
-        <!-- studylife-ai: separate long-lived per-user API key slot (AiApiKeyHash), same shape
-             as the Home Assistant key but independently generated/revoked - see
-             SetupAiIntegrationCard. -->
+        <!-- studylife-ai: separate long-lived per-user API key slot (AiApiKeyHash). UNLIKE the
+             Home Assistant card above, this one is a plain on/off toggle, not a reveal-once-
+             plaintext lifecycle - the server registers the key with studylife-ai itself, the
+             user never needs to see it. See SetupAiIntegrationCard. -->
         <SetupAiIntegrationCard />
 
-        <!-- studylife-mcp: THIRD, separate long-lived per-user API key slot (McpApiKeyHash) for
-             the MCP server exposing StudyLife to Claude Desktop/other MCP clients - same shape
-             as the other two keys but independently generated/revoked, see
-             SetupMcpIntegrationCard. -->
-        <SetupMcpIntegrationCard />
-
-        <!-- studylife-capture: FOURTH, separate long-lived per-user API key slot
-             (CaptureApiKeyHash) for the browser extension that saves selected text/articles
-             into StudyLife as notes - same shape as the other three keys but independently
-             generated/revoked, see SetupCaptureIntegrationCard. -->
-        <SetupCaptureIntegrationCard />
+        <!-- studylife-mcp + studylife-capture: the other two per-user API key slots
+             (McpApiKeyHash/CaptureApiKeyHash) are no longer provisioned from this page at all -
+             both are set up through their own consent flows (the MCP OAuth connect flow +
+             CLI login; the capture extension's own "Connect" action). This page's only job for
+             either is emergency disconnect, so both slots share ONE minimal status/disconnect
+             card instead of two full key-lifecycle cards. See SetupExternalConnectionsCard. -->
+        <SetupExternalConnectionsCard />
 
         @if (_isOwner)
         {
