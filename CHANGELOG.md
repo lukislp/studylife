@@ -1,3 +1,15 @@
+# [2.3.0](https://github.com/lukislp/studylife/compare/v2.2.1...v2.3.0) (2026-08-27)
+
+
+### Bug Fixes
+
+* regenerate the OpenAPI spec after the main merge ([c227f89](https://github.com/lukislp/studylife/commit/c227f896091dffd35fe40b81029217f093c4513b))
+
+
+### Features
+
+* ai toggle and a single external-connections card ([006f4ff](https://github.com/lukislp/studylife/commit/006f4fff3caaec01299ef4c323fd572e58635a08))
+
 ## [2.2.1](https://github.com/lukislp/studylife/compare/v2.2.0...v2.2.1) (2026-08-27)
 
 
