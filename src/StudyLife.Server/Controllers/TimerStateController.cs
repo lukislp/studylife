@@ -54,7 +54,13 @@ public class TimerStateController : ControllerBase
             return ToDto(entity);
         }
 
-        entity.SessionId = dto.SessionId;
+        // Dangling SessionId (e.g. the session was just deleted while the timer kept running) is
+        // silently nulled rather than rejected with 400 - this is the high-frequency, fire-and-
+        // forget timer sync path (see the class doc comment above), and a hard failure here would
+        // just break the timer push for no one to retry.
+        entity.SessionId = dto.SessionId is { } sessionId && await _db.Sessions.AnyAsync(s => s.Id == sessionId)
+            ? dto.SessionId
+            : null;
         entity.IsRunning = dto.IsRunning;
         entity.IsBreak = dto.IsBreak;
         entity.CurrentRound = dto.CurrentRound;
