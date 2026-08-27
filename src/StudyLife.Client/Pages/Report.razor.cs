@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using Microsoft.JSInterop;
 using StudyLife.Client.Components.Stats;
+using StudyLife.Client.Models;
 using StudyLife.Shared;
 
 namespace StudyLife.Client.Pages;
@@ -21,7 +22,6 @@ public partial class Report
     /// one implementation for both pages.</summary>
     private readonly record struct CourseHoursRow(CourseDto Course, double Hours, int Count);
 
-    private I18nText.ReportText T = new();
     private bool _loaded;
 
     private DateTime _generatedAt;
@@ -43,33 +43,44 @@ public partial class Report
     // just with a much larger days window (~10 years, practically "everything").
     private const int HistoryDays = 3650;
 
-    protected override async Task OnInitializedAsync()
-    {
-        // All fetches below are independent of each other - start them all immediately instead
-        // of await-ing one after another (same pattern as Index.razor.cs/Setup.razor/Stats.razor.cs).
-        var i18nTask = I18nText.GetTextTableAsync<I18nText.ReportText>(this);
-        var settingsTask = State.GetSettingsAsync();
-        var coursesTask = State.GetCoursesAsync();
-        var goalsUnfilteredTask = State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals");
-        var historyTask = State.GetJsonCachedAsync<List<StudySessionDto>>($"api/sessions/history?days={HistoryDays}");
-        var programsTask = State.GetJsonCachedAsync<List<StudyProgramSummaryDto>>("api/studyprograms");
-        var groupQuotasTask = State.GetActiveGroupQuotasAsync();
+    // All fetches below are independent of each other, and of the text-table fetch that
+    // LocalizedComponentBase starts in parallel - kicked off here (OnInitializingAsync, runs
+    // alongside that fetch) instead of await-ing one after another (same pattern as
+    // Index.razor.cs/Setup.razor/Stats.razor.cs).
+    private Task<UserSettings>? _settingsTask;
+    private Task<List<CourseDto>>? _coursesTask;
+    private Task<List<CourseGoalDto>?>? _goalsUnfilteredTask;
+    private Task<List<StudySessionDto>?>? _historyTask;
+    private Task<List<StudyProgramSummaryDto>?>? _programsTask;
+    private Task<IReadOnlyDictionary<string, int>>? _groupQuotasTask;
 
-        T = await i18nTask;
+    protected override Task OnInitializingAsync()
+    {
+        _settingsTask = State.GetSettingsAsync();
+        _coursesTask = State.GetCoursesAsync();
+        _goalsUnfilteredTask = State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals");
+        _historyTask = State.GetJsonCachedAsync<List<StudySessionDto>>($"api/sessions/history?days={HistoryDays}");
+        _programsTask = State.GetJsonCachedAsync<List<StudyProgramSummaryDto>>("api/studyprograms");
+        _groupQuotasTask = State.GetActiveGroupQuotasAsync();
+        return Task.CompletedTask;
+    }
+
+    protected override async Task OnTextLoadedAsync()
+    {
         _generatedAt = DateTime.Now;
 
-        var settings = await settingsTask;
-        var allCourses = await coursesTask;
+        var settings = await _settingsTask!;
+        var allCourses = await _coursesTask!;
         var activeCourseIds = allCourses.Select(c => c.Id).ToHashSet();
 
-        var goalsUnfiltered = await goalsUnfilteredTask ?? new();
+        var goalsUnfiltered = await _goalsUnfilteredTask! ?? new();
         var goals = goalsUnfiltered.Where(g => activeCourseIds.Contains(g.CourseId)).ToList();
 
-        var history = (await historyTask ?? new())
+        var history = (await _historyTask! ?? new())
             .Where(s => activeCourseIds.Contains(s.CourseId))
             .ToList();
 
-        var programs = await programsTask ?? new();
+        var programs = await _programsTask! ?? new();
         _programmeName = programs.FirstOrDefault(p => p.Id == settings.ActiveStudyProgramId)?.Name
             ?? CourseCatalog.BuiltInProgramName;
 
@@ -109,7 +120,7 @@ public partial class Report
             ? StudyMetrics.FormatGrade(averageGrade.Value)
             : null;
 
-        var groupQuotas = await groupQuotasTask;
+        var groupQuotas = await _groupQuotasTask!;
         _ectsTotal = CourseCatalog.CalcTotalEcts(allCourses, groupQuotas);
         _ectsEarned = CourseCatalog.CalcEctsEarned(allCourses, settings.CompletedCourseIds, groupQuotas);
         _ectsPercent = _ectsTotal > 0 ? Math.Min(100.0, _ectsEarned / (double)_ectsTotal * 100) : 0;
@@ -130,15 +141,18 @@ public partial class Report
         try { await JS.InvokeVoidAsync("printPage"); } catch { /* best-effort, ignore */ }
     }
 
+    // Only ever called from markup gated by both IsTextLoaded and _loaded (both set by this class's
+    // own OnTextLoadedAsync before any row is rendered) - T is guaranteed loaded, no defensive
+    // "?? """ needed here.
     private string StatusFor(StatsCourseListCard.CourseStatRow row)
     {
-        if (row.IsCompleted) return T.StatusCompleted ?? "";
+        if (row.IsCompleted) return T.StatusCompleted;
         if (row.DaysRemaining.HasValue)
         {
             return row.DaysRemaining.Value >= 0
-                ? string.Format(T.StatusDueFormat ?? "", row.DaysRemaining.Value)
-                : string.Format(T.StatusOverdueFormat ?? "", -row.DaysRemaining.Value);
+                ? string.Format(T.StatusDueFormat, row.DaysRemaining.Value)
+                : string.Format(T.StatusOverdueFormat, -row.DaysRemaining.Value);
         }
-        return T.StatusInProgress ?? "";
+        return T.StatusInProgress;
     }
 }

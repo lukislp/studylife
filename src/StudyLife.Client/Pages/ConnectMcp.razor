@@ -1,10 +1,10 @@
 @page "/connect/mcp"
 @layout PublicLayout
 @using StudyLife.Shared
+@inherits LocalizedComponentBase<I18nText.ConnectText>
 @inject HttpClient Http
 @inject NavigationManager Nav
 @inject SessionTokenStore TokenStore
-@inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
 @* MCP OAuth connect flow (identity contract v1 §2): studylife-mcp's OAuth authorize step
    redirects the browser here with redirect_uri/state. Requires a passkey session like the
@@ -14,6 +14,8 @@
    returns - studylife-mcp's own callback, carrying a single-use assertion. The plaintext MCP
    key itself never appears in this browser at all. *@
 
+@if (IsTextLoaded)
+{
 <PageTitle>@T.ConnectPageTitle</PageTitle>
 
 <div class="progress-share-page">
@@ -41,19 +43,17 @@
         }
     </div>
 </div>
+}
 
 @code {
-    private I18nText.ConnectText T = new();
     private bool _busy;
     private string? _error;
     private bool _invalidRequest;
     private string _redirectUri = "";
     private string _state = "";
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnTextLoadedAsync()
     {
-        T = await I18nText.GetTextTableAsync<I18nText.ConnectText>(this);
-
         var uri = Nav.ToAbsoluteUri(Nav.Uri);
         var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
         _redirectUri = query["redirect_uri"] ?? "";
@@ -63,7 +63,7 @@
         if (!Uri.TryCreate(_redirectUri, UriKind.Absolute, out var parsedRedirect) || parsedRedirect.Scheme != Uri.UriSchemeHttps)
         {
             _invalidRequest = true;
-            return;
+            return Task.CompletedTask;
         }
 
         if (string.IsNullOrEmpty(TokenStore.Token))
@@ -73,6 +73,7 @@
             var self = $"/connect/mcp?redirect_uri={Uri.EscapeDataString(_redirectUri)}&state={Uri.EscapeDataString(_state)}";
             Nav.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(self)}", forceLoad: true);
         }
+        return Task.CompletedTask;
     }
 
     private async Task ConnectAsync()

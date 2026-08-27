@@ -1,8 +1,8 @@
 @page "/shared/{Token}"
 @layout PublicLayout
 @using StudyLife.Shared
+@inherits LocalizedComponentBase<I18nText.ProgressShareText>
 @inject HttpClient Http
-@inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
 @* Public, read-only progress view (see ProgressController.GetShared) - no login, no API key,
    its own PublicLayout without navigation (see there). Shows EXCLUSIVELY the compact snapshot
@@ -11,8 +11,12 @@
    404, the page then shows the InvalidLink view. Every OTHER error (5xx, timeout, network
    outage) shows the TemporaryError view instead - otherwise a temporary server problem would
    incorrectly look like a permanently invalid link, especially for parents/mentors without
-   technical context. *@
+   technical context. Unauthenticated-friendly by design (PublicUnlessInvalidSession server
+   policy) - nothing in this component depends on a session; the text-table fetch that
+   LocalizedComponentBase performs is equally session-independent. *@
 
+@if (IsTextLoaded)
+{
 <PageTitle>@T.PageTitleTag</PageTitle>
 
 <div class="progress-share-page">
@@ -45,7 +49,7 @@
             <div class="progress-share-stats">
                 <div class="progress-share-stat">
                     <div class="progress-share-stat-value">@_data.EarnedEcts</div>
-                    <div class="progress-share-stat-label">@string.Format(T.EctsFormat ?? "", _data.EarnedEcts, _data.TotalEcts)</div>
+                    <div class="progress-share-stat-label">@string.Format(T.EctsFormat, _data.EarnedEcts, _data.TotalEcts)</div>
                 </div>
                 <div class="progress-share-stat">
                     <div class="progress-share-stat-value">@(_data.AverageGrade.HasValue ? _data.AverageGrade.Value.ToString("0.00") : "—")</div>
@@ -56,7 +60,7 @@
             <div class="progress-share-bar-track">
                 <div class="progress-share-bar-fill" style="width:@(BarPercent)%"></div>
             </div>
-            <p class="ss-desc">@string.Format(T.CoursesCompletedFormat ?? "", _data.CoursesCompletedCount, _data.CoursesTotalCount)</p>
+            <p class="ss-desc">@string.Format(T.CoursesCompletedFormat, _data.CoursesCompletedCount, _data.CoursesTotalCount)</p>
 
             <h2 class="progress-share-subheading">@T.ActiveCoursesHeading</h2>
             @if (_data.ActiveCourses.Count == 0)
@@ -76,21 +80,21 @@
                                     <div class="progress-share-course-fill" style="width:@(c.TopicProgressPercent)%"></div>
                                 </div>
                             </div>
-                            <span class="progress-share-course-percent">@string.Format(T.TopicProgressFormat ?? "", c.TopicProgressPercent)</span>
+                            <span class="progress-share-course-percent">@string.Format(T.TopicProgressFormat, c.TopicProgressPercent)</span>
                         </div>
                     }
                 </div>
             }
 
-            <p class="progress-share-footer">@string.Format(T.GeneratedAtFormat ?? "", _data.GeneratedAt.ToLocalTime().ToString("g")) · @T.PoweredByLabel</p>
+            <p class="progress-share-footer">@string.Format(T.GeneratedAtFormat, _data.GeneratedAt.ToLocalTime().ToString("g")) · @T.PoweredByLabel</p>
         </div>
     }
 </div>
+}
 
 @code {
     [Parameter] public string Token { get; set; } = "";
 
-    private I18nText.ProgressShareText T = new();
     private ProgressShareDto? _data;
     private bool _loading = true;
     private bool _temporaryError;
@@ -99,9 +103,8 @@
         ? 0
         : (int)Math.Round(Math.Min(100.0, _data.EarnedEcts * 100.0 / _data.TotalEcts));
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnTextLoadedAsync()
     {
-        T = await I18nText.GetTextTableAsync<I18nText.ProgressShareText>(this);
         try
         {
             var response = await Http.GetAsync($"api/progress/shared/{Uri.EscapeDataString(Token)}");

@@ -1,10 +1,12 @@
 @page "/weekplan"
 @using StudyLife.Client.Services
 @using StudyLife.Shared
+@inherits LocalizedComponentBase<I18nText.WeekPlanText>
 @inject AppStateService State
-@inject Toolbelt.Blazor.I18nText.I18nText I18nText
 @inject IJSRuntime JS
 
+@if (IsTextLoaded)
+{
 <PageTitle>StudyLife — @T.Heading</PageTitle>
 
 <div class="setup-page report-page">
@@ -22,8 +24,8 @@
         <div class="report-doc">
             <div class="report-doc-head">
                 <h1 class="report-title">@T.Heading</h1>
-                <div class="report-meta">@string.Format(T.WeekRangeFormat ?? "", _weekStart.ToString("dd.MM.yyyy"), _weekEnd.ToString("dd.MM.yyyy"))</div>
-                <div class="report-meta">@string.Format(T.GeneratedOnFormat ?? "", _generatedAt.ToString("dd.MM.yyyy HH:mm"))</div>
+                <div class="report-meta">@string.Format(T.WeekRangeFormat, _weekStart.ToString("dd.MM.yyyy"), _weekEnd.ToString("dd.MM.yyyy"))</div>
+                <div class="report-meta">@string.Format(T.GeneratedOnFormat, _generatedAt.ToString("dd.MM.yyyy HH:mm"))</div>
             </div>
 
             <div class="report-section">
@@ -31,7 +33,7 @@
                 <table class="report-table report-summary-table">
                     <tbody>
                         <tr><th>@T.PlannedHoursLabel</th><td>@_plannedHoursLabel</td></tr>
-                        <tr><th>@T.WeeklyGoalLabel</th><td>@string.Format(T.WeeklyGoalFormat ?? "", _weeklyGoalMin, _weeklyGoalMax)</td></tr>
+                        <tr><th>@T.WeeklyGoalLabel</th><td>@string.Format(T.WeeklyGoalFormat, _weeklyGoalMin, _weeklyGoalMax)</td></tr>
                         <tr><th>@T.SessionCountLabel</th><td>@_totalSessions</td></tr>
                     </tbody>
                 </table>
@@ -74,3 +76,4 @@
         </div>
     }
 </div>
+}
