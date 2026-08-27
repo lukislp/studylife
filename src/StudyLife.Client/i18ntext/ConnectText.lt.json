@@ -1,7 +1,10 @@
 {
-  "ConnectPageTitle": "StudyLife — Prisijungimas",
-  "ConnectHeading": "Prijungti išorinę programėlę",
-  "ConnectIntro": "Prijungti „StudyLife“ prie išorinės programėlės?",
+  "ConnectMcpPageTitle": "StudyLife — Prisijungimas",
+  "ConnectMcpHeading": "Prijungti išorinę programėlę",
+  "ConnectMcpIntro": "Prijungti „StudyLife“ prie išorinės programėlės?",
+  "ConnectCapturePageTitle": "StudyLife — Plėtinio prijungimas",
+  "ConnectCaptureHeading": "Prijungti naršyklės plėtinį",
+  "ConnectCaptureIntro": "Prijungti „studylife-capture“ naršyklės plėtinį prie jūsų „StudyLife“ paskyros?",
   "ConnectButton": "Prijungti",
   "ConnectCancelButton": "Atšaukti",
   "ConnectWorking": "Jungiamasi…",

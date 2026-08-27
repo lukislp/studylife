@@ -1,7 +1,10 @@
 {
-  "ConnectPageTitle": "StudyLife — Підключення",
-  "ConnectHeading": "Підключити зовнішній застосунок",
-  "ConnectIntro": "Підключити StudyLife до зовнішнього застосунку?",
+  "ConnectMcpPageTitle": "StudyLife — Підключення",
+  "ConnectMcpHeading": "Підключити зовнішній застосунок",
+  "ConnectMcpIntro": "Підключити StudyLife до зовнішнього застосунку?",
+  "ConnectCapturePageTitle": "StudyLife — Підключення розширення",
+  "ConnectCaptureHeading": "Підключити розширення браузера",
+  "ConnectCaptureIntro": "Підключити розширення браузера studylife-capture до вашого облікового запису StudyLife?",
   "ConnectButton": "Підключити",
   "ConnectCancelButton": "Скасувати",
   "ConnectWorking": "Підключення…",
