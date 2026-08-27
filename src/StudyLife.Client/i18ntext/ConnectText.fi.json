@@ -1,7 +1,10 @@
 {
-  "ConnectPageTitle": "StudyLife — Yhdistä",
-  "ConnectHeading": "Yhdistä ulkoinen sovellus",
-  "ConnectIntro": "Yhdistetäänkö StudyLife ulkoiseen sovellukseen?",
+  "ConnectMcpPageTitle": "StudyLife — Yhdistä",
+  "ConnectMcpHeading": "Yhdistä ulkoinen sovellus",
+  "ConnectMcpIntro": "Yhdistetäänkö StudyLife ulkoiseen sovellukseen?",
+  "ConnectCapturePageTitle": "StudyLife — Yhdistä laajennus",
+  "ConnectCaptureHeading": "Yhdistä selainlaajennus",
+  "ConnectCaptureIntro": "Yhdistetäänkö studylife-capture-selainlaajennus StudyLife-tiliisi?",
   "ConnectButton": "Yhdistä",
   "ConnectCancelButton": "Peruuta",
   "ConnectWorking": "Yhdistetään…",

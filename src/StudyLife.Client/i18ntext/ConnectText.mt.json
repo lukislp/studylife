@@ -1,7 +1,10 @@
 {
-  "ConnectPageTitle": "StudyLife — Ikkonnettja",
-  "ConnectHeading": "Ikkonnettja app esterna",
-  "ConnectIntro": "Tikkonnettja StudyLife ma' app esterna?",
+  "ConnectMcpPageTitle": "StudyLife — Ikkonnettja",
+  "ConnectMcpHeading": "Ikkonnettja app esterna",
+  "ConnectMcpIntro": "Tikkonnettja StudyLife ma' app esterna?",
+  "ConnectCapturePageTitle": "StudyLife — Ikkonnettja estensjoni",
+  "ConnectCaptureHeading": "Ikkonnettja estensjoni tal-browser",
+  "ConnectCaptureIntro": "Tikkonnettja l-estensjoni tal-browser studylife-capture mal-kont StudyLife tiegħek?",
   "ConnectButton": "Ikkonnettja",
   "ConnectCancelButton": "Ikkanċella",
   "ConnectWorking": "Qed tikkonnettja…",
