@@ -73,7 +73,20 @@ public partial class BackgroundTaskService
                 // start with CourseId null (see studylife-capture's api.ts), but a user editing
                 // the note in the few seconds before this tick runs must win, not get overwritten.
                 if (result.CourseId.HasValue && note.CourseId is null)
-                    note.CourseId = result.CourseId;
+                {
+                    // Defense against a drifted/hallucinated CourseId (audit finding M2 follow-up):
+                    // studylife-ai normally only ever sends ids from the user's own active course
+                    // list, so this should be rare, but a background job must degrade gracefully
+                    // rather than throw/400 like the interactive write paths - an unresolvable id
+                    // is stored as null instead of aborting the whole enrichment.
+                    var course = await new CourseResolver(db).ResolveAsync(result.CourseId.Value);
+                    if (course != null)
+                        note.CourseId = result.CourseId;
+                    else
+                        _logger.LogWarning(
+                            "CaptureEnrichment: studylife-ai returned unknown CourseId {CourseId} for note {NoteId} - storing null instead",
+                            result.CourseId, note.Id);
+                }
                 if (result.Tags.Count > 0)
                     note.Tags = string.Join(", ", result.Tags);
                 note.Summary = result.Summary;
