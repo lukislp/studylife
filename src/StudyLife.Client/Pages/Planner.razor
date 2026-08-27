@@ -2,11 +2,13 @@
 @using StudyLife.Client.Models
 @using StudyLife.Client.Services
 @using StudyLife.Shared
+@inherits LocalizedComponentBase<I18nText.PlannerText>
 @inject AppStateService State
-@inject Toolbelt.Blazor.I18nText.I18nText I18nText
 @inject HttpClient Http
 @implements IDisposable
 
+@if (IsTextLoaded)
+{
 <PageTitle>StudyLife — Planner</PageTitle>
 
 <div class="setup-page planner-page">
@@ -60,7 +62,7 @@
                     @if (_examCourseTotalTopics > 0)
                     {
                         <div class="planner-topics-hint @(_examOpenTopics.Count == 0 ? "done" : "")">
-                            @(_examOpenTopics.Count > 0 ? string.Format(T.OpenTopicsCount ?? "", _examOpenTopics.Count, _examCourseTotalTopics) : T.NoOpenTopics)
+                            @(_examOpenTopics.Count > 0 ? string.Format(T.OpenTopicsCount, _examOpenTopics.Count, _examCourseTotalTopics) : T.NoOpenTopics)
                         </div>
                     }
                     @if (!string.IsNullOrEmpty(_examError))
@@ -73,7 +75,7 @@
                 @if (_examProposals.Count > 0)
                 {
                     <div class="planner-proposal dash-card">
-                        <div class="card-label">@string.Format(T.ProposalHeading ?? "", _examProposals.Count, ExamProposalHours.ToString("0.0"))</div>
+                        <div class="card-label">@string.Format(T.ProposalHeading, _examProposals.Count, ExamProposalHours.ToString("0.0"))</div>
                         <div class="planner-proposal-list">
                             @foreach (var p in _examProposals)
                             {
@@ -106,7 +108,7 @@
             <p class="planner-intro">@T.WeekPlanIntro</p>
 
             <div class="planner-form dash-card">
-                <div class="quota-legend">@string.Format(T.CurrentWeekHours ?? "", _weekAlreadyHours.ToString("0.0"), WeekMin, WeekMax)</div>
+                <div class="quota-legend">@string.Format(T.CurrentWeekHours, _weekAlreadyHours.ToString("0.0"), WeekMin, WeekMax)</div>
                 <div class="field">
                     <label>@T.FieldSessionLength</label>
                     <select class="select" @bind="_weekSessionLengthMinutes">
@@ -122,7 +124,7 @@
                 }
                 else
                 {
-                    <div class="planner-topics-hint">@string.Format(T.RemainingHoursLabel ?? "", _weekRemainingHours.ToString("0.0"))</div>
+                    <div class="planner-topics-hint">@string.Format(T.RemainingHoursLabel, _weekRemainingHours.ToString("0.0"))</div>
                     <button class="btn-primary" @onclick="GenerateWeekPlan">✦ @T.GenerateWeekPlanButton</button>
                 }
             </div>
@@ -144,7 +146,7 @@
             @if (_weekProposals.Count > 0)
             {
                 <div class="planner-proposal dash-card">
-                    <div class="card-label">@string.Format(T.WeekPlanHeading ?? "", _weekProposals.Count, WeekProposalHours.ToString("0.0"))</div>
+                    <div class="card-label">@string.Format(T.WeekPlanHeading, _weekProposals.Count, WeekProposalHours.ToString("0.0"))</div>
                     <div class="planner-proposal-list">
                         @foreach (var p in _weekProposals)
                         {
@@ -172,6 +174,7 @@
         </div>
     }
 </div>
+}
 
 @code {
     private const int NeglectHistoryDays = 180;
@@ -182,7 +185,6 @@
     private int WeekMin => _settings.WeeklyGoalMinHours > 0 ? _settings.WeeklyGoalMinHours : 25;
     private int WeekMax => Math.Max(WeekMin, _settings.WeeklyGoalMaxHours > 0 ? _settings.WeeklyGoalMaxHours : 30);
 
-    private I18nText.PlannerText T = new();
     private string _activeTab = "exam";
     private UserSettings _settings = new();
     private List<CourseDto> _courses = new();
@@ -229,10 +231,12 @@
     private List<HintFact> _weekHintFacts = new();
     private double WeekProposalHours => _weekProposals.Sum(p => (p.End - p.Start).TotalHours);
 
+    // Only ever called (via RefreshWeekCourseHints) from GenerateWeekPlan (button click) or the
+    // language-switch relocalization below, both post-load - T is guaranteed loaded here.
     private string BuildHintText(HintFact f) =>
-        f.ExamDaysUntil is int daysUntil ? string.Format(T.ExamInDays ?? "", daysUntil)
-        : f.DaysSinceStudied is int daysSince ? string.Format(T.LastStudiedDaysAgo ?? "", daysSince)
-        : T.NeverStudied ?? "";
+        f.ExamDaysUntil is int daysUntil ? string.Format(T.ExamInDays, daysUntil)
+        : f.DaysSinceStudied is int daysSince ? string.Format(T.LastStudiedDaysAgo, daysSince)
+        : T.NeverStudied;
 
     private void RefreshWeekCourseHints() =>
         _weekCourseHints = _weekHintFacts.Select(f => new WeekCourseHint(f.Name, f.Icon, f.Color, BuildHintText(f))).ToList();
@@ -246,9 +250,11 @@
     {
         if (firstRender) return;
 
-        // _langWatcher can still be null here: OnInitializedAsync's first await doesn't complete
-        // synchronously, so Blazor renders once - firstRender=true - before the rest of
-        // OnInitializedAsync (incl. _langWatcher's assignment) has run; a later render catches up.
+        // _langWatcher can still be null here: LocalizedComponentBase's OnInitializedAsync awaits
+        // the text-table fetch before this component's own OnTextLoadedAsync (where _langWatcher
+        // is assigned) even starts, and that first await doesn't complete synchronously, so Blazor
+        // renders once - firstRender=true - before OnTextLoadedAsync has run; a later render
+        // catches up once it's set.
         if (_langWatcher != null && await _langWatcher.CheckChangedAsync())
         {
             if (_examUsedFallbackTopic)
@@ -256,36 +262,45 @@
             foreach (var p in _weekProposals.Where(p => _weekFallbackCourseIds.Contains(p.CourseId)))
                 p.Topic = T.ReviewTopicFallback;
             RefreshWeekCourseHints();
-            if (_examAcceptedCount is int examCount) _examAcceptedMessage = string.Format(T.ExamPlanAccepted ?? "", examCount);
-            if (_weekAcceptedCount is int weekCount) _weekAcceptedMessage = string.Format(T.WeekPlanAccepted ?? "", weekCount);
+            if (_examAcceptedCount is int examCount) _examAcceptedMessage = string.Format(T.ExamPlanAccepted, examCount);
+            if (_weekAcceptedCount is int weekCount) _weekAcceptedMessage = string.Format(T.WeekPlanAccepted, weekCount);
             await InvokeAsync(StateHasChanged);
         }
     }
 
-    protected override async Task OnInitializedAsync()
-    {
-        // All fetches below are independent of each other - start them all immediately instead
-        // of await-ing one after another (same pattern as Index.razor.cs/Setup.razor).
-        var i18nTask = I18nText.GetTextTableAsync<I18nText.PlannerText>(this);
-        var settingsTask = State.GetSettingsAsync();
-        var coursesTask = State.GetCoursesAsync();
-        var sessionsTask = State.GetSessionsAsync();
-        var goalsTask = State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals");
-        var historyTask = State.GetJsonCachedAsync<List<StudySessionDto>>($"api/sessions/history?days={NeglectHistoryDays}&onlyCompleted=false");
+    // Independent of each other, and of the text-table fetch that LocalizedComponentBase starts
+    // in parallel - kicked off here (OnInitializingAsync, runs alongside that fetch) instead of
+    // await-ing one after another (same pattern as Index.razor.cs/Setup.razor).
+    private Task<UserSettings>? _settingsTask;
+    private Task<List<CourseDto>>? _coursesTask;
+    private Task<List<StudySession>>? _sessionsTask;
+    private Task<List<CourseGoalDto>?>? _goalsTask;
+    private Task<List<StudySessionDto>?>? _historyTask;
 
-        T = await i18nTask;
+    protected override Task OnInitializingAsync()
+    {
+        _settingsTask = State.GetSettingsAsync();
+        _coursesTask = State.GetCoursesAsync();
+        _sessionsTask = State.GetSessionsAsync();
+        _goalsTask = State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals");
+        _historyTask = State.GetJsonCachedAsync<List<StudySessionDto>>($"api/sessions/history?days={NeglectHistoryDays}&onlyCompleted=false");
+        return Task.CompletedTask;
+    }
+
+    protected override async Task OnTextLoadedAsync()
+    {
         _langWatcher = new I18nLanguageWatcher(I18nText);
         await _langWatcher.InitAsync();
         State.OnChange += OnStateChanged;
 
-        _settings = await settingsTask;
-        var allCourses = await coursesTask;
+        _settings = await _settingsTask!;
+        var allCourses = await _coursesTask!;
         _courses = allCourses
             .Where(c => _settings.SelectedCourseIds.Contains(c.Id) && !_settings.CompletedCourseIds.Contains(c.Id))
             .ToList();
-        _sessions = await sessionsTask;
-        _goals = await goalsTask ?? new();
-        _history = await historyTask ?? new();
+        _sessions = await _sessionsTask!;
+        _goals = await _goalsTask! ?? new();
+        _history = await _historyTask! ?? new();
 
         if (_courses.Count > 0)
         {
@@ -408,7 +423,7 @@
         _examUsedFallbackTopic = false;
         _examGenerated = false;
         _examAcceptedCount = count;
-        _examAcceptedMessage = string.Format(T.ExamPlanAccepted ?? "", count);
+        _examAcceptedMessage = string.Format(T.ExamPlanAccepted, count);
         RecalcWeekHours();
     }
 
@@ -539,7 +554,7 @@
         _weekFallbackCourseIds.Clear();
         _weekGenerated = false;
         _weekAcceptedCount = count;
-        _weekAcceptedMessage = string.Format(T.WeekPlanAccepted ?? "", count);
+        _weekAcceptedMessage = string.Format(T.WeekPlanAccepted, count);
         RecalcWeekHours();
     }
 }

@@ -14,7 +14,6 @@ namespace StudyLife.Client.Pages;
 /// </summary>
 public partial class WeekPlan
 {
-    private I18nText.WeekPlanText T = new();
     private bool _loaded;
 
     private DateTime _generatedAt;
@@ -27,27 +26,34 @@ public partial class WeekPlan
     private List<DayGroup> _dayGroups = new();
     private Dictionary<int, CourseDto> _courseLookup = new();
 
-    protected override async Task OnInitializedAsync()
-    {
-        // Independent of each other - start them all immediately instead of await-ing one after
-        // another (same pattern as Index.razor.cs/Setup.razor).
-        var i18nTask = I18nText.GetTextTableAsync<I18nText.WeekPlanText>(this);
-        var settingsTask = State.GetSettingsAsync();
-        var coursesTask = State.GetCoursesAsync();
-        var sessionsTask = State.GetSessionsAsync();
+    // Independent of each other, and of the text-table fetch that LocalizedComponentBase starts
+    // in parallel - kicked off here (OnInitializingAsync, runs alongside that fetch) instead of
+    // await-ing one after another (same pattern as Index.razor.cs/Setup.razor).
+    private Task<UserSettings>? _settingsTask;
+    private Task<List<CourseDto>>? _coursesTask;
+    private Task<List<StudySession>>? _sessionsTask;
 
-        T = await i18nTask;
+    protected override Task OnInitializingAsync()
+    {
+        _settingsTask = State.GetSettingsAsync();
+        _coursesTask = State.GetCoursesAsync();
+        _sessionsTask = State.GetSessionsAsync();
+        return Task.CompletedTask;
+    }
+
+    protected override async Task OnTextLoadedAsync()
+    {
         _generatedAt = DateTime.Now;
         // Monday start, same convention as Calendar.razor.cs (MondayOf) - here via the shared
         // StudyMetrics helper instead of its own copy of the offset calculation.
         _weekStart = StudyMetrics.WeekStartOf(DateTime.Today);
         _weekEnd = _weekStart.AddDays(6);
 
-        var settings = await settingsTask;
-        var allCourses = await coursesTask;
+        var settings = await _settingsTask!;
+        var allCourses = await _coursesTask!;
         _courseLookup = allCourses.ToDictionary(c => c.Id);
 
-        var sessions = await sessionsTask;
+        var sessions = await _sessionsTask!;
         var weekSessions = sessions
             .Where(s => s.StartTime.Date >= _weekStart && s.StartTime.Date <= _weekEnd)
             .OrderBy(s => s.StartTime)
