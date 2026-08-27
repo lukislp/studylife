@@ -2,11 +2,13 @@
 @using StudyLife.Client.Components.Stats
 @using StudyLife.Client.Services
 @using StudyLife.Shared
+@inherits LocalizedComponentBase<I18nText.ReportText>
 @inject AppStateService State
 @inject HttpClient Http
-@inject Toolbelt.Blazor.I18nText.I18nText I18nText
 @inject IJSRuntime JS
 
+@if (IsTextLoaded)
+{
 <PageTitle>StudyLife — @T.Report</PageTitle>
 
 <div class="setup-page report-page">
@@ -28,11 +30,11 @@
                 {
                     <div class="report-meta">@_programmeName</div>
                 }
-                <div class="report-meta">@string.Format(T.GeneratedOnFormat ?? "", _generatedAt.ToString("dd.MM.yyyy HH:mm"))</div>
+                <div class="report-meta">@string.Format(T.GeneratedOnFormat, _generatedAt.ToString("dd.MM.yyyy HH:mm"))</div>
                 <div class="report-meta">
                     @if (_periodStart.HasValue && _periodEnd.HasValue)
                     {
-                        @string.Format(T.PeriodFormat ?? "", _periodStart.Value.ToString("dd.MM.yyyy"), _periodEnd.Value.ToString("dd.MM.yyyy"))
+                        @string.Format(T.PeriodFormat, _periodStart.Value.ToString("dd.MM.yyyy"), _periodEnd.Value.ToString("dd.MM.yyyy"))
                     }
                     else
                     {
@@ -56,7 +58,7 @@
                 <h2>@T.EctsHeading</h2>
                 <table class="report-table report-summary-table">
                     <tbody>
-                        <tr><th>@T.TableEcts</th><td>@string.Format(T.EctsProgressFormat ?? "", _ectsEarned, _ectsTotal, _ectsPercent.ToString("0"))</td></tr>
+                        <tr><th>@T.TableEcts</th><td>@string.Format(T.EctsProgressFormat, _ectsEarned, _ectsTotal, _ectsPercent.ToString("0"))</td></tr>
                         <tr><th>@T.AverageGradeLabel</th><td>@(_averageGradeLabel ?? T.AverageGradeEmpty)</td></tr>
                     </tbody>
                 </table>
@@ -106,3 +108,4 @@
         </div>
     }
 </div>
+}

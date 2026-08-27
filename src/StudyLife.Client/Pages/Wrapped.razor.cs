@@ -7,8 +7,6 @@ namespace StudyLife.Client.Pages;
 
 public partial class Wrapped
 {
-    private I18nText.WrappedText T = new();
-
     // Recap period: rolling 365 days (default window of GET api/sessions/history,
     // days=365), deliberately instead of a "study year"/semester concept - the data model has no
     // clean academic year (StudyProgramEntity has no start date), and a rolling
@@ -42,29 +40,38 @@ public partial class Wrapped
 
     // Rough chronotype comparison for the highlight - no threshold like the
     // early-bird/night-owl achievements (Index.Achievements.razor.cs), "which
-    // side dominates" is enough for a single recap tile here.
+    // side dominates" is enough for a single recap tile here. Only ever rendered from markup
+    // gated by IsTextLoaded, so T is guaranteed loaded here - no defensive "?? """ needed.
     private string ChronotypeText => _earlyBirdHours > _nightOwlHours
-        ? T.EarlyBirdText ?? ""
+        ? T.EarlyBirdText
         : _nightOwlHours > _earlyBirdHours
-            ? T.NightOwlText ?? ""
-            : T.BalancedChronotypeText ?? "";
+            ? T.NightOwlText
+            : T.BalancedChronotypeText;
 
-    protected override async Task OnInitializedAsync()
+    // Independent of each other, and of the text-table fetch that LocalizedComponentBase starts
+    // in parallel - kicked off here (OnInitializingAsync, runs alongside that fetch) instead of
+    // await-ing one after another (same pattern as Index.razor.cs/Setup.razor).
+    private Task<UserSettings>? _settingsTask;
+    private Task<List<CourseDto>>? _coursesTask;
+    private Task<List<StudySessionDto>?>? _periodHistoryTask;
+    private Task<List<StudySessionDto>?>? _allTimeHistoryTask;
+
+    protected override Task OnInitializingAsync()
     {
-        // All fetches below are independent of each other - start them all immediately instead
-        // of await-ing one after another (same pattern as Index.razor.cs/Setup.razor).
-        var i18nTask = I18nText.GetTextTableAsync<I18nText.WrappedText>(this);
-        var settingsTask = State.GetSettingsAsync();
-        var coursesTask = State.GetCoursesAsync();
-        var periodHistoryTask = State.GetJsonCachedAsync<List<StudySessionDto>>("api/sessions/history");
-        var allTimeHistoryTask = State.GetJsonCachedAsync<List<StudySessionDto>>("api/sessions/history?days=3650");
+        _settingsTask = State.GetSettingsAsync();
+        _coursesTask = State.GetCoursesAsync();
+        _periodHistoryTask = State.GetJsonCachedAsync<List<StudySessionDto>>("api/sessions/history");
+        _allTimeHistoryTask = State.GetJsonCachedAsync<List<StudySessionDto>>("api/sessions/history?days=3650");
+        return Task.CompletedTask;
+    }
 
-        T = await i18nTask;
+    protected override async Task OnTextLoadedAsync()
+    {
         _langWatcher = new I18nLanguageWatcher(I18nText);
         await _langWatcher.InitAsync();
 
-        var settings = await settingsTask;
-        var allCourses = await coursesTask;
+        var settings = await _settingsTask!;
+        var allCourses = await _coursesTask!;
         var activeCourseIds = allCourses.Select(c => c.Id).ToHashSet();
 
         _periodEnd = DateTime.Today;
@@ -72,14 +79,14 @@ public partial class Wrapped
 
         // Recap period (365 days, default of /api/sessions/history) - for total hours,
         // sessions, streak, top course, weekday, and chronotype highlight.
-        var periodHistory = (await periodHistoryTask ?? new())
+        var periodHistory = (await _periodHistoryTask! ?? new())
             .Where(s => activeCourseIds.Contains(s.CourseId))
             .ToList();
 
         // All-time history for the achievement count - the same ~10-year span as
         // Index.Achievements.razor.cs' AchievementHistoryDays, since achievements are
         // deliberately programme-wide milestones, not tied to the recap period.
-        var allTimeHistory = (await allTimeHistoryTask ?? new())
+        var allTimeHistory = (await _allTimeHistoryTask! ?? new())
             .Where(s => activeCourseIds.Contains(s.CourseId))
             .ToList();
 
@@ -136,9 +143,11 @@ public partial class Wrapped
     {
         if (firstRender) return;
 
-        // _langWatcher can still be null here: OnInitializedAsync's first await doesn't complete
-        // synchronously, so Blazor renders once - firstRender=true - before the rest of
-        // OnInitializedAsync (incl. _langWatcher's assignment) has run; a later render catches up.
+        // _langWatcher can still be null here: LocalizedComponentBase's OnInitializedAsync awaits
+        // the text-table fetch before this component's own OnTextLoadedAsync (where _langWatcher
+        // is assigned) even starts, and that first await doesn't complete synchronously, so Blazor
+        // renders once - firstRender=true - before OnTextLoadedAsync has run; a later render
+        // catches up once it's set.
         if (_langWatcher != null && await _langWatcher.CheckChangedAsync() && _busiestWeekday != null && _busiestWeekdayIdx >= 0)
         {
             _busiestWeekday = _busiestWeekday with { Label = WeekdayName(_busiestWeekdayIdx) };

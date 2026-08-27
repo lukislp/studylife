@@ -3,18 +3,20 @@
 @using System.Text
 @using System.Text.Json.Nodes
 @using StudyLife.Shared
+@inherits LocalizedComponentBase<I18nText.AuthText>
 @inject HttpClient Http
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 @inject SessionTokenStore TokenStore
 @inject INativeAppAuth NativeAuth
-@inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
 @* Passkey login (phase 2). Deliberately uses PublicLayout (no app navigation) and the same
    progress-share card styles as SharedProgress - no separate stylesheet needed, index.html
    must not be touched. No username field: login/begin returns the CredentialIds for
    ALL users, the browser itself picks the passkey from the OS store. *@
 
+@if (IsTextLoaded)
+{
 <PageTitle>@T.LoginPageTitle</PageTitle>
 
 <div class="progress-share-page">
@@ -54,9 +56,9 @@
         </div>
     </div>
 </div>
+}
 
 @code {
-    private I18nText.AuthText T = new();
     private bool _busy;
     private string? _error;
     private IJSObjectReference? _module;
@@ -72,13 +74,18 @@
     // on the plain web flow, never when _app.IsActive (the native return redirect always wins).
     private string? _returnUrl;
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializingAsync()
     {
+        // Pure, T-independent computation - safe to run alongside the text-table fetch
+        // (same "start work immediately" idiom as Index.razor.cs/Setup.razor).
         var uri = Nav.ToAbsoluteUri(Nav.Uri);
         _app = AppReturnContext.FromUri(uri);
         _returnUrl = ValidateReturnUrl(System.Web.HttpUtility.ParseQueryString(uri.Query)["returnUrl"]);
-        T = await I18nText.GetTextTableAsync<I18nText.AuthText>(this);
+        return Task.CompletedTask;
+    }
 
+    protected override async Task OnTextLoadedAsync()
+    {
         // Public demo instance (server started with DEMO_MODE=true): skip the passkey UI
         // entirely and sign in automatically as the demo user. On a normal deployment
         // GET api/auth/demo returns demo:false and this block is a no-op - and any error

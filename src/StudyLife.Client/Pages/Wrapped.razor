@@ -1,17 +1,19 @@
 @page "/wrapped"
 @using StudyLife.Client.Services
 @using StudyLife.Shared
+@inherits LocalizedComponentBase<I18nText.WrappedText>
 @inject AppStateService State
 @inject HttpClient Http
-@inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
+@if (IsTextLoaded)
+{
 <PageTitle>StudyLife — @T.PageTitle</PageTitle>
 
 <div class="wrapped-page">
     <div class="wrapped-page-header">
         <a class="wrapped-back-link" href="/auswertung">← @T.BackLink</a>
         <h1>@T.HeaderTitle</h1>
-        <p class="wrapped-period">@string.Format(T.PeriodFormat ?? "", _periodStart.ToString("dd.MM.yyyy"), _periodEnd.ToString("dd.MM.yyyy"))</p>
+        <p class="wrapped-period">@string.Format(T.PeriodFormat, _periodStart.ToString("dd.MM.yyyy"), _periodEnd.ToString("dd.MM.yyyy"))</p>
     </div>
 
     <div class="wrapped-slides">
@@ -65,3 +67,4 @@
         }
     </div>
 </div>
+}
