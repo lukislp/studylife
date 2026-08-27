@@ -1,110 +1,11 @@
 @page "/connect/mcp"
 @layout PublicLayout
-@using StudyLife.Shared
-@inject HttpClient Http
-@inject NavigationManager Nav
-@inject SessionTokenStore TokenStore
-@inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
-@* MCP OAuth connect flow (identity contract v1 §2): studylife-mcp's OAuth authorize step
-   redirects the browser here with redirect_uri/state. Requires a passkey session like the
-   rest of the app - an unauthenticated visitor is bounced through /login first (via its
-   returnUrl mechanics, see Login.razor) and lands back here afterward. On Connect,
-   POSTs to api/auth/mcp-connect (session-authenticated) and navigates to the RedirectTo it
-   returns - studylife-mcp's own callback, carrying a single-use assertion. The plaintext MCP
-   key itself never appears in this browser at all. *@
+@* Thin wrapper: the actual consent UI/logic lives in Components/ConnectConsent.razor, shared with
+   /connect/capture (see ConnectCapture.razor) - see that component for the full flow writeup
+   (identity contract v1 §2). This page is the "mcp" audience: studylife-mcp's OAuth authorize
+   step redirects the browser here with redirect_uri/state (either a normal https callback, or -
+   for the stdio `mcp --login` consumer with no https origin of its own - an RFC 8252 loopback
+   http://127.0.0.1|localhost redirect_uri). *@
 
-<PageTitle>@T.ConnectPageTitle</PageTitle>
-
-<div class="progress-share-page">
-    <div class="progress-share-card">
-        <h1>@T.ConnectHeading</h1>
-        @if (_invalidRequest)
-        {
-            <p class="ss-desc" style="color:var(--danger, #e74c3c)">@T.ConnectInvalidRequest</p>
-        }
-        else
-        {
-            <p class="ss-desc">@T.ConnectIntro</p>
-            @if (_error != null)
-            {
-                <p class="ss-desc" style="color:var(--danger, #e74c3c)">@_error</p>
-            }
-            <div style="display:flex; flex-direction:column; gap:0.75rem; margin-top:1.25rem;">
-                <button type="button" class="btn-primary" @onclick="ConnectAsync" disabled="@_busy">
-                    @(_busy ? T.ConnectWorking : T.ConnectButton)
-                </button>
-                <button type="button" class="btn-secondary" @onclick="Cancel" disabled="@_busy">
-                    @T.ConnectCancelButton
-                </button>
-            </div>
-        }
-    </div>
-</div>
-
-@code {
-    private I18nText.ConnectText T = new();
-    private bool _busy;
-    private string? _error;
-    private bool _invalidRequest;
-    private string _redirectUri = "";
-    private string _state = "";
-
-    protected override async Task OnInitializedAsync()
-    {
-        T = await I18nText.GetTextTableAsync<I18nText.ConnectText>(this);
-
-        var uri = Nav.ToAbsoluteUri(Nav.Uri);
-        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
-        _redirectUri = query["redirect_uri"] ?? "";
-        _state = query["state"] ?? "";
-        // Only a client-side "don't even show the consent screen" shortcut - the authoritative
-        // check is server-side in AuthController.McpConnect (absolute https URL required).
-        if (!Uri.TryCreate(_redirectUri, UriKind.Absolute, out var parsedRedirect) || parsedRedirect.Scheme != Uri.UriSchemeHttps)
-        {
-            _invalidRequest = true;
-            return;
-        }
-
-        if (string.IsNullOrEmpty(TokenStore.Token))
-        {
-            // Same-origin relative path+query as ONE query value on /login - Login.razor decodes
-            // and validates it via ValidateReturnUrl before using it as the post-login redirect.
-            var self = $"/connect/mcp?redirect_uri={Uri.EscapeDataString(_redirectUri)}&state={Uri.EscapeDataString(_state)}";
-            Nav.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(self)}", forceLoad: true);
-        }
-    }
-
-    private async Task ConnectAsync()
-    {
-        _busy = true;
-        _error = null;
-        try
-        {
-            var response = await Http.PostAsJsonAsync("api/auth/mcp-connect",
-                new McpConnectRequestDto { RedirectUri = _redirectUri, State = _state });
-            if (!response.IsSuccessStatusCode)
-            {
-                _error = T.ConnectFailed;
-                return;
-            }
-            var result = await response.Content.ReadFromJsonAsync<McpConnectResponseDto>();
-            if (result?.RedirectTo is not { Length: > 0 } redirectTo) { _error = T.ConnectFailed; return; }
-
-            // Leaves this origin entirely (studylife-mcp's own callback) - forceLoad is required
-            // for Blazor's NavigationManager to actually leave the SPA instead of trying (and
-            // failing) to route the external URL internally.
-            Nav.NavigateTo(redirectTo, forceLoad: true);
-        }
-        catch (HttpRequestException)
-        {
-            _error = T.ConnectFailed;
-        }
-        finally
-        {
-            _busy = false;
-        }
-    }
-
-    private void Cancel() => Nav.NavigateTo("/", forceLoad: true);
-}
+<ConnectConsent Audience="mcp" />

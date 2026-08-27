@@ -1,7 +1,10 @@
 {
-  "ConnectPageTitle": "StudyLife — Anslut",
-  "ConnectHeading": "Anslut extern app",
-  "ConnectIntro": "Ansluta StudyLife till en extern app?",
+  "ConnectMcpPageTitle": "StudyLife — Anslut",
+  "ConnectMcpHeading": "Anslut extern app",
+  "ConnectMcpIntro": "Ansluta StudyLife till en extern app?",
+  "ConnectCapturePageTitle": "StudyLife — Anslut tillägg",
+  "ConnectCaptureHeading": "Anslut webbläsartillägg",
+  "ConnectCaptureIntro": "Ansluta webbläsartillägget studylife-capture till ditt StudyLife-konto?",
   "ConnectButton": "Anslut",
   "ConnectCancelButton": "Avbryt",
   "ConnectWorking": "Ansluter…",

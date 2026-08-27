@@ -1,7 +1,10 @@
 {
-  "ConnectPageTitle": "StudyLife — Ligar",
-  "ConnectHeading": "Ligar aplicação externa",
-  "ConnectIntro": "Ligar o StudyLife a uma aplicação externa?",
+  "ConnectMcpPageTitle": "StudyLife — Ligar",
+  "ConnectMcpHeading": "Ligar aplicação externa",
+  "ConnectMcpIntro": "Ligar o StudyLife a uma aplicação externa?",
+  "ConnectCapturePageTitle": "StudyLife — Ligar extensão",
+  "ConnectCaptureHeading": "Ligar extensão do navegador",
+  "ConnectCaptureIntro": "Ligar a extensão do navegador studylife-capture à sua conta StudyLife?",
   "ConnectButton": "Ligar",
   "ConnectCancelButton": "Cancelar",
   "ConnectWorking": "A ligar…",

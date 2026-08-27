@@ -1,7 +1,10 @@
 {
-  "ConnectPageTitle": "StudyLife — Tilslut",
-  "ConnectHeading": "Tilslut ekstern app",
-  "ConnectIntro": "Vil du forbinde StudyLife med en ekstern app?",
+  "ConnectMcpPageTitle": "StudyLife — Tilslut",
+  "ConnectMcpHeading": "Tilslut ekstern app",
+  "ConnectMcpIntro": "Vil du forbinde StudyLife med en ekstern app?",
+  "ConnectCapturePageTitle": "StudyLife — Tilslut udvidelse",
+  "ConnectCaptureHeading": "Tilslut browserudvidelse",
+  "ConnectCaptureIntro": "Vil du forbinde browserudvidelsen studylife-capture med din StudyLife-konto?",
   "ConnectButton": "Tilslut",
   "ConnectCancelButton": "Annuller",
   "ConnectWorking": "Forbinder…",

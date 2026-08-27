@@ -10,13 +10,21 @@
    right after generation (the server stores exclusively the SHA-256 hash) - after that the card
    just shows "active since ...". Deliberately no rotation, same as HA/AI/MCP: the extension
    (running in the user's own browser) has no live session that could pick up a rotation.
-   Self-contained component, structurally a copy of SetupMcpIntegrationCard (its own SetupText
-   instance + its own HTTP calls) with the capture-api-key endpoints and Capture-prefixed i18n
-   keys instead. *@
+
+   Now that the /connect/capture browser-consent flow exists (AuthController.CaptureConnect/
+   CaptureAssertionExchange, ConnectCapture.razor -> Components/ConnectConsent.razor) as an
+   alternative to pasting a key by hand, this card just gains a hint pointing at it - unlike
+   SetupMcpIntegrationCard the manual path stays the PRIMARY surface here (no collapsed
+   disclosure): the extension still needs an explicit UI to trigger the consent flow from
+   (its own options page), so "generate here, paste there" remains the baseline flow most users
+   will actually use. Self-contained component, structurally a copy of SetupMcpIntegrationCard
+   (its own SetupText instance + its own HTTP calls) with the capture-api-key endpoints and
+   Capture-prefixed i18n keys instead. *@
 
 <div class="setup-section">
     <div class="ss-label">@T.CaptureIntegrationHeading</div>
     <p class="ss-desc">@T.CaptureIntegrationDesc</p>
+    <p class="ss-desc">@T.CaptureConnectHint</p>
 
     @if (!string.IsNullOrEmpty(_generatedKey))
     {

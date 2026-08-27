@@ -1,7 +1,10 @@
 {
-  "ConnectPageTitle": "StudyLife — Pripojenie",
-  "ConnectHeading": "Pripojiť externú aplikáciu",
-  "ConnectIntro": "Pripojiť StudyLife k externej aplikácii?",
+  "ConnectMcpPageTitle": "StudyLife — Pripojenie",
+  "ConnectMcpHeading": "Pripojiť externú aplikáciu",
+  "ConnectMcpIntro": "Pripojiť StudyLife k externej aplikácii?",
+  "ConnectCapturePageTitle": "StudyLife — Pripojenie rozšírenia",
+  "ConnectCaptureHeading": "Pripojiť rozšírenie prehliadača",
+  "ConnectCaptureIntro": "Pripojiť rozšírenie prehliadača studylife-capture k vášmu účtu StudyLife?",
   "ConnectButton": "Pripojiť",
   "ConnectCancelButton": "Zrušiť",
   "ConnectWorking": "Pripája sa…",

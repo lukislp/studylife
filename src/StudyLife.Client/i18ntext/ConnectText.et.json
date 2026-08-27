@@ -1,7 +1,10 @@
 {
-  "ConnectPageTitle": "StudyLife — Ühenda",
-  "ConnectHeading": "Ühenda väline rakendus",
-  "ConnectIntro": "Kas ühendada StudyLife välise rakendusega?",
+  "ConnectMcpPageTitle": "StudyLife — Ühenda",
+  "ConnectMcpHeading": "Ühenda väline rakendus",
+  "ConnectMcpIntro": "Kas ühendada StudyLife välise rakendusega?",
+  "ConnectCapturePageTitle": "StudyLife — Ühenda laiendus",
+  "ConnectCaptureHeading": "Ühenda brauserilaiendus",
+  "ConnectCaptureIntro": "Kas ühendada studylife-capture brauserilaiendus sinu StudyLife'i kontoga?",
   "ConnectButton": "Ühenda",
   "ConnectCancelButton": "Loobu",
   "ConnectWorking": "Ühendamine…",

@@ -1,7 +1,10 @@
 {
-  "ConnectPageTitle": "StudyLife — Povezava",
-  "ConnectHeading": "Poveži zunanjo aplikacijo",
-  "ConnectIntro": "Ali želite povezati StudyLife z zunanjo aplikacijo?",
+  "ConnectMcpPageTitle": "StudyLife — Povezava",
+  "ConnectMcpHeading": "Poveži zunanjo aplikacijo",
+  "ConnectMcpIntro": "Ali želite povezati StudyLife z zunanjo aplikacijo?",
+  "ConnectCapturePageTitle": "StudyLife — Povezava razširitve",
+  "ConnectCaptureHeading": "Poveži razširitev brskalnika",
+  "ConnectCaptureIntro": "Ali želite povezati razširitev brskalnika studylife-capture z vašim računom StudyLife?",
   "ConnectButton": "Poveži",
   "ConnectCancelButton": "Prekliči",
   "ConnectWorking": "Povezovanje…",

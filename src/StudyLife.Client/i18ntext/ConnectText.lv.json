@@ -1,7 +1,10 @@
 {
-  "ConnectPageTitle": "StudyLife — Savienot",
-  "ConnectHeading": "Savienot ārēju lietotni",
-  "ConnectIntro": "Vai savienot StudyLife ar ārēju lietotni?",
+  "ConnectMcpPageTitle": "StudyLife — Savienot",
+  "ConnectMcpHeading": "Savienot ārēju lietotni",
+  "ConnectMcpIntro": "Vai savienot StudyLife ar ārēju lietotni?",
+  "ConnectCapturePageTitle": "StudyLife — Savienot paplašinājumu",
+  "ConnectCaptureHeading": "Savienot pārlūkprogrammas paplašinājumu",
+  "ConnectCaptureIntro": "Vai savienot studylife-capture pārlūkprogrammas paplašinājumu ar jūsu StudyLife kontu?",
   "ConnectButton": "Savienot",
   "ConnectCancelButton": "Atcelt",
   "ConnectWorking": "Notiek savienošana…",

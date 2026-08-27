@@ -1,7 +1,10 @@
 {
-  "ConnectPageTitle": "StudyLife — Verbinden",
-  "ConnectHeading": "Externe app verbinden",
-  "ConnectIntro": "StudyLife verbinden met een externe app?",
+  "ConnectMcpPageTitle": "StudyLife — Verbinden",
+  "ConnectMcpHeading": "Externe app verbinden",
+  "ConnectMcpIntro": "StudyLife verbinden met een externe app?",
+  "ConnectCapturePageTitle": "StudyLife — Extensie verbinden",
+  "ConnectCaptureHeading": "Browserextensie verbinden",
+  "ConnectCaptureIntro": "De studylife-capture-browserextensie verbinden met je StudyLife-account?",
   "ConnectButton": "Verbinden",
   "ConnectCancelButton": "Annuleren",
   "ConnectWorking": "Verbinden…",
