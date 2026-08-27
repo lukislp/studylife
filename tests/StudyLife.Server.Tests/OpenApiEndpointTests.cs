@@ -58,6 +58,8 @@ public class OpenApiEndpointTests : IClassFixture<CustomWebApplicationFactory>
             "TimerStateDto", "WhoamiResponseDto",
             "McpConnectRequestDto", "McpConnectResponseDto",
             "McpAssertionExchangeRequestDto", "McpAssertionExchangeResponseDto",
+            "CaptureConnectRequestDto", "CaptureConnectResponseDto",
+            "CaptureAssertionExchangeRequestDto", "CaptureAssertionExchangeResponseDto",
         })
         {
             Assert.True(

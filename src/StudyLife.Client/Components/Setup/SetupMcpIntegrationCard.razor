@@ -10,42 +10,65 @@
    exclusively the SHA-256 hash) - after that the card just shows "active since ...". Deliberately
    no rotation, same as HA/AI: studylife-mcp (an MCP server run locally by the user for Claude
    Desktop and other MCP clients) has no live session that could pick up a rotation.
-   Self-contained component, structurally a copy of SetupAiIntegrationCard (its own SetupText
-   instance + its own HTTP calls) with the mcp-api-key endpoints and Mcp-prefixed i18n keys
-   instead. *@
+
+   Now that the /connect/mcp browser-consent flow exists (AuthController.McpConnect/
+   McpAssertionExchange, ConnectMcp.razor -> Components/ConnectConsent.razor), that is the
+   PRIMARY way most users connect studylife-mcp - it rotates this exact same key slot itself
+   (via RotateMcpKey), so this card's primary surface shrinks to status + revoke; the old
+   generate/reveal/regenerate block moves behind a collapsed "advanced" disclosure, kept as a
+   manual fallback (headless/offline setups, or anyone who prefers pasting a key by hand) rather
+   than deleted. Self-contained component, structurally a copy of SetupAiIntegrationCard (its own
+   SetupText instance + its own HTTP calls) with the mcp-api-key endpoints and Mcp-prefixed i18n
+   keys instead. *@
 
 <div class="setup-section">
     <div class="ss-label">@T.McpIntegrationHeading</div>
     <p class="ss-desc">@T.McpIntegrationDesc</p>
-
-    @if (!string.IsNullOrEmpty(_generatedKey))
-    {
-        <div class="field-row" style="flex-wrap:wrap">
-            <input class="input" readonly value="@_generatedKey" />
-            <button type="button" class="btn-secondary" style="flex-shrink:0" @onclick="CopyKey">
-                @(_copied ? $"✓ {T.Copied}" : T.Copy)
-            </button>
-        </div>
-        <p class="ss-desc" style="font-weight:600">⚠️ @T.McpKeyOnceHint</p>
-    }
+    <p class="ss-desc">@T.McpConnectHint</p>
 
     @if (_hasKey)
     {
         <p class="ss-desc">@string.Format(T.McpKeyActiveSince ?? "", _createdAt?.ToLocalTime().ToString("g") ?? "")</p>
         <div class="toggle-row" style="gap:0.75rem;flex-wrap:wrap">
-            <button type="button" class="btn-secondary" @onclick="() => _confirmingRegenerate = true" disabled="@_busy">
-                @T.McpKeyRegenerateButton
-            </button>
             <button type="button" class="btn-danger" @onclick="() => _confirmingRevoke = true" disabled="@_busy">
                 @T.McpKeyRevokeButton
             </button>
         </div>
     }
-    else
+
+    <button type="button" class="btn-secondary" style="margin-top:0.75rem" @onclick="() => _advancedOpen = !_advancedOpen">
+        @(_advancedOpen ? "▾" : "▸") @T.McpAdvancedToggle
+    </button>
+
+    @if (_advancedOpen)
     {
-        <button type="button" class="btn-secondary" @onclick="Generate" disabled="@_busy">
-            @(_busy ? "…" : T.McpKeyGenerateButton)
-        </button>
+        <div style="margin-top:0.75rem; display:flex; flex-direction:column; gap:0.5rem">
+            @if (!string.IsNullOrEmpty(_generatedKey))
+            {
+                <div class="field-row" style="flex-wrap:wrap">
+                    <input class="input" readonly value="@_generatedKey" />
+                    <button type="button" class="btn-secondary" style="flex-shrink:0" @onclick="CopyKey">
+                        @(_copied ? $"✓ {T.Copied}" : T.Copy)
+                    </button>
+                </div>
+                <p class="ss-desc" style="font-weight:600">⚠️ @T.McpKeyOnceHint</p>
+            }
+
+            @if (_hasKey)
+            {
+                <div class="toggle-row" style="gap:0.75rem;flex-wrap:wrap">
+                    <button type="button" class="btn-secondary" @onclick="() => _confirmingRegenerate = true" disabled="@_busy">
+                        @T.McpKeyRegenerateButton
+                    </button>
+                </div>
+            }
+            else
+            {
+                <button type="button" class="btn-secondary" @onclick="Generate" disabled="@_busy">
+                    @(_busy ? "…" : T.McpKeyGenerateButton)
+                </button>
+            }
+        </div>
     }
 </div>
 
@@ -107,6 +130,10 @@
     private bool _busy;
     private bool _confirmingRegenerate;
     private bool _confirmingRevoke;
+    // Collapsed by default - the manual generate/reveal/regenerate block is now a fallback
+    // behind the /connect/mcp browser-consent flow, not the primary surface (see the file-level
+    // comment above).
+    private bool _advancedOpen;
 
     protected override async Task OnInitializedAsync()
     {

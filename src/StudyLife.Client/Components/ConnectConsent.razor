@@ -1,0 +1,143 @@
+@using StudyLife.Shared
+@inject HttpClient Http
+@inject NavigationManager Nav
+@inject SessionTokenStore TokenStore
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+@* Shared consent UI behind BOTH /connect/mcp and /connect/capture (see ConnectMcp.razor/
+   ConnectCapture.razor - thin @@page wrappers that just set Audience and render this).
+   Generalized from the original MCP-only ConnectMcp.razor (identity contract v1 §2) to a
+   per-audience "slot" mechanism, mirroring AuthController.BuildConnectRedirectAsync/
+   RedeemConsentAssertionAsync server-side: requires a passkey session like the rest of the app -
+   an unauthenticated visitor is bounced through /login first (via its returnUrl mechanics, see
+   Login.razor) and lands back here afterward. On Connect, POSTs to the audience's own
+   api/auth/{audience}-connect (session-authenticated) and navigates to the RedirectTo it returns -
+   the consumer's own callback, carrying a single-use, audience-bound assertion. The plaintext key
+   itself never appears in this browser at all. *@
+
+<PageTitle>@PageTitle</PageTitle>
+
+<div class="progress-share-page">
+    <div class="progress-share-card">
+        <h1>@Heading</h1>
+        @if (_invalidRequest)
+        {
+            <p class="ss-desc" style="color:var(--danger, #e74c3c)">@T.ConnectInvalidRequest</p>
+        }
+        else
+        {
+            <p class="ss-desc">@Intro</p>
+            @if (_error != null)
+            {
+                <p class="ss-desc" style="color:var(--danger, #e74c3c)">@_error</p>
+            }
+            <div style="display:flex; flex-direction:column; gap:0.75rem; margin-top:1.25rem;">
+                <button type="button" class="btn-primary" @onclick="ConnectAsync" disabled="@_busy">
+                    @(_busy ? T.ConnectWorking : T.ConnectButton)
+                </button>
+                <button type="button" class="btn-secondary" @onclick="Cancel" disabled="@_busy">
+                    @T.ConnectCancelButton
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    /// <summary>"mcp" or "capture" - selects both the audience-appropriate copy below and the
+    /// actual endpoint pair (api/auth/{Audience}-connect / the DTO type used to call it).</summary>
+    [Parameter, EditorRequired] public string Audience { get; set; } = "";
+
+    private I18nText.ConnectText T = new();
+    private bool _busy;
+    private string? _error;
+    private bool _invalidRequest;
+    private string _redirectUri = "";
+    private string _state = "";
+
+    private bool IsCapture => Audience == "capture";
+    private string PageTitle => IsCapture ? T.ConnectCapturePageTitle : T.ConnectMcpPageTitle;
+    private string Heading => IsCapture ? T.ConnectCaptureHeading : T.ConnectMcpHeading;
+    private string Intro => IsCapture ? T.ConnectCaptureIntro : T.ConnectMcpIntro;
+
+    protected override async Task OnInitializedAsync()
+    {
+        T = await I18nText.GetTextTableAsync<I18nText.ConnectText>(this);
+
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        _redirectUri = query["redirect_uri"] ?? "";
+        _state = query["state"] ?? "";
+        // Only a client-side "don't even show the consent screen" shortcut - the authoritative
+        // check is server-side in AuthController.IsAllowedRedirectUri (https, or the RFC 8252
+        // loopback exception for the mcp audience's stdio `mcp --login` consumer).
+        if (!IsAllowedRedirectUri(_redirectUri))
+        {
+            _invalidRequest = true;
+            return;
+        }
+
+        if (string.IsNullOrEmpty(TokenStore.Token))
+        {
+            // Same-origin relative path+query as ONE query value on /login - Login.razor decodes
+            // and validates it via ValidateReturnUrl before using it as the post-login redirect.
+            var self = $"/connect/{Audience}?redirect_uri={Uri.EscapeDataString(_redirectUri)}&state={Uri.EscapeDataString(_state)}";
+            Nav.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(self)}", forceLoad: true);
+        }
+    }
+
+    /// <summary>Mirrors AuthController.IsAllowedRedirectUri exactly - see there for the full
+    /// rationale (https always allowed; http only for the exact 127.0.0.1/localhost loopback
+    /// hosts, any port, any path - RFC 8252 §8.3 native-app exception).</summary>
+    private static bool IsAllowedRedirectUri(string redirectUri)
+    {
+        if (!Uri.TryCreate(redirectUri, UriKind.Absolute, out var uri)) return false;
+        if (uri.Scheme == Uri.UriSchemeHttps) return true;
+        return uri.Scheme == Uri.UriSchemeHttp
+            && (string.Equals(uri.Host, "127.0.0.1", StringComparison.Ordinal)
+                || string.Equals(uri.Host, "localhost", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private async Task ConnectAsync()
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            string? redirectTo;
+            if (IsCapture)
+            {
+                var response = await Http.PostAsJsonAsync("api/auth/capture-connect",
+                    new CaptureConnectRequestDto { RedirectUri = _redirectUri, State = _state });
+                if (!response.IsSuccessStatusCode) { _error = T.ConnectFailed; return; }
+                var result = await response.Content.ReadFromJsonAsync<CaptureConnectResponseDto>();
+                redirectTo = result?.RedirectTo;
+            }
+            else
+            {
+                var response = await Http.PostAsJsonAsync("api/auth/mcp-connect",
+                    new McpConnectRequestDto { RedirectUri = _redirectUri, State = _state });
+                if (!response.IsSuccessStatusCode) { _error = T.ConnectFailed; return; }
+                var result = await response.Content.ReadFromJsonAsync<McpConnectResponseDto>();
+                redirectTo = result?.RedirectTo;
+            }
+
+            if (redirectTo is not { Length: > 0 }) { _error = T.ConnectFailed; return; }
+
+            // Leaves this origin entirely (the consumer's own callback) - forceLoad is required
+            // for Blazor's NavigationManager to actually leave the SPA instead of trying (and
+            // failing) to route the external URL internally.
+            Nav.NavigateTo(redirectTo, forceLoad: true);
+        }
+        catch (HttpRequestException)
+        {
+            _error = T.ConnectFailed;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private void Cancel() => Nav.NavigateTo("/", forceLoad: true);
+}

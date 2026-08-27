@@ -1,7 +1,10 @@
 {
-  "ConnectPageTitle": "StudyLife — Σύνδεση",
-  "ConnectHeading": "Σύνδεση εξωτερικής εφαρμογής",
-  "ConnectIntro": "Σύνδεση του StudyLife με μια εξωτερική εφαρμογή;",
+  "ConnectMcpPageTitle": "StudyLife — Σύνδεση",
+  "ConnectMcpHeading": "Σύνδεση εξωτερικής εφαρμογής",
+  "ConnectMcpIntro": "Σύνδεση του StudyLife με μια εξωτερική εφαρμογή;",
+  "ConnectCapturePageTitle": "StudyLife — Σύνδεση επέκτασης",
+  "ConnectCaptureHeading": "Σύνδεση επέκτασης προγράμματος περιήγησης",
+  "ConnectCaptureIntro": "Σύνδεση της επέκτασης studylife-capture με τον λογαριασμό σας στο StudyLife;",
   "ConnectButton": "Σύνδεση",
   "ConnectCancelButton": "Ακύρωση",
   "ConnectWorking": "Σύνδεση σε εξέλιξη…",
