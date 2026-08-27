@@ -155,6 +155,33 @@ public class BackgroundTaskServiceCaptureEnrichmentTests : IClassFixture<CustomW
         Assert.NotNull(note.EnrichedAt);
     }
 
+    /// <summary>
+    /// Audit finding M2 follow-up: studylife-ai normally only ever sends CourseIds from the
+    /// user's own active course list, but a drifted/hallucinated id must not crash the whole
+    /// enrichment tick or reject it outright the way the interactive write paths (NotesController)
+    /// do - a background job has no caller to hand a 400 back to, so it degrades to storing null
+    /// instead, and the note is still marked enriched (tags/summary are still applied).
+    /// </summary>
+    [Fact]
+    public async Task RunCaptureEnrichmentAsync_UnknownCourseId_StoresNullCourseIdAndDoesNotThrow()
+    {
+        var noteId = await SeedNoteAsync("https://example.com/article");
+        var (service, _) = CreateService(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("{\"course_id\":987654,\"course_confidence\":0.9,\"tags\":[\"a\"],\"summary\":\"S.\"}"),
+        });
+
+        var exception = await Record.ExceptionAsync(() => _factory.WithDbAsync(db => service.RunCaptureEnrichmentAsync(db)));
+
+        Assert.Null(exception);
+        var note = await ReloadNoteAsync(noteId);
+        Assert.Null(note.CourseId);
+        Assert.NotNull(note.EnrichedAt);
+        // Everything else from the result is still applied - only the unresolvable course is dropped.
+        Assert.Equal("a", note.Tags);
+        Assert.Equal("S.", note.Summary);
+    }
+
     [Fact]
     public async Task RunCaptureEnrichmentAsync_FirstFailure_LeavesEnrichedAtNullAndIncrementsAttempts()
     {
