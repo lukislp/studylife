@@ -274,11 +274,16 @@ public class NotesControllerTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     /// <summary>
-    /// Same frozen-at-creation exemption as above, for SessionId: a note bound to a session that
-    /// was later deleted must still be editable as long as SessionId is left unchanged.
+    /// Unlike CourseId (no FK possible - the catalog is code), SessionId has a real
+    /// ON DELETE SET NULL foreign key since the referential-integrity migration: deleting the
+    /// session nulls the note's reference IN THE DATABASE immediately, so the "unchanged
+    /// dangling SessionId" state the frozen-at-creation exemption covers for courses cannot
+    /// exist for sessions anymore. A client re-sending the stale id after the delete is now a
+    /// null -> id CHANGE and is correctly rejected; re-sending null (what a freshly polled
+    /// client does) keeps working. Both halves pinned here.
     /// </summary>
     [Fact]
-    public async Task Update_SessionIdUnchanged_DeletedSession_StillSucceeds()
+    public async Task Update_AfterSessionDelete_FkNullsReference_StaleIdRejected_NullAccepted()
     {
         var sessionId = await SeedSessionDirectlyAsync();
         var created = await SeedNoteDirectlyAsync(sessionId: sessionId);
@@ -289,18 +294,28 @@ public class NotesControllerTests : IClassFixture<CustomWebApplicationFactory>
             await db.SaveChangesAsync();
         });
 
-        var updated = ValidNote();
-        updated.Id = created.Id;
-        updated.SessionId = sessionId;
-        updated.Title = "Aktualisiert trotz gelöschter Session";
+        // The FK already nulled the stored reference.
+        await _factory.WithDbAsync(async db =>
+            Assert.Null((await db.Notes.AsNoTracking().FirstAsync(n => n.Id == created.Id)).SessionId));
 
-        var response = await _client.PutAsJsonAsync($"/api/notes/{created.Id}", updated);
+        var stale = ValidNote();
+        stale.Id = created.Id;
+        stale.SessionId = sessionId;
+        stale.Title = "Stale Session-Referenz";
+        var staleResponse = await _client.PutAsJsonAsync($"/api/notes/{created.Id}", stale);
+        Assert.Equal(HttpStatusCode.BadRequest, staleResponse.StatusCode);
+
+        var detached = ValidNote();
+        detached.Id = created.Id;
+        detached.SessionId = null;
+        detached.Title = "Aktualisiert nach Session-Löschung";
+        var response = await _client.PutAsJsonAsync($"/api/notes/{created.Id}", detached);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var dto = await response.Content.ReadFromJsonAsync<NoteDto>();
         Assert.NotNull(dto);
-        Assert.Equal(sessionId, dto!.SessionId);
-        Assert.Equal("Aktualisiert trotz gelöschter Session", dto.Title);
+        Assert.Null(dto!.SessionId);
+        Assert.Equal("Aktualisiert nach Session-Löschung", dto.Title);
     }
 
     /// <summary>Inserts a session directly via EF (bypassing SessionsController's own CourseId
