@@ -1,3 +1,11 @@
+## [2.3.3](https://github.com/lukislp/studylife/compare/v2.3.2...v2.3.3) (2026-08-27)
+
+
+### Bug Fixes
+
+* planner course lookup goes through CourseResolver ([0f0c63a](https://github.com/lukislp/studylife/commit/0f0c63a97748e6d8e9a4982b628537e793b0f520))
+* split AuthController into concern-partials (no contract change) ([df48714](https://github.com/lukislp/studylife/commit/df48714f8d9e976ccdce297d48e13ed4e44681a6))
+
 ## [2.3.2](https://github.com/lukislp/studylife/compare/v2.3.1...v2.3.2) (2026-08-27)
 
 
