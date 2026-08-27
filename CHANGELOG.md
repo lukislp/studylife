@@ -1,3 +1,10 @@
+## [2.3.1](https://github.com/lukislp/studylife/compare/v2.3.0...v2.3.1) (2026-08-27)
+
+
+### Bug Fixes
+
+* bring README in line with consent-flow provisioning and the invite gate ([3c6e6b4](https://github.com/lukislp/studylife/commit/3c6e6b4a1b4a15b0c9af55f831b787f2f9c69e6c))
+
 # [2.3.0](https://github.com/lukislp/studylife/compare/v2.2.1...v2.3.0) (2026-08-27)
 
 
