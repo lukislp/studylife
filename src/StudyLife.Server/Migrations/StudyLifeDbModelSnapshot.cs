@@ -76,8 +76,12 @@ namespace StudyLife.Server.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedByUserId");
+
                     b.HasIndex("TokenHash")
                         .IsUnique();
+
+                    b.HasIndex("UsedByUserId");
 
                     b.ToTable("AuthInvites");
                 });
@@ -323,6 +327,8 @@ namespace StudyLife.Server.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CourseGroupId");
+
                     b.HasIndex("StudyProgramId");
 
                     b.ToTable("CustomCourses");
@@ -382,6 +388,8 @@ namespace StudyLife.Server.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("SessionId");
 
                     b.ToTable("Notes");
                 });
@@ -699,6 +707,8 @@ namespace StudyLife.Server.Migrations
                     b.HasIndex("AuthUserId")
                         .IsUnique();
 
+                    b.HasIndex("SessionId");
+
                     b.ToTable("TimerState");
                 });
 
@@ -840,6 +850,59 @@ namespace StudyLife.Server.Migrations
                         .IsUnique();
 
                     b.ToTable("Settings");
+                });
+
+            modelBuilder.Entity("StudyLife.Server.Data.AuthInviteEntity", b =>
+                {
+                    b.HasOne("StudyLife.Server.Data.AuthUserEntity", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("StudyLife.Server.Data.AuthUserEntity", null)
+                        .WithMany()
+                        .HasForeignKey("UsedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("StudyLife.Server.Data.CourseGroupEntity", b =>
+                {
+                    b.HasOne("StudyLife.Server.Data.StudyProgramEntity", null)
+                        .WithMany()
+                        .HasForeignKey("StudyProgramId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("StudyLife.Server.Data.CustomCourseEntity", b =>
+                {
+                    b.HasOne("StudyLife.Server.Data.CourseGroupEntity", null)
+                        .WithMany()
+                        .HasForeignKey("CourseGroupId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("StudyLife.Server.Data.StudyProgramEntity", null)
+                        .WithMany()
+                        .HasForeignKey("StudyProgramId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("StudyLife.Server.Data.NoteEntity", b =>
+                {
+                    b.HasOne("StudyLife.Server.Data.StudySessionEntity", null)
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("StudyLife.Server.Data.TimerStateEntity", b =>
+                {
+                    b.HasOne("StudyLife.Server.Data.StudySessionEntity", null)
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 #pragma warning restore 612, 618
         }

@@ -92,16 +92,23 @@ public class StudyLifeDbEdgeTests : IDisposable
         var now = DateTime.UtcNow;
         using var db = NewSqliteContext(authUserId: 7);
 
+        // CourseGroupEntity/CustomCourseEntity.StudyProgramId now carry a real FK (migration
+        // AddReferentialIntegrityForeignKeys) - the program therefore has to exist (and its
+        // real generated Id known) BEFORE group/course reference it, in its own SaveChanges,
+        // rather than relying on insertion order within a single shared SaveChanges call.
+        var program = new StudyProgramEntity { Name = "My Program", CreatedAt = now };
+        db.StudyPrograms.Add(program);
+        db.SaveChanges();
+
         var settings = new UserSettingsEntity();
         var reminder = new SentReminderEntity { Key = "42:reminder5", SentAt = now };
         var goal = new CourseGoalEntity { CourseId = 3, CourseName = "Analysis" };
         var timer = new TimerStateEntity { UpdatedAt = now };
-        var program = new StudyProgramEntity { Name = "My Program", CreatedAt = now };
-        var group = new CourseGroupEntity { StudyProgramId = 1, Name = "Electives", EctsQuota = 10 };
-        var course = new CustomCourseEntity { StudyProgramId = 1, Name = "Custom Course" };
+        var group = new CourseGroupEntity { StudyProgramId = program.Id, Name = "Electives", EctsQuota = 10 };
+        var course = new CustomCourseEntity { StudyProgramId = program.Id, Name = "Custom Course" };
         var template = new SessionTemplateEntity { Name = "Template", CourseId = 3, CreatedAt = now };
         var resource = new CourseResourceEntity { CourseId = 3, Title = "Slides", Url = "https://x", CreatedAt = now };
-        db.AddRange(settings, reminder, goal, timer, program, group, course, template, resource);
+        db.AddRange(settings, reminder, goal, timer, group, course, template, resource);
         db.SaveChanges();
 
         Assert.Equal(7, settings.AuthUserId);

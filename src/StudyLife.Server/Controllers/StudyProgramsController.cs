@@ -62,6 +62,13 @@ public class StudyProgramsController : ControllerBase
     /// built-in study program has no DB row and therefore cannot be deleted (the route only
     /// matches int ids anyway, "no program" is never reached through here).
     ///
+    /// Groups/courses are no longer removed manually here - CourseGroupEntity.StudyProgramId
+    /// and CustomCourseEntity.StudyProgramId both carry a real ON DELETE CASCADE FK constraint
+    /// now (see StudyLifeDb.cs / migration AddReferentialIntegrityForeignKeys), so a single
+    /// Remove(program) + SaveChanges cascades both away at the DB level. Pure mechanical
+    /// simplification - the referential-integrity analysis found this exact choreography was
+    /// already correct; the FK is only a DB-level safety net for it.
+    ///
     /// Deliberately NOT deleted along with it: CourseGoalEntity (grades/deadlines) and
     /// StudySessionEntity (study sessions) - both reference courses only via a bare int
     /// CourseId without an FK (see StudyLifeDb.cs), and the value the client sends for that
@@ -75,7 +82,9 @@ public class StudyProgramsController : ControllerBase
     /// missing courses are already tolerated today, instead of throwing an error. Explicitly
     /// deleting them as well would also silently destroy notes/history that the user doesn't
     /// expect to lose separately from deleting the program - when in doubt, data deletion
-    /// stays minimally invasive.
+    /// stays minimally invasive. This is exactly why CourseId columns deliberately did NOT get
+    /// an FK in the referential-integrity pass either - a real FK there would force exactly
+    /// the deletion this paragraph argues against.
     /// </summary>
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
@@ -85,17 +94,8 @@ public class StudyProgramsController : ControllerBase
 
         await using var transaction = await _db.Database.BeginTransactionAsync();
 
-        // Courses first, then groups, then the program itself - no navigation properties/
-        // cascade-delete configuration in this codebase's style (see Create above), so
-        // manually in the correct order of referential dependency.
-        var courses = await _db.CustomCourses.Where(c => c.StudyProgramId == id).ToListAsync();
-        _db.CustomCourses.RemoveRange(courses);
-        await _db.SaveChangesAsync();
-
-        var groups = await _db.CourseGroups.Where(g => g.StudyProgramId == id).ToListAsync();
-        _db.CourseGroups.RemoveRange(groups);
-        await _db.SaveChangesAsync();
-
+        // The DB-level CASCADE FK on CourseGroups.StudyProgramId/CustomCourses.StudyProgramId
+        // takes care of the child rows - see the doc comment above.
         _db.StudyPrograms.Remove(program);
         await _db.SaveChangesAsync();
 

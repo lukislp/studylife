@@ -97,6 +97,67 @@ public class StudyLifeDb : DbContext
         modelBuilder.Entity<CustomCourseEntity>().HasIndex(c => c.StudyProgramId);
         modelBuilder.Entity<CourseResourceEntity>().HasIndex(r => r.CourseId);
 
+        // Real FK constraints (referential-integrity analysis, 2026-08-27). Added ONLY where the
+        // referenced row is guaranteed to exist and application code already maintains the
+        // relationship correctly on its own (StudyProgramsController.Delete's manual cascade,
+        // TimerStateController/NotesController's session handling, etc.) - the FK is a pure
+        // DB-level safety net against a future bug or manual data surgery, not new application
+        // behavior. Deliberately still WITHOUT navigation properties (HasOne<T>().WithMany() with
+        // no lambda) - same bare-int-FK, no-navigation style as the rest of this file; EF creates
+        // these as shadow relationships that never surface as a .Include()-able property.
+        //
+        // Explicitly NOT covered by this pass, and why - so nobody "completes" it later:
+        // - Any CourseId column (StudySessionEntity/CourseGoalEntity/CourseResourceEntity/
+        //   SessionTemplateEntity): the course "catalog" a CourseId points into is half code
+        //   (CourseCatalog, static built-in Ids 1-62) and half DB (CustomCourseEntity, Ids shifted
+        //   by StudyProgramCatalog.CustomCourseIdOffset) - there is no single backing table an FK
+        //   could even target. More importantly, the frozen-history design is DELIBERATE (see
+        //   StudyProgramsController.Delete's doc comment): a session/goal/resource must keep
+        //   referencing a CourseId that no longer resolves to any course after its program is
+        //   deleted, instead of being deleted or nulled out along with it. An FK here would
+        //   directly break that intended behavior.
+        // - AuthUserId on every user-owned table: there is no user-deletion feature yet. Whether a
+        //   future one cascades, restricts, or anonymizes is a product decision for that feature to
+        //   make, not something to bolt on silently here.
+        modelBuilder.Entity<CustomCourseEntity>()
+            .HasOne<StudyProgramEntity>()
+            .WithMany()
+            .HasForeignKey(c => c.StudyProgramId)
+            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<CourseGroupEntity>()
+            .HasOne<StudyProgramEntity>()
+            .WithMany()
+            .HasForeignKey(g => g.StudyProgramId)
+            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<CustomCourseEntity>()
+            .HasOne<CourseGroupEntity>()
+            .WithMany()
+            .HasForeignKey(c => c.CourseGroupId)
+            .OnDelete(DeleteBehavior.SetNull);
+        // No deletion path for AuthUserEntity exists (see the AuthUserId note above) - RESTRICT is
+        // therefore inert today, but it's the semantically correct constraint should one ever be
+        // added: an invite's creator must not vanish out from under it silently.
+        modelBuilder.Entity<AuthInviteEntity>()
+            .HasOne<AuthUserEntity>()
+            .WithMany()
+            .HasForeignKey(i => i.CreatedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<AuthInviteEntity>()
+            .HasOne<AuthUserEntity>()
+            .WithMany()
+            .HasForeignKey(i => i.UsedByUserId)
+            .OnDelete(DeleteBehavior.SetNull);
+        modelBuilder.Entity<NoteEntity>()
+            .HasOne<StudySessionEntity>()
+            .WithMany()
+            .HasForeignKey(n => n.SessionId)
+            .OnDelete(DeleteBehavior.SetNull);
+        modelBuilder.Entity<TimerStateEntity>()
+            .HasOne<StudySessionEntity>()
+            .WithMany()
+            .HasForeignKey(t => t.SessionId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         // "One row per user" enforced at the DB level (bug fix): UserSettingsEntity/TimerStateEntity
         // were previously singleton-per-user by convention only - multiple independent
         // get-or-create call sites (SettingsController.Save, BackupController.
