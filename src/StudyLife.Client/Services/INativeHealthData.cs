@@ -42,35 +42,13 @@ public interface INativeHealthData
     /// never granted/denied (distinct from a genuine 0 steps).</summary>
     Task<int?> GetStepsSinceAsync(int minutesAgo) => Task.FromResult<int?>(null);
 
-    /// <summary>
-    /// Value-tuple variant kept for backward compatibility with cross-repo implementers still
-    /// mid-migration (see the MAUI app's ProjectReference to this repo's main branch in CI) -
-    /// prefer overriding <see cref="GetCardioFitnessPointsAsync"/> instead, which this repo's own
-    /// consumers now use exclusively. Do not add new callers/implementers of this member; it
-    /// exists purely so old implementations keep compiling until they're migrated.
-    /// </summary>
-    [Obsolete("Implement/call GetCardioFitnessPointsAsync instead - value tuples in LINQ pipelines can crash iOS AOT compilation.", error: false)]
-    Task<IReadOnlyList<(DateTime Date, double Vo2Max)>?> GetCardioFitnessHistoryAsync(int days) =>
-        Task.FromResult<IReadOnlyList<(DateTime Date, double Vo2Max)>?>(null);
-
     /// <summary>Cardio Fitness (VO2max, ml/(kg·min)) history for the last <paramref name="days"/>
     /// days, oldest first - unlike HRV/sleep, watchOS computes these roughly monthly (from
     /// outdoor walk/run workouts), so readings are sparse rather than daily. Null if
     /// authorization was never granted/denied, or if there simply are no readings in the
-    /// window (e.g. no Watch workout history) - the Stats page card treats both the same way.
-    /// <para>
-    /// Default implementation adapts <see cref="GetCardioFitnessHistoryAsync"/> so that any
-    /// implementer which only overrides the old tuple-based member (e.g. the MAUI app's
-    /// NativeHealthData, until it migrates) keeps working unchanged through this new member too -
-    /// override this one directly instead once the old member is gone.
-    /// </para></summary>
-#pragma warning disable CS0618 // deliberate bridge to the obsolete member, for old implementers
-    async Task<IReadOnlyList<CardioFitnessPoint>?> GetCardioFitnessPointsAsync(int days)
-    {
-        var legacy = await GetCardioFitnessHistoryAsync(days);
-        return legacy?.Select(p => new CardioFitnessPoint(p.Date, p.Vo2Max)).ToList();
-    }
-#pragma warning restore CS0618
+    /// window (e.g. no Watch workout history) - the Stats page card treats both the same way.</summary>
+    Task<IReadOnlyList<CardioFitnessPoint>?> GetCardioFitnessPointsAsync(int days) =>
+        Task.FromResult<IReadOnlyList<CardioFitnessPoint>?>(null);
 }
 
 /// <summary>Default registration in the browser client (Program.cs).</summary>
