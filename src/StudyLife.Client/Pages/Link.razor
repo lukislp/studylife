@@ -3,11 +3,11 @@
 @using System.Text
 @using System.Text.Json.Nodes
 @using StudyLife.Shared
+@inherits LocalizedComponentBase<I18nText.AuthText>
 @inject HttpClient Http
 @inject IJSRuntime JS
 @inject NavigationManager Nav
 @inject INativeAppAuth NativeAuth
-@inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
 @* Links this NEW, not-yet-logged-in device to an existing account via a code
    (register/begin-linked) - an alternative to the browser-dependent WebAuthn cross-device/
@@ -17,6 +17,8 @@
    cross-device ceremony) - it then ends up PENDING until the other device approves it via the
    device list; no token is issued here, hence no forceLoad redirect. *@
 
+@if (IsTextLoaded)
+{
 <PageTitle>@T.LinkPageTitle</PageTitle>
 
 <div class="progress-share-page">
@@ -47,9 +49,9 @@
         }
     </div>
 </div>
+}
 
 @code {
-    private I18nText.AuthText T = new();
     private string _code = "";
     private bool _busy;
     private bool _success;
@@ -61,8 +63,10 @@
     // completion is signalled to the app only via a linked=1 redirect (details in AppReturnContext).
     private AppReturnContext _app = AppReturnContext.FromUri(new Uri("https://unused.invalid/"));
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializingAsync()
     {
+        // Pure, T-independent computation - safe to run alongside the text-table fetch
+        // (same "start work immediately" idiom as Index.razor.cs/Setup.razor).
         var uri = Nav.ToAbsoluteUri(Nav.Uri);
         _app = AppReturnContext.FromUri(uri);
         if (_app.IsActive && uri.Fragment is { Length: > 1 } fragment)
@@ -73,7 +77,7 @@
                 if (kv.Length == 2 && kv[0] == "code") _code = Uri.UnescapeDataString(kv[1]);
             }
         }
-        T = await I18nText.GetTextTableAsync<I18nText.AuthText>(this);
+        return Task.CompletedTask;
     }
 
     private async Task ConnectAsync()
