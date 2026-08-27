@@ -1,3 +1,10 @@
+## [2.1.6](https://github.com/lukislp/studylife/compare/v2.1.5...v2.1.6) (2026-08-27)
+
+
+### Bug Fixes
+
+* remove the obsolete tuple compatibility shims ([8a3287b](https://github.com/lukislp/studylife/commit/8a3287b05425b91d973cb76ba2e7a26290b23638)), closes [#7](https://github.com/lukislp/studylife/issues/7)
+
 ## [2.1.5](https://github.com/lukislp/studylife/compare/v2.1.4...v2.1.5) (2026-08-26)
 
 
