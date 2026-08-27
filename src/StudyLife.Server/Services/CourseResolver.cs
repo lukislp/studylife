@@ -20,11 +20,15 @@ namespace StudyLife.Server.Services;
 /// docs/ARCHITECTURE.md "Course id validation"). Used by every controller that creates a NEW
 /// binding between a row and a course (SessionsController.Create and .Update when the
 /// CourseId actually changes, CourseGoalsController.Save on first creation,
-/// SessionTemplatesController.Create, CourseResourcesController.Create) - deliberately NOT
-/// used by BackupController's raw restore or JSON import (those intentionally carry
-/// historical ids and bypass validation by design, see BackupController's own doc comments)
-/// and NOT for a PUT that keeps a row's CourseId unchanged (frozen-at-creation semantics -
-/// editing/completing a session or goal of a since-deleted custom course must keep working).
+/// SessionTemplatesController.Create, CourseResourcesController.Create, NotesController.Create
+/// and .Update when a non-null CourseId actually changes) - deliberately NOT used by
+/// BackupController's raw restore or JSON import (those intentionally carry historical ids and
+/// bypass validation by design, see BackupController's own doc comments) and NOT for a PUT
+/// that keeps a row's CourseId unchanged (frozen-at-creation semantics - editing/completing a
+/// session, goal, or note of a since-deleted custom course must keep working). Also used, in a
+/// deliberately SOFTER form, by BackgroundTaskService.CaptureEnrichment: a course id supplied by
+/// studylife-ai that fails to resolve is stored as null with a logged warning instead of
+/// rejecting the whole enrichment - a background job degrading gracefully rather than throwing.
 /// </summary>
 public interface ICourseResolver
 {
@@ -75,4 +79,14 @@ public class CourseResolver : ICourseResolver
 public static class CourseValidationMessages
 {
     public static string UnknownCourseId(int courseId) => $"CourseId {courseId} does not exist.";
+}
+
+/// <summary>Stable, user-facing error text for a SessionId that doesn't exist (or doesn't belong
+/// to the calling user, indistinguishable via the global query filter - see StudyLifeDb) - the
+/// SessionId analogue of <see cref="CourseValidationMessages"/>, used by write paths that reject
+/// an unresolvable SessionId (NotesController) rather than silently dropping it (TimerStateController,
+/// see its own Save() comment for why that path degrades instead of rejecting).</summary>
+public static class SessionValidationMessages
+{
+    public static string UnknownSessionId(int sessionId) => $"SessionId {sessionId} does not exist.";
 }

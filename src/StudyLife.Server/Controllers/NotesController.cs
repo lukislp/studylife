@@ -12,11 +12,13 @@ public class NotesController : ControllerBase
 {
     private readonly StudyLifeDb _db;
     private readonly INoteSearchStrategy _searchStrategy;
+    private readonly ICourseResolver _courseResolver;
 
-    public NotesController(StudyLifeDb db, INoteSearchStrategy searchStrategy)
+    public NotesController(StudyLifeDb db, INoteSearchStrategy searchStrategy, ICourseResolver courseResolver)
     {
         _db = db;
         _searchStrategy = searchStrategy;
+        _courseResolver = courseResolver;
     }
 
     [HttpGet]
@@ -38,8 +40,22 @@ public class NotesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<NoteDto> Create(NoteDto dto)
+    public async Task<ActionResult<NoteDto>> Create(NoteDto dto)
     {
+        // A note without a course is legit (e.g. a fresh capture before the AI enrichment or the
+        // user assigns one) - only a NON-NULL CourseId/SessionId is validated, same "set means
+        // checked" contract as the CourseId re-validation on Update below.
+        if (dto.CourseId is { } courseId)
+        {
+            var course = await _courseResolver.ResolveAsync(courseId);
+            if (course == null) return BadRequest(CourseValidationMessages.UnknownCourseId(courseId));
+        }
+        if (dto.SessionId is { } sessionId)
+        {
+            var sessionExists = await _db.Sessions.AnyAsync(s => s.Id == sessionId);
+            if (!sessionExists) return BadRequest(SessionValidationMessages.UnknownSessionId(sessionId));
+        }
+
         var entity = new NoteEntity
         {
             Title = dto.Title,
@@ -61,6 +77,23 @@ public class NotesController : ControllerBase
     {
         var entity = await _db.Notes.FindAsync(id);
         if (entity == null) return NotFound();
+
+        // Frozen-at-creation exemption, mirroring SessionsController.Update's CourseId handling
+        // (audit finding M2 follow-up): only a CourseId/SessionId that actually CHANGED to a new
+        // non-null value is re-validated - editing an old note still bound to a since-deleted
+        // custom course (or a session that has since been removed) must keep working. Changing
+        // TO null (detaching) never needs validation either way.
+        if (dto.CourseId != entity.CourseId && dto.CourseId is { } courseId)
+        {
+            var course = await _courseResolver.ResolveAsync(courseId);
+            if (course == null) return BadRequest(CourseValidationMessages.UnknownCourseId(courseId));
+        }
+        if (dto.SessionId != entity.SessionId && dto.SessionId is { } sessionId)
+        {
+            var sessionExists = await _db.Sessions.AnyAsync(s => s.Id == sessionId);
+            if (!sessionExists) return BadRequest(SessionValidationMessages.UnknownSessionId(sessionId));
+        }
+
         entity.Title = dto.Title;
         entity.Content = dto.Content;
         entity.CourseId = dto.CourseId;

@@ -37,8 +37,8 @@ public class TimerStateControllerFreshDbTests : IClassFixture<CustomWebApplicati
 
 public class TimerStateControllerTests : IClassFixture<CustomWebApplicationFactory>
 {
-    private readonly HttpClient _client;
     private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
 
     public TimerStateControllerTests(CustomWebApplicationFactory factory)
     {
@@ -46,17 +46,18 @@ public class TimerStateControllerTests : IClassFixture<CustomWebApplicationFacto
         _client = factory.CreateClient();
     }
 
-    // Real Session rows for the tests below to reference by id. TimerState.SessionId now carries
-    // a real FK (migration AddReferentialIntegrityForeignKeys, ON DELETE SET NULL) that rejects
-    // any SessionId not backed by an actual row - the arbitrary literals (42, 77, ...) this suite
-    // used before the FK existed would now fail at save time, so every value has to come from a
-    // real, once-created session instead.
-    private async Task<int> CreateSessionAsync() => await _factory.WithDbAsync(async db =>
+    /// <summary>Inserts a real session directly via EF (bypassing SessionsController - its own
+    /// CourseId validation is irrelevant here) so PUT /api/timerstate's SessionId existence check
+    /// has something valid to resolve against. A fresh row per call, since a dangling/reused id
+    /// across tests sharing the singleton row (see the class comment below) could otherwise
+    /// collide with one a different test already deleted.</summary>
+    private Task<int> SeedSessionAsync() => _factory.WithDbAsync(async db =>
     {
         var session = new StudySessionEntity
         {
             CourseId = 1,
-            CourseName = "Test Course",
+            CourseName = "Seeded Timer Session",
+            CourseColor = "#6C5CE7",
             StartTime = DateTime.Now,
             EndTime = DateTime.Now.AddHours(1),
         };
@@ -78,7 +79,7 @@ public class TimerStateControllerTests : IClassFixture<CustomWebApplicationFacto
     [Fact]
     public async Task Put_ThenGet_RoundTripsExactValues()
     {
-        var state = RunningFocusState(await CreateSessionAsync());
+        var state = RunningFocusState(await SeedSessionAsync());
 
         var putResponse = await _client.PutAsJsonAsync("/api/timerstate", state);
         Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
@@ -98,11 +99,11 @@ public class TimerStateControllerTests : IClassFixture<CustomWebApplicationFacto
     [Fact]
     public async Task Put_Twice_UpdatesSingletonRowInsteadOfDuplicating()
     {
-        var first = RunningFocusState(await CreateSessionAsync());
+        var first = RunningFocusState(await SeedSessionAsync());
         first.CurrentRound = 1;
         first.TimerModeId = 2;
 
-        var second = RunningFocusState(await CreateSessionAsync());
+        var second = RunningFocusState(await SeedSessionAsync());
         second.IsRunning = false;
         second.IsBreak = true;
         second.CurrentRound = 4;
@@ -151,6 +152,32 @@ public class TimerStateControllerTests : IClassFixture<CustomWebApplicationFacto
         AssertMatches(implausible, getResult);
     }
 
+    /// <summary>
+    /// SessionId existence check (mirrors NotesController): unlike the interactive write paths
+    /// (POST/PUT /api/notes), this fire-and-forget sync path degrades instead of rejecting - a
+    /// SessionId that doesn't resolve to an existing session (e.g. the session was deleted while
+    /// the timer kept running) is silently nulled server-side rather than answered with 400.
+    /// </summary>
+    [Fact]
+    public async Task Put_WithDanglingSessionId_ReturnsOkWithNulledSessionId()
+    {
+        var state = RunningFocusState(987654);
+
+        var putResponse = await _client.PutAsJsonAsync("/api/timerstate", state);
+
+        Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
+        var putResult = await putResponse.Content.ReadFromJsonAsync<TimerStateDto>();
+        Assert.NotNull(putResult);
+        Assert.Null(putResult!.SessionId);
+        // Every other field from the push is still applied - only SessionId is nulled.
+        Assert.True(putResult.IsRunning);
+        Assert.Equal(2, putResult.CurrentRound);
+
+        var getResponse = await _client.GetAsync("/api/timerstate");
+        var getResult = await getResponse.Content.ReadFromJsonAsync<TimerStateDto>();
+        Assert.Null(getResult!.SessionId);
+    }
+
     // ── ClientSequence semantics (audit S6) ─────────────────────────────────────
     // All four tests below share ONE singleton row with every other test in this class (see the
     // class doc comment) and xUnit does not guarantee method execution order - so each test's
@@ -167,7 +194,7 @@ public class TimerStateControllerTests : IClassFixture<CustomWebApplicationFacto
     [Fact]
     public async Task Put_WithStaleSequence_IsIgnored_ReturnsCurrentState()
     {
-        var baseline = RunningFocusState(await CreateSessionAsync());
+        var baseline = RunningFocusState(await SeedSessionAsync());
         var baselineSeq = FreshSequence();
         baseline.ClientSequence = baselineSeq;
         var baselinePut = await _client.PutAsJsonAsync("/api/timerstate", baseline);
@@ -175,7 +202,10 @@ public class TimerStateControllerTests : IClassFixture<CustomWebApplicationFacto
 
         // Simulates the out-of-order case (audit S6): TimerService fires PUTs unawaited, so an
         // OLDER transition's request can land on the server AFTER a newer one already did.
-        var stale = RunningFocusState(await CreateSessionAsync());
+        // SessionId here is a dangling placeholder (no seeded session behind it) - harmless,
+        // since the stale-sequence check below rejects this PUT before the SessionId is ever
+        // looked at.
+        var stale = RunningFocusState(999_999_999);
         stale.CurrentRound = 99;
         stale.ClientSequence = baselineSeq - 1000; // clearly older than the baseline just written
 
@@ -196,12 +226,12 @@ public class TimerStateControllerTests : IClassFixture<CustomWebApplicationFacto
     [Fact]
     public async Task Put_WithNewerSequence_IsApplied()
     {
-        var baseline = RunningFocusState(await CreateSessionAsync());
+        var baseline = RunningFocusState(await SeedSessionAsync());
         var baselineSeq = FreshSequence();
         baseline.ClientSequence = baselineSeq;
         await _client.PutAsJsonAsync("/api/timerstate", baseline);
 
-        var newer = RunningFocusState(await CreateSessionAsync());
+        var newer = RunningFocusState(await SeedSessionAsync());
         newer.CurrentRound = 3;
         newer.ClientSequence = baselineSeq + 1;
 
@@ -221,12 +251,12 @@ public class TimerStateControllerTests : IClassFixture<CustomWebApplicationFacto
     [Fact]
     public async Task Put_WithoutSequence_AlwaysOverwrites_LastWriteWinsForHaCompat()
     {
-        var sequenced = RunningFocusState(await CreateSessionAsync());
+        var sequenced = RunningFocusState(await SeedSessionAsync());
         var seq = FreshSequence();
         sequenced.ClientSequence = seq;
         await _client.PutAsJsonAsync("/api/timerstate", sequenced);
 
-        var unsequenced = RunningFocusState(await CreateSessionAsync());
+        var unsequenced = RunningFocusState(await SeedSessionAsync());
         unsequenced.IsRunning = false;
         unsequenced.ClientSequence = null;
 
@@ -248,16 +278,18 @@ public class TimerStateControllerTests : IClassFixture<CustomWebApplicationFacto
     [Fact]
     public async Task Put_WithSequence_AfterAnUnsequencedWrite_StillDetectsStaleness()
     {
-        var sequenced = RunningFocusState(await CreateSessionAsync());
+        var sequenced = RunningFocusState(await SeedSessionAsync());
         var seq = FreshSequence();
         sequenced.ClientSequence = seq;
         await _client.PutAsJsonAsync("/api/timerstate", sequenced);
 
-        var unsequenced = RunningFocusState(await CreateSessionAsync());
+        var unsequenced = RunningFocusState(await SeedSessionAsync());
         unsequenced.ClientSequence = null;
         await _client.PutAsJsonAsync("/api/timerstate", unsequenced);
 
-        var stale = RunningFocusState(await CreateSessionAsync());
+        // SessionId here is a dangling placeholder - harmless, this PUT is rejected as stale
+        // before the SessionId is ever looked at (same reasoning as Put_WithStaleSequence above).
+        var stale = RunningFocusState(999_999_998);
         stale.ClientSequence = seq - 1000; // older than seq, even though the LAST accepted write had no sequence at all
 
         var response = await _client.PutAsJsonAsync("/api/timerstate", stale);
