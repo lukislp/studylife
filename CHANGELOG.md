@@ -1,3 +1,15 @@
+# [2.2.0](https://github.com/lukislp/studylife/compare/v2.1.9...v2.2.0) (2026-08-27)
+
+
+### Bug Fixes
+
+* regenerate the OpenAPI spec after the main merge ([ddd5f4c](https://github.com/lukislp/studylife/commit/ddd5f4c47b00a4ff5724b4a8ec0fd2f1a83c95bd))
+
+
+### Features
+
+* consent provisioning for capture and the stdio loopback ([70f6eb2](https://github.com/lukislp/studylife/commit/70f6eb21abfc83ffb7695cca559dad491b57a52d))
+
 ## [2.1.9](https://github.com/lukislp/studylife/compare/v2.1.8...v2.1.9) (2026-08-27)
 
 
