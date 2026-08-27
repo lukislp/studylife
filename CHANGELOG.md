@@ -1,3 +1,10 @@
+## [2.1.8](https://github.com/lukislp/studylife/compare/v2.1.7...v2.1.8) (2026-08-27)
+
+
+### Bug Fixes
+
+* migrate the nine remaining pages to LocalizedComponentBase ([ca1d1e1](https://github.com/lukislp/studylife/commit/ca1d1e1330f989f7338ab92c48642763fcbcfb56))
+
 ## [2.1.7](https://github.com/lukislp/studylife/compare/v2.1.6...v2.1.7) (2026-08-27)
 
 
