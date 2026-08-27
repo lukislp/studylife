@@ -1,7 +1,10 @@
 {
-  "ConnectPageTitle": "StudyLife — Conectare",
-  "ConnectHeading": "Conectează aplicație externă",
-  "ConnectIntro": "Conectezi StudyLife cu o aplicație externă?",
+  "ConnectMcpPageTitle": "StudyLife — Conectare",
+  "ConnectMcpHeading": "Conectează aplicație externă",
+  "ConnectMcpIntro": "Conectezi StudyLife cu o aplicație externă?",
+  "ConnectCapturePageTitle": "StudyLife — Conectare extensie",
+  "ConnectCaptureHeading": "Conectează extensia de browser",
+  "ConnectCaptureIntro": "Conectezi extensia de browser studylife-capture la contul tău StudyLife?",
   "ConnectButton": "Conectează",
   "ConnectCancelButton": "Anulează",
   "ConnectWorking": "Se conectează…",

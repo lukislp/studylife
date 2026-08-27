@@ -1,7 +1,10 @@
 {
-  "ConnectPageTitle": "StudyLife — Połącz",
-  "ConnectHeading": "Połącz aplikację zewnętrzną",
-  "ConnectIntro": "Połączyć StudyLife z aplikacją zewnętrzną?",
+  "ConnectMcpPageTitle": "StudyLife — Połącz",
+  "ConnectMcpHeading": "Połącz aplikację zewnętrzną",
+  "ConnectMcpIntro": "Połączyć StudyLife z aplikacją zewnętrzną?",
+  "ConnectCapturePageTitle": "StudyLife — Połącz rozszerzenie",
+  "ConnectCaptureHeading": "Połącz rozszerzenie przeglądarki",
+  "ConnectCaptureIntro": "Połączyć rozszerzenie przeglądarki studylife-capture z Twoim kontem StudyLife?",
   "ConnectButton": "Połącz",
   "ConnectCancelButton": "Anuluj",
   "ConnectWorking": "Łączenie…",

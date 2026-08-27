@@ -1,7 +1,10 @@
 {
-  "ConnectPageTitle": "StudyLife — Csatlakozás",
-  "ConnectHeading": "Külső alkalmazás csatlakoztatása",
-  "ConnectIntro": "Csatlakoztatod a StudyLife-ot egy külső alkalmazáshoz?",
+  "ConnectMcpPageTitle": "StudyLife — Csatlakozás",
+  "ConnectMcpHeading": "Külső alkalmazás csatlakoztatása",
+  "ConnectMcpIntro": "Csatlakoztatod a StudyLife-ot egy külső alkalmazáshoz?",
+  "ConnectCapturePageTitle": "StudyLife — Bővítmény csatlakoztatása",
+  "ConnectCaptureHeading": "Böngészőbővítmény csatlakoztatása",
+  "ConnectCaptureIntro": "Csatlakoztatod a studylife-capture böngészőbővítményt a StudyLife-fiókodhoz?",
   "ConnectButton": "Csatlakozás",
   "ConnectCancelButton": "Mégse",
   "ConnectWorking": "Csatlakozás…",

@@ -692,6 +692,47 @@ public class McpAssertionExchangeResponseDto
     public string McpApiKey { get; set; } = "";
 }
 
+/// <summary>Body of POST /api/auth/capture-connect (identity contract v1 §2, generalized to a
+/// second audience/slot alongside mcp-connect, session-required): the browser page
+/// /connect/capture forwards the redirect_uri/state it received from the studylife-capture
+/// extension's chrome.identity launchWebAuthFlow (a normal https://&lt;id&gt;.chromiumapp.org/
+/// redirect_uri, no special-casing needed) unchanged. Same shape as McpConnectRequestDto,
+/// deliberately its own type rather than a shared one - see McpConnectRequestDto/
+/// CaptureConnectResponseDto and the "near-identical trio, on purpose" convention this repo
+/// already uses for the per-slot API-key endpoints in SettingsController.</summary>
+public class CaptureConnectRequestDto
+{
+    public string RedirectUri { get; set; } = "";
+    public string State { get; set; } = "";
+}
+
+/// <summary>Response of POST /api/auth/capture-connect: the URL the Blazor page navigates to
+/// next, carrying the single-use, capture-audience-bound assertion back to the extension's own
+/// chrome.identity callback.</summary>
+public class CaptureConnectResponseDto
+{
+    public string RedirectTo { get; set; } = "";
+}
+
+/// <summary>Body of POST /api/auth/capture-assertion-exchange (identity contract v1 §2 step 4,
+/// generalized to the capture audience - exempt from the API gate, the assertion itself is the
+/// credential). An mcp-connect assertion presented here is rejected (audience mismatch, see
+/// AuthController.RedeemConsentAssertionAsync) - the two audiences' assertions are never
+/// interchangeable even though they share the same cache/expiry/single-use machinery.</summary>
+public class CaptureAssertionExchangeRequestDto
+{
+    public string Assertion { get; set; } = "";
+}
+
+/// <summary>Response of POST /api/auth/capture-assertion-exchange: the real AuthUserId and the
+/// plaintext studylife-capture key the extension needs to authenticate its own requests - this
+/// is the only place the plaintext leaves the server for this flow.</summary>
+public class CaptureAssertionExchangeResponseDto
+{
+    public int UserId { get; set; }
+    public string CaptureApiKey { get; set; } = "";
+}
+
 /// <summary>Response of POST /api/auth/recovery/generate - the plaintext codes only exist
 /// in this one response, server-side only hashes are stored.</summary>
 public class RecoveryCodesResponseDto
