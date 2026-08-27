@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
+using StudyLife.Server.Services;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Controllers;
@@ -19,8 +20,13 @@ public class PlannerController : ControllerBase
     private const string ReviewTopicFallback = "Wiederholung";
 
     private readonly StudyLifeDb _db;
+    private readonly ICourseResolver _courseResolver;
 
-    public PlannerController(StudyLifeDb db) => _db = db;
+    public PlannerController(StudyLifeDb db, ICourseResolver courseResolver)
+    {
+        _db = db;
+        _courseResolver = courseResolver;
+    }
 
     [HttpPost("exam-plan")]
     public async Task<ActionResult<List<StudySessionDto>>> GenerateExamPlan(ExamPlanRequestDto request)
@@ -29,21 +35,7 @@ public class PlannerController : ControllerBase
 
         var settings = await _db.Settings.FirstOrDefaultAsync() ?? new UserSettingsEntity();
 
-        // Course resolution is program-aware like ProgressController/CoursesController: an
-        // active custom study program → its courses (tenant-separated), otherwise the built-in
-        // catalog. Previously this endpoint (Home Assistant service "generate_exam_plan") only
-        // knew CourseCatalog.AppliedAICourses.
-        List<CourseDto> catalog;
-        if (settings.ActiveStudyProgramId is int programId
-            && await _db.StudyPrograms.AsNoTracking().AnyAsync(p => p.Id == programId))
-        {
-            catalog = await Services.StudyProgramCatalog.LoadCoursesAsync(_db, programId);
-        }
-        else
-        {
-            catalog = CourseCatalog.AppliedAICourses;
-        }
-        var course = catalog.FirstOrDefault(c => c.Id == request.CourseId);
+        var course = await _courseResolver.ResolveInActiveProgramAsync(request.CourseId, settings);
         if (course == null) return BadRequest($"Course ID {request.CourseId} is not in the active study program (/api/courses).");
         var goal = await _db.CourseGoals.FirstOrDefaultAsync(g => g.CourseId == request.CourseId);
         var completedTopics = string.IsNullOrWhiteSpace(goal?.CompletedTopics)
