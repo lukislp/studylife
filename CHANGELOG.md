@@ -1,3 +1,10 @@
+# [2.4.0](https://github.com/lukislp/studylife/compare/v2.3.4...v2.4.0) (2026-08-28)
+
+
+### Features
+
+* add studylife-focusguard API key slot (identity contract v1, 5th consumer) ([efc5adc](https://github.com/lukislp/studylife/commit/efc5adc0d0d3aafca8e606fbab8e728684d2616e))
+
 ## [2.3.4](https://github.com/lukislp/studylife/compare/v2.3.3...v2.3.4) (2026-08-28)
 
 
