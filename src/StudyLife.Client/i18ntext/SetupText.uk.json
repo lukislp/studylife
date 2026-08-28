@@ -189,6 +189,7 @@
   "ExternalConnectionsDesc": "studylife-mcp і studylife-capture підключаються через власні процеси входу, а не звідси. Якщо потрібно негайно припинити доступ, відключіть його нижче.",
   "McpConnectionLabel": "studylife-mcp",
   "CaptureConnectionLabel": "studylife-capture",
+  "FocusGuardConnectionLabel": "studylife-focusguard",
   "ConnectionConnected": "Підключено",
   "ConnectionNotConnected": "Не підключено",
   "DisconnectButton": "Відключити",

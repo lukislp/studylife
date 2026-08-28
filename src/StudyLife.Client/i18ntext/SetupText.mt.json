@@ -189,6 +189,7 @@
   "ExternalConnectionsDesc": "studylife-mcp u studylife-capture jikkonnettjaw permezz tal-flussi ta' login tagħhom stess, mhux minn hawn. Jekk ikollok bżonn taqta' l-aċċess minnufih, aqta' l-konnessjoni hawn taħt.",
   "McpConnectionLabel": "studylife-mcp",
   "CaptureConnectionLabel": "studylife-capture",
+  "FocusGuardConnectionLabel": "studylife-focusguard",
   "ConnectionConnected": "Konness",
   "ConnectionNotConnected": "Mhux konness",
   "DisconnectButton": "Aqta' l-konnessjoni",

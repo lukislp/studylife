@@ -189,6 +189,7 @@
   "ExternalConnectionsDesc": "studylife-mcp ja studylife-capture yhdistetään omien kirjautumispolkujensa kautta, ei täältä. Jos sinun täytyy katkaista pääsy heti, katkaise yhteys alta.",
   "McpConnectionLabel": "studylife-mcp",
   "CaptureConnectionLabel": "studylife-capture",
+  "FocusGuardConnectionLabel": "studylife-focusguard",
   "ConnectionConnected": "Yhdistetty",
   "ConnectionNotConnected": "Ei yhdistetty",
   "DisconnectButton": "Katkaise yhteys",

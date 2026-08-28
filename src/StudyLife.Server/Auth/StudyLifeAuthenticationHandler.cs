@@ -123,24 +123,27 @@ public class StudyLifeAuthenticationHandler : AuthenticationHandler<StudyLifeAut
             return AuthenticateResult.Success(BuildTicket(session.AuthUserId, AuthTypeSession));
         }
 
-        // Without a session token: per-user API key, matched against all four independent
+        // Without a session token: per-user API key, matched against all five independent
         // slots in one step (see AuthUserEntity.ApiKeyHash/AiApiKeyHash/McpApiKeyHash/
-        // CaptureApiKeyHash) - any one of them authenticates AND identifies the user. Header
-        // only (audit finding A12a) - a ?apiKey= query string is deliberately NOT accepted.
+        // CaptureApiKeyHash/FocusGuardApiKeyHash) - any one of them authenticates AND identifies
+        // the user. Header only (audit finding A12a) - a ?apiKey= query string is deliberately
+        // NOT accepted.
         var providedKey = request.Headers["X-Api-Key"].FirstOrDefault();
         if (!string.IsNullOrEmpty(providedKey))
         {
             var keyHash = AuthSessionService.HashToken(providedKey);
             var keyOwner = await _db.AuthUsers.AsNoTracking()
                 .FirstOrDefaultAsync(u => u.ApiKeyHash == keyHash || u.AiApiKeyHash == keyHash
-                    || u.McpApiKeyHash == keyHash || u.CaptureApiKeyHash == keyHash);
+                    || u.McpApiKeyHash == keyHash || u.CaptureApiKeyHash == keyHash
+                    || u.FocusGuardApiKeyHash == keyHash);
             if (keyOwner is null)
                 return AuthenticateResult.Fail("Invalid API key.");
 
             var slot = keyOwner.ApiKeyHash == keyHash ? "ha"
                 : keyOwner.AiApiKeyHash == keyHash ? "ai"
                 : keyOwner.McpApiKeyHash == keyHash ? "mcp"
-                : "capture";
+                : keyOwner.CaptureApiKeyHash == keyHash ? "capture"
+                : "focusguard";
 
             Context.Items[CurrentUserAccessor.HttpContextItemKey] = keyOwner.Id;
             // Which slot matched (identity contract v1 §1) - only consumed by whoami today,

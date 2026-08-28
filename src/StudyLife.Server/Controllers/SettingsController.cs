@@ -509,6 +509,67 @@ public class SettingsController : ControllerBase
         return NoContent();
     }
 
+    // Same two-endpoint shape again (status + revoke, no generate), for the separate
+    // studylife-focusguard browser-extension key slot (AuthUserEntity.FocusGuardApiKeyHash).
+    // Like capture/mcp, provisioning happens exclusively through the consent flow
+    // (AuthController.FocusGuardConnect), never a plaintext-paste here.
+
+    /// <summary>Status for the setup card: does a FocusGuard key exist, and since when? Same
+    /// "never the plaintext" rule as GetCaptureApiKeyStatus.</summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpGet("focusguard-api-key")]
+    public async Task<ActionResult<FocusGuardApiKeyStatusDto>> GetFocusGuardApiKeyStatus()
+    {
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
+        var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+        return new FocusGuardApiKeyStatusDto { HasKey = user.FocusGuardApiKeyHash != null, CreatedAt = user.FocusGuardApiKeyCreatedAt };
+    }
+
+    /// <summary>Generates a new long-lived per-user API key for studylife-focusguard (immediately
+    /// replaces any existing one in this slot only). Not the extension's actual path (it uses the
+    /// consent flow, AuthController.FocusGuardConnect) - kept for the same uniform admin/test
+    /// surface every other slot has (see GenerateCaptureApiKey).</summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpPost("focusguard-api-key/generate")]
+    public async Task<ActionResult<FocusGuardApiKeyGenerateResponseDto>> GenerateFocusGuardApiKey()
+    {
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
+        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+
+        var key = RotateFocusGuardKey(user, DateTime.UtcNow);
+        await _db.SaveChangesAsync();
+        return new FocusGuardApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = user.FocusGuardApiKeyCreatedAt!.Value };
+    }
+
+    /// <summary>Core of AuthController.FocusGuardConnect (the focusguard browser-consent connect
+    /// flow, identity contract v1 §2 generalized to a third audience). Same pattern as
+    /// RotateCaptureKey/RotateMcpKey. Caller must SaveChanges.</summary>
+    internal static string RotateFocusGuardKey(AuthUserEntity user, DateTime now)
+    {
+        var key = AuthSessionService.GenerateToken();
+        user.FocusGuardApiKeyHash = AuthSessionService.HashToken(key);
+        user.FocusGuardApiKeyCreatedAt = now;
+        return key;
+    }
+
+    /// <summary>Permanently revokes the studylife-focusguard API key (hash is deleted) - the
+    /// extension gets 401 from the next poll onward. The other four slots are untouched.</summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpPost("focusguard-api-key/revoke")]
+    public async Task<IActionResult> RevokeFocusGuardApiKey()
+    {
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
+        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+
+        user.FocusGuardApiKeyHash = null;
+        user.FocusGuardApiKeyCreatedAt = null;
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
     // Same CSPRNG technique as CalendarTokenProvider.GenerateToken: 32 bytes, base64url
     // without padding - already URL-safe, because the token travels as part of the client
     // route path (/shared/{token}) and the API path (/api/progress/shared/{token}).

@@ -1,0 +1,11 @@
+@page "/connect/focusguard"
+@layout PublicLayout
+
+@* Thin wrapper: the actual consent UI/logic lives in Components/ConnectConsent.razor, shared with
+   /connect/mcp and /connect/capture (see ConnectCapture.razor for the full flow writeup, identity
+   contract v1 §2, generalized to the studylife-focusguard browser extension as a third audience).
+   The extension's own chrome.identity.launchWebAuthFlow redirects the browser here with
+   redirect_uri/state (an ordinary https://<id>.chromiumapp.org/ callback - no loopback exception
+   needed for this audience, but the shared validator still tolerates one). *@
+
+<ConnectConsent Audience="focusguard" />

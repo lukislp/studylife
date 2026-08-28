@@ -189,6 +189,7 @@
   "ExternalConnectionsDesc": "studylife-mcp og studylife-capture opretter forbindelse via deres egne login-flows, ikke herfra. Hvis du har brug for straks at afbryde adgangen, så afbryd forbindelsen nedenfor.",
   "McpConnectionLabel": "studylife-mcp",
   "CaptureConnectionLabel": "studylife-capture",
+  "FocusGuardConnectionLabel": "studylife-focusguard",
   "ConnectionConnected": "Forbundet",
   "ConnectionNotConnected": "Ikke forbundet",
   "DisconnectButton": "Afbryd forbindelse",

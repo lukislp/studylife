@@ -690,6 +690,104 @@
         }
       }
     },
+    "/api/auth/focusguard-connect": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FocusGuardConnectRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FocusGuardConnectRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FocusGuardConnectRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/FocusGuardConnectResponseDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FocusGuardConnectResponseDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FocusGuardConnectResponseDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/focusguard-assertion-exchange": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FocusGuardAssertionExchangeRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FocusGuardAssertionExchangeRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FocusGuardAssertionExchangeRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/FocusGuardAssertionExchangeResponseDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FocusGuardAssertionExchangeResponseDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FocusGuardAssertionExchangeResponseDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/auth/whoami": {
       "get": {
         "tags": [
@@ -3128,6 +3226,76 @@
         }
       }
     },
+    "/api/settings/focusguard-api-key": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/FocusGuardApiKeyStatusDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FocusGuardApiKeyStatusDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FocusGuardApiKeyStatusDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/focusguard-api-key/generate": {
+      "post": {
+        "tags": [
+          "Settings"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/FocusGuardApiKeyGenerateResponseDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FocusGuardApiKeyGenerateResponseDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FocusGuardApiKeyGenerateResponseDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/focusguard-api-key/revoke": {
+      "post": {
+        "tags": [
+          "Settings"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/studyprograms": {
       "get": {
         "tags": [
@@ -4699,6 +4867,97 @@
               "string"
             ],
             "format": "double"
+          }
+        }
+      },
+      "FocusGuardApiKeyGenerateResponseDto": {
+        "required": [
+          "apiKey",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "apiKey": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "FocusGuardApiKeyStatusDto": {
+        "required": [
+          "hasKey"
+        ],
+        "type": "object",
+        "properties": {
+          "hasKey": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "FocusGuardAssertionExchangeRequestDto": {
+        "required": [
+          "assertion"
+        ],
+        "type": "object",
+        "properties": {
+          "assertion": {
+            "type": "string"
+          }
+        }
+      },
+      "FocusGuardAssertionExchangeResponseDto": {
+        "required": [
+          "userId",
+          "focusGuardApiKey"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "focusGuardApiKey": {
+            "type": "string"
+          }
+        }
+      },
+      "FocusGuardConnectRequestDto": {
+        "required": [
+          "redirectUri",
+          "state"
+        ],
+        "type": "object",
+        "properties": {
+          "redirectUri": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          }
+        }
+      },
+      "FocusGuardConnectResponseDto": {
+        "required": [
+          "redirectTo"
+        ],
+        "type": "object",
+        "properties": {
+          "redirectTo": {
+            "type": "string"
           }
         }
       },

@@ -189,6 +189,7 @@
   "ExternalConnectionsDesc": "studylife-mcp и studylife-capture се свързват чрез собствените си процеси за вход, не оттук. Ако трябва незабавно да прекратите достъпа, прекъснете връзката по-долу.",
   "McpConnectionLabel": "studylife-mcp",
   "CaptureConnectionLabel": "studylife-capture",
+  "FocusGuardConnectionLabel": "studylife-focusguard",
   "ConnectionConnected": "Свързано",
   "ConnectionNotConnected": "Не е свързано",
   "DisconnectButton": "Прекъсни връзката",
