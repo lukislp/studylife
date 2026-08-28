@@ -100,7 +100,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: studylife
-          image: ghcr.io/lukislp/studylife-server:2.4.0 # {"$imagepolicy": "flux-system:studylife-server"}
+          image: ghcr.io/lukislp/studylife-server:2.4.1 # {"$imagepolicy": "flux-system:studylife-server"}
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
