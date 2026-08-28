@@ -47,9 +47,9 @@
 }
 
 @code {
-    /// <summary>"mcp", "capture", or "focusguard" - selects both the audience-appropriate copy
-    /// below and the actual endpoint pair (api/auth/{Audience}-connect / the DTO type used to
-    /// call it).</summary>
+    /// <summary>"mcp", "capture", "focusguard", "timetrack", or "focustunes" - selects both the
+    /// audience-appropriate copy below and the actual endpoint pair (api/auth/{Audience}-connect
+    /// / the DTO type used to call it).</summary>
     [Parameter, EditorRequired] public string Audience { get; set; } = "";
 
     private bool _busy;
@@ -62,18 +62,24 @@
     {
         "capture" => T.ConnectCapturePageTitle,
         "focusguard" => T.ConnectFocusGuardPageTitle,
+        "timetrack" => T.ConnectTimeTrackPageTitle,
+        "focustunes" => T.ConnectFocusTunesPageTitle,
         _ => T.ConnectMcpPageTitle,
     };
     private string Heading => Audience switch
     {
         "capture" => T.ConnectCaptureHeading,
         "focusguard" => T.ConnectFocusGuardHeading,
+        "timetrack" => T.ConnectTimeTrackHeading,
+        "focustunes" => T.ConnectFocusTunesHeading,
         _ => T.ConnectMcpHeading,
     };
     private string Intro => Audience switch
     {
         "capture" => T.ConnectCaptureIntro,
         "focusguard" => T.ConnectFocusGuardIntro,
+        "timetrack" => T.ConnectTimeTrackIntro,
+        "focustunes" => T.ConnectFocusTunesIntro,
         _ => T.ConnectMcpIntro,
     };
 
@@ -139,6 +145,22 @@
                     new FocusGuardConnectRequestDto { RedirectUri = _redirectUri, State = _state });
                 if (!response.IsSuccessStatusCode) { _error = T.ConnectFailed; return; }
                 var result = await response.Content.ReadFromJsonAsync<FocusGuardConnectResponseDto>();
+                redirectTo = result?.RedirectTo;
+            }
+            else if (Audience == "timetrack")
+            {
+                var response = await Http.PostAsJsonAsync("api/auth/timetrack-connect",
+                    new TimeTrackConnectRequestDto { RedirectUri = _redirectUri, State = _state });
+                if (!response.IsSuccessStatusCode) { _error = T.ConnectFailed; return; }
+                var result = await response.Content.ReadFromJsonAsync<TimeTrackConnectResponseDto>();
+                redirectTo = result?.RedirectTo;
+            }
+            else if (Audience == "focustunes")
+            {
+                var response = await Http.PostAsJsonAsync("api/auth/focustunes-connect",
+                    new FocusTunesConnectRequestDto { RedirectUri = _redirectUri, State = _state });
+                if (!response.IsSuccessStatusCode) { _error = T.ConnectFailed; return; }
+                var result = await response.Content.ReadFromJsonAsync<FocusTunesConnectResponseDto>();
                 redirectTo = result?.RedirectTo;
             }
             else

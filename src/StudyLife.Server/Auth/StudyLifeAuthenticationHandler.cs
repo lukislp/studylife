@@ -123,11 +123,11 @@ public class StudyLifeAuthenticationHandler : AuthenticationHandler<StudyLifeAut
             return AuthenticateResult.Success(BuildTicket(session.AuthUserId, AuthTypeSession));
         }
 
-        // Without a session token: per-user API key, matched against all five independent
+        // Without a session token: per-user API key, matched against all seven independent
         // slots in one step (see AuthUserEntity.ApiKeyHash/AiApiKeyHash/McpApiKeyHash/
-        // CaptureApiKeyHash/FocusGuardApiKeyHash) - any one of them authenticates AND identifies
-        // the user. Header only (audit finding A12a) - a ?apiKey= query string is deliberately
-        // NOT accepted.
+        // CaptureApiKeyHash/FocusGuardApiKeyHash/TimeTrackApiKeyHash/FocusTunesApiKeyHash) - any
+        // one of them authenticates AND identifies the user. Header only (audit finding A12a) -
+        // a ?apiKey= query string is deliberately NOT accepted.
         var providedKey = request.Headers["X-Api-Key"].FirstOrDefault();
         if (!string.IsNullOrEmpty(providedKey))
         {
@@ -135,7 +135,8 @@ public class StudyLifeAuthenticationHandler : AuthenticationHandler<StudyLifeAut
             var keyOwner = await _db.AuthUsers.AsNoTracking()
                 .FirstOrDefaultAsync(u => u.ApiKeyHash == keyHash || u.AiApiKeyHash == keyHash
                     || u.McpApiKeyHash == keyHash || u.CaptureApiKeyHash == keyHash
-                    || u.FocusGuardApiKeyHash == keyHash);
+                    || u.FocusGuardApiKeyHash == keyHash || u.TimeTrackApiKeyHash == keyHash
+                    || u.FocusTunesApiKeyHash == keyHash);
             if (keyOwner is null)
                 return AuthenticateResult.Fail("Invalid API key.");
 
@@ -143,7 +144,9 @@ public class StudyLifeAuthenticationHandler : AuthenticationHandler<StudyLifeAut
                 : keyOwner.AiApiKeyHash == keyHash ? "ai"
                 : keyOwner.McpApiKeyHash == keyHash ? "mcp"
                 : keyOwner.CaptureApiKeyHash == keyHash ? "capture"
-                : "focusguard";
+                : keyOwner.FocusGuardApiKeyHash == keyHash ? "focusguard"
+                : keyOwner.TimeTrackApiKeyHash == keyHash ? "timetrack"
+                : "focustunes";
 
             Context.Items[CurrentUserAccessor.HttpContextItemKey] = keyOwner.Id;
             // Which slot matched (identity contract v1 §1) - only consumed by whoami today,
