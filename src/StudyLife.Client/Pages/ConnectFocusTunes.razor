@@ -1,0 +1,9 @@
+@page "/connect/focustunes"
+@layout PublicLayout
+
+@* Thin wrapper: the actual consent UI/logic lives in Components/ConnectConsent.razor, shared
+   with /connect/mcp, /connect/capture, /connect/focusguard, and /connect/timetrack (see
+   ConnectCapture.razor for the full flow writeup, identity contract v1 §2, generalized to the
+   studylife-focustunes browser extension as a fifth audience). *@
+
+<ConnectConsent Audience="focustunes" />

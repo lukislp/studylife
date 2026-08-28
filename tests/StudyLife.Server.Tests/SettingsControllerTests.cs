@@ -515,6 +515,140 @@ public class SettingsControllerFocusGuardApiKeyTests : IClassFixture<CustomWebAp
         _client = factory.CreateClient(); // carries the seeded test user's session token
     }
 
+/// <summary>
+/// Same lifecycle as SettingsControllerCaptureApiKeyTests, mirrored for the separate
+/// studylife-timetrack key slot (AuthUserEntity.TimeTrackApiKeyHash / api/settings/timetrack-api-key).
+/// Own class/factory for the same reason as the other slot tests - generate/revoke mutate AuthUser 1.
+/// Uses /api/notes (not /api/timerstate) as the reachable-endpoint check: it's the ONLY endpoint
+/// this slot's ApiKeyScopes entry actually grants (see ApiKeyScopeTests.TimeTrack_* for the
+/// narrowest-slot scope assertions).
+/// </summary>
+public class SettingsControllerTimeTrackApiKeyTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+
+    public SettingsControllerTimeTrackApiKeyTests(CustomWebApplicationFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient(); // carries the seeded test user's session token
+    }
+
+    [Fact]
+    public async Task TimeTrackApiKeyLifecycle_StatusGenerateGateRevoke()
+    {
+        // ── Fresh state: no key ─────────────────────────────────────────────────────────────
+        var status = await _client.GetFromJsonAsync<TimeTrackApiKeyStatusDto>("/api/settings/timetrack-api-key");
+        Assert.NotNull(status);
+        Assert.False(status!.HasKey);
+        Assert.Null(status.CreatedAt);
+
+        // ── Generate: plaintext exactly once, only the hash is stored ───────────────────────
+        var generateResponse = await _client.PostAsync("/api/settings/timetrack-api-key/generate", null);
+        Assert.Equal(HttpStatusCode.OK, generateResponse.StatusCode);
+        var generated = await generateResponse.Content.ReadFromJsonAsync<TimeTrackApiKeyGenerateResponseDto>();
+        Assert.NotNull(generated);
+        Assert.NotEmpty(generated!.ApiKey);
+        Assert.True(generated.CreatedAt >= DateTime.UtcNow.AddMinutes(-2));
+
+        status = await _client.GetFromJsonAsync<TimeTrackApiKeyStatusDto>("/api/settings/timetrack-api-key");
+        Assert.True(status!.HasKey);
+        Assert.NotNull(status.CreatedAt);
+
+        // ── The generated key passes the /api gate as X-Api-Key, same as the other six keys ─
+        using (var keyClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, generated.ApiKey))
+        {
+            Assert.Equal(HttpStatusCode.OK, (await keyClient.GetAsync("/api/notes")).StatusCode);
+
+            // ... but the key must NOT be able to manage itself: all three timetrack-api-key
+            // endpoints reject gate-only (API key) authentication with 401.
+            Assert.Equal(HttpStatusCode.Unauthorized, (await keyClient.GetAsync("/api/settings/timetrack-api-key")).StatusCode);
+            Assert.Equal(HttpStatusCode.Unauthorized, (await keyClient.PostAsync("/api/settings/timetrack-api-key/generate", null)).StatusCode);
+            Assert.Equal(HttpStatusCode.Unauthorized, (await keyClient.PostAsync("/api/settings/timetrack-api-key/revoke", null)).StatusCode);
+        }
+
+        // ── Revoke (with a real session): key hash deleted, old key gets 401 at the gate ────
+        var revokeResponse = await _client.PostAsync("/api/settings/timetrack-api-key/revoke", null);
+        Assert.Equal(HttpStatusCode.NoContent, revokeResponse.StatusCode);
+
+        status = await _client.GetFromJsonAsync<TimeTrackApiKeyStatusDto>("/api/settings/timetrack-api-key");
+        Assert.False(status!.HasKey);
+        Assert.Null(status.CreatedAt);
+
+        using (var revokedClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, generated.ApiKey))
+        {
+            Assert.Equal(HttpStatusCode.Unauthorized, (await revokedClient.GetAsync("/api/notes")).StatusCode);
+        }
+    }
+}
+
+/// <summary>
+/// Same lifecycle as SettingsControllerCaptureApiKeyTests, mirrored for the separate
+/// studylife-focustunes key slot (AuthUserEntity.FocusTunesApiKeyHash / api/settings/focustunes-api-key).
+/// Own class/factory for the same reason as the other slot tests - generate/revoke mutate AuthUser 1.
+/// Uses /api/timerstate (not /api/notes) as the reachable-endpoint check: it's the ONLY endpoint
+/// this slot's ApiKeyScopes entry actually grants (see ApiKeyScopeTests.FocusTunes_* for the
+/// narrowest-slot scope assertions).
+/// </summary>
+public class SettingsControllerFocusTunesApiKeyTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+
+    public SettingsControllerFocusTunesApiKeyTests(CustomWebApplicationFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient(); // carries the seeded test user's session token
+    }
+
+    [Fact]
+    public async Task FocusTunesApiKeyLifecycle_StatusGenerateGateRevoke()
+    {
+        // ── Fresh state: no key ─────────────────────────────────────────────────────────────
+        var status = await _client.GetFromJsonAsync<FocusTunesApiKeyStatusDto>("/api/settings/focustunes-api-key");
+        Assert.NotNull(status);
+        Assert.False(status!.HasKey);
+        Assert.Null(status.CreatedAt);
+
+        // ── Generate: plaintext exactly once, only the hash is stored ───────────────────────
+        var generateResponse = await _client.PostAsync("/api/settings/focustunes-api-key/generate", null);
+        Assert.Equal(HttpStatusCode.OK, generateResponse.StatusCode);
+        var generated = await generateResponse.Content.ReadFromJsonAsync<FocusTunesApiKeyGenerateResponseDto>();
+        Assert.NotNull(generated);
+        Assert.NotEmpty(generated!.ApiKey);
+        Assert.True(generated.CreatedAt >= DateTime.UtcNow.AddMinutes(-2));
+
+        status = await _client.GetFromJsonAsync<FocusTunesApiKeyStatusDto>("/api/settings/focustunes-api-key");
+        Assert.True(status!.HasKey);
+        Assert.NotNull(status.CreatedAt);
+
+        // ── The generated key passes the /api gate as X-Api-Key, same as the other six keys ─
+        using (var keyClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, generated.ApiKey))
+        {
+            Assert.Equal(HttpStatusCode.OK, (await keyClient.GetAsync("/api/timerstate")).StatusCode);
+
+            // ... but the key must NOT be able to manage itself: all three focustunes-api-key
+            // endpoints reject gate-only (API key) authentication with 401.
+            Assert.Equal(HttpStatusCode.Unauthorized, (await keyClient.GetAsync("/api/settings/focustunes-api-key")).StatusCode);
+            Assert.Equal(HttpStatusCode.Unauthorized, (await keyClient.PostAsync("/api/settings/focustunes-api-key/generate", null)).StatusCode);
+            Assert.Equal(HttpStatusCode.Unauthorized, (await keyClient.PostAsync("/api/settings/focustunes-api-key/revoke", null)).StatusCode);
+        }
+
+        // ── Revoke (with a real session): key hash deleted, old key gets 401 at the gate ────
+        var revokeResponse = await _client.PostAsync("/api/settings/focustunes-api-key/revoke", null);
+        Assert.Equal(HttpStatusCode.NoContent, revokeResponse.StatusCode);
+
+        status = await _client.GetFromJsonAsync<FocusTunesApiKeyStatusDto>("/api/settings/focustunes-api-key");
+        Assert.False(status!.HasKey);
+        Assert.Null(status.CreatedAt);
+
+        using (var revokedClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, generated.ApiKey))
+        {
+            Assert.Equal(HttpStatusCode.Unauthorized, (await revokedClient.GetAsync("/api/timerstate")).StatusCode);
+        }
+    }
+}
+
     [Fact]
     public async Task FocusGuardApiKeyLifecycle_StatusGenerateGateRevoke()
     {

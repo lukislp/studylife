@@ -483,6 +483,38 @@ public class FocusGuardApiKeyGenerateResponseDto
     public DateTime CreatedAt { get; set; }
 }
 
+/// <summary>Status DTO for the studylife-timetrack key slot - same shape as
+/// FocusGuardApiKeyStatusDto, see AuthUserEntity.TimeTrackApiKeyHash.</summary>
+public class TimeTrackApiKeyStatusDto
+{
+    public bool HasKey { get; set; }
+    public DateTime? CreatedAt { get; set; }
+}
+
+/// <summary>Generate-response DTO for the studylife-timetrack key slot - same shape as
+/// FocusGuardApiKeyGenerateResponseDto.</summary>
+public class TimeTrackApiKeyGenerateResponseDto
+{
+    public string ApiKey { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
+}
+
+/// <summary>Status DTO for the studylife-focustunes key slot - same shape as
+/// FocusGuardApiKeyStatusDto, see AuthUserEntity.FocusTunesApiKeyHash.</summary>
+public class FocusTunesApiKeyStatusDto
+{
+    public bool HasKey { get; set; }
+    public DateTime? CreatedAt { get; set; }
+}
+
+/// <summary>Generate-response DTO for the studylife-focustunes key slot - same shape as
+/// FocusGuardApiKeyGenerateResponseDto.</summary>
+public class FocusTunesApiKeyGenerateResponseDto
+{
+    public string ApiKey { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
+}
+
 /// <summary>
 /// Request/response shapes for POST /api/ai/chat, /api/ai/agent, /api/ai/agent/confirm - the
 /// AiProxyController passes bodies through byte-for-byte, so these must match studylife-ai's own
@@ -792,6 +824,60 @@ public class FocusGuardAssertionExchangeResponseDto
 {
     public int UserId { get; set; }
     public string FocusGuardApiKey { get; set; } = "";
+}
+
+/// <summary>Body of POST /api/auth/timetrack-connect - same shape and role as
+/// FocusGuardConnectRequestDto, a fourth audience/slot in the consent flow.</summary>
+public class TimeTrackConnectRequestDto
+{
+    public string RedirectUri { get; set; } = "";
+    public string State { get; set; } = "";
+}
+
+/// <summary>Response of POST /api/auth/timetrack-connect.</summary>
+public class TimeTrackConnectResponseDto
+{
+    public string RedirectTo { get; set; } = "";
+}
+
+/// <summary>Body of POST /api/auth/timetrack-assertion-exchange (step 4, fourth audience).</summary>
+public class TimeTrackAssertionExchangeRequestDto
+{
+    public string Assertion { get; set; } = "";
+}
+
+/// <summary>Response of POST /api/auth/timetrack-assertion-exchange.</summary>
+public class TimeTrackAssertionExchangeResponseDto
+{
+    public int UserId { get; set; }
+    public string TimeTrackApiKey { get; set; } = "";
+}
+
+/// <summary>Body of POST /api/auth/focustunes-connect - same shape and role as
+/// FocusGuardConnectRequestDto, a fifth audience/slot in the consent flow.</summary>
+public class FocusTunesConnectRequestDto
+{
+    public string RedirectUri { get; set; } = "";
+    public string State { get; set; } = "";
+}
+
+/// <summary>Response of POST /api/auth/focustunes-connect.</summary>
+public class FocusTunesConnectResponseDto
+{
+    public string RedirectTo { get; set; } = "";
+}
+
+/// <summary>Body of POST /api/auth/focustunes-assertion-exchange (step 4, fifth audience).</summary>
+public class FocusTunesAssertionExchangeRequestDto
+{
+    public string Assertion { get; set; } = "";
+}
+
+/// <summary>Response of POST /api/auth/focustunes-assertion-exchange.</summary>
+public class FocusTunesAssertionExchangeResponseDto
+{
+    public int UserId { get; set; }
+    public string FocusTunesApiKey { get; set; } = "";
 }
 
 /// <summary>Response of POST /api/auth/recovery/generate - the plaintext codes only exist

@@ -145,6 +145,33 @@ public static class ApiKeyScopes
         new("TimerState", "Get"), // GET /api/timerstate - background.ts's poll loop
     ];
 
+    /// <summary>
+    /// studylife-timetrack (github.com/lukislp/studylife-timetrack) - the passive time-tracking
+    /// browser extension. Same shape as Capture: it delivers its daily per-domain time report as
+    /// a plain note (reusing Notes.Create rather than a bespoke endpoint) and verifies its own
+    /// credentials still work - it never reads sessions, courses, or settings, and its own local
+    /// per-domain tracking data never leaves the device except as that one daily note.
+    /// </summary>
+    private static readonly HashSet<Endpoint> TimeTrack =
+    [
+        Whoami,
+        new("Notes", "GetAll"), // GET /api/notes - background.ts's connection check after connecting
+        new("Notes", "Create"), // POST /api/notes - background.ts's daily report delivery
+    ];
+
+    /// <summary>
+    /// studylife-focustunes (github.com/lukislp/studylife-focustunes) - the focus-session music
+    /// companion browser extension. Identical scope/shape to FocusGuard: it only ever polls
+    /// TimerState.Get to decide which Spotify playlist should be playing right now. All actual
+    /// playback control happens against Spotify's own API with the user's own separately-obtained
+    /// Spotify OAuth token - this slot never touches Spotify credentials or playback state.
+    /// </summary>
+    private static readonly HashSet<Endpoint> FocusTunes =
+    [
+        Whoami,
+        new("TimerState", "Get"), // GET /api/timerstate - background.ts's poll loop
+    ];
+
     public static readonly IReadOnlyDictionary<string, IReadOnlySet<Endpoint>> BySlot =
         new Dictionary<string, IReadOnlySet<Endpoint>>
         {
@@ -153,5 +180,7 @@ public static class ApiKeyScopes
             ["mcp"] = Mcp,
             ["capture"] = Capture,
             ["focusguard"] = FocusGuard,
+            ["timetrack"] = TimeTrack,
+            ["focustunes"] = FocusTunes,
         };
 }

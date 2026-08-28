@@ -570,6 +570,110 @@ public class SettingsController : ControllerBase
         return NoContent();
     }
 
+    // Same three-endpoint shape again, for the separate studylife-timetrack browser-extension
+    // key slot (AuthUserEntity.TimeTrackApiKeyHash). Provisioning is via the consent flow
+    // (AuthController.TimeTrackConnect); generate/revoke exist for the same uniform admin/test
+    // surface every other slot has.
+
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpGet("timetrack-api-key")]
+    public async Task<ActionResult<TimeTrackApiKeyStatusDto>> GetTimeTrackApiKeyStatus()
+    {
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
+        var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+        return new TimeTrackApiKeyStatusDto { HasKey = user.TimeTrackApiKeyHash != null, CreatedAt = user.TimeTrackApiKeyCreatedAt };
+    }
+
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpPost("timetrack-api-key/generate")]
+    public async Task<ActionResult<TimeTrackApiKeyGenerateResponseDto>> GenerateTimeTrackApiKey()
+    {
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
+        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+
+        var key = RotateTimeTrackKey(user, DateTime.UtcNow);
+        await _db.SaveChangesAsync();
+        return new TimeTrackApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = user.TimeTrackApiKeyCreatedAt!.Value };
+    }
+
+    /// <summary>Core of AuthController.TimeTrackConnect. Same pattern as RotateFocusGuardKey.
+    /// Caller must SaveChanges.</summary>
+    internal static string RotateTimeTrackKey(AuthUserEntity user, DateTime now)
+    {
+        var key = AuthSessionService.GenerateToken();
+        user.TimeTrackApiKeyHash = AuthSessionService.HashToken(key);
+        user.TimeTrackApiKeyCreatedAt = now;
+        return key;
+    }
+
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpPost("timetrack-api-key/revoke")]
+    public async Task<IActionResult> RevokeTimeTrackApiKey()
+    {
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
+        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+
+        user.TimeTrackApiKeyHash = null;
+        user.TimeTrackApiKeyCreatedAt = null;
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    // Same three-endpoint shape again, for the separate studylife-focustunes browser-extension
+    // key slot (AuthUserEntity.FocusTunesApiKeyHash). Provisioning is via the consent flow
+    // (AuthController.FocusTunesConnect); generate/revoke exist for the same uniform admin/test
+    // surface every other slot has.
+
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpGet("focustunes-api-key")]
+    public async Task<ActionResult<FocusTunesApiKeyStatusDto>> GetFocusTunesApiKeyStatus()
+    {
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
+        var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+        return new FocusTunesApiKeyStatusDto { HasKey = user.FocusTunesApiKeyHash != null, CreatedAt = user.FocusTunesApiKeyCreatedAt };
+    }
+
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpPost("focustunes-api-key/generate")]
+    public async Task<ActionResult<FocusTunesApiKeyGenerateResponseDto>> GenerateFocusTunesApiKey()
+    {
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
+        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+
+        var key = RotateFocusTunesKey(user, DateTime.UtcNow);
+        await _db.SaveChangesAsync();
+        return new FocusTunesApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = user.FocusTunesApiKeyCreatedAt!.Value };
+    }
+
+    /// <summary>Core of AuthController.FocusTunesConnect. Same pattern as RotateFocusGuardKey.
+    /// Caller must SaveChanges.</summary>
+    internal static string RotateFocusTunesKey(AuthUserEntity user, DateTime now)
+    {
+        var key = AuthSessionService.GenerateToken();
+        user.FocusTunesApiKeyHash = AuthSessionService.HashToken(key);
+        user.FocusTunesApiKeyCreatedAt = now;
+        return key;
+    }
+
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpPost("focustunes-api-key/revoke")]
+    public async Task<IActionResult> RevokeFocusTunesApiKey()
+    {
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
+        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+
+        user.FocusTunesApiKeyHash = null;
+        user.FocusTunesApiKeyCreatedAt = null;
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
     // Same CSPRNG technique as CalendarTokenProvider.GenerateToken: 32 bytes, base64url
     // without padding - already URL-safe, because the token travels as part of the client
     // route path (/shared/{token}) and the API path (/api/progress/shared/{token}).
