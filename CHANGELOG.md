@@ -1,3 +1,10 @@
+## [2.3.4](https://github.com/lukislp/studylife/compare/v2.3.3...v2.3.4) (2026-08-28)
+
+
+### Bug Fixes
+
+* restore StudyLifeAi secrets in sealed studylife-secrets ([2ef8797](https://github.com/lukislp/studylife/commit/2ef8797ee736b11c5d6712d057f5cd96719cc50b))
+
 ## [2.3.3](https://github.com/lukislp/studylife/compare/v2.3.2...v2.3.3) (2026-08-27)
 
 
