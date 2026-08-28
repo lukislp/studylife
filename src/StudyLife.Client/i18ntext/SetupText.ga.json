@@ -189,6 +189,7 @@
   "ExternalConnectionsDesc": "Ceanglaíonn studylife-mcp agus studylife-capture trína gcuid próiseas sínithe isteach féin, ní as seo. Má tá ort rochtain a ghearradh láithreach, dícheangail thíos é.",
   "McpConnectionLabel": "studylife-mcp",
   "CaptureConnectionLabel": "studylife-capture",
+  "FocusGuardConnectionLabel": "studylife-focusguard",
   "ConnectionConnected": "Ceangailte",
   "ConnectionNotConnected": "Neamhcheangailte",
   "DisconnectButton": "Dícheangail",

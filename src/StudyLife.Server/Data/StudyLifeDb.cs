@@ -127,6 +127,9 @@ public class StudyLifeDb : DbContext
         // Per-user API key for the studylife-capture browser extension: separate slot from the
         // three above (see AuthUserEntity.CaptureApiKeyHash), same uniqueness reasoning.
         modelBuilder.Entity<AuthUserEntity>().HasIndex(u => u.CaptureApiKeyHash).IsUnique();
+        // Per-user API key for the studylife-focusguard browser extension: separate slot from the
+        // four above (see AuthUserEntity.FocusGuardApiKeyHash), same uniqueness reasoning.
+        modelBuilder.Entity<AuthUserEntity>().HasIndex(u => u.FocusGuardApiKeyHash).IsUnique();
         // AI key outbox (audit A7): drained table-wide by BackgroundTaskService across all
         // users in one query (see RunAiKeyOutboxAsync), not per-user - the index supports the
         // per-user CreatedAt ordering that drain does in memory.
@@ -311,6 +314,18 @@ public class AuthUserEntity
     public string? CaptureApiKeyHash { get; set; }
     /// <summary>Timestamp of the (last) generation of <see cref="CaptureApiKeyHash"/> - display-only, same as ApiKeyCreatedAt.</summary>
     public DateTime? CaptureApiKeyCreatedAt { get; set; }
+    /// <summary>
+    /// SHA-256 hash of the per-user API key for the studylife-focusguard browser extension - same
+    /// shape and same reasoning as <see cref="CaptureApiKeyHash"/> (long-lived, no rotation, key
+    /// lives on a device that isn't this server), but a SEPARATE credential/slot: generating or
+    /// revoking this one must not affect any of the other four and vice versa. By far the
+    /// narrowest scope of any slot (see ApiKeyScopes.FocusGuard) - the extension only ever polls
+    /// GET /api/timerstate to decide whether to block, it never reads or writes anything else.
+    /// Null = no key generated, or revoked.
+    /// </summary>
+    public string? FocusGuardApiKeyHash { get; set; }
+    /// <summary>Timestamp of the (last) generation of <see cref="FocusGuardApiKeyHash"/> - display-only, same as ApiKeyCreatedAt.</summary>
+    public DateTime? FocusGuardApiKeyCreatedAt { get; set; }
     /// <summary>
     /// Permanent, per-user token for the subscribable ICS calendar feed
     /// (GET /api/sessions/ics?calendarToken=...). Unlike ApiKeyHash, stored in PLAINTEXT

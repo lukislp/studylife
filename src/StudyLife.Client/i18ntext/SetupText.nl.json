@@ -189,6 +189,7 @@
   "ExternalConnectionsDesc": "studylife-mcp en studylife-capture maken verbinding via hun eigen aanmeldstromen, niet hier. Als je de toegang direct moet afsluiten, verbreek de verbinding hieronder.",
   "McpConnectionLabel": "studylife-mcp",
   "CaptureConnectionLabel": "studylife-capture",
+  "FocusGuardConnectionLabel": "studylife-focusguard",
   "ConnectionConnected": "Verbonden",
   "ConnectionNotConnected": "Niet verbonden",
   "DisconnectButton": "Verbinding verbreken",

@@ -189,6 +189,7 @@
   "ExternalConnectionsDesc": "studylife-mcp ir studylife-capture prisijungia per savo prisijungimo procesus, ne iš čia. Jei reikia nedelsiant nutraukti prieigą, atsijunkite žemiau.",
   "McpConnectionLabel": "studylife-mcp",
   "CaptureConnectionLabel": "studylife-capture",
+  "FocusGuardConnectionLabel": "studylife-focusguard",
   "ConnectionConnected": "Prisijungta",
   "ConnectionNotConnected": "Neprisijungta",
   "DisconnectButton": "Atsijungti",

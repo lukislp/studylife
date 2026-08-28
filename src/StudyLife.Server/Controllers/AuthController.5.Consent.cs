@@ -20,6 +20,7 @@ public partial class AuthController
 
     private const string AudienceMcp = "mcp";
     private const string AudienceCapture = "capture";
+    private const string AudienceFocusGuard = "focusguard";
 
     /// <summary>Cached under a single-use assertion token, exactly like PendingHandoff -
     /// ApiKey is the ONE moment the plaintext exists after rotation until the consumer's
@@ -173,6 +174,37 @@ public partial class AuthController
         var result = await RedeemConsentAssertionAsync(AudienceCapture, request.Assertion);
         if (result is null) return Unauthorized();
         return new CaptureAssertionExchangeResponseDto { UserId = result.Value.UserId, CaptureApiKey = result.Value.ApiKey };
+    }
+
+    /// <summary>
+    /// Step 3 of the focusguard connect flow (identity contract v1 §2, third audience alongside
+    /// mcp/capture): same session-required shape as CaptureConnect, rotating the focusguard key
+    /// slot instead (SettingsController.RotateFocusGuardKey). The extension's own
+    /// chrome.identity.launchWebAuthFlow supplies redirect_uri/state exactly like the capture flow.
+    /// </summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpPost("focusguard-connect")]
+    public async Task<ActionResult<FocusGuardConnectResponseDto>> FocusGuardConnect([FromBody] FocusGuardConnectRequestDto request)
+    {
+        var (redirectTo, error) = await BuildConnectRedirectAsync(AudienceFocusGuard, request.RedirectUri, request.State, SettingsController.RotateFocusGuardKey);
+        if (error is not null) return error;
+        return new FocusGuardConnectResponseDto { RedirectTo = redirectTo! };
+    }
+
+    /// <summary>
+    /// Step 4 of the focusguard connect flow: exchanges a single-use, focusguard-audience
+    /// assertion for the real AuthUserId and the plaintext focusguard key - called by the
+    /// extension's own background script against its configured StudyLife URL. EXEMPT from the
+    /// API gate ([AllowAnonymous]), same non-distinguishing-401 and audience-isolation rules as
+    /// CaptureAssertionExchange.
+    /// </summary>
+    [AllowAnonymous]
+    [HttpPost("focusguard-assertion-exchange")]
+    public async Task<ActionResult<FocusGuardAssertionExchangeResponseDto>> FocusGuardAssertionExchange([FromBody] FocusGuardAssertionExchangeRequestDto request)
+    {
+        var result = await RedeemConsentAssertionAsync(AudienceFocusGuard, request.Assertion);
+        if (result is null) return Unauthorized();
+        return new FocusGuardAssertionExchangeResponseDto { UserId = result.Value.UserId, FocusGuardApiKey = result.Value.ApiKey };
     }
 
     private static string ConsentAssertionCacheKey(string assertion) => $"consent-assertion:{assertion}";

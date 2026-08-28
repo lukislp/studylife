@@ -189,6 +189,7 @@
   "ExternalConnectionsDesc": "studylife-mcp un studylife-capture pieslēdzas, izmantojot savas pieteikšanās plūsmas, nevis šeit. Ja jums nekavējoties jāpārtrauc piekļuve, atvienojiet to zemāk.",
   "McpConnectionLabel": "studylife-mcp",
   "CaptureConnectionLabel": "studylife-capture",
+  "FocusGuardConnectionLabel": "studylife-focusguard",
   "ConnectionConnected": "Savienots",
   "ConnectionNotConnected": "Nav savienots",
   "DisconnectButton": "Atvienot",

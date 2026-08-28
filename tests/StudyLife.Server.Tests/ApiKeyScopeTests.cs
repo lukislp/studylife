@@ -235,6 +235,61 @@ public class ApiKeyScopeTests : IClassFixture<CustomWebApplicationFactory>
         await RevokeKeyAsync("capture");
     }
 
+    // ---------- focusguard (distraction-blocker browser extension: THE narrowest slot -
+    // only polling whether a session is currently running, see ApiKeyScopes.FocusGuard) ----------
+
+    [Fact]
+    public async Task FocusGuard_AllowedEndpoint_GetTimerState_ReturnsOk()
+    {
+        var apiKey = await GenerateKeyAsync("focusguard");
+        using var client = ApiKeyTestHelpers.CreateClientWithKey(_factory, apiKey);
+
+        var response = await client.GetAsync("/api/timerstate");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await RevokeKeyAsync("focusguard");
+    }
+
+    [Fact]
+    public async Task FocusGuard_OutOfScopeEndpoint_ListNotes_ReturnsForbidden()
+    {
+        // The blocker extension never reads note content - it only ever needs to know whether a
+        // session is currently running, nothing about what it's for.
+        var apiKey = await GenerateKeyAsync("focusguard");
+        using var client = ApiKeyTestHelpers.CreateClientWithKey(_factory, apiKey);
+
+        var response = await client.GetAsync("/api/notes");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        await RevokeKeyAsync("focusguard");
+    }
+
+    [Fact]
+    public async Task FocusGuard_OutOfScopeEndpoint_ListSessions_ReturnsForbidden()
+    {
+        var apiKey = await GenerateKeyAsync("focusguard");
+        using var client = ApiKeyTestHelpers.CreateClientWithKey(_factory, apiKey);
+
+        var response = await client.GetAsync("/api/sessions");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        await RevokeKeyAsync("focusguard");
+    }
+
+    [Fact]
+    public async Task FocusGuard_OutOfScopeEndpoint_SaveTimerState_ReturnsForbidden()
+    {
+        // Read-only slot: the extension must never be able to WRITE the timer state either,
+        // only poll it.
+        var apiKey = await GenerateKeyAsync("focusguard");
+        using var client = ApiKeyTestHelpers.CreateClientWithKey(_factory, apiKey);
+
+        var response = await client.PutAsJsonAsync("/api/timerstate", new TimerStateDto());
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        await RevokeKeyAsync("focusguard");
+    }
+
     // ---------- credential-kind carve-outs ----------
 
     [Fact]

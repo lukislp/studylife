@@ -132,6 +132,19 @@ public static class ApiKeyScopes
         new("Notes", "Create"), // POST /api/notes - api.ts saveCapture
     ];
 
+    /// <summary>
+    /// studylife-focusguard (github.com/lukislp/studylife-focusguard) - the distraction-blocker
+    /// browser extension. THE narrowest slot of all: it polls TimerState.Get to decide whether a
+    /// focus session is currently running (block or don't) and never reads or writes anything
+    /// else - no notes, no sessions, no settings. A leaked FocusGuard key therefore reveals only
+    /// "is a session running right now", nothing about its content.
+    /// </summary>
+    private static readonly HashSet<Endpoint> FocusGuard =
+    [
+        Whoami,
+        new("TimerState", "Get"), // GET /api/timerstate - background.ts's poll loop
+    ];
+
     public static readonly IReadOnlyDictionary<string, IReadOnlySet<Endpoint>> BySlot =
         new Dictionary<string, IReadOnlySet<Endpoint>>
         {
@@ -139,5 +152,6 @@ public static class ApiKeyScopes
             ["ai"] = Ai,
             ["mcp"] = Mcp,
             ["capture"] = Capture,
+            ["focusguard"] = FocusGuard,
         };
 }
