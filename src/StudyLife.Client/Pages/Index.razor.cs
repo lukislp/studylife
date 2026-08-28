@@ -146,7 +146,11 @@ public partial class Index
     // GET /api/backup/database), NOT toward the automatic weekly server dump
     // (BackgroundTaskService.RunBackupDumpAsync) - that doesn't protect against total device loss,
     // since it ends up on the same machine/Pi. BackupController sets
-    // UserSettings.LastBackupDownloadAt on every successful manual download.
+    // UserSettings.LastBackupDownloadAt on every successful manual download. Only ever shown
+    // when rawBackupSupported (api/system/capabilities) is true - in Postgres mode the manual
+    // download this hint links to is a 501 dead end (BackupController.IsRawBackupAvailable),
+    // and that mode typically already has its own genuinely-offsite protection (CNPG + an
+    // external object store, see k8s/02-postgres.yaml) that this hint predates.
     private bool _showBackupStalenessHint;
     private bool _backupNeverDownloaded;
     private int _daysSinceLastBackup;
@@ -242,6 +246,11 @@ public partial class Index
         var sessionsTask = State.GetSessionsAsync();
         var historyTask = State.GetJsonCachedAsync<List<StudySessionDto>>($"api/sessions/history?days={HistoryDays}&onlyCompleted=false");
         var isDemoTask = State.GetIsDemoAsync();
+        // Same capability flag Setup.razor already uses to hide the raw-backup UI on Postgres
+        // (SetupBackupCard/SetupRestoreCard) - the dashboard staleness hint below needs it too
+        // (see the field comment on _showBackupStalenessHint for why).
+        var capabilitiesTask = Http.GetFromJsonAsync<SystemCapabilitiesResponseDto>(
+            $"api/system/capabilities?nocache={DateTime.UtcNow.Ticks}");
         var goalsTask = State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals");
         var groupQuotasTask = State.GetActiveGroupQuotasAsync();
         var studyProgramsTask = State.GetJsonCachedAsync<List<StudyProgramSummaryDto>>("api/studyprograms");
@@ -324,19 +333,35 @@ public partial class Index
         // the owner, see the _isOwner field comment. Suppressed on public demo instances:
         // the demo user IS the owner and never has a backup timestamp, so the banner would
         // permanently nag every visitor about backing up throwaway seed data - and the
-        // backup endpoints are 403-blocked there anyway.
+        // backup endpoints are 403-blocked there anyway. ALSO suppressed whenever
+        // rawBackupSupported is false (Postgres mode): GET/POST api/backup/database(/encrypted)
+        // - the only actions that ever advance LastBackupDownloadAt - return 501 there
+        // (BackupController.IsRawBackupAvailable), so the hint would otherwise nag toward an
+        // action this deployment structurally cannot perform. A Postgres install typically
+        // means CNPG's own continuous WAL archiving + daily backups to an external object
+        // store (see k8s/02-postgres.yaml) already cover what this hint originally existed for
+        // (protection against total device loss) - fail-open to `true` (still show it) if the
+        // capabilities fetch itself fails, same as everywhere else this flag is read.
         var isDemo = await isDemoTask;
+        var rawBackupSupported = true;
+        try
+        {
+            var capabilities = await capabilitiesTask;
+            if (capabilities is not null) rawBackupSupported = capabilities.RawBackupSupported;
+        }
+        catch { /* older server or transient error - fail open, same as Setup.razor's own fetch */ }
+
         if (settings.LastBackupDownloadAt == null)
         {
             _backupNeverDownloaded = true;
             _daysSinceLastBackup = 0;
-            _showBackupStalenessHint = _isOwner && !isDemo;
+            _showBackupStalenessHint = _isOwner && !isDemo && rawBackupSupported;
         }
         else
         {
             _backupNeverDownloaded = false;
             _daysSinceLastBackup = (today - settings.LastBackupDownloadAt.Value.Date).Days;
-            _showBackupStalenessHint = _isOwner && !isDemo && _daysSinceLastBackup > BackupStalenessThresholdDays;
+            _showBackupStalenessHint = _isOwner && !isDemo && rawBackupSupported && _daysSinceLastBackup > BackupStalenessThresholdDays;
         }
 
         // Weekly quota (configurable target, default 25-30 h/week)
