@@ -189,6 +189,7 @@
   "ExternalConnectionsDesc": "studylife-mcp y studylife-capture se conectan mediante sus propios flujos de inicio de sesión, no desde aquí. Si alguna vez necesitas cortar el acceso de inmediato, desconéctalo abajo.",
   "McpConnectionLabel": "studylife-mcp",
   "CaptureConnectionLabel": "studylife-capture",
+  "FocusGuardConnectionLabel": "studylife-focusguard",
   "ConnectionConnected": "Conectado",
   "ConnectionNotConnected": "No conectado",
   "DisconnectButton": "Desconectar",

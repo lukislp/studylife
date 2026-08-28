@@ -189,6 +189,7 @@
   "ExternalConnectionsDesc": "A studylife-mcp és a studylife-capture a saját bejelentkezési folyamataikon keresztül kapcsolódnak, nem innen. Ha azonnal meg kell szüntetned a hozzáférést, bontsd a kapcsolatot alább.",
   "McpConnectionLabel": "studylife-mcp",
   "CaptureConnectionLabel": "studylife-capture",
+  "FocusGuardConnectionLabel": "studylife-focusguard",
   "ConnectionConnected": "Kapcsolódva",
   "ConnectionNotConnected": "Nincs kapcsolódva",
   "DisconnectButton": "Kapcsolat bontása",

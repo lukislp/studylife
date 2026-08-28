@@ -459,6 +459,31 @@ public class CaptureApiKeyGenerateResponseDto
 }
 
 /// <summary>
+/// Status of the per-user API key (existence + creation date, never the plaintext) for the
+/// studylife-focusguard browser extension - separate slot from the other four keys (see
+/// AuthUserEntity.FocusGuardApiKeyHash), same "existence + timestamp only" shape as
+/// CaptureApiKeyStatusDto. No generate DTO for this slot (unlike ha/ai) - like capture and mcp,
+/// provisioning happens exclusively through the consent flow (FocusGuardConnect below).
+/// </summary>
+public class FocusGuardApiKeyStatusDto
+{
+    public bool HasKey { get; set; }
+    public DateTime? CreatedAt { get; set; }
+}
+
+/// <summary>
+/// Response of POST /api/settings/focusguard-api-key/generate - same one-time-plaintext shape as
+/// CaptureApiKeyGenerateResponseDto, for the separate studylife-focusguard key slot. Kept
+/// alongside the consent flow (not the UI's actual path, see SetupExternalConnectionsCard) for
+/// the same uniform admin/test surface every other slot has.
+/// </summary>
+public class FocusGuardApiKeyGenerateResponseDto
+{
+    public string ApiKey { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
+}
+
+/// <summary>
 /// Request/response shapes for POST /api/ai/chat, /api/ai/agent, /api/ai/agent/confirm - the
 /// AiProxyController passes bodies through byte-for-byte, so these must match studylife-ai's own
 /// pydantic schemas exactly (field names, including its snake_case ones - see
@@ -731,6 +756,42 @@ public class CaptureAssertionExchangeResponseDto
 {
     public int UserId { get; set; }
     public string CaptureApiKey { get; set; } = "";
+}
+
+/// <summary>Body of POST /api/auth/focusguard-connect - same shape and role as
+/// CaptureConnectRequestDto, third audience/slot in the consent flow (identity contract v1 §2).
+/// The extension's own chrome.identity.launchWebAuthFlow supplies redirect_uri/state exactly like
+/// the capture flow does.</summary>
+public class FocusGuardConnectRequestDto
+{
+    public string RedirectUri { get; set; } = "";
+    public string State { get; set; } = "";
+}
+
+/// <summary>Response of POST /api/auth/focusguard-connect: the URL the Blazor page navigates to
+/// next, carrying the single-use, focusguard-audience-bound assertion back to the extension's own
+/// chrome.identity callback.</summary>
+public class FocusGuardConnectResponseDto
+{
+    public string RedirectTo { get; set; } = "";
+}
+
+/// <summary>Body of POST /api/auth/focusguard-assertion-exchange (identity contract v1 §2 step 4,
+/// third audience - exempt from the API gate, the assertion itself is the credential). A
+/// capture- or mcp-connect assertion presented here is rejected (audience mismatch, see
+/// AuthController.RedeemConsentAssertionAsync).</summary>
+public class FocusGuardAssertionExchangeRequestDto
+{
+    public string Assertion { get; set; } = "";
+}
+
+/// <summary>Response of POST /api/auth/focusguard-assertion-exchange: the real AuthUserId and the
+/// plaintext studylife-focusguard key the extension needs to authenticate its own requests - this
+/// is the only place the plaintext leaves the server for this flow.</summary>
+public class FocusGuardAssertionExchangeResponseDto
+{
+    public int UserId { get; set; }
+    public string FocusGuardApiKey { get; set; } = "";
 }
 
 /// <summary>Response of POST /api/auth/recovery/generate - the plaintext codes only exist

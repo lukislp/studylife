@@ -47,8 +47,9 @@
 }
 
 @code {
-    /// <summary>"mcp" or "capture" - selects both the audience-appropriate copy below and the
-    /// actual endpoint pair (api/auth/{Audience}-connect / the DTO type used to call it).</summary>
+    /// <summary>"mcp", "capture", or "focusguard" - selects both the audience-appropriate copy
+    /// below and the actual endpoint pair (api/auth/{Audience}-connect / the DTO type used to
+    /// call it).</summary>
     [Parameter, EditorRequired] public string Audience { get; set; } = "";
 
     private bool _busy;
@@ -57,10 +58,24 @@
     private string _redirectUri = "";
     private string _state = "";
 
-    private bool IsCapture => Audience == "capture";
-    private string PageTitle => IsCapture ? T.ConnectCapturePageTitle : T.ConnectMcpPageTitle;
-    private string Heading => IsCapture ? T.ConnectCaptureHeading : T.ConnectMcpHeading;
-    private string Intro => IsCapture ? T.ConnectCaptureIntro : T.ConnectMcpIntro;
+    private string PageTitle => Audience switch
+    {
+        "capture" => T.ConnectCapturePageTitle,
+        "focusguard" => T.ConnectFocusGuardPageTitle,
+        _ => T.ConnectMcpPageTitle,
+    };
+    private string Heading => Audience switch
+    {
+        "capture" => T.ConnectCaptureHeading,
+        "focusguard" => T.ConnectFocusGuardHeading,
+        _ => T.ConnectMcpHeading,
+    };
+    private string Intro => Audience switch
+    {
+        "capture" => T.ConnectCaptureIntro,
+        "focusguard" => T.ConnectFocusGuardIntro,
+        _ => T.ConnectMcpIntro,
+    };
 
     // LocalizedComponentBase lifecycle (the pattern rolled out to every page in the straggler
     // migration): the base class loads T, markup is gated on IsTextLoaded, and everything that
@@ -110,12 +125,20 @@
         try
         {
             string? redirectTo;
-            if (IsCapture)
+            if (Audience == "capture")
             {
                 var response = await Http.PostAsJsonAsync("api/auth/capture-connect",
                     new CaptureConnectRequestDto { RedirectUri = _redirectUri, State = _state });
                 if (!response.IsSuccessStatusCode) { _error = T.ConnectFailed; return; }
                 var result = await response.Content.ReadFromJsonAsync<CaptureConnectResponseDto>();
+                redirectTo = result?.RedirectTo;
+            }
+            else if (Audience == "focusguard")
+            {
+                var response = await Http.PostAsJsonAsync("api/auth/focusguard-connect",
+                    new FocusGuardConnectRequestDto { RedirectUri = _redirectUri, State = _state });
+                if (!response.IsSuccessStatusCode) { _error = T.ConnectFailed; return; }
+                var result = await response.Content.ReadFromJsonAsync<FocusGuardConnectResponseDto>();
                 redirectTo = result?.RedirectTo;
             }
             else
