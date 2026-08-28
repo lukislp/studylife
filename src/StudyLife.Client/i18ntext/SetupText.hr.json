@@ -189,6 +189,7 @@
   "ExternalConnectionsDesc": "studylife-mcp i studylife-capture povezuju se putem vlastitih procesa prijave, ne odavde. Ako trebate odmah prekinuti pristup, prekinite vezu u nastavku.",
   "McpConnectionLabel": "studylife-mcp",
   "CaptureConnectionLabel": "studylife-capture",
+  "FocusGuardConnectionLabel": "studylife-focusguard",
   "ConnectionConnected": "Povezano",
   "ConnectionNotConnected": "Nije povezano",
   "DisconnectButton": "Prekini vezu",

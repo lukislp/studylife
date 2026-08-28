@@ -189,6 +189,7 @@
   "ExternalConnectionsDesc": "studylife-mcp ja studylife-capture ühenduvad oma sisselogimisvoogude kaudu, mitte siit. Kui pead juurdepääsu kohe katkestama, katkesta ühendus allpool.",
   "McpConnectionLabel": "studylife-mcp",
   "CaptureConnectionLabel": "studylife-capture",
+  "FocusGuardConnectionLabel": "studylife-focusguard",
   "ConnectionConnected": "Ühendatud",
   "ConnectionNotConnected": "Ühendamata",
   "DisconnectButton": "Katkesta ühendus",

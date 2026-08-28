@@ -152,6 +152,12 @@ namespace StudyLife.Server.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("FocusGuardApiKeyCreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FocusGuardApiKeyHash")
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("IsOwner")
                         .HasColumnType("INTEGER");
 
@@ -173,6 +179,9 @@ namespace StudyLife.Server.Migrations
                         .IsUnique();
 
                     b.HasIndex("CaptureApiKeyHash")
+                        .IsUnique();
+
+                    b.HasIndex("FocusGuardApiKeyHash")
                         .IsUnique();
 
                     b.HasIndex("McpApiKeyHash")

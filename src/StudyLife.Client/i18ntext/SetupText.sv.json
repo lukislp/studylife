@@ -189,6 +189,7 @@
   "ExternalConnectionsDesc": "studylife-mcp och studylife-capture ansluts via sina egna inloggningsflöden, inte härifrån. Om du behöver stänga av åtkomsten omedelbart, koppla från nedan.",
   "McpConnectionLabel": "studylife-mcp",
   "CaptureConnectionLabel": "studylife-capture",
+  "FocusGuardConnectionLabel": "studylife-focusguard",
   "ConnectionConnected": "Ansluten",
   "ConnectionNotConnected": "Inte ansluten",
   "DisconnectButton": "Koppla från",

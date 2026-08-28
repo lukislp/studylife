@@ -189,6 +189,7 @@
   "ExternalConnectionsDesc": "Τα studylife-mcp και studylife-capture συνδέονται μέσω των δικών τους ροών σύνδεσης, όχι από εδώ. Αν χρειαστεί να διακόψετε αμέσως την πρόσβαση, αποσυνδέστε το παρακάτω.",
   "McpConnectionLabel": "studylife-mcp",
   "CaptureConnectionLabel": "studylife-capture",
+  "FocusGuardConnectionLabel": "studylife-focusguard",
   "ConnectionConnected": "Συνδεδεμένο",
   "ConnectionNotConnected": "Μη συνδεδεμένο",
   "DisconnectButton": "Αποσύνδεση",
