@@ -290,6 +290,88 @@ public class ApiKeyScopeTests : IClassFixture<CustomWebApplicationFactory>
         await RevokeKeyAsync("focusguard");
     }
 
+    // ---------- timetrack (passive time-tracking browser extension: Whoami + Notes only,
+    // same shape as capture - it delivers its daily report as a plain note, see
+    // ApiKeyScopes.TimeTrack) ----------
+
+    [Fact]
+    public async Task TimeTrack_AllowedEndpoint_CreateNote_ReturnsOk()
+    {
+        var apiKey = await GenerateKeyAsync("timetrack");
+        using var client = ApiKeyTestHelpers.CreateClientWithKey(_factory, apiKey);
+
+        var response = await client.PostAsJsonAsync("/api/notes", new NoteDto { Title = "Daily report", Content = "wikipedia.org: 12m" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await RevokeKeyAsync("timetrack");
+    }
+
+    [Fact]
+    public async Task TimeTrack_OutOfScopeEndpoint_ListSessions_ReturnsForbidden()
+    {
+        var apiKey = await GenerateKeyAsync("timetrack");
+        using var client = ApiKeyTestHelpers.CreateClientWithKey(_factory, apiKey);
+
+        var response = await client.GetAsync("/api/sessions");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        await RevokeKeyAsync("timetrack");
+    }
+
+    [Fact]
+    public async Task TimeTrack_OutOfScopeEndpoint_GetTimerState_ReturnsForbidden()
+    {
+        // The time-tracking extension has nothing to do with the focus timer - it tracks
+        // per-domain browsing time independently of whether a session is running.
+        var apiKey = await GenerateKeyAsync("timetrack");
+        using var client = ApiKeyTestHelpers.CreateClientWithKey(_factory, apiKey);
+
+        var response = await client.GetAsync("/api/timerstate");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        await RevokeKeyAsync("timetrack");
+    }
+
+    // ---------- focustunes (focus-session music companion browser extension: same narrowest
+    // shape as focusguard - only polls whether a session is running, see
+    // ApiKeyScopes.FocusTunes) ----------
+
+    [Fact]
+    public async Task FocusTunes_AllowedEndpoint_GetTimerState_ReturnsOk()
+    {
+        var apiKey = await GenerateKeyAsync("focustunes");
+        using var client = ApiKeyTestHelpers.CreateClientWithKey(_factory, apiKey);
+
+        var response = await client.GetAsync("/api/timerstate");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await RevokeKeyAsync("focustunes");
+    }
+
+    [Fact]
+    public async Task FocusTunes_OutOfScopeEndpoint_ListNotes_ReturnsForbidden()
+    {
+        var apiKey = await GenerateKeyAsync("focustunes");
+        using var client = ApiKeyTestHelpers.CreateClientWithKey(_factory, apiKey);
+
+        var response = await client.GetAsync("/api/notes");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        await RevokeKeyAsync("focustunes");
+    }
+
+    [Fact]
+    public async Task FocusTunes_OutOfScopeEndpoint_SaveTimerState_ReturnsForbidden()
+    {
+        var apiKey = await GenerateKeyAsync("focustunes");
+        using var client = ApiKeyTestHelpers.CreateClientWithKey(_factory, apiKey);
+
+        var response = await client.PutAsJsonAsync("/api/timerstate", new TimerStateDto());
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        await RevokeKeyAsync("focustunes");
+    }
+
     // ---------- credential-kind carve-outs ----------
 
     [Fact]
