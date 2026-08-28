@@ -21,6 +21,8 @@ public partial class AuthController
     private const string AudienceMcp = "mcp";
     private const string AudienceCapture = "capture";
     private const string AudienceFocusGuard = "focusguard";
+    private const string AudienceTimeTrack = "timetrack";
+    private const string AudienceFocusTunes = "focustunes";
 
     /// <summary>Cached under a single-use assertion token, exactly like PendingHandoff -
     /// ApiKey is the ONE moment the plaintext exists after rotation until the consumer's
@@ -205,6 +207,64 @@ public partial class AuthController
         var result = await RedeemConsentAssertionAsync(AudienceFocusGuard, request.Assertion);
         if (result is null) return Unauthorized();
         return new FocusGuardAssertionExchangeResponseDto { UserId = result.Value.UserId, FocusGuardApiKey = result.Value.ApiKey };
+    }
+
+    /// <summary>
+    /// Step 3 of the timetrack connect flow (identity contract v1 §2, fourth audience): same
+    /// session-required shape as CaptureConnect, rotating the timetrack key slot instead
+    /// (SettingsController.RotateTimeTrackKey).
+    /// </summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpPost("timetrack-connect")]
+    public async Task<ActionResult<TimeTrackConnectResponseDto>> TimeTrackConnect([FromBody] TimeTrackConnectRequestDto request)
+    {
+        var (redirectTo, error) = await BuildConnectRedirectAsync(AudienceTimeTrack, request.RedirectUri, request.State, SettingsController.RotateTimeTrackKey);
+        if (error is not null) return error;
+        return new TimeTrackConnectResponseDto { RedirectTo = redirectTo! };
+    }
+
+    /// <summary>
+    /// Step 4 of the timetrack connect flow: exchanges a single-use, timetrack-audience assertion
+    /// for the real AuthUserId and the plaintext timetrack key. EXEMPT from the API gate
+    /// ([AllowAnonymous]), same non-distinguishing-401 and audience-isolation rules as
+    /// CaptureAssertionExchange.
+    /// </summary>
+    [AllowAnonymous]
+    [HttpPost("timetrack-assertion-exchange")]
+    public async Task<ActionResult<TimeTrackAssertionExchangeResponseDto>> TimeTrackAssertionExchange([FromBody] TimeTrackAssertionExchangeRequestDto request)
+    {
+        var result = await RedeemConsentAssertionAsync(AudienceTimeTrack, request.Assertion);
+        if (result is null) return Unauthorized();
+        return new TimeTrackAssertionExchangeResponseDto { UserId = result.Value.UserId, TimeTrackApiKey = result.Value.ApiKey };
+    }
+
+    /// <summary>
+    /// Step 3 of the focustunes connect flow (identity contract v1 §2, fifth audience): same
+    /// session-required shape as CaptureConnect, rotating the focustunes key slot instead
+    /// (SettingsController.RotateFocusTunesKey).
+    /// </summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpPost("focustunes-connect")]
+    public async Task<ActionResult<FocusTunesConnectResponseDto>> FocusTunesConnect([FromBody] FocusTunesConnectRequestDto request)
+    {
+        var (redirectTo, error) = await BuildConnectRedirectAsync(AudienceFocusTunes, request.RedirectUri, request.State, SettingsController.RotateFocusTunesKey);
+        if (error is not null) return error;
+        return new FocusTunesConnectResponseDto { RedirectTo = redirectTo! };
+    }
+
+    /// <summary>
+    /// Step 4 of the focustunes connect flow: exchanges a single-use, focustunes-audience
+    /// assertion for the real AuthUserId and the plaintext focustunes key. EXEMPT from the API
+    /// gate ([AllowAnonymous]), same non-distinguishing-401 and audience-isolation rules as
+    /// CaptureAssertionExchange.
+    /// </summary>
+    [AllowAnonymous]
+    [HttpPost("focustunes-assertion-exchange")]
+    public async Task<ActionResult<FocusTunesAssertionExchangeResponseDto>> FocusTunesAssertionExchange([FromBody] FocusTunesAssertionExchangeRequestDto request)
+    {
+        var result = await RedeemConsentAssertionAsync(AudienceFocusTunes, request.Assertion);
+        if (result is null) return Unauthorized();
+        return new FocusTunesAssertionExchangeResponseDto { UserId = result.Value.UserId, FocusTunesApiKey = result.Value.ApiKey };
     }
 
     private static string ConsentAssertionCacheKey(string assertion) => $"consent-assertion:{assertion}";

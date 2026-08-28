@@ -1,0 +1,9 @@
+@page "/connect/timetrack"
+@layout PublicLayout
+
+@* Thin wrapper: the actual consent UI/logic lives in Components/ConnectConsent.razor, shared
+   with /connect/mcp, /connect/capture, and /connect/focusguard (see ConnectCapture.razor for the
+   full flow writeup, identity contract v1 §2, generalized to the studylife-timetrack browser
+   extension as a fourth audience). *@
+
+<ConnectConsent Audience="timetrack" />

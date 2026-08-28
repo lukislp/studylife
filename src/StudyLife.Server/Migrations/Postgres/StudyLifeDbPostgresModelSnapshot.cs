@@ -171,6 +171,12 @@ namespace StudyLife.Server.Migrations.Postgres
                     b.Property<string>("FocusGuardApiKeyHash")
                         .HasColumnType("text");
 
+                    b.Property<DateTime?>("FocusTunesApiKeyCreatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("FocusTunesApiKeyHash")
+                        .HasColumnType("text");
+
                     b.Property<bool>("IsOwner")
                         .HasColumnType("boolean");
 
@@ -178,6 +184,12 @@ namespace StudyLife.Server.Migrations.Postgres
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("McpApiKeyHash")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("TimeTrackApiKeyCreatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("TimeTrackApiKeyHash")
                         .HasColumnType("text");
 
                     b.HasKey("Id");
@@ -197,7 +209,13 @@ namespace StudyLife.Server.Migrations.Postgres
                     b.HasIndex("FocusGuardApiKeyHash")
                         .IsUnique();
 
+                    b.HasIndex("FocusTunesApiKeyHash")
+                        .IsUnique();
+
                     b.HasIndex("McpApiKeyHash")
+                        .IsUnique();
+
+                    b.HasIndex("TimeTrackApiKeyHash")
                         .IsUnique();
 
                     b.ToTable("AuthUsers");
