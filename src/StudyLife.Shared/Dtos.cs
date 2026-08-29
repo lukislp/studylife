@@ -908,6 +908,85 @@ public class TrayAssertionExchangeResponseDto
     public string TrayApiKey { get; set; } = "";
 }
 
+/// <summary>
+/// GET /api/auth/oauth-clients/{clientId} - fetched by the frontend BEFORE rendering the consent
+/// screen for a dynamically registered client (see OAuthClientEntity). Unlike the 5 hardcoded
+/// audiences above (whose consent copy is hardcoded client-side per audience), a dynamic client's
+/// name/description/requested scopes have to come from somewhere - this is that lookup.
+/// </summary>
+public class OAuthClientInfoDto
+{
+    public string Name { get; set; } = "";
+    public string Description { get; set; } = "";
+    public List<string> RequestedScopes { get; set; } = new();
+}
+
+/// <summary>Body of POST /api/auth/connect - the generic, ClientId-parameterized counterpart to
+/// McpConnect/CaptureConnect/etc. Approve action for a dynamically registered client.</summary>
+public class GenericConnectRequestDto
+{
+    public string ClientId { get; set; } = "";
+    public string RedirectUri { get; set; } = "";
+    public string State { get; set; } = "";
+}
+
+/// <summary>Response of POST /api/auth/connect.</summary>
+public class GenericConnectResponseDto
+{
+    public string RedirectTo { get; set; } = "";
+}
+
+/// <summary>Body of POST /api/auth/assertion-exchange - unlike the 5 hardcoded per-audience
+/// exchange endpoints, this one is shared across every dynamic client, so ClientId has to be
+/// supplied explicitly (it's what used to be implicit in the endpoint's own URL).</summary>
+public class GenericAssertionExchangeRequestDto
+{
+    public string ClientId { get; set; } = "";
+    public string Assertion { get; set; } = "";
+}
+
+/// <summary>Response of POST /api/auth/assertion-exchange.</summary>
+public class GenericAssertionExchangeResponseDto
+{
+    public int UserId { get; set; }
+    public string ApiKey { get; set; } = "";
+}
+
+/// <summary>One of a developer's own registered OAuthClientEntity rows (DeveloperController's
+/// list/detail shape) - never carries a secret, there is none: unlike an API key, a client
+/// registration itself has nothing to hide from its own owner.</summary>
+public class DeveloperClientDto
+{
+    public string ClientId { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string Description { get; set; } = "";
+    public List<string> AllowedRedirectUris { get; set; } = new();
+    public List<string> RequestedScopes { get; set; } = new();
+    public DateTime CreatedAt { get; set; }
+}
+
+/// <summary>Body of POST /api/developer/clients - registers a new OAuthClientEntity. Every
+/// requested scope must be a member of ApiKeyScopes.PubliclyGrantable, enforced server-side.</summary>
+public class CreateDeveloperClientRequestDto
+{
+    public string ClientId { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string Description { get; set; } = "";
+    public List<string> AllowedRedirectUris { get; set; } = new();
+    public List<string> RequestedScopes { get; set; } = new();
+}
+
+/// <summary>Body of PUT /api/developer/clients/{clientId} - Name/Description/AllowedRedirectUris/
+/// RequestedScopes are all editable after the fact (the "scope erweiterbar" requirement) -
+/// ClientId itself never changes once registered.</summary>
+public class UpdateDeveloperClientRequestDto
+{
+    public string Name { get; set; } = "";
+    public string Description { get; set; } = "";
+    public List<string> AllowedRedirectUris { get; set; } = new();
+    public List<string> RequestedScopes { get; set; } = new();
+}
+
 /// <summary>Response of POST /api/auth/recovery/generate - the plaintext codes only exist
 /// in this one response, server-side only hashes are stored.</summary>
 public class RecoveryCodesResponseDto

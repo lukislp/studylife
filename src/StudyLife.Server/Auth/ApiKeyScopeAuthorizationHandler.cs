@@ -44,8 +44,16 @@ public sealed class ApiKeyScopeAuthorizationHandler(
         var httpContext = httpContextAccessor.HttpContext;
         var descriptor = httpContext?.GetEndpoint()?.Metadata.GetMetadata<ControllerActionDescriptor>();
 
-        var allowed = slot is not null && descriptor is not null
-            && ApiKeyScopes.BySlot.TryGetValue(slot, out var allowedEndpoints)
+        // Dynamically registered clients (OAuthClientEntity) carry their own granted-scopes
+        // snapshot as a claim instead of a fixed entry in ApiKeyScopes.BySlot - see
+        // ClientApiKeyEntity.GrantedScopes and StudyLifeAuthenticationHandler.BuildClientTicket.
+        // Whoami is unioned in unconditionally, same as every hardcoded slot below already does -
+        // a developer never has to explicitly request identity-contract-v1-§1 access.
+        IReadOnlySet<ApiKeyScopes.Endpoint>? allowedEndpoints = slot is not null && slot.StartsWith("client:", StringComparison.Ordinal)
+            ? new HashSet<ApiKeyScopes.Endpoint>(ApiKeyScopes.Parse(context.User.FindFirst(StudyLifeAuthenticationHandler.GrantedScopesClaim)?.Value)) { ApiKeyScopes.Whoami }
+            : slot is not null && ApiKeyScopes.BySlot.TryGetValue(slot, out var bySlot) ? bySlot : null;
+
+        var allowed = descriptor is not null && allowedEndpoints is not null
             && allowedEndpoints.Contains(new ApiKeyScopes.Endpoint(descriptor.ControllerName, descriptor.ActionName));
 
         if (allowed)

@@ -45,7 +45,9 @@ public partial class AuthController
     /// assertion handed to whatever URI passes here is single-use, short-lived, and only ever
     /// exchangeable server-to-server (see RedeemConsentAssertionAsync) regardless.
     /// </summary>
-    private static bool IsAllowedRedirectUri(string? redirectUri)
+    /// <summary>internal instead of private: reused as-is by DeveloperController when validating
+    /// an OAuthClientEntity's AllowedRedirectUris list at registration time.</summary>
+    internal static bool IsAllowedRedirectUri(string? redirectUri)
     {
         if (!Uri.TryCreate(redirectUri, UriKind.Absolute, out var uri)) return false;
         if (uri.Scheme == Uri.UriSchemeHttps) return true;

@@ -36,8 +36,11 @@ public static class ApiKeyScopes
     /// it is (AuthController.Whoami, GET /api/auth/whoami) - needed by all three satellite
     /// repos (studylife-hacs, studylife-mcp, studylife-ai) and the capture extension alike for
     /// diagnosing a misconfigured/rejected key, so it is added to every slot below instead of
-    /// being special-cased outside the map.</summary>
-    private static readonly Endpoint Whoami = new("Auth", "Whoami");
+    /// being special-cased outside the map. Public (not private) so
+    /// ApiKeyScopeAuthorizationHandler can union it into a dynamic OAuthClientEntity's own
+    /// granted scopes too - a developer never has to explicitly request it, same as every
+    /// hardcoded slot below never has to either.</summary>
+    public static readonly Endpoint Whoami = new("Auth", "Whoami");
 
     /// <summary>
     /// Home Assistant (github.com/lukislp/studylife-hacs, not in this repo - fetched and read
@@ -199,4 +202,59 @@ public static class ApiKeyScopes
             ["tray"] = Tray,
             ["webhooks"] = Webhooks,
         };
+
+    /// <summary>
+    /// The ONLY endpoints a dynamically registered OAuthClientEntity (see that entity's doc
+    /// comment, DeveloperController) may ever request a scope for - a deliberately narrower
+    /// allowlist than the full surface any of the 8 hardcoded slots above can reach. Excludes
+    /// Settings.Save and every admin/owner-only action (invites, backup/restore) outright:
+    /// those stay reachable only via a session or one of the 8 pre-vetted, code-reviewed slots,
+    /// never via a scope an arbitrary third-party developer can self-select. Every entry here
+    /// mirrors something already proven safe to expose, drawn from the union of Ha/Ai/Mcp/
+    /// Capture/Webhooks above.
+    /// </summary>
+    public static readonly IReadOnlySet<Endpoint> PubliclyGrantable = new HashSet<Endpoint>
+    {
+        Whoami,
+        new("Notes", "GetAll"),
+        new("Notes", "Search"),
+        new("Notes", "Create"),
+        new("Notes", "Update"),
+        new("Notes", "Delete"),
+        new("Sessions", "GetAll"),
+        new("Sessions", "GetHistory"),
+        new("Sessions", "Create"),
+        new("Sessions", "Update"),
+        new("Sessions", "Delete"),
+        new("CourseGoals", "GetAll"),
+        new("CourseGoals", "Save"),
+        new("CourseGoals", "Delete"),
+        new("TimerState", "Get"),
+        new("Courses", "GetAll"),
+        new("StudyPrograms", "GetAll"),
+        new("StudyPrograms", "Get"),
+        new("WebhooksProxy", "List"),
+        new("WebhooksProxy", "Create"),
+        new("WebhooksProxy", "Delete"),
+    };
+
+    /// <summary>"Controller.Action" pairs joined by commas - the wire/storage format for both
+    /// OAuthClientEntity.RequestedScopes and ClientApiKeyEntity.GrantedScopes. Deliberately plain
+    /// text, not JSON: matches every other comma-separated list already in this codebase
+    /// (CourseGoalEntity.CompletedTopics, CustomCourseEntity.Topics), and the granted-scopes
+    /// claim value (see ApiKeyScopeAuthorizationHandler) has to be a plain string either way.</summary>
+    public static string Serialize(IEnumerable<Endpoint> endpoints) =>
+        string.Join(',', endpoints.Select(e => $"{e.Controller}.{e.Action}"));
+
+    public static IReadOnlySet<Endpoint> Parse(string? scopes)
+    {
+        if (string.IsNullOrWhiteSpace(scopes)) return new HashSet<Endpoint>();
+        var result = new HashSet<Endpoint>();
+        foreach (var raw in scopes.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var parts = raw.Split('.', 2);
+            if (parts.Length == 2) result.Add(new Endpoint(parts[0], parts[1]));
+        }
+        return result;
+    }
 }
