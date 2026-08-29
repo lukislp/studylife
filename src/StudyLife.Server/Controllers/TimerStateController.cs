@@ -11,8 +11,15 @@ namespace StudyLife.Server.Controllers;
 public class TimerStateController : ControllerBase
 {
     private readonly StudyLifeDb _db;
+    private readonly WebhooksProxyClient _webhooks;
+    private readonly ICurrentUserAccessor _currentUser;
 
-    public TimerStateController(StudyLifeDb db) => _db = db;
+    public TimerStateController(StudyLifeDb db, WebhooksProxyClient webhooks, ICurrentUserAccessor currentUser)
+    {
+        _db = db;
+        _webhooks = webhooks;
+        _currentUser = currentUser;
+    }
 
     [HttpGet]
     public async Task<TimerStateDto> Get()
@@ -34,6 +41,7 @@ public class TimerStateController : ControllerBase
     public async Task<TimerStateDto> Save(TimerStateDto dto)
     {
         var entity = await _db.TimerState.GetOrCreateAsync(_db);
+        var wasRunning = entity.IsRunning;
 
         // Sequence-based out-of-order rejection (audit S6): TimerService fires this PUT
         // unawaited on every transition, so two rapid transitions can arrive reversed on the
@@ -69,6 +77,25 @@ public class TimerStateController : ControllerBase
         entity.UpdatedAt = DateTime.Now;
         if (dto.ClientSequence is { } newSeq) entity.LastClientSequence = newSeq;
         await _db.SaveChangesAsync();
+
+        // Fire-and-forget with CancellationToken.None, deliberately NOT the request's own `ct`:
+        // this call must outlive the request (a slow/unreachable studylife-webhooks must never
+        // add latency to the timer's own high-frequency, latency-sensitive push path), and
+        // HttpContext.RequestAborted is not safe for detached work - it can fire the moment the
+        // response completes, which would abort an in-flight webhook delivery for no reason.
+        // PublishEventAsync itself never throws (see WebhooksProxyClient), so there is no
+        // unobserved-exception risk in not awaiting this.
+        if (!wasRunning && entity.IsRunning)
+        {
+            _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId, WebhookEventTypes.TimerStarted,
+                new { sessionId = entity.SessionId }, CancellationToken.None);
+        }
+        else if (wasRunning && !entity.IsRunning)
+        {
+            _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId, WebhookEventTypes.TimerEnded,
+                new { sessionId = entity.SessionId }, CancellationToken.None);
+        }
+
         return ToDto(entity);
     }
 

@@ -281,6 +281,9 @@ builder.Services.AddSingleton<ApnsSender>();
 // studylife-ai integration - permanently inactive without StudyLifeAi:* configuration
 // (see the AiProxyClient comment).
 builder.Services.AddSingleton<AiProxyClient>();
+// studylife-webhooks integration - permanently inactive without StudyLifeWebhooks:*
+// configuration (see the WebhooksProxyClient comment).
+builder.Services.AddSingleton<WebhooksProxyClient>();
 // Raw DB backup/restore + the former file-based VAPID/setup-secret storage are bound to a
 // local single SQLite file (online backup API, PRAGMA integrity_check, file swap) -
 // deliberately NOT registered in Postgres mode (multiple pods, no guaranteed shared volume);

@@ -191,6 +191,7 @@
   "CaptureConnectionLabel": "studylife-capture",
   "FocusGuardConnectionLabel": "studylife-focusguard",
   "FocusTunesConnectionLabel": "studylife-focustunes",
+  "TrayConnectionLabel": "studylife-tray",
   "ConnectionConnected": "Conectat",
   "ConnectionNotConnected": "Neconectat",
   "DisconnectButton": "Deconectează",
