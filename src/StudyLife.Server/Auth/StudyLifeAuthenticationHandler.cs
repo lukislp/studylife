@@ -123,11 +123,11 @@ public class StudyLifeAuthenticationHandler : AuthenticationHandler<StudyLifeAut
             return AuthenticateResult.Success(BuildTicket(session.AuthUserId, AuthTypeSession));
         }
 
-        // Without a session token: per-user API key, matched against all seven independent
+        // Without a session token: per-user API key, matched against all eight independent
         // slots in one step (see AuthUserEntity.ApiKeyHash/AiApiKeyHash/McpApiKeyHash/
-        // CaptureApiKeyHash/FocusGuardApiKeyHash/FocusTunesApiKeyHash/TrayApiKeyHash) - any one
-        // of them authenticates AND identifies the user. Header only (audit finding A12a) - a
-        // ?apiKey= query string is deliberately NOT accepted.
+        // CaptureApiKeyHash/FocusGuardApiKeyHash/FocusTunesApiKeyHash/TrayApiKeyHash/
+        // WebhooksApiKeyHash) - any one of them authenticates AND identifies the user. Header
+        // only (audit finding A12a) - a ?apiKey= query string is deliberately NOT accepted.
         var providedKey = request.Headers["X-Api-Key"].FirstOrDefault();
         if (!string.IsNullOrEmpty(providedKey))
         {
@@ -136,7 +136,7 @@ public class StudyLifeAuthenticationHandler : AuthenticationHandler<StudyLifeAut
                 .FirstOrDefaultAsync(u => u.ApiKeyHash == keyHash || u.AiApiKeyHash == keyHash
                     || u.McpApiKeyHash == keyHash || u.CaptureApiKeyHash == keyHash
                     || u.FocusGuardApiKeyHash == keyHash || u.FocusTunesApiKeyHash == keyHash
-                    || u.TrayApiKeyHash == keyHash);
+                    || u.TrayApiKeyHash == keyHash || u.WebhooksApiKeyHash == keyHash);
             if (keyOwner is null)
                 return AuthenticateResult.Fail("Invalid API key.");
 
@@ -146,7 +146,8 @@ public class StudyLifeAuthenticationHandler : AuthenticationHandler<StudyLifeAut
                 : keyOwner.CaptureApiKeyHash == keyHash ? "capture"
                 : keyOwner.FocusGuardApiKeyHash == keyHash ? "focusguard"
                 : keyOwner.FocusTunesApiKeyHash == keyHash ? "focustunes"
-                : "tray";
+                : keyOwner.TrayApiKeyHash == keyHash ? "tray"
+                : "webhooks";
 
             Context.Items[CurrentUserAccessor.HttpContextItemKey] = keyOwner.Id;
             // Which slot matched (identity contract v1 §1) - only consumed by whoami today,

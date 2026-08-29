@@ -179,6 +179,12 @@ namespace StudyLife.Server.Migrations
                     b.Property<string>("TrayApiKeyHash")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("WebhooksApiKeyCreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WebhooksApiKeyHash")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AiApiKeyHash")
@@ -203,6 +209,9 @@ namespace StudyLife.Server.Migrations
                         .IsUnique();
 
                     b.HasIndex("TrayApiKeyHash")
+                        .IsUnique();
+
+                    b.HasIndex("WebhooksApiKeyHash")
                         .IsUnique();
 
                     b.ToTable("AuthUsers");

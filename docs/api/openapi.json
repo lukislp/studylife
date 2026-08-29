@@ -3632,6 +3632,76 @@
         }
       }
     },
+    "/api/settings/webhooks-api-key": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhooksApiKeyStatusDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhooksApiKeyStatusDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhooksApiKeyStatusDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/webhooks-api-key/generate": {
+      "post": {
+        "tags": [
+          "Settings"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhooksApiKeyGenerateResponseDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhooksApiKeyGenerateResponseDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhooksApiKeyGenerateResponseDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/webhooks-api-key/revoke": {
+      "post": {
+        "tags": [
+          "Settings"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/studyprograms": {
       "get": {
         "tags": [
@@ -7410,6 +7480,40 @@
         "properties": {
           "version": {
             "type": "string"
+          }
+        }
+      },
+      "WebhooksApiKeyGenerateResponseDto": {
+        "required": [
+          "apiKey",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "apiKey": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "WebhooksApiKeyStatusDto": {
+        "required": [
+          "hasKey"
+        ],
+        "type": "object",
+        "properties": {
+          "hasKey": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },

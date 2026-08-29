@@ -1,25 +1,31 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using StudyLife.Server.Auth;
 using StudyLife.Server.Services;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Controllers;
 
 /// <summary>
-/// Proxies webhook-registration requests from the Blazor client to the studylife-webhooks
-/// microservice on behalf of the logged-in user - same reasoning as AiProxyController (the user's
-/// browser never talks to studylife-webhooks directly, and never needs its own API key/consent
-/// flow for this the way Guard/Tune do, since every call already carries session auth here).
-/// Session-only auth: an API key alone must not be enough to manage someone's webhook
-/// registrations.
+/// Proxies webhook-registration requests from whichever caller to the studylife-webhooks
+/// microservice, on behalf of whichever user actually authenticated the request.
+///
+/// Deliberately NOT session-only, unlike AiProxyController: the whole point of studylife-webhooks
+/// is that OTHER programs/add-ons (not the StudyLife browser client itself) register their own
+/// subscriptions, so this needs to be reachable with just an API key - specifically the
+/// WebhooksApiKey slot (see ApiKeyScopes.Webhooks), generated once from the Setup page (like Ha's
+/// key) and handed to whichever external tool the user wants to let manage webhooks. No explicit
+/// [Authorize] here at all - falls through to the default ApiAccess fallback policy (session OR
+/// any scoped API key + ApiKeyScopeAuthorizationHandler's per-slot enforcement), exactly like
+/// TimerStateController/NotesController/etc. Per-user isolation is automatic, not something this
+/// controller has to enforce itself: _currentUser.AuthUserId always resolves to whichever user
+/// actually owns the credential that authenticated the request (session or API key alike), and
+/// every call below is scoped to that id - there is no code path where one user's key can reach
+/// another user's webhook registrations.
 ///
 /// Pure reverse proxy for the response side (status/content-type/body pass through unparsed) -
 /// this controller never needs to know studylife-webhooks' exact registration-record shape.
 /// </summary>
 [ApiController]
 [Route("api/webhooks")]
-[Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
 public class WebhooksProxyController : ControllerBase
 {
     private readonly WebhooksProxyClient _client;

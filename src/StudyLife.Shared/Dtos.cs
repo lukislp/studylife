@@ -515,6 +515,22 @@ public class TrayApiKeyGenerateResponseDto
     public DateTime CreatedAt { get; set; }
 }
 
+/// <summary>Status DTO for the studylife-webhooks registration-management key slot - same shape
+/// as HaApiKeyStatusDto, see AuthUserEntity.WebhooksApiKeyHash.</summary>
+public class WebhooksApiKeyStatusDto
+{
+    public bool HasKey { get; set; }
+    public DateTime? CreatedAt { get; set; }
+}
+
+/// <summary>Generate-response DTO for the studylife-webhooks registration-management key slot -
+/// same shape as HaApiKeyGenerateResponseDto.</summary>
+public class WebhooksApiKeyGenerateResponseDto
+{
+    public string ApiKey { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
+}
+
 /// <summary>
 /// Request/response shapes for POST /api/ai/chat, /api/ai/agent, /api/ai/agent/confirm - the
 /// AiProxyController passes bodies through byte-for-byte, so these must match studylife-ai's own
