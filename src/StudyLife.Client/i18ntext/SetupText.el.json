@@ -176,6 +176,7 @@
   "HaKeyRevokeConfirmYes": "Ναι, ανάκληση",
   "WebhooksHeading": "Webhooks",
   "WebhooksDesc": "Δημιουργήστε ένα προσωπικό κλειδί API μακράς διάρκειας, ώστε εξωτερικά προγράμματα να μπορούν να καταχωρίζουν τις δικές τους συνδρομές webhook και να λαμβάνουν συμβάντα του StudyLife ως υπογεγραμμένες κλήσεις HTTP. Δεν εναλλάσσεται ποτέ και δεν λήγει — ισχύει μέχρι να δημιουργήσετε εδώ νέο ή να το ανακαλέσετε. Χειριστείτε το σαν κωδικό πρόσβασης.",
+  "WebhooksKeyNamePlaceholder": "Όνομα (π.χ. Zapier)",
   "WebhooksKeyGenerateButton": "Δημιουργία κλειδιού API",
   "WebhooksKeyRegenerateButton": "Δημιουργία νέου κλειδιού",
   "WebhooksKeyRevokeButton": "Ανάκληση",

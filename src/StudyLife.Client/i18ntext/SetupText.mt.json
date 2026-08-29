@@ -176,6 +176,7 @@
   "HaKeyRevokeConfirmYes": "Iva, irrevoka",
   "WebhooksHeading": "Webhooks",
   "WebhooksDesc": "Iġġenera ċavetta API personali u li ddum fit-tul biex programmi esterni jkunu jistgħu jirreġistraw is-sottoskrizzjonijiet webhook tagħhom stess u jirċievu l-avvenimenti ta' StudyLife bħala sejħiet HTTP iffirmati. Qatt ma ddur u qatt ma tiskadi — tibqa' valida sakemm terġa' tiġġeneraha jew tirrevokaha hawn. Ittrattaha bħal password.",
+  "WebhooksKeyNamePlaceholder": "Isem (eż. Zapier)",
   "WebhooksKeyGenerateButton": "Iġġenera ċavetta API",
   "WebhooksKeyRegenerateButton": "Iġġenera ċavetta ġdida",
   "WebhooksKeyRevokeButton": "Irrevoka",

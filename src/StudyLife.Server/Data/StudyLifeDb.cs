@@ -35,6 +35,7 @@ public class StudyLifeDb : DbContext
     public DbSet<PushSubscriptionEntity> PushSubscriptions => Set<PushSubscriptionEntity>();
     public DbSet<SentReminderEntity> SentReminders => Set<SentReminderEntity>();
     public DbSet<AiKeyOutboxEntity> AiKeyOutbox => Set<AiKeyOutboxEntity>();
+    public DbSet<WebhookApiKeyEntity> WebhookApiKeys => Set<WebhookApiKeyEntity>();
     public DbSet<NoteEntity> Notes => Set<NoteEntity>();
     public DbSet<CourseGoalEntity> CourseGoals => Set<CourseGoalEntity>();
     public DbSet<TimerStateEntity> TimerState => Set<TimerStateEntity>();
@@ -136,9 +137,6 @@ public class StudyLifeDb : DbContext
         // Per-user API key for the studylife-tray desktop app: separate slot from the six above
         // (see AuthUserEntity.TrayApiKeyHash), same uniqueness reasoning.
         modelBuilder.Entity<AuthUserEntity>().HasIndex(u => u.TrayApiKeyHash).IsUnique();
-        // Per-user API key for managing studylife-webhooks registrations: separate slot from the
-        // seven above (see AuthUserEntity.WebhooksApiKeyHash), same uniqueness reasoning.
-        modelBuilder.Entity<AuthUserEntity>().HasIndex(u => u.WebhooksApiKeyHash).IsUnique();
         // AI key outbox (audit A7): drained table-wide by BackgroundTaskService across all
         // users in one query (see RunAiKeyOutboxAsync), not per-user - the index supports the
         // per-user CreatedAt ordering that drain does in memory.
@@ -183,6 +181,17 @@ public class StudyLifeDb : DbContext
         // SystemSecretsEntity likewise without a filter (and without AuthUserId) - it is not a
         // user-data table but instance-wide configuration (VAPID keys, setup code,
         // see SystemSecretsService), exactly one row for the entire installation.
+
+        // WebhookApiKeyEntity: unlike every other API-key slot (one key per user, a column on
+        // AuthUserEntity), Webhooks supports multiple NAMED keys per user - see
+        // SettingsController's webhooks-api-keys trio. Same "no query filter" reasoning as
+        // RecoveryCodeEntity/AuthInviteEntity above: StudyLifeAuthenticationHandler resolves a
+        // presented key by KeyHash table-wide, before any AuthUserId is known - a filter would
+        // make that lookup always return nothing. The list/create/delete actions filter
+        // explicitly by AuthUserId in the controller instead. AuthUserId index (not unique, no
+        // FK - same loose pattern as AiKeyOutboxEntity) supports that per-user listing.
+        modelBuilder.Entity<WebhookApiKeyEntity>().HasIndex(k => k.KeyHash).IsUnique();
+        modelBuilder.Entity<WebhookApiKeyEntity>().HasIndex(k => k.AuthUserId);
 
         // Postgres-specific: Npgsql maps DateTime by default to "timestamp with time
         // zone" (STRICTLY requires Kind=Utc) - but the UnspecifiedKindConverter above deliberately
@@ -358,18 +367,6 @@ public class AuthUserEntity
     public string? TrayApiKeyHash { get; set; }
     /// <summary>Timestamp of the (last) generation of <see cref="TrayApiKeyHash"/> - display-only, same as ApiKeyCreatedAt.</summary>
     public DateTime? TrayApiKeyCreatedAt { get; set; }
-    /// <summary>
-    /// SHA-256 hash of the per-user API key for managing studylife-webhooks registrations - same
-    /// shape and narrow-scope reasoning as FocusGuardApiKeyHash (see ApiKeyScopes.Webhooks: only
-    /// the Webhooks.* endpoints, plus Whoami), but manually generated/revoked from the Setup page
-    /// like <see cref="ApiKeyHash"/> (Home Assistant's slot) rather than provisioned via a
-    /// browser-consent flow - there is no single dedicated client app here, this key is meant to
-    /// be handed to whichever external program/add-on the user wants to let register its own
-    /// webhook subscriptions. Null = no key generated, or revoked.
-    /// </summary>
-    public string? WebhooksApiKeyHash { get; set; }
-    /// <summary>Timestamp of the (last) generation of <see cref="WebhooksApiKeyHash"/> - display-only, same as ApiKeyCreatedAt.</summary>
-    public DateTime? WebhooksApiKeyCreatedAt { get; set; }
     /// <summary>
     /// Permanent, per-user token for the subscribable ICS calendar feed
     /// (GET /api/sessions/ics?calendarToken=...). Unlike ApiKeyHash, stored in PLAINTEXT
@@ -739,6 +736,26 @@ public class AiKeyOutboxEntity
     public DateTime CreatedAt { get; set; }
     public int Attempts { get; set; }
     public DateTime? LastAttemptAt { get; set; }
+}
+
+/// <summary>
+/// One named, long-lived API key for managing studylife-webhooks registrations - unlike every
+/// other slot (a single column on AuthUserEntity), a user can hold many of these at once, one
+/// per external program/add-on they want to let register webhook subscriptions (see
+/// SettingsController's webhooks-api-keys trio and SetupWebhooksCard). All share the same scope
+/// (ApiKeyScopes.Webhooks) - Name is purely a display label the user picks for their own
+/// bookkeeping, not itself security-relevant.
+/// </summary>
+public class WebhookApiKeyEntity
+{
+    public int Id { get; set; }
+    /// <summary>No FK - same loose pattern as everywhere else in this file.</summary>
+    public int AuthUserId { get; set; }
+    public string Name { get; set; } = "";
+    /// <summary>SHA-256 hash, same as every other *ApiKeyHash - the plaintext is only ever
+    /// shown once, at creation.</summary>
+    public string KeyHash { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
 }
 
 public class NoteEntity

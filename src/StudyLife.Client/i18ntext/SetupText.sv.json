@@ -176,6 +176,7 @@
   "HaKeyRevokeConfirmYes": "Ja, återkalla",
   "WebhooksHeading": "Webhooks",
   "WebhooksDesc": "Generera en personlig, långlivad API-nyckel så att externa program kan registrera sina egna webhook-prenumerationer och ta emot StudyLife-händelser som signerade HTTP-anrop. Den roterar aldrig och går inte ut — den gäller tills du genererar en ny eller återkallar den här. Behandla den som ett lösenord.",
+  "WebhooksKeyNamePlaceholder": "Namn (t.ex. Zapier)",
   "WebhooksKeyGenerateButton": "Generera API-nyckel",
   "WebhooksKeyRegenerateButton": "Generera ny nyckel",
   "WebhooksKeyRevokeButton": "Återkalla",

@@ -176,6 +176,7 @@
   "HaKeyRevokeConfirmYes": "Kyllä, kumoa",
   "WebhooksHeading": "Webhooks",
   "WebhooksDesc": "Luo henkilökohtainen, pitkäikäinen API-avain, jotta ulkoiset ohjelmat voivat rekisteröidä omia webhook-tilauksiaan ja vastaanottaa StudyLifen tapahtumia allekirjoitettuina HTTP-kutsuina. Se ei koskaan vaihdu automaattisesti eikä vanhene — se on voimassa, kunnes luot täällä uuden tai kumoat sen. Käsittele sitä kuin salasanaa.",
+  "WebhooksKeyNamePlaceholder": "Nimi (esim. Zapier)",
   "WebhooksKeyGenerateButton": "Luo API-avain",
   "WebhooksKeyRegenerateButton": "Luo uusi avain",
   "WebhooksKeyRevokeButton": "Kumoa avain",

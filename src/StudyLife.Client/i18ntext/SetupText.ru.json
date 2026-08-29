@@ -176,6 +176,7 @@
   "HaKeyRevokeConfirmYes": "Да, отозвать",
   "WebhooksHeading": "Webhooks",
   "WebhooksDesc": "Сгенерируйте персональный долговременный API-ключ, чтобы внешние программы могли регистрировать собственные подписки на webhook и получать события StudyLife в виде подписанных HTTP-вызовов. Он никогда не меняется автоматически и не истекает — действует, пока вы не сгенерируете здесь новый или не отзовёте его. Обращайтесь с ним как с паролем.",
+  "WebhooksKeyNamePlaceholder": "Имя (напр. Zapier)",
   "WebhooksKeyGenerateButton": "Сгенерировать API-ключ",
   "WebhooksKeyRegenerateButton": "Сгенерировать новый ключ",
   "WebhooksKeyRevokeButton": "Отозвать",

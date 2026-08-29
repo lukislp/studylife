@@ -176,6 +176,7 @@
   "HaKeyRevokeConfirmYes": "Taip, panaikinti",
   "WebhooksHeading": "Webhooks",
   "WebhooksDesc": "Sugeneruokite asmeninį ilgalaikį API raktą, kad išorinės programos galėtų registruoti savo webhook prenumeratas ir gauti StudyLife įvykius kaip pasirašytus HTTP iškvietimus. Jis niekada nesikeičia automatiškai ir nenustoja galioti — galioja, kol čia sugeneruosite naują arba jį panaikinsite. Elkitės su juo kaip su slaptažodžiu.",
+  "WebhooksKeyNamePlaceholder": "Pavadinimas (pvz., Zapier)",
   "WebhooksKeyGenerateButton": "Sugeneruoti API raktą",
   "WebhooksKeyRegenerateButton": "Sugeneruoti naują raktą",
   "WebhooksKeyRevokeButton": "Panaikinti",

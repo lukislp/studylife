@@ -176,6 +176,7 @@
   "HaKeyRevokeConfirmYes": "Sì, revoca",
   "WebhooksHeading": "Webhooks",
   "WebhooksDesc": "Genera una chiave API personale e di lunga durata in modo che programmi esterni possano registrare le proprie sottoscrizioni webhook e ricevere gli eventi di StudyLife come chiamate HTTP firmate. Non ruota mai e non scade: resta valida finché non la rigeneri o la revochi qui. Trattala come una password.",
+  "WebhooksKeyNamePlaceholder": "Nome (es. Zapier)",
   "WebhooksKeyGenerateButton": "Genera chiave API",
   "WebhooksKeyRegenerateButton": "Genera nuova chiave",
   "WebhooksKeyRevokeButton": "Revoca",

@@ -21,9 +21,12 @@ public class StudyLifeAuthenticationSchemeOptions : AuthenticationSchemeOptions;
 /// 2. X-Session-Token header - if present, it EXCLUSIVELY applies (an invalid/expired token
 ///    fails authentication even if a valid API key is ALSO present), extending the session on
 ///    a sliding basis via AuthSessionService.ValidateAndRefreshAsync exactly as before.
-/// 3. X-Api-Key header ONLY, matched against the four independent hash slots on AuthUserEntity
-///    (ApiKeyHash/AiApiKeyHash/McpApiKeyHash/CaptureApiKeyHash). The former ?apiKey= query
-///    string fallback was removed (audit finding A12a): a credential in the URL ends up in
+/// 3. X-Api-Key header ONLY, matched against the seven independent hash column slots on
+///    AuthUserEntity (ApiKeyHash/AiApiKeyHash/McpApiKeyHash/CaptureApiKeyHash/
+///    FocusGuardApiKeyHash/FocusTunesApiKeyHash/TrayApiKeyHash), falling back to the
+///    WebhookApiKeyEntity table (Webhooks is the one slot that supports multiple named keys
+///    per user instead of a single column - see that entity's own doc comment). The former
+///    ?apiKey= query string fallback was removed (audit finding A12a): a credential in the URL ends up in
 ///    server access logs, browser history, and Referer headers of any outbound request the
 ///    page makes, none of which apply to a header. No known consumer ever used the query
 ///    form (see the removal commit for the cross-repo grep); the ICS feed's ?calendarToken=
@@ -123,11 +126,11 @@ public class StudyLifeAuthenticationHandler : AuthenticationHandler<StudyLifeAut
             return AuthenticateResult.Success(BuildTicket(session.AuthUserId, AuthTypeSession));
         }
 
-        // Without a session token: per-user API key, matched against all eight independent
+        // Without a session token: per-user API key, matched against seven independent column
         // slots in one step (see AuthUserEntity.ApiKeyHash/AiApiKeyHash/McpApiKeyHash/
-        // CaptureApiKeyHash/FocusGuardApiKeyHash/FocusTunesApiKeyHash/TrayApiKeyHash/
-        // WebhooksApiKeyHash) - any one of them authenticates AND identifies the user. Header
-        // only (audit finding A12a) - a ?apiKey= query string is deliberately NOT accepted.
+        // CaptureApiKeyHash/FocusGuardApiKeyHash/FocusTunesApiKeyHash/TrayApiKeyHash) - any one
+        // of them authenticates AND identifies the user. Header only (audit finding A12a) - a
+        // ?apiKey= query string is deliberately NOT accepted.
         var providedKey = request.Headers["X-Api-Key"].FirstOrDefault();
         if (!string.IsNullOrEmpty(providedKey))
         {
@@ -136,24 +139,40 @@ public class StudyLifeAuthenticationHandler : AuthenticationHandler<StudyLifeAut
                 .FirstOrDefaultAsync(u => u.ApiKeyHash == keyHash || u.AiApiKeyHash == keyHash
                     || u.McpApiKeyHash == keyHash || u.CaptureApiKeyHash == keyHash
                     || u.FocusGuardApiKeyHash == keyHash || u.FocusTunesApiKeyHash == keyHash
-                    || u.TrayApiKeyHash == keyHash || u.WebhooksApiKeyHash == keyHash);
-            if (keyOwner is null)
-                return AuthenticateResult.Fail("Invalid API key.");
+                    || u.TrayApiKeyHash == keyHash);
+            if (keyOwner is not null)
+            {
+                var slot = keyOwner.ApiKeyHash == keyHash ? "ha"
+                    : keyOwner.AiApiKeyHash == keyHash ? "ai"
+                    : keyOwner.McpApiKeyHash == keyHash ? "mcp"
+                    : keyOwner.CaptureApiKeyHash == keyHash ? "capture"
+                    : keyOwner.FocusGuardApiKeyHash == keyHash ? "focusguard"
+                    : keyOwner.FocusTunesApiKeyHash == keyHash ? "focustunes"
+                    : "tray";
 
-            var slot = keyOwner.ApiKeyHash == keyHash ? "ha"
-                : keyOwner.AiApiKeyHash == keyHash ? "ai"
-                : keyOwner.McpApiKeyHash == keyHash ? "mcp"
-                : keyOwner.CaptureApiKeyHash == keyHash ? "capture"
-                : keyOwner.FocusGuardApiKeyHash == keyHash ? "focusguard"
-                : keyOwner.FocusTunesApiKeyHash == keyHash ? "focustunes"
-                : keyOwner.TrayApiKeyHash == keyHash ? "tray"
-                : "webhooks";
+                Context.Items[CurrentUserAccessor.HttpContextItemKey] = keyOwner.Id;
+                // Which slot matched (identity contract v1 §1) - only consumed by whoami today,
+                // but cheap to set unconditionally here instead of re-deriving it per caller.
+                Context.Items[AuthSessionService.ApiKeySlotItemKey] = slot;
+                return AuthenticateResult.Success(BuildTicket(keyOwner.Id, AuthTypeApiKey, slot));
+            }
 
-            Context.Items[CurrentUserAccessor.HttpContextItemKey] = keyOwner.Id;
-            // Which slot matched (identity contract v1 §1) - only consumed by whoami today,
-            // but cheap to set unconditionally here instead of re-deriving it per caller.
-            Context.Items[AuthSessionService.ApiKeySlotItemKey] = slot;
-            return AuthenticateResult.Success(BuildTicket(keyOwner.Id, AuthTypeApiKey, slot));
+            // Unlike the seven slots above (one key per user, a column on AuthUserEntity),
+            // Webhooks supports multiple NAMED keys per user (WebhookApiKeyEntity, see
+            // SettingsController's webhooks-api-keys trio) - looked up by hash in its own table
+            // instead of an equality check against a fixed column. No query filter on that
+            // table (see StudyLifeDb's own comment on it) - this lookup is exactly the
+            // before-any-user-is-known case that exempts it.
+            var webhookKey = await _db.WebhookApiKeys.AsNoTracking()
+                .FirstOrDefaultAsync(k => k.KeyHash == keyHash);
+            if (webhookKey is not null)
+            {
+                Context.Items[CurrentUserAccessor.HttpContextItemKey] = webhookKey.AuthUserId;
+                Context.Items[AuthSessionService.ApiKeySlotItemKey] = "webhooks";
+                return AuthenticateResult.Success(BuildTicket(webhookKey.AuthUserId, AuthTypeApiKey, "webhooks"));
+            }
+
+            return AuthenticateResult.Fail("Invalid API key.");
         }
 
         // No credential attempted at all - NoResult (not Fail): endpoints that require ApiAccess

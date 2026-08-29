@@ -176,6 +176,7 @@
   "HaKeyRevokeConfirmYes": "Jā, atsaukt",
   "WebhooksHeading": "Webhooks",
   "WebhooksDesc": "Ģenerējiet personisku, ilglaicīgu API atslēgu, lai ārējas programmas varētu reģistrēt savus webhook abonementus un saņemt StudyLife notikumus kā parakstītus HTTP izsaukumus. Tā nekad nemainās automātiski, un tai nav derīguma termiņa — tā ir spēkā, līdz šeit ģenerēsiet jaunu vai to atsauksiet. Izturieties pret to kā pret paroli.",
+  "WebhooksKeyNamePlaceholder": "Nosaukums (piem., Zapier)",
   "WebhooksKeyGenerateButton": "Ģenerēt API atslēgu",
   "WebhooksKeyRegenerateButton": "Ģenerēt jaunu atslēgu",
   "WebhooksKeyRevokeButton": "Atsaukt",

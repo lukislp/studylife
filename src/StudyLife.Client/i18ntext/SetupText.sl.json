@@ -176,6 +176,7 @@
   "HaKeyRevokeConfirmYes": "Da, razveljavi",
   "WebhooksHeading": "Webhooks",
   "WebhooksDesc": "Ustvarite oseben, dolgoživ ključ API, da lahko zunanji programi registrirajo lastne naročnine na webhook in prejemajo dogodke StudyLife kot podpisane klice HTTP. Nikoli se ne zamenja samodejno in ne poteče — velja, dokler ga tukaj znova ne ustvarite ali razveljavite. Ravnajte z njim kot z geslom.",
+  "WebhooksKeyNamePlaceholder": "Ime (npr. Zapier)",
   "WebhooksKeyGenerateButton": "Ustvari ključ API",
   "WebhooksKeyRegenerateButton": "Ustvari nov ključ",
   "WebhooksKeyRevokeButton": "Razveljavi",

@@ -179,12 +179,6 @@ namespace StudyLife.Server.Migrations
                     b.Property<string>("TrayApiKeyHash")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("WebhooksApiKeyCreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("WebhooksApiKeyHash")
-                        .HasColumnType("TEXT");
-
                     b.HasKey("Id");
 
                     b.HasIndex("AiApiKeyHash")
@@ -209,9 +203,6 @@ namespace StudyLife.Server.Migrations
                         .IsUnique();
 
                     b.HasIndex("TrayApiKeyHash")
-                        .IsUnique();
-
-                    b.HasIndex("WebhooksApiKeyHash")
                         .IsUnique();
 
                     b.ToTable("AuthUsers");
@@ -876,6 +867,36 @@ namespace StudyLife.Server.Migrations
                         .IsUnique();
 
                     b.ToTable("Settings");
+                });
+
+            modelBuilder.Entity("StudyLife.Server.Data.WebhookApiKeyEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("AuthUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("KeyHash")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthUserId");
+
+                    b.HasIndex("KeyHash")
+                        .IsUnique();
+
+                    b.ToTable("WebhookApiKeys");
                 });
 #pragma warning restore 612, 618
         }
