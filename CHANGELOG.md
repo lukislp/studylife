@@ -1,3 +1,10 @@
+# [2.12.0](https://github.com/lukislp/studylife/compare/v2.11.0...v2.12.0) (2026-08-29)
+
+
+### Features
+
+* add a generic OAuth-style client registry for third-party add-ons ([6107ebb](https://github.com/lukislp/studylife/commit/6107ebb2c9596ae8d24dd7af7a202b07f7fc8ed2))
+
 # [2.11.0](https://github.com/lukislp/studylife/compare/v2.10.0...v2.11.0) (2026-08-29)
 
 
