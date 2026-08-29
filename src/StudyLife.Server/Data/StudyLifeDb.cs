@@ -130,11 +130,8 @@ public class StudyLifeDb : DbContext
         // Per-user API key for the studylife-focusguard browser extension: separate slot from the
         // four above (see AuthUserEntity.FocusGuardApiKeyHash), same uniqueness reasoning.
         modelBuilder.Entity<AuthUserEntity>().HasIndex(u => u.FocusGuardApiKeyHash).IsUnique();
-        // Per-user API key for the studylife-timetrack browser extension: separate slot from the
-        // five above (see AuthUserEntity.TimeTrackApiKeyHash), same uniqueness reasoning.
-        modelBuilder.Entity<AuthUserEntity>().HasIndex(u => u.TimeTrackApiKeyHash).IsUnique();
         // Per-user API key for the studylife-focustunes browser extension: separate slot from the
-        // six above (see AuthUserEntity.FocusTunesApiKeyHash), same uniqueness reasoning.
+        // five above (see AuthUserEntity.FocusTunesApiKeyHash), same uniqueness reasoning.
         modelBuilder.Entity<AuthUserEntity>().HasIndex(u => u.FocusTunesApiKeyHash).IsUnique();
         // AI key outbox (audit A7): drained table-wide by BackgroundTaskService across all
         // users in one query (see RunAiKeyOutboxAsync), not per-user - the index supports the
@@ -332,17 +329,6 @@ public class AuthUserEntity
     public string? FocusGuardApiKeyHash { get; set; }
     /// <summary>Timestamp of the (last) generation of <see cref="FocusGuardApiKeyHash"/> - display-only, same as ApiKeyCreatedAt.</summary>
     public DateTime? FocusGuardApiKeyCreatedAt { get; set; }
-    /// <summary>
-    /// SHA-256 hash of the per-user API key for the studylife-timetrack browser extension - same
-    /// shape and reasoning as <see cref="CaptureApiKeyHash"/>, a SEPARATE credential/slot from
-    /// the other five. Scope (see ApiKeyScopes.TimeTrack) is Whoami + Notes.Create only: the
-    /// extension delivers its daily per-domain time report as a plain note (reusing the existing
-    /// endpoint rather than a bespoke one), it never reads any existing data. Null = no key
-    /// generated, or revoked.
-    /// </summary>
-    public string? TimeTrackApiKeyHash { get; set; }
-    /// <summary>Timestamp of the (last) generation of <see cref="TimeTrackApiKeyHash"/> - display-only, same as ApiKeyCreatedAt.</summary>
-    public DateTime? TimeTrackApiKeyCreatedAt { get; set; }
     /// <summary>
     /// SHA-256 hash of the per-user API key for the studylife-focustunes browser extension - same
     /// shape and reasoning as <see cref="FocusGuardApiKeyHash"/>, a SEPARATE credential/slot from

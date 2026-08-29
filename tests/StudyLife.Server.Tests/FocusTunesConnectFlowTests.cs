@@ -6,8 +6,8 @@ using StudyLife.Shared;
 namespace StudyLife.Server.Tests;
 
 /// <summary>
-/// FocusTunes browser-consent connect flow (identity contract v1 §2, generalized to a fifth
-/// audience alongside mcp/capture/focusguard/timetrack - see
+/// FocusTunes browser-consent connect flow (identity contract v1 §2, generalized to a fourth
+/// audience alongside mcp/capture/focusguard - see
 /// AuthController.BuildConnectRedirectAsync/RedeemConsentAssertionAsync): POST
 /// api/auth/focustunes-connect (session-required, rotates the caller's FOCUSTUNES key and stakes
 /// out a single-use, focustunes-audience assertion) followed by POST
