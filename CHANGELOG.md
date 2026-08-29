@@ -1,3 +1,10 @@
+# [2.14.0](https://github.com/lukislp/studylife/compare/v2.13.0...v2.14.0) (2026-08-29)
+
+
+### Features
+
+* wire studylife-developers into prod (config, network policy, shared secret) ([103ad8a](https://github.com/lukislp/studylife/commit/103ad8aa4d734a4c8ada7a348fd4d90ebd711dca))
+
 # [2.13.0](https://github.com/lukislp/studylife/compare/v2.12.0...v2.13.0) (2026-08-29)
 
 
