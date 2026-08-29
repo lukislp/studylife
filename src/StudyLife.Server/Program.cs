@@ -554,13 +554,19 @@ app.UseWhen(
 // media-src fallback blocks playback entirely (found live via a real browser, not just a code
 // read-through - Chrome's console error names the exact fallback rule being hit).
 // Dev exception: ws:/wss: in connect-src, so dotnet watch's browser-refresh WebSocket isn't blocked.
+// api.github.com + raw.githubusercontent.com: MarketplaceClient fetches the public
+// studylife-marketplace catalog directly from the browser (no server involvement, see
+// StudyLifeMarketplacePlan) - api.github.com lists listings/, raw.githubusercontent.com serves
+// each listing's actual JSON content (GitHub's own contents-API "download_url" always points
+// there, confirmed live). Found via a real browser test, not just a code read-through - Chrome's
+// console names the exact blocked host.
 var csp = "default-src 'self'; "
     + "script-src 'self' 'wasm-unsafe-eval'; "
     + "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
     + "font-src 'self' https://fonts.gstatic.com; "
     + "img-src 'self' data:; "
     + "media-src 'self' data:; "
-    + "connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com"
+    + "connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://api.github.com https://raw.githubusercontent.com"
     + (app.Environment.IsDevelopment() ? " ws: wss:; " : "; ")
     + "base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'";
 app.Use(async (context, next) =>
