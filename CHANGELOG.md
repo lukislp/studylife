@@ -1,3 +1,10 @@
+## [2.8.1](https://github.com/lukislp/studylife/compare/v2.8.0...v2.8.1) (2026-08-29)
+
+
+### Bug Fixes
+
+* disable Redis AUTH (requirepass/masterauth) in prod ([ef804ad](https://github.com/lukislp/studylife/commit/ef804adfa8c50e5a6250f338a844d0b95bce9916))
+
 # [2.8.0](https://github.com/lukislp/studylife/compare/v2.7.0...v2.8.0) (2026-08-29)
 
 
