@@ -260,5 +260,17 @@
   "InvitesExpiresFormat": "Vyprší: {0}",
   "InvitesUsedLabel": "Použito",
   "InvitesExpiredLabel": "Vypršelo",
-  "InvitesRevoke": "Zrušit"
+  "InvitesRevoke": "Zrušit",
+  "MarketplaceHeading": "Obchod s doplňky",
+  "MarketplaceDesc": "Prohlédněte si doplňky od ostatních vývojářů a nainstalujte je jedním kliknutím. Doplňky vždy dostanou pouze oprávnění, o která výslovně požádají.",
+  "MarketplaceBrowseButton": "Procházet doplňky",
+  "MarketplaceLoading": "Načítání doplňků…",
+  "MarketplaceEmpty": "Zatím nejsou zveřejněny žádné doplňky.",
+  "MarketplaceFetchFailed": "Katalog obchodu se nepodařilo načíst. Zkuste to prosím později.",
+  "MarketplaceInstallButton": "Instalovat",
+  "MarketplaceInstallFailed": "Instalace tohoto doplňku selhala. Zkuste to prosím znovu.",
+  "MarketplaceScopesLabel": "Vyžaduje přístup k:",
+  "MarketplaceByDeveloper": "od {0}",
+  "MarketplaceViewSource": "Zobrazit zdrojový kód",
+  "MarketplaceDemoNotice": "Instalace doplňků je na této demo instanci zakázána."
 }

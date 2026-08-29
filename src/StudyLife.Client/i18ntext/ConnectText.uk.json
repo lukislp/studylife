@@ -16,5 +16,8 @@
   "ConnectCancelButton": "Скасувати",
   "ConnectWorking": "Підключення…",
   "ConnectFailed": "Не вдалося підключитися. Спробуйте ще раз.",
-  "ConnectInvalidRequest": "Цей запит на підключення недійсний або застарів."
+  "ConnectInvalidRequest": "Цей запит на підключення недійсний або застарів.",
+  "ConnectClientPageTitle": "StudyLife — Підключення",
+  "ConnectClientHeading": "Підключити доповнення",
+  "ConnectClientNotRegistered": "Це доповнення ще не зареєстровано у вашому екземплярі StudyLife."
 }

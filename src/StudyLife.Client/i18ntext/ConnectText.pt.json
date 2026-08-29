@@ -16,5 +16,8 @@
   "ConnectCancelButton": "Cancelar",
   "ConnectWorking": "A ligar…",
   "ConnectFailed": "A ligação não funcionou. Tente novamente.",
-  "ConnectInvalidRequest": "Este pedido de ligação é inválido ou expirou."
+  "ConnectInvalidRequest": "Este pedido de ligação é inválido ou expirou.",
+  "ConnectClientPageTitle": "StudyLife — Ligar",
+  "ConnectClientHeading": "Ligar extra",
+  "ConnectClientNotRegistered": "Este extra ainda não está registado na sua instância StudyLife."
 }

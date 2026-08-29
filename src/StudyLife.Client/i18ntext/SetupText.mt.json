@@ -260,5 +260,17 @@
   "InvitesExpiresFormat": "Tiskadi: {0}",
   "InvitesUsedLabel": "Użata",
   "InvitesExpiredLabel": "Skadiet",
-  "InvitesRevoke": "Irrevoka"
+  "InvitesRevoke": "Irrevoka",
+  "MarketplaceHeading": "Suq",
+  "MarketplaceDesc": "Ċċekkja add-ons minn żviluppaturi oħra u installahom b'click wieħed. L-add-ons jirċievu biss il-permessi li jitolbu b'mod espliċitu.",
+  "MarketplaceBrowseButton": "Ċċekkja l-add-ons",
+  "MarketplaceLoading": "Qed jitgħabbew l-add-ons…",
+  "MarketplaceEmpty": "Għadu ma ġie ppubblikat l-ebda add-on.",
+  "MarketplaceFetchFailed": "Ma setax jitgħabba l-katalogu tas-suq. Jekk jogħġbok erġa' pprova aktar tard.",
+  "MarketplaceInstallButton": "Installa",
+  "MarketplaceInstallFailed": "L-installazzjoni ta' dan l-add-on falliet. Jekk jogħġbok erġa' pprova.",
+  "MarketplaceScopesLabel": "Qed jitlob aċċess għal:",
+  "MarketplaceByDeveloper": "minn {0}",
+  "MarketplaceViewSource": "Ara l-kodiċi sors",
+  "MarketplaceDemoNotice": "L-installazzjoni tal-add-ons hija diżattivata fuq din l-istanza tad-demo."
 }

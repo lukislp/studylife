@@ -16,5 +16,8 @@
   "ConnectCancelButton": "Cancel",
   "ConnectWorking": "Connecting…",
   "ConnectFailed": "Connecting didn't work. Please try again.",
-  "ConnectInvalidRequest": "This connection request is invalid or has expired."
+  "ConnectInvalidRequest": "This connection request is invalid or has expired.",
+  "ConnectClientPageTitle": "StudyLife — Connect",
+  "ConnectClientHeading": "Connect add-on",
+  "ConnectClientNotRegistered": "This add-on isn't registered on your StudyLife instance yet."
 }

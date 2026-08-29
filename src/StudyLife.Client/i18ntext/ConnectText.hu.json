@@ -16,5 +16,8 @@
   "ConnectCancelButton": "Mégse",
   "ConnectWorking": "Csatlakozás…",
   "ConnectFailed": "A csatlakozás nem sikerült. Próbáld újra.",
-  "ConnectInvalidRequest": "Ez a csatlakozási kérés érvénytelen vagy lejárt."
+  "ConnectInvalidRequest": "Ez a csatlakozási kérés érvénytelen vagy lejárt.",
+  "ConnectClientPageTitle": "StudyLife — Kapcsolódás",
+  "ConnectClientHeading": "Bővítmény összekapcsolása",
+  "ConnectClientNotRegistered": "Ez a bővítmény még nincs regisztrálva a StudyLife-fiókodban."
 }

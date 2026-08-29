@@ -260,5 +260,17 @@
   "InvitesExpiresFormat": "Udløber: {0}",
   "InvitesUsedLabel": "Brugt",
   "InvitesExpiredLabel": "Udløbet",
-  "InvitesRevoke": "Tilbagekald"
+  "InvitesRevoke": "Tilbagekald",
+  "MarketplaceHeading": "Markedsplads",
+  "MarketplaceDesc": "Gennemse tilføjelser fra andre udviklere, og installer dem med ét klik. Tilføjelser får kun de tilladelser, de udtrykkeligt anmoder om.",
+  "MarketplaceBrowseButton": "Gennemse tilføjelser",
+  "MarketplaceLoading": "Indlæser tilføjelser…",
+  "MarketplaceEmpty": "Ingen tilføjelser er udgivet endnu.",
+  "MarketplaceFetchFailed": "Kunne ikke indlæse markedspladsens katalog. Prøv igen senere.",
+  "MarketplaceInstallButton": "Installer",
+  "MarketplaceInstallFailed": "Installation af denne tilføjelse mislykkedes. Prøv igen.",
+  "MarketplaceScopesLabel": "Anmoder om adgang til:",
+  "MarketplaceByDeveloper": "af {0}",
+  "MarketplaceViewSource": "Se kildekode",
+  "MarketplaceDemoNotice": "Installation af tilføjelser er deaktiveret på denne demoinstans."
 }

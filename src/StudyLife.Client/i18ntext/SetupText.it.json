@@ -260,5 +260,17 @@
   "InvitesExpiresFormat": "Scade: {0}",
   "InvitesUsedLabel": "Utilizzato",
   "InvitesExpiredLabel": "Scaduto",
-  "InvitesRevoke": "Revoca"
+  "InvitesRevoke": "Revoca",
+  "MarketplaceHeading": "Marketplace",
+  "MarketplaceDesc": "Sfoglia i componenti aggiuntivi di altri sviluppatori e installali con un clic. I componenti aggiuntivi ricevono solo le autorizzazioni che richiedono esplicitamente.",
+  "MarketplaceBrowseButton": "Sfoglia componenti aggiuntivi",
+  "MarketplaceLoading": "Caricamento componenti aggiuntivi…",
+  "MarketplaceEmpty": "Nessun componente aggiuntivo pubblicato ancora.",
+  "MarketplaceFetchFailed": "Impossibile caricare il catalogo del marketplace. Riprova più tardi.",
+  "MarketplaceInstallButton": "Installa",
+  "MarketplaceInstallFailed": "L'installazione di questo componente aggiuntivo non è riuscita. Riprova.",
+  "MarketplaceScopesLabel": "Richiede l'accesso a:",
+  "MarketplaceByDeveloper": "di {0}",
+  "MarketplaceViewSource": "Visualizza codice sorgente",
+  "MarketplaceDemoNotice": "L'installazione di componenti aggiuntivi è disabilitata su questa istanza demo."
 }

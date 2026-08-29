@@ -260,5 +260,17 @@
   "InvitesExpiresFormat": "Λήγει: {0}",
   "InvitesUsedLabel": "Χρησιμοποιήθηκε",
   "InvitesExpiredLabel": "Έληξε",
-  "InvitesRevoke": "Ανάκληση"
+  "InvitesRevoke": "Ανάκληση",
+  "MarketplaceHeading": "Marketplace",
+  "MarketplaceDesc": "Περιηγηθείτε σε πρόσθετα άλλων προγραμματιστών και εγκαταστήστε τα με ένα κλικ. Τα πρόσθετα λαμβάνουν μόνο τα δικαιώματα που ζητούν ρητά.",
+  "MarketplaceBrowseButton": "Περιήγηση προσθέτων",
+  "MarketplaceLoading": "Φόρτωση προσθέτων…",
+  "MarketplaceEmpty": "Δεν έχουν δημοσιευτεί ακόμη πρόσθετα.",
+  "MarketplaceFetchFailed": "Δεν ήταν δυνατή η φόρτωση του καταλόγου του marketplace. Δοκιμάστε ξανά αργότερα.",
+  "MarketplaceInstallButton": "Εγκατάσταση",
+  "MarketplaceInstallFailed": "Η εγκατάσταση αυτού του προσθέτου απέτυχε. Δοκιμάστε ξανά.",
+  "MarketplaceScopesLabel": "Ζητά πρόσβαση σε:",
+  "MarketplaceByDeveloper": "από {0}",
+  "MarketplaceViewSource": "Προβολή πηγαίου κώδικα",
+  "MarketplaceDemoNotice": "Η εγκατάσταση προσθέτων είναι απενεργοποιημένη σε αυτήν την επίδειξη."
 }

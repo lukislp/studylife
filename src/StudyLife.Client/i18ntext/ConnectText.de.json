@@ -16,5 +16,8 @@
   "ConnectCancelButton": "Abbrechen",
   "ConnectWorking": "Verbindung wird hergestellt…",
   "ConnectFailed": "Die Verbindung hat nicht funktioniert. Bitte versuche es erneut.",
-  "ConnectInvalidRequest": "Diese Verbindungsanfrage ist ungültig oder abgelaufen."
+  "ConnectInvalidRequest": "Diese Verbindungsanfrage ist ungültig oder abgelaufen.",
+  "ConnectClientPageTitle": "StudyLife — Verbinden",
+  "ConnectClientHeading": "Add-on verbinden",
+  "ConnectClientNotRegistered": "Dieses Add-on ist auf deiner StudyLife-Instanz noch nicht registriert."
 }

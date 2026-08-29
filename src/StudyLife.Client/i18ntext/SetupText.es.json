@@ -260,5 +260,17 @@
   "InvitesExpiresFormat": "Caduca: {0}",
   "InvitesUsedLabel": "Usada",
   "InvitesExpiredLabel": "Caducada",
-  "InvitesRevoke": "Revocar"
+  "InvitesRevoke": "Revocar",
+  "MarketplaceHeading": "Marketplace",
+  "MarketplaceDesc": "Explora complementos de otros desarrolladores e instálalos con un clic. Los complementos solo obtienen los permisos que solicitan explícitamente.",
+  "MarketplaceBrowseButton": "Explorar complementos",
+  "MarketplaceLoading": "Cargando complementos…",
+  "MarketplaceEmpty": "Aún no hay complementos publicados.",
+  "MarketplaceFetchFailed": "No se pudo cargar el catálogo del marketplace. Inténtalo de nuevo más tarde.",
+  "MarketplaceInstallButton": "Instalar",
+  "MarketplaceInstallFailed": "No se pudo instalar este complemento. Inténtalo de nuevo.",
+  "MarketplaceScopesLabel": "Solicita acceso a:",
+  "MarketplaceByDeveloper": "por {0}",
+  "MarketplaceViewSource": "Ver código fuente",
+  "MarketplaceDemoNotice": "La instalación de complementos está deshabilitada en esta instancia de demostración."
 }

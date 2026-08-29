@@ -16,5 +16,8 @@
   "ConnectCancelButton": "Annuleren",
   "ConnectWorking": "Verbinden…",
   "ConnectFailed": "Verbinden is niet gelukt. Probeer het opnieuw.",
-  "ConnectInvalidRequest": "Dit verbindingsverzoek is ongeldig of verlopen."
+  "ConnectInvalidRequest": "Dit verbindingsverzoek is ongeldig of verlopen.",
+  "ConnectClientPageTitle": "StudyLife — Verbinden",
+  "ConnectClientHeading": "Add-on verbinden",
+  "ConnectClientNotRegistered": "Deze add-on is nog niet geregistreerd op jouw StudyLife-instantie."
 }

@@ -16,5 +16,8 @@
   "ConnectCancelButton": "Anulează",
   "ConnectWorking": "Se conectează…",
   "ConnectFailed": "Conectarea nu a reușit. Te rugăm să încerci din nou.",
-  "ConnectInvalidRequest": "Această cerere de conectare este invalidă sau a expirat."
+  "ConnectInvalidRequest": "Această cerere de conectare este invalidă sau a expirat.",
+  "ConnectClientPageTitle": "StudyLife — Conectare",
+  "ConnectClientHeading": "Conectează suplimentul",
+  "ConnectClientNotRegistered": "Acest supliment nu este încă înregistrat pe instanța dvs. StudyLife."
 }

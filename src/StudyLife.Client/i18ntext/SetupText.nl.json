@@ -260,5 +260,17 @@
   "InvitesExpiresFormat": "Verloopt: {0}",
   "InvitesUsedLabel": "Gebruikt",
   "InvitesExpiredLabel": "Verlopen",
-  "InvitesRevoke": "Intrekken"
+  "InvitesRevoke": "Intrekken",
+  "MarketplaceHeading": "Marketplace",
+  "MarketplaceDesc": "Blader door add-ons van andere ontwikkelaars en installeer ze met één klik. Add-ons krijgen alleen de rechten die ze uitdrukkelijk aanvragen.",
+  "MarketplaceBrowseButton": "Add-ons doorbladeren",
+  "MarketplaceLoading": "Add-ons laden…",
+  "MarketplaceEmpty": "Er zijn nog geen add-ons gepubliceerd.",
+  "MarketplaceFetchFailed": "De marketplace-catalogus kon niet worden geladen. Probeer het later opnieuw.",
+  "MarketplaceInstallButton": "Installeren",
+  "MarketplaceInstallFailed": "Deze add-on installeren is mislukt. Probeer het opnieuw.",
+  "MarketplaceScopesLabel": "Vraagt toegang tot:",
+  "MarketplaceByDeveloper": "door {0}",
+  "MarketplaceViewSource": "Broncode bekijken",
+  "MarketplaceDemoNotice": "Het installeren van add-ons is uitgeschakeld op deze demo-instantie."
 }

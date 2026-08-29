@@ -16,5 +16,8 @@
   "ConnectCancelButton": "Peruuta",
   "ConnectWorking": "Yhdistetään…",
   "ConnectFailed": "Yhdistäminen epäonnistui. Yritä uudelleen.",
-  "ConnectInvalidRequest": "Tämä yhdistämispyyntö on virheellinen tai vanhentunut."
+  "ConnectInvalidRequest": "Tämä yhdistämispyyntö on virheellinen tai vanhentunut.",
+  "ConnectClientPageTitle": "StudyLife — Yhdistä",
+  "ConnectClientHeading": "Yhdistä lisäosa",
+  "ConnectClientNotRegistered": "Tätä lisäosaa ei ole vielä rekisteröity StudyLife-instanssiisi."
 }

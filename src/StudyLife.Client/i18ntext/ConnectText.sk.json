@@ -16,5 +16,8 @@
   "ConnectCancelButton": "Zrušiť",
   "ConnectWorking": "Pripája sa…",
   "ConnectFailed": "Pripojenie sa nepodarilo. Skúste to znova.",
-  "ConnectInvalidRequest": "Táto žiadosť o pripojenie je neplatná alebo vypršala."
+  "ConnectInvalidRequest": "Táto žiadosť o pripojenie je neplatná alebo vypršala.",
+  "ConnectClientPageTitle": "StudyLife — Pripojenie",
+  "ConnectClientHeading": "Pripojiť doplnok",
+  "ConnectClientNotRegistered": "Tento doplnok ešte nie je zaregistrovaný vo vašej inštancii StudyLife."
 }

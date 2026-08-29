@@ -260,5 +260,17 @@
   "InvitesExpiresFormat": "Beidzas: {0}",
   "InvitesUsedLabel": "Izmantots",
   "InvitesExpiredLabel": "Beidzies",
-  "InvitesRevoke": "Atsaukt"
+  "InvitesRevoke": "Atsaukt",
+  "MarketplaceHeading": "Veikals",
+  "MarketplaceDesc": "Pārlūkojiet citu izstrādātāju papildinājumus un instalējiet tos ar vienu klikšķi. Papildinājumi saņem tikai tās atļaujas, ko tie skaidri pieprasa.",
+  "MarketplaceBrowseButton": "Pārlūkot papildinājumus",
+  "MarketplaceLoading": "Notiek papildinājumu ielāde…",
+  "MarketplaceEmpty": "Vēl nav publicēts neviens papildinājums.",
+  "MarketplaceFetchFailed": "Neizdevās ielādēt veikala katalogu. Lūdzu, mēģiniet vēlreiz vēlāk.",
+  "MarketplaceInstallButton": "Instalēt",
+  "MarketplaceInstallFailed": "Neizdevās instalēt šo papildinājumu. Lūdzu, mēģiniet vēlreiz.",
+  "MarketplaceScopesLabel": "Pieprasa piekļuvi:",
+  "MarketplaceByDeveloper": "izstrādātājs {0}",
+  "MarketplaceViewSource": "Skatīt pirmkodu",
+  "MarketplaceDemoNotice": "Papildinājumu instalēšana šajā demonstrācijas versijā ir atspējota."
 }

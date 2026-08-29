@@ -260,5 +260,17 @@
   "InvitesExpiresFormat": "Aegub: {0}",
   "InvitesUsedLabel": "Kasutatud",
   "InvitesExpiredLabel": "Aegunud",
-  "InvitesRevoke": "Tühista"
+  "InvitesRevoke": "Tühista",
+  "MarketplaceHeading": "Turuplats",
+  "MarketplaceDesc": "Sirvi teiste arendajate lisandmooduleid ja paigalda need ühe klõpsuga. Lisandmoodulid saavad ainult need õigused, mida nad selgesõnaliselt taotlevad.",
+  "MarketplaceBrowseButton": "Sirvi lisandmooduleid",
+  "MarketplaceLoading": "Lisandmoodulite laadimine…",
+  "MarketplaceEmpty": "Ühtegi lisandmoodulit pole veel avaldatud.",
+  "MarketplaceFetchFailed": "Turuplatsi kataloogi ei õnnestunud laadida. Palun proovi hiljem uuesti.",
+  "MarketplaceInstallButton": "Paigalda",
+  "MarketplaceInstallFailed": "Selle lisandmooduli paigaldamine ebaõnnestus. Palun proovi uuesti.",
+  "MarketplaceScopesLabel": "Taotleb juurdepääsu:",
+  "MarketplaceByDeveloper": "arendaja {0}",
+  "MarketplaceViewSource": "Vaata lähtekoodi",
+  "MarketplaceDemoNotice": "Lisandmoodulite paigaldamine on selles demoversioonis keelatud."
 }

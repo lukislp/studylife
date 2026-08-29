@@ -260,5 +260,17 @@
   "InvitesExpiresFormat": "Expire le {0}",
   "InvitesUsedLabel": "Utilisée",
   "InvitesExpiredLabel": "Expirée",
-  "InvitesRevoke": "Révoquer"
+  "InvitesRevoke": "Révoquer",
+  "MarketplaceHeading": "Marketplace",
+  "MarketplaceDesc": "Parcourez les extensions proposées par d'autres développeurs et installez-les en un clic. Les extensions n'obtiennent que les autorisations qu'elles demandent explicitement.",
+  "MarketplaceBrowseButton": "Parcourir les extensions",
+  "MarketplaceLoading": "Chargement des extensions…",
+  "MarketplaceEmpty": "Aucune extension publiée pour le moment.",
+  "MarketplaceFetchFailed": "Impossible de charger le catalogue du marketplace. Veuillez réessayer plus tard.",
+  "MarketplaceInstallButton": "Installer",
+  "MarketplaceInstallFailed": "L'installation de cette extension a échoué. Veuillez réessayer.",
+  "MarketplaceScopesLabel": "Demande l'accès à :",
+  "MarketplaceByDeveloper": "par {0}",
+  "MarketplaceViewSource": "Voir le code source",
+  "MarketplaceDemoNotice": "L'installation d'extensions est désactivée sur cette instance de démonstration."
 }

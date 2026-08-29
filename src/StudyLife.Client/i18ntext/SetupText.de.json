@@ -260,5 +260,17 @@
   "InvitesExpiresFormat": "Läuft ab: {0}",
   "InvitesUsedLabel": "Verwendet",
   "InvitesExpiredLabel": "Abgelaufen",
-  "InvitesRevoke": "Widerrufen"
+  "InvitesRevoke": "Widerrufen",
+  "MarketplaceHeading": "Marketplace",
+  "MarketplaceDesc": "Durchsuche Add-ons anderer Entwickler und installiere sie mit einem Klick. Add-ons erhalten ausschließlich die Berechtigungen, die sie ausdrücklich anfordern.",
+  "MarketplaceBrowseButton": "Add-ons durchsuchen",
+  "MarketplaceLoading": "Add-ons werden geladen…",
+  "MarketplaceEmpty": "Es sind noch keine Add-ons veröffentlicht.",
+  "MarketplaceFetchFailed": "Der Marketplace-Katalog konnte nicht geladen werden. Bitte versuche es später erneut.",
+  "MarketplaceInstallButton": "Installieren",
+  "MarketplaceInstallFailed": "Die Installation dieses Add-ons ist fehlgeschlagen. Bitte versuche es erneut.",
+  "MarketplaceScopesLabel": "Benötigt Zugriff auf:",
+  "MarketplaceByDeveloper": "von {0}",
+  "MarketplaceViewSource": "Quellcode ansehen",
+  "MarketplaceDemoNotice": "Das Installieren von Add-ons ist auf dieser Demo-Instanz deaktiviert."
 }

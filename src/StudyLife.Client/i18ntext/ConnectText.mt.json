@@ -16,5 +16,8 @@
   "ConnectCancelButton": "Ikkanċella",
   "ConnectWorking": "Qed tikkonnettja…",
   "ConnectFailed": "Il-konnessjoni ma rnexxietx. Jekk jogħġbok erġa' pprova.",
-  "ConnectInvalidRequest": "Din it-talba ta' konnessjoni mhijiex valida jew skadiet."
+  "ConnectInvalidRequest": "Din it-talba ta' konnessjoni mhijiex valida jew skadiet.",
+  "ConnectClientPageTitle": "StudyLife — Qabbad",
+  "ConnectClientHeading": "Qabbad l-add-on",
+  "ConnectClientNotRegistered": "Dan l-add-on għadu mhux irreġistrat fuq l-istanza StudyLife tiegħek."
 }
