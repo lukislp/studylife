@@ -1,3 +1,10 @@
+# [2.9.0](https://github.com/lukislp/studylife/compare/v2.8.1...v2.9.0) (2026-08-29)
+
+
+### Features
+
+* add a Setup page card for the webhooks API key ([72473f1](https://github.com/lukislp/studylife/commit/72473f1adc0dda085d505d38d33245d14b9c079a))
+
 ## [2.8.1](https://github.com/lukislp/studylife/compare/v2.8.0...v2.8.1) (2026-08-29)
 
 
