@@ -122,6 +122,16 @@ function isPageHidden() {
     return document.hidden;
 }
 
+// Lets an installed browser extension (studylife-focusguard, studylife-focustunes) react to a
+// timer start/pause/reset the instant it happens, instead of waiting for its own periodic poll -
+// those extensions register a content script (scoped to exactly the one origin the user connected
+// with) that listens for this event and, on hearing it, just re-polls its own authenticated
+// GET /api/timerstate rather than trusting this payload directly; the actual DTO here only exists
+// to save that immediate re-poll from being a total guess about what changed.
+function dispatchTimerStateChanged(state) {
+    window.dispatchEvent(new CustomEvent('studylife:timerstate-changed', { detail: state }));
+}
+
 // ── Cross-tab write-queue lock (Web Locks API) ───────────────────────────
 // Every tab is its own Blazor WASM runtime with its own in-memory copy of
 // AppStateService's offline write queue, all persisting to the same
