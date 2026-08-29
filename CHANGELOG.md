@@ -1,3 +1,10 @@
+# [2.8.0](https://github.com/lukislp/studylife/compare/v2.7.0...v2.8.0) (2026-08-29)
+
+
+### Features
+
+* wire studylife-webhooks BaseUrl/SharedSecret into prod config ([e0bbd31](https://github.com/lukislp/studylife/commit/e0bbd314210f76f6c5efcf6da5df4dd583c2b852))
+
 # [2.7.0](https://github.com/lukislp/studylife/compare/v2.6.1...v2.7.0) (2026-08-29)
 
 
