@@ -176,6 +176,7 @@
   "HaKeyRevokeConfirmYes": "Tá, cúlghairm",
   "WebhooksHeading": "Webhooks",
   "WebhooksDesc": "Gin eochair API phearsanta fhadsaoil ionas gur féidir le cláir sheachtracha a gcuid síntiús webhook féin a chlárú agus imeachtaí StudyLife a fháil mar aisghlaonna HTTP sínithe. Ní rothlaíonn sí riamh agus ní théann sí in éag — fanann sí bailí go dtí go ngineann tú ceann nua nó go gcúlghairmeann tú anseo í. Caith léi mar a chaithfeá le pasfhocal.",
+  "WebhooksKeyNamePlaceholder": "Ainm (m.sh. Zapier)",
   "WebhooksKeyGenerateButton": "Gin eochair API",
   "WebhooksKeyRegenerateButton": "Gin eochair nua",
   "WebhooksKeyRevokeButton": "Cúlghairm",

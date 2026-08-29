@@ -515,18 +515,28 @@ public class TrayApiKeyGenerateResponseDto
     public DateTime CreatedAt { get; set; }
 }
 
-/// <summary>Status DTO for the studylife-webhooks registration-management key slot - same shape
-/// as HaApiKeyStatusDto, see AuthUserEntity.WebhooksApiKeyHash.</summary>
-public class WebhooksApiKeyStatusDto
+/// <summary>One entry in the list of a user's named webhooks API keys (see
+/// WebhookApiKeyEntity) - never carries the plaintext or hash, only the display metadata a
+/// "manage your keys" UI needs.</summary>
+public class WebhookApiKeyDto
 {
-    public bool HasKey { get; set; }
-    public DateTime? CreatedAt { get; set; }
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
 }
 
-/// <summary>Generate-response DTO for the studylife-webhooks registration-management key slot -
-/// same shape as HaApiKeyGenerateResponseDto.</summary>
-public class WebhooksApiKeyGenerateResponseDto
+/// <summary>Request to create a new named webhooks API key.</summary>
+public class CreateWebhookApiKeyRequestDto
 {
+    public string Name { get; set; } = "";
+}
+
+/// <summary>Response to creating a new named webhooks API key - the only place the plaintext is
+/// ever returned, same "shown once" pattern as every other *ApiKeyGenerateResponseDto.</summary>
+public class CreateWebhookApiKeyResponseDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
     public string ApiKey { get; set; } = "";
     public DateTime CreatedAt { get; set; }
 }

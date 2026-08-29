@@ -176,6 +176,7 @@
   "HaKeyRevokeConfirmYes": "Igen, visszavonom",
   "WebhooksHeading": "Webhooks",
   "WebhooksDesc": "Generálj személyes, hosszú élettartamú API-kulcsot, hogy külső programok regisztrálhassák saját webhook-feliratkozásaikat, és aláírt HTTP-hívásokként kaphassák meg a StudyLife eseményeit. Soha nem cserélődik és nem jár le — addig érvényes, amíg itt újat nem generálsz vagy vissza nem vonod. Kezeld úgy, mint egy jelszót.",
+  "WebhooksKeyNamePlaceholder": "Név (pl. Zapier)",
   "WebhooksKeyGenerateButton": "API-kulcs generálása",
   "WebhooksKeyRegenerateButton": "Új kulcs generálása",
   "WebhooksKeyRevokeButton": "Visszavonás",

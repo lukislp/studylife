@@ -536,7 +536,7 @@ public class SettingsControllerFocusGuardApiKeyTests : IClassFixture<CustomWebAp
         Assert.True(status!.HasKey);
         Assert.NotNull(status.CreatedAt);
 
-        // ── The generated key passes the /api gate as X-Api-Key, same as the other seven keys ─
+        // ── The generated key passes the /api gate as X-Api-Key, same as the other six keys ─
         using (var keyClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, generated.ApiKey))
         {
             Assert.Equal(HttpStatusCode.OK, (await keyClient.GetAsync("/api/timerstate")).StatusCode);
@@ -603,7 +603,7 @@ public class SettingsControllerFocusTunesApiKeyTests : IClassFixture<CustomWebAp
         Assert.True(status!.HasKey);
         Assert.NotNull(status.CreatedAt);
 
-        // ── The generated key passes the /api gate as X-Api-Key, same as the other seven keys ──
+        // ── The generated key passes the /api gate as X-Api-Key, same as the other six keys ──
         using (var keyClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, generated.ApiKey))
         {
             Assert.Equal(HttpStatusCode.OK, (await keyClient.GetAsync("/api/timerstate")).StatusCode);
@@ -667,7 +667,7 @@ public class SettingsControllerTrayApiKeyTests : IClassFixture<CustomWebApplicat
         Assert.True(status!.HasKey);
         Assert.NotNull(status.CreatedAt);
 
-        // ── The generated key passes the /api gate as X-Api-Key, same as the other seven keys ──
+        // ── The generated key passes the /api gate as X-Api-Key, same as the other six keys ──
         using (var keyClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, generated.ApiKey))
         {
             Assert.Equal(HttpStatusCode.OK, (await keyClient.GetAsync("/api/timerstate")).StatusCode);
@@ -695,10 +695,11 @@ public class SettingsControllerTrayApiKeyTests : IClassFixture<CustomWebApplicat
 }
 
 /// <summary>
-/// Same lifecycle as SettingsControllerTrayApiKeyTests, mirrored for the separate
-/// studylife-webhooks registration-management key slot (AuthUserEntity.WebhooksApiKeyHash /
-/// api/settings/webhooks-api-key). Own class/factory for the same reason as the other slot
-/// tests - generate/revoke mutate AuthUser 1.
+/// Unlike every other slot's single generate/revoke lifecycle (see
+/// SettingsControllerTrayApiKeyTests), the studylife-webhooks registration-management slot
+/// supports multiple NAMED keys per user (WebhookApiKeyEntity / api/settings/webhooks-api-keys)
+/// - list/create/delete instead of status/generate/revoke. Own class/factory for the same
+/// reason as the other slot tests - create/delete mutate AuthUser 1's key rows.
 /// </summary>
 public class SettingsControllerWebhooksApiKeyTests : IClassFixture<CustomWebApplicationFactory>
 {
@@ -712,54 +713,77 @@ public class SettingsControllerWebhooksApiKeyTests : IClassFixture<CustomWebAppl
     }
 
     [Fact]
-    public async Task WebhooksApiKeyLifecycle_StatusGenerateGateRevoke()
+    public async Task WebhooksApiKeyLifecycle_ListCreateGateDelete()
     {
-        // ── Fresh state: no key ─────────────────────────────────────────────────────────────
-        var status = await _client.GetFromJsonAsync<WebhooksApiKeyStatusDto>("/api/settings/webhooks-api-key");
-        Assert.NotNull(status);
-        Assert.False(status!.HasKey);
-        Assert.Null(status.CreatedAt);
+        // ── Fresh state: no keys ────────────────────────────────────────────────────────────
+        var keys = await _client.GetFromJsonAsync<List<WebhookApiKeyDto>>("/api/settings/webhooks-api-keys");
+        Assert.NotNull(keys);
+        Assert.Empty(keys!);
 
-        // ── Generate: plaintext exactly once, only the hash is stored ───────────────────────
-        var generateResponse = await _client.PostAsync("/api/settings/webhooks-api-key/generate", null);
-        Assert.Equal(HttpStatusCode.OK, generateResponse.StatusCode);
-        var generated = await generateResponse.Content.ReadFromJsonAsync<WebhooksApiKeyGenerateResponseDto>();
-        Assert.NotNull(generated);
-        Assert.NotEmpty(generated!.ApiKey);
-        Assert.True(generated.CreatedAt >= DateTime.UtcNow.AddMinutes(-2));
+        // ── Create: plaintext exactly once, only the hash is stored ─────────────────────────
+        var createResponse = await _client.PostAsJsonAsync("/api/settings/webhooks-api-keys", new CreateWebhookApiKeyRequestDto { Name = "Zapier" });
+        Assert.Equal(HttpStatusCode.OK, createResponse.StatusCode);
+        var created = await createResponse.Content.ReadFromJsonAsync<CreateWebhookApiKeyResponseDto>();
+        Assert.NotNull(created);
+        Assert.NotEmpty(created!.ApiKey);
+        Assert.Equal("Zapier", created.Name);
+        Assert.True(created.CreatedAt >= DateTime.UtcNow.AddMinutes(-2));
 
-        status = await _client.GetFromJsonAsync<WebhooksApiKeyStatusDto>("/api/settings/webhooks-api-key");
-        Assert.True(status!.HasKey);
-        Assert.NotNull(status.CreatedAt);
+        keys = await _client.GetFromJsonAsync<List<WebhookApiKeyDto>>("/api/settings/webhooks-api-keys");
+        var listed = Assert.Single(keys!);
+        Assert.Equal(created.Id, listed.Id);
+        Assert.Equal("Zapier", listed.Name);
+
+        // ── A second, independently named key coexists with the first ──────────────────────
+        var secondResponse = await _client.PostAsJsonAsync("/api/settings/webhooks-api-keys", new CreateWebhookApiKeyRequestDto { Name = "n8n" });
+        var second = await secondResponse.Content.ReadFromJsonAsync<CreateWebhookApiKeyResponseDto>();
+        keys = await _client.GetFromJsonAsync<List<WebhookApiKeyDto>>("/api/settings/webhooks-api-keys");
+        Assert.Equal(2, keys!.Count);
 
         // ── The generated key passes the /api gate as X-Api-Key, same as the other seven keys -
         // 503 here (not 200) is CORRECT and expected: it means the key was authenticated and
         // authorized (WebhooksProxyController's own Enabled gate is what returns 503, since
         // StudyLifeWebhooks:* is unconfigured in this test host - see WebhooksProxyControllerTests
         // for the full reasoning) rather than 401/403, which is what this assertion is pinning.
-        using (var keyClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, generated.ApiKey))
+        using (var keyClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, created.ApiKey))
         {
             Assert.Equal(HttpStatusCode.ServiceUnavailable, (await keyClient.GetAsync("/api/webhooks")).StatusCode);
 
-            // ... but the key must NOT be able to manage itself: all three webhooks-api-key
-            // endpoints reject gate-only (API key) authentication with 401.
-            Assert.Equal(HttpStatusCode.Unauthorized, (await keyClient.GetAsync("/api/settings/webhooks-api-key")).StatusCode);
-            Assert.Equal(HttpStatusCode.Unauthorized, (await keyClient.PostAsync("/api/settings/webhooks-api-key/generate", null)).StatusCode);
-            Assert.Equal(HttpStatusCode.Unauthorized, (await keyClient.PostAsync("/api/settings/webhooks-api-key/revoke", null)).StatusCode);
+            // ... but the key must NOT be able to manage the key list itself: all three
+            // webhooks-api-keys endpoints reject gate-only (API key) authentication with 401.
+            Assert.Equal(HttpStatusCode.Unauthorized, (await keyClient.GetAsync("/api/settings/webhooks-api-keys")).StatusCode);
+            Assert.Equal(HttpStatusCode.Unauthorized,
+                (await keyClient.PostAsJsonAsync("/api/settings/webhooks-api-keys", new CreateWebhookApiKeyRequestDto { Name = "x" })).StatusCode);
+            Assert.Equal(HttpStatusCode.Unauthorized, (await keyClient.DeleteAsync($"/api/settings/webhooks-api-keys/{created.Id}")).StatusCode);
         }
 
-        // ── Revoke (with a real session): key hash deleted, old key gets 401 at the gate ────
-        var revokeResponse = await _client.PostAsync("/api/settings/webhooks-api-key/revoke", null);
-        Assert.Equal(HttpStatusCode.NoContent, revokeResponse.StatusCode);
+        // ── Delete one key (with a real session): only that key's hash is gone, the OTHER
+        // named key must keep working - proving delete is per-key, not per-slot. ─────────────
+        var deleteResponse = await _client.DeleteAsync($"/api/settings/webhooks-api-keys/{created.Id}");
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
 
-        status = await _client.GetFromJsonAsync<WebhooksApiKeyStatusDto>("/api/settings/webhooks-api-key");
-        Assert.False(status!.HasKey);
-        Assert.Null(status.CreatedAt);
+        keys = await _client.GetFromJsonAsync<List<WebhookApiKeyDto>>("/api/settings/webhooks-api-keys");
+        var remaining = Assert.Single(keys!);
+        Assert.Equal(second!.Id, remaining.Id);
 
-        using (var revokedClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, generated.ApiKey))
+        using (var deletedClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, created.ApiKey))
         {
-            Assert.Equal(HttpStatusCode.Unauthorized, (await revokedClient.GetAsync("/api/webhooks")).StatusCode);
+            Assert.Equal(HttpStatusCode.Unauthorized, (await deletedClient.GetAsync("/api/webhooks")).StatusCode);
         }
+        using (var stillValidClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, second.ApiKey))
+        {
+            Assert.Equal(HttpStatusCode.ServiceUnavailable, (await stillValidClient.GetAsync("/api/webhooks")).StatusCode);
+        }
+
+        // Cleanup so other tests in this fixture don't see a stray key.
+        await _client.DeleteAsync($"/api/settings/webhooks-api-keys/{second.Id}");
+    }
+
+    [Fact]
+    public async Task DeleteWebhooksApiKey_UnknownId_ReturnsNotFound()
+    {
+        var response = await _client.DeleteAsync("/api/settings/webhooks-api-keys/999999");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 }
 

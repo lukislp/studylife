@@ -176,6 +176,7 @@
   "HaKeyRevokeConfirmYes": "Jah, tühista võti",
   "WebhooksHeading": "Webhooks",
   "WebhooksDesc": "Loo isiklik pikaealine API-võti, et välised programmid saaksid registreerida oma webhook-tellimusi ja saada StudyLife'i sündmusi allkirjastatud HTTP-päringutena. See ei roteeru kunagi ega aegu — kehtib seni, kuni selle siin uuesti genereerid või tühistad. Kohtle seda nagu parooli.",
+  "WebhooksKeyNamePlaceholder": "Nimi (nt Zapier)",
   "WebhooksKeyGenerateButton": "Genereeri API-võti",
   "WebhooksKeyRegenerateButton": "Genereeri uus võti",
   "WebhooksKeyRevokeButton": "Tühista võti",

@@ -176,6 +176,7 @@
   "HaKeyRevokeConfirmYes": "Ja, intrekken",
   "WebhooksHeading": "Webhooks",
   "WebhooksDesc": "Genereer een persoonlijke, langlevende API-sleutel zodat externe programma's hun eigen webhook-abonnementen kunnen registreren en StudyLife-events als ondertekende HTTP-callbacks kunnen ontvangen. Hij roteert nooit en verloopt niet — hij blijft geldig totdat je hem hier opnieuw genereert of intrekt. Behandel hem als een wachtwoord.",
+  "WebhooksKeyNamePlaceholder": "Naam (bijv. Zapier)",
   "WebhooksKeyGenerateButton": "API-sleutel genereren",
   "WebhooksKeyRegenerateButton": "Nieuwe sleutel genereren",
   "WebhooksKeyRevokeButton": "Intrekken",

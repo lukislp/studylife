@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using StudyLife.Shared;
 
 namespace StudyLife.Server.Tests;
 
@@ -70,14 +71,14 @@ public class WebhooksProxyControllerTests : IClassFixture<CustomWebApplicationFa
     public async Task List_WithValidWebhooksApiKeyAndNoSession_ReturnsServiceUnavailable_NotUnauthorized()
     {
         var sessionClient = _factory.CreateClient();
-        var apiKey = await GenerateWebhooksApiKeyAsync(sessionClient);
+        var (apiKey, id) = await GenerateWebhooksApiKeyAsync(sessionClient);
 
         using var keyClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, apiKey);
         var response = await keyClient.GetAsync("/api/webhooks");
 
         Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
 
-        await sessionClient.PostAsync("/api/settings/webhooks-api-key/revoke", null);
+        await sessionClient.DeleteAsync($"/api/settings/webhooks-api-keys/{id}");
     }
 
     [Fact]
@@ -107,20 +108,21 @@ public class WebhooksProxyControllerTests : IClassFixture<CustomWebApplicationFa
         // to endpoints outside ApiKeyScopes.Webhooks either (e.g. /api/timerstate, which every
         // Guard/Tune/Tray-style narrow slot IS scoped to, but Webhooks deliberately is not).
         var sessionClient = _factory.CreateClient();
-        var apiKey = await GenerateWebhooksApiKeyAsync(sessionClient);
+        var (apiKey, id) = await GenerateWebhooksApiKeyAsync(sessionClient);
 
         using var keyClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, apiKey);
         var response = await keyClient.GetAsync("/api/timerstate");
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
 
-        await sessionClient.PostAsync("/api/settings/webhooks-api-key/revoke", null);
+        await sessionClient.DeleteAsync($"/api/settings/webhooks-api-keys/{id}");
     }
 
-    private static async Task<string> GenerateWebhooksApiKeyAsync(HttpClient sessionClient)
+    private static async Task<(string ApiKey, int Id)> GenerateWebhooksApiKeyAsync(HttpClient sessionClient)
     {
-        var generateResponse = await sessionClient.PostAsync("/api/settings/webhooks-api-key/generate", null);
+        var generateResponse = await sessionClient.PostAsJsonAsync("/api/settings/webhooks-api-keys",
+            new CreateWebhookApiKeyRequestDto { Name = "test-key" });
         var body = (await generateResponse.Content.ReadFromJsonAsync<JsonDocument>())!;
-        return body.RootElement.GetProperty("apiKey").GetString()!;
+        return (body.RootElement.GetProperty("apiKey").GetString()!, body.RootElement.GetProperty("id").GetInt32());
     }
 }

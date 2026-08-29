@@ -674,55 +674,56 @@ public class SettingsController : ControllerBase
         return NoContent();
     }
 
-    // Same three-endpoint shape again, for the separate studylife-webhooks registration-
-    // management key slot (AuthUserEntity.WebhooksApiKeyHash). Unlike every browser-extension/app
-    // slot above, this one is manually generated here - like ha-api-key - rather than provisioned
-    // via a per-client browser-consent flow: it's meant to be handed to whichever external
-    // program/add-on the user wants to let manage its own webhook subscriptions (see
-    // ApiKeyScopes.Webhooks), not one single known consumer.
+    // Unlike every other slot above (one key per user, a column on AuthUserEntity), the
+    // studylife-webhooks registration-management slot supports multiple NAMED keys per user
+    // (WebhookApiKeyEntity) - one per external program/add-on the user wants to let manage its
+    // own webhook subscriptions (see ApiKeyScopes.Webhooks), not one single known consumer.
+    // WebhookApiKeys carries no query filter (see StudyLifeDb's own comment on it), so every
+    // action here filters explicitly by AuthUserId - the same "user-specific accesses filter
+    // explicitly in the controller" pattern that entity's comment documents.
 
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
-    [HttpGet("webhooks-api-key")]
-    public async Task<ActionResult<WebhooksApiKeyStatusDto>> GetWebhooksApiKeyStatus()
+    [HttpGet("webhooks-api-keys")]
+    public async Task<ActionResult<List<WebhookApiKeyDto>>> GetWebhooksApiKeys()
     {
         var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
-        if (user is null) return Unauthorized();
-        return new WebhooksApiKeyStatusDto { HasKey = user.WebhooksApiKeyHash != null, CreatedAt = user.WebhooksApiKeyCreatedAt };
+        return await _db.WebhookApiKeys.AsNoTracking()
+            .Where(k => k.AuthUserId == userId)
+            .OrderBy(k => k.CreatedAt)
+            .Select(k => new WebhookApiKeyDto { Id = k.Id, Name = k.Name, CreatedAt = k.CreatedAt })
+            .ToListAsync();
     }
 
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
-    [HttpPost("webhooks-api-key/generate")]
-    public async Task<ActionResult<WebhooksApiKeyGenerateResponseDto>> GenerateWebhooksApiKey()
+    [HttpPost("webhooks-api-keys")]
+    public async Task<ActionResult<CreateWebhookApiKeyResponseDto>> CreateWebhooksApiKey(CreateWebhookApiKeyRequestDto request)
     {
+        var name = request.Name?.Trim() ?? "";
+        if (name.Length == 0) return BadRequest("Name must not be empty.");
+        if (name.Length > 100) return BadRequest("Name must be at most 100 characters long.");
+
         var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
-        if (user is null) return Unauthorized();
-
-        var key = RotateWebhooksKey(user, DateTime.UtcNow);
-        await _db.SaveChangesAsync();
-        return new WebhooksApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = user.WebhooksApiKeyCreatedAt!.Value };
-    }
-
-    /// <summary>Same pattern as every other slot's Rotate helper. Caller must SaveChanges.</summary>
-    internal static string RotateWebhooksKey(AuthUserEntity user, DateTime now)
-    {
         var key = AuthSessionService.GenerateToken();
-        user.WebhooksApiKeyHash = AuthSessionService.HashToken(key);
-        user.WebhooksApiKeyCreatedAt = now;
-        return key;
+        var entity = new WebhookApiKeyEntity
+        {
+            AuthUserId = userId,
+            Name = name,
+            KeyHash = AuthSessionService.HashToken(key),
+            CreatedAt = DateTime.UtcNow,
+        };
+        _db.WebhookApiKeys.Add(entity);
+        await _db.SaveChangesAsync();
+        return new CreateWebhookApiKeyResponseDto { Id = entity.Id, Name = entity.Name, ApiKey = key, CreatedAt = entity.CreatedAt };
     }
 
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
-    [HttpPost("webhooks-api-key/revoke")]
-    public async Task<IActionResult> RevokeWebhooksApiKey()
+    [HttpDelete("webhooks-api-keys/{id}")]
+    public async Task<IActionResult> DeleteWebhooksApiKey(int id)
     {
         var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
-        if (user is null) return Unauthorized();
-
-        user.WebhooksApiKeyHash = null;
-        user.WebhooksApiKeyCreatedAt = null;
+        var entity = await _db.WebhookApiKeys.FirstOrDefaultAsync(k => k.Id == id && k.AuthUserId == userId);
+        if (entity is null) return NotFound();
+        _db.WebhookApiKeys.Remove(entity);
         await _db.SaveChangesAsync();
         return NoContent();
     }

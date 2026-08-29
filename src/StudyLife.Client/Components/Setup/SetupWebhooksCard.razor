@@ -3,16 +3,29 @@
 @inject IJSRuntime JS
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
-@* Long-lived per-user API key for studylife-webhooks (see WebhooksApiKeyHash): manually
-   generated here rather than provisioned through a consent flow, same reasoning as
-   SetupHomeAssistantCard - there is no single dedicated client, any external program the
-   user wants to let register webhook subscriptions gets handed this one key. Identical
-   generate/regenerate/revoke lifecycle and markup as that card (own SetupText instance +
-   own HTTP calls), just pointed at the webhooks-api-key endpoints. *@
+@* Long-lived, NAMED API keys for studylife-webhooks (see WebhookApiKeyEntity): unlike every
+   other slot's single generate/revoke lifecycle (SetupHomeAssistantCard), a user can hold many
+   of these at once - one per external program/add-on they want to let manage its own webhook
+   subscriptions. List + create-with-name + delete-per-row, closer in shape to the webhook
+   registration list itself (WebhooksProxyController) than to SetupHomeAssistantCard. Self-
+   contained component (own SetupText instance + own HTTP calls), same style as that card. *@
 
 <div class="setup-section">
     <div class="ss-label">@T.WebhooksHeading</div>
     <p class="ss-desc">@T.WebhooksDesc</p>
+
+    @foreach (var key in _keys)
+    {
+        <div class="field-row" style="flex-wrap:wrap">
+            <div style="flex:1;min-width:0">
+                <strong>@key.Name</strong>
+                <div class="ss-desc" style="margin:0">@string.Format(T.WebhooksKeyActiveSince ?? "", key.CreatedAt.ToLocalTime().ToString("g"))</div>
+            </div>
+            <button type="button" class="btn-danger" style="flex-shrink:0" @onclick="() => _confirmingRevokeId = key.Id" disabled="@_busy">
+                @T.WebhooksKeyRevokeButton
+            </button>
+        </div>
+    }
 
     @if (!string.IsNullOrEmpty(_generatedKey))
     {
@@ -25,65 +38,30 @@
         <p class="ss-desc" style="font-weight:600">⚠️ @T.WebhooksKeyOnceHint</p>
     }
 
-    @if (_hasKey)
-    {
-        <p class="ss-desc">@string.Format(T.WebhooksKeyActiveSince ?? "", _createdAt?.ToLocalTime().ToString("g") ?? "")</p>
-        <div class="toggle-row" style="gap:0.75rem;flex-wrap:wrap">
-            <button type="button" class="btn-secondary" @onclick="() => _confirmingRegenerate = true" disabled="@_busy">
-                @T.WebhooksKeyRegenerateButton
-            </button>
-            <button type="button" class="btn-danger" @onclick="() => _confirmingRevoke = true" disabled="@_busy">
-                @T.WebhooksKeyRevokeButton
-            </button>
-        </div>
-    }
-    else
-    {
-        <button type="button" class="btn-secondary" @onclick="Generate" disabled="@_busy">
+    <div class="field-row" style="flex-wrap:wrap">
+        <input class="input" placeholder="@T.WebhooksKeyNamePlaceholder" @bind="_newKeyName" @bind:event="oninput" disabled="@_busy" />
+        <button type="button" class="btn-secondary" style="flex-shrink:0" @onclick="Generate" disabled="@(_busy || string.IsNullOrWhiteSpace(_newKeyName))">
             @(_busy ? "…" : T.WebhooksKeyGenerateButton)
         </button>
-    }
+    </div>
 </div>
 
-@if (_confirmingRegenerate)
+@if (_confirmingRevokeId is { } revokeId)
 {
-    <div class="modal-overlay" @onclick="() => _confirmingRegenerate = false">
-        <div class="modal" @onclick:stopPropagation="true">
-            <div class="modal-header">
-                <h3>@T.WebhooksKeyRegenerateConfirmTitle</h3>
-                <button type="button" class="modal-close" @onclick="() => _confirmingRegenerate = false">✕</button>
-            </div>
-            <div class="modal-body">
-                <p>⚠️ @T.WebhooksKeyRegenerateConfirmWarning</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn-secondary" @onclick="() => _confirmingRegenerate = false" disabled="@_busy">
-                    @T.WebhooksKeyConfirmCancel
-                </button>
-                <button type="button" class="btn-danger" @onclick="ConfirmRegenerate" disabled="@_busy">
-                    @(_busy ? "…" : T.WebhooksKeyRegenerateConfirmYes)
-                </button>
-            </div>
-        </div>
-    </div>
-}
-
-@if (_confirmingRevoke)
-{
-    <div class="modal-overlay" @onclick="() => _confirmingRevoke = false">
+    <div class="modal-overlay" @onclick="() => _confirmingRevokeId = null">
         <div class="modal" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h3>@T.WebhooksKeyRevokeConfirmTitle</h3>
-                <button type="button" class="modal-close" @onclick="() => _confirmingRevoke = false">✕</button>
+                <button type="button" class="modal-close" @onclick="() => _confirmingRevokeId = null">✕</button>
             </div>
             <div class="modal-body">
                 <p>⚠️ @T.WebhooksKeyRevokeConfirmWarning</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn-secondary" @onclick="() => _confirmingRevoke = false" disabled="@_busy">
+                <button type="button" class="btn-secondary" @onclick="() => _confirmingRevokeId = null" disabled="@_busy">
                     @T.WebhooksKeyConfirmCancel
                 </button>
-                <button type="button" class="btn-danger" @onclick="ConfirmRevoke" disabled="@_busy">
+                <button type="button" class="btn-danger" @onclick="() => ConfirmRevoke(revokeId)" disabled="@_busy">
                     @(_busy ? "…" : T.WebhooksKeyRevokeConfirmYes)
                 </button>
             </div>
@@ -94,67 +72,56 @@
 @code {
     private I18nText.SetupText T = new();
 
-    private bool _hasKey;
-    private DateTime? _createdAt;
+    private List<WebhookApiKeyDto> _keys = new();
+    private string _newKeyName = "";
     // Plaintext only visible right after a generation within this page load - the server
     // never gives it out again (only the hash lives in the DB).
     private string? _generatedKey;
     private bool _copied;
     private bool _busy;
-    private bool _confirmingRegenerate;
-    private bool _confirmingRevoke;
+    private int? _confirmingRevokeId;
 
     protected override async Task OnInitializedAsync()
     {
         T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
         try
         {
-            var status = await Http.GetFromJsonAsync<WebhooksApiKeyStatusDto>("api/settings/webhooks-api-key");
-            _hasKey = status?.HasKey ?? false;
-            _createdAt = status?.CreatedAt;
+            _keys = await Http.GetFromJsonAsync<List<WebhookApiKeyDto>>("api/settings/webhooks-api-keys") ?? new();
         }
-        catch { /* offline: card shows the "no key" default */ }
+        catch { /* offline: card shows an empty list */ }
     }
 
     private async Task Generate()
     {
+        if (string.IsNullOrWhiteSpace(_newKeyName)) return;
         _busy = true;
         try
         {
-            var response = await Http.PostAsync("api/settings/webhooks-api-key/generate", null);
+            var response = await Http.PostAsJsonAsync("api/settings/webhooks-api-keys",
+                new CreateWebhookApiKeyRequestDto { Name = _newKeyName.Trim() });
             if (response.IsSuccessStatusCode)
             {
-                var dto = await response.Content.ReadFromJsonAsync<WebhooksApiKeyGenerateResponseDto>();
+                var dto = await response.Content.ReadFromJsonAsync<CreateWebhookApiKeyResponseDto>();
                 if (!string.IsNullOrEmpty(dto?.ApiKey))
                 {
-                    _generatedKey = dto!.ApiKey;
-                    _hasKey = true;
-                    _createdAt = dto.CreatedAt;
+                    _generatedKey = dto.ApiKey;
+                    _keys.Add(new WebhookApiKeyDto { Id = dto.Id, Name = dto.Name, CreatedAt = dto.CreatedAt });
+                    _newKeyName = "";
                 }
             }
         }
         finally { _busy = false; }
     }
 
-    private async Task ConfirmRegenerate()
+    private async Task ConfirmRevoke(int id)
     {
-        _confirmingRegenerate = false;
-        await Generate();
-    }
-
-    private async Task ConfirmRevoke()
-    {
-        _confirmingRevoke = false;
+        _confirmingRevokeId = null;
         _busy = true;
         try
         {
-            var response = await Http.PostAsync("api/settings/webhooks-api-key/revoke", null);
+            var response = await Http.DeleteAsync($"api/settings/webhooks-api-keys/{id}");
             if (response.IsSuccessStatusCode)
-            {
-                _hasKey = false;
-                _createdAt = null;
-                _generatedKey = null;
-            }
+                _keys.RemoveAll(k => k.Id == id);
         }
         finally { _busy = false; }
     }

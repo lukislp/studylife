@@ -176,6 +176,7 @@
   "HaKeyRevokeConfirmYes": "Ano, odvolat",
   "WebhooksHeading": "Webhooks",
   "WebhooksDesc": "Vygenerujte si osobní, dlouhodobě platný API klíč, aby se k němu mohly připojit externí programy a samy si registrovat webhook odběry a přijímat události ze StudyLife jako podepsaná HTTP volání zpět. Nikdy se neobměňuje a nevyprší — platí, dokud ho zde znovu nevygenerujete nebo neodvoláte. Zacházejte s ním jako s heslem.",
+  "WebhooksKeyNamePlaceholder": "Název (např. Zapier)",
   "WebhooksKeyGenerateButton": "Vygenerovat API klíč",
   "WebhooksKeyRegenerateButton": "Vygenerovat nový klíč",
   "WebhooksKeyRevokeButton": "Odvolat",
