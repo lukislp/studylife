@@ -36,6 +36,8 @@ public class StudyLifeDb : DbContext
     public DbSet<SentReminderEntity> SentReminders => Set<SentReminderEntity>();
     public DbSet<AiKeyOutboxEntity> AiKeyOutbox => Set<AiKeyOutboxEntity>();
     public DbSet<WebhookApiKeyEntity> WebhookApiKeys => Set<WebhookApiKeyEntity>();
+    public DbSet<OAuthClientEntity> OAuthClients => Set<OAuthClientEntity>();
+    public DbSet<ClientApiKeyEntity> ClientApiKeys => Set<ClientApiKeyEntity>();
     public DbSet<NoteEntity> Notes => Set<NoteEntity>();
     public DbSet<CourseGoalEntity> CourseGoals => Set<CourseGoalEntity>();
     public DbSet<TimerStateEntity> TimerState => Set<TimerStateEntity>();
@@ -192,6 +194,19 @@ public class StudyLifeDb : DbContext
         // FK - same loose pattern as AiKeyOutboxEntity) supports that per-user listing.
         modelBuilder.Entity<WebhookApiKeyEntity>().HasIndex(k => k.KeyHash).IsUnique();
         modelBuilder.Entity<WebhookApiKeyEntity>().HasIndex(k => k.AuthUserId);
+
+        // OAuthClientEntity: same no-query-filter reasoning - StudyLifeAuthenticationHandler and
+        // the generic connect flow both resolve a client by ClientId before any AuthUserId is
+        // known (a fresh, unauthenticated visitor's browser hitting /connect for the first time).
+        // OwnerAuthUserId-scoped access (DeveloperController's own CRUD) filters explicitly, same
+        // pattern as WebhookApiKeyEntity/AiKeyOutboxEntity.
+        modelBuilder.Entity<OAuthClientEntity>().HasIndex(c => c.ClientId).IsUnique();
+        modelBuilder.Entity<OAuthClientEntity>().HasIndex(c => c.OwnerAuthUserId);
+
+        // ClientApiKeyEntity: same reasoning again - resolved by KeyHash table-wide during
+        // authentication, before any AuthUserId is known.
+        modelBuilder.Entity<ClientApiKeyEntity>().HasIndex(k => k.KeyHash).IsUnique();
+        modelBuilder.Entity<ClientApiKeyEntity>().HasIndex(k => k.AuthUserId);
 
         // Postgres-specific: Npgsql maps DateTime by default to "timestamp with time
         // zone" (STRICTLY requires Kind=Utc) - but the UnspecifiedKindConverter above deliberately
@@ -754,6 +769,67 @@ public class WebhookApiKeyEntity
     public string Name { get; set; } = "";
     /// <summary>SHA-256 hash, same as every other *ApiKeyHash - the plaintext is only ever
     /// shown once, at creation.</summary>
+    public string KeyHash { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
+}
+
+/// <summary>
+/// A dynamically registered application in the generic OAuth-style client registry (the
+/// "Automation &amp; Extensibility Platform" / add-on marketplace foundation) - generalizes
+/// AuthController.5.Consent.cs's per-audience consent flow (mcp/capture/focusguard/focustunes/
+/// tray, all still hardcoded and untouched) so registering a NEW application is a database row,
+/// not a code change. Registered via DeveloperController by any logged-in user (the "developer"),
+/// resolved by ClientId during the generic connect flow (see AuthController.10.OAuthClients.cs)
+/// before any end user's AuthUserId is known.
+/// </summary>
+public class OAuthClientEntity
+{
+    public int Id { get; set; }
+    /// <summary>Public, developer-chosen slug (unique) - what the client presents as
+    /// clientId=... on the connect redirect, and what a published marketplace manifest's own
+    /// "id" field must match.</summary>
+    public string ClientId { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string Description { get; set; } = "";
+    /// <summary>Comma-separated, EXACT-match list (not prefix) - stricter than
+    /// AuthController's blanket https-or-loopback IsAllowedRedirectUri check the 5 hardcoded
+    /// audiences use, since here the set of trusted values is itself data the developer
+    /// controls.</summary>
+    public string AllowedRedirectUris { get; set; } = "";
+    /// <summary>Comma-separated "Controller.Action" pairs (see ApiKeyScopes.Endpoint) - every
+    /// entry MUST be a member of ApiKeyScopes.PubliclyGrantable, enforced by DeveloperController
+    /// on every write. This is the CURRENT requested set; an already-issued ClientApiKeyEntity's
+    /// own GrantedScopes is a separate snapshot and does NOT change when this does - see that
+    /// entity's own doc comment for why.</summary>
+    public string RequestedScopes { get; set; } = "";
+    /// <summary>No FK - same loose pattern as everywhere else in this file. Who registered this
+    /// client via DeveloperController; only they may edit/delete it.</summary>
+    public int OwnerAuthUserId { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+/// <summary>
+/// One issued, per-installation API key for a dynamically registered OAuthClientEntity - the
+/// generic-client counterpart to WebhookApiKeyEntity, issued by the generic connect flow instead
+/// of manually generated from the Setup page.
+/// </summary>
+public class ClientApiKeyEntity
+{
+    public int Id { get; set; }
+    /// <summary>No FK - same loose pattern as everywhere else in this file. Who installed/
+    /// authorized this client (the end user granting access), NOT the developer who registered
+    /// it (see OAuthClientEntity.OwnerAuthUserId).</summary>
+    public int AuthUserId { get; set; }
+    public string ClientId { get; set; } = "";
+    /// <summary>SNAPSHOT of OAuthClientEntity.RequestedScopes at the moment this key was issued -
+    /// deliberately NOT re-read live from OAuthClientEntity at authorization time. If the
+    /// developer later adds scopes to their registration, this already-issued key keeps its
+    /// original, narrower grant until the user explicitly re-runs the connect flow and consents
+    /// again - otherwise a developer could pitch a minimal-scope app, collect installs, then
+    /// silently escalate access for everyone already connected. See
+    /// ApiKeyScopeAuthorizationHandler, which enforces against THIS field, never
+    /// OAuthClientEntity.RequestedScopes.</summary>
+    public string GrantedScopes { get; set; } = "";
     public string KeyHash { get; set; } = "";
     public DateTime CreatedAt { get; set; }
 }

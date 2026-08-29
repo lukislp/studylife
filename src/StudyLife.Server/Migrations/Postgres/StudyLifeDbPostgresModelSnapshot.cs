@@ -221,6 +221,42 @@ namespace StudyLife.Server.Migrations.Postgres
                     b.ToTable("AuthUsers");
                 });
 
+            modelBuilder.Entity("StudyLife.Server.Data.ClientApiKeyEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AuthUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("GrantedScopes")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("KeyHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthUserId");
+
+                    b.HasIndex("KeyHash")
+                        .IsUnique();
+
+                    b.ToTable("ClientApiKeys");
+                });
+
             modelBuilder.Entity("StudyLife.Server.Data.CourseGoalEntity", b =>
                 {
                     b.Property<int>("Id")
@@ -434,6 +470,50 @@ namespace StudyLife.Server.Migrations.Postgres
                     b.HasKey("Id");
 
                     b.ToTable("Notes");
+                });
+
+            modelBuilder.Entity("StudyLife.Server.Data.OAuthClientEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AllowedRedirectUris")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("OwnerAuthUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RequestedScopes")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId")
+                        .IsUnique();
+
+                    b.HasIndex("OwnerAuthUserId");
+
+                    b.ToTable("OAuthClients");
                 });
 
             modelBuilder.Entity("StudyLife.Server.Data.PasskeyCredentialEntity", b =>

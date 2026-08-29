@@ -65,6 +65,12 @@ public class StudyLifeAuthenticationHandler : AuthenticationHandler<StudyLifeAut
     /// used to make by checking AuthSessionService.SessionItemKey presence.</summary>
     public const string AuthTypeClaim = "auth_type";
 
+    /// <summary>Claim carrying a ClientApiKeyEntity's GrantedScopes snapshot (see that entity's
+    /// doc comment) - only present when api_key_slot starts with "client:". Read exclusively by
+    /// ApiKeyScopeAuthorizationHandler, which parses it via ApiKeyScopes.Parse instead of looking
+    /// up ApiKeyScopes.BySlot for this one dynamic case.</summary>
+    public const string GrantedScopesClaim = "granted_scopes";
+
     private const string AuthTypeSession = "session";
     private const string AuthTypeApiKey = "apikey";
     private const string AuthTypeCalendarToken = "calendarToken";
@@ -172,6 +178,21 @@ public class StudyLifeAuthenticationHandler : AuthenticationHandler<StudyLifeAut
                 return AuthenticateResult.Success(BuildTicket(webhookKey.AuthUserId, AuthTypeApiKey, "webhooks"));
             }
 
+            // Dynamically registered clients (OAuthClientEntity, see its own doc comment and
+            // ApiKeyScopes.PubliclyGrantable) - a THIRD kind of lookup, again by hash in its own
+            // table, no query filter, same before-any-user-is-known reasoning. The slot is the
+            // ClientId itself (prefixed, not one of the 8 fixed strings above) so Whoami usefully
+            // shows WHICH app authenticated, not just "some dynamic client".
+            var clientKey = await _db.ClientApiKeys.AsNoTracking()
+                .FirstOrDefaultAsync(k => k.KeyHash == keyHash);
+            if (clientKey is not null)
+            {
+                var clientSlot = $"client:{clientKey.ClientId}";
+                Context.Items[CurrentUserAccessor.HttpContextItemKey] = clientKey.AuthUserId;
+                Context.Items[AuthSessionService.ApiKeySlotItemKey] = clientSlot;
+                return AuthenticateResult.Success(BuildClientTicket(clientKey.AuthUserId, clientSlot, clientKey.GrantedScopes));
+            }
+
             return AuthenticateResult.Fail("Invalid API key.");
         }
 
@@ -190,6 +211,23 @@ public class StudyLifeAuthenticationHandler : AuthenticationHandler<StudyLifeAut
         };
         if (apiKeySlot is not null) claims.Add(new Claim("api_key_slot", apiKeySlot));
 
+        var identity = new ClaimsIdentity(claims, Scheme.Name);
+        var principal = new ClaimsPrincipal(identity);
+        return new AuthenticationTicket(principal, Scheme.Name);
+    }
+
+    /// <summary>Same shape as BuildTicket, plus the GrantedScopesClaim a dynamic client's scope
+    /// check needs - kept separate rather than adding an optional parameter to BuildTicket since
+    /// only this one credential kind ever carries it.</summary>
+    private AuthenticationTicket BuildClientTicket(int userId, string apiKeySlot, string grantedScopes)
+    {
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, userId.ToString(CultureInfo.InvariantCulture)),
+            new(AuthTypeClaim, AuthTypeApiKey),
+            new("api_key_slot", apiKeySlot),
+            new(GrantedScopesClaim, grantedScopes),
+        };
         var identity = new ClaimsIdentity(claims, Scheme.Name);
         var principal = new ClaimsPrincipal(identity);
         return new AuthenticationTicket(principal, Scheme.Name);
