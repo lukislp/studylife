@@ -21,11 +21,16 @@ public class PlannerController : ControllerBase
 
     private readonly StudyLifeDb _db;
     private readonly ICourseResolver _courseResolver;
+    private readonly WebhooksProxyClient _webhooks;
+    private readonly ICurrentUserAccessor _currentUser;
 
-    public PlannerController(StudyLifeDb db, ICourseResolver courseResolver)
+    public PlannerController(StudyLifeDb db, ICourseResolver courseResolver,
+        WebhooksProxyClient webhooks, ICurrentUserAccessor currentUser)
     {
         _db = db;
         _courseResolver = courseResolver;
+        _webhooks = webhooks;
+        _currentUser = currentUser;
     }
 
     [HttpPost("exam-plan")]
@@ -81,6 +86,10 @@ public class PlannerController : ControllerBase
             created.Add(entity);
         }
         await _db.SaveChangesAsync();
+
+        _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId, WebhookEventTypes.PlanGenerated,
+            new { courseId = course.Id, courseName = course.Name, sessionsCreated = created.Count, examDate = request.ExamDate },
+            CancellationToken.None);
 
         return created.Select(e => new StudySessionDto
         {

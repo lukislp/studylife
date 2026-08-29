@@ -12,11 +12,16 @@ public class CourseGoalsController : ControllerBase
 {
     private readonly StudyLifeDb _db;
     private readonly ICourseResolver _courseResolver;
+    private readonly WebhooksProxyClient _webhooks;
+    private readonly ICurrentUserAccessor _currentUser;
 
-    public CourseGoalsController(StudyLifeDb db, ICourseResolver courseResolver)
+    public CourseGoalsController(StudyLifeDb db, ICourseResolver courseResolver,
+        WebhooksProxyClient webhooks, ICurrentUserAccessor currentUser)
     {
         _db = db;
         _courseResolver = courseResolver;
+        _webhooks = webhooks;
+        _currentUser = currentUser;
     }
 
     [HttpGet]
@@ -30,6 +35,8 @@ public class CourseGoalsController : ControllerBase
         if (dto.Grade is < 1.0m or > 5.0m) return BadRequest("Grade must be between 1.0 and 5.0.");
 
         var entity = await _db.CourseGoals.FirstOrDefaultAsync(g => g.CourseId == courseId);
+        var isNew = entity == null;
+        var wasCompletedBefore = entity?.CompletedAt != null;
         if (entity == null)
         {
             // Audit finding M2: a NEW goal binds a fresh CourseId, so it must resolve against
@@ -52,6 +59,16 @@ public class CourseGoalsController : ControllerBase
         entity.CompletedTopics = dto.CompletedTopics;
         entity.Tag = dto.Tag;
         await _db.SaveChangesAsync();
+
+        var payload = new { courseId = entity.CourseId, courseName = entity.CourseName };
+        _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId,
+            isNew ? WebhookEventTypes.CourseGoalCreated : WebhookEventTypes.CourseGoalUpdated,
+            payload, CancellationToken.None);
+        if (entity.CompletedAt != null && !wasCompletedBefore)
+        {
+            _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId, WebhookEventTypes.CourseGoalCompleted,
+                payload, CancellationToken.None);
+        }
         return ToDto(entity);
     }
 
@@ -62,6 +79,8 @@ public class CourseGoalsController : ControllerBase
         if (entity == null) return NotFound();
         _db.CourseGoals.Remove(entity);
         await _db.SaveChangesAsync();
+        _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId, WebhookEventTypes.CourseGoalDeleted,
+            new { courseId = entity.CourseId, courseName = entity.CourseName }, CancellationToken.None);
         return NoContent();
     }
 

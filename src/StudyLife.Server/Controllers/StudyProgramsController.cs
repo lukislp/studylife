@@ -20,11 +20,16 @@ public class StudyProgramsController : ControllerBase
 {
     private readonly StudyLifeDb _db;
     private readonly SettingsCacheVersion _settingsCacheVersion;
+    private readonly WebhooksProxyClient _webhooks;
+    private readonly ICurrentUserAccessor _currentUser;
 
-    public StudyProgramsController(StudyLifeDb db, SettingsCacheVersion settingsCacheVersion)
+    public StudyProgramsController(StudyLifeDb db, SettingsCacheVersion settingsCacheVersion,
+        WebhooksProxyClient webhooks, ICurrentUserAccessor currentUser)
     {
         _db = db;
         _settingsCacheVersion = settingsCacheVersion;
+        _webhooks = webhooks;
+        _currentUser = currentUser;
     }
 
     [HttpGet]
@@ -52,8 +57,14 @@ public class StudyProgramsController : ControllerBase
     {
         var program = await _db.StudyPrograms.FirstOrDefaultAsync(p => p.Id == id);
         if (program == null) return NotFound();
+        var wasCompleted = program.IsCompleted;
         program.IsCompleted = request.IsCompleted;
         await _db.SaveChangesAsync();
+        if (program.IsCompleted && !wasCompleted)
+        {
+            _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId, WebhookEventTypes.StudyProgramCompleted,
+                new { id = program.Id, name = program.Name }, CancellationToken.None);
+        }
         return new StudyProgramSummaryDto { Id = program.Id, Name = program.Name, IsBuiltIn = false, IsCompleted = program.IsCompleted };
     }
 
@@ -82,6 +93,8 @@ public class StudyProgramsController : ControllerBase
     {
         var program = await _db.StudyPrograms.FirstOrDefaultAsync(p => p.Id == id);
         if (program == null) return NotFound();
+        var programId = program.Id;
+        var programName = program.Name;
 
         await using var transaction = await _db.Database.BeginTransactionAsync();
 
@@ -114,6 +127,8 @@ public class StudyProgramsController : ControllerBase
         }
 
         await transaction.CommitAsync();
+        _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId, WebhookEventTypes.StudyProgramDeleted,
+            new { id = programId, name = programName }, CancellationToken.None);
         return NoContent();
     }
 
@@ -208,6 +223,8 @@ public class StudyProgramsController : ControllerBase
         await _db.SaveChangesAsync();
         await transaction.CommitAsync();
 
+        _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId, WebhookEventTypes.StudyProgramCreated,
+            new { id = program.Id, name = program.Name }, CancellationToken.None);
         return new StudyProgramSummaryDto { Id = program.Id, Name = program.Name, IsBuiltIn = false };
     }
 }

@@ -29,4 +29,37 @@ public static class WebhookEventTypes
     /// <summary>Fired at the same point SessionsController.CheckNewRecordAsync already sends its
     /// push notification - "longest single session so far" (see that method's doc comment).</summary>
     public const string NewRecordSet = "new_record.set";
+
+    public const string NoteCreated = "note.created";
+    public const string NoteUpdated = "note.updated";
+    public const string NoteDeleted = "note.deleted";
+
+    /// <summary>CourseGoalsController.Save is an upsert (PUT) - Created/Updated distinguish
+    /// which branch ran, Completed fires additionally (not instead) the moment CompletedAt
+    /// transitions from unset to set, same "transition, not level" reasoning as
+    /// SessionCompleted/TimerStarted/TimerEnded above.</summary>
+    public const string CourseGoalCreated = "course_goal.created";
+    public const string CourseGoalUpdated = "course_goal.updated";
+    public const string CourseGoalCompleted = "course_goal.completed";
+    public const string CourseGoalDeleted = "course_goal.deleted";
+
+    public const string CourseResourceCreated = "course_resource.created";
+    public const string CourseResourceDeleted = "course_resource.deleted";
+
+    public const string SessionTemplateCreated = "session_template.created";
+    public const string SessionTemplateDeleted = "session_template.deleted";
+
+    public const string StudyProgramCreated = "study_program.created";
+
+    /// <summary>StudyProgramsController.SetCompleted toggles a purely manual flag both ways -
+    /// only fired on the false-&gt;true transition, mirroring SessionCompleted (an un-complete
+    /// is not itself considered a noteworthy event to subscribe to).</summary>
+    public const string StudyProgramCompleted = "study_program.completed";
+    public const string StudyProgramDeleted = "study_program.deleted";
+
+    /// <summary>PlannerController.GenerateExamPlan bulk-inserts StudySessionEntity rows
+    /// directly (not through SessionsController), so none of those individually fire
+    /// SessionCreated - this single summary event is the only webhook signal for the whole
+    /// batch.</summary>
+    public const string PlanGenerated = "plan.generated";
 }
