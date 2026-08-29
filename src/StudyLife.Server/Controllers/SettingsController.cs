@@ -19,15 +19,17 @@ public class SettingsController : ControllerBase
     private readonly SettingsCacheVersion _settingsCacheVersion;
     private readonly ICurrentUserAccessor _currentUser;
     private readonly AiProxyClient _aiProxyClient;
+    private readonly DeveloperProxyClient _developerProxyClient;
 
     public SettingsController(StudyLifeDb db, IDistributedCache cache, SettingsCacheVersion settingsCacheVersion,
-        ICurrentUserAccessor currentUser, AiProxyClient aiProxyClient)
+        ICurrentUserAccessor currentUser, AiProxyClient aiProxyClient, DeveloperProxyClient developerProxyClient)
     {
         _db = db;
         _cache = cache;
         _settingsCacheVersion = settingsCacheVersion;
         _currentUser = currentUser;
         _aiProxyClient = aiProxyClient;
+        _developerProxyClient = developerProxyClient;
     }
 
     [HttpGet]
@@ -725,6 +727,57 @@ public class SettingsController : ControllerBase
         if (entity is null) return NotFound();
         _db.WebhookApiKeys.Remove(entity);
         await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    // Same three-endpoint shape as the ai-api-key group above, for the separate
+    // studylife-developers portal key slot (AuthUserEntity.DeveloperApiKeyHash) - a toggle,
+    // not a reveal-once-plaintext lifecycle: nothing external ever needs the raw key, the
+    // server hands it to studylife-developers itself at generation time
+    // (DeveloperProxyClient.RegisterKeyAsync). Deliberately no outbox here (see that client's
+    // own class doc) - a failed delivery simply surfaces as a non-success response, the user
+    // retries the toggle.
+
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpGet("developer-api-key")]
+    public async Task<ActionResult<DeveloperApiKeyStatusDto>> GetDeveloperApiKeyStatus()
+    {
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
+        var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+        return new DeveloperApiKeyStatusDto { HasKey = user.DeveloperApiKeyHash != null, CreatedAt = user.DeveloperApiKeyCreatedAt };
+    }
+
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpPost("developer-api-key/generate")]
+    public async Task<ActionResult<DeveloperApiKeyGenerateResponseDto>> GenerateDeveloperApiKey(CancellationToken ct)
+    {
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
+        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+
+        var key = AuthSessionService.GenerateToken();
+        user.DeveloperApiKeyHash = AuthSessionService.HashToken(key);
+        user.DeveloperApiKeyCreatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        await _developerProxyClient.RegisterKeyAsync(userId, key, ct);
+        return new DeveloperApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = user.DeveloperApiKeyCreatedAt.Value };
+    }
+
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpPost("developer-api-key/revoke")]
+    public async Task<IActionResult> RevokeDeveloperApiKey(CancellationToken ct)
+    {
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
+        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+
+        user.DeveloperApiKeyHash = null;
+        user.DeveloperApiKeyCreatedAt = null;
+        await _db.SaveChangesAsync();
+
+        await _developerProxyClient.RevokeKeyAsync(userId, ct);
         return NoContent();
     }
 

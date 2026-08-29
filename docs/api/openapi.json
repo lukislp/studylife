@@ -4045,6 +4045,76 @@
         }
       }
     },
+    "/api/settings/developer-api-key": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeveloperApiKeyStatusDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeveloperApiKeyStatusDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeveloperApiKeyStatusDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/developer-api-key/generate": {
+      "post": {
+        "tags": [
+          "Settings"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeveloperApiKeyGenerateResponseDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeveloperApiKeyGenerateResponseDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeveloperApiKeyGenerateResponseDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/developer-api-key/revoke": {
+      "post": {
+        "tags": [
+          "Settings"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/studyprograms": {
       "get": {
         "tags": [
@@ -5679,6 +5749,40 @@
         "properties": {
           "demo": {
             "type": "boolean"
+          }
+        }
+      },
+      "DeveloperApiKeyGenerateResponseDto": {
+        "required": [
+          "apiKey",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "apiKey": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DeveloperApiKeyStatusDto": {
+        "required": [
+          "hasKey"
+        ],
+        "type": "object",
+        "properties": {
+          "hasKey": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },

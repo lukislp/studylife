@@ -284,6 +284,8 @@ builder.Services.AddSingleton<AiProxyClient>();
 // studylife-webhooks integration - permanently inactive without StudyLifeWebhooks:*
 // configuration (see the WebhooksProxyClient comment).
 builder.Services.AddSingleton<WebhooksProxyClient>();
+// Same pattern (see the WebhooksProxyClient comment) - for the studylife-developers portal.
+builder.Services.AddSingleton<DeveloperProxyClient>();
 // Raw DB backup/restore + the former file-based VAPID/setup-secret storage are bound to a
 // local single SQLite file (online backup API, PRAGMA integrity_check, file swap) -
 // deliberately NOT registered in Postgres mode (multiple pods, no guaranteed shared volume);

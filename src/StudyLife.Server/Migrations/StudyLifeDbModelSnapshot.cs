@@ -148,6 +148,12 @@ namespace StudyLife.Server.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("DeveloperApiKeyCreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DeveloperApiKeyHash")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("DisplayName")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -191,6 +197,9 @@ namespace StudyLife.Server.Migrations
                         .IsUnique();
 
                     b.HasIndex("CaptureApiKeyHash")
+                        .IsUnique();
+
+                    b.HasIndex("DeveloperApiKeyHash")
                         .IsUnique();
 
                     b.HasIndex("FocusGuardApiKeyHash")

@@ -270,6 +270,12 @@
              gets handed this one key. See SetupWebhooksCard. -->
         <SetupWebhooksCard />
 
+        <!-- studylife-developers: separate long-lived per-user API key slot (DeveloperApiKeyHash),
+             a toggle like studylife-ai's own card - scoped exclusively to managing one's own
+             add-on registrations (ApiKeyScopes.Developer), never any study data. See
+             SetupDeveloperCard. -->
+        <SetupDeveloperCard />
+
         <!-- studylife-ai: separate long-lived per-user API key slot (AiApiKeyHash). UNLIKE the
              Home Assistant card above, this one is a plain on/off toggle, not a reveal-once-
              plaintext lifecycle - the server registers the key with studylife-ai itself, the

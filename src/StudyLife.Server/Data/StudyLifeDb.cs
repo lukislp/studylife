@@ -139,6 +139,9 @@ public class StudyLifeDb : DbContext
         // Per-user API key for the studylife-tray desktop app: separate slot from the six above
         // (see AuthUserEntity.TrayApiKeyHash), same uniqueness reasoning.
         modelBuilder.Entity<AuthUserEntity>().HasIndex(u => u.TrayApiKeyHash).IsUnique();
+        // Per-user API key for the studylife-developers portal: separate slot from the seven
+        // above (see AuthUserEntity.DeveloperApiKeyHash), same uniqueness reasoning.
+        modelBuilder.Entity<AuthUserEntity>().HasIndex(u => u.DeveloperApiKeyHash).IsUnique();
         // AI key outbox (audit A7): drained table-wide by BackgroundTaskService across all
         // users in one query (see RunAiKeyOutboxAsync), not per-user - the index supports the
         // per-user CreatedAt ordering that drain does in memory.
@@ -382,6 +385,19 @@ public class AuthUserEntity
     public string? TrayApiKeyHash { get; set; }
     /// <summary>Timestamp of the (last) generation of <see cref="TrayApiKeyHash"/> - display-only, same as ApiKeyCreatedAt.</summary>
     public DateTime? TrayApiKeyCreatedAt { get; set; }
+    /// <summary>
+    /// SHA-256 hash of the per-user API key for the studylife-developers portal - same shape and
+    /// toggle-not-reveal reasoning as <see cref="AiApiKeyHash"/> (see ApiKeyScopes.Developer):
+    /// nothing external ever needs the raw key, the server hands it to studylife-developers
+    /// itself at generation time (DeveloperProxyClient.RegisterKeyAsync) and only ever stores
+    /// the hash locally. Scoped exclusively to DeveloperController (managing one's own
+    /// OAuthClientEntity registrations) - deliberately NOT part of ApiKeyScopes.PubliclyGrantable,
+    /// since that catalog is for installed third-party add-ons' DATA access, an entirely separate
+    /// concern from managing developer registrations.
+    /// </summary>
+    public string? DeveloperApiKeyHash { get; set; }
+    /// <summary>Timestamp of the (last) generation of <see cref="DeveloperApiKeyHash"/> - display-only, same as ApiKeyCreatedAt.</summary>
+    public DateTime? DeveloperApiKeyCreatedAt { get; set; }
     /// <summary>
     /// Permanent, per-user token for the subscribable ICS calendar feed
     /// (GET /api/sessions/ics?calendarToken=...). Unlike ApiKeyHash, stored in PLAINTEXT
