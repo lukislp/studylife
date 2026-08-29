@@ -113,6 +113,26 @@ spec:
       ports:
         - { protocol: TCP, port: 8443 }
 ---
+# Same reasoning and same port as allow-studylife-ai-to-web above - studylife-developers (the
+# add-on developer portal, separate repo/namespace) calls StudyLife's REST API server-to-server
+# the identical way: cluster-internal Service DNS on port 8443, trusting the same internal
+# cert-manager CA (see studylife-developers' own k8s/05-studylife-ca.yaml and
+# k8s/01-config.yaml's StudyLife__BaseUrl).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-studylife-developers-to-web
+  namespace: studylife-scale
+spec:
+  podSelector: { matchLabels: { app: studylife-web } }
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: studylife-developers } }
+          podSelector: { matchLabels: { app: studylife-developers } }
+      ports:
+        - { protocol: TCP, port: 8443 }
+---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
