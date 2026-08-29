@@ -25,6 +25,7 @@ public class SystemController : ControllerBase
 {
     private readonly StudyLifeDb _db;
     private readonly bool _rawBackupSupported;
+    private readonly bool _demoMode;
 
     public SystemController(StudyLifeDb db,
         IConfiguration config,
@@ -43,6 +44,7 @@ public class SystemController : ControllerBase
         // about whether the write-block middleware is actually registered.
         _rawBackupSupported = backupService is not null && restoreService is not null
             && !DemoModeGuard.IsEnabled(config);
+        _demoMode = DemoModeGuard.IsEnabled(config);
     }
 
     /// <summary>
@@ -76,6 +78,14 @@ public class SystemController : ControllerBase
 
         if (user.CalendarToken is null)
         {
+            // On a demo instance this branch is normally unreachable (DemoSeeder pre-seeds the
+            // token), but this lazy create is a GET that PERSISTS - the write-block middleware
+            // in Program.cs only covers non-GET methods, so without this check a seeder change
+            // (e.g. dropping the pre-seeded token, or a second demo user) would silently turn
+            // this endpoint into the demo's only visitor-reachable DB write.
+            if (_demoMode)
+                return StatusCode(StatusCodes.Status503ServiceUnavailable,
+                    new { error = "demo calendar token not seeded" });
             user.CalendarToken = AuthSessionService.GenerateToken();
             user.CalendarTokenCreatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
