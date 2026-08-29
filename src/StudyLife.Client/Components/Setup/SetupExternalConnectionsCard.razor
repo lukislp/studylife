@@ -2,15 +2,15 @@
 @inject HttpClient Http
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
-@* Consolidated status/disconnect card for the five integrations that no longer provision a key
+@* Consolidated status/disconnect card for the four integrations that no longer provision a key
    through this Setup page: studylife-mcp (AuthUserEntity.McpApiKeyHash), studylife-capture
-   (CaptureApiKeyHash), studylife-focusguard (FocusGuardApiKeyHash), studylife-timetrack
-   (TimeTrackApiKeyHash), and studylife-focustunes (FocusTunesApiKeyHash). UNLIKE the Home
+   (CaptureApiKeyHash), studylife-focusguard (FocusGuardApiKeyHash), and studylife-focustunes
+   (FocusTunesApiKeyHash). UNLIKE the Home
    Assistant and studylife-ai cards, this one never generates a key here - provisioning happens
    exclusively through each integration's own consent flow (each extension's own "Connect" action
    against its already-authenticated session; the MCP OAuth connect flow behind
    AuthController.McpConnect, plus the CLI login, for stdio-based MCP clients). The only thing a
-   user ever needs from THIS page for any of the five is an emergency disconnect, so the card is
+   user ever needs from THIS page for any of the four is an emergency disconnect, so the card is
    reduced to a status line plus a revoke button per slot - no generate, no one-time plaintext
    reveal, no advanced disclosure, no manual paste path. Self-contained component (own SetupText
    instance + own HTTP calls), reusing the existing per-slot status and revoke endpoints
@@ -51,16 +51,6 @@
     </div>
 
     <div class="toggle-row" style="justify-content:space-between;flex-wrap:wrap">
-        <span>@T.TimeTrackConnectionLabel — <strong>@(_timeTrackConnected ? T.ConnectionConnected : T.ConnectionNotConnected)</strong></span>
-        @if (_timeTrackConnected)
-        {
-            <button type="button" class="btn-danger" @onclick="DisconnectTimeTrack" disabled="@_timeTrackBusy">
-                @(_timeTrackBusy ? "…" : T.DisconnectButton)
-            </button>
-        }
-    </div>
-
-    <div class="toggle-row" style="justify-content:space-between;flex-wrap:wrap">
         <span>@T.FocusTunesConnectionLabel — <strong>@(_focusTunesConnected ? T.ConnectionConnected : T.ConnectionNotConnected)</strong></span>
         @if (_focusTunesConnected)
         {
@@ -77,12 +67,10 @@
     private bool _mcpConnected;
     private bool _captureConnected;
     private bool _focusGuardConnected;
-    private bool _timeTrackConnected;
     private bool _focusTunesConnected;
     private bool _mcpBusy;
     private bool _captureBusy;
     private bool _focusGuardBusy;
-    private bool _timeTrackBusy;
     private bool _focusTunesBusy;
 
     protected override async Task OnInitializedAsync()
@@ -104,12 +92,6 @@
         {
             var focusGuardStatus = await Http.GetFromJsonAsync<FocusGuardApiKeyStatusDto>("api/settings/focusguard-api-key");
             _focusGuardConnected = focusGuardStatus?.HasKey ?? false;
-        }
-        catch { /* offline: card shows the "not connected" default */ }
-        try
-        {
-            var timeTrackStatus = await Http.GetFromJsonAsync<TimeTrackApiKeyStatusDto>("api/settings/timetrack-api-key");
-            _timeTrackConnected = timeTrackStatus?.HasKey ?? false;
         }
         catch { /* offline: card shows the "not connected" default */ }
         try
@@ -151,17 +133,6 @@
             if (response.IsSuccessStatusCode) _focusGuardConnected = false;
         }
         finally { _focusGuardBusy = false; }
-    }
-
-    private async Task DisconnectTimeTrack()
-    {
-        _timeTrackBusy = true;
-        try
-        {
-            var response = await Http.PostAsync("api/settings/timetrack-api-key/revoke", null);
-            if (response.IsSuccessStatusCode) _timeTrackConnected = false;
-        }
-        finally { _timeTrackBusy = false; }
     }
 
     private async Task DisconnectFocusTunes()
