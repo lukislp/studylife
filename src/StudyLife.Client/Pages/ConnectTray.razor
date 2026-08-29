@@ -1,0 +1,10 @@
+@page "/connect/tray"
+@layout PublicLayout
+
+@* Thin wrapper: the actual consent UI/logic lives in Components/ConnectConsent.razor, shared
+   with /connect/mcp, /connect/capture, /connect/focusguard, and /connect/focustunes (see
+   ConnectCapture.razor for the full flow writeup, identity contract v1 §2, generalized to the
+   studylife-tray desktop app as a fifth audience - the one non-browser-extension consumer, using
+   an RFC 8252 loopback redirect_uri instead of chrome.identity). *@
+
+<ConnectConsent Audience="tray" />

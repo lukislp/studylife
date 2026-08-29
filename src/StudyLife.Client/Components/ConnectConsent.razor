@@ -47,7 +47,7 @@
 }
 
 @code {
-    /// <summary>"mcp", "capture", "focusguard", or "focustunes" - selects both the
+    /// <summary>"mcp", "capture", "focusguard", "focustunes", or "tray" - selects both the
     /// audience-appropriate copy below and the actual endpoint pair (api/auth/{Audience}-connect
     /// / the DTO type used to call it).</summary>
     [Parameter, EditorRequired] public string Audience { get; set; } = "";
@@ -58,6 +58,10 @@
     private string _redirectUri = "";
     private string _state = "";
 
+    // "tray" deliberately falls through to the Mcp default below for PageTitle/Heading, not a
+    // dedicated ConnectTray* pair: studylife-tray is a native desktop app, not a browser
+    // extension, so Mcp's already-generic "external app" wording fits it exactly - only Intro
+    // needs audience-specific copy (it names the product).
     private string PageTitle => Audience switch
     {
         "capture" => T.ConnectCapturePageTitle,
@@ -77,6 +81,7 @@
         "capture" => T.ConnectCaptureIntro,
         "focusguard" => T.ConnectFocusGuardIntro,
         "focustunes" => T.ConnectFocusTunesIntro,
+        "tray" => T.ConnectTrayIntro,
         _ => T.ConnectMcpIntro,
     };
 
@@ -150,6 +155,14 @@
                     new FocusTunesConnectRequestDto { RedirectUri = _redirectUri, State = _state });
                 if (!response.IsSuccessStatusCode) { _error = T.ConnectFailed; return; }
                 var result = await response.Content.ReadFromJsonAsync<FocusTunesConnectResponseDto>();
+                redirectTo = result?.RedirectTo;
+            }
+            else if (Audience == "tray")
+            {
+                var response = await Http.PostAsJsonAsync("api/auth/tray-connect",
+                    new TrayConnectRequestDto { RedirectUri = _redirectUri, State = _state });
+                if (!response.IsSuccessStatusCode) { _error = T.ConnectFailed; return; }
+                var result = await response.Content.ReadFromJsonAsync<TrayConnectResponseDto>();
                 redirectTo = result?.RedirectTo;
             }
             else

@@ -330,6 +330,45 @@ public class ApiKeyScopeTests : IClassFixture<CustomWebApplicationFactory>
         await RevokeKeyAsync("focustunes");
     }
 
+    // ---------- tray (Windows system tray desktop app: same narrowest shape as
+    // focusguard/focustunes - only polls whether a session is running, see ApiKeyScopes.Tray) ----------
+
+    [Fact]
+    public async Task Tray_AllowedEndpoint_GetTimerState_ReturnsOk()
+    {
+        var apiKey = await GenerateKeyAsync("tray");
+        using var client = ApiKeyTestHelpers.CreateClientWithKey(_factory, apiKey);
+
+        var response = await client.GetAsync("/api/timerstate");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await RevokeKeyAsync("tray");
+    }
+
+    [Fact]
+    public async Task Tray_OutOfScopeEndpoint_ListNotes_ReturnsForbidden()
+    {
+        var apiKey = await GenerateKeyAsync("tray");
+        using var client = ApiKeyTestHelpers.CreateClientWithKey(_factory, apiKey);
+
+        var response = await client.GetAsync("/api/notes");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        await RevokeKeyAsync("tray");
+    }
+
+    [Fact]
+    public async Task Tray_OutOfScopeEndpoint_SaveTimerState_ReturnsForbidden()
+    {
+        var apiKey = await GenerateKeyAsync("tray");
+        using var client = ApiKeyTestHelpers.CreateClientWithKey(_factory, apiKey);
+
+        var response = await client.PutAsJsonAsync("/api/timerstate", new TimerStateDto());
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        await RevokeKeyAsync("tray");
+    }
+
     // ---------- credential-kind carve-outs ----------
 
     [Fact]

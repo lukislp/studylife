@@ -22,6 +22,7 @@ public partial class AuthController
     private const string AudienceCapture = "capture";
     private const string AudienceFocusGuard = "focusguard";
     private const string AudienceFocusTunes = "focustunes";
+    private const string AudienceTray = "tray";
 
     /// <summary>Cached under a single-use assertion token, exactly like PendingHandoff -
     /// ApiKey is the ONE moment the plaintext exists after rotation until the consumer's
@@ -235,6 +236,38 @@ public partial class AuthController
         var result = await RedeemConsentAssertionAsync(AudienceFocusTunes, request.Assertion);
         if (result is null) return Unauthorized();
         return new FocusTunesAssertionExchangeResponseDto { UserId = result.Value.UserId, FocusTunesApiKey = result.Value.ApiKey };
+    }
+
+    /// <summary>
+    /// Step 3 of the tray connect flow (identity contract v1 §2, fifth audience): same
+    /// session-required shape as FocusTunesConnect, rotating the tray key slot instead
+    /// (SettingsController.RotateTrayKey). Unlike every browser-extension audience above, the
+    /// caller here is a native desktop app - BuildConnectRedirectAsync's IsAllowedRedirectUri
+    /// already accepts an RFC 8252 http://127.0.0.1|localhost loopback redirect_uri for exactly
+    /// this reason (see studylife-mcp's CLI login flow for the other existing precedent).
+    /// </summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpPost("tray-connect")]
+    public async Task<ActionResult<TrayConnectResponseDto>> TrayConnect([FromBody] TrayConnectRequestDto request)
+    {
+        var (redirectTo, error) = await BuildConnectRedirectAsync(AudienceTray, request.RedirectUri, request.State, SettingsController.RotateTrayKey);
+        if (error is not null) return error;
+        return new TrayConnectResponseDto { RedirectTo = redirectTo! };
+    }
+
+    /// <summary>
+    /// Step 4 of the tray connect flow: exchanges a single-use, tray-audience assertion for the
+    /// real AuthUserId and the plaintext tray key - called by the app itself against its own
+    /// loopback HTTP listener's captured redirect. EXEMPT from the API gate ([AllowAnonymous]),
+    /// same non-distinguishing-401 and audience-isolation rules as FocusTunesAssertionExchange.
+    /// </summary>
+    [AllowAnonymous]
+    [HttpPost("tray-assertion-exchange")]
+    public async Task<ActionResult<TrayAssertionExchangeResponseDto>> TrayAssertionExchange([FromBody] TrayAssertionExchangeRequestDto request)
+    {
+        var result = await RedeemConsentAssertionAsync(AudienceTray, request.Assertion);
+        if (result is null) return Unauthorized();
+        return new TrayAssertionExchangeResponseDto { UserId = result.Value.UserId, TrayApiKey = result.Value.ApiKey };
     }
 
     private static string ConsentAssertionCacheKey(string assertion) => $"consent-assertion:{assertion}";

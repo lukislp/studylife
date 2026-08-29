@@ -158,6 +158,17 @@ public static class ApiKeyScopes
         new("TimerState", "Get"), // GET /api/timerstate - background.ts's poll loop
     ];
 
+    /// <summary>
+    /// studylife-tray (github.com/lukislp/studylife-tray) - the Windows system tray companion
+    /// app. Identical scope/shape to FocusGuard/FocusTunes: a native app, not a browser extension,
+    /// but it only ever polls TimerState.Get to show the current session status in the tray icon.
+    /// </summary>
+    private static readonly HashSet<Endpoint> Tray =
+    [
+        Whoami,
+        new("TimerState", "Get"), // GET /api/timerstate - the app's poll loop
+    ];
+
     public static readonly IReadOnlyDictionary<string, IReadOnlySet<Endpoint>> BySlot =
         new Dictionary<string, IReadOnlySet<Endpoint>>
         {
@@ -167,5 +178,6 @@ public static class ApiKeyScopes
             ["capture"] = Capture,
             ["focusguard"] = FocusGuard,
             ["focustunes"] = FocusTunes,
+            ["tray"] = Tray,
         };
 }

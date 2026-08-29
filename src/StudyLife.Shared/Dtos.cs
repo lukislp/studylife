@@ -499,6 +499,22 @@ public class FocusTunesApiKeyGenerateResponseDto
     public DateTime CreatedAt { get; set; }
 }
 
+/// <summary>Status DTO for the studylife-tray key slot - same shape as
+/// FocusGuardApiKeyStatusDto, see AuthUserEntity.TrayApiKeyHash.</summary>
+public class TrayApiKeyStatusDto
+{
+    public bool HasKey { get; set; }
+    public DateTime? CreatedAt { get; set; }
+}
+
+/// <summary>Generate-response DTO for the studylife-tray key slot - same shape as
+/// FocusGuardApiKeyGenerateResponseDto.</summary>
+public class TrayApiKeyGenerateResponseDto
+{
+    public string ApiKey { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
+}
+
 /// <summary>
 /// Request/response shapes for POST /api/ai/chat, /api/ai/agent, /api/ai/agent/confirm - the
 /// AiProxyController passes bodies through byte-for-byte, so these must match studylife-ai's own
@@ -824,7 +840,7 @@ public class FocusTunesConnectResponseDto
     public string RedirectTo { get; set; } = "";
 }
 
-/// <summary>Body of POST /api/auth/focustunes-assertion-exchange (step 4, fifth audience).</summary>
+/// <summary>Body of POST /api/auth/focustunes-assertion-exchange (step 4, fourth audience).</summary>
 public class FocusTunesAssertionExchangeRequestDto
 {
     public string Assertion { get; set; } = "";
@@ -835,6 +851,35 @@ public class FocusTunesAssertionExchangeResponseDto
 {
     public int UserId { get; set; }
     public string FocusTunesApiKey { get; set; } = "";
+}
+
+/// <summary>Body of POST /api/auth/tray-connect - same shape and role as
+/// FocusTunesConnectRequestDto, a fifth audience/slot in the consent flow. The studylife-tray
+/// desktop app supplies an RFC 8252 loopback redirect_uri here instead of a chrome.identity
+/// callback, since it isn't a browser extension.</summary>
+public class TrayConnectRequestDto
+{
+    public string RedirectUri { get; set; } = "";
+    public string State { get; set; } = "";
+}
+
+/// <summary>Response of POST /api/auth/tray-connect.</summary>
+public class TrayConnectResponseDto
+{
+    public string RedirectTo { get; set; } = "";
+}
+
+/// <summary>Body of POST /api/auth/tray-assertion-exchange (step 4, fifth audience).</summary>
+public class TrayAssertionExchangeRequestDto
+{
+    public string Assertion { get; set; } = "";
+}
+
+/// <summary>Response of POST /api/auth/tray-assertion-exchange.</summary>
+public class TrayAssertionExchangeResponseDto
+{
+    public int UserId { get; set; }
+    public string TrayApiKey { get; set; } = "";
 }
 
 /// <summary>Response of POST /api/auth/recovery/generate - the plaintext codes only exist
@@ -1298,4 +1343,14 @@ public class MetricsAchievementTierDto
     public int Threshold { get; set; }
     public bool Unlocked { get; set; }
     public double Current { get; set; }
+}
+
+/// <summary>Body of POST /api/webhooks (WebhooksProxyController.Create), forwarded to
+/// studylife-webhooks almost verbatim. Events is a plain list of event-type strings (see
+/// WebhookEventTypes) - not validated against a closed enum here or on studylife-webhooks' side,
+/// so a new event type never needs a contract change on either end.</summary>
+public class CreateWebhookRequestDto
+{
+    public string TargetUrl { get; set; } = "";
+    public List<string> Events { get; set; } = new();
 }
