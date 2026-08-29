@@ -191,6 +191,7 @@
   "CaptureConnectionLabel": "studylife-capture",
   "FocusGuardConnectionLabel": "studylife-focusguard",
   "FocusTunesConnectionLabel": "studylife-focustunes",
+  "TrayConnectionLabel": "studylife-tray",
   "ConnectionConnected": "Kapcsolódva",
   "ConnectionNotConnected": "Nincs kapcsolódva",
   "DisconnectButton": "Kapcsolat bontása",

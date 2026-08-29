@@ -622,6 +622,111 @@ public class SettingsController : ControllerBase
         return NoContent();
     }
 
+    // Same three-endpoint shape again, for the separate studylife-tray desktop-app key slot
+    // (AuthUserEntity.TrayApiKeyHash). Provisioning is via the consent flow
+    // (AuthController.TrayConnect); generate/revoke exist for the same uniform admin/test
+    // surface every other slot has.
+
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpGet("tray-api-key")]
+    public async Task<ActionResult<TrayApiKeyStatusDto>> GetTrayApiKeyStatus()
+    {
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
+        var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+        return new TrayApiKeyStatusDto { HasKey = user.TrayApiKeyHash != null, CreatedAt = user.TrayApiKeyCreatedAt };
+    }
+
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpPost("tray-api-key/generate")]
+    public async Task<ActionResult<TrayApiKeyGenerateResponseDto>> GenerateTrayApiKey()
+    {
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
+        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+
+        var key = RotateTrayKey(user, DateTime.UtcNow);
+        await _db.SaveChangesAsync();
+        return new TrayApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = user.TrayApiKeyCreatedAt!.Value };
+    }
+
+    /// <summary>Core of AuthController.TrayConnect. Same pattern as RotateFocusTunesKey.
+    /// Caller must SaveChanges.</summary>
+    internal static string RotateTrayKey(AuthUserEntity user, DateTime now)
+    {
+        var key = AuthSessionService.GenerateToken();
+        user.TrayApiKeyHash = AuthSessionService.HashToken(key);
+        user.TrayApiKeyCreatedAt = now;
+        return key;
+    }
+
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpPost("tray-api-key/revoke")]
+    public async Task<IActionResult> RevokeTrayApiKey()
+    {
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
+        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+
+        user.TrayApiKeyHash = null;
+        user.TrayApiKeyCreatedAt = null;
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    // Same three-endpoint shape again, for the separate studylife-webhooks registration-
+    // management key slot (AuthUserEntity.WebhooksApiKeyHash). Unlike every browser-extension/app
+    // slot above, this one is manually generated here - like ha-api-key - rather than provisioned
+    // via a per-client browser-consent flow: it's meant to be handed to whichever external
+    // program/add-on the user wants to let manage its own webhook subscriptions (see
+    // ApiKeyScopes.Webhooks), not one single known consumer.
+
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpGet("webhooks-api-key")]
+    public async Task<ActionResult<WebhooksApiKeyStatusDto>> GetWebhooksApiKeyStatus()
+    {
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
+        var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+        return new WebhooksApiKeyStatusDto { HasKey = user.WebhooksApiKeyHash != null, CreatedAt = user.WebhooksApiKeyCreatedAt };
+    }
+
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpPost("webhooks-api-key/generate")]
+    public async Task<ActionResult<WebhooksApiKeyGenerateResponseDto>> GenerateWebhooksApiKey()
+    {
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
+        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+
+        var key = RotateWebhooksKey(user, DateTime.UtcNow);
+        await _db.SaveChangesAsync();
+        return new WebhooksApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = user.WebhooksApiKeyCreatedAt!.Value };
+    }
+
+    /// <summary>Same pattern as every other slot's Rotate helper. Caller must SaveChanges.</summary>
+    internal static string RotateWebhooksKey(AuthUserEntity user, DateTime now)
+    {
+        var key = AuthSessionService.GenerateToken();
+        user.WebhooksApiKeyHash = AuthSessionService.HashToken(key);
+        user.WebhooksApiKeyCreatedAt = now;
+        return key;
+    }
+
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpPost("webhooks-api-key/revoke")]
+    public async Task<IActionResult> RevokeWebhooksApiKey()
+    {
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
+        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+
+        user.WebhooksApiKeyHash = null;
+        user.WebhooksApiKeyCreatedAt = null;
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
     // Same CSPRNG technique as CalendarTokenProvider.GenerateToken: 32 bytes, base64url
     // without padding - already URL-safe, because the token travels as part of the client
     // route path (/shared/{token}) and the API path (/api/progress/shared/{token}).

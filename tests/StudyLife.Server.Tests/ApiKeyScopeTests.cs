@@ -330,6 +330,91 @@ public class ApiKeyScopeTests : IClassFixture<CustomWebApplicationFactory>
         await RevokeKeyAsync("focustunes");
     }
 
+    // ---------- tray (Windows system tray desktop app: same narrowest shape as
+    // focusguard/focustunes - only polls whether a session is running, see ApiKeyScopes.Tray) ----------
+
+    [Fact]
+    public async Task Tray_AllowedEndpoint_GetTimerState_ReturnsOk()
+    {
+        var apiKey = await GenerateKeyAsync("tray");
+        using var client = ApiKeyTestHelpers.CreateClientWithKey(_factory, apiKey);
+
+        var response = await client.GetAsync("/api/timerstate");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await RevokeKeyAsync("tray");
+    }
+
+    [Fact]
+    public async Task Tray_OutOfScopeEndpoint_ListNotes_ReturnsForbidden()
+    {
+        var apiKey = await GenerateKeyAsync("tray");
+        using var client = ApiKeyTestHelpers.CreateClientWithKey(_factory, apiKey);
+
+        var response = await client.GetAsync("/api/notes");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        await RevokeKeyAsync("tray");
+    }
+
+    [Fact]
+    public async Task Tray_OutOfScopeEndpoint_SaveTimerState_ReturnsForbidden()
+    {
+        var apiKey = await GenerateKeyAsync("tray");
+        using var client = ApiKeyTestHelpers.CreateClientWithKey(_factory, apiKey);
+
+        var response = await client.PutAsJsonAsync("/api/timerstate", new TimerStateDto());
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        await RevokeKeyAsync("tray");
+    }
+
+    // ---------- webhooks (registration-management key for the studylife-webhooks microservice:
+    // the ONE slot scoped to Webhooks.* instead of TimerState.Get - see ApiKeyScopes.Webhooks;
+    // meant to be handed to an arbitrary external program, not one known client) ----------
+
+    [Fact]
+    public async Task Webhooks_AllowedEndpoint_ListWebhooks_ReturnsServiceUnavailable()
+    {
+        // 503, not 200/403: StudyLifeWebhooks:* is unconfigured in the test host (an optional
+        // integration, same as studylife-ai - see WebhooksProxyControllerTests), so a properly
+        // scoped call still reaches the controller, which then reports "not configured". A scope
+        // failure would be 403 instead - that's the assertion this test actually pins.
+        var apiKey = await GenerateKeyAsync("webhooks");
+        using var client = ApiKeyTestHelpers.CreateClientWithKey(_factory, apiKey);
+
+        var response = await client.GetAsync("/api/webhooks");
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        await RevokeKeyAsync("webhooks");
+    }
+
+    [Fact]
+    public async Task Webhooks_OutOfScopeEndpoint_ListNotes_ReturnsForbidden()
+    {
+        var apiKey = await GenerateKeyAsync("webhooks");
+        using var client = ApiKeyTestHelpers.CreateClientWithKey(_factory, apiKey);
+
+        var response = await client.GetAsync("/api/notes");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        await RevokeKeyAsync("webhooks");
+    }
+
+    [Fact]
+    public async Task Webhooks_OutOfScopeEndpoint_GetTimerState_ReturnsForbidden()
+    {
+        // Unlike every other narrow slot (Guard/Tune/Tray), Webhooks is NOT scoped to
+        // TimerState.Get at all - it has no reason to poll session state itself.
+        var apiKey = await GenerateKeyAsync("webhooks");
+        using var client = ApiKeyTestHelpers.CreateClientWithKey(_factory, apiKey);
+
+        var response = await client.GetAsync("/api/timerstate");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        await RevokeKeyAsync("webhooks");
+    }
+
     // ---------- credential-kind carve-outs ----------
 
     [Fact]

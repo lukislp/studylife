@@ -133,6 +133,12 @@ public class StudyLifeDb : DbContext
         // Per-user API key for the studylife-focustunes browser extension: separate slot from the
         // five above (see AuthUserEntity.FocusTunesApiKeyHash), same uniqueness reasoning.
         modelBuilder.Entity<AuthUserEntity>().HasIndex(u => u.FocusTunesApiKeyHash).IsUnique();
+        // Per-user API key for the studylife-tray desktop app: separate slot from the six above
+        // (see AuthUserEntity.TrayApiKeyHash), same uniqueness reasoning.
+        modelBuilder.Entity<AuthUserEntity>().HasIndex(u => u.TrayApiKeyHash).IsUnique();
+        // Per-user API key for managing studylife-webhooks registrations: separate slot from the
+        // seven above (see AuthUserEntity.WebhooksApiKeyHash), same uniqueness reasoning.
+        modelBuilder.Entity<AuthUserEntity>().HasIndex(u => u.WebhooksApiKeyHash).IsUnique();
         // AI key outbox (audit A7): drained table-wide by BackgroundTaskService across all
         // users in one query (see RunAiKeyOutboxAsync), not per-user - the index supports the
         // per-user CreatedAt ordering that drain does in memory.
@@ -341,6 +347,29 @@ public class AuthUserEntity
     public string? FocusTunesApiKeyHash { get; set; }
     /// <summary>Timestamp of the (last) generation of <see cref="FocusTunesApiKeyHash"/> - display-only, same as ApiKeyCreatedAt.</summary>
     public DateTime? FocusTunesApiKeyCreatedAt { get; set; }
+    /// <summary>
+    /// SHA-256 hash of the per-user API key for the studylife-tray desktop app - same shape and
+    /// reasoning as <see cref="FocusGuardApiKeyHash"/>, a SEPARATE credential/slot from the other
+    /// six, and the same narrow scope (see ApiKeyScopes.Tray): only GET /api/timerstate + Whoami.
+    /// A native app, not a browser extension, so its browser-consent connect flow uses an RFC
+    /// 8252 loopback redirect_uri instead of chrome.identity - see AuthController.
+    /// IsAllowedRedirectUri. Null = no key generated, or revoked.
+    /// </summary>
+    public string? TrayApiKeyHash { get; set; }
+    /// <summary>Timestamp of the (last) generation of <see cref="TrayApiKeyHash"/> - display-only, same as ApiKeyCreatedAt.</summary>
+    public DateTime? TrayApiKeyCreatedAt { get; set; }
+    /// <summary>
+    /// SHA-256 hash of the per-user API key for managing studylife-webhooks registrations - same
+    /// shape and narrow-scope reasoning as FocusGuardApiKeyHash (see ApiKeyScopes.Webhooks: only
+    /// the Webhooks.* endpoints, plus Whoami), but manually generated/revoked from the Setup page
+    /// like <see cref="ApiKeyHash"/> (Home Assistant's slot) rather than provisioned via a
+    /// browser-consent flow - there is no single dedicated client app here, this key is meant to
+    /// be handed to whichever external program/add-on the user wants to let register its own
+    /// webhook subscriptions. Null = no key generated, or revoked.
+    /// </summary>
+    public string? WebhooksApiKeyHash { get; set; }
+    /// <summary>Timestamp of the (last) generation of <see cref="WebhooksApiKeyHash"/> - display-only, same as ApiKeyCreatedAt.</summary>
+    public DateTime? WebhooksApiKeyCreatedAt { get; set; }
     /// <summary>
     /// Permanent, per-user token for the subscribable ICS calendar feed
     /// (GET /api/sessions/ics?calendarToken=...). Unlike ApiKeyHash, stored in PLAINTEXT

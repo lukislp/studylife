@@ -186,6 +186,18 @@ namespace StudyLife.Server.Migrations.Postgres
                     b.Property<string>("McpApiKeyHash")
                         .HasColumnType("text");
 
+                    b.Property<DateTime?>("TrayApiKeyCreatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("TrayApiKeyHash")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("WebhooksApiKeyCreatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("WebhooksApiKeyHash")
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AiApiKeyHash")
@@ -207,6 +219,12 @@ namespace StudyLife.Server.Migrations.Postgres
                         .IsUnique();
 
                     b.HasIndex("McpApiKeyHash")
+                        .IsUnique();
+
+                    b.HasIndex("TrayApiKeyHash")
+                        .IsUnique();
+
+                    b.HasIndex("WebhooksApiKeyHash")
                         .IsUnique();
 
                     b.ToTable("AuthUsers");

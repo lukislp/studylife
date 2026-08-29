@@ -2,15 +2,15 @@
 @inject HttpClient Http
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
-@* Consolidated status/disconnect card for the four integrations that no longer provision a key
+@* Consolidated status/disconnect card for the five integrations that no longer provision a key
    through this Setup page: studylife-mcp (AuthUserEntity.McpApiKeyHash), studylife-capture
-   (CaptureApiKeyHash), studylife-focusguard (FocusGuardApiKeyHash), and studylife-focustunes
-   (FocusTunesApiKeyHash). UNLIKE the Home
+   (CaptureApiKeyHash), studylife-focusguard (FocusGuardApiKeyHash), studylife-focustunes
+   (FocusTunesApiKeyHash), and studylife-tray (TrayApiKeyHash). UNLIKE the Home
    Assistant and studylife-ai cards, this one never generates a key here - provisioning happens
-   exclusively through each integration's own consent flow (each extension's own "Connect" action
-   against its already-authenticated session; the MCP OAuth connect flow behind
+   exclusively through each integration's own consent flow (each extension's/app's own "Connect"
+   action against its already-authenticated session; the MCP OAuth connect flow behind
    AuthController.McpConnect, plus the CLI login, for stdio-based MCP clients). The only thing a
-   user ever needs from THIS page for any of the four is an emergency disconnect, so the card is
+   user ever needs from THIS page for any of the five is an emergency disconnect, so the card is
    reduced to a status line plus a revoke button per slot - no generate, no one-time plaintext
    reveal, no advanced disclosure, no manual paste path. Self-contained component (own SetupText
    instance + own HTTP calls), reusing the existing per-slot status and revoke endpoints
@@ -59,6 +59,16 @@
             </button>
         }
     </div>
+
+    <div class="toggle-row" style="justify-content:space-between;flex-wrap:wrap">
+        <span>@T.TrayConnectionLabel — <strong>@(_trayConnected ? T.ConnectionConnected : T.ConnectionNotConnected)</strong></span>
+        @if (_trayConnected)
+        {
+            <button type="button" class="btn-danger" @onclick="DisconnectTray" disabled="@_trayBusy">
+                @(_trayBusy ? "…" : T.DisconnectButton)
+            </button>
+        }
+    </div>
 </div>
 
 @code {
@@ -68,10 +78,12 @@
     private bool _captureConnected;
     private bool _focusGuardConnected;
     private bool _focusTunesConnected;
+    private bool _trayConnected;
     private bool _mcpBusy;
     private bool _captureBusy;
     private bool _focusGuardBusy;
     private bool _focusTunesBusy;
+    private bool _trayBusy;
 
     protected override async Task OnInitializedAsync()
     {
@@ -98,6 +110,12 @@
         {
             var focusTunesStatus = await Http.GetFromJsonAsync<FocusTunesApiKeyStatusDto>("api/settings/focustunes-api-key");
             _focusTunesConnected = focusTunesStatus?.HasKey ?? false;
+        }
+        catch { /* offline: card shows the "not connected" default */ }
+        try
+        {
+            var trayStatus = await Http.GetFromJsonAsync<TrayApiKeyStatusDto>("api/settings/tray-api-key");
+            _trayConnected = trayStatus?.HasKey ?? false;
         }
         catch { /* offline: card shows the "not connected" default */ }
     }
@@ -144,5 +162,16 @@
             if (response.IsSuccessStatusCode) _focusTunesConnected = false;
         }
         finally { _focusTunesBusy = false; }
+    }
+
+    private async Task DisconnectTray()
+    {
+        _trayBusy = true;
+        try
+        {
+            var response = await Http.PostAsync("api/settings/tray-api-key/revoke", null);
+            if (response.IsSuccessStatusCode) _trayConnected = false;
+        }
+        finally { _trayBusy = false; }
     }
 }
