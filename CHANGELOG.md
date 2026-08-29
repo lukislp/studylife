@@ -1,3 +1,10 @@
+# [2.13.0](https://github.com/lukislp/studylife/compare/v2.12.0...v2.13.0) (2026-08-29)
+
+
+### Features
+
+* add a dedicated toggle-style API key for the studylife-developers portal ([14c8825](https://github.com/lukislp/studylife/commit/14c8825b20b1d75a41d8d3f5db8cce3a8373b12c))
+
 # [2.12.0](https://github.com/lukislp/studylife/compare/v2.11.0...v2.12.0) (2026-08-29)
 
 
