@@ -91,6 +91,14 @@ public partial class BackgroundTaskService : BackgroundService
     // passed in a test" identically.
     private readonly AiProxyClient? _aiProxyClient;
 
+    // True only on a confirmed demo instance (DemoModeGuard) - gates the one worker job that
+    // can write OUTWARD on behalf of visitor-created data (capture enrichment posting to
+    // studylife-ai). Optional constructor param like _aiProxyClient, and for the same reason:
+    // the direct-construction unit tests don't pass an IConfiguration, and "not passed" and
+    // "not a demo" behave identically (false). In production DI always injects the host's
+    // IConfiguration, so this agrees with Program.cs about whether demo mode is armed.
+    private readonly bool _demoReadOnly;
+
     // Clock seam for the wall-clock gates in the sub-task partials (weekly report on Sunday
     // evenings, monthly report on the 1st, daily motivation from 8 AM, ...). Production always
     // uses TimeProvider.System - LocalNow below is then byte-identical to the previous direct
@@ -110,7 +118,8 @@ public partial class BackgroundTaskService : BackgroundService
         IWorkerShardClaim? shardClaim = null,
         DatabaseBackupService? backupService = null,
         TimeProvider? timeProvider = null,
-        AiProxyClient? aiProxyClient = null)
+        AiProxyClient? aiProxyClient = null,
+        IConfiguration? configuration = null)
     {
         _services = services;
         _vapidKeys = vapidKeysHolder.Keys!; // always set - see VapidKeysHolder comment
@@ -120,6 +129,7 @@ public partial class BackgroundTaskService : BackgroundService
         _shardClaim = shardClaim ?? new StaticWorkerShardClaim();
         _time = timeProvider ?? TimeProvider.System;
         _aiProxyClient = aiProxyClient;
+        _demoReadOnly = configuration is not null && DemoModeGuard.IsEnabled(configuration);
     }
 
     private WebPushClient GetPushClient()
