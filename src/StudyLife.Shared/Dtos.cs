@@ -987,6 +987,23 @@ public class UpdateDeveloperClientRequestDto
     public List<string> RequestedScopes { get; set; } = new();
 }
 
+/// <summary>Status DTO for the studylife-developers portal key slot - same shape as
+/// AiApiKeyStatusDto, see AuthUserEntity.DeveloperApiKeyHash.</summary>
+public class DeveloperApiKeyStatusDto
+{
+    public bool HasKey { get; set; }
+    public DateTime? CreatedAt { get; set; }
+}
+
+/// <summary>Generate-response DTO for the studylife-developers portal key slot - same shape as
+/// AiApiKeyGenerateResponseDto. The frontend discards ApiKey (toggle, not reveal - see
+/// SetupDeveloperCard).</summary>
+public class DeveloperApiKeyGenerateResponseDto
+{
+    public string ApiKey { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
+}
+
 /// <summary>Response of POST /api/auth/recovery/generate - the plaintext codes only exist
 /// in this one response, server-side only hashes are stored.</summary>
 public class RecoveryCodesResponseDto

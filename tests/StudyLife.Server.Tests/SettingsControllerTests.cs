@@ -1107,3 +1107,63 @@ public class SettingsControllerPoisonedDataTests : IClassFixture<CustomWebApplic
         Assert.Empty(dto.CompletedCourseIds);
     }
 }
+
+/// <summary>
+/// Same toggle shape as SettingsControllerAiApiKeyTests, for the separate studylife-developers
+/// portal key slot (AuthUserEntity.DeveloperApiKeyHash / api/settings/developer-api-key) - a
+/// key scoped EXCLUSIVELY to managing one's own OAuthClientEntity registrations
+/// (DeveloperController), never any study data and never the generic add-on-connect flow.
+/// </summary>
+public class SettingsControllerDeveloperApiKeyTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+
+    public SettingsControllerDeveloperApiKeyTests(CustomWebApplicationFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient(); // carries the seeded test user's session token
+    }
+
+    [Fact]
+    public async Task DeveloperApiKeyLifecycle_StatusGenerateGateRevoke()
+    {
+        // ── Fresh state: no key ─────────────────────────────────────────────────────────────
+        var status = await _client.GetFromJsonAsync<DeveloperApiKeyStatusDto>("/api/settings/developer-api-key");
+        Assert.NotNull(status);
+        Assert.False(status!.HasKey);
+
+        // ── Generate: plaintext exactly once, only the hash is stored ───────────────────────
+        var generateResponse = await _client.PostAsync("/api/settings/developer-api-key/generate", null);
+        Assert.Equal(HttpStatusCode.OK, generateResponse.StatusCode);
+        var generated = await generateResponse.Content.ReadFromJsonAsync<DeveloperApiKeyGenerateResponseDto>();
+        Assert.NotNull(generated);
+        Assert.NotEmpty(generated!.ApiKey);
+
+        status = await _client.GetFromJsonAsync<DeveloperApiKeyStatusDto>("/api/settings/developer-api-key");
+        Assert.True(status!.HasKey);
+
+        // ── The generated key reaches DeveloperController, but nowhere else ─────────────────
+        using (var keyClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, generated.ApiKey))
+        {
+            Assert.Equal(HttpStatusCode.OK, (await keyClient.GetAsync("/api/developer/clients")).StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, (await keyClient.GetAsync("/api/notes")).StatusCode);
+
+            // ... and must NOT be able to manage itself: gate-only (API key) authentication is
+            // rejected with 401 on all three developer-api-key endpoints.
+            Assert.Equal(HttpStatusCode.Unauthorized, (await keyClient.GetAsync("/api/settings/developer-api-key")).StatusCode);
+            Assert.Equal(HttpStatusCode.Unauthorized, (await keyClient.PostAsync("/api/settings/developer-api-key/generate", null)).StatusCode);
+            Assert.Equal(HttpStatusCode.Unauthorized, (await keyClient.PostAsync("/api/settings/developer-api-key/revoke", null)).StatusCode);
+        }
+
+        // ── Revoke: key hash deleted, old key gets 401 at the gate ──────────────────────────
+        var revokeResponse = await _client.PostAsync("/api/settings/developer-api-key/revoke", null);
+        Assert.Equal(HttpStatusCode.NoContent, revokeResponse.StatusCode);
+
+        status = await _client.GetFromJsonAsync<DeveloperApiKeyStatusDto>("/api/settings/developer-api-key");
+        Assert.False(status!.HasKey);
+
+        using var revokedClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, generated.ApiKey);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await revokedClient.GetAsync("/api/developer/clients")).StatusCode);
+    }
+}

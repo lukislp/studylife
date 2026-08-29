@@ -145,7 +145,7 @@ public class StudyLifeAuthenticationHandler : AuthenticationHandler<StudyLifeAut
                 .FirstOrDefaultAsync(u => u.ApiKeyHash == keyHash || u.AiApiKeyHash == keyHash
                     || u.McpApiKeyHash == keyHash || u.CaptureApiKeyHash == keyHash
                     || u.FocusGuardApiKeyHash == keyHash || u.FocusTunesApiKeyHash == keyHash
-                    || u.TrayApiKeyHash == keyHash);
+                    || u.TrayApiKeyHash == keyHash || u.DeveloperApiKeyHash == keyHash);
             if (keyOwner is not null)
             {
                 var slot = keyOwner.ApiKeyHash == keyHash ? "ha"
@@ -154,7 +154,8 @@ public class StudyLifeAuthenticationHandler : AuthenticationHandler<StudyLifeAut
                     : keyOwner.CaptureApiKeyHash == keyHash ? "capture"
                     : keyOwner.FocusGuardApiKeyHash == keyHash ? "focusguard"
                     : keyOwner.FocusTunesApiKeyHash == keyHash ? "focustunes"
-                    : "tray";
+                    : keyOwner.TrayApiKeyHash == keyHash ? "tray"
+                    : "developer";
 
                 Context.Items[CurrentUserAccessor.HttpContextItemKey] = keyOwner.Id;
                 // Which slot matched (identity contract v1 §1) - only consumed by whoami today,

@@ -1,0 +1,129 @@
+@using StudyLife.Shared
+@inject HttpClient Http
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+@* Long-lived per-user API key for the studylife-developers portal - a SEPARATE slot
+   (AuthUserEntity.DeveloperApiKeyHash), same toggle-not-reveal shape as SetupAiIntegrationCard:
+   nothing external ever needs the raw key, the server hands it to studylife-developers itself
+   at generation time (DeveloperProxyClient.RegisterKeyAsync) and only ever stores the SHA-256
+   hash locally. Scoped EXCLUSIVELY to managing one's own OAuthClientEntity registrations
+   (ApiKeyScopes.Developer) - never any study data, and deliberately separate from the generic
+   add-on-connect flow any INSTALLED third-party add-on uses. Self-contained component (own
+   SetupText instance + own HTTP calls), modeled directly after SetupAiIntegrationCard. *@
+
+<div class="setup-section">
+    <div class="ss-label">@T.DeveloperHeading</div>
+    <p class="ss-desc">@T.DeveloperDesc</p>
+
+    @if (_hasKey)
+    {
+        <p class="ss-desc" style="font-weight:600">✅ @T.Enabled</p>
+        <div class="toggle-row" style="gap:0.75rem;flex-wrap:wrap">
+            <button type="button" class="btn-secondary" @onclick="Reconnect" disabled="@_busy">
+                @(_reconnectSuccess ? $"✓ {T.DeveloperReconnectSuccess}" : (_reconnecting ? "…" : T.DeveloperReconnectButton))
+            </button>
+            <button type="button" class="btn-danger" @onclick="() => _confirmingDisable = true" disabled="@_busy">
+                @T.DeveloperDisableButton
+            </button>
+        </div>
+    }
+    else
+    {
+        <p class="ss-desc">@T.Disabled</p>
+        <button type="button" class="btn-secondary" @onclick="Enable" disabled="@_busy">
+            @(_busy ? "…" : T.DeveloperEnableButton)
+        </button>
+    }
+</div>
+
+@if (_confirmingDisable)
+{
+    <div class="modal-overlay" @onclick="() => _confirmingDisable = false">
+        <div class="modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>@T.DeveloperDisableConfirmTitle</h3>
+                <button type="button" class="modal-close" @onclick="() => _confirmingDisable = false">✕</button>
+            </div>
+            <div class="modal-body">
+                <p>⚠️ @T.DeveloperDisableConfirmWarning</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" @onclick="() => _confirmingDisable = false" disabled="@_busy">
+                    @T.DeveloperConfirmCancel
+                </button>
+                <button type="button" class="btn-danger" @onclick="ConfirmDisable" disabled="@_busy">
+                    @(_busy ? "…" : T.DeveloperDisableConfirmYes)
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private I18nText.SetupText T = new();
+
+    private bool _hasKey;
+    private bool _busy;
+    private bool _reconnecting;
+    private bool _reconnectSuccess;
+    private bool _confirmingDisable;
+
+    protected override async Task OnInitializedAsync()
+    {
+        T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
+        try
+        {
+            var status = await Http.GetFromJsonAsync<DeveloperApiKeyStatusDto>("api/settings/developer-api-key");
+            _hasKey = status?.HasKey ?? false;
+        }
+        catch { /* offline: card shows the "disabled" default */ }
+    }
+
+    private async Task Enable()
+    {
+        _busy = true;
+        try
+        {
+            var response = await Http.PostAsync("api/settings/developer-api-key/generate", null);
+            if (response.IsSuccessStatusCode) _hasKey = true;
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task Reconnect()
+    {
+        _busy = true;
+        _reconnecting = true;
+        StateHasChanged();
+        try
+        {
+            var response = await Http.PostAsync("api/settings/developer-api-key/generate", null);
+            if (response.IsSuccessStatusCode)
+            {
+                _hasKey = true;
+                _reconnectSuccess = true;
+                StateHasChanged();
+                await Task.Delay(2000);
+                _reconnectSuccess = false;
+            }
+        }
+        finally
+        {
+            _reconnecting = false;
+            _busy = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ConfirmDisable()
+    {
+        _confirmingDisable = false;
+        _busy = true;
+        try
+        {
+            var response = await Http.PostAsync("api/settings/developer-api-key/revoke", null);
+            if (response.IsSuccessStatusCode) _hasKey = false;
+        }
+        finally { _busy = false; }
+    }
+}

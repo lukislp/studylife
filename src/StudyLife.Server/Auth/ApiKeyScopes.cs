@@ -190,6 +190,23 @@ public static class ApiKeyScopes
         new("WebhooksProxy", "Delete"),
     ];
 
+    /// <summary>
+    /// studylife-developers (github.com/lukislp/studylife-developers) - the add-on developer
+    /// portal. A toggle-not-reveal key like Ai's (see AuthUserEntity.DeveloperApiKeyHash),
+    /// scoped EXCLUSIVELY to managing the owning user's own OAuthClientEntity registrations -
+    /// never any study data, and deliberately separate from PubliclyGrantable, which is what an
+    /// INSTALLED third-party add-on may request, not what the portal that REGISTERS add-ons may
+    /// reach.
+    /// </summary>
+    private static readonly HashSet<Endpoint> Developer =
+    [
+        Whoami,
+        new("Developer", "GetAll"),
+        new("Developer", "Create"),
+        new("Developer", "Update"),
+        new("Developer", "Delete"),
+    ];
+
     public static readonly IReadOnlyDictionary<string, IReadOnlySet<Endpoint>> BySlot =
         new Dictionary<string, IReadOnlySet<Endpoint>>
         {
@@ -201,6 +218,7 @@ public static class ApiKeyScopes
             ["focustunes"] = FocusTunes,
             ["tray"] = Tray,
             ["webhooks"] = Webhooks,
+            ["developer"] = Developer,
         };
 
     /// <summary>

@@ -1,8 +1,8 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Auth;
 using StudyLife.Server.Data;
+using StudyLife.Server.Services;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Controllers;
@@ -10,29 +10,39 @@ namespace StudyLife.Server.Controllers;
 /// <summary>
 /// CRUD for OAuthClientEntity - lets any logged-in user register/manage their own add-ons
 /// against the generic connect flow (AuthController.10.OAuthClients.cs). This is the only
-/// backend dependency the studylife-developers portal has: it authenticates itself through that
-/// same generic connect flow (the very first client registered in the system), then calls this
-/// controller's endpoints with its own resulting session/key to manage the developer's clients.
+/// backend dependency the studylife-developers portal has: it authenticates with its own
+/// dedicated toggle-style key (AuthUserEntity.DeveloperApiKeyHash, see SettingsController's
+/// developer-api-key group and ApiKeyScopes.Developer) - deliberately NOT the generic
+/// add-on-connect flow (AuthController.10.OAuthClients.cs) that flow is for INSTALLED
+/// third-party add-ons requesting DATA access; granting that same mechanism the ability to
+/// manage OTHER clients' registrations would let any installed add-on mint arbitrarily-scoped
+/// new clients for other users to unwittingly consent to. No explicit [Authorize] here at all -
+/// falls through to the default ApiAccess fallback policy (session OR any scoped API key +
+/// ApiKeyScopeAuthorizationHandler's per-slot enforcement), exactly like WebhooksProxyController.
 ///
-/// Every action is SessionOnly and filters explicitly by OwnerAuthUserId - OAuthClientEntity
-/// carries no query filter at the EF level (needed for the connect flow's own by-ClientId lookup
-/// before any user is known, see StudyLifeDb's comment on it), so ownership is enforced here
-/// instead, same "user-specific accesses filter explicitly in the controller" pattern as
-/// WebhookApiKeyEntity/SettingsController.
+/// Every action filters explicitly by OwnerAuthUserId - OAuthClientEntity carries no query
+/// filter at the EF level (needed for the connect flow's own by-ClientId lookup before any user
+/// is known, see StudyLifeDb's comment on it), so ownership is enforced here instead, same
+/// "user-specific accesses filter explicitly in the controller" pattern as WebhookApiKeyEntity/
+/// SettingsController.
 /// </summary>
 [ApiController]
 [Route("api/developer/clients")]
-[Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
 public class DeveloperController : ControllerBase
 {
     private readonly StudyLifeDb _db;
+    private readonly ICurrentUserAccessor _currentUser;
 
-    public DeveloperController(StudyLifeDb db) => _db = db;
+    public DeveloperController(StudyLifeDb db, ICurrentUserAccessor currentUser)
+    {
+        _db = db;
+        _currentUser = currentUser;
+    }
 
     [HttpGet]
     public async Task<ActionResult<List<DeveloperClientDto>>> GetAll()
     {
-        var userId = HttpContext.SessionAuthUserId()!.Value;
+        var userId = _currentUser.AuthUserId;
         return await _db.OAuthClients.AsNoTracking()
             .Where(c => c.OwnerAuthUserId == userId)
             .OrderBy(c => c.CreatedAt)
@@ -49,7 +59,7 @@ public class DeveloperController : ControllerBase
         if (await _db.OAuthClients.AnyAsync(c => c.ClientId == request.ClientId))
             return BadRequest($"ClientId '{request.ClientId}' is already taken.");
 
-        var userId = HttpContext.SessionAuthUserId()!.Value;
+        var userId = _currentUser.AuthUserId;
         var entity = new OAuthClientEntity
         {
             ClientId = request.ClientId,
@@ -73,7 +83,7 @@ public class DeveloperController : ControllerBase
     [HttpPut("{clientId}")]
     public async Task<ActionResult<DeveloperClientDto>> Update(string clientId, UpdateDeveloperClientRequestDto request)
     {
-        var userId = HttpContext.SessionAuthUserId()!.Value;
+        var userId = _currentUser.AuthUserId;
         var entity = await _db.OAuthClients.FirstOrDefaultAsync(c => c.ClientId == clientId && c.OwnerAuthUserId == userId);
         if (entity is null) return NotFound();
 
@@ -91,7 +101,7 @@ public class DeveloperController : ControllerBase
     [HttpDelete("{clientId}")]
     public async Task<IActionResult> Delete(string clientId)
     {
-        var userId = HttpContext.SessionAuthUserId()!.Value;
+        var userId = _currentUser.AuthUserId;
         var entity = await _db.OAuthClients.FirstOrDefaultAsync(c => c.ClientId == clientId && c.OwnerAuthUserId == userId);
         if (entity is null) return NotFound();
         _db.OAuthClients.Remove(entity);

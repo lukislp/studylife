@@ -240,6 +240,33 @@ public class GenericOAuthConnectFlowTests : IClassFixture<CustomWebApplicationFa
         await CleanupAsync("info-client");
     }
 
+    /// <summary>The security boundary DeveloperController's own doc comment describes:
+    /// an installed third-party add-on's key must never be able to reach the endpoints that
+    /// manage OAuthClientEntity registrations, no matter how broad the scopes IT requested -
+    /// "Developer.*" isn't even a member of ApiKeyScopes.PubliclyGrantable, so it can never end
+    /// up in a GrantedScopes snapshot at all.</summary>
+    [Fact]
+    public async Task InstalledAddonKey_CannotReachDeveloperController()
+    {
+        await SeedClientAsync("data-only-client", RedirectUri, "WebhooksProxy.List", "Notes.GetAll");
+        var sessionClient = _factory.CreateClient();
+
+        var connectResponse = await sessionClient.PostAsJsonAsync("/api/auth/connect",
+            new GenericConnectRequestDto { ClientId = "data-only-client", RedirectUri = RedirectUri, State = "s" });
+        var (assertion, _) = ParseRedirectTo((await connectResponse.Content.ReadFromJsonAsync<GenericConnectResponseDto>())!.RedirectTo);
+        using var anon = ApiKeyTestHelpers.CreateClientWithKey(_factory, null);
+        var exchangeResult = await (await anon.PostAsJsonAsync("/api/auth/assertion-exchange",
+            new GenericAssertionExchangeRequestDto { ClientId = "data-only-client", Assertion = assertion }))
+            .Content.ReadFromJsonAsync<GenericAssertionExchangeResponseDto>();
+
+        using var keyClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, exchangeResult!.ApiKey);
+        var response = await keyClient.GetAsync("/api/developer/clients");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+
+        await CleanupAsync("data-only-client");
+    }
+
     [Fact]
     public async Task GetOAuthClientInfo_UnknownClientId_ReturnsNotFound()
     {
