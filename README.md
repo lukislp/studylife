@@ -42,7 +42,7 @@ flowchart LR
     Mcp["studylife-mcp\n(local MCP server)"]
     StudyLifeAI["studylife-ai\n(hosted LLM agent)"]
     Capture["studylife-capture\n(browser extension)"]
-    FocusGuard["studylife-focusguard\n(browser extension)"]
+    StudyLifeFocus["studylife-focus\n(browser extension:\nGuard + Tune)"]
 
     MauiApp -- "BlazorWebView\n(project reference, no copy)" --> BlazorUI
     BlazorUI -- "passkey session\n(X-Session-Token)" --> API
@@ -58,7 +58,7 @@ flowchart LR
     HomeAssistant -- "X-Api-Key" --> API
     Mcp -- "X-Api-Key" --> API
     Capture -- "X-Api-Key" --> API
-    FocusGuard -- "X-Api-Key\n(read-only)" --> API
+    StudyLifeFocus -- "X-Api-Key\n(read-only, 2 scopes)" --> API
 ```
 
 `API` and `Worker` are the same container image, just started with a different `Worker:Enabled`
@@ -70,8 +70,9 @@ replicas never fire the same push reminder N times — exactly one `Worker` shar
 via Redis once it scales past a single replica) owns the 30s reminder/report tick.
 
 The browser client authenticates exclusively via its passkey session; Home Assistant,
-studylife-mcp, studylife-capture, and studylife-focusguard instead each get their own
-long-lived, revocable per-user API key (`X-Api-Key`) — neither can hold a live browser session,
+studylife-mcp, studylife-capture, and studylife-focus (whose Guard and Tune features each hold
+their own, independently-scoped key) instead each get their own long-lived, revocable per-user
+API key (`X-Api-Key`) — neither can hold a live browser session,
 so a bare API key is
 deliberately accepted from them but never from the AI proxy path. `AiProxyController` mints a
 short-lived, HMAC-signed token per request instead of forwarding a stored key (which only ever
@@ -131,7 +132,7 @@ the native app and the browser/PWA client are always pixel-identical.
 - Sound and vibration feedback when a session completes
 - Reflection prompt after a session ends ("What did you learn?"), saved directly as a linked note
 - Movement-break reminder (native app only): after ~25 minutes of continuous, uninterrupted focus, a dismissible banner + notification suggests a short break if Apple HealthKit step data shows barely any movement
-- Distraction blocking while a session runs (via the [studylife-focusguard](https://github.com/lukislp/studylife-focusguard) browser extension): allowlist or blocklist specific sites, with automatic tab redirect on session start and restore on session end
+- Distraction blocking and automatic Spotify playlist switching while a session runs (via the [studylife-focus](https://github.com/lukislp/studylife-focus) browser extension's independently-toggleable Guard and Tune features): allowlist or blocklist specific sites with automatic tab redirect on session start and restore on session end, and/or switch to a focus/break Spotify playlist
 
 ### Dashboard
 - Daily overview with active/next session
@@ -316,7 +317,7 @@ Four separate repos extend this app without their own database or user system - 
 - **[studylife-ai](https://github.com/lukislp/studylife-ai)** - a RAG study assistant with source citations over your own notes/courses/sessions, a LangGraph agent with a confirmation flow for write actions, and a RAGAS eval pipeline in CI. FastAPI + LiteLLM (provider-agnostic - API models or fully local via Ollama) + Qdrant.
 - **[studylife-mcp](https://github.com/lukislp/studylife-mcp)** - a Model Context Protocol server exposing StudyLife to Claude and other MCP clients: read tools (courses, notes, sessions, course goals), write tools (create note, create session), and a self-built OAuth 2.1 authorization server for multi-user remote access.
 - **[studylife-capture](https://github.com/lukislp/studylife-capture)** - a Chrome extension (Manifest V3) for saving a selection or a whole article from any page as a StudyLife note, using a dedicated `CaptureApiKey` provisioned via a one-click browser consent flow. Saved notes are enriched asynchronously by a StudyLife background task calling studylife-ai: course match (scoped to your active courses), tags, a one-sentence summary, related-notes links, and immediate search indexing.
-- **[studylife-focusguard](https://github.com/lukislp/studylife-focusguard)** - a Chrome extension (Manifest V3) that blocks or allows sites while a focus-timer session is running (allowlist or blocklist, your choice), plus automatic tab redirect/restore around a session's start and end. Its `FocusGuardApiKey` is deliberately the narrowest of any add-on's - it can only poll `GET /api/timerstate`, never read or write notes, sessions, or settings.
+- **[studylife-focus](https://github.com/lukislp/studylife-focus)** - a Chrome extension (Manifest V3) with two independent, separately-toggleable features, each with its own scoped key: **Guard** blocks or allows sites while a focus-timer session is running (allowlist or blocklist, your choice), plus automatic tab redirect/restore around a session's start and end; **Tune** switches a Spotify playlist. Both `FocusGuardApiKey` and `FocusTunesApiKey` are deliberately the narrowest of any add-on's - either can only poll `GET /api/timerstate`, never read or write notes, sessions, or settings.
 
 ## Home Assistant Integration
 
@@ -326,7 +327,7 @@ Four separate repos extend this app without their own database or user system - 
 
 Login runs exclusively via passkey (WebAuthn) - there is no password and no unauthenticated API access anymore. The very first registration on a fresh installation additionally requires the setup code output once to the server logs (see Deployment above); every subsequent registration (e.g. for family members) creates its own account, completely separate from other users - by default it requires an invite link created by the instance owner on the Setup page (`Registration__Mode`: `open`/`invite`/`closed`, default `invite`). A session token extends on a sliding basis with active use (90 days), but forces a fresh login after 180 days at the latest. An additional device can either be registered directly or paired via a time-limited linking code from an already logged-in device - in both cases an already logged-in device must first approve the new device via device management before it can be used.
 
-For non-interactive integrations like Home Assistant, which cannot maintain a passkey session, a long-lived, **per-user** API key can be generated on the Setup page (`X-Api-Key` header) - it does not rotate automatically, but can be revoked immediately at any time; a leaked key therefore only ever compromises exactly one account, and each key slot is additionally scoped to only the endpoints its integration needs. The other add-ons (AI, MCP, Capture, FocusGuard) receive their equally scoped keys without any manual copying - via the Setup toggle or a browser sign-in/consent flow - and can be disconnected from the Setup page at any time. The subscribable iCalendar feed and an optional public share-progress link each use their own separate tokens instead of the API key. Details on the complete security model (including the results of a targeted security review): [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#security).
+For non-interactive integrations like Home Assistant, which cannot maintain a passkey session, a long-lived, **per-user** API key can be generated on the Setup page (`X-Api-Key` header) - it does not rotate automatically, but can be revoked immediately at any time; a leaked key therefore only ever compromises exactly one account, and each key slot is additionally scoped to only the endpoints its integration needs. The other add-ons (AI, MCP, Capture, Focus's Guard and Tune features) receive their equally scoped keys without any manual copying - via the Setup toggle or a browser sign-in/consent flow - and can be disconnected from the Setup page at any time. The subscribable iCalendar feed and an optional public share-progress link each use their own separate tokens instead of the API key. Details on the complete security model (including the results of a targeted security review): [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#security).
 
 ---
 
