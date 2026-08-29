@@ -1,3 +1,15 @@
+# [2.15.0](https://github.com/lukislp/studylife/compare/v2.14.0...v2.15.0) (2026-08-29)
+
+
+### Bug Fixes
+
+* allow the marketplace's GitHub calls through CSP, cache listings for 24h ([6e6575c](https://github.com/lukislp/studylife/commit/6e6575ccc0df7f43fc39cf122f732dc92af04ef3))
+
+
+### Features
+
+* browse and install marketplace add-ons from the Setup page ([7f4629f](https://github.com/lukislp/studylife/commit/7f4629f5e3c0dc4c7c8eb04c18f007be1c930707))
+
 # [2.14.0](https://github.com/lukislp/studylife/compare/v2.13.0...v2.14.0) (2026-08-29)
 
 
