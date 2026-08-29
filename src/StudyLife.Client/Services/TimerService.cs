@@ -121,6 +121,7 @@ public class TimerService
             _timer = new System.Threading.Timer(_ => Tick(), null, 1000, 1000);
         }
         OnTick?.Invoke(SecondsLeft, IsBreak, CurrentRound, IsRunning);
+        NotifyBrowserOfStateChange();
         SchedulePush();
     }
 
@@ -139,6 +140,7 @@ public class TimerService
         }
         OnPaused?.Invoke();
         OnTick?.Invoke(SecondsLeft, IsBreak, CurrentRound, IsRunning);
+        NotifyBrowserOfStateChange();
         SchedulePush();
     }
 
@@ -184,6 +186,12 @@ public class TimerService
             }
         }
         OnTick?.Invoke(SecondsLeft, IsBreak, CurrentRound, IsRunning);
+        // Unconditional, unlike the SchedulePush below: a browser extension reacting to this
+        // event only ever re-polls its own authenticated endpoint, so there's no "overwrite
+        // another device's state" risk the way there is for the real server push - gating this
+        // on wasRunning too would silently disable the instant-reaction path for the overwhelmingly
+        // common "pause, then reset" sequence, where wasRunning is false by the time Reset() runs.
+        NotifyBrowserOfStateChange();
         // Same as LoadMode: a reset on a device where nothing was running at all must not
         // overwrite the running state of another device on the server.
         if (wasRunning) SchedulePush();
@@ -277,12 +285,11 @@ public class TimerService
     /// running. Builds the DTO synchronously (fast, no I/O, under _lock) and hands it to the
     /// single-flight push queue below - the caller never awaits the actual network call.
     /// </summary>
-    private void SchedulePush()
+    private TimerStateDto BuildStateDto()
     {
-        TimerStateDto dto;
         lock (_lock)
         {
-            dto = new TimerStateDto
+            return new TimerStateDto
             {
                 SessionId = _sessionId,
                 IsRunning = _isRunning,
@@ -294,6 +301,11 @@ public class TimerService
                 PhaseEndsAt = _isRunning ? _phaseEndsAtUtc?.ToLocalTime() : null,
             };
         }
+    }
+
+    private void SchedulePush()
+    {
+        var dto = BuildStateDto();
 
         lock (_pushLock)
         {
@@ -305,13 +317,21 @@ public class TimerService
             _pushInFlight = true;
         }
         _ = DrainPushQueueAsync();
-        DispatchTimerStateChangedEvent(dto);
     }
 
     /// <summary>Fire-and-forget browser-DOM nudge for installed extensions (see interop.js) -
-    /// deliberately decoupled from the actual server push above: an extension reacting to this
-    /// re-polls its own authenticated endpoint rather than trusting the payload, so this firing
-    /// (or failing) has no bearing on the real push's own success/failure/ordering guarantees.</summary>
+    /// deliberately separate from SchedulePush above (and from that method's own overwrite-guard
+    /// gating at some call sites, e.g. Reset()): an extension reacting to this always re-polls its
+    /// own authenticated endpoint rather than trusting the payload, so there is no "stale state
+    /// might overwrite another device" risk here the way there is for the real server push, and
+    /// this firing (or failing) has no bearing on that push's own success/failure/ordering
+    /// guarantees either.</summary>
+    private void NotifyBrowserOfStateChange()
+    {
+        var dto = BuildStateDto();
+        DispatchTimerStateChangedEvent(dto);
+    }
+
     private async void DispatchTimerStateChangedEvent(TimerStateDto dto)
     {
         try { await _js.InvokeVoidAsync("dispatchTimerStateChanged", dto); }
