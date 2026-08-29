@@ -1,3 +1,10 @@
+## [2.15.1](https://github.com/lukislp/studylife/compare/v2.15.0...v2.15.1) (2026-08-29)
+
+
+### Bug Fixes
+
+* close latent demo-mode write paths outside the HTTP write-block ([e8b20fd](https://github.com/lukislp/studylife/commit/e8b20fd834a61cdf02cd9afecbf1ea30d8bf8fa9))
+
 # [2.15.0](https://github.com/lukislp/studylife/compare/v2.14.0...v2.15.0) (2026-08-29)
 
 
