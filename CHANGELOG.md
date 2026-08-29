@@ -1,3 +1,10 @@
+# [2.10.0](https://github.com/lukislp/studylife/compare/v2.9.0...v2.10.0) (2026-08-29)
+
+
+### Features
+
+* publish webhook events for notes, goals, resources, templates, programs, and plans ([81685b7](https://github.com/lukislp/studylife/commit/81685b740f1fa7b79d9d8c866b8505f57b8d269a))
+
 # [2.9.0](https://github.com/lukislp/studylife/compare/v2.8.1...v2.9.0) (2026-08-29)
 
 
