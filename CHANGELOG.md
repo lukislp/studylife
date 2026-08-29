@@ -1,3 +1,10 @@
+# [2.11.0](https://github.com/lukislp/studylife/compare/v2.10.0...v2.11.0) (2026-08-29)
+
+
+### Features
+
+* support multiple named webhooks API keys per user ([8146231](https://github.com/lukislp/studylife/commit/8146231d48fb13465245ea2eaaed10bd79caed82))
+
 # [2.10.0](https://github.com/lukislp/studylife/compare/v2.9.0...v2.10.0) (2026-08-29)
 
 
