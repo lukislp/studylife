@@ -16,5 +16,8 @@
   "ConnectCancelButton": "Atšaukti",
   "ConnectWorking": "Jungiamasi…",
   "ConnectFailed": "Prisijungti nepavyko. Bandykite dar kartą.",
-  "ConnectInvalidRequest": "Šis prijungimo užklausimas negalioja arba baigėsi jo galiojimo laikas."
+  "ConnectInvalidRequest": "Šis prijungimo užklausimas negalioja arba baigėsi jo galiojimo laikas.",
+  "ConnectClientPageTitle": "StudyLife — Prijungti",
+  "ConnectClientHeading": "Prijungti priedą",
+  "ConnectClientNotRegistered": "Šis priedas dar neužregistruotas jūsų StudyLife egzemplioriuje."
 }

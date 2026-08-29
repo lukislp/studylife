@@ -260,5 +260,17 @@
   "InvitesExpiresFormat": "Изтича: {0}",
   "InvitesUsedLabel": "Използвана",
   "InvitesExpiredLabel": "Изтекла",
-  "InvitesRevoke": "Отмяна"
+  "InvitesRevoke": "Отмяна",
+  "MarketplaceHeading": "Магазин за добавки",
+  "MarketplaceDesc": "Разгледайте добавки, изпратени от други разработчици, и ги инсталирайте с едно кликване. Добавките получават само разрешенията, които изрично поискат.",
+  "MarketplaceBrowseButton": "Разгледай добавките",
+  "MarketplaceLoading": "Зареждане на добавки…",
+  "MarketplaceEmpty": "Все още няма публикувани добавки.",
+  "MarketplaceFetchFailed": "Каталогът на магазина не можа да се зареди. Опитайте отново по-късно.",
+  "MarketplaceInstallButton": "Инсталирай",
+  "MarketplaceInstallFailed": "Инсталирането на тази добавка се провали. Опитайте отново.",
+  "MarketplaceScopesLabel": "Изисква достъп до:",
+  "MarketplaceByDeveloper": "от {0}",
+  "MarketplaceViewSource": "Преглед на кода",
+  "MarketplaceDemoNotice": "Инсталирането на добавки е деактивирано в тази демо инстанция."
 }

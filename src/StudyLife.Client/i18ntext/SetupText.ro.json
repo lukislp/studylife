@@ -260,5 +260,17 @@
   "InvitesExpiresFormat": "Expiră: {0}",
   "InvitesUsedLabel": "Folosit",
   "InvitesExpiredLabel": "Expirat",
-  "InvitesRevoke": "Revocă"
+  "InvitesRevoke": "Revocă",
+  "MarketplaceHeading": "Piață de extensii",
+  "MarketplaceDesc": "Răsfoiți suplimentele trimise de alți dezvoltatori și instalați-le dintr-un singur clic. Suplimentele primesc doar permisiunile pe care le solicită în mod explicit.",
+  "MarketplaceBrowseButton": "Răsfoiește suplimentele",
+  "MarketplaceLoading": "Se încarcă suplimentele…",
+  "MarketplaceEmpty": "Niciun supliment nu a fost publicat încă.",
+  "MarketplaceFetchFailed": "Catalogul pieței nu a putut fi încărcat. Încercați din nou mai târziu.",
+  "MarketplaceInstallButton": "Instalează",
+  "MarketplaceInstallFailed": "Instalarea acestui supliment a eșuat. Încercați din nou.",
+  "MarketplaceScopesLabel": "Solicită acces la:",
+  "MarketplaceByDeveloper": "de {0}",
+  "MarketplaceViewSource": "Vezi codul sursă",
+  "MarketplaceDemoNotice": "Instalarea suplimentelor este dezactivată pe această instanță demonstrativă."
 }

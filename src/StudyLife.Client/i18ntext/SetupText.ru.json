@@ -260,5 +260,17 @@
   "InvitesExpiresFormat": "Истекает: {0}",
   "InvitesUsedLabel": "Использовано",
   "InvitesExpiredLabel": "Истекло",
-  "InvitesRevoke": "Отозвать"
+  "InvitesRevoke": "Отозвать",
+  "MarketplaceHeading": "Магазин дополнений",
+  "MarketplaceDesc": "Просматривайте дополнения от других разработчиков и устанавливайте их в один клик. Дополнения получают только те разрешения, которые явно запрашивают.",
+  "MarketplaceBrowseButton": "Просмотреть дополнения",
+  "MarketplaceLoading": "Загрузка дополнений…",
+  "MarketplaceEmpty": "Пока нет опубликованных дополнений.",
+  "MarketplaceFetchFailed": "Не удалось загрузить каталог магазина. Повторите попытку позже.",
+  "MarketplaceInstallButton": "Установить",
+  "MarketplaceInstallFailed": "Не удалось установить это дополнение. Повторите попытку.",
+  "MarketplaceScopesLabel": "Запрашивает доступ к:",
+  "MarketplaceByDeveloper": "от {0}",
+  "MarketplaceViewSource": "Просмотреть исходный код",
+  "MarketplaceDemoNotice": "Установка дополнений отключена на этом демо-экземпляре."
 }

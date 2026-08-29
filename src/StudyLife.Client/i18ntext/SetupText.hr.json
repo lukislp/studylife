@@ -260,5 +260,17 @@
   "InvitesExpiresFormat": "Ističe: {0}",
   "InvitesUsedLabel": "Iskorišteno",
   "InvitesExpiredLabel": "Isteklo",
-  "InvitesRevoke": "Opozovi"
+  "InvitesRevoke": "Opozovi",
+  "MarketplaceHeading": "Tržnica",
+  "MarketplaceDesc": "Pregledajte dodatke drugih razvojnih programera i instalirajte ih jednim klikom. Dodaci dobivaju samo dopuštenja koja izričito zatraže.",
+  "MarketplaceBrowseButton": "Pregledaj dodatke",
+  "MarketplaceLoading": "Učitavanje dodataka…",
+  "MarketplaceEmpty": "Još nema objavljenih dodataka.",
+  "MarketplaceFetchFailed": "Katalog tržnice nije moguće učitati. Pokušajte ponovno kasnije.",
+  "MarketplaceInstallButton": "Instaliraj",
+  "MarketplaceInstallFailed": "Instalacija ovog dodatka nije uspjela. Pokušajte ponovno.",
+  "MarketplaceScopesLabel": "Traži pristup:",
+  "MarketplaceByDeveloper": "autora {0}",
+  "MarketplaceViewSource": "Prikaži izvorni kod",
+  "MarketplaceDemoNotice": "Instaliranje dodataka onemogućeno je na ovoj demo instanci."
 }

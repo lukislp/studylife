@@ -16,5 +16,8 @@
   "ConnectCancelButton": "Annuler",
   "ConnectWorking": "Connexion en cours…",
   "ConnectFailed": "La connexion a échoué. Veuillez réessayer.",
-  "ConnectInvalidRequest": "Cette demande de connexion n'est pas valide ou a expiré."
+  "ConnectInvalidRequest": "Cette demande de connexion n'est pas valide ou a expiré.",
+  "ConnectClientPageTitle": "StudyLife — Connexion",
+  "ConnectClientHeading": "Connecter l'extension",
+  "ConnectClientNotRegistered": "Cette extension n'est pas encore enregistrée sur votre instance StudyLife."
 }

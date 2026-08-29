@@ -260,5 +260,17 @@
   "InvitesExpiresFormat": "Rachaidh in éag: {0}",
   "InvitesUsedLabel": "Úsáidte",
   "InvitesExpiredLabel": "Imithe in éag",
-  "InvitesRevoke": "Cúlghairm"
+  "InvitesRevoke": "Cúlghairm",
+  "MarketplaceHeading": "Margadh",
+  "MarketplaceDesc": "Féach ar bhreiseáin ó fhorbróirí eile agus suiteáil iad le cliceáil amháin. Ní fhaigheann breiseáin ach na ceadanna a iarrann siad go sonrach.",
+  "MarketplaceBrowseButton": "Féach ar bhreiseáin",
+  "MarketplaceLoading": "Breiseáin á lódáil…",
+  "MarketplaceEmpty": "Níl aon bhreiseán foilsithe fós.",
+  "MarketplaceFetchFailed": "Níorbh fhéidir catalóg an mhargaidh a lódáil. Bain triail eile as ar ball.",
+  "MarketplaceInstallButton": "Suiteáil",
+  "MarketplaceInstallFailed": "Theip ar shuiteáil an bhreiseáin seo. Bain triail eile as.",
+  "MarketplaceScopesLabel": "Ag iarraidh rochtain ar:",
+  "MarketplaceByDeveloper": "le {0}",
+  "MarketplaceViewSource": "Féach ar an gcód foinseach",
+  "MarketplaceDemoNotice": "Tá suiteáil breiseán díchumasaithe ar an gcás taispeána seo."
 }

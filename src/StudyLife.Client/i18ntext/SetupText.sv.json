@@ -260,5 +260,17 @@
   "InvitesExpiresFormat": "Går ut: {0}",
   "InvitesUsedLabel": "Använd",
   "InvitesExpiredLabel": "Utgången",
-  "InvitesRevoke": "Återkalla"
+  "InvitesRevoke": "Återkalla",
+  "MarketplaceHeading": "Marketplace",
+  "MarketplaceDesc": "Bläddra bland tillägg från andra utvecklare och installera dem med ett klick. Tillägg får endast de behörigheter de uttryckligen begär.",
+  "MarketplaceBrowseButton": "Bläddra bland tillägg",
+  "MarketplaceLoading": "Läser in tillägg…",
+  "MarketplaceEmpty": "Inga tillägg har publicerats ännu.",
+  "MarketplaceFetchFailed": "Det gick inte att läsa in marketplace-katalogen. Försök igen senare.",
+  "MarketplaceInstallButton": "Installera",
+  "MarketplaceInstallFailed": "Det gick inte att installera det här tillägget. Försök igen.",
+  "MarketplaceScopesLabel": "Begär åtkomst till:",
+  "MarketplaceByDeveloper": "av {0}",
+  "MarketplaceViewSource": "Visa källkod",
+  "MarketplaceDemoNotice": "Det går inte att installera tillägg på den här demoinstansen."
 }

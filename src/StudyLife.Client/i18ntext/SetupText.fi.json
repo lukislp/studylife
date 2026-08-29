@@ -260,5 +260,17 @@
   "InvitesExpiresFormat": "Vanhenee: {0}",
   "InvitesUsedLabel": "Käytetty",
   "InvitesExpiredLabel": "Vanhentunut",
-  "InvitesRevoke": "Peruuta"
+  "InvitesRevoke": "Peruuta",
+  "MarketplaceHeading": "Kauppapaikka",
+  "MarketplaceDesc": "Selaa muiden kehittäjien lisäosia ja asenna ne yhdellä klikkauksella. Lisäosat saavat vain ne oikeudet, joita ne nimenomaisesti pyytävät.",
+  "MarketplaceBrowseButton": "Selaa lisäosia",
+  "MarketplaceLoading": "Ladataan lisäosia…",
+  "MarketplaceEmpty": "Yhtään lisäosaa ei ole vielä julkaistu.",
+  "MarketplaceFetchFailed": "Kauppapaikan luetteloa ei voitu ladata. Yritä myöhemmin uudelleen.",
+  "MarketplaceInstallButton": "Asenna",
+  "MarketplaceInstallFailed": "Tämän lisäosan asentaminen epäonnistui. Yritä uudelleen.",
+  "MarketplaceScopesLabel": "Pyytää käyttöoikeutta:",
+  "MarketplaceByDeveloper": "kehittäjä {0}",
+  "MarketplaceViewSource": "Näytä lähdekoodi",
+  "MarketplaceDemoNotice": "Lisäosien asentaminen on poistettu käytöstä tässä demoversiossa."
 }

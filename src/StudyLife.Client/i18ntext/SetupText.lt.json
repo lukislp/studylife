@@ -260,5 +260,17 @@
   "InvitesExpiresFormat": "Baigiasi: {0}",
   "InvitesUsedLabel": "Panaudota",
   "InvitesExpiredLabel": "Nebegalioja",
-  "InvitesRevoke": "Atšaukti"
+  "InvitesRevoke": "Atšaukti",
+  "MarketplaceHeading": "Prekyvietė",
+  "MarketplaceDesc": "Naršykite kitų kūrėjų priedus ir įdiekite juos vienu paspaudimu. Priedai gauna tik tuos leidimus, kuriuos aiškiai prašo.",
+  "MarketplaceBrowseButton": "Naršyti priedus",
+  "MarketplaceLoading": "Įkeliami priedai…",
+  "MarketplaceEmpty": "Kol kas nėra paskelbtų priedų.",
+  "MarketplaceFetchFailed": "Nepavyko įkelti prekyvietės katalogo. Bandykite dar kartą vėliau.",
+  "MarketplaceInstallButton": "Įdiegti",
+  "MarketplaceInstallFailed": "Nepavyko įdiegti šio priedo. Bandykite dar kartą.",
+  "MarketplaceScopesLabel": "Prašo prieigos prie:",
+  "MarketplaceByDeveloper": "kūrėjas {0}",
+  "MarketplaceViewSource": "Peržiūrėti šaltinio kodą",
+  "MarketplaceDemoNotice": "Priedų diegimas šioje demonstracinėje versijoje išjungtas."
 }

@@ -16,5 +16,8 @@
   "ConnectCancelButton": "Anuluj",
   "ConnectWorking": "Łączenie…",
   "ConnectFailed": "Połączenie się nie powiodło. Spróbuj ponownie.",
-  "ConnectInvalidRequest": "To żądanie połączenia jest nieprawidłowe lub wygasło."
+  "ConnectInvalidRequest": "To żądanie połączenia jest nieprawidłowe lub wygasło.",
+  "ConnectClientPageTitle": "StudyLife — Połącz",
+  "ConnectClientHeading": "Połącz dodatek",
+  "ConnectClientNotRegistered": "Ten dodatek nie jest jeszcze zarejestrowany w Twojej instancji StudyLife."
 }

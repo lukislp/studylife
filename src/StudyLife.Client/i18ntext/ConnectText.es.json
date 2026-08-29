@@ -16,5 +16,8 @@
   "ConnectCancelButton": "Cancelar",
   "ConnectWorking": "Conectando…",
   "ConnectFailed": "La conexión no funcionó. Inténtalo de nuevo.",
-  "ConnectInvalidRequest": "Esta solicitud de conexión no es válida o ha caducado."
+  "ConnectInvalidRequest": "Esta solicitud de conexión no es válida o ha caducado.",
+  "ConnectClientPageTitle": "StudyLife — Conectar",
+  "ConnectClientHeading": "Conectar complemento",
+  "ConnectClientNotRegistered": "Este complemento aún no está registrado en tu instancia de StudyLife."
 }

@@ -16,5 +16,8 @@
   "ConnectCancelButton": "Odustani",
   "ConnectWorking": "Povezivanje…",
   "ConnectFailed": "Povezivanje nije uspjelo. Pokušajte ponovno.",
-  "ConnectInvalidRequest": "Ovaj zahtjev za povezivanje nije valjan ili je istekao."
+  "ConnectInvalidRequest": "Ovaj zahtjev za povezivanje nije valjan ili je istekao.",
+  "ConnectClientPageTitle": "StudyLife — Povezivanje",
+  "ConnectClientHeading": "Poveži dodatak",
+  "ConnectClientNotRegistered": "Ovaj dodatak još nije registriran na vašoj StudyLife instanci."
 }

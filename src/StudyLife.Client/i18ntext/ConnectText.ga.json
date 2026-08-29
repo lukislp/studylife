@@ -16,5 +16,8 @@
   "ConnectCancelButton": "Cealaigh",
   "ConnectWorking": "Ag nascadh…",
   "ConnectFailed": "Níor éirigh leis an nasc. Bain triail eile as.",
-  "ConnectInvalidRequest": "Tá an t-iarratas naisc seo neamhbhailí nó tá sé imithe in éag."
+  "ConnectInvalidRequest": "Tá an t-iarratas naisc seo neamhbhailí nó tá sé imithe in éag.",
+  "ConnectClientPageTitle": "StudyLife — Ceangail",
+  "ConnectClientHeading": "Ceangail breiseán",
+  "ConnectClientNotRegistered": "Níl an breiseán seo cláraithe ar do chuid StudyLife fós."
 }

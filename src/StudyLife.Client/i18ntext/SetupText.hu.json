@@ -260,5 +260,17 @@
   "InvitesExpiresFormat": "Lejár: {0}",
   "InvitesUsedLabel": "Felhasználva",
   "InvitesExpiredLabel": "Lejárt",
-  "InvitesRevoke": "Visszavonás"
+  "InvitesRevoke": "Visszavonás",
+  "MarketplaceHeading": "Piactér",
+  "MarketplaceDesc": "Böngéssz más fejlesztők bővítményei között, és telepítsd őket egy kattintással. A bővítmények csak azokat a jogosultságokat kapják meg, amelyeket kifejezetten kérnek.",
+  "MarketplaceBrowseButton": "Bővítmények böngészése",
+  "MarketplaceLoading": "Bővítmények betöltése…",
+  "MarketplaceEmpty": "Még nincs közzétett bővítmény.",
+  "MarketplaceFetchFailed": "A piactér katalógusát nem sikerült betölteni. Kérjük, próbáld újra később.",
+  "MarketplaceInstallButton": "Telepítés",
+  "MarketplaceInstallFailed": "A bővítmény telepítése nem sikerült. Kérjük, próbáld újra.",
+  "MarketplaceScopesLabel": "Hozzáférést kér ehhez:",
+  "MarketplaceByDeveloper": "készítette: {0}",
+  "MarketplaceViewSource": "Forráskód megtekintése",
+  "MarketplaceDemoNotice": "A bővítmények telepítése le van tiltva ezen a demó példányon."
 }

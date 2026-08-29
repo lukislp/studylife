@@ -260,5 +260,17 @@
   "InvitesExpiresFormat": "Wygasa: {0}",
   "InvitesUsedLabel": "Wykorzystane",
   "InvitesExpiredLabel": "Wygasłe",
-  "InvitesRevoke": "Odwołaj"
+  "InvitesRevoke": "Odwołaj",
+  "MarketplaceHeading": "Sklep z dodatkami",
+  "MarketplaceDesc": "Przeglądaj dodatki innych deweloperów i instaluj je jednym kliknięciem. Dodatki otrzymują wyłącznie uprawnienia, o które wyraźnie proszą.",
+  "MarketplaceBrowseButton": "Przeglądaj dodatki",
+  "MarketplaceLoading": "Ładowanie dodatków…",
+  "MarketplaceEmpty": "Nie opublikowano jeszcze żadnych dodatków.",
+  "MarketplaceFetchFailed": "Nie udało się załadować katalogu sklepu. Spróbuj ponownie później.",
+  "MarketplaceInstallButton": "Zainstaluj",
+  "MarketplaceInstallFailed": "Instalacja tego dodatku nie powiodła się. Spróbuj ponownie.",
+  "MarketplaceScopesLabel": "Wymaga dostępu do:",
+  "MarketplaceByDeveloper": "od {0}",
+  "MarketplaceViewSource": "Zobacz kod źródłowy",
+  "MarketplaceDemoNotice": "Instalowanie dodatków jest wyłączone w tej instancji demonstracyjnej."
 }

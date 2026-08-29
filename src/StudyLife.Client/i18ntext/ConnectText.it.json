@@ -16,5 +16,8 @@
   "ConnectCancelButton": "Annulla",
   "ConnectWorking": "Connessione in corso…",
   "ConnectFailed": "Connessione non riuscita. Riprova.",
-  "ConnectInvalidRequest": "Questa richiesta di connessione non è valida o è scaduta."
+  "ConnectInvalidRequest": "Questa richiesta di connessione non è valida o è scaduta.",
+  "ConnectClientPageTitle": "StudyLife — Connetti",
+  "ConnectClientHeading": "Connetti componente aggiuntivo",
+  "ConnectClientNotRegistered": "Questo componente aggiuntivo non è ancora registrato sulla tua istanza StudyLife."
 }

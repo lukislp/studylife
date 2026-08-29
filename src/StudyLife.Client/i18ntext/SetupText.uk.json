@@ -260,5 +260,17 @@
   "InvitesExpiresFormat": "Спливає: {0}",
   "InvitesUsedLabel": "Використано",
   "InvitesExpiredLabel": "Прострочено",
-  "InvitesRevoke": "Відкликати"
+  "InvitesRevoke": "Відкликати",
+  "MarketplaceHeading": "Магазин доповнень",
+  "MarketplaceDesc": "Переглядайте доповнення від інших розробників і встановлюйте їх одним натисканням. Доповнення отримують лише ті дозволи, які вони явно запитують.",
+  "MarketplaceBrowseButton": "Переглянути доповнення",
+  "MarketplaceLoading": "Завантаження доповнень…",
+  "MarketplaceEmpty": "Поки що немає опублікованих доповнень.",
+  "MarketplaceFetchFailed": "Не вдалося завантажити каталог магазину. Спробуйте пізніше.",
+  "MarketplaceInstallButton": "Встановити",
+  "MarketplaceInstallFailed": "Не вдалося встановити це доповнення. Спробуйте ще раз.",
+  "MarketplaceScopesLabel": "Запитує доступ до:",
+  "MarketplaceByDeveloper": "від {0}",
+  "MarketplaceViewSource": "Переглянути вихідний код",
+  "MarketplaceDemoNotice": "Встановлення доповнень вимкнено на цьому демо-екземплярі."
 }

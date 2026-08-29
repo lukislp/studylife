@@ -1,0 +1,153 @@
+@page "/connect/client/{ClientId}"
+@layout PublicLayout
+@using StudyLife.Shared
+@inherits LocalizedComponentBase<I18nText.ConnectText>
+@inject HttpClient Http
+@inject NavigationManager Nav
+@inject SessionTokenStore TokenStore
+
+@* Generic consent page for any dynamically-registered OAuthClientEntity (marketplace add-ons),
+   as opposed to ConnectConsent.razor's 5 hardcoded audiences (mcp/capture/focusguard/
+   focustunes/tray) - deliberately left untouched, see StudyLifeMarketplacePlan. Reached either
+   from MarketplaceBrowserModal's "Install" button, or directly from an add-on's own external
+   service deep-linking a user here with its own redirect_uri/state, exactly like the 5
+   hardcoded audiences already work. Fetches the client's own Name/Description/RequestedScopes
+   (AuthController.GetOAuthClientInfo) to render consent copy dynamically instead of a hardcoded
+   per-audience switch, then POSTs to the existing generic api/auth/connect endpoint. *@
+
+@if (IsTextLoaded)
+{
+<PageTitle>@T.ConnectClientPageTitle</PageTitle>
+
+<div class="progress-share-page">
+    <div class="progress-share-card">
+        <h1>@T.ConnectClientHeading</h1>
+        @if (_invalidRequest)
+        {
+            <p class="ss-desc" style="color:var(--danger, #e74c3c)">@T.ConnectInvalidRequest</p>
+        }
+        else if (_notRegistered)
+        {
+            <p class="ss-desc" style="color:var(--danger, #e74c3c)">@T.ConnectClientNotRegistered</p>
+        }
+        else
+        {
+            <p class="ss-desc">@_clientInfo?.Description</p>
+            @if (_clientInfo is { RequestedScopes.Count: > 0 })
+            {
+                <p class="ss-desc" style="margin-top:0.75rem">
+                    @string.Join(", ", _clientInfo.RequestedScopes.Select(MarketplaceScopeLabels.Describe))
+                </p>
+            }
+            @if (_error != null)
+            {
+                <p class="ss-desc" style="color:var(--danger, #e74c3c)">@_error</p>
+            }
+            <div style="display:flex; flex-direction:column; gap:0.75rem; margin-top:1.25rem;">
+                <button type="button" class="btn-primary" @onclick="ConnectAsync" disabled="@_busy">
+                    @(_busy ? T.ConnectWorking : T.ConnectButton)
+                </button>
+                <button type="button" class="btn-secondary" @onclick="Cancel" disabled="@_busy">
+                    @T.ConnectCancelButton
+                </button>
+            </div>
+        }
+    </div>
+</div>
+}
+
+@code {
+    [Parameter] public string ClientId { get; set; } = "";
+
+    private bool _busy;
+    private string? _error;
+    private bool _invalidRequest;
+    private bool _notRegistered;
+    private string _redirectUri = "";
+    private string _state = "";
+    private OAuthClientInfoDto? _clientInfo;
+
+    protected override async Task OnTextLoadedAsync()
+    {
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        _redirectUri = query["redirect_uri"] ?? "";
+        _state = query["state"] ?? "";
+
+        // Only a client-side "don't even show the consent screen" shortcut - the authoritative
+        // check is server-side in AuthController.Connect (exact-match against the client's own
+        // AllowedRedirectUris).
+        if (!IsAllowedRedirectUri(_redirectUri))
+        {
+            _invalidRequest = true;
+            return;
+        }
+
+        if (string.IsNullOrEmpty(TokenStore.Token))
+        {
+            var self = $"/connect/client/{Uri.EscapeDataString(ClientId)}?redirect_uri={Uri.EscapeDataString(_redirectUri)}&state={Uri.EscapeDataString(_state)}";
+            Nav.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(self)}", forceLoad: true);
+            return;
+        }
+
+        try
+        {
+            var response = await Http.GetAsync($"api/auth/oauth-clients/{Uri.EscapeDataString(ClientId)}");
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _notRegistered = true;
+                return;
+            }
+            if (!response.IsSuccessStatusCode)
+            {
+                _error = T.ConnectFailed;
+                return;
+            }
+            _clientInfo = await response.Content.ReadFromJsonAsync<OAuthClientInfoDto>();
+        }
+        catch (HttpRequestException)
+        {
+            _error = T.ConnectFailed;
+        }
+    }
+
+    /// <summary>Mirrors AuthController.IsAllowedRedirectUri exactly - see ConnectConsent.razor's
+    /// own copy for the full rationale.</summary>
+    private static bool IsAllowedRedirectUri(string redirectUri)
+    {
+        if (!Uri.TryCreate(redirectUri, UriKind.Absolute, out var uri)) return false;
+        if (uri.Scheme == Uri.UriSchemeHttps) return true;
+        return uri.Scheme == Uri.UriSchemeHttp
+            && (string.Equals(uri.Host, "127.0.0.1", StringComparison.Ordinal)
+                || string.Equals(uri.Host, "localhost", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private async Task ConnectAsync()
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/auth/connect",
+                new GenericConnectRequestDto { ClientId = ClientId, RedirectUri = _redirectUri, State = _state });
+            if (!response.IsSuccessStatusCode) { _error = T.ConnectFailed; return; }
+            var result = await response.Content.ReadFromJsonAsync<GenericConnectResponseDto>();
+            if (result?.RedirectTo is not { Length: > 0 }) { _error = T.ConnectFailed; return; }
+
+            // Leaves this origin entirely (the add-on's own callback) - forceLoad is required
+            // for Blazor's NavigationManager to actually leave the SPA instead of trying (and
+            // failing) to route the external URL internally.
+            Nav.NavigateTo(result.RedirectTo, forceLoad: true);
+        }
+        catch (HttpRequestException)
+        {
+            _error = T.ConnectFailed;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private void Cancel() => Nav.NavigateTo("/", forceLoad: true);
+}

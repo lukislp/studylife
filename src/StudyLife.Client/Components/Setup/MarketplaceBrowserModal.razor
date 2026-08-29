@@ -1,0 +1,152 @@
+@using StudyLife.Shared
+@inject MarketplaceClient MarketplaceClient
+@inject HttpClient Http
+@inject NavigationManager Nav
+@inject AppStateService State
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+@* Browses studylife-marketplace's public catalog (fetched client-side, see MarketplaceClient -
+   no StudyLife.Server involvement) and installs a listing by materializing a local
+   OAuthClientEntity (reusing DeveloperController.Create unchanged) before handing off to the
+   new generic consent page (ConnectClient.razor). See StudyLifeMarketplacePlan for the full
+   design - in particular why RedirectUriPattern is used as one literal redirect URI.
+
+   Demo mode: browsing stays fully functional (GitHub fetch, not this app's own API), but
+   installing is disabled here too. This is a UX nicety, not the actual enforcement - the
+   server's own demo write-block middleware (Program.cs, DemoModeGuard) already 403s every
+   mutating /api call except /api/auth/demo-login and /api/dictate, which already covers
+   POST api/developer/clients and api/auth/connect with zero changes needed there. *@
+
+<div class="modal-overlay" @onclick="() => OnClose.InvokeAsync()">
+    <div class="modal" @onclick:stopPropagation="true" style="max-width:560px;max-height:85vh;display:flex;flex-direction:column">
+        <div class="modal-header">
+            <h3>@T.MarketplaceHeading</h3>
+            <button type="button" class="modal-close" @onclick="() => OnClose.InvokeAsync()">✕</button>
+        </div>
+        <div class="modal-body" style="overflow-y:auto;flex:1 1 auto;min-height:0">
+            @if (_loading)
+            {
+                <p class="ss-desc">@T.MarketplaceLoading</p>
+            }
+            else if (_fetchError)
+            {
+                <p class="ss-desc" style="color:var(--danger, #e74c3c)">@T.MarketplaceFetchFailed</p>
+            }
+            else if (_listings.Count == 0)
+            {
+                <p class="ss-desc">@T.MarketplaceEmpty</p>
+            }
+            else
+            {
+                @if (_isDemo)
+                {
+                    <p class="ss-desc">@T.MarketplaceDemoNotice</p>
+                }
+                @foreach (var listing in _listings)
+                {
+                    <div class="field-row" style="flex-wrap:wrap;align-items:flex-start;border-bottom:1px solid var(--border);padding-bottom:0.75rem;margin-bottom:0.75rem">
+                        <div style="flex:1;min-width:240px">
+                            <strong>@listing.Name</strong>
+                            <span class="ss-desc" style="margin-left:6px">@string.Format(T.MarketplaceByDeveloper ?? "{0}", listing.Developer)</span>
+                            <div class="ss-desc" style="margin:2px 0 0">@listing.Description</div>
+                            <div class="ss-desc" style="margin:4px 0 0">
+                                @T.MarketplaceScopesLabel
+                                @string.Join(", ", listing.RequestedScopes.Select(MarketplaceScopeLabels.Describe))
+                            </div>
+                            <a href="@listing.Repository" target="_blank" rel="noopener" class="ss-desc">@T.MarketplaceViewSource</a>
+                        </div>
+                        <div class="toggle-row" style="gap:0.5rem;flex-shrink:0">
+                            <button type="button" class="btn-secondary" disabled="@(_busyClientId != null || _isDemo)"
+                                    @onclick="() => InstallAsync(listing)">
+                                @(_busyClientId == listing.Id ? "…" : T.MarketplaceInstallButton)
+                            </button>
+                        </div>
+                    </div>
+                    @if (_installError != null && _installErrorClientId == listing.Id)
+                    {
+                        <p class="ss-desc" style="color:var(--danger, #e74c3c);margin-top:-0.5rem">@_installError</p>
+                    }
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private I18nText.SetupText T = new();
+    private List<MarketplaceListingDto> _listings = new();
+    private bool _loading = true;
+    private bool _fetchError;
+    private bool _isDemo;
+    private string? _busyClientId;
+    private string? _installError;
+    private string? _installErrorClientId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
+        _isDemo = await State.GetIsDemoAsync();
+        try
+        {
+            _listings = await MarketplaceClient.GetListingsAsync();
+        }
+        catch
+        {
+            _fetchError = true;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task InstallAsync(MarketplaceListingDto listing)
+    {
+        _busyClientId = listing.Id;
+        _installError = null;
+        try
+        {
+            // Already registered locally (e.g. another user on this instance installed it
+            // first, or this is a reinstall) - skip straight to consent.
+            var existing = await Http.GetAsync($"api/auth/oauth-clients/{Uri.EscapeDataString(listing.Id)}");
+            if (existing.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                var createResponse = await Http.PostAsJsonAsync("api/developer/clients", new CreateDeveloperClientRequestDto
+                {
+                    ClientId = listing.Id,
+                    Name = listing.Name,
+                    Description = listing.Description,
+                    AllowedRedirectUris = new List<string> { listing.RedirectUriPattern },
+                    RequestedScopes = listing.RequestedScopes,
+                });
+                if (!createResponse.IsSuccessStatusCode)
+                {
+                    _installError = T.MarketplaceInstallFailed;
+                    _installErrorClientId = listing.Id;
+                    return;
+                }
+            }
+            else if (!existing.IsSuccessStatusCode)
+            {
+                _installError = T.MarketplaceInstallFailed;
+                _installErrorClientId = listing.Id;
+                return;
+            }
+
+            var state = Guid.NewGuid().ToString("N");
+            var redirectUri = Uri.EscapeDataString(listing.RedirectUriPattern);
+            Nav.NavigateTo($"/connect/client/{Uri.EscapeDataString(listing.Id)}?redirect_uri={redirectUri}&state={state}");
+        }
+        catch (HttpRequestException)
+        {
+            _installError = T.MarketplaceInstallFailed;
+            _installErrorClientId = listing.Id;
+        }
+        finally
+        {
+            _busyClientId = null;
+        }
+    }
+}

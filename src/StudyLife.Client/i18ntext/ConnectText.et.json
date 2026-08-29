@@ -16,5 +16,8 @@
   "ConnectCancelButton": "Loobu",
   "ConnectWorking": "Ühendamine…",
   "ConnectFailed": "Ühendamine ebaõnnestus. Palun proovi uuesti.",
-  "ConnectInvalidRequest": "See ühendustaotlus on kehtetu või aegunud."
+  "ConnectInvalidRequest": "See ühendustaotlus on kehtetu või aegunud.",
+  "ConnectClientPageTitle": "StudyLife — Ühenda",
+  "ConnectClientHeading": "Ühenda lisandmoodul",
+  "ConnectClientNotRegistered": "Seda lisandmoodulit pole sinu StudyLife'i eksemplaris veel registreeritud."
 }

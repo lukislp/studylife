@@ -276,6 +276,12 @@
              SetupDeveloperCard. -->
         <SetupDeveloperCard />
 
+        <!-- Marketplace: browse/install add-ons published to the public studylife-marketplace
+             catalog. Fetches the catalog directly from GitHub client-side (MarketplaceClient) -
+             no StudyLife.Server involvement for browsing; installing reuses the existing
+             DeveloperController/generic connect-consent endpoints. See SetupMarketplaceCard. -->
+        <SetupMarketplaceCard />
+
         <!-- studylife-ai: separate long-lived per-user API key slot (AiApiKeyHash). UNLIKE the
              Home Assistant card above, this one is a plain on/off toggle, not a reveal-once-
              plaintext lifecycle - the server registers the key with studylife-ai itself, the

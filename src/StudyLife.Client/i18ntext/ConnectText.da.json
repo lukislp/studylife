@@ -16,5 +16,8 @@
   "ConnectCancelButton": "Annuller",
   "ConnectWorking": "Forbinder…",
   "ConnectFailed": "Forbindelsen mislykkedes. Prøv igen.",
-  "ConnectInvalidRequest": "Denne forbindelsesanmodning er ugyldig eller udløbet."
+  "ConnectInvalidRequest": "Denne forbindelsesanmodning er ugyldig eller udløbet.",
+  "ConnectClientPageTitle": "StudyLife — Forbind",
+  "ConnectClientHeading": "Forbind tilføjelse",
+  "ConnectClientNotRegistered": "Denne tilføjelse er endnu ikke registreret på din StudyLife-instans."
 }

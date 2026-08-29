@@ -1,0 +1,29 @@
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+@* Entry point for browsing and installing add-ons from the public studylife-marketplace catalog.
+   Self-contained component (own SetupText instance), modeled after SetupDeveloperCard - opens
+   MarketplaceBrowserModal on click, following the same modal-ownership pattern SetupDeveloperCard
+   already uses for its own disable-confirmation modal. *@
+
+<div class="setup-section">
+    <div class="ss-label">@T.MarketplaceHeading</div>
+    <p class="ss-desc">@T.MarketplaceDesc</p>
+    <button type="button" class="btn-secondary" @onclick="() => _showModal = true">
+        @T.MarketplaceBrowseButton
+    </button>
+</div>
+
+@if (_showModal)
+{
+    <MarketplaceBrowserModal OnClose="() => _showModal = false" />
+}
+
+@code {
+    private I18nText.SetupText T = new();
+    private bool _showModal;
+
+    protected override async Task OnInitializedAsync()
+    {
+        T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
+    }
+}

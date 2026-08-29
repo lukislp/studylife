@@ -16,5 +16,8 @@
   "ConnectCancelButton": "Atcelt",
   "ConnectWorking": "Notiek savienošana…",
   "ConnectFailed": "Savienojums neizdevās. Lūdzu, mēģiniet vēlreiz.",
-  "ConnectInvalidRequest": "Šis savienojuma pieprasījums nav derīgs vai ir beidzies."
+  "ConnectInvalidRequest": "Šis savienojuma pieprasījums nav derīgs vai ir beidzies.",
+  "ConnectClientPageTitle": "StudyLife — Savienot",
+  "ConnectClientHeading": "Savienot papildinājumu",
+  "ConnectClientNotRegistered": "Šis papildinājums vēl nav reģistrēts jūsu StudyLife instancē."
 }

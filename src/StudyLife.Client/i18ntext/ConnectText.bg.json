@@ -16,5 +16,8 @@
   "ConnectCancelButton": "Отказ",
   "ConnectWorking": "Свързване…",
   "ConnectFailed": "Свързването не бе успешно. Моля, опитайте отново.",
-  "ConnectInvalidRequest": "Заявката за свързване е невалидна или е изтекла."
+  "ConnectInvalidRequest": "Заявката за свързване е невалидна или е изтекла.",
+  "ConnectClientPageTitle": "StudyLife — Свързване",
+  "ConnectClientHeading": "Свързване на добавка",
+  "ConnectClientNotRegistered": "Тази добавка все още не е регистрирана във вашия StudyLife."
 }

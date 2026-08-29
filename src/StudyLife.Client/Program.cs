@@ -33,6 +33,16 @@ builder.Services.AddScoped<AppStateService>();
 builder.Services.AddScoped<TimerService>();
 builder.Services.AddScoped<NotificationService>();
 
+// Marketplace catalog: reads studylife-marketplace's public listings/ directory directly from
+// GitHub's REST API - a separate typed HttpClient (NOT the session-token one above), since this
+// talks to api.github.com, not this app's own server, and needs no auth at all (public repo,
+// public read-only data). GitHub requires a User-Agent on every request.
+builder.Services.AddHttpClient<MarketplaceClient>(client =>
+{
+    client.BaseAddress = new Uri("https://api.github.com/");
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("StudyLife-Marketplace-Client");
+});
+
 // Native app bridge (MAUI Blazor Hybrid): always the no-op variants in the browser - the
 // auth pages resp. NotificationService check IsAvailable and behave here exactly as
 // before. The native app (separate studylife-app repo) registers its

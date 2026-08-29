@@ -260,5 +260,17 @@
   "InvitesExpiresFormat": "Expira: {0}",
   "InvitesUsedLabel": "Utilizado",
   "InvitesExpiredLabel": "Expirado",
-  "InvitesRevoke": "Revogar"
+  "InvitesRevoke": "Revogar",
+  "MarketplaceHeading": "Marketplace",
+  "MarketplaceDesc": "Explore extras submetidos por outros programadores e instale-os com um clique. Os extras recebem apenas as permissões que solicitam explicitamente.",
+  "MarketplaceBrowseButton": "Explorar extras",
+  "MarketplaceLoading": "A carregar extras…",
+  "MarketplaceEmpty": "Ainda não há extras publicados.",
+  "MarketplaceFetchFailed": "Não foi possível carregar o catálogo do marketplace. Tente novamente mais tarde.",
+  "MarketplaceInstallButton": "Instalar",
+  "MarketplaceInstallFailed": "A instalação deste extra falhou. Tente novamente.",
+  "MarketplaceScopesLabel": "Solicita acesso a:",
+  "MarketplaceByDeveloper": "por {0}",
+  "MarketplaceViewSource": "Ver código-fonte",
+  "MarketplaceDemoNotice": "A instalação de extras está desativada nesta instância de demonstração."
 }

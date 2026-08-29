@@ -260,5 +260,17 @@
   "InvitesExpiresFormat": "Expires {0}",
   "InvitesUsedLabel": "Used",
   "InvitesExpiredLabel": "Expired",
-  "InvitesRevoke": "Revoke"
+  "InvitesRevoke": "Revoke",
+  "MarketplaceHeading": "Marketplace",
+  "MarketplaceDesc": "Browse add-ons submitted by other developers and install them with one click. Add-ons only ever get the permissions they explicitly request.",
+  "MarketplaceBrowseButton": "Browse add-ons",
+  "MarketplaceLoading": "Loading add-ons…",
+  "MarketplaceEmpty": "No add-ons published yet.",
+  "MarketplaceFetchFailed": "Couldn't load the marketplace catalog. Please try again later.",
+  "MarketplaceInstallButton": "Install",
+  "MarketplaceInstallFailed": "Installing this add-on failed. Please try again.",
+  "MarketplaceScopesLabel": "Requests access to:",
+  "MarketplaceByDeveloper": "by {0}",
+  "MarketplaceViewSource": "View source",
+  "MarketplaceDemoNotice": "Installing add-ons is disabled on this demo instance."
 }
