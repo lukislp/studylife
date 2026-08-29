@@ -190,7 +190,6 @@
   "McpConnectionLabel": "studylife-mcp",
   "CaptureConnectionLabel": "studylife-capture",
   "FocusGuardConnectionLabel": "studylife-focusguard",
-  "TimeTrackConnectionLabel": "studylife-timetrack",
   "FocusTunesConnectionLabel": "studylife-focustunes",
   "ConnectionConnected": "Συνδεδεμένο",
   "ConnectionNotConnected": "Μη συνδεδεμένο",
