@@ -30,9 +30,10 @@ public class SessionsController : ControllerBase
                 .Select(s => ToDto(s)));
 
     private readonly ApnsSender _apnsSender;
+    private readonly WebhooksProxyClient _webhooks;
 
     public SessionsController(StudyLifeDb db, IDistributedCache cache, SessionHistoryCacheVersion historyCacheVersion, VapidKeysHolder vapidKeysHolder,
-        ICurrentUserAccessor currentUser, ApnsSender apnsSender, ICourseResolver courseResolver)
+        ICurrentUserAccessor currentUser, ApnsSender apnsSender, ICourseResolver courseResolver, WebhooksProxyClient webhooks)
     {
         _db = db;
         _cache = cache;
@@ -41,6 +42,7 @@ public class SessionsController : ControllerBase
         _currentUser = currentUser;
         _apnsSender = apnsSender;
         _courseResolver = courseResolver;
+        _webhooks = webhooks;
     }
 
     [HttpGet]
@@ -84,6 +86,7 @@ public class SessionsController : ControllerBase
         await _db.SaveChangesAsync();
         _historyCacheVersion.Value++;
         await CheckNewRecordAsync(entity);
+        PublishSessionWebhookEvents(entity, isNewSession: true, wasCompletedBefore: false);
         return ToDto(entity);
     }
 
@@ -112,6 +115,7 @@ public class SessionsController : ControllerBase
         }
 
         var oldStartTime = entity.StartTime;
+        var wasCompletedBefore = entity.IsCompleted;
         Apply(dto, entity);
 
         // If the session start shifts, this invalidates the already-sent session reminders
@@ -133,6 +137,7 @@ public class SessionsController : ControllerBase
         await _db.SaveChangesAsync();
         _historyCacheVersion.Value++;
         await CheckNewRecordAsync(entity);
+        PublishSessionWebhookEvents(entity, isNewSession: false, wasCompletedBefore);
         return Ok(ToDto(entity));
     }
 
@@ -144,7 +149,37 @@ public class SessionsController : ControllerBase
         _db.Sessions.Remove(entity);
         await _db.SaveChangesAsync();
         _historyCacheVersion.Value++;
+        _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId, WebhookEventTypes.SessionDeleted,
+            new { sessionId = entity.Id, courseName = entity.CourseName }, CancellationToken.None);
         return NoContent();
+    }
+
+    /// <summary>Fire-and-forget with CancellationToken.None (see TimerStateController.Save's
+    /// identical reasoning - HttpContext.RequestAborted is not safe for work meant to outlive the
+    /// request). isNewSession is an explicit flag, not inferred from wasCompletedBefore: an
+    /// Update of a still-incomplete session also has wasCompletedBefore=false, and must NOT
+    /// re-fire session.created on every such edit - only Create ever passes isNewSession: true.
+    /// session.completed fires exactly on the false-&gt;true transition, whether that happens at
+    /// creation (a session logged as already complete) or later via Update - never re-fires on a
+    /// subsequent edit of an already-completed session.</summary>
+    private void PublishSessionWebhookEvents(StudySessionEntity entity, bool isNewSession, bool wasCompletedBefore)
+    {
+        var userId = _currentUser.AuthUserId;
+        var payload = new
+        {
+            sessionId = entity.Id,
+            courseId = entity.CourseId,
+            courseName = entity.CourseName,
+            durationMinutes = (entity.EndTime - entity.StartTime).TotalMinutes,
+        };
+        if (isNewSession)
+        {
+            _ = _webhooks.PublishEventAsync(userId, WebhookEventTypes.SessionCreated, payload, CancellationToken.None);
+        }
+        if (entity.IsCompleted && !wasCompletedBefore)
+        {
+            _ = _webhooks.PublishEventAsync(userId, WebhookEventTypes.SessionCompleted, payload, CancellationToken.None);
+        }
     }
 
     [HttpDelete("series/{groupId}")]
@@ -318,6 +353,9 @@ public class SessionsController : ControllerBase
             if (duration.TotalHours <= previousMaxHours) return;
 
             await SendNewRecordPushAsync(duration);
+            _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId, WebhookEventTypes.NewRecordSet,
+                new { sessionId = entity.Id, durationMinutes = duration.TotalMinutes, previousBestMinutes = previousMaxHours * 60 },
+                CancellationToken.None);
 
             _db.SentReminders.Add(new SentReminderEntity { Key = key, SentAt = now });
             await _db.SaveChangesAsync();
