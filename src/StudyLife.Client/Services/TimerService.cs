@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using Microsoft.JSInterop;
 using StudyLife.Client.Models;
 using StudyLife.Shared;
 
@@ -7,6 +8,7 @@ namespace StudyLife.Client.Services;
 public class TimerService
 {
     private readonly HttpClient _http;
+    private readonly IJSRuntime _js;
     private System.Threading.Timer? _timer;
     private int _secondsLeft;
     private bool _isRunning;
@@ -75,7 +77,11 @@ public class TimerService
     /// local LoadMode wrapper.</summary>
     public event Action<TimerMode>? OnModeChanged;
 
-    public TimerService(HttpClient http) => _http = http;
+    public TimerService(HttpClient http, IJSRuntime js)
+    {
+        _http = http;
+        _js = js;
+    }
 
     public int SecondsLeft { get { lock (_lock) return _secondsLeft; } }
     public bool IsRunning { get { lock (_lock) return _isRunning; } }
@@ -299,6 +305,17 @@ public class TimerService
             _pushInFlight = true;
         }
         _ = DrainPushQueueAsync();
+        DispatchTimerStateChangedEvent(dto);
+    }
+
+    /// <summary>Fire-and-forget browser-DOM nudge for installed extensions (see interop.js) -
+    /// deliberately decoupled from the actual server push above: an extension reacting to this
+    /// re-polls its own authenticated endpoint rather than trusting the payload, so this firing
+    /// (or failing) has no bearing on the real push's own success/failure/ordering guarantees.</summary>
+    private async void DispatchTimerStateChangedEvent(TimerStateDto dto)
+    {
+        try { await _js.InvokeVoidAsync("dispatchTimerStateChanged", dto); }
+        catch { /* JS interop unavailable (e.g. prerendering) - nothing this hook can do about it */ }
     }
 
     /// <summary>
