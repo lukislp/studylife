@@ -264,6 +264,12 @@
              HTTP calls), see SetupHomeAssistantCard. -->
         <SetupHomeAssistantCard />
 
+        <!-- studylife-webhooks: separate long-lived per-user API key slot (WebhooksApiKeyHash),
+             manually generated like Home Assistant's above - there is no single dedicated
+             client, any external program the user wants to register webhook subscriptions
+             gets handed this one key. See SetupWebhooksCard. -->
+        <SetupWebhooksCard />
+
         <!-- studylife-ai: separate long-lived per-user API key slot (AiApiKeyHash). UNLIKE the
              Home Assistant card above, this one is a plain on/off toggle, not a reveal-once-
              plaintext lifecycle - the server registers the key with studylife-ai itself, the
