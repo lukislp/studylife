@@ -1,3 +1,15 @@
+# [2.7.0](https://github.com/lukislp/studylife/compare/v2.6.1...v2.7.0) (2026-08-29)
+
+
+### Bug Fixes
+
+* authenticate webhook registration with its own API key, not a session ([56a7521](https://github.com/lukislp/studylife/commit/56a7521fab9c8b9370e0b6f66fc67b3107c2bcef))
+
+
+### Features
+
+* add studylife-tray API key slot and a webhook event system ([bf8a3e3](https://github.com/lukislp/studylife/commit/bf8a3e382a0a140fed02685d05159db7e681c51c))
+
 ## [2.6.1](https://github.com/lukislp/studylife/compare/v2.6.0...v2.6.1) (2026-08-29)
 
 
