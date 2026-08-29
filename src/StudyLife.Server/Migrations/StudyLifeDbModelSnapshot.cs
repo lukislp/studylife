@@ -173,12 +173,6 @@ namespace StudyLife.Server.Migrations
                     b.Property<string>("McpApiKeyHash")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("TimeTrackApiKeyCreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("TimeTrackApiKeyHash")
-                        .HasColumnType("TEXT");
-
                     b.HasKey("Id");
 
                     b.HasIndex("AiApiKeyHash")
@@ -200,9 +194,6 @@ namespace StudyLife.Server.Migrations
                         .IsUnique();
 
                     b.HasIndex("McpApiKeyHash")
-                        .IsUnique();
-
-                    b.HasIndex("TimeTrackApiKeyHash")
                         .IsUnique();
 
                     b.ToTable("AuthUsers");
