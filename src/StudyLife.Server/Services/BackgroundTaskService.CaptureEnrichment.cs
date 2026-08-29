@@ -42,6 +42,12 @@ public partial class BackgroundTaskService
     internal async Task RunCaptureEnrichmentAsync(StudyLifeDb db)
     {
         if (_aiProxyClient is not { Enabled: true }) return;
+        // Demo instances: this job is the one write path that never traverses the HTTP
+        // write-block middleware (it runs inside the worker, not a request). Today it is
+        // doubly inert on the demo host (no StudyLifeAi:BaseUrl configured, and DemoSeeder
+        // creates no SourceUrl notes), but neither of those is a demo-mode guarantee - so
+        // gate it explicitly rather than relying on incidental config/seed properties.
+        if (_demoReadOnly) return;
 
         var backoffCutoff = LocalNow - MinRetryBackoff;
         var pending = await db.Notes

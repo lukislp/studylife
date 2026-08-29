@@ -17,7 +17,7 @@ public interface IOwnershipService
     Task<bool> IsOwnerAsync(int authUserId);
 }
 
-public class OwnershipService(StudyLifeDb db, ILogger<OwnershipService> logger) : IOwnershipService
+public class OwnershipService(StudyLifeDb db, IConfiguration config, ILogger<OwnershipService> logger) : IOwnershipService
 {
     public async Task<bool> IsOwnerAsync(int authUserId)
     {
@@ -40,10 +40,18 @@ public class OwnershipService(StudyLifeDb db, ILogger<OwnershipService> logger) 
         var lowestId = await db.AuthUsers.OrderBy(u => u.Id).Select(u => u.Id).FirstOrDefaultAsync();
         if (lowestId == 0) return false; // no AuthUsers at all - should never happen past setup
 
-        await db.AuthUsers.Where(u => u.Id == lowestId).ExecuteUpdateAsync(s => s.SetProperty(u => u.IsOwner, true));
-        logger.LogWarning(
-            "No AuthUser had IsOwner set - self-healed by assigning ownership to the lowest-Id user (Id={UserId}). " +
-            "This is expected once after restoring a pre-ownership-flag backup; unexpected otherwise.", lowestId);
+        // Demo instances answer with the derived result but never PERSIST it: this method runs
+        // on plain GETs (account-info/invites), which the write-block middleware in Program.cs
+        // deliberately lets through. Normally unreachable there anyway (DemoSeeder seeds
+        // IsOwner=true), but that seeder line must not be the only thing standing between a
+        // demo visitor's GET and an ExecuteUpdate.
+        if (!DemoModeGuard.IsEnabled(config))
+        {
+            await db.AuthUsers.Where(u => u.Id == lowestId).ExecuteUpdateAsync(s => s.SetProperty(u => u.IsOwner, true));
+            logger.LogWarning(
+                "No AuthUser had IsOwner set - self-healed by assigning ownership to the lowest-Id user (Id={UserId}). " +
+                "This is expected once after restoring a pre-ownership-flag backup; unexpected otherwise.", lowestId);
+        }
         return authUserId == lowestId;
     }
 }
