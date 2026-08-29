@@ -169,6 +169,24 @@ public static class ApiKeyScopes
         new("TimerState", "Get"), // GET /api/timerstate - the app's poll loop
     ];
 
+    /// <summary>
+    /// Manually generated from the Setup page (like Ha's slot), not provisioned via a
+    /// browser-consent flow - meant to be handed to WHICHEVER external program/add-on the user
+    /// wants to let register its own studylife-webhooks subscriptions (e.g. a hypothetical iOS
+    /// focus app), not one single known client. Scoped to exactly the registration-management
+    /// endpoints (WebhooksProxyController), never TimerState or anything else - it can register/
+    /// list/delete webhook subscriptions FOR THE OWNING USER ONLY (WebhooksProxyController always
+    /// resolves the target user_id from the authenticated caller, never from request input), but
+    /// cannot read or write any StudyLife data itself.
+    /// </summary>
+    private static readonly HashSet<Endpoint> Webhooks =
+    [
+        Whoami,
+        new("WebhooksProxy", "List"),
+        new("WebhooksProxy", "Create"),
+        new("WebhooksProxy", "Delete"),
+    ];
+
     public static readonly IReadOnlyDictionary<string, IReadOnlySet<Endpoint>> BySlot =
         new Dictionary<string, IReadOnlySet<Endpoint>>
         {
@@ -179,5 +197,6 @@ public static class ApiKeyScopes
             ["focusguard"] = FocusGuard,
             ["focustunes"] = FocusTunes,
             ["tray"] = Tray,
+            ["webhooks"] = Webhooks,
         };
 }
