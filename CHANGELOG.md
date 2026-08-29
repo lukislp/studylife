@@ -1,3 +1,10 @@
+# [2.6.0](https://github.com/lukislp/studylife/compare/v2.5.1...v2.6.0) (2026-08-29)
+
+
+### Features
+
+* dispatch a browser event on every timer state change ([b1ce2f7](https://github.com/lukislp/studylife/commit/b1ce2f78d3d89ff7ba6035d4d2e49642861adf2b))
+
 ## [2.5.1](https://github.com/lukislp/studylife/compare/v2.5.0...v2.5.1) (2026-08-29)
 
 
