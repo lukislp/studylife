@@ -17,11 +17,16 @@ public class CourseResourcesController : ControllerBase
 {
     private readonly StudyLifeDb _db;
     private readonly ICourseResolver _courseResolver;
+    private readonly WebhooksProxyClient _webhooks;
+    private readonly ICurrentUserAccessor _currentUser;
 
-    public CourseResourcesController(StudyLifeDb db, ICourseResolver courseResolver)
+    public CourseResourcesController(StudyLifeDb db, ICourseResolver courseResolver,
+        WebhooksProxyClient webhooks, ICurrentUserAccessor currentUser)
     {
         _db = db;
         _courseResolver = courseResolver;
+        _webhooks = webhooks;
+        _currentUser = currentUser;
     }
 
     [HttpGet]
@@ -54,6 +59,8 @@ public class CourseResourcesController : ControllerBase
         };
         _db.CourseResources.Add(entity);
         await _db.SaveChangesAsync();
+        _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId, WebhookEventTypes.CourseResourceCreated,
+            new { id = entity.Id, courseId = entity.CourseId, title = entity.Title, url = entity.Url }, CancellationToken.None);
         return ToDto(entity);
     }
 
@@ -64,6 +71,8 @@ public class CourseResourcesController : ControllerBase
         if (entity == null) return NotFound();
         _db.CourseResources.Remove(entity);
         await _db.SaveChangesAsync();
+        _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId, WebhookEventTypes.CourseResourceDeleted,
+            new { id = entity.Id, courseId = entity.CourseId }, CancellationToken.None);
         return NoContent();
     }
 

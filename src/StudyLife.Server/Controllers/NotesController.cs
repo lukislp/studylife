@@ -13,12 +13,17 @@ public class NotesController : ControllerBase
     private readonly StudyLifeDb _db;
     private readonly INoteSearchStrategy _searchStrategy;
     private readonly ICourseResolver _courseResolver;
+    private readonly WebhooksProxyClient _webhooks;
+    private readonly ICurrentUserAccessor _currentUser;
 
-    public NotesController(StudyLifeDb db, INoteSearchStrategy searchStrategy, ICourseResolver courseResolver)
+    public NotesController(StudyLifeDb db, INoteSearchStrategy searchStrategy, ICourseResolver courseResolver,
+        WebhooksProxyClient webhooks, ICurrentUserAccessor currentUser)
     {
         _db = db;
         _searchStrategy = searchStrategy;
         _courseResolver = courseResolver;
+        _webhooks = webhooks;
+        _currentUser = currentUser;
     }
 
     [HttpGet]
@@ -69,6 +74,8 @@ public class NotesController : ControllerBase
         };
         _db.Notes.Add(entity);
         await _db.SaveChangesAsync();
+        _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId, WebhookEventTypes.NoteCreated,
+            new { noteId = entity.Id, courseId = entity.CourseId, sessionId = entity.SessionId }, CancellationToken.None);
         return ToDto(entity);
     }
 
@@ -101,6 +108,8 @@ public class NotesController : ControllerBase
         entity.IsMarkdown = dto.IsMarkdown;
         entity.UpdatedAt = DateTime.Now;
         await _db.SaveChangesAsync();
+        _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId, WebhookEventTypes.NoteUpdated,
+            new { noteId = entity.Id, courseId = entity.CourseId, sessionId = entity.SessionId }, CancellationToken.None);
         return Ok(ToDto(entity));
     }
 
@@ -111,6 +120,8 @@ public class NotesController : ControllerBase
         if (entity == null) return NotFound();
         _db.Notes.Remove(entity);
         await _db.SaveChangesAsync();
+        _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId, WebhookEventTypes.NoteDeleted,
+            new { noteId = entity.Id }, CancellationToken.None);
         return NoContent();
     }
 

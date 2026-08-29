@@ -17,11 +17,16 @@ public class SessionTemplatesController : ControllerBase
 {
     private readonly StudyLifeDb _db;
     private readonly ICourseResolver _courseResolver;
+    private readonly WebhooksProxyClient _webhooks;
+    private readonly ICurrentUserAccessor _currentUser;
 
-    public SessionTemplatesController(StudyLifeDb db, ICourseResolver courseResolver)
+    public SessionTemplatesController(StudyLifeDb db, ICourseResolver courseResolver,
+        WebhooksProxyClient webhooks, ICurrentUserAccessor currentUser)
     {
         _db = db;
         _courseResolver = courseResolver;
+        _webhooks = webhooks;
+        _currentUser = currentUser;
     }
 
     [HttpGet]
@@ -54,6 +59,8 @@ public class SessionTemplatesController : ControllerBase
         };
         _db.SessionTemplates.Add(entity);
         await _db.SaveChangesAsync();
+        _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId, WebhookEventTypes.SessionTemplateCreated,
+            new { id = entity.Id, name = entity.Name, courseId = entity.CourseId }, CancellationToken.None);
         return ToDto(entity);
     }
 
@@ -64,6 +71,8 @@ public class SessionTemplatesController : ControllerBase
         if (entity == null) return NotFound();
         _db.SessionTemplates.Remove(entity);
         await _db.SaveChangesAsync();
+        _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId, WebhookEventTypes.SessionTemplateDeleted,
+            new { id = entity.Id, name = entity.Name }, CancellationToken.None);
         return NoContent();
     }
 
