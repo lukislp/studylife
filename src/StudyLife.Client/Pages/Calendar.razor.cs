@@ -9,7 +9,7 @@ namespace StudyLife.Client.Pages;
 
 public partial class Calendar
 {
-    private DateTime _weekStart = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek + 1);
+    private DateTime _weekStart = MondayOf(DateTime.Today);
     private List<DateTime> _days = new();
 
     // View mode: "week" (default, desktop) or "day" (single column, mobile).
@@ -218,7 +218,7 @@ public partial class Calendar
     private void GoToday()
     {
         _currentDay = DateTime.Today;
-        _weekStart = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek + 1);
+        _weekStart = MondayOf(DateTime.Today);
         BuildWeek();
         // Deliberate jump to "today": re-center on the "now" line again, even though
         // the initial scroll-to-now (first render) has already fired.
