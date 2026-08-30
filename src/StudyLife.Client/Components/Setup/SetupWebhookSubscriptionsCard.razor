@@ -1,0 +1,86 @@
+@using StudyLife.Shared
+@inject HttpClient Http
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+@* Webhook SUBSCRIPTIONS (target_url/events, held by studylife-webhooks) - a different thing
+   from the API keys managed above in SetupWebhooksCard, which only let a program CREATE these.
+   Revoking a key does not delete subscriptions already created with it (studylife-webhooks never
+   records which key created which one), so this is the only place a user can see what's actually
+   registered and remove something stale. Self-contained component, same style as
+   SetupWebhooksCard. *@
+
+<div class="setup-section">
+    <div class="ss-label">@T.WebhookSubscriptionsHeading</div>
+    <p class="ss-desc">@T.WebhookSubscriptionsDesc</p>
+
+    @if (_subscriptions.Count == 0)
+    {
+        <p class="ss-desc">@T.WebhookSubscriptionsEmpty</p>
+    }
+    @foreach (var sub in _subscriptions)
+    {
+        <div class="field-row" style="flex-wrap:wrap">
+            <div style="flex:1;min-width:0">
+                <strong style="word-break:break-all">@sub.TargetUrl</strong>
+                <div class="ss-desc" style="margin:0">@string.Format(T.WebhookSubscriptionEventsLabel ?? "", string.Join(", ", sub.Events))</div>
+            </div>
+            <button type="button" class="btn-danger" style="flex-shrink:0" @onclick="() => _confirmingDeleteId = sub.Id" disabled="@_busy">
+                @T.WebhookSubscriptionDeleteButton
+            </button>
+        </div>
+    }
+</div>
+
+@if (_confirmingDeleteId is { } deleteId)
+{
+    <div class="modal-overlay" @onclick="() => _confirmingDeleteId = null">
+        <div class="modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>@T.WebhookSubscriptionDeleteConfirmTitle</h3>
+                <button type="button" class="modal-close" @onclick="() => _confirmingDeleteId = null">✕</button>
+            </div>
+            <div class="modal-body">
+                <p>⚠️ @T.WebhookSubscriptionDeleteConfirmWarning</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" @onclick="() => _confirmingDeleteId = null" disabled="@_busy">
+                    @T.WebhooksKeyConfirmCancel
+                </button>
+                <button type="button" class="btn-danger" @onclick="() => ConfirmDelete(deleteId)" disabled="@_busy">
+                    @(_busy ? "…" : T.WebhookSubscriptionDeleteConfirmYes)
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private I18nText.SetupText T = new();
+
+    private List<WebhookRegistrationDto> _subscriptions = new();
+    private bool _busy;
+    private string? _confirmingDeleteId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
+        try
+        {
+            _subscriptions = await Http.GetFromJsonAsync<List<WebhookRegistrationDto>>("api/webhooks") ?? new();
+        }
+        catch { /* offline, or studylife-webhooks not configured: card shows an empty list */ }
+    }
+
+    private async Task ConfirmDelete(string id)
+    {
+        _confirmingDeleteId = null;
+        _busy = true;
+        try
+        {
+            var response = await Http.DeleteAsync($"api/webhooks/{id}");
+            if (response.IsSuccessStatusCode)
+                _subscriptions.RemoveAll(s => s.Id == id);
+        }
+        finally { _busy = false; }
+    }
+}
