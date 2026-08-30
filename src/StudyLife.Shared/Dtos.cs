@@ -1476,3 +1476,21 @@ public class CreateWebhookRequestDto
     public string TargetUrl { get; set; } = "";
     public List<string> Events { get; set; } = new();
 }
+
+/// <summary>One registered webhook subscription, as returned by GET /api/webhooks
+/// (WebhooksProxyController.List). Unlike every other DTO in this file, this one describes
+/// studylife-webhooks' OWN response shape verbatim - ProxyAsync copies the upstream body through
+/// byte-for-byte (no JSON reparsing), so the field names are that Python/FastAPI service's
+/// snake_case, not this project's usual PascalCase-in/camelCase-out convention. The
+/// [JsonPropertyName] attributes below are load-bearing for that reason, not stylistic.</summary>
+public class WebhookRegistrationDto
+{
+    [System.Text.Json.Serialization.JsonPropertyName("id")]
+    public string Id { get; set; } = "";
+    [System.Text.Json.Serialization.JsonPropertyName("target_url")]
+    public string TargetUrl { get; set; } = "";
+    [System.Text.Json.Serialization.JsonPropertyName("events")]
+    public List<string> Events { get; set; } = new();
+    [System.Text.Json.Serialization.JsonPropertyName("created_at")]
+    public DateTime CreatedAt { get; set; }
+}

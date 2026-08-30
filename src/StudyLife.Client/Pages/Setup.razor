@@ -270,6 +270,12 @@
              gets handed this one key. See SetupWebhooksCard. -->
         <SetupWebhooksCard />
 
+        <!-- Registered webhook subscriptions (as opposed to the API key above that only lets a
+             program create them) - lets a user see/remove what's actually registered, since
+             revoking a key never deletes subscriptions already created with it. See
+             SetupWebhookSubscriptionsCard. -->
+        <SetupWebhookSubscriptionsCard />
+
         <!-- studylife-developers: separate long-lived per-user API key slot (DeveloperApiKeyHash),
              a toggle like studylife-ai's own card - scoped exclusively to managing one's own
              add-on registrations (ApiKeyScopes.Developer), never any study data. See
