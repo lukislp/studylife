@@ -1,3 +1,10 @@
+# [2.16.0](https://github.com/lukislp/studylife/compare/v2.15.1...v2.16.0) (2026-08-30)
+
+
+### Features
+
+* add UI to view and delete registered webhook subscriptions ([805dcff](https://github.com/lukislp/studylife/commit/805dcffdc61ab9eeb291a61bc9ffdabe6c4c5218))
+
 ## [2.15.1](https://github.com/lukislp/studylife/compare/v2.15.0...v2.15.1) (2026-08-29)
 
 
