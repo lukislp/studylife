@@ -328,6 +328,10 @@ Beyond the four built-in integrations above, StudyLife has a generic, data-drive
 - **[studylife-developers](https://github.com/lukislp/studylife-developers)** - the portal for registering your own add-on against your own instance: a client ID, the scopes it needs (drawn from an explicit allowlist that excludes anything owner-only, like settings or backups), and its redirect URI. Pairs with your instance the same toggle-and-forget way as the AI assistant above.
 - Granted scopes are snapshotted onto a user's API key at the moment they consent, never re-read live from the add-on's own registration - a developer widening their add-on's requested scopes later never silently escalates access for users who already installed it.
 
+## Command-Line Interface
+
+[studylife-cli](https://github.com/lukislp/studylife-cli) is a terminal client for notes, sessions, course goals, the focus timer, courses, study programs, and webhooks - with a `--json` flag on every command for scripting. It registers itself through the same generic dynamic-client mechanism as the Add-on Marketplace above (`studylife login` opens your browser to approve the connection) rather than through any dedicated server-side code, so it needs nothing StudyLife itself doesn't already expose.
+
 ## Webhooks
 
 [studylife-webhooks](https://github.com/lukislp/studylife-webhooks) delivers signed HTTP callbacks on session/goal events to your own automations (Zapier, n8n, Discord, and similar). Unlike the add-ons above it's an outbound event pipe rather than something that calls back into StudyLife's API - manage one or more independently-named API keys for it from the Setup page.
