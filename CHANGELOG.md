@@ -1,3 +1,10 @@
+## [2.16.1](https://github.com/lukislp/studylife/compare/v2.16.0...v2.16.1) (2026-08-30)
+
+
+### Bug Fixes
+
+* correct the calendar's week-start calculation on Sundays ([03342c9](https://github.com/lukislp/studylife/commit/03342c94b4a34a395545e1e3fd335bcd78d6c207))
+
 # [2.16.0](https://github.com/lukislp/studylife/compare/v2.15.1...v2.16.0) (2026-08-30)
 
 
