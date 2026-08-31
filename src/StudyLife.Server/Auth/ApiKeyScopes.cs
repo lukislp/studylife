@@ -251,6 +251,14 @@ public static class ApiKeyScopes
         new("Courses", "GetAll"),
         new("StudyPrograms", "GetAll"),
         new("StudyPrograms", "Get"),
+        // ResolveProgrammeAsync's program=0 resolves the built-in study program
+        // unconditionally (never the user's currently active one) - the only way a
+        // third-party client can read its ECTS progress at all, since StudyPrograms.Get
+        // is [HttpGet("{id:int}")] and the built-in program has no DB row/int id to
+        // route to. Exposes the full MetricsSummaryDto (streak, hours, quota, ECTS,
+        // average grade, forecast, month comparison), not just ECTS - accepted tradeoff,
+        // see the same reasoning already applied to the Ha slot above.
+        new("Metrics", "GetSummary"),
         new("WebhooksProxy", "List"),
         new("WebhooksProxy", "Create"),
         new("WebhooksProxy", "Delete"),

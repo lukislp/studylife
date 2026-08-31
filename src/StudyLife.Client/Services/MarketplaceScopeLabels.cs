@@ -29,6 +29,7 @@ public static class MarketplaceScopeLabels
         ["Courses.GetAll"] = "Read the course catalog",
         ["StudyPrograms.GetAll"] = "Read study programs",
         ["StudyPrograms.Get"] = "Read a study program's detail",
+        ["Metrics.GetSummary"] = "Read metrics summary",
         ["WebhooksProxy.List"] = "List webhook registrations",
         ["WebhooksProxy.Create"] = "Create webhook registrations",
         ["WebhooksProxy.Delete"] = "Delete webhook registrations",
