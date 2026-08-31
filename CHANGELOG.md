@@ -1,3 +1,10 @@
+# [2.17.0](https://github.com/lukislp/studylife/compare/v2.16.1...v2.17.0) (2026-08-31)
+
+
+### Features
+
+* expose Metrics.GetSummary to publicly-registered OAuth clients ([922d83b](https://github.com/lukislp/studylife/commit/922d83bdbfcc70fd6463edd1b8079bf0d49af4a5))
+
 ## [2.16.1](https://github.com/lukislp/studylife/compare/v2.16.0...v2.16.1) (2026-08-30)
 
 
