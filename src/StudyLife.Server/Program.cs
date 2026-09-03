@@ -1,9 +1,7 @@
-using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Auth;
@@ -179,7 +177,15 @@ builder.Services.AddRateLimiter(options =>
                 ((int)Math.Ceiling(retryAfter.TotalSeconds)).ToString();
         return ValueTask.CompletedTask;
     };
-    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+    // Two chained limiters: the per-client-IP partitions below, PLUS an IP-independent global
+    // bucket for the recovery-code login only. The per-IP bucket is only as trustworthy as the
+    // X-Forwarded-For trust decision (ForwardedHeadersConfig) - on a flat pod network any
+    // first-party pod the NetworkPolicy lets reach this service could mint fresh client IPs
+    // per request and brute-force the 12-character recovery code unthrottled (2026-09 audit
+    // S6). The global bucket caps the TOTAL recovery attempts per window regardless of how many
+    // "clients" they claim to come from; recovery logins are rare enough (a lost device) that
+    // 30 per 15 minutes across the whole instance never hits a legitimate user.
+    var perClientLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
     {
         // Audit finding O6: this also covers /healthz/ready + /healthz/live (HealthController) -
         // deliberately unlimited like every other non-/api path, not just incidentally. Probe
@@ -215,6 +221,17 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0
             });
     });
+    var globalRecoveryLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+        context.Request.Path.StartsWithSegments("/api/auth/recovery/login")
+            ? RateLimitPartition.GetFixedWindowLimiter("recovery|global",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 30,
+                    Window = TimeSpan.FromMinutes(15),
+                    QueueLimit = 0
+                })
+            : RateLimitPartition.GetNoLimiter("no-limit"));
+    options.GlobalLimiter = PartitionedRateLimiter.CreateChained(perClientLimiter, globalRecoveryLimiter);
 });
 
 var dbPath = Path.Combine(builder.Environment.ContentRootPath, "app_data", "studylife.db");
@@ -468,35 +485,12 @@ if (!EF.IsDesignTime)
 // nginx runs as its own reverse proxy on the same host and terminates TLS - Kestrel itself
 // only gets plain HTTP (ASPNETCORE_URLS=http://+:8080) and, without this middleware, would treat every
 // request as HTTP, regardless of whether the browser actually talks to nginx over HTTPS.
-// Security fix: instead of clearing Known* entirely (= trusting X-Forwarded-For/-Proto from ANY
-// sender), restricted to private/RFC1918 ranges. Reason: docker-compose.yml publishes
-// port 8080 on ALL host interfaces (no static Docker bridge subnet can be pinned, because
-// the same host runs several independent compose stacks alongside a shared
-// nginx-proxy-manager instance) - anyone reaching the port directly instead of via nginx could
-// otherwise forge X-Forwarded-For arbitrarily and thereby defeat the IP-based rate limiter above.
-// These private ranges cover both Docker bridge subnets and the LAN through which
-// nginx actually connects (neither is statically predictable) - an attacker would have to come
-// from one of these ranges themselves to bypass the restriction. The gap could only be
-// fully closed by NOT publishing port 8080 on all host interfaces anymore - but that
-// would affect the shared nginx-proxy-manager infrastructure for other services on
-// the same host and is therefore deliberately not part of this fix.
-var forwardedHeadersOptions = new ForwardedHeadersOptions
-{
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-};
-forwardedHeadersOptions.KnownIPNetworks.Clear();
-forwardedHeadersOptions.KnownProxies.Clear();
-foreach (var (address, prefixLength) in new (string Address, int PrefixLength)[]
-{
-    ("127.0.0.0", 8),      // Loopback
-    ("10.0.0.0", 8),       // RFC1918
-    ("172.16.0.0", 12),    // RFC1918 (covers Docker's default bridge range)
-    ("192.168.0.0", 16),   // RFC1918
-})
-{
-    forwardedHeadersOptions.KnownIPNetworks.Add(new System.Net.IPNetwork(IPAddress.Parse(address), prefixLength));
-}
-app.UseForwardedHeaders(forwardedHeadersOptions);
+// WHICH upstreams may set X-Forwarded-For/-Proto is the whole security question here (a
+// trusted sender can forge a fresh client IP per request and thereby defeat the IP-partitioned
+// rate limiter above) - see ForwardedHeadersConfig for the default RFC1918 trust, the
+// ForwardedHeaders:KnownNetworks/KnownProxies/ForwardLimit configuration that narrows it per
+// deployment, and the documented flat-pod-network limitation on Kubernetes.
+app.UseForwardedHeaders(ForwardedHeadersConfig.Build(builder.Configuration));
 
 // Scalability branch: shows WHICH instance answered a response - only for
 // observing load balancing (browser DevTools/curl -v, response header), no
