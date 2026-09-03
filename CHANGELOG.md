@@ -1,3 +1,10 @@
+## [3.2.7](https://github.com/lukislp/studylife/compare/v3.2.6...v3.2.7) (2026-09-03)
+
+
+### Bug Fixes
+
+* make the sleep-consistency tile robust and show the average duration ([69da2ad](https://github.com/lukislp/studylife/commit/69da2ade4e811759cb6d36c18bf3240c2f9da948))
+
 ## [3.2.6](https://github.com/lukislp/studylife/compare/v3.2.5...v3.2.6) (2026-09-03)
 
 
