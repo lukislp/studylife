@@ -522,16 +522,14 @@ public class DtoContractSnapshotTests : IClassFixture<CustomWebApplicationFactor
 }
 
 /// <summary>
-/// Program.cs stamps a blanket Cache-Control: no-store on every /api/* response, specifically to
-/// override CacheHelper.SetHeaders (SessionsController/SettingsController/CoursesController),
-/// which sets its own "private, no-cache"/"private, max-age=..." from deeper in the pipeline.
-/// This exact interaction broke twice in production before this test existed: a header set BEFORE
-/// next() was silently overwritten by CacheHelper's later assignment, and a header set AFTER
-/// next() but via a plain assignment still lost the race because a small buffered JSON body is
-/// already flushed (HasStarted == true) by the time control returns from next() - only
-/// Response.OnStarting() reliably wins. Both bugs shipped and were only caught by manual curl
-/// testing against the live API; this test exists so the wire-level result is pinned going
-/// forward instead of relying on remembering the interaction.
+/// Pins the split the blanket /api "no-store" middleware (Program.cs) has to respect: an endpoint
+/// that sets its own Cache-Control through CacheHelper keeps it (revalidatable "private,
+/// no-cache", or "private, max-age" for the immutable course catalog) so the browser can hold
+/// the ETag and get 304s, while everything without an explicit directive falls back to
+/// no-store. The previous version of this class asserted the opposite - no-store overriding
+/// CacheHelper - which was the bug the 2026-09 audit found (L1): it silently disabled every 304.
+/// The heuristic-caching incident that motivated the middleware only ever concerned responses
+/// WITHOUT an explicit directive; those still get no-store (see ApiCacheHeaderTests).
 /// </summary>
 public class CacheControlHeaderTests : IClassFixture<CustomWebApplicationFactory>
 {
@@ -541,33 +539,43 @@ public class CacheControlHeaderTests : IClassFixture<CustomWebApplicationFactory
         => _client = factory.CreateClient();
 
     [Fact]
-    public async Task SessionsHistory_CacheControlIsNoStore_OverridesCacheHelpersOwnHeader()
+    public async Task SessionsHistory_KeepsCacheHelpersRevalidatableHeader()
     {
         var response = await _client.GetAsync("/api/sessions/history?days=30");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(response.Headers.CacheControl);
-        Assert.True(response.Headers.CacheControl!.NoStore, "Expected Cache-Control: no-store, not CacheHelper's own 'private, no-cache'.");
-        Assert.False(response.Headers.CacheControl.NoCache);
-        Assert.False(response.Headers.CacheControl.Private);
+        Assert.True(response.Headers.CacheControl!.Private);
+        Assert.True(response.Headers.CacheControl.NoCache);
+        Assert.False(response.Headers.CacheControl.NoStore, "no-store must not override CacheHelper's 'private, no-cache' - it kills ETag/304.");
     }
 
     [Fact]
-    public async Task Courses_CacheControlIsNoStore_OverridesCacheHelpersOwnMaxAge()
+    public async Task Courses_KeepsCacheHelpersMaxAge()
     {
         var response = await _client.GetAsync("/api/courses");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(response.Headers.CacheControl);
-        Assert.True(response.Headers.CacheControl!.NoStore, "Expected Cache-Control: no-store, not CacheHelper's own 'private, max-age=...'.");
-        Assert.Null(response.Headers.CacheControl.MaxAge);
+        Assert.True(response.Headers.CacheControl!.Private);
+        Assert.NotNull(response.Headers.CacheControl.MaxAge);
+        Assert.False(response.Headers.CacheControl.NoStore);
     }
 
     [Fact]
-    public async Task Settings_CacheControlIsNoStore_OverridesCacheHelpersOwnHeader()
+    public async Task Settings_KeepsCacheHelpersRevalidatableHeader()
     {
         var response = await _client.GetAsync("/api/settings");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(response.Headers.CacheControl);
-        Assert.True(response.Headers.CacheControl!.NoStore, "Expected Cache-Control: no-store, not CacheHelper's own 'private, no-cache'.");
+        Assert.True(response.Headers.CacheControl!.NoCache);
+        Assert.False(response.Headers.CacheControl.NoStore);
+    }
+
+    [Fact]
+    public async Task UnmatchedApiPath_StillGetsNoStore()
+    {
+        var response = await _client.GetAsync("/api/does-not-exist");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.True(response.Headers.CacheControl?.NoStore);
     }
 }
 
