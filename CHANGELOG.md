@@ -1,3 +1,13 @@
+## [3.2.2](https://github.com/lukislp/studylife/compare/v3.2.1...v3.2.2) (2026-09-03)
+
+
+### Bug Fixes
+
+* block first paint only on the shell stylesheets ([827ac10](https://github.com/lukislp/studylife/commit/827ac10ae18cb1010bb0680a518d3220422251ba))
+* cache the metrics endpoints per user and precompile the container publishes ([a3cbc6b](https://github.com/lukislp/studylife/commit/a3cbc6b4ab2256716a92f5aa22eb90e03fb8aaa2))
+* memoize session-history windows in AppStateService ([aec4fbd](https://github.com/lukislp/studylife/commit/aec4fbd7e28f30972828a3d6914bdc72f326892d))
+* stop the sidebar clock from re-rendering the whole page every ten seconds ([6105b23](https://github.com/lukislp/studylife/commit/6105b23098cd80fedbba61ee9d4c07dbedf536fb))
+
 ## [3.2.1](https://github.com/lukislp/studylife/compare/v3.2.0...v3.2.1) (2026-09-03)
 
 
