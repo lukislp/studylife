@@ -229,6 +229,7 @@ public class AppStateService : IAsyncDisposable
     /// instead of at the next login's first cache touch.</summary>
     private async Task PurgeOnLogoutAsync()
     {
+        InvalidateHistoryMemo();
         try { await _jsRuntime.InvokeVoidAsync("stopChangeStream"); } catch { /* no stream to stop */ }
         await PurgeCachesAndQueueAsync();
         try { await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", UserIdMarkerKey); }
@@ -274,6 +275,34 @@ public class AppStateService : IAsyncDisposable
     /// old data forever. StoreReadCacheAsync/LoadReadCacheAsync additionally namespace this key
     /// per-account (S7) before it touches localStorage.
     /// </summary>
+    /// <summary>
+    /// Session history windows (GET api/sessions/history), memoized per (days, onlyCompleted).
+    /// Index, Stats, Planner, Report and Wrapped each fetched their own windows through
+    /// GetJsonCachedAsync on every navigation - the dashboard alone asked for ten years of
+    /// history twice per visit (2026-09 audit L5). History depends on nothing but the sessions,
+    /// so the memo is dropped exactly when the sessions change (poll, server-sent change event,
+    /// any local write) - never a stale read after a write - plus a safety TTL. Faulted fetches
+    /// are not memoized, so a transient error is retried on the next call.
+    /// </summary>
+    public Task<List<StudySessionDto>?> GetHistoryAsync(int days, bool onlyCompleted = true)
+    {
+        var url = $"api/sessions/history?days={days}" + (onlyCompleted ? "" : "&onlyCompleted=false");
+        if (_historyMemo.TryGetValue(url, out var entry)
+            && DateTime.UtcNow - entry.FetchedAt < HistoryMemoTtl
+            && !entry.Task.IsFaulted && !entry.Task.IsCanceled)
+        {
+            return entry.Task;
+        }
+        var task = GetJsonCachedAsync<List<StudySessionDto>>(url);
+        _historyMemo[url] = (task, DateTime.UtcNow);
+        return task;
+    }
+
+    private static readonly TimeSpan HistoryMemoTtl = TimeSpan.FromMinutes(10);
+    private readonly Dictionary<string, (Task<List<StudySessionDto>?> Task, DateTime FetchedAt)> _historyMemo = new();
+
+    private void InvalidateHistoryMemo() => _historyMemo.Clear();
+
     public async Task<T?> GetJsonCachedAsync<T>(string url) where T : class
     {
         var cacheKey = "studylife-cache-v2:" + url;
@@ -405,7 +434,7 @@ public class AppStateService : IAsyncDisposable
         }
         catch { /* ignore poll errors */ }
 
-        if (sessionsChanged) OnSessionsChanged?.Invoke();
+        if (sessionsChanged) { InvalidateHistoryMemo(); OnSessionsChanged?.Invoke(); }
         if (settingsChanged) OnSettingsChanged?.Invoke();
         if (sessionsChanged || settingsChanged) NotifyStateChanged();
     }
@@ -1215,6 +1244,7 @@ public class AppStateService : IAsyncDisposable
         }
         catch { await EnqueueSaveSessionAsync(ToDto(session)); /* offline: replay later */ }
         _sessionsCache = null;
+        InvalidateHistoryMemo();
         OnSessionsChanged?.Invoke();
         NotifyStateChanged();
     }
@@ -1224,6 +1254,7 @@ public class AppStateService : IAsyncDisposable
         try { await _http.DeleteAsync($"api/sessions/{id}"); }
         catch { await EnqueueDeleteSessionAsync(id); /* offline: replay later */ }
         _sessionsCache = null;
+        InvalidateHistoryMemo();
         OnSessionsChanged?.Invoke();
         NotifyStateChanged();
     }
@@ -1237,6 +1268,7 @@ public class AppStateService : IAsyncDisposable
         }
         catch { await EnqueueDeleteSeriesAsync(groupId, fromDate); /* offline: replay later */ }
         _sessionsCache = null;
+        InvalidateHistoryMemo();
         OnSessionsChanged?.Invoke();
         NotifyStateChanged();
     }

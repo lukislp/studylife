@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
 using StudyLife.Shared;
@@ -23,11 +24,50 @@ namespace StudyLife.Server.Controllers;
 public class MetricsController : ControllerBase
 {
     private readonly StudyLifeDb _db;
+    private readonly IDistributedCache _cache;
+    private readonly SessionHistoryCacheVersion _historyVersion;
+    private readonly SettingsCacheVersion _settingsVersion;
+    private readonly ICurrentUserAccessor _currentUser;
 
-    public MetricsController(StudyLifeDb db) => _db = db;
+    /// <summary>Upper bound for a cached metrics response - the version-keyed cache key already
+    /// changes on every session/settings/goal write, so this only covers inputs that bump no
+    /// counter (study-programme edits, the wall clock moving past a day boundary).</summary>
+    private static readonly TimeSpan CacheTtl = TimeSpan.FromSeconds(60);
 
+    public MetricsController(StudyLifeDb db, IDistributedCache cache, SessionHistoryCacheVersion historyVersion,
+        SettingsCacheVersion settingsVersion, ICurrentUserAccessor currentUser)
+    {
+        _db = db;
+        _cache = cache;
+        _historyVersion = historyVersion;
+        _settingsVersion = settingsVersion;
+        _currentUser = currentUser;
+    }
+
+    /// <summary>
+    /// Cached through CacheHelper like the sessions/settings GETs (2026-09 audit P2): both metrics
+    /// endpoints are what the Home Assistant integration and the MCP server poll, and each call
+    /// used to re-run the full aggregation over the user's sessions. The key carries the per-user
+    /// session and settings versions (course-goal writes bump the settings version too, see
+    /// CourseGoalsController), so a write is visible on the very next request; the ETag lets HA's
+    /// aiohttp client get 304s. `now` is part of the key - an explicit value (tests, fixtures) is
+    /// keyed exactly, the implicit wall clock per minute. Programme resolution runs BEFORE the
+    /// cache so a 404 is never cached and the factory can rely on a resolved programme.
+    /// </summary>
     [HttpGet("summary")]
     public async Task<ActionResult<MetricsSummaryDto>> GetSummary([FromQuery] int? program = null, [FromQuery] DateTime? now = null)
+    {
+        var activeProgramId = (await _db.Settings.AsNoTracking().Select(s => (int?)s.ActiveStudyProgramId).FirstOrDefaultAsync());
+        if (await ResolveProgrammeAsync(program, activeProgramId) == null) return NotFound();
+
+        var userId = _currentUser.AuthUserId;
+        var nowKey = now is { } explicitNow ? explicitNow.Ticks.ToString() : DateTime.Now.ToString("yyyyMMddHHmm");
+        var cacheKey = $"metrics:summary:{userId}:{program?.ToString() ?? "active"}:{nowKey}"
+            + $":{await _historyVersion.GetAsync(userId)}:{await _settingsVersion.GetAsync(userId)}";
+        return await _cache.GetOrSetAsync(this, cacheKey, CacheTtl, async () => (await ComputeSummaryAsync(program, now)).Value!);
+    }
+
+    private async Task<ActionResult<MetricsSummaryDto>> ComputeSummaryAsync(int? program, DateTime? now)
     {
         var asOf = now ?? DateTime.Now;
         var settingsEntity = await _db.Settings.AsNoTracking().FirstOrDefaultAsync();
@@ -146,8 +186,20 @@ public class MetricsController : ControllerBase
         };
     }
 
+    /// <summary>Same caching shape as GetSummary (see there).</summary>
     [HttpGet("achievements")]
     public async Task<ActionResult<MetricsAchievementsDto>> GetAchievements([FromQuery] int? program = null)
+    {
+        var activeProgramId = (await _db.Settings.AsNoTracking().Select(s => (int?)s.ActiveStudyProgramId).FirstOrDefaultAsync());
+        if (await ResolveProgrammeAsync(program, activeProgramId) == null) return NotFound();
+
+        var userId = _currentUser.AuthUserId;
+        var cacheKey = $"metrics:achievements:{userId}:{program?.ToString() ?? "active"}:{DateTime.Now:yyyyMMdd}"
+            + $":{await _historyVersion.GetAsync(userId)}:{await _settingsVersion.GetAsync(userId)}";
+        return await _cache.GetOrSetAsync(this, cacheKey, CacheTtl, async () => (await ComputeAchievementsAsync(program)).Value!);
+    }
+
+    private async Task<ActionResult<MetricsAchievementsDto>> ComputeAchievementsAsync(int? program)
     {
         var settingsEntity = await _db.Settings.AsNoTracking().FirstOrDefaultAsync();
         var settings = SettingsController.ToDto(settingsEntity ?? new UserSettingsEntity());

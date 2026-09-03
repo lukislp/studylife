@@ -251,7 +251,7 @@ public partial class Index
         var settingsTask = State.GetSettingsAsync();
         var coursesTask = State.GetCoursesAsync();
         var sessionsTask = State.GetSessionsAsync();
-        var historyTask = State.GetJsonCachedAsync<List<StudySessionDto>>($"api/sessions/history?days={HistoryDays}&onlyCompleted=false");
+        var historyTask = State.GetHistoryAsync(HistoryDays, onlyCompleted: false);
         var isDemoTask = State.GetIsDemoAsync();
         // Same capability flag Setup.razor already uses to hide the raw-backup UI on Postgres
         // (SetupBackupCard/SetupRestoreCard) - the dashboard staleness hint below needs it too
@@ -265,7 +265,7 @@ public partial class Index
         var sleepOnsetTask = Health.IsAvailable ? Health.GetRecentSleepOnsetMinutesAsync(30) : Task.FromResult<IReadOnlyList<double>?>(null);
         var dueForHeavyRefresh = _lastHeavyFetchAt == DateTime.MinValue || DateTime.UtcNow - _lastHeavyFetchAt >= HeavyFetchThrottle;
         var heavyHistoryTask = refreshHeavyHistory && dueForHeavyRefresh
-            ? State.GetJsonCachedAsync<List<StudySessionDto>>($"api/sessions/history?days={AchievementHistoryDays}")
+            ? State.GetHistoryAsync(AchievementHistoryDays)
             : null;
 
         var settings = await settingsTask;
