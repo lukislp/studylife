@@ -799,7 +799,19 @@ function studylifeTelemetryFlush() {
     try {
         var json = DotNet.invokeMethod('StudyLife.Client', 'GetPendingTelemetryJson');
         if (!json) return;
-        navigator.sendBeacon('api/telemetry', new Blob([json], { type: 'application/json' }));
+        // fetch+keepalive instead of navigator.sendBeacon: a beacon cannot carry the session
+        // header, so every unload flush was answered 401 by the SessionOnly policy (seen as a
+        // console error on the web on 2026-09-04). keepalive requests survive pagehide like a
+        // beacon does (body limit 64 KB - batches are capped at 32 KB by the server anyway).
+        var token = null;
+        try { token = localStorage.getItem('studylife-session-token'); } catch (e) { /* storage unavailable */ }
+        if (!token) return;
+        fetch('api/telemetry', {
+            method: 'POST',
+            keepalive: true,
+            headers: { 'Content-Type': 'application/json', 'X-Session-Token': token },
+            body: json
+        }).catch(function () { /* best effort */ });
     } catch (e) { /* best effort - a lost final flush is not worth surfacing */ }
 }
 
