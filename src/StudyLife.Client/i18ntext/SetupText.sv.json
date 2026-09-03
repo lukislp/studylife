@@ -281,5 +281,7 @@
   "MarketplaceByDeveloper": "av {0}",
   "MarketplaceViewSource": "Visa källkod",
   "MarketplaceDemoNotice": "Det går inte att installera tillägg på den här demoinstansen.",
-  "ClientKeysHeading": "Anslutna tillägg"
+  "ClientKeysHeading": "Anslutna tillägg",
+  "TelemetryHeading": "Användnings- och felrapporter",
+  "TelemetryDesc": "Hjälper oss att hitta buggar och långsamma delar genom att skicka anonym prestanda- och felinformation — aldrig dina anteckningar, sessioner eller hälsodata. Du kan stänga av detta när som helst."
 }

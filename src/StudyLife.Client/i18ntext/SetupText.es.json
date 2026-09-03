@@ -281,5 +281,7 @@
   "MarketplaceByDeveloper": "por {0}",
   "MarketplaceViewSource": "Ver código fuente",
   "MarketplaceDemoNotice": "La instalación de complementos está deshabilitada en esta instancia de demostración.",
-  "ClientKeysHeading": "Complementos conectados"
+  "ClientKeysHeading": "Complementos conectados",
+  "TelemetryHeading": "Informes de uso y errores",
+  "TelemetryDesc": "Nos ayuda a detectar fallos y puntos lentos enviando datos anónimos de rendimiento y errores — nunca tus notas, sesiones ni datos de salud. Puedes desactivarlo cuando quieras."
 }

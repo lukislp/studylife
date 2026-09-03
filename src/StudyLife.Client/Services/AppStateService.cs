@@ -386,6 +386,16 @@ public class AppStateService : IAsyncDisposable
         }
     }
 
+    /// <summary>Telemetry phase 2 (docs/ARCHITECTURE.md "Telemetry"): raised from the same
+    /// dotnetRef js/interop.js's startChangeStream already holds for OnServerChange above -
+    /// TelemetryService subscribes to this instead of AppStateService taking a dependency on it
+    /// (which would risk a DI cycle, since TelemetryService itself reads settings/consent from
+    /// AppStateService). Args: event kind (connected/reconnect/fallback_poll), duration ms.</summary>
+    public event Action<string, double>? OnSseLifecycleEventRaised;
+
+    [JSInvokable]
+    public void OnSseLifecycle(string kind, double durationMs) => OnSseLifecycleEventRaised?.Invoke(kind, durationMs);
+
     private int _pushPollPending;
 
     private async Task PollAsync()
@@ -1358,6 +1368,7 @@ public class AppStateService : IAsyncDisposable
         ComebackNudgeEnabled = d.ComebackNudgeEnabled,
         NewRecordNotificationsEnabled = d.NewRecordNotificationsEnabled,
         MonthlyReportEnabled = d.MonthlyReportEnabled,
+        TelemetryConsent = d.TelemetryConsent,
         LastBackupDownloadAt = d.LastBackupDownloadAt,
         ActiveStudyProgramId = d.ActiveStudyProgramId,
         ProgressShareEnabled = d.ProgressShareEnabled,
@@ -1400,6 +1411,7 @@ public class AppStateService : IAsyncDisposable
         ComebackNudgeEnabled = s.ComebackNudgeEnabled,
         NewRecordNotificationsEnabled = s.NewRecordNotificationsEnabled,
         MonthlyReportEnabled = s.MonthlyReportEnabled,
+        TelemetryConsent = s.TelemetryConsent,
         LastBackupDownloadAt = s.LastBackupDownloadAt,
         ActiveStudyProgramId = s.ActiveStudyProgramId,
         ProgressShareEnabled = s.ProgressShareEnabled,

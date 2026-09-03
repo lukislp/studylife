@@ -142,6 +142,7 @@ public class SettingsController : ControllerBase
         entity.ComebackNudgeEnabled = dto.ComebackNudgeEnabled;
         entity.NewRecordNotificationsEnabled = dto.NewRecordNotificationsEnabled;
         entity.MonthlyReportEnabled = dto.MonthlyReportEnabled;
+        entity.TelemetryConsent = dto.TelemetryConsent;
         entity.ActiveStudyProgramId = dto.ActiveStudyProgramId;
         // LastBackupDownloadAt deliberately NOT set here (audit F1): it is documented on
         // UserSettingsEntity as "set directly in BackupController, not via the normal settings
@@ -828,6 +829,7 @@ public class SettingsController : ControllerBase
         ComebackNudgeEnabled = e.ComebackNudgeEnabled,
         NewRecordNotificationsEnabled = e.NewRecordNotificationsEnabled,
         MonthlyReportEnabled = e.MonthlyReportEnabled,
+        TelemetryConsent = e.TelemetryConsent,
         LastBackupDownloadAt = e.LastBackupDownloadAt,
         ActiveStudyProgramId = e.ActiveStudyProgramId,
         ProgressShareEnabled = e.ProgressShareEnabled,

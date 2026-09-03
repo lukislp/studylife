@@ -624,6 +624,7 @@ async function startChangeStream(url, token, dotnetRef) {
     let backoffMs = 2000;
     let failuresWithoutConnection = 0;
     while (!controller.signal.aborted) {
+        const attemptStart = performance.now();
         try {
             const response = await fetch(url, {
                 headers: { 'X-Session-Token': token, 'Accept': 'text/event-stream' },
@@ -634,6 +635,10 @@ async function startChangeStream(url, token, dotnetRef) {
             if (!response.ok || !response.body) throw new Error('change stream status ' + response.status);
             failuresWithoutConnection = 0;
             backoffMs = 2000;
+            // Telemetry (docs/ARCHITECTURE.md "Telemetry"): reuses the same dotnetRef as
+            // OnServerChange - AppStateService owns the ref, TelemetryService listens via its
+            // OnSseLifecycleEventRaised event (no new cross-service dependency needed).
+            dotnetRef.invokeMethodAsync('OnSseLifecycle', 'connected', performance.now() - attemptStart).catch(function () { });
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let buffer = '';
@@ -651,8 +656,12 @@ async function startChangeStream(url, token, dotnetRef) {
             }
         } catch (err) {
             if (controller.signal.aborted) return;
-            if (++failuresWithoutConnection >= 6) return;
+            if (++failuresWithoutConnection >= 6) {
+                dotnetRef.invokeMethodAsync('OnSseLifecycle', 'fallback_poll', performance.now() - attemptStart).catch(function () { });
+                return;
+            }
         }
+        dotnetRef.invokeMethodAsync('OnSseLifecycle', 'reconnect', backoffMs).catch(function () { });
         await new Promise(resolve => setTimeout(resolve, backoffMs));
         backoffMs = Math.min(backoffMs * 2, 60000);
     }
@@ -663,4 +672,166 @@ function stopChangeStream() {
         changeStreamAbort.abort();
         changeStreamAbort = null;
     }
+}
+
+// ---- Client telemetry (TelemetryService, phase 2 - docs/ARCHITECTURE.md "Telemetry") ----------
+// The 20s/25-event flush itself is a normal awaited POST from .NET. Two things a normal async
+// call can't do reliably live here instead: (1) the final flush on pagehide/visibilitychange,
+// via sendBeacon + a SYNCHRONOUS DotNet.invokeMethod (an async round trip started that late
+// routinely never resolves before the tab is actually gone - see MDN's pagehide guidance);
+// (2) Web Vitals, which only finalize once the page is backgrounded (LCP/CLS/INP keep changing
+// until then).
+
+var studylifeVitals = { ttfb: null, fcp: null, lcp: null, cls: 0, inp: null };
+var studylifeVitalsReported = false;
+
+function studylifeCollectStaticVitals() {
+    try {
+        var nav = performance.getEntriesByType('navigation')[0];
+        if (nav) studylifeVitals.ttfb = nav.responseStart;
+    } catch (e) { /* Navigation Timing L2 unsupported */ }
+    try {
+        var paintEntries = performance.getEntriesByType('paint');
+        for (var i = 0; i < paintEntries.length; i++) {
+            if (paintEntries[i].name === 'first-contentful-paint') { studylifeVitals.fcp = paintEntries[i].startTime; break; }
+        }
+    } catch (e) { /* Paint Timing unsupported */ }
+}
+
+function studylifeObserveVitals() {
+    if (typeof PerformanceObserver === 'undefined') return;
+    try {
+        new PerformanceObserver(function (list) {
+            var entries = list.getEntries();
+            var last = entries[entries.length - 1];
+            if (last) studylifeVitals.lcp = last.renderTime || last.loadTime || last.startTime;
+        }).observe({ type: 'largest-contentful-paint', buffered: true });
+    } catch (e) { /* not supported in this browser */ }
+    try {
+        new PerformanceObserver(function (list) {
+            list.getEntries().forEach(function (entry) {
+                if (!entry.hadRecentInput) studylifeVitals.cls += entry.value;
+            });
+        }).observe({ type: 'layout-shift', buffered: true });
+    } catch (e) { /* not supported */ }
+    try {
+        // Simplified proxy for INP (the real spec takes roughly the 98th percentile across the
+        // whole session) - the single slowest interaction is a reasonable first-cut signal and
+        // needs no session-long percentile bookkeeping.
+        new PerformanceObserver(function (list) {
+            list.getEntries().forEach(function (entry) {
+                if (studylifeVitals.inp === null || entry.duration > studylifeVitals.inp) studylifeVitals.inp = entry.duration;
+            });
+        }).observe({ type: 'event', durationThreshold: 40, buffered: true });
+    } catch (e) { /* not supported */ }
+}
+
+function studylifeReportVitalsOnce() {
+    if (studylifeVitalsReported) return;
+    studylifeVitalsReported = true;
+    try {
+        DotNet.invokeMethod('StudyLife.Client', 'ReportVitals',
+            studylifeVitals.ttfb, studylifeVitals.fcp, studylifeVitals.lcp, studylifeVitals.inp, studylifeVitals.cls);
+    } catch (e) { /* best effort */ }
+}
+
+function studylifeGetConnectionType() {
+    try {
+        var c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        if (c) {
+            if (c.type === 'wifi') return 'wifi';
+            if (c.type === 'ethernet') return 'ethernet';
+            if (c.type === 'cellular') return 'cellular';
+        }
+    } catch (e) { /* NetworkInformation unsupported (Firefox/Safari) */ }
+    return 'unknown';
+}
+
+/// Read once, from MainLayout after first render (TelemetryService.RecordBootFromMarksAsync) -
+/// the phase marks themselves come from boot-loading.js (sl-html-ready/sl-boot-script-done),
+/// boot-start.js (sl-wasm-download-start/sl-runtime-ready, around the manual Blazor.start() call)
+/// and studylifeMarkFirstRender below (sl-first-render, MainLayout.OnAfterRenderAsync).
+function studylifeGetBootMarks() {
+    function markTime(name) {
+        var entries = performance.getEntriesByName(name, 'mark');
+        return entries.length ? entries[0].startTime : null;
+    }
+    var htmlReady = markTime('sl-html-ready');
+    var bootScriptDone = markTime('sl-boot-script-done');
+    var wasmStart = markTime('sl-wasm-download-start');
+    var runtimeReady = markTime('sl-runtime-ready');
+    var firstRender = markTime('sl-first-render');
+
+    var downloadBytes = 0;
+    var swCacheHit = false;
+    try {
+        performance.getEntriesByType('resource').forEach(function (entry) {
+            if (entry.name.indexOf('_framework/') === -1) return;
+            downloadBytes += entry.transferSize || 0;
+            // transferSize 0 with a non-zero body means the resource was served from the service
+            // worker's cache (or an HTTP 304/disk cache) rather than downloaded over the network.
+            if (entry.transferSize === 0 && entry.decodedBodySize > 0) swCacheHit = true;
+        });
+    } catch (e) { /* Resource Timing unsupported */ }
+
+    var cold = true;
+    try { cold = !sessionStorage.getItem('studylife-booted-before'); sessionStorage.setItem('studylife-booted-before', '1'); }
+    catch (e) { /* private mode - default to reporting every boot as cold */ }
+
+    return {
+        cold: cold,
+        htmlMs: htmlReady,
+        bootScriptMs: (htmlReady !== null && bootScriptDone !== null) ? (bootScriptDone - htmlReady) : null,
+        wasmDownloadMs: (wasmStart !== null && runtimeReady !== null) ? (runtimeReady - wasmStart) : null,
+        runtimeReadyMs: runtimeReady,
+        firstRenderMs: firstRender,
+        downloadBytes: downloadBytes,
+        swCacheHit: swCacheHit
+    };
+}
+
+function studylifeMarkFirstRender() {
+    try { performance.mark('sl-first-render'); } catch (e) { /* Performance API unsupported */ }
+}
+
+function studylifeTelemetryFlush() {
+    studylifeReportVitalsOnce();
+    try {
+        var json = DotNet.invokeMethod('StudyLife.Client', 'GetPendingTelemetryJson');
+        if (!json) return;
+        navigator.sendBeacon('api/telemetry', new Blob([json], { type: 'application/json' }));
+    } catch (e) { /* best effort - a lost final flush is not worth surfacing */ }
+}
+
+function studylifeSanitizeErrorStack(stack) {
+    if (!stack) return '';
+    // Keeps only lines that look like a real stack frame (file:line:col) - drops the leading
+    // "ErrorType: message" line every JS Error.stack starts with, since the message must never
+    // leave the device (contract: "no message text").
+    return stack.split('\n').filter(function (l) { return /:\d+:\d+/.test(l); }).join('\n').substring(0, 4000);
+}
+
+function studylifeTelemetryInit() {
+    studylifeCollectStaticVitals();
+    studylifeObserveVitals();
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'hidden') studylifeTelemetryFlush();
+    });
+    window.addEventListener('pagehide', studylifeTelemetryFlush);
+
+    // Separate from the diagnostics banner listeners at the top of this file (different purpose:
+    // this reports a sanitized type+stack to the server for the ClientError log/errors counter,
+    // that one shows the raw message locally for on-device debugging) - both run independently
+    // on the same browser events.
+    window.addEventListener('error', function (e) {
+        var stack = studylifeSanitizeErrorStack(e.error && e.error.stack);
+        DotNet.invokeMethodAsync('StudyLife.Client', 'ReportJsError',
+            (e.error && e.error.name) || 'Error', stack, true, location.pathname).catch(function () { });
+    });
+    window.addEventListener('unhandledrejection', function (e) {
+        var reason = e.reason;
+        var stack = studylifeSanitizeErrorStack(reason && reason.stack);
+        DotNet.invokeMethodAsync('StudyLife.Client', 'ReportJsError',
+            (reason && reason.name) || 'UnhandledRejection', stack, false, location.pathname).catch(function () { });
+    });
 }

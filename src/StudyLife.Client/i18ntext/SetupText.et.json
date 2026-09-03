@@ -281,5 +281,7 @@
   "MarketplaceByDeveloper": "arendaja {0}",
   "MarketplaceViewSource": "Vaata lähtekoodi",
   "MarketplaceDemoNotice": "Lisandmoodulite paigaldamine on selles demoversioonis keelatud.",
-  "ClientKeysHeading": "Ühendatud lisad"
+  "ClientKeysHeading": "Ühendatud lisad",
+  "TelemetryHeading": "Kasutus- ja vearaportid",
+  "TelemetryDesc": "Aitab meil leida vigu ja aeglaseid kohti, saates anonüümseid jõudlus- ja veaandmeid — mitte kunagi sinu märkmeid, seansse ega terviseandmeid. Saad selle igal ajal välja lülitada."
 }

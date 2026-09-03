@@ -64,6 +64,7 @@ public class UserSettings
     public bool ComebackNudgeEnabled { get; set; } // Gentle comeback hint after exactly 1 day off, default false (opt-in, new category)
     public bool NewRecordNotificationsEnabled { get; set; } // Instant feedback on a new personal record, default false (opt-in, new category)
     public bool MonthlyReportEnabled { get; set; } = true; // Monthly recap push, analogous to WeeklyReportEnabled, default true
+    public bool? TelemetryConsent { get; set; } // Client telemetry opt-in, null = undecided (consent modal not yet answered)
 }
 
 public class TimerMode

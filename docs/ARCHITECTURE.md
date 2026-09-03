@@ -628,3 +628,62 @@ convention so the same instruments can be exported via OTLP to a collector later
 read by an own dashboard through the Prometheus HTTP API — the export format is a
 configuration decision, not a code change.
 
+**Phase 2 — client beacon.** `POST /api/telemetry` (`Controllers/TelemetryController.cs`,
+policy `SessionOnly`, `[EnableRateLimiting("telemetry")]` at 30 batches/minute per user, a 32 KB
+body guard via `[RejectOversizedBody]`, ≤ 50 events/batch) accepts a batch of client-observed
+events and maps them onto a second meter, `StudyLife.Client` (`Services/ClientTelemetryMetrics.cs`)
+— separate from phase 1's `StudyLife.Server`, so "everything the clients reported" can be
+queried/dashboarded as its own group even though both export through the same Prometheus scrape
+surface. `error` events additionally produce a structured `ClientError` Information log (kind,
+type, stack hash, sanitized stack, platform, app version, session id — never a user id), kept in
+Loki for 14 days.
+
+Consent: `UserSettingsEntity.TelemetryConsent` (`bool?`, threaded through the usual four settings
+layers) — `null` (undecided) and `false` (declined) both make the endpoint answer `204 No
+Content` and record nothing; only an explicit `true` is accepted. A public demo instance
+(`DemoModeGuard`) always answers 204 regardless of consent — POST /api/telemetry is one of the
+two exemptions (with `/api/dictate`) from the demo write-block middleware, since the contract
+requires 204, not the generic 403. The consent modal (`Components/TelemetryConsentModal.razor`)
+is shown once from `MainLayout.razor` after settings load, only when `TelemetryConsent == null`
+and the instance isn't in demo mode; Accept/Decline write the field through the normal settings
+save path and the modal never shows again either way. `Components/Setup/SetupTelemetryCard.razor`
+(next to the progress-share card on the setup page) lets it be changed again afterward.
+
+What is collected (client-side, `Services/TelemetryService.cs`): boot timeline (HTML/boot-script/
+wasm-download/runtime-ready/first-render/dashboard-ready durations, cold vs. warm, download
+bytes, service-worker cache hit — `performance.mark` calls in `wwwroot/js/boot-loading.js`,
+`wwwroot/js/boot-start.js` around the now-manual `Blazor.start()`, and `MainLayout`'s first
+render, read once via `wwwroot/js/interop.js`'s `studylifeGetBootMarks`), Web Vitals (TTFB, FCP,
+LCP, INP, CLS via `PerformanceObserver`), every API call's route/method/status/duration/
+not-modified (`Services/SessionHandler.cs`, which already sees every request to this app's own
+API), SSE change-stream lifecycle (`AppStateService.StartChangeStreamAsync`'s
+`OnSseLifecycleEventRaised`), Blazor navigation render time
+(`NavigationManager.LocationChanged` → next render), and unhandled errors — a .NET `ErrorBoundary`
+in `MainLayout.razor` (unchanged visible fallback; recording is a side effect of the
+`ErrorContent` render) and JS `window.onerror`/`unhandledrejection` — as `kind`/`type` + a
+sanitized, hashed stack, never the exception/error **message** (may contain user content).
+`INativeTelemetry` (next to `INativeHealthData`/`INativePush`) is the native-app hook for MetricKit
+launch/resource/crash reports and HealthKit query outcomes, merged into the same batches; the
+browser registers the no-op `NoNativeTelemetry`.
+
+Privacy rules enforced server-side (`TelemetryController`/`ClientTelemetryMetrics`): route/page
+values are normalized (`TelemetryRouteCatalog` replaces integer/GUID/>40-char segments with
+`{id}` and collapses anything not matching the server's own route table to `other`) so the
+`route` tag stays a bounded set; `appVersion`/`language` are tags only on `studylife.client.boots`
+and (appVersion only) `studylife.client.errors`; every other instrument carries only `platform`
+plus its own small fixed enumeration. `health_query` events never carry a sample/night count or
+any health value, only outcome/duration. Unrecognized event types are counted under
+`studylife.client.events.dropped{reason="unknown_type"}` instead of silently vanishing or
+rejecting the whole batch.
+
+Sampling (`TelemetryService`): a random session id (rotated after 24 h in `localStorage`) gets a
+single per-session coin flip at 10% — `boot`/`vitals`/`navigation`/`api`/`sse`/`push`/
+`app_launch`/`app_resource`/`health_query` only fire for a sampled-in session (keeping
+boot↔API correlation intact within a session), while `error` always fires regardless of sampling.
+Events are buffered in memory and flushed every 20 s or at 25 events; a final flush on
+`pagehide`/`visibilitychange` uses `navigator.sendBeacon` via a **synchronous**
+`DotNet.invokeMethod` call (an async round trip started that late routinely never completes
+before the tab is gone). Boot events collected before the consent question is answered are kept
+in memory and flushed once accepted, or discarded on decline — never sent while consent is still
+`null`.
+

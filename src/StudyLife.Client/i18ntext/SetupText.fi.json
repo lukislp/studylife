@@ -281,5 +281,7 @@
   "MarketplaceByDeveloper": "kehittäjä {0}",
   "MarketplaceViewSource": "Näytä lähdekoodi",
   "MarketplaceDemoNotice": "Lisäosien asentaminen on poistettu käytöstä tässä demoversiossa.",
-  "ClientKeysHeading": "Yhdistetyt lisäosat"
+  "ClientKeysHeading": "Yhdistetyt lisäosat",
+  "TelemetryHeading": "Käyttö- ja virheraportit",
+  "TelemetryDesc": "Auttaa meitä löytämään bugeja ja hitaita kohtia lähettämällä anonyymejä suorituskyky- ja virhetietoja — ei koskaan muistiinpanojasi, istuntojasi tai terveystietojasi. Voit poistaa tämän käytöstä milloin tahansa."
 }

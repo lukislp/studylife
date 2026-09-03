@@ -10,6 +10,7 @@
 @inject NotificationService Notifications
 @inject SessionTokenStore TokenStore
 @inject INativeAppAuth NativeAuth
+@inject TelemetryService Telemetry
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
 @implements IDisposable
 
@@ -157,6 +158,7 @@
     <PushDeviceManager Open="_deviceManagerOpen" OnClose="CloseDeviceManager" />
     <PasskeyDeviceManager Open="_passkeyManagerOpen" OnClose="ClosePasskeyManager" />
     <AgentChatModal Open="_agentChatOpen" OnClose="CloseAgentChat" />
+    <TelemetryConsentModal Show="_showTelemetryConsentModal" OnAnswered="() => _showTelemetryConsentModal = false" />
 
     <main class="main-content" id="main-scroll">
         @* Catches rendering exceptions of individual pages instead of crashing the whole WASM app
@@ -173,7 +175,8 @@
             <ChildContent>
                 @Body
             </ChildContent>
-            <ErrorContent>
+            <ErrorContent Context="ex">
+                @{ RecordPageError(ex); }
                 <div class="setup-section"><p class="ss-desc">@T.PageLoadErrorText</p></div>
             </ErrorContent>
         </ErrorBoundary>
@@ -197,6 +200,8 @@
     private ErrorBoundary? _errorBoundary;
     private bool _authenticated;
     private bool _demoMode;
+    private bool _showTelemetryConsentModal;
+    private long? _navigationStartedAtTimestamp;
 
     private record Language(string Code, string Flag, string Name);
 
@@ -248,6 +253,7 @@
             return;
         }
         _authenticated = true;
+        var dashboardReadyStopwatch = System.Diagnostics.Stopwatch.StartNew();
 
         try
         {
@@ -269,6 +275,9 @@
             // to every cold start before the shell painted (2026-09 audit L6).
             var updateCheckTask = CheckForClientUpdateAsync();
             var notificationsTask = Notifications.InitializeAsync();
+            // Telemetry phase 2 (docs/ARCHITECTURE.md "Telemetry"): reads settings itself (shared,
+            // deduped fetch with settingsTask above), so it can run alongside everything else here.
+            var telemetryInitTask = Telemetry.InitializeAsync();
 
             _clockTimer = new System.Threading.Timer(_ => _ = InvokeAsync(OnClockTickAsync), null, 0, 10000);
             await CheckActive();
@@ -291,12 +300,22 @@
             // dial (hides passkey/push management there, see the fab markup). Cached in
             // AppStateService so Index.razor's backup-banner suppression shares the fetch.
             _demoMode = await demoModeTask;
+            // Consent modal (docs/ARCHITECTURE.md "Telemetry"): shown exactly once, only once
+            // settings are known - null means the modal was never answered (an explicit true/false
+            // never shows it again, see TelemetryConsentModal). Demo instances never ask (there is
+            // no meaningful account behind the shared demo user to remember an answer for, and
+            // TelemetryController drops everything from a demo instance regardless).
+            _showTelemetryConsentModal = !_demoMode && settings.TelemetryConsent is null;
             await updateCheckTask;
+            await telemetryInitTask;
             // Server declared the passkey session invalid via 401 (SessionHandler has already
             // discarded the token) - redirect to the login page. This is the ONLY path that
             // triggers a logout; network errors/timeouts never touch the token.
             TokenStore.OnSessionInvalidated += OnSessionInvalidated;
             await UpdateAppBadgeAsync();
+            // "Dashboard has real data" milestone (contract: boot.dashboardReadyMs) - approximated
+            // as this whole startup sequence completing, see TelemetryService.RecordDashboardReady.
+            Telemetry.RecordDashboardReady(dashboardReadyStopwatch.Elapsed.TotalMilliseconds);
         }
         catch (Exception ex)
         {
@@ -436,6 +455,15 @@
     {
         if (firstRender)
         {
+            // Boot timeline (contract: boot.firstRenderMs and the other phase marks) - read
+            // exactly once, right after the first real render, per docs/ARCHITECTURE.md.
+            try
+            {
+                await JS.InvokeVoidAsync("studylifeMarkFirstRender");
+                await Telemetry.RecordBootFromMarksAsync();
+            }
+            catch { /* stale cached index.html without the helper - skip silently */ }
+
             _searchHotkeyRef = DotNetObjectReference.Create(this);
 
             // Ctrl+K/Cmd+K hotkey: a document-wide keydown listener (index.html).
@@ -462,6 +490,14 @@
                 }
                 catch { /* Module not available - falls back to the clock ticker's 60s cadence */ }
             }
+        }
+        else if (_navigationStartedAtTimestamp is { } startedAt)
+        {
+            // First render AFTER a navigation (not the very first render above, which has no
+            // "previous page" to time from) - contract: navigation.renderMs.
+            _navigationStartedAtTimestamp = null;
+            var elapsedMs = System.Diagnostics.Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds;
+            Telemetry.RecordNavigation(_currentPage, elapsedMs);
         }
     }
 
@@ -543,6 +579,9 @@
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
     {
         UpdateCurrentPage(e.Location);
+        // Navigation render timing (contract: navigation.renderMs) - stopped on the next
+        // OnAfterRenderAsync, i.e. the render that actually reflects the new page.
+        _navigationStartedAtTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
         // Normal client navigation resets a triggered ErrorBoundary fallback so an error on ONE
         // page doesn't permanently block every following page (the 401 race the boundary is
         // primarily meant for leaves the app via a forceLoad reload anyway).
@@ -553,6 +592,13 @@
             try { await JS.InvokeVoidAsync("scrollElementToTop", "main-scroll"); } catch { /* best-effort, ignore */ }
         });
     }
+
+    /// <summary>ErrorBoundary.ErrorContent side effect (docs/ARCHITECTURE.md "Telemetry") -
+    /// deliberately keeps the exact same visible fallback markup as before this feature; this
+    /// only adds the telemetry recording, called as a side effect from the render fragment
+    /// itself since ErrorContent has no separate lifecycle hook to attach to.</summary>
+    private void RecordPageError(Exception ex) =>
+        Telemetry.RecordError("dotnet", ex.GetType().Name, ex.ToString(), fatal: true, page: _currentPage);
 
     private void UpdateCurrentPage(string uri)
     {

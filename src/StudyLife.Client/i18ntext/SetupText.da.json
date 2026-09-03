@@ -281,5 +281,7 @@
   "MarketplaceByDeveloper": "af {0}",
   "MarketplaceViewSource": "Se kildekode",
   "MarketplaceDemoNotice": "Installation af tilføjelser er deaktiveret på denne demoinstans.",
-  "ClientKeysHeading": "Tilsluttede tilføjelser"
+  "ClientKeysHeading": "Tilsluttede tilføjelser",
+  "TelemetryHeading": "Brugs- og fejlrapporter",
+  "TelemetryDesc": "Hjælper os med at finde fejl og langsomme steder ved at sende anonyme data om ydeevne og fejl — aldrig dine noter, sessioner eller sundhedsdata. Du kan altid slå det fra."
 }

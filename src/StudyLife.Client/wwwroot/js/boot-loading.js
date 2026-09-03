@@ -1,3 +1,10 @@
+// Telemetry boot timeline (docs/ARCHITECTURE.md "Telemetry", phase 2): this script is the
+// earliest point any of our own JS runs, right after the initial HTML parse - a reasonable proxy
+// for "html ready" until boot-start.js's manual Blazor.start() picks up the wasm/runtime phases
+// and MainLayout marks the first real render. Read once via js/interop.js's
+// studylifeGetBootMarks (TelemetryService.RecordBootFromMarksAsync).
+try { performance.mark('sl-html-ready'); } catch (e) { /* Performance API unsupported */ }
+
 // Public demo instances (DEMO_MODE=true): the WASM boot itself takes several seconds
 // before Login.razor's own demo-mode check ever runs - without an explanation, that
 // silent wait reads as the app being stuck, right before it auto-signs the visitor in.
@@ -27,3 +34,5 @@ fetch('api/auth/demo').then(function (r) { return r.json(); }).then(function (d)
         head.appendChild(link);
     });
 })();
+
+try { performance.mark('sl-boot-script-done'); } catch (e) { /* Performance API unsupported */ }

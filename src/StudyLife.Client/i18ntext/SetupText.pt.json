@@ -281,5 +281,7 @@
   "MarketplaceByDeveloper": "por {0}",
   "MarketplaceViewSource": "Ver código-fonte",
   "MarketplaceDemoNotice": "A instalação de extras está desativada nesta instância de demonstração.",
-  "ClientKeysHeading": "Add-ons ligados"
+  "ClientKeysHeading": "Add-ons ligados",
+  "TelemetryHeading": "Relatórios de utilização e erros",
+  "TelemetryDesc": "Ajuda-nos a detetar falhas e pontos lentos enviando dados anónimos de desempenho e erros — nunca as tuas notas, sessões ou dados de saúde. Podes desativar isto a qualquer momento."
 }
