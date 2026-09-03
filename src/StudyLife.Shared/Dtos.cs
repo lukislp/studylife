@@ -1,17 +1,23 @@
+using System.ComponentModel.DataAnnotations;
 namespace StudyLife.Shared;
 
 public class StudySessionDto
 {
     public int Id { get; set; }
     public int CourseId { get; set; }
+    [MaxLength(200)]
     public string CourseName { get; set; } = "";
+    [MaxLength(32)]
     public string CourseColor { get; set; } = "#6C5CE7";
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
+    [MaxLength(500)]
     public string? Topic { get; set; }
+    [MaxLength(10000)]
     public string? Notes { get; set; }
     public bool IsCompleted { get; set; }
     public int TimerModeId { get; set; }
+    [MaxLength(100)]
     public string? RecurrenceGroupId { get; set; }
 }
 
@@ -29,17 +35,24 @@ public class UserSettingsDto
     /// The Blazor client always sends the Version it last fetched (see AppStateService).
     /// </summary>
     public int? Version { get; set; }
+    [MaxLength(2000)]
     public List<int> SelectedCourseIds { get; set; } = new() { 1, 2, 3, 4 };
+    [MaxLength(2000)]
     public List<int> CompletedCourseIds { get; set; } = new();
+    [MaxLength(50)]
     public string Theme { get; set; } = "dark";
     /// <summary>Preset key of a curated accent color (e.g. "coral", "blue"), not raw hex values.</summary>
+    [MaxLength(32)]
     public string AccentColor { get; set; } = "coral";
     public bool AutoSwitchFocus { get; set; } = true;
     public int AutoSwitchMinutesBefore { get; set; } = 2;
+    [MaxLength(50)]
     public string MotivationalStyle { get; set; } = "claude";
     /// <summary>Comma-separated minute values before session start, e.g. "60,30,10,5,3,2,1".</summary>
+    [MaxLength(200)]
     public string SessionReminderMinutes { get; set; } = "60,30,10,5,3,2,1";
     /// <summary>Comma-separated day values before the course goal date, e.g. "14,7,3,1,0".</summary>
+    [MaxLength(200)]
     public string CourseGoalReminderDays { get; set; } = "14,7,3,1,0";
     /// <summary>Number of days without a session after which the inactivity reminder fires.</summary>
     public int InactivityThresholdDays { get; set; } = 5;
@@ -48,6 +61,7 @@ public class UserSettingsDto
     /// <summary>Latest time (hour, 0-23, exclusive) up to which the exam planner/weekly plan assistant suggests sessions.</summary>
     public int StudyWindowEndHour { get; set; } = 21;
     /// <summary>Comma-separated weekdays (0=Sunday..6=Saturday, System.DayOfWeek values) on which planning is allowed.</summary>
+    [MaxLength(100)]
     public string StudyDays { get; set; } = "0,1,2,3,4,5,6";
     /// <summary>Desired graduation date. Null = feature off (no target-hours display on the dashboard).</summary>
     public DateTime? TargetGraduationDate { get; set; }
@@ -57,6 +71,7 @@ public class UserSettingsDto
     /// JSON instead of the usual comma lists, because mode names may contain commas.
     /// IDs start at 100 so they never collide with the built-in modes (1-5). "" = no custom modes.
     /// </summary>
+    [MaxLength(20000)]
     public string CustomTimerModes { get; set; } = "";
     /// <summary>Minimum desired study workload in hours/week. Replaces the previously hardcoded 25h.</summary>
     public int WeeklyGoalMinHours { get; set; } = 25;
@@ -97,6 +112,7 @@ public class UserSettingsDto
     /// </summary>
     public bool ProgressShareEnabled { get; set; }
     /// <summary>Permanent token for GET /api/progress/shared/{token}. Null = never activated.</summary>
+    [MaxLength(200)]
     public string? ProgressShareToken { get; set; }
     /// <summary>Warns if the current study streak can still break today. Default false (opt-in, new category).</summary>
     public bool StreakRiskRemindersEnabled { get; set; }
@@ -133,6 +149,7 @@ public class ProgressShareDto
 /// <summary>A single active course in the progress snapshot, with topic progress (0-100).</summary>
 public class ProgressShareCourseDto
 {
+    [MaxLength(100)]
     public string Name { get; set; } = "";
     public string Icon { get; set; } = "📚";
     public string Color { get; set; } = "#6C5CE7";
@@ -144,39 +161,49 @@ public class ProgressShareCourseDto
 public class NoteDto
 {
     public int Id { get; set; }
+    [MaxLength(500)]
     public string Title { get; set; } = "";
+    [MaxLength(1000000)]
     public string Content { get; set; } = "";
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public int? CourseId { get; set; }
     public int? SessionId { get; set; }
     public bool IsMarkdown { get; set; }
+    [MaxLength(2048)]
     public string? SourceUrl { get; set; }
     /// <summary>Comma-separated tags from capture enrichment (see NoteEntity.EnrichedAt) -
     /// server-assigned, read-only from the client's point of view (Create/Update never accept
     /// it, see NotesController).</summary>
+    [MaxLength(2000)]
     public string? Tags { get; set; }
     /// <summary>One-sentence AI-generated summary from capture enrichment - same read-only
     /// contract as Tags.</summary>
+    [MaxLength(10000)]
     public string? Summary { get; set; }
     /// <summary>Ids of existing notes studylife-ai found similar to this capture - same
     /// read-only contract as Tags/Summary. Empty (not null) when there are none, matching
     /// UserSettingsDto.SelectedCourseIds's List&lt;int&gt; convention rather than NoteEntity's
     /// raw comma-separated string.</summary>
+    [MaxLength(100)]
     public List<int> RelatedNoteIds { get; set; } = new();
 }
 
 public class CourseGoalDto
 {
     public int CourseId { get; set; }
+    [MaxLength(200)]
     public string CourseName { get; set; } = "";
     public DateTime? TargetDate { get; set; }
+    [MaxLength(5000)]
     public string? CompletionNote { get; set; }
     public DateTime? CompletedAt { get; set; }
     /// <summary>Final grade, German grading system (1.0 = best, 5.0 = failed).</summary>
     public decimal? Grade { get; set; }
     /// <summary>Comma-separated list of checked-off topic names from CourseCatalog.Topics.</summary>
+    [MaxLength(10000)]
     public string CompletedTopics { get; set; } = "";
+    [MaxLength(100)]
     public string? Tag { get; set; }
 }
 
@@ -189,7 +216,9 @@ public class CourseResourceDto
 {
     public int Id { get; set; }
     public int CourseId { get; set; }
+    [MaxLength(500)]
     public string Title { get; set; } = "";
+    [MaxLength(2048)]
     public string Url { get; set; } = "";
     public DateTime CreatedAt { get; set; }
 }
@@ -259,6 +288,7 @@ public class StudyProgramDetailDto
 /// </summary>
 public class CreateStudyProgramRequestDto
 {
+    [MaxLength(200)]
     public string Name { get; set; } = "";
     public List<CreateStudyProgramGroupDto> Groups { get; set; } = new();
     public List<CreateStudyProgramCourseDto> Courses { get; set; } = new();
@@ -266,6 +296,7 @@ public class CreateStudyProgramRequestDto
 
 public class CreateStudyProgramGroupDto
 {
+    [MaxLength(200)]
     public string Name { get; set; } = "";
     /// <summary>Maximum creditable ECTS of this group, no matter how many courses are completed.</summary>
     public int EctsQuota { get; set; }
@@ -274,12 +305,17 @@ public class CreateStudyProgramGroupDto
 public class CreateStudyProgramCourseDto
 {
     public int Semester { get; set; } = 1;
+    [MaxLength(200)]
     public string Name { get; set; } = "";
+    [MaxLength(50)]
     public string Code { get; set; } = "";
+    [MaxLength(32)]
     public string Color { get; set; } = "#6C5CE7";
+    [MaxLength(50)]
     public string Icon { get; set; } = "📚";
     public int Ects { get; set; } = 5;
     /// <summary>Name of the elective group from Groups. Null/empty = mandatory module.</summary>
+    [MaxLength(200)]
     public string? Group { get; set; }
     public List<string> Topics { get; set; } = new();
 }
@@ -322,6 +358,7 @@ public class TimerStateDto
 /// delete token (no further push delivery for this user).</summary>
 public class LiveActivityPushTokenDto
 {
+    [MaxLength(512)]
     public string? Token { get; set; }
 }
 
@@ -358,11 +395,15 @@ public class IcsImportResultDto
 public class SessionTemplateDto
 {
     public int Id { get; set; }
+    [MaxLength(200)]
     public string Name { get; set; } = "";
     public int CourseId { get; set; }
+    [MaxLength(200)]
     public string CourseName { get; set; } = "";
+    [MaxLength(32)]
     public string CourseColor { get; set; } = "#6C5CE7";
     public int DurationMinutes { get; set; } = 60;
+    [MaxLength(500)]
     public string? Topic { get; set; }
     /// <summary>0=Sunday..6=Saturday (System.DayOfWeek values).</summary>
     public int? DefaultWeekday { get; set; }
@@ -552,12 +593,15 @@ public class CreateWebhookApiKeyResponseDto
 /// </summary>
 public class AiChatMessageDto
 {
+    [MaxLength(50)]
     public string Role { get; set; } = "";
+    [MaxLength(50000)]
     public string Content { get; set; } = "";
 }
 
 public class AiChatRequestDto
 {
+    [MaxLength(200)]
     public List<AiChatMessageDto> Messages { get; set; } = new();
 }
 
@@ -584,6 +628,7 @@ public class AiChatSourceDto
 
 public class AiAgentRequestDto
 {
+    [MaxLength(50000)]
     public string Message { get; set; } = "";
 }
 
@@ -606,8 +651,11 @@ public class AiAgentResponseDto
 public class AiConfirmRequestDto
 {
     [System.Text.Json.Serialization.JsonPropertyName("thread_id")]
+    [MaxLength(200)]
     public string ThreadId { get; set; } = "";
+    [MaxLength(50)]
     public string Decision { get; set; } = "";
+    [MaxLength(50000)]
     public string? Message { get; set; }
 }
 
@@ -642,10 +690,12 @@ public class VersionResponseDto
 /// <summary>Body of POST /api/auth/register/begin (phase 2, passkey login).</summary>
 public class PasskeyRegisterBeginRequestDto
 {
+    [MaxLength(100)]
     public string DisplayName { get; set; } = "";
     /// <summary>Only checked for the very first registration ever (SetupSecretService) -
     /// every subsequent one deliberately stays open (family signup). Null/empty for all later
     /// registrations.</summary>
+    [MaxLength(200)]
     public string? SetupSecret { get; set; }
     /// <summary>
     /// Registration invite token (audit finding A10, Registration:Mode=invite) - optional, so
@@ -655,6 +705,7 @@ public class PasskeyRegisterBeginRequestDto
     /// register/begin (RegistrationGateService.CheckBeginAsync) but only CONSUMED at
     /// register/complete, so a begin alone never burns it.
     /// </summary>
+    [MaxLength(500)]
     public string? InviteToken { get; set; }
 }
 
@@ -748,7 +799,9 @@ public class WhoamiResponseDto
 /// OAuth authorize redirect unchanged.</summary>
 public class McpConnectRequestDto
 {
+    [MaxLength(2048)]
     public string RedirectUri { get; set; } = "";
+    [MaxLength(1000)]
     public string State { get; set; } = "";
 }
 
@@ -785,7 +838,9 @@ public class McpAssertionExchangeResponseDto
 /// already uses for the per-slot API-key endpoints in SettingsController.</summary>
 public class CaptureConnectRequestDto
 {
+    [MaxLength(2048)]
     public string RedirectUri { get; set; } = "";
+    [MaxLength(1000)]
     public string State { get; set; } = "";
 }
 
@@ -822,7 +877,9 @@ public class CaptureAssertionExchangeResponseDto
 /// the capture flow does.</summary>
 public class FocusGuardConnectRequestDto
 {
+    [MaxLength(2048)]
     public string RedirectUri { get; set; } = "";
+    [MaxLength(1000)]
     public string State { get; set; } = "";
 }
 
@@ -856,7 +913,9 @@ public class FocusGuardAssertionExchangeResponseDto
 /// FocusGuardConnectRequestDto, a fourth audience/slot in the consent flow.</summary>
 public class FocusTunesConnectRequestDto
 {
+    [MaxLength(2048)]
     public string RedirectUri { get; set; } = "";
+    [MaxLength(1000)]
     public string State { get; set; } = "";
 }
 
@@ -885,7 +944,9 @@ public class FocusTunesAssertionExchangeResponseDto
 /// callback, since it isn't a browser extension.</summary>
 public class TrayConnectRequestDto
 {
+    [MaxLength(2048)]
     public string RedirectUri { get; set; } = "";
+    [MaxLength(1000)]
     public string State { get; set; } = "";
 }
 
@@ -925,8 +986,11 @@ public class OAuthClientInfoDto
 /// McpConnect/CaptureConnect/etc. Approve action for a dynamically registered client.</summary>
 public class GenericConnectRequestDto
 {
+    [MaxLength(100)]
     public string ClientId { get; set; } = "";
+    [MaxLength(2048)]
     public string RedirectUri { get; set; } = "";
+    [MaxLength(1000)]
     public string State { get; set; } = "";
 }
 
@@ -957,10 +1021,15 @@ public class GenericAssertionExchangeResponseDto
 /// registration itself has nothing to hide from its own owner.</summary>
 public class DeveloperClientDto
 {
+    [MaxLength(100)]
     public string ClientId { get; set; } = "";
+    [MaxLength(100)]
     public string Name { get; set; } = "";
+    [MaxLength(2000)]
     public string Description { get; set; } = "";
+    [MaxLength(20)]
     public List<string> AllowedRedirectUris { get; set; } = new();
+    [MaxLength(100)]
     public List<string> RequestedScopes { get; set; } = new();
     public DateTime CreatedAt { get; set; }
 }
@@ -970,9 +1039,13 @@ public class DeveloperClientDto
 public class CreateDeveloperClientRequestDto
 {
     public string ClientId { get; set; } = "";
+    [MaxLength(100)]
     public string Name { get; set; } = "";
+    [MaxLength(2000)]
     public string Description { get; set; } = "";
+    [MaxLength(20)]
     public List<string> AllowedRedirectUris { get; set; } = new();
+    [MaxLength(100)]
     public List<string> RequestedScopes { get; set; } = new();
 }
 
@@ -1022,6 +1095,7 @@ public class RecoveryStatusDto
 /// <summary>POST /api/auth/recovery/login (emergency login with a one-time code).</summary>
 public class RecoveryLoginRequestDto
 {
+    [MaxLength(50)]
     public string? Code { get; set; }
 }
 
@@ -1043,6 +1117,7 @@ public class PasskeyListItemDto
 /// <summary>Body of PUT /api/auth/credentials/{id}/label (DeviceLabel freely editable).</summary>
 public class PasskeyRenameRequestDto
 {
+    [MaxLength(100)]
     public string Label { get; set; } = "";
 }
 
@@ -1146,6 +1221,7 @@ public class DeviceLinkCodeResponseDto
 /// the code itself assigns the new device to the account that generated it).</summary>
 public class DeviceLinkRedeemRequestDto
 {
+    [MaxLength(50)]
     public string Code { get; set; } = "";
 }
 
@@ -1492,7 +1568,9 @@ public class MetricsAchievementTierDto
 /// so a new event type never needs a contract change on either end.</summary>
 public class CreateWebhookRequestDto
 {
+    [MaxLength(2048)]
     public string TargetUrl { get; set; } = "";
+    [MaxLength(50)]
     public List<string> Events { get; set; } = new();
 }
 
