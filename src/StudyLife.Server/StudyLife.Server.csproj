@@ -4,6 +4,15 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' != ''">
+    <!-- ReadyToRun (AOT-precompiled IL) for the RID-specific container publishes only
+         (.github/workflows/ci-cd.yml publishes linux-x64 and linux-arm64). The web pod runs
+         Database.Migrate() before Kestrel listens and the worker waits behind a 400s startup
+         probe, both on Raspberry Pi CPUs where JIT-compiling the whole app at cold start is the
+         dominant startup cost (2026-09 audit L2). Plain RID-less builds (tests, OpenAPI
+         generation) are unaffected - R2R output is larger and only pays off when run. -->
+    <PublishReadyToRun>true</PublishReadyToRun>
+  </PropertyGroup>
   <PropertyGroup>
     <!-- Audit finding D2: a plain `dotnet build` regenerates docs/api/openapi.json
          deterministically. Microsoft.Extensions.ApiDescription.Server's build-time generation
