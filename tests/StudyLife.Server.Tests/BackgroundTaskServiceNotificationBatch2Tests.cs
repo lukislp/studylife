@@ -351,7 +351,7 @@ public class BackgroundTaskServiceComebackNudgeExpiredSubscriptionTests : IClass
         });
         using var gone = new GoneEndpoint();
         var (p256dh, auth) = FakePushKeys.Generate();
-        await _client.PostAsJsonAsync("/api/push/subscribe", new PushSubscribeRequest(gone.Url, p256dh, auth));
+        await PushTestSubscriptions.InsertAsync(_factory, gone.Url, p256dh, auth);
 
         // Exactly 1 day of pause: session the day before yesterday, nothing yesterday/today.
         var start = DateTime.Now.Date.AddDays(-2).AddHours(10);
@@ -469,7 +469,7 @@ public class BackgroundTaskServiceMonthlyReportRichDataTests : IClassFixture<Cus
 
         using var gone = new GoneEndpoint();
         var (p256dh, auth) = FakePushKeys.Generate();
-        await _client.PostAsJsonAsync("/api/push/subscribe", new PushSubscribeRequest(gone.Url, p256dh, auth));
+        await PushTestSubscriptions.InsertAsync(_factory, gone.Url, p256dh, auth);
 
         var before = DateTime.Now;
         await _service.RunMonthlyReportAsync(db, () => db.PushSubscriptions.ToListAsync());
@@ -531,7 +531,7 @@ public class BackgroundTaskServiceMonthlyReportEmptyMonthTests : IClassFixture<C
         await BackgroundTaskTestSettings.PutAsync(_client, s => s.MonthlyReportEnabled = true);
         using var gone = new GoneEndpoint();
         var (p256dh, auth) = FakePushKeys.Generate();
-        await _client.PostAsJsonAsync("/api/push/subscribe", new PushSubscribeRequest(gone.Url, p256dh, auth));
+        await PushTestSubscriptions.InsertAsync(_factory, gone.Url, p256dh, auth);
         // Deliberately no sessions at all -> the report month sum is guaranteed 0h.
 
         using var scope = _factory.Services.CreateScope();
@@ -590,7 +590,7 @@ public class BackgroundTaskServiceMonthlyReportClaimRaceTests : IClassFixture<Cu
         await BackgroundTaskTestSettings.PutAsync(_client, s => s.MonthlyReportEnabled = true);
         using var gone = new GoneEndpoint();
         var (p256dh, auth) = FakePushKeys.Generate();
-        await _client.PostAsJsonAsync("/api/push/subscribe", new PushSubscribeRequest(gone.Url, p256dh, auth));
+        await PushTestSubscriptions.InsertAsync(_factory, gone.Url, p256dh, auth);
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<StudyLifeDb>();

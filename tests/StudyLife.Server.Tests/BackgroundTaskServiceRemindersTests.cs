@@ -119,7 +119,8 @@ public class BackgroundTaskServicePushNotificationTests : IClassFixture<CustomWe
         });
         using var gone = new GoneEndpoint();
         var (p256dh, auth) = FakePushKeys.Generate();
-        await SubscribeAsync(gone.Url, p256dh, auth);
+        // Loopback fake endpoint: bypasses the public-https policy of the API (see PushTestSubscriptions).
+        await PushTestSubscriptions.InsertAsync(_factory, gone.Url, p256dh, auth);
         var sessionId = await CreateSessionAsync(3, DateTime.Now.AddMinutes(4));
 
         await InvokeAsync();

@@ -17,6 +17,10 @@ namespace StudyLife.Server.Controllers;
 public class PlannerController : ControllerBase
 {
     private const int DefaultSessionLengthMinutes = 90;
+    private const int MinSessionLengthMinutes = 5;
+    private const int MaxSessionLengthMinutes = 480;
+    private const double MaxTotalHours = 1000;
+    private const int MaxYearsAhead = 2;
     private const string ReviewTopicFallback = "Wiederholung";
 
     private readonly StudyLifeDb _db;
@@ -37,6 +41,16 @@ public class PlannerController : ControllerBase
     public async Task<ActionResult<List<StudySessionDto>>> GenerateExamPlan(ExamPlanRequestDto request)
     {
         if (request.ExamDate.Date <= DateTime.Today) return BadRequest("ExamDate must be in the future.");
+        // Upper bounds (2026-09 audit S2): without them "examDate=2999, totalHours=30000,
+        // sessionLengthMinutes=1" materialized millions of StudySessionEntity objects into one
+        // SaveChanges - an OOM on the target hardware plus a bloated database, reachable with a
+        // plain HA API key. Two years at 3 slots/day caps a single plan at ~2200 sessions.
+        if (request.ExamDate.Date > DateTime.Today.AddYears(MaxYearsAhead))
+            return BadRequest($"ExamDate must be within the next {MaxYearsAhead} years.");
+        if (request.SessionLengthMinutes is > 0 and (< MinSessionLengthMinutes or > MaxSessionLengthMinutes))
+            return BadRequest($"SessionLengthMinutes must be between {MinSessionLengthMinutes} and {MaxSessionLengthMinutes}.");
+        if (request.TotalHours is > MaxTotalHours)
+            return BadRequest($"TotalHours must be at most {MaxTotalHours}.");
 
         var settings = await _db.Settings.FirstOrDefaultAsync() ?? new UserSettingsEntity();
 
