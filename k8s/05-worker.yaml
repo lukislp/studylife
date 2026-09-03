@@ -48,7 +48,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: studylife
-          image: ghcr.io/lukislp/studylife-server:3.0.0 # {"$imagepolicy": "flux-system:studylife-server"}
+          image: ghcr.io/lukislp/studylife-server:3.0.1 # {"$imagepolicy": "flux-system:studylife-server"}
           # Audit finding O4: committed directly as "Always" (see the matching comment on
           # k8s/04-web.yaml for the full rationale and the dev-cluster/"kind" override needed for
           # a locally-loaded image).
@@ -110,7 +110,7 @@ spec:
             # 03-redis.yaml (docs/SCALING.md "Redis AUTH"), in either order, without a crash-loop.
             - name: Cache__Password
               valueFrom:
-                secretKeyRef: { name: redis-auth, key: password, optional: true }
+                secretKeyRef: {name: redis-auth, key: password, optional: true}
             # DataProtection key-ring-at-rest encryption (Program.cs, ProtectKeysWithCertificate)
             # - identical to k8s/04-web.yaml, required whenever Cache__Provider=Redis. The
             # worker runs the same AddDataProtection() setup as web (shared Program.cs), so it
