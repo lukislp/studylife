@@ -16,6 +16,12 @@ updates:
     groups:
       dotnet:
         patterns: ["Microsoft.*", "System.*", "Npgsql.*"]
+    ignore:
+      # Microsoft.OpenApi is only pinned to lift a vulnerable transitive 2.0.0; ASP.NET Core
+      # OpenApi 10.x requires < 3.0.0 and its source generator does not compile against 3.x.
+      # Revisit with the .NET 11 upgrade.
+      - dependency-name: "Microsoft.OpenApi"
+        update-types: ["version-update:semver-major"]
     commit-message:
       prefix: "fix(deps)"
   - package-ecosystem: docker
