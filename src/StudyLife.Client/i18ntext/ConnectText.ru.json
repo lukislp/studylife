@@ -19,5 +19,6 @@
   "ConnectInvalidRequest": "Этот запрос на подключение недействителен или истёк.",
   "ConnectClientPageTitle": "StudyLife — Подключение",
   "ConnectClientHeading": "Подключить дополнение",
-  "ConnectClientNotRegistered": "Это дополнение ещё не зарегистрировано в вашем экземпляре StudyLife."
+  "ConnectClientNotRegistered": "Это дополнение ещё не зарегистрировано в вашем экземпляре StudyLife.",
+  "ConnectRedirectTarget": "После подключения ты будешь перенаправлен на: {0}"
 }

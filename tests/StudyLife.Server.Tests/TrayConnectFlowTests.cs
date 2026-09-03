@@ -26,7 +26,11 @@ public class TrayConnectFlowTests : IClassFixture<CustomWebApplicationFactory>
 
     public TrayConnectFlowTests(CustomWebApplicationFactory factory) => _factory = factory;
 
-    private const string RedirectUri = "https://abcdefghijklmnopqrstuvwxyzabcdef.chromiumapp.org/";
+    // studylife-tray is a native desktop app: its ConnectFlow always uses an RFC 8252 loopback
+    // callback, and since the per-audience allow-list (ConsentRedirectPolicy) that is the ONLY
+    // built-in shape the tray audience accepts - the chromiumapp.org URI the browser-extension
+    // flow tests use would be rejected here with 400.
+    private const string RedirectUri = "http://127.0.0.1:41999/callback";
     private const string LoopbackRedirectUri = "http://127.0.0.1:51823/callback";
 
     private static (string Assertion, string State) ParseRedirectTo(string redirectTo)

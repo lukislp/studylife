@@ -19,5 +19,6 @@
   "ConnectInvalidRequest": "Este pedido de ligação é inválido ou expirou.",
   "ConnectClientPageTitle": "StudyLife — Ligar",
   "ConnectClientHeading": "Ligar extra",
-  "ConnectClientNotRegistered": "Este extra ainda não está registado na sua instância StudyLife."
+  "ConnectClientNotRegistered": "Este extra ainda não está registado na sua instância StudyLife.",
+  "ConnectRedirectTarget": "Depois de ligar serás redirecionado para: {0}"
 }

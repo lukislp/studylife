@@ -19,5 +19,6 @@
   "ConnectInvalidRequest": "Dit verbindingsverzoek is ongeldig of verlopen.",
   "ConnectClientPageTitle": "StudyLife — Verbinden",
   "ConnectClientHeading": "Add-on verbinden",
-  "ConnectClientNotRegistered": "Deze add-on is nog niet geregistreerd op jouw StudyLife-instantie."
+  "ConnectClientNotRegistered": "Deze add-on is nog niet geregistreerd op jouw StudyLife-instantie.",
+  "ConnectRedirectTarget": "Na het verbinden word je doorgestuurd naar: {0}"
 }

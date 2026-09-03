@@ -19,5 +19,6 @@
   "ConnectInvalidRequest": "See ühendustaotlus on kehtetu või aegunud.",
   "ConnectClientPageTitle": "StudyLife — Ühenda",
   "ConnectClientHeading": "Ühenda lisandmoodul",
-  "ConnectClientNotRegistered": "Seda lisandmoodulit pole sinu StudyLife'i eksemplaris veel registreeritud."
+  "ConnectClientNotRegistered": "Seda lisandmoodulit pole sinu StudyLife'i eksemplaris veel registreeritud.",
+  "ConnectRedirectTarget": "Pärast ühendamist suunatakse sind edasi aadressile: {0}"
 }

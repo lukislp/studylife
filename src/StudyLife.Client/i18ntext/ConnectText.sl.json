@@ -19,5 +19,6 @@
   "ConnectInvalidRequest": "Ta zahteva za povezavo ni veljavna ali je potekla.",
   "ConnectClientPageTitle": "StudyLife — Povezava",
   "ConnectClientHeading": "Poveži dodatek",
-  "ConnectClientNotRegistered": "Ta dodatek še ni registriran v vaši namestitvi StudyLife."
+  "ConnectClientNotRegistered": "Ta dodatek še ni registriran v vaši namestitvi StudyLife.",
+  "ConnectRedirectTarget": "Po povezavi boš preusmerjen na: {0}"
 }

@@ -19,5 +19,6 @@
   "ConnectInvalidRequest": "Šis savienojuma pieprasījums nav derīgs vai ir beidzies.",
   "ConnectClientPageTitle": "StudyLife — Savienot",
   "ConnectClientHeading": "Savienot papildinājumu",
-  "ConnectClientNotRegistered": "Šis papildinājums vēl nav reģistrēts jūsu StudyLife instancē."
+  "ConnectClientNotRegistered": "Šis papildinājums vēl nav reģistrēts jūsu StudyLife instancē.",
+  "ConnectRedirectTarget": "Pēc savienošanas tu tiksi novirzīts uz: {0}"
 }

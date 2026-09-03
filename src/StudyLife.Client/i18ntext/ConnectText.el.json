@@ -19,5 +19,6 @@
   "ConnectInvalidRequest": "Αυτό το αίτημα σύνδεσης δεν είναι έγκυρο ή έχει λήξει.",
   "ConnectClientPageTitle": "StudyLife — Σύνδεση",
   "ConnectClientHeading": "Σύνδεση προσθέτου",
-  "ConnectClientNotRegistered": "Αυτό το πρόσθετο δεν έχει καταχωριστεί ακόμη στην εγκατάστασή σας StudyLife."
+  "ConnectClientNotRegistered": "Αυτό το πρόσθετο δεν έχει καταχωριστεί ακόμη στην εγκατάστασή σας StudyLife.",
+  "ConnectRedirectTarget": "Μετά τη σύνδεση θα μεταφερθείς στο: {0}"
 }

@@ -19,5 +19,6 @@
   "ConnectInvalidRequest": "Заявката за свързване е невалидна или е изтекла.",
   "ConnectClientPageTitle": "StudyLife — Свързване",
   "ConnectClientHeading": "Свързване на добавка",
-  "ConnectClientNotRegistered": "Тази добавка все още не е регистрирана във вашия StudyLife."
+  "ConnectClientNotRegistered": "Тази добавка все още не е регистрирана във вашия StudyLife.",
+  "ConnectRedirectTarget": "След свързването ще бъдеш пренасочен към: {0}"
 }
