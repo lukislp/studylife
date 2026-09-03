@@ -174,9 +174,17 @@ spec:
             # Domains entitlement.
             - name: Apple__TeamId
               value: "GAP8W46W8A"
+            # OpenTelemetry metrics in Prometheus format (Program.cs Telemetry:MetricsPort) on a
+            # dedicated listener that serves nothing else; reachable from the monitoring namespace
+            # only (k8s/12-network-policies.yaml allow-prometheus-to-metrics), never via the
+            # Service/Gateway. Scrape job: homelab-infra monitoring/01-prometheus.yaml "studylife".
+            - name: Telemetry__MetricsPort
+              value: "9464"
           ports:
             - containerPort: 8080
             - containerPort: 8443
+            - containerPort: 9464
+              name: metrics
           # Without requests/limits the scheduler cannot bin-pack sensibly, and a runaway pod
           # (e.g. GC pressure under load) could starve neighbors on the same Pi - limit set as a
           # rough 2x buffer over observed demand.
