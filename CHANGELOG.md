@@ -1,3 +1,15 @@
+## [3.0.1](https://github.com/lukislp/studylife/compare/v3.0.0...v3.0.1) (2026-09-03)
+
+
+### Bug Fixes
+
+* cache valid session-token lookups per pod for 30 seconds ([c392b33](https://github.com/lukislp/studylife/commit/c392b334ce88e98b5d0be459ec68274b71fc16a6))
+* claim new-record pushes via the unique index and filter metrics in SQL ([f1aa957](https://github.com/lukislp/studylife/commit/f1aa957fc3dcc82956b434a11603edb095ee3350))
+* evict revoked sessions from the per-pod token cache ([5b8ff29](https://github.com/lukislp/studylife/commit/5b8ff29682aa18625e98eb0280e502af92622e48))
+* overlap the client's startup round trips ([3e5b515](https://github.com/lukislp/studylife/commit/3e5b5159e0f5a8c1695b6961f37cd39db159d54b))
+* place the Cache__Password env entries inside the container env lists ([99f9bcc](https://github.com/lukislp/studylife/commit/99f9bcc7677fe0006b7d1c7ce2c8552df7a66692))
+* share rate-limit buckets across replicas via Redis and wire the Redis AUTH secret ([f065dfb](https://github.com/lukislp/studylife/commit/f065dfbecbdea044aa4e5a9380193a6d721ffa4f))
+
 # [3.0.0](https://github.com/lukislp/studylife/compare/v2.17.3...v3.0.0) (2026-09-03)
 
 
