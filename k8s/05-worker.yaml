@@ -131,8 +131,14 @@ spec:
               value: /etc/studylife-dataprotection-tls/tls.crt
             - name: DataProtection__KeyPath
               value: /etc/studylife-dataprotection-tls/tls.key
+            # Same metrics listener as the web pod (k8s/04-web.yaml) - the worker's own tick
+            # duration and webhook/reminder counters live here, not in the web pods.
+            - name: Telemetry__MetricsPort
+              value: "9464"
           ports:
             - containerPort: 8080
+            - containerPort: 9464
+              name: metrics
           resources:
             requests: {cpu: 50m, memory: 128Mi}
             limits: {cpu: 300m, memory: 256Mi}
