@@ -70,10 +70,21 @@ spec:
   # deliberately accepted trade-off.
   selector:
     matchLabels: {app: studylife-web}
+  # Surge-only rollouts (2026-09 audit M9): with minReplicas 1 the default 25% maxUnavailable
+  # rounds to 0 anyway, stating it keeps that true if the minimum ever changes.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   template:
     metadata:
       labels: {app: studylife-web}
     spec:
+      # 60s covers the 25s SSE heartbeat cycle and in-flight TTS work; the preStop sleep on the
+      # container gives the gateway a moment to stop routing to a terminating pod before Kestrel
+      # shuts down.
+      terminationGracePeriodSeconds: 60
       # Soft (preferred) instead of hard (required) anti-affinity: spreads replicas across
       # different nodes when several are available, but does NOT block on a single-node cluster
       # (like this Docker Desktop test setup) - required would leave pods 2+ Pending forever
@@ -102,6 +113,9 @@ spec:
         - name: studylife
           image: ghcr.io/lukislp/studylife-server:3.2.2 # {"$imagepolicy": "flux-system:studylife-server"}
           imagePullPolicy: Always
+          lifecycle:
+            preStop:
+              exec: {command: ["sleep", "5"]}
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: {drop: ["ALL"]}
