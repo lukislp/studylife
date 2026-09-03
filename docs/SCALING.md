@@ -563,105 +563,89 @@ change in the same file - work with targeted `kubectl patch`/`kubectl set env`/S
 reapply, exactly as with the other placeholder files (`07-ingress.yaml`, `17-grafana.yaml`,
 `09-uptime-kuma.yaml`).
 
-### Redis AUTH (Opt-In, Audit Finding O6 Round 2)
+### Redis AUTH (enabled 2026-09, Audit Finding O6 Round 2)
 
-The client TLS above (`### Client TLS`) encrypts the App↔Redis hop against eavesdropping, but
-nothing has ever required a PASSWORD on it - any pod that can reach the client port at all (e.g.
-one already inside the `allow-app-and-self-to-redis` NetworkPolicy allowlist, or a compromised
-pod that has otherwise gained network access) can read/write every key with no credential check.
+The client TLS above (`### Client TLS`) encrypts the App↔Redis hop against eavesdropping; since
+2026-09 every client connection additionally has to authenticate. Two principals exist:
 
-**This is deliberately OPT-IN, not enabled by default.** Applying `k8s/03-redis.yaml` unchanged
-is a no-op for a running cluster - every piece of wiring below is a `#`-commented block in the
-manifest itself, inert until an operator follows this exact procedure. The app side needs no code
-change either: `Cache:ConnectionString` already flows through `StackExchange.Redis.
-ConfigurationOptions.Parse` (`Program.cs`), which natively understands a `password=...` key in the
-connection string - `RedisWorkerShardClaim`, the `SessionHistoryCacheVersion`/
-`SettingsCacheVersion` `RedisVersionCounter`s, and the DataProtection key ring
-(`PersistKeysToStackExchangeRedis`) all share the same `IConnectionMultiplexer`/
-`ConfigurationOptions`, so a password just works for all of them simultaneously, nothing to
-special-case. **Constraint**: the connection string format is comma-separated `key=value` pairs -
-pick a password with no comma or semicolon in it, or `ConfigurationOptions.Parse` misparses the
-string.
+- the **`studylife` ACL user** (`user studylife on >… ~* &* +@all` on the `redis-server` command
+  line in `k8s/03-redis.yaml`) - what web and worker authenticate as (`Cache__User` +
+  `Cache__Password`, merged into `ConfigurationOptions.User/.Password` by `Program.cs`);
+- the **default user**, locked by `requirepass` - used by the replicas (`masterauth`), the
+  probes (`redis-cli -a`) and the `redis-exporter` sidecar (`--redis.password`).
 
-**Why requirepass alone isn't enough in cluster mode** (the "if redis-cluster mode makes
-requirepass+cluster-bus tricky" question): a Redis Cluster replica connects to its master as a
-plain CLIENT - replication (`REPLCONF`/`PSYNC`) runs over the same regular data port `requirepass`
-just locked down, not over the cluster bus - so replication breaks the moment `requirepass` is set
-unless `masterauth` carries the identical password. The cluster BUS itself (port 16379,
-node-to-node gossip/topology) is unaffected either way: Redis has no AUTH mechanism for the bus
-protocol at all, with or without `requirepass`/`masterauth` set - it stays protected exactly as it
-already is today, via the `NetworkPolicy` restricting 16379 to `redis-cluster` pods only
-(`k8s/12-network-policies.yaml`), completely orthogonal to this change. The full required set for
-this cluster is therefore just `requirepass` + `masterauth` (same value) - no ACL users, no
-`masteruser`, nothing bus-related.
+All of them read the ONE Kubernetes Secret `redis-auth` (`username`, `password`). That is the
+structural fix for the 2026-08-27 rollback (commit ef804ad): back then Redis started requiring a
+password that the app's connection string never received, and every fresh pod connection
+crash-looped with NOAUTH. With a single Secret feeding both sides there is nothing to keep in
+sync by hand. **Constraint**: `ConfigurationOptions.Parse` splits the connection string on
+commas, so the password must not contain `,` or `;` (the `Cache__Password` env path avoids the
+parser, but keep the rule anyway so a future move into the connection string cannot break).
 
-**Ordered enable procedure** (targeted `kubectl` commands, matching this document's established
-"never bulk-apply a file with placeholders in it" discipline - see the near-incident above):
+**Why a dedicated ACL user, not just requirepass**: an app that sends `AUTH` to a Redis whose
+default user has no password fails to connect ("AUTH called without any password configured"),
+and a Redis that requires a password rejects an app without one - so with the default user alone
+there is no order of operations without an outage window. An ACL user can exist while the
+default user is still open, so the app can be switched first and the lock applied afterwards.
 
-1. **Create the secret** (real cluster, not the `k8s/dev/` placeholder pattern - this one has no
-   same-name prod counterpart to collide with, but still shouldn't be committed in plaintext):
+**Why requirepass alone isn't enough in cluster mode**: a Redis Cluster replica connects to its
+master as a plain CLIENT - replication (`REPLCONF`/`PSYNC`) runs over the regular data port
+`requirepass` locks down, not over the cluster bus - so `masterauth` must carry the identical
+password. The cluster BUS itself (port 16379, gossip/topology) has no AUTH mechanism at all and
+stays protected exactly as before, via the `NetworkPolicy` restricting 16379 to `redis-cluster`
+pods only (`k8s/12-network-policies.yaml`).
+
+**Zero-downtime enable procedure** (what was executed on 2026-09-03; repeat on a fresh cluster in
+this order):
+
+1. **Secret** (no comma/semicolon in the password):
    ```bash
    kubectl -n studylife-scale create secret generic redis-auth \
-     --from-literal=password=<a generated password, no comma/semicolon>
+     --from-literal=username=studylife --from-literal=password=<generated>
    ```
-   (Or seal it via `kubeseal` into `k8s/sealed-secrets/studylife-scale/` alongside the existing
-   ones, if it should be Git-versioned like the Postgres/app secrets - see "Sealed Secrets" below.)
-2. **Uncomment the three commented blocks in `k8s/03-redis.yaml`** together (they only work as a
-   set): the `redis` container's `command`/`env` (adds `--requirepass`/`--masterauth`), its
-   `readinessProbe`/`livenessProbe` (switches to `redis-cli -a "$REDIS_PASSWORD"`), and the
-   `redis-exporter` container's `args`/`env` (adds `--redis.password`). Apply:
+2. **ACL user live, default user still open** - on every node, no restart:
    ```bash
-   kubectl apply -f k8s/03-redis.yaml
+   PW=$(kubectl -n studylife-scale get secret redis-auth -o jsonpath='{.data.password}' | base64 -d)
+   for i in 0 1 2 3 4 5; do
+     kubectl -n studylife-scale exec redis-cluster-$i -c redis -- redis-cli ACL SETUSER studylife on ">$PW" '~*' '&*' '+@all'
+   done
+   kubectl -n studylife-scale exec redis-cluster-0 -c redis -- redis-cli --user studylife --pass "$PW" --no-auth-warning ping   # PONG
    ```
-   This only changes the `StatefulSet`'s pod template - no pod restarts yet on its own.
-3. **Restart the Redis pods ONE BY ONE**, not a bulk `kubectl rollout restart` - this cluster's
-   data is pure disposable cache (`appendonly no`) with its own master/replica redundancy already,
-   and a sequential restart lets each node rejoin the (already-gossiping, unauthenticated-bus)
-   cluster before the next one goes down, the same caution already used for the Longhorn storage
-   migration (see the `volumeClaimTemplates` comment on the `StatefulSet` above):
+3. **App switches to the ACL user**: `k8s/04-web.yaml`/`05-worker.yaml` already carry
+   `Cache__User`/`Cache__Password` from the Secret (`optional: true`), so a normal rollout (Flux
+   after the release, or `kubectl rollout restart deployment/studylife-web deployment/studylife-worker`)
+   is enough. Verify every app connection is authenticated as `studylife` before going on:
+   ```bash
+   kubectl -n studylife-scale exec redis-cluster-0 -c redis -- redis-cli CLIENT LIST | grep -c "user=studylife"
+   kubectl -n studylife-scale exec redis-cluster-0 -c redis -- redis-cli CLIENT LIST | grep -v "user=studylife" | grep -v "cmd=client"   # only replication/self
+   ```
+4. **Lock the default user live** (equivalent to requirepass + masterauth), on every node:
+   ```bash
+   for i in 0 1 2 3 4 5; do
+     kubectl -n studylife-scale exec redis-cluster-$i -c redis -- redis-cli CONFIG SET masterauth "$PW"
+     kubectl -n studylife-scale exec redis-cluster-$i -c redis -- redis-cli CONFIG SET requirepass "$PW"
+   done
+   ```
+   From here on a bare `redis-cli ping` answers NOAUTH; the app is unaffected (ACL user).
+5. **Persist**: `kubectl apply -f k8s/03-redis.yaml` (command line carries requirepass/masterauth/
+   user from the Secret, probes and exporter authenticate) and restart the pods ONE BY ONE, each
+   time waiting for `cluster_state:ok` (disposable cache, but the sequential restart keeps the
+   replicas' copies alive and lets each node rejoin before the next goes down):
    ```bash
    for i in 0 1 2 3 4 5; do
      kubectl -n studylife-scale delete pod redis-cluster-$i
-     kubectl -n studylife-scale rollout status statefulset/redis-cluster --timeout=120s
-     # confirm cluster_state:ok before moving to the next pod:
-     kubectl -n studylife-scale exec redis-cluster-$i -- redis-cli -a <password> --no-auth-warning cluster info | grep cluster_state
+     kubectl -n studylife-scale wait --for=condition=ready pod/redis-cluster-$i --timeout=180s
+     kubectl -n studylife-scale exec redis-cluster-$i -c redis -- redis-cli -a "$PW" --no-auth-warning cluster info | grep cluster_state
    done
    ```
-4. **Nothing to patch on the app side anymore.** Since the 2026-09 audit pass, `Program.cs`
-   reads `Cache:Password` (env `Cache__Password`) and merges it into the Redis connection
-   options, and `k8s/04-web.yaml` / `k8s/05-worker.yaml` already source that variable from the
-   very same `redis-auth` Secret created in step 1 (`secretKeyRef`, `optional: true` - the
-   variable is simply absent while the Secret does not exist). The 2026-08-27 attempt failed
-   exactly here: Redis started requiring a password that the app's connection string never
-   received, so every fresh pod connection crash-looped with NOAUTH and the change had to be
-   reverted (commit ef804ad). With one Secret feeding both sides that drift cannot recur; the
-   connection string itself stays password-free. Verify the wiring BEFORE step 3:
-   ```bash
-   kubectl -n studylife-scale exec deploy/studylife-web -- sh -c 'test -n "$Cache__Password" && echo present'
-   ```
-   (Prints `present` only once the Secret exists AND web has been restarted after creating it -
-   do that restart first, then proceed with the Redis pods in step 3.)
-5. **Restart web and worker** so they pick up the changed ConfigMap (neither watches it live):
-   ```bash
-   kubectl -n studylife-scale rollout restart deployment/studylife-web deployment/studylife-worker
-   ```
-6. **Done** - verify with the existing `ApiVerify` script (registration + read/write + cache
-   consistency) and `kubectl -n studylife-scale logs -l app=studylife-web | grep -i redis` (no
-   `NOAUTH`/connection errors).
+6. **Verify**: `redis-cli ping` → NOAUTH; `redis-cli -a "$PW" --no-auth-warning ping` → PONG;
+   `kubectl -n studylife-scale logs -l app=studylife-web --since=10m | grep -i noauth` → empty;
+   exporter metrics still scraped (`curl localhost:9121/metrics | grep redis_up` inside the pod
+   → `redis_up 1`); `/healthz/ready` 200.
 
-**Rollback path**: revert step 4's ConfigMap patch (drop `password=...`) and restart web/worker
-BEFORE reverting the Redis pods themselves - the app must stop presenting a password before the
-server stops requiring one, otherwise the order is harmless either way in THIS direction (an app
-presenting no password against a server that now requires one simply fails to connect, exactly
-the state before step 1). Reverting the Redis side itself follows the same one-pod-at-a-time
-rollout as step 3, with the manifest's uncommented blocks re-commented (or `kubectl apply` of the
-pre-change file).
-
-**Not implemented, deliberately out of scope**: ACL-based per-application users (ha/ai/mcp/capture
-each get their own Postgres/API-key credential already via `ApiKeyScopes`, but Redis has always
-been a single shared cache with no per-caller isolation need - a single `requirepass` matches the
-actual threat model here, "any reachable pod" vs. "any reachable pod, but also without a
-password").
+**Rollback path**: `CONFIG SET requirepass ""` on every node reopens the default user
+immediately (the app keeps working throughout - it authenticates as `studylife` either way); then
+re-apply the previous `03-redis.yaml` and restart the pods one by one. The ACL user can stay.
 
 ### Prod Secret vs. Learning-Cluster Placeholder (structural fix)
 
