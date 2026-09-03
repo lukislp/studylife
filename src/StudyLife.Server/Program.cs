@@ -323,6 +323,10 @@ if (speechEnabled)
     builder.Services.AddSingleton(new StudyLife.Tts.PiperVoiceRegistry(
         builder.Configuration["Tts:VoicesDirectory"] ?? Path.Combine(builder.Environment.ContentRootPath, "tts-voices")));
     builder.Services.AddSingleton<StudyLife.Tts.EspeakPhonemizer>();
+    // Synthesized audio lives in its own bounded per-pod cache, NOT in IDistributedCache - see
+    // TtsAudioCache for why sharing the LRU pool with login challenges was a problem.
+    builder.Services.AddSingleton(new TtsAudioCache(
+        builder.Configuration.GetValue("Tts:CacheSizeMb", 32) * 1024L * 1024L));
     // Voice dictation: one multilingual Whisper model (see Dockerfile), unlike PiperVoiceRegistry's
     // per-language voices - covers all of StudyLife's languages, so no per-language registry is
     // needed here. Loaded lazily on first use, same as PiperVoiceRegistry (see WhisperTranscriber's
@@ -560,13 +564,17 @@ app.UseWhen(
 // each listing's actual JSON content (GitHub's own contents-API "download_url" always points
 // there, confirmed live). Found via a real browser test, not just a code read-through - Chrome's
 // console names the exact blocked host.
+// Fonts are self-hosted since the 2026-09 audit (wwwroot/fonts, @font-face in base.css) - the
+// former Google Fonts @import cost two extra origins (DNS+TLS each) serialized before the first
+// paint, so fonts.googleapis.com/fonts.gstatic.com are gone from style-src, font-src and
+// connect-src alike; 'self' covers the woff2 files and the service worker fetching them.
 var csp = "default-src 'self'; "
     + "script-src 'self' 'wasm-unsafe-eval'; "
-    + "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-    + "font-src 'self' https://fonts.gstatic.com; "
+    + "style-src 'self' 'unsafe-inline'; "
+    + "font-src 'self'; "
     + "img-src 'self' data:; "
     + "media-src 'self' data:; "
-    + "connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://api.github.com https://raw.githubusercontent.com"
+    + "connect-src 'self' https://api.github.com https://raw.githubusercontent.com"
     + (app.Environment.IsDevelopment() ? " ws: wss:; " : "; ")
     + "base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'";
 app.Use(async (context, next) =>
@@ -600,12 +608,22 @@ app.Use(async (context, next) =>
 // live via a direct authenticated request: still "private, no-cache"). OnStarting is the actual
 // correct primitive for this - it fires right before headers are sent regardless of when exactly
 // that happens, so it reliably runs after any Cache-Control the controller already set.
+// ...but ONLY where the controller set no Cache-Control of its own. The first version of this
+// middleware overwrote unconditionally, which silently killed the whole ETag/304 mechanism in
+// CacheHelper (SessionsController/SettingsController/CoursesController): "no-store" forbids the
+// browser from keeping the response at all, so it never has an ETag to send back as
+// If-None-Match, and every 30s poll and every dashboard navigation re-downloaded the full body
+// (2026-09 audit L1). CacheHelper's "private, no-cache" already forces revalidation on every
+// use - which is exactly what protects the native app's NSURLCache from serving stale data, the
+// original reason for this middleware. Heuristic caching (the actual bug) only ever applies to
+// responses WITHOUT an explicit directive, and those still get no-store here.
 app.Use((context, next) =>
 {
     if (context.Request.Path.StartsWithSegments("/api"))
         context.Response.OnStarting(() =>
         {
-            context.Response.Headers.CacheControl = "no-store";
+            if (Microsoft.Extensions.Primitives.StringValues.IsNullOrEmpty(context.Response.Headers.CacheControl))
+                context.Response.Headers.CacheControl = "no-store";
             return Task.CompletedTask;
         });
     return next();

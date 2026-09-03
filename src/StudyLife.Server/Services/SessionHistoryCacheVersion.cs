@@ -1,14 +1,17 @@
+using System.Globalization;
+
 namespace StudyLife.Server.Services;
 
 /// <summary>
-/// Singleton counter folded into the GetHistory cache key. SessionsController is transient
-/// per-request, so a plain field there wouldn't survive across requests - bumping this on every
-/// write makes previously cached entries unreachable (and eventually evicted) without having to
-/// enumerate/remove individual cache keys for every days/onlyCompleted combination.
+/// Per-user counter folded into the Sessions/History cache keys (SessionsController). The
+/// controller is transient per request, so a plain field there wouldn't survive across
+/// requests - bumping this on every session write makes the previously cached entry (and the
+/// ETag derived from the same key) unreachable for THAT user without touching the cache
+/// directly. Other users' entries stay valid: the counter is keyed by AuthUserId (2026-09 audit
+/// P4), and every access is async end to end (P3) instead of blocking on a Redis round trip.
 ///
-/// Thin synchronous facade around <see cref="IVersionCounter"/> (in-memory in single-instance
-/// mode, Redis in multi-pod mode - see Program.cs) - see the IVersionCounter comment for the
-/// design rationale behind the synchronous GetAwaiter().GetResult() delegation.
+/// Thin facade around <see cref="IVersionCounter"/> (in-memory in single-instance mode, Redis in
+/// multi-pod mode - see Program.cs).
 /// </summary>
 public class SessionHistoryCacheVersion
 {
@@ -19,15 +22,11 @@ public class SessionHistoryCacheVersion
         _counter = counter;
     }
 
-    /// <summary>
-    /// Read: current counter value. Write (only used via <c>Value++</c>): atomically increments
-    /// the counter by 1 - the "new" value the compiler computes for <c>Value++</c> is
-    /// deliberately ignored, so that even in Redis mode IncrementAsync (a real atomic INCR) is
-    /// used instead of a racy read-modify-write.
-    /// </summary>
-    public int Value
-    {
-        get => _counter.GetValueAsync().GetAwaiter().GetResult();
-        set => _counter.IncrementAsync().GetAwaiter().GetResult();
-    }
+    public Task<int> GetAsync(int authUserId) => _counter.GetValueAsync(Key(authUserId));
+
+    /// <summary>Atomically increments the user's counter (a real INCR in Redis mode, never a
+    /// racy read-modify-write) - call after every write that changes that user's sessions.</summary>
+    public Task<int> BumpAsync(int authUserId) => _counter.IncrementAsync(Key(authUserId));
+
+    private static string Key(int authUserId) => authUserId.ToString(CultureInfo.InvariantCulture);
 }

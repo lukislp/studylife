@@ -3,8 +3,8 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Distributed;
 using StudyLife.Server.Data;
+using StudyLife.Server.Services;
 using StudyLife.Tts;
 
 namespace StudyLife.Server.Controllers;
@@ -53,10 +53,10 @@ public class TtsController : ControllerBase
     // DatabaseBackupService?/DatabaseRestoreService? for the Postgres case.
     private readonly PiperVoiceRegistry? _voices;
     private readonly EspeakPhonemizer? _phonemizer;
-    private readonly IDistributedCache _cache;
+    private readonly TtsAudioCache? _cache;
 
-    public TtsController(StudyLifeDb db, IDistributedCache cache,
-        PiperVoiceRegistry? voices = null, EspeakPhonemizer? phonemizer = null)
+    public TtsController(StudyLifeDb db,
+        PiperVoiceRegistry? voices = null, EspeakPhonemizer? phonemizer = null, TtsAudioCache? cache = null)
     {
         _db = db;
         _cache = cache;
@@ -69,7 +69,7 @@ public class TtsController : ControllerBase
     {
         // Speech:Enabled=false (Program.cs) - checked first, before any DB/argument work, same
         // as BackupController's IsRawBackupAvailable check.
-        if (_voices is null || _phonemizer is null)
+        if (_voices is null || _phonemizer is null || _cache is null)
             return NotFound(new { error = "text-to-speech is not available on this server" });
 
         if (string.IsNullOrWhiteSpace(lang))
@@ -87,8 +87,7 @@ public class TtsController : ControllerBase
             return NotFound(new { error = "note has no readable content" });
 
         var cacheKey = CacheKey(lang, text);
-        var cached = await _cache.GetAsync(cacheKey);
-        if (cached != null) return File(cached, "audio/wav");
+        if (_cache.TryGet(cacheKey, out var cached)) return File(cached, "audio/wav");
 
         var phonemizer = _phonemizer;
         var cache = _cache;
@@ -117,13 +116,13 @@ public class TtsController : ControllerBase
     // handled short ones. TextChunker bounds each call's input length regardless of how long
     // the overall note is, and carries the pause length (sentence vs. clause-level punctuation)
     // through to PiperVoice so it can insert the right gap between the resulting audio segments.
-    private static async Task<byte[]> SynthesizeAndCache(
-        string cacheKey, string text, PiperVoice voice, EspeakPhonemizer phonemizer, IDistributedCache cache)
+    private static byte[] SynthesizeAndCache(
+        string cacheKey, string text, PiperVoice voice, EspeakPhonemizer phonemizer, TtsAudioCache cache)
     {
         var phonemeChunks = TextChunker.Chunk(text)
             .Select(chunk => (Phonemes: phonemizer.Phonemize(chunk.Text, voice.EspeakVoice), chunk.LongPause));
         var wav = voice.SynthesizeWav(phonemeChunks);
-        await cache.SetAsync(cacheKey, wav, new DistributedCacheEntryOptions().SetAbsoluteExpiration(CacheTtl));
+        cache.Set(cacheKey, wav, CacheTtl);
         return wav;
     }
 

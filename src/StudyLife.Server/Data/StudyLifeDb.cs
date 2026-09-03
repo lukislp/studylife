@@ -84,7 +84,18 @@ public class StudyLifeDb : DbContext
         // otherwise, in phase 2, a second user couldn't e.g. create a goal for the same
         // CourseId (or their "weeklyreport:<week>" SentReminder insert would collide).
         modelBuilder.Entity<CourseGoalEntity>().HasIndex(g => new { g.AuthUserId, g.CourseId }).IsUnique();
-        modelBuilder.Entity<StudySessionEntity>().HasIndex(s => s.StartTime);
+        // Hot-path indexes (2026-09 audit P1). Every read of these tables goes through the
+        // AuthUserId global query filter below, and the session queries additionally range on
+        // StartTime - without a leading AuthUserId column that is a sequential scan over ALL
+        // tenants' rows on every dashboard load, every 30s poll and every worker tick. The
+        // former single-column StartTime index is replaced by the composite (a leading
+        // AuthUserId equality plus StartTime range/order is exactly what the planner wants).
+        modelBuilder.Entity<StudySessionEntity>().HasIndex(s => new { s.AuthUserId, s.StartTime });
+        modelBuilder.Entity<NoteEntity>().HasIndex(n => new { n.AuthUserId, n.UpdatedAt });
+        modelBuilder.Entity<NoteEntity>().HasIndex(n => new { n.AuthUserId, n.CourseId });
+        modelBuilder.Entity<StudyProgramEntity>().HasIndex(p => p.AuthUserId);
+        modelBuilder.Entity<SessionTemplateEntity>().HasIndex(t => t.AuthUserId);
+        modelBuilder.Entity<CustomCourseEntity>().HasIndex(c => c.AuthUserId);
         modelBuilder.Entity<SentReminderEntity>().HasIndex(r => new { r.AuthUserId, r.Key }).IsUnique();
         // Security/multi-user fix: PushSubscriptionEntity.Endpoint was originally GLOBALLY unique
         // ("one push endpoint belongs to exactly one browser profile") - that only held as long as a

@@ -35,11 +35,11 @@ public class SettingsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<UserSettingsDto>> Get()
     {
-        var cacheKey = $"settings:{_currentUser.AuthUserId}:{_settingsCacheVersion.Value}";
-        // 15s TTL - half the 30s client poll interval, so near-simultaneous polls from
-        // multiple open clients collapse onto one query while real changes still show
-        // up within about one poll cycle.
-        var result = await _cache.GetOrSetAsync(this, cacheKey, TimeSpan.FromSeconds(15), async () =>
+        var cacheKey = $"settings:{_currentUser.AuthUserId}:{await _settingsCacheVersion.GetAsync(_currentUser.AuthUserId)}";
+        // The key changes on every write (per-user version counter), so the TTL is only a memory
+        // bound. 15s used to expire before the 30s client poll ever came back - see
+        // SessionsController.GetAll for the full reasoning behind ten minutes.
+        var result = await _cache.GetOrSetAsync(this, cacheKey, TimeSpan.FromMinutes(10), async () =>
         {
             var entity = await _db.Settings.AsNoTracking().FirstOrDefaultAsync()
                 ?? new UserSettingsEntity();
@@ -159,7 +159,7 @@ public class SettingsController : ControllerBase
         // Token=null).
         entity.Version++;
         await _db.SaveChangesAsync();
-        _settingsCacheVersion.Value++;
+        await _settingsCacheVersion.BumpAsync(_currentUser.AuthUserId);
         return ToDto(entity);
     }
 
@@ -181,7 +181,7 @@ public class SettingsController : ControllerBase
         entity.ProgressShareEnabled = true;
         entity.ProgressShareToken = GenerateShareToken();
         await _db.SaveChangesAsync();
-        _settingsCacheVersion.Value++;
+        await _settingsCacheVersion.BumpAsync(_currentUser.AuthUserId);
         return ToDto(entity);
     }
 
@@ -201,7 +201,7 @@ public class SettingsController : ControllerBase
         entity.ProgressShareEnabled = false;
         entity.ProgressShareToken = null;
         await _db.SaveChangesAsync();
-        _settingsCacheVersion.Value++;
+        await _settingsCacheVersion.BumpAsync(_currentUser.AuthUserId);
         return ToDto(entity);
     }
 
@@ -219,7 +219,7 @@ public class SettingsController : ControllerBase
         entity.ProgressShareToken = GenerateShareToken();
         entity.ProgressShareEnabled = true;
         await _db.SaveChangesAsync();
-        _settingsCacheVersion.Value++;
+        await _settingsCacheVersion.BumpAsync(_currentUser.AuthUserId);
         return ToDto(entity);
     }
 
