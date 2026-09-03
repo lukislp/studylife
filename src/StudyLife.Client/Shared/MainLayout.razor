@@ -275,9 +275,13 @@
             // to every cold start before the shell painted (2026-09 audit L6).
             var updateCheckTask = CheckForClientUpdateAsync();
             var notificationsTask = Notifications.InitializeAsync();
-            // Telemetry phase 2 (docs/ARCHITECTURE.md "Telemetry"): reads settings itself (shared,
-            // deduped fetch with settingsTask above), so it can run alongside everything else here.
-            var telemetryInitTask = Telemetry.InitializeAsync();
+            // Telemetry phase 2 (docs/ARCHITECTURE.md "Telemetry"): deliberately NOT awaited
+            // anywhere in this startup sequence. It fetches api/system/capabilities (sample rate)
+            // and the settings (consent) - a full round trip that visibly delayed the first paint
+            // of the native app on the first evening of phase 2. TelemetryService buffers every
+            // event until that initialisation has decided the session, so nothing is lost by
+            // letting it finish in the background.
+            _ = Telemetry.InitializeAsync();
 
             _clockTimer = new System.Threading.Timer(_ => _ = InvokeAsync(OnClockTickAsync), null, 0, 10000);
             await CheckActive();
@@ -307,7 +311,6 @@
             // TelemetryController drops everything from a demo instance regardless).
             _showTelemetryConsentModal = !_demoMode && settings.TelemetryConsent is null;
             await updateCheckTask;
-            await telemetryInitTask;
             // Server declared the passkey session invalid via 401 (SessionHandler has already
             // discarded the token) - redirect to the login page. This is the ONLY path that
             // triggers a logout; network errors/timeouts never touch the token.
