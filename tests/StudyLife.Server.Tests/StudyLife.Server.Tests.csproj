@@ -29,7 +29,7 @@
     <!-- StackExchange.Redis's IDatabase is too large to hand-stub in this codebase's usual style
          (see RedisVersionCounterTests/RedisWorkerShardClaimTests) - NSubstitute is the only
          production-code-free way to mock it. -->
-    <PackageReference Include="NSubstitute" Version="6.0.0" />
+    <PackageReference Include="NSubstitute" Version="6.2.0" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
