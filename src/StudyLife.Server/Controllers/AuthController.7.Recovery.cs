@@ -84,7 +84,14 @@ public partial class AuthController
         if (code is null) return Unauthorized();
 
         var now = DateTime.UtcNow;
-        code.UsedAt = now;
+        // Atomic single-use claim (2026-09 audit S13): the read above and this conditional UPDATE
+        // are two statements, so two concurrent redemptions of the same code both pass the read -
+        // only one of them wins the UPDATE, the other sees 0 rows and gets the same 401 as an
+        // already-used code. Same pattern as RegistrationGateService.TryConsumeInviteAsync.
+        var claimed = await _db.RecoveryCodes
+            .Where(c => c.Id == code.Id && c.UsedAt == null)
+            .ExecuteUpdateAsync(s => s.SetProperty(c => c.UsedAt, now));
+        if (claimed == 0) return Unauthorized();
         var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == code.AuthUserId);
         // A recovery login IS the "I lost the device that was signed in" case - every session
         // that device (or anyone holding its token) still has must die with it. Done before the

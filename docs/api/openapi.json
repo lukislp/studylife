@@ -5301,9 +5301,11 @@
         "type": "object",
         "properties": {
           "redirectUri": {
+            "maxLength": 2048,
             "type": "string"
           },
           "state": {
+            "maxLength": 1000,
             "type": "string"
           }
         }
@@ -5437,6 +5439,7 @@
             "format": "int32"
           },
           "courseName": {
+            "maxLength": 200,
             "type": "string"
           },
           "targetDate": {
@@ -5447,6 +5450,7 @@
             "format": "date-time"
           },
           "completionNote": {
+            "maxLength": 5000,
             "type": [
               "null",
               "string"
@@ -5469,9 +5473,11 @@
             "format": "double"
           },
           "completedTopics": {
+            "maxLength": 10000,
             "type": "string"
           },
           "tag": {
+            "maxLength": 100,
             "type": [
               "null",
               "string"
@@ -5544,9 +5550,11 @@
             "format": "int32"
           },
           "title": {
+            "maxLength": 500,
             "type": "string"
           },
           "url": {
+            "maxLength": 2048,
             "type": "string"
           },
           "createdAt": {
@@ -5569,18 +5577,22 @@
             "type": "string"
           },
           "name": {
+            "maxLength": 100,
             "type": "string"
           },
           "description": {
+            "maxLength": 2000,
             "type": "string"
           },
           "allowedRedirectUris": {
+            "maxItems": 20,
             "type": "array",
             "items": {
               "type": "string"
             }
           },
           "requestedScopes": {
+            "maxItems": 100,
             "type": "array",
             "items": {
               "type": "string"
@@ -5639,15 +5651,19 @@
             "format": "int32"
           },
           "name": {
+            "maxLength": 200,
             "type": "string"
           },
           "code": {
+            "maxLength": 50,
             "type": "string"
           },
           "color": {
+            "maxLength": 32,
             "type": "string"
           },
           "icon": {
+            "maxLength": 50,
             "type": "string"
           },
           "ects": {
@@ -5659,6 +5675,7 @@
             "format": "int32"
           },
           "group": {
+            "maxLength": 200,
             "type": [
               "null",
               "string"
@@ -5680,6 +5697,7 @@
         "type": "object",
         "properties": {
           "name": {
+            "maxLength": 200,
             "type": "string"
           },
           "ectsQuota": {
@@ -5701,6 +5719,7 @@
         "type": "object",
         "properties": {
           "name": {
+            "maxLength": 200,
             "type": "string"
           },
           "groups": {
@@ -5765,9 +5784,11 @@
         "type": "object",
         "properties": {
           "targetUrl": {
+            "maxLength": 2048,
             "type": "string"
           },
           "events": {
+            "maxItems": 50,
             "type": "array",
             "items": {
               "type": "string"
@@ -5922,21 +5943,26 @@
         "type": "object",
         "properties": {
           "clientId": {
+            "maxLength": 100,
             "type": "string"
           },
           "name": {
+            "maxLength": 100,
             "type": "string"
           },
           "description": {
+            "maxLength": 2000,
             "type": "string"
           },
           "allowedRedirectUris": {
+            "maxItems": 20,
             "type": "array",
             "items": {
               "type": "string"
             }
           },
           "requestedScopes": {
+            "maxItems": 100,
             "type": "array",
             "items": {
               "type": "string"
@@ -5975,6 +6001,7 @@
         "type": "object",
         "properties": {
           "code": {
+            "maxLength": 50,
             "type": "string"
           }
         }
@@ -6113,9 +6140,11 @@
         "type": "object",
         "properties": {
           "redirectUri": {
+            "maxLength": 2048,
             "type": "string"
           },
           "state": {
+            "maxLength": 1000,
             "type": "string"
           }
         }
@@ -6204,9 +6233,11 @@
         "type": "object",
         "properties": {
           "redirectUri": {
+            "maxLength": 2048,
             "type": "string"
           },
           "state": {
+            "maxLength": 1000,
             "type": "string"
           }
         }
@@ -6266,12 +6297,15 @@
         "type": "object",
         "properties": {
           "clientId": {
+            "maxLength": 100,
             "type": "string"
           },
           "redirectUri": {
+            "maxLength": 2048,
             "type": "string"
           },
           "state": {
+            "maxLength": 1000,
             "type": "string"
           }
         }
@@ -6407,6 +6441,7 @@
         "type": "object",
         "properties": {
           "token": {
+            "maxLength": 512,
             "type": [
               "null",
               "string"
@@ -6487,9 +6522,11 @@
         "type": "object",
         "properties": {
           "redirectUri": {
+            "maxLength": 2048,
             "type": "string"
           },
           "state": {
+            "maxLength": 1000,
             "type": "string"
           }
         }
@@ -7126,9 +7163,11 @@
             "format": "int32"
           },
           "title": {
+            "maxLength": 500,
             "type": "string"
           },
           "content": {
+            "maxLength": 1000000,
             "type": "string"
           },
           "createdAt": {
@@ -7161,24 +7200,28 @@
             "type": "boolean"
           },
           "sourceUrl": {
+            "maxLength": 2048,
             "type": [
               "null",
               "string"
             ]
           },
           "tags": {
+            "maxLength": 2000,
             "type": [
               "null",
               "string"
             ]
           },
           "summary": {
+            "maxLength": 10000,
             "type": [
               "null",
               "string"
             ]
           },
           "relatedNoteIds": {
+            "maxItems": 100,
             "type": "array",
             "items": {
               "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -7309,15 +7352,18 @@
         "type": "object",
         "properties": {
           "displayName": {
+            "maxLength": 100,
             "type": "string"
           },
           "setupSecret": {
+            "maxLength": 200,
             "type": [
               "null",
               "string"
             ]
           },
           "inviteToken": {
+            "maxLength": 500,
             "type": [
               "null",
               "string"
@@ -7347,6 +7393,7 @@
         "type": "object",
         "properties": {
           "label": {
+            "maxLength": 100,
             "type": "string"
           }
         }
@@ -7363,6 +7410,7 @@
         "type": "object",
         "properties": {
           "name": {
+            "maxLength": 100,
             "type": "string"
           },
           "icon": {
@@ -7510,6 +7558,7 @@
         "type": "object",
         "properties": {
           "code": {
+            "maxLength": 50,
             "type": [
               "null",
               "string"
@@ -7610,6 +7659,7 @@
             "format": "int32"
           },
           "name": {
+            "maxLength": 200,
             "type": "string"
           },
           "courseId": {
@@ -7621,9 +7671,11 @@
             "format": "int32"
           },
           "courseName": {
+            "maxLength": 200,
             "type": "string"
           },
           "courseColor": {
+            "maxLength": 32,
             "type": "string"
           },
           "durationMinutes": {
@@ -7635,6 +7687,7 @@
             "format": "int32"
           },
           "topic": {
+            "maxLength": 500,
             "type": [
               "null",
               "string"
@@ -7792,9 +7845,11 @@
             "format": "int32"
           },
           "courseName": {
+            "maxLength": 200,
             "type": "string"
           },
           "courseColor": {
+            "maxLength": 32,
             "type": "string"
           },
           "startTime": {
@@ -7806,12 +7861,14 @@
             "format": "date-time"
           },
           "topic": {
+            "maxLength": 500,
             "type": [
               "null",
               "string"
             ]
           },
           "notes": {
+            "maxLength": 10000,
             "type": [
               "null",
               "string"
@@ -7829,6 +7886,7 @@
             "format": "int32"
           },
           "recurrenceGroupId": {
+            "maxLength": 100,
             "type": [
               "null",
               "string"
@@ -7990,9 +8048,11 @@
         "type": "object",
         "properties": {
           "redirectUri": {
+            "maxLength": 2048,
             "type": "string"
           },
           "state": {
+            "maxLength": 1000,
             "type": "string"
           }
         }
@@ -8085,6 +8145,7 @@
             "format": "int32"
           },
           "selectedCourseIds": {
+            "maxItems": 2000,
             "type": "array",
             "items": {
               "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -8096,6 +8157,7 @@
             }
           },
           "completedCourseIds": {
+            "maxItems": 2000,
             "type": "array",
             "items": {
               "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -8107,9 +8169,11 @@
             }
           },
           "theme": {
+            "maxLength": 50,
             "type": "string"
           },
           "accentColor": {
+            "maxLength": 32,
             "type": "string"
           },
           "autoSwitchFocus": {
@@ -8124,12 +8188,15 @@
             "format": "int32"
           },
           "motivationalStyle": {
+            "maxLength": 50,
             "type": "string"
           },
           "sessionReminderMinutes": {
+            "maxLength": 200,
             "type": "string"
           },
           "courseGoalReminderDays": {
+            "maxLength": 200,
             "type": "string"
           },
           "inactivityThresholdDays": {
@@ -8157,6 +8224,7 @@
             "format": "int32"
           },
           "studyDays": {
+            "maxLength": 100,
             "type": "string"
           },
           "targetGraduationDate": {
@@ -8167,6 +8235,7 @@
             "format": "date-time"
           },
           "customTimerModes": {
+            "maxLength": 20000,
             "type": "string"
           },
           "weeklyGoalMinHours": {
@@ -8242,6 +8311,7 @@
             "type": "boolean"
           },
           "progressShareToken": {
+            "maxLength": 200,
             "type": [
               "null",
               "string"

@@ -19,6 +19,7 @@ namespace StudyLife.Server.Controllers;
 [ApiController]
 [Route("api/ai")]
 [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+[Microsoft.AspNetCore.RateLimiting.EnableRateLimiting(RateLimitPolicies.Expensive)]
 public class AiProxyController : ControllerBase
 {
     private readonly AiProxyClient _client;
