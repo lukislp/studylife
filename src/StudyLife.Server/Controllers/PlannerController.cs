@@ -37,6 +37,7 @@ public class PlannerController : ControllerBase
         _currentUser = currentUser;
     }
 
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting(RateLimitPolicies.Expensive)]
     [HttpPost("exam-plan")]
     public async Task<ActionResult<List<StudySessionDto>>> GenerateExamPlan(ExamPlanRequestDto request)
     {

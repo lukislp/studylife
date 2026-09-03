@@ -46,6 +46,14 @@ builder.Services.AddStudyLifeAuthentication();
 // Funnel for the scalability branch) - stating it explicitly keeps the redirect actually
 // functional instead of just silencing the symptom.
 builder.Services.Configure<HttpsRedirectionOptions>(options => options.HttpsPort = 443);
+// HSTS was on framework defaults (30 days, this host only). A year plus subdomains is the usual
+// production shape; the header is only emitted outside Development (UseHsts below) and only
+// matters when the gateway forwards it, which it does (2026-09 audit M7).
+builder.Services.AddHsts(options =>
+{
+    options.MaxAge = TimeSpan.FromDays(365);
+    options.IncludeSubDomains = true;
+});
 
 // Encrypted hop ingress-nginx -> Kestrel (scalability branch, K8s): WebBackendTls__CertPath/
 // KeyPath (see k8s/04-web.yaml) point to a secret issued by cert-manager from the
@@ -263,6 +271,24 @@ builder.Services.AddRateLimiter(options =>
             ? FixedWindow(context, "recovery|global", permitLimit: 30, TimeSpan.FromMinutes(15))
             : RateLimitPartition.GetNoLimiter("no-limit"));
     options.GlobalLimiter = PartitionedRateLimiter.CreateChained(perClientLimiter, globalRecoveryLimiter);
+
+    // CPU-heavy endpoints (Whisper transcription, Piper synthesis, the AI proxy, the JSON export,
+    // the exam planner) shared the flat 300/min bucket with everything else - 300 concurrent
+    // syntheses per minute from one client would flatten the Pi (2026-09 audit S10/M3). A
+    // per-user concurrency limiter caps how many of them run AT ONCE per pod: two in flight, two
+    // waiting, the rest 429. Keyed by the authenticated user (falls back to the client IP for the
+    // anonymous edge cases), deliberately per process: the work it protects is this pod's CPU.
+    options.AddPolicy(RateLimitPolicies.Expensive, context =>
+    {
+        var key = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+            ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetConcurrencyLimiter($"expensive|{key}", _ => new ConcurrencyLimiterOptions
+        {
+            PermitLimit = 2,
+            QueueLimit = 2,
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+        });
+    });
 });
 
 var dbPath = Path.Combine(builder.Environment.ContentRootPath, "app_data", "studylife.db");
@@ -613,6 +639,9 @@ app.Use(async (context, next) =>
     headers["X-Content-Type-Options"] = "nosniff";
     headers["Referrer-Policy"] = "same-origin";
     headers["X-Frame-Options"] = "DENY";
+    // microphone=(self): voice dictation (DictationController) records in the page itself;
+    // everything else this app never asks for is denied outright, including for embedded frames.
+    headers["Permissions-Policy"] = "camera=(), microphone=(self), geolocation=(), payment=(), usb=(), interest-cohort=()";
     headers["Content-Security-Policy"] = csp;
     await next();
 });

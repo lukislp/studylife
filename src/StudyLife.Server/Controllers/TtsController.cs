@@ -37,6 +37,8 @@ public class TtsController : ControllerBase
     // seem to have landed" reports for notes that had been tested earlier.
     private const int SynthesisVersion = 3;
 
+    private const int MaxSpeechCharacters = 20_000;
+
     // A client retry (or several concurrent readers of the same note) while the first
     // synthesis is still running would otherwise each kick off their own independent ONNX
     // pass over the same content, competing for the same limited Pi CPU instead of just
@@ -64,6 +66,7 @@ public class TtsController : ControllerBase
         _phonemizer = phonemizer;
     }
 
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting(RateLimitPolicies.Expensive)]
     [HttpGet("{id}/tts")]
     public async Task<IActionResult> Synthesize(int id, [FromQuery] string? lang)
     {
@@ -85,6 +88,12 @@ public class TtsController : ControllerBase
         var text = MarkdownToSpeechText.Extract(note.Content, note.IsMarkdown);
         if (string.IsNullOrWhiteSpace(text))
             return NotFound(new { error = "note has no readable content" });
+        // ~20k characters is around 25 minutes of speech and tens of megabytes of WAV; a longer
+        // note would mean thousands of ONNX passes and a response too big to be useful in the
+        // player anyway (2026-09 audit S10). 422 (not 400): the request is well-formed, the note
+        // is just too long to read aloud - the client shows that as a distinct message.
+        if (text.Length > MaxSpeechCharacters)
+            return UnprocessableEntity(new { error = $"note is too long to read aloud (limit {MaxSpeechCharacters} characters)" });
 
         var cacheKey = CacheKey(lang, text);
         if (_cache.TryGet(cacheKey, out var cached)) return File(cached, "audio/wav");

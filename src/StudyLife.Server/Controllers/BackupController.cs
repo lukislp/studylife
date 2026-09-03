@@ -210,6 +210,7 @@ public class BackupController : ControllerBase
     /// Serialized with the SAME JsonSerializerOptions the framework itself uses for every other
     /// endpoint (_jsonOptions) - the fix for the casing bug.
     /// </summary>
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting(RateLimitPolicies.Expensive)]
     [HttpGet("export")]
     public async Task<IActionResult> Export()
     {
@@ -318,6 +319,7 @@ public class BackupController : ControllerBase
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("import-json")]
     [RequestSizeLimit(MaxImportJsonBytes)]
+    [RejectOversizedBody(MaxImportJsonBytes)]
     public async Task<ActionResult<BackupImportResponseDto>> ImportJson([FromBody] BackupExportDto import)
     {
         // Defense in depth alongside [RequestSizeLimit] above (which only takes full effect

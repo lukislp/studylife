@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using StudyLife.Shared;
 using StudyLife.Stt;
 
+using StudyLife.Server.Services;
+
 namespace StudyLife.Server.Controllers;
 
 /// <summary>
@@ -30,6 +32,7 @@ public class DictationController : ControllerBase
     /// 2-letter language code to bias decoding toward (same convention as TtsController's "lang")
     /// - omitted auto-detects the language instead, at the cost of an extra detection pass.
     /// </param>
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting(RateLimitPolicies.Expensive)]
     [HttpPost]
     [RequestSizeLimit(50L * 1024 * 1024)]
     [RequestFormLimits(MultipartBodyLengthLimit = 50L * 1024 * 1024)]
