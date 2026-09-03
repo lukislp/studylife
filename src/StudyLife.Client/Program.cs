@@ -82,6 +82,7 @@ try
     // controls (especially the calendar time picker, <input type="datetime-local">) in
     // English format (AM/PM) instead of 24h, regardless of the selected UI language.
     var currentLanguage = await i18nText.GetCurrentLanguageAsync();
+    LocalDate.Language = currentLanguage;
     await js.InvokeVoidAsync("setDocumentLanguage", currentLanguage);
 }
 catch { /* localStorage not available (e.g. private mode) - app keeps running with browser auto-detection */ }
