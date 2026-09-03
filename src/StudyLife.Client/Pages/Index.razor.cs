@@ -90,19 +90,6 @@ public partial class Index
 
     private string FocusScoreRatioText => string.Format(T.FocusScoreRatioFormat ?? "", _focusScoreStudied, _focusScorePlanned);
 
-    // Forecast text lives inside DashboardProgressCard (Phase 3/goals group), but its value
-    // (_forecastAvailable/_forecastAlreadyDone) is only computed in BuildForecast during Phase 5
-    // (needs _allTimeHistory) - without this guard the card would show "not enough data" for
-    // every user between those two phases, a wrong value that then flips to the real forecast
-    // (exactly what the progressive-render rework must avoid).
-    private string ForecastText => _achievementsLoading
-        ? "…"
-        : _forecastAlreadyDone
-            ? T.ForecastAlreadyDone ?? ""
-            : _forecastAvailable
-                ? string.Format(T.ForecastCompletionText ?? "", _forecastDateLabel)
-                : T.ForecastNotEnoughData ?? "";
-
     private List<DashboardTrendChart.WeekTrend> _weeklyTrend = new();
 
     private List<DashboardUpcomingGoalsCard.UpcomingGoal> _upcomingGoals = new();
@@ -185,16 +172,6 @@ public partial class Index
     private I18nLanguageWatcher _langWatcher = null!;
     private Task<bool>? _isOwnerTask;
 
-    // Progressive render (2026-09 audit): default true so the FIRST LoadDataAsync run shows a
-    // skeleton for the cards each flag covers instead of their zero/empty field defaults. A
-    // refresh (OnSessionsChanged/OnSettingsChanged) never resets these back to true - the already
-    // rendered data stays visible while newer data replaces it, matching every other page's
-    // refresh behaviour (no flicker back to a loading state).
-    private bool _sessionsLoading = true;
-    private bool _goalsLoading = true;
-    private bool _healthLoading = true;
-    private bool _achievementsLoading = true;
-
     protected override Task OnInitializingAsync()
     {
         State.OnSessionsChanged += OnSessionsChanged;
@@ -271,13 +248,6 @@ public partial class Index
         // adds up to multiple real seconds once server round-trip time is non-trivial (e.g. the
         // public demo). dueForHeavyRefresh only touches local fields/the method parameter (no
         // I/O), so it's safe to compute this early too, to decide whether to start that fetch.
-        //
-        // The awaits below are grouped into phases instead of one long sequential chain (2026-09
-        // progressive-render audit): each phase renders (StateHasChanged) as soon as its own data
-        // is ready, so the page fills in card by card instead of staying blank until the slowest
-        // fetch (GET api/sessions/history, ~500ms measured on a phone) has returned. The tasks
-        // themselves already started above/below regardless of phase order, so this only changes
-        // WHEN each result is awaited/rendered, never what is fetched.
         var settingsTask = State.GetSettingsAsync();
         var coursesTask = State.GetCoursesAsync();
         var sessionsTask = State.GetSessionsAsync();
@@ -298,9 +268,6 @@ public partial class Index
             ? State.GetHistoryAsync(AchievementHistoryDays)
             : null;
 
-        // ── Phase 1: cheapest prerequisites - settings + courses. Everything below depends on at
-        // least one of these two, so this is the earliest the page can show anything real (the
-        // course list itself, plus activeCourseIds needed to scope every later fetch).
         var settings = await settingsTask;
         var allCourses = await coursesTask;
         _courses = allCourses.Where(c => settings.SelectedCourseIds.Contains(c.Id)).ToList();
@@ -312,10 +279,7 @@ public partial class Index
         // the course list and ECTS. Custom course ids never collide with the built-in
         // catalog (1-62) thanks to CustomCourseIdOffset (100000+), so the filter is unambiguous.
         var activeCourseIds = allCourses.Select(c => c.Id).ToHashSet();
-        await InvokeAsync(StateHasChanged);
 
-        // ── Phase 2: sessions/history-driven tiles (today/next session, week stats, quotas,
-        // trend, today ring, recent sessions, donut, neglected course, insights, latest note).
         // Also scope the near-term data (today/active/upcoming): a session from another
         // programme showing up as "today's session" would be just as confusing as its history in the charts.
         var sessions = (await sessionsTask).Where(s => activeCourseIds.Contains(s.CourseId)).ToList();
@@ -499,6 +463,40 @@ public partial class Index
             .Select(FromHistoryDto)
             .ToList();
 
+        // Active-programme scope: goals/grades from other programmes must not factor into either
+        // the average grade or the upcoming deadlines (same activeCourseIds set
+        // as above for history/sessions).
+        var goals = (await goalsTask ?? new())
+            .Where(g => activeCourseIds.Contains(g.CourseId))
+            .ToList();
+        _courseTags = goals.ToDictionary(g => g.CourseId, g => g.Tag);
+        _courseDeadlineDays = goals
+            .Where(g => g.TargetDate.HasValue && g.CompletedAt == null)
+            .Select(g => new { g.CourseId, Days = (g.TargetDate!.Value.Date - today).Days })
+            .Where(x => x.Days <= CourseDeadlineCutoffDays)
+            .ToDictionary(x => x.CourseId, x => x.Days);
+        _upcomingGoals = StudyMetrics.CalcUpcomingCourseGoals(goals, today)
+            .Select(g => new DashboardUpcomingGoalsCard.UpcomingGoal(g.CourseName, g.TargetDate))
+            .ToList();
+
+        // ECTS & average grade (mirrors Stats.razor's Ects-weighted calculation).
+        // Programme-aware: the group quotas of the ACTIVE programme (built-in: the static
+        // CourseCatalog.GroupEctsQuotas; custom: fetched per programme via AppStateService).
+        var groupQuotas = await groupQuotasTask;
+        _ectsTotal = CourseCatalog.CalcTotalEcts(allCourses, groupQuotas);
+        _ectsEarned = CourseCatalog.CalcEctsEarned(allCourses, settings.CompletedCourseIds, groupQuotas);
+        _ectsPercent = _ectsTotal > 0 ? Math.Min(100.0, _ectsEarned / (double)_ectsTotal * 100) : 0;
+
+        var averageGrade = StudyMetrics.CalcWeightedAverageGrade(goals
+            .Where(g => g.Grade.HasValue)
+            .Select(g => new StudyMetrics.GradedCourse(g.Grade!.Value, allCourses.FirstOrDefault(c => c.Id == g.CourseId)?.Ects ?? 5)));
+        _averageGradeLabel = averageGrade.HasValue ? StudyMetrics.FormatGrade(averageGrade.Value) : "–";
+
+        var topics = StudyMetrics.CalcTopicsProgress(allCourses, settings.SelectedCourseIds, goals);
+        _topicsCompleted = topics.Completed;
+        _topicsTotal = topics.Total;
+        _topicsPercent = topics.Percent;
+
         // Today's ring - same "all sessions, not IsCompleted-filtered" semantics as the week/trend tiles above.
         // Daily target derived from the weekly quota (25-30h/week ÷ 7).
         var todayMinutes = _todaySessions.Sum(s => (s.EndTime - s.StartTime).TotalMinutes);
@@ -539,75 +537,16 @@ public partial class Index
             _productivityShowPlanLink = false;
         }
         await BuildLatestNoteAsync(allCourses);
-
-        _sessionsLoading = false;
-        await InvokeAsync(StateHasChanged);
-
-        // ── Phase 3: goals/programs/quotas (upcoming goals, ECTS/avg grade, topics progress).
-        // Active-programme scope: goals/grades from other programmes must not factor into either
-        // the average grade or the upcoming deadlines (same activeCourseIds set
-        // as above for history/sessions).
-        var goals = (await goalsTask ?? new())
-            .Where(g => activeCourseIds.Contains(g.CourseId))
-            .ToList();
-        _courseTags = goals.ToDictionary(g => g.CourseId, g => g.Tag);
-        _courseDeadlineDays = goals
-            .Where(g => g.TargetDate.HasValue && g.CompletedAt == null)
-            .Select(g => new { g.CourseId, Days = (g.TargetDate!.Value.Date - today).Days })
-            .Where(x => x.Days <= CourseDeadlineCutoffDays)
-            .ToDictionary(x => x.CourseId, x => x.Days);
-        _upcomingGoals = StudyMetrics.CalcUpcomingCourseGoals(goals, today)
-            .Select(g => new DashboardUpcomingGoalsCard.UpcomingGoal(g.CourseName, g.TargetDate))
-            .ToList();
-
-        // ECTS & average grade (mirrors Stats.razor's Ects-weighted calculation).
-        // Programme-aware: the group quotas of the ACTIVE programme (built-in: the static
-        // CourseCatalog.GroupEctsQuotas; custom: fetched per programme via AppStateService).
-        var groupQuotas = await groupQuotasTask;
-        _ectsTotal = CourseCatalog.CalcTotalEcts(allCourses, groupQuotas);
-        _ectsEarned = CourseCatalog.CalcEctsEarned(allCourses, settings.CompletedCourseIds, groupQuotas);
-        _ectsPercent = _ectsTotal > 0 ? Math.Min(100.0, _ectsEarned / (double)_ectsTotal * 100) : 0;
-
-        var averageGrade = StudyMetrics.CalcWeightedAverageGrade(goals
-            .Where(g => g.Grade.HasValue)
-            .Select(g => new StudyMetrics.GradedCourse(g.Grade!.Value, allCourses.FirstOrDefault(c => c.Id == g.CourseId)?.Ects ?? 5)));
-        _averageGradeLabel = averageGrade.HasValue ? StudyMetrics.FormatGrade(averageGrade.Value) : "–";
-
-        var topics = StudyMetrics.CalcTopicsProgress(allCourses, settings.SelectedCourseIds, goals);
-        _topicsCompleted = topics.Completed;
-        _topicsTotal = topics.Total;
-        _topicsPercent = topics.Percent;
-
-        // Programmes-completed achievement: counts across ALL of the user's programmes (deliberately
-        // NOT scoped to activeCourseIds - "how many programmes have you completed in total"
-        // is by definition a cross-programme milestone). IsCompleted is
-        // a purely manual flag (StudyProgramsController), the built-in programme never counts
-        // (no DB entry, IsCompleted always false). Small/cheap enough to
-        // refetch on every reload instead of hiding it behind refreshHeavyHistory. Only consumed
-        // later by BuildAchievements (Phase 5) - fetched here anyway since it's cheap and belongs
-        // conceptually with the other goals/programs/quotas data.
-        var studyPrograms = await studyProgramsTask ?? new();
-        _programsCompleted = studyPrograms.Count(p => p.IsCompleted);
-
-        _goalsLoading = false;
-        await InvokeAsync(StateHasChanged);
-
-        // ── Phase 4: health tiles (HealthKit HRV/sleep - native-app-only, can be genuinely slow
-        // on-device; resolves instantly to null on the web client, see hrvTask/sleepNightsTask above).
         BuildReadinessScore(await hrvTask);
         BuildSleepConsistency(await sleepNightsTask);
 
-        _healthLoading = false;
-        await InvokeAsync(StateHasChanged);
-
-        // ── Phase 5: achievements/heavy history. Deliberately a separate, much longer-range fetch
-        // than `history` (HistoryDays = 400) above - achievements and the month/year comparison are
-        // meant to reflect the whole journey, not just the last ~13 months. Shared between both so
-        // it's only fetched once. Only redone when refreshHeavyHistory is requested (session data
-        // actually changed, not a settings-only change) AND at least HeavyFetchThrottle has passed
-        // since the last fetch (or this is the first load) - a second safety net so rapid-fire
-        // session edits (e.g. several Focus Timer sessions in a row) don't each re-hammer the
-        // ~10-year endpoint.
+        // Deliberately a separate, much longer-range fetch than `history` (HistoryDays = 400) above -
+        // achievements and the month/year comparison are meant to reflect the whole journey, not just
+        // the last ~13 months. Shared between both so it's only fetched once. Only redone when
+        // refreshHeavyHistory is requested (session data actually changed, not a settings-only change)
+        // AND at least HeavyFetchThrottle has passed since the last fetch (or this is the first load) -
+        // a second safety net so rapid-fire session edits (e.g. several Focus Timer sessions in a row)
+        // don't each re-hammer the ~10-year endpoint.
         if (heavyHistoryTask != null)
         {
             _allTimeHistoryRaw = await heavyHistoryTask ?? new();
@@ -619,13 +558,19 @@ public partial class Index
         // therefore stays gated behind refreshHeavyHistory + throttle.
         _allTimeHistory = _allTimeHistoryRaw.Where(s => activeCourseIds.Contains(s.CourseId)).ToList();
 
+        // Programmes-completed achievement: counts across ALL of the user's programmes (deliberately
+        // NOT scoped to activeCourseIds - "how many programmes have you completed in total"
+        // is by definition a cross-programme milestone). IsCompleted is
+        // a purely manual flag (StudyProgramsController), the built-in programme never counts
+        // (no DB entry, IsCompleted always false). Small/cheap enough to
+        // refetch on every reload instead of hiding it behind refreshHeavyHistory.
+        var studyPrograms = await studyProgramsTask ?? new();
+        _programsCompleted = studyPrograms.Count(p => p.IsCompleted);
+
         BuildAchievements(settings, activeCourseIds);
         BuildMonthComparison();
         BuildBestRecords();
         BuildForecast(settings, allCourses, _allTimeHistory);
-
-        _achievementsLoading = false;
-        await InvokeAsync(StateHasChanged);
     }
 
     private static string FormatHoursLabel(double hours)

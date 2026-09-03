@@ -283,20 +283,11 @@
             // letting it finish in the background.
             _ = Telemetry.InitializeAsync();
 
-            // Cheap and synchronous - safe to do before the minimal await gate below so the very
-            // first render already highlights the right nav item instead of flashing "dashboard"
-            // for a frame on a deep link.
+            _clockTimer = new System.Threading.Timer(_ => _ = InvokeAsync(OnClockTickAsync), null, 0, 10000);
+            await CheckActive();
             Nav.LocationChanged += OnLocationChanged;
             UpdateCurrentPage(Nav.Uri);
-            _clockTimer = new System.Threading.Timer(_ => _ = InvokeAsync(OnClockTickAsync), null, 0, 10000);
-
-            // Minimal render gate (2026-09 progressive-render audit): only what the shell markup
-            // itself reads directly - the i18n table (nav labels/tooltips) and the language it
-            // came from, plus settings for the theme. Everything else that used to be awaited
-            // here (CheckActive, notifications, pending-writes count, demo-mode chip, update
-            // check, app badge, the telemetry "dashboard ready" mark) continues below in
-            // ContinueStartupAsync, which runs detached from this method so the shell (rendered
-            // as soon as this method returns) doesn't wait for any of it.
+            await notificationsTask;
             T = await i18nTask;
             _lang = await currentLanguageTask;
             LocalDate.Language = _lang;
@@ -305,42 +296,6 @@
             // Best-effort: never let a missing/failing JS helper (e.g. stale cached index.html
             // in an installed PWA) crash the whole layout - the CSS default theme applies then.
             try { await JS.InvokeVoidAsync("applyTheme", settings.Theme); } catch { /* ignore */ }
-
-            _ = ContinueStartupAsync(dashboardReadyStopwatch, settings, pendingWritesTask, demoModeTask, updateCheckTask, notificationsTask);
-        }
-        catch (Exception ex)
-        {
-            // Diagnostics for the "unhandled error" banner that had so far only been reproduced
-            // blindly: this startup path runs on EVERY authenticated cold start, and an exception
-            // in it previously went completely unlogged into the Blazor renderer. Same flush
-            // pattern as AppleInAppPasskeys.LogDiag, visible via "devicectl device process launch --console".
-            Console.WriteLine($"[MainLayout.OnInitializedAsync] Error: {ex}");
-            Console.Out.Flush();
-            throw;
-        }
-    }
-
-    /// <summary>Everything after the minimal render gate in <see cref="OnInitializedAsync"/> -
-    /// deliberately not awaited there, so the shell (nav, sidebar, @Body) paints as soon as
-    /// T/language/theme are known instead of waiting for CheckActive/notifications/pending-writes/
-    /// demo-mode/update-check/app-badge too (2026-09 progressive-render audit: those together
-    /// used to add up to the ~1.1s gap between WebView paint and visible dashboard measured via
-    /// client telemetry). Each step below re-renders via InvokeAsync(StateHasChanged) once it has
-    /// something to show; nothing here blocks the caller.</summary>
-    private async Task ContinueStartupAsync(
-        System.Diagnostics.Stopwatch dashboardReadyStopwatch,
-        UserSettings settings,
-        Task<int> pendingWritesTask,
-        Task<bool> demoModeTask,
-        Task updateCheckTask,
-        Task notificationsTask)
-    {
-        try
-        {
-            await CheckActive();
-            await InvokeAsync(StateHasChanged);
-
-            await notificationsTask;
 
             State.OnSessionsChanged += OnSessionsChanged;
             State.OnPendingWritesChanged += OnPendingWritesChanged;
@@ -355,11 +310,7 @@
             // no meaningful account behind the shared demo user to remember an answer for, and
             // TelemetryController drops everything from a demo instance regardless).
             _showTelemetryConsentModal = !_demoMode && settings.TelemetryConsent is null;
-            await InvokeAsync(StateHasChanged);
-
             await updateCheckTask;
-            if (_updateAvailable) await InvokeAsync(StateHasChanged);
-
             // Server declared the passkey session invalid via 401 (SessionHandler has already
             // discarded the token) - redirect to the login page. This is the ONLY path that
             // triggers a logout; network errors/timeouts never touch the token.
@@ -371,11 +322,13 @@
         }
         catch (Exception ex)
         {
-            // Same diagnostics as OnInitializedAsync's catch - this runs detached from the
-            // framework's render pipeline (fire-and-forget from there), so an exception here would
-            // otherwise vanish as an unobserved task exception instead of surfacing anywhere.
-            Console.WriteLine($"[MainLayout.ContinueStartupAsync] Error: {ex}");
+            // Diagnostics for the "unhandled error" banner that had so far only been reproduced
+            // blindly: this startup path runs on EVERY authenticated cold start, and an exception
+            // in it previously went completely unlogged into the Blazor renderer. Same flush
+            // pattern as AppleInAppPasskeys.LogDiag, visible via "devicectl device process launch --console".
+            Console.WriteLine($"[MainLayout.OnInitializedAsync] Error: {ex}");
             Console.Out.Flush();
+            throw;
         }
     }
 
