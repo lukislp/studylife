@@ -36,6 +36,9 @@ public class PushController : ControllerBase
     /// larger is not a real PushSubscription and would only bloat the column.</summary>
     private const int MaxKeyLength = 512;
 
+    private static readonly System.Text.RegularExpressions.Regex ApnsTokenShape =
+        new("^[A-Za-z0-9_-]{8,256}$", System.Text.RegularExpressions.RegexOptions.Compiled);
+
     [HttpPost("subscribe")]
     public async Task<IActionResult> Subscribe(PushSubscribeRequest dto)
     {
@@ -85,7 +88,12 @@ public class PushController : ControllerBase
     [HttpPost("subscribe-apns")]
     public async Task<IActionResult> SubscribeApns(ApnsSubscribeRequest dto)
     {
-        if (string.IsNullOrWhiteSpace(dto.Token)) return BadRequest();
+        // APNs device tokens are opaque hex in practice (Apple says not to assume the length);
+        // what matters here is that the value is interpolated into the APNs request PATH by
+        // ApnsSender, so anything outside a URL-path-safe alphabet - '/', '?', '#', '.' - is
+        // refused (2026-09 audit S13). Path-safe rather than strict hex keeps room for whatever
+        // Apple does next without reopening the injection surface.
+        if (string.IsNullOrWhiteSpace(dto.Token) || !ApnsTokenShape.IsMatch(dto.Token)) return BadRequest();
 
         var syntheticEndpoint = $"apns:{dto.Token}";
         var deviceName = string.IsNullOrWhiteSpace(dto.DeviceName) ? "StudyLife App" : dto.DeviceName.Trim();

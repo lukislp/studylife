@@ -436,7 +436,7 @@ public class SessionsController : ControllerBase
     }
 
     private static string IcsEscape(string value) =>
-        value.Replace("\\", "\\\\").Replace(";", "\\;").Replace(",", "\\,").Replace("\n", "\\n");
+        value.Replace("\r", "").Replace("\\", "\\\\").Replace(";", "\\;").Replace(",", "\\,").Replace("\n", "\\n");
 
     private static string? Validate(StudySessionDto dto)
     {

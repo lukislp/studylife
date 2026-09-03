@@ -23,7 +23,6 @@ public sealed class ApiKeyScopeRequirement : IAuthorizationRequirement;
 /// </summary>
 public sealed class ApiKeyScopeAuthorizationHandler(
     IHttpContextAccessor httpContextAccessor,
-    IConfiguration configuration,
     ILogger<ApiKeyScopeAuthorizationHandler> logger)
     : AuthorizationHandler<ApiKeyScopeRequirement>
 {
@@ -62,31 +61,17 @@ public sealed class ApiKeyScopeAuthorizationHandler(
             return Task.CompletedTask;
         }
 
-        // Rollout escape hatch (audit finding A6 round 2 phase B step 2): default true. While
-        // false, every would-be-denied request is logged but still let through - lets an
-        // operator confirm the matrix against real traffic before it starts actually rejecting
-        // anything. See appsettings.json / docs/ARCHITECTURE.md "Security" for the setting.
-        var enforce = configuration.GetValue("Security:EnforceKeyScopes", true);
+        // The former Security:EnforceKeyScopes=false "log-only" rollout switch is gone (2026-09
+        // audit S12): it was read per request from configuration, so a stray environment
+        // variable silently turned every narrow key - including the browser extension's - back
+        // into a full-API credential with nothing but a warning per request. The scope matrix
+        // has been enforced in production since 2026-08-26; a switch that can only weaken it has
+        // no remaining purpose.
         var endpointLabel = descriptor is not null
             ? $"{descriptor.ControllerName}.{descriptor.ActionName}"
             : httpContext?.Request.Path.Value ?? "(unknown endpoint)";
-
-        if (enforce)
-        {
-            logger.LogWarning(
-                "API key slot {Slot} denied access to {Endpoint} - not in ApiKeyScopes (Security:EnforceKeyScopes=true)",
-                slot, endpointLabel);
-            // Deliberately no context.Fail()/context.Succeed() - see the class comment.
-        }
-        else
-        {
-            logger.LogWarning(
-                "API key slot {Slot} would be DENIED access to {Endpoint} - not in ApiKeyScopes, " +
-                "but Security:EnforceKeyScopes=false (log-only mode) lets it through",
-                slot, endpointLabel);
-            context.Succeed(requirement);
-        }
-
+        logger.LogWarning("API key slot {Slot} denied access to {Endpoint} - not in ApiKeyScopes", slot, endpointLabel);
+        // Deliberately no context.Fail()/context.Succeed() - see the class comment.
         return Task.CompletedTask;
     }
 }

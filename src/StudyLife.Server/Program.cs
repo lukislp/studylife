@@ -46,6 +46,14 @@ builder.Services.AddStudyLifeAuthentication();
 // Funnel for the scalability branch) - stating it explicitly keeps the redirect actually
 // functional instead of just silencing the symptom.
 builder.Services.Configure<HttpsRedirectionOptions>(options => options.HttpsPort = 443);
+// HSTS was on framework defaults (30 days, this host only). A year plus subdomains is the usual
+// production shape; the header is only emitted outside Development (UseHsts below) and only
+// matters when the gateway forwards it, which it does (2026-09 audit M7).
+builder.Services.AddHsts(options =>
+{
+    options.MaxAge = TimeSpan.FromDays(365);
+    options.IncludeSubDomains = true;
+});
 
 // Encrypted hop ingress-nginx -> Kestrel (scalability branch, K8s): WebBackendTls__CertPath/
 // KeyPath (see k8s/04-web.yaml) point to a secret issued by cert-manager from the
@@ -631,6 +639,9 @@ app.Use(async (context, next) =>
     headers["X-Content-Type-Options"] = "nosniff";
     headers["Referrer-Policy"] = "same-origin";
     headers["X-Frame-Options"] = "DENY";
+    // microphone=(self): voice dictation (DictationController) records in the page itself;
+    // everything else this app never asks for is denied outright, including for embedded frames.
+    headers["Permissions-Policy"] = "camera=(), microphone=(self), geolocation=(), payment=(), usb=(), interest-cohort=()";
     headers["Content-Security-Policy"] = csp;
     await next();
 });
