@@ -1,3 +1,11 @@
+## [3.7.1](https://github.com/lukislp/studylife/compare/v3.7.0...v3.7.1) (2026-09-03)
+
+
+### Bug Fixes
+
+* render dashboard progressively instead of waiting for every request ([cb60e83](https://github.com/lukislp/studylife/commit/cb60e83858c83472c7886b8302cfb0016f613fb1))
+* send the unload telemetry flush with the session header ([bcb1c77](https://github.com/lukislp/studylife/commit/bcb1c7725913de117c30f15809bd724b09514cc3))
+
 # [3.7.0](https://github.com/lukislp/studylife/compare/v3.6.1...v3.7.0) (2026-09-03)
 
 
