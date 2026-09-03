@@ -136,10 +136,18 @@ public partial class AuthController
         return NoContent();
     }
 
-    private Task<int> RevokeOtherSessionsAsync(int userId)
+    private async Task<int> RevokeOtherSessionsAsync(int userId)
     {
         var currentSessionId = (int)HttpContext.Items[AuthSessionService.SessionItemKey]!; // set for every session-authenticated request
-        return _db.AuthSessions.Where(s => s.AuthUserId == userId && s.Id != currentSessionId).ExecuteDeleteAsync();
+        var others = _db.AuthSessions.Where(s => s.AuthUserId == userId && s.Id != currentSessionId);
+        // Evict the revoked tokens from this pod's AuthSessionCache as well - otherwise a device
+        // signed out here could keep authenticating against THIS pod for up to 30 more seconds.
+        // Other pods drop their entries at the cache's TTL (documented on AuthSessionCache).
+        var revokedHashes = await others.Select(s => s.TokenHash).ToListAsync();
+        var deleted = await others.ExecuteDeleteAsync();
+        var cache = HttpContext.RequestServices.GetRequiredService<AuthSessionCache>();
+        foreach (var hash in revokedHashes) cache.Remove(hash);
+        return deleted;
     }
 
     /// <summary>
