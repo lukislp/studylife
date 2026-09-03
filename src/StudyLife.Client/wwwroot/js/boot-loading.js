@@ -11,3 +11,19 @@ fetch('api/auth/demo').then(function (r) { return r.json(); }).then(function (d)
         if (el) el.textContent = 'Loading demo — you’ll be signed in automatically';
     }
 }).catch(function () { /* normal instance / offline - default text stays */ });
+
+// Page stylesheets, loaded without blocking the first paint (see index.html). A stylesheet
+// link appended from script is not render-blocking; by the time Blazor has downloaded and
+// started the runtime (seconds), these few kilobytes have long arrived, so the first rendered
+// page is fully styled. Order preserved as in the former <link> list so cascade precedence is
+// unchanged.
+(function () {
+    var sheets = ['dashboard', 'stats', 'calendar', 'focus', 'setup', 'notes', 'planner', 'progressshare'];
+    var head = document.head;
+    sheets.forEach(function (name) {
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'css/' + name + '.css';
+        head.appendChild(link);
+    });
+})();

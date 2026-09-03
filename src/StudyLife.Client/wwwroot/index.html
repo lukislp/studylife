@@ -9,18 +9,14 @@
          lets the browser fetch them in parallel with the CSS instead of after it. -->
     <link rel="preload" href="fonts/dmsans-normal-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="fonts/dmmono-400-normal-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <!-- Only what the boot screen and the app shell need blocks the first paint. The page-
+         specific sheets (dashboard, stats, calendar, ...) are appended by js/boot-loading.js
+         without blocking - they are long downloaded by the time the WASM runtime has booted and
+         renders the first page (2026-09 audit L4). print.css only applies when printing. -->
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/shared.css" />
-    <link rel="stylesheet" href="css/dashboard.css" />
-    <link rel="stylesheet" href="css/stats.css" />
-    <link rel="stylesheet" href="css/calendar.css" />
-    <link rel="stylesheet" href="css/focus.css" />
-    <link rel="stylesheet" href="css/setup.css" />
-    <link rel="stylesheet" href="css/notes.css" />
-    <link rel="stylesheet" href="css/planner.css" />
     <link rel="stylesheet" href="css/responsive.css" />
     <link rel="stylesheet" href="css/print.css" media="print" />
-    <link rel="stylesheet" href="css/progressshare.css" />
     <link rel="manifest" href="manifest.json" />
     <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-512.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
