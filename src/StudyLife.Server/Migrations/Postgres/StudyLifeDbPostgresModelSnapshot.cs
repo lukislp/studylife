@@ -416,6 +416,8 @@ namespace StudyLife.Server.Migrations.Postgres
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AuthUserId");
+
                     b.HasIndex("StudyProgramId");
 
                     b.ToTable("CustomCourses");
@@ -477,6 +479,10 @@ namespace StudyLife.Server.Migrations.Postgres
                         .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AuthUserId", "CourseId");
+
+                    b.HasIndex("AuthUserId", "UpdatedAt");
 
                     b.ToTable("Notes");
                 });
@@ -709,6 +715,8 @@ namespace StudyLife.Server.Migrations.Postgres
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AuthUserId");
+
                     b.ToTable("SessionTemplates");
                 });
 
@@ -734,6 +742,8 @@ namespace StudyLife.Server.Migrations.Postgres
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AuthUserId");
 
                     b.ToTable("StudyPrograms");
                 });
@@ -783,7 +793,7 @@ namespace StudyLife.Server.Migrations.Postgres
 
                     b.HasKey("Id");
 
-                    b.HasIndex("StartTime");
+                    b.HasIndex("AuthUserId", "StartTime");
 
                     b.ToTable("Sessions");
                 });
