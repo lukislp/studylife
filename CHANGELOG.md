@@ -1,3 +1,10 @@
+## [2.17.2](https://github.com/lukislp/studylife/compare/v2.17.1...v2.17.2) (2026-09-03)
+
+
+### Bug Fixes
+
+* stop showing a goal as overdue once its course is completed ([3c7f8ae](https://github.com/lukislp/studylife/commit/3c7f8ae23555eb3065b6b21fd0bda74ec886bf11))
+
 ## [2.17.1](https://github.com/lukislp/studylife/compare/v2.17.0...v2.17.1) (2026-09-03)
 
 
