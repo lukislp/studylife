@@ -2326,6 +2326,18 @@
         }
       }
     },
+    "/api/events": {
+      "get": {
+        "tags": [
+          "Events"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/healthz/live": {
       "get": {
         "tags": [
@@ -8357,6 +8369,9 @@
     },
     {
       "name": "Dictation"
+    },
+    {
+      "name": "Events"
     },
     {
       "name": "Health"

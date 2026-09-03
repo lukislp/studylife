@@ -606,3 +606,61 @@ function encodeWavPcm16(samples, sampleRate) {
     }
     return new Uint8Array(buffer);
 }
+
+// ---- Server-sent change stream (AppStateService.StartChangeStreamAsync) ----------------------
+// Holds ONE GET api/events open (EventsController) and calls back into .NET with the kind of
+// data that changed, so the app refetches right away instead of waiting for its 30s poll. Plain
+// fetch + ReadableStream instead of EventSource: EventSource cannot send the X-Session-Token
+// header, and the token must never travel in a URL. Reconnects with exponential backoff (2s ->
+// 60s) on any failure, gives up after several failures that never produced a connection (a host
+// that cannot stream at all - the poll keeps working there), and stops for good on 401/403 (the
+// session is gone; the regular 401 handling on the next poll takes over).
+let changeStreamAbort = null;
+
+async function startChangeStream(url, token, dotnetRef) {
+    stopChangeStream();
+    const controller = new AbortController();
+    changeStreamAbort = controller;
+    let backoffMs = 2000;
+    let failuresWithoutConnection = 0;
+    while (!controller.signal.aborted) {
+        try {
+            const response = await fetch(url, {
+                headers: { 'X-Session-Token': token, 'Accept': 'text/event-stream' },
+                cache: 'no-store',
+                signal: controller.signal
+            });
+            if (response.status === 401 || response.status === 403) return;
+            if (!response.ok || !response.body) throw new Error('change stream status ' + response.status);
+            failuresWithoutConnection = 0;
+            backoffMs = 2000;
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                let end;
+                while ((end = buffer.indexOf('\n\n')) >= 0) {
+                    const block = buffer.slice(0, end);
+                    buffer = buffer.slice(end + 2);
+                    const data = block.match(/^data: (.*)$/m);
+                    if (data) dotnetRef.invokeMethodAsync('OnServerChange', data[1]).catch(function () { });
+                }
+            }
+        } catch (err) {
+            if (controller.signal.aborted) return;
+            if (++failuresWithoutConnection >= 6) return;
+        }
+        await new Promise(resolve => setTimeout(resolve, backoffMs));
+        backoffMs = Math.min(backoffMs * 2, 60000);
+    }
+}
+
+function stopChangeStream() {
+    if (changeStreamAbort) {
+        changeStreamAbort.abort();
+        changeStreamAbort = null;
+    }
+}
