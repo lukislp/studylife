@@ -257,7 +257,7 @@ public partial class Index
         // (SetupBackupCard/SetupRestoreCard) - the dashboard staleness hint below needs it too
         // (see the field comment on _showBackupStalenessHint for why).
         var capabilitiesTask = Http.GetFromJsonAsync<SystemCapabilitiesResponseDto>(
-            $"api/system/capabilities?nocache={DateTime.UtcNow.Ticks}");
+            $"api/system/capabilities?nocache={DateTime.UtcNow.Ticks}", StudyLifeJson.Options);
         var goalsTask = State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals");
         var groupQuotasTask = State.GetActiveGroupQuotasAsync();
         var studyProgramsTask = State.GetJsonCachedAsync<List<StudyProgramSummaryDto>>("api/studyprograms");
