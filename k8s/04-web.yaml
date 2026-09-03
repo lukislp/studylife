@@ -153,6 +153,15 @@ spec:
           # Without requests/limits the scheduler cannot bin-pack sensibly, and a runaway pod
           # (e.g. GC pressure under load) could starve neighbors on the same Pi - limit set as a
           # rough 2x buffer over observed demand.
+          # CPU request raised 100m->300m, limit 500m->900m (2026-09-03): the HPA's 70%
+          # utilization target is a percentage of this request, so at 100m a burst as small as
+          # 70m CPU (e.g. bulk-creating a batch of sessions via the planner, each Create doing a
+          # DB write + cache invalidation) tripped a scale-up - confirmed via HPA event history
+          # (60-130+ scale cycles over 25 days). Bulk-planning 100-200 sessions at once is a
+          # normal, recurring workflow (not a one-off), so the request needed enough headroom to
+          # absorb that without flapping, not just a one-time bump - 300m puts the trip point at
+          # 210m, comfortably above a single bulk-import burst. Limit raised in step to keep the
+          # same ~3x burst-over-request ratio, not because of any observed CPU ceiling issue.
           # Memory raised 300Mi->768Mi->900Mi (2026-08-19): the "read note aloud" feature's
           # PiperVoiceRegistry loads each ONNX voice once and keeps it cached for the pod's
           # lifetime, so after first use a pod's footprint permanently includes every voice
@@ -177,8 +186,8 @@ spec:
           # ones were - watch real pod memory after this deploys rather than treating 1200Mi as
           # final.
           resources:
-            requests: {cpu: 100m, memory: 300Mi}
-            limits: {cpu: 500m, memory: 1200Mi}
+            requests: {cpu: 300m, memory: 300Mi}
+            limits: {cpu: 900m, memory: 1200Mi}
           # Audit finding O6: both probes used to hit plain "/" - which only proves Kestrel is up,
           # not that this pod can actually reach Postgres/the pooler. A pod with a dead DB
           # connection stayed "Ready" forever and kept receiving (failing) traffic. Readiness now
