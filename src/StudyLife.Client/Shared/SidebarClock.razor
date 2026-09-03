@@ -1,0 +1,29 @@
+@implements IDisposable
+
+@* The sidebar clock owns its own 10-second timer so that ticking re-renders ONLY these two
+   lines. It used to be driven by MainLayout's timer calling StateHasChanged() on the layout,
+   which re-rendered the whole layout including @Body - every dashboard/stats card diffed
+   again every ten seconds for a clock nobody was looking at (2026-09 audit L7). *@
+<div class="time-display">@_now.ToString("HH:mm")</div>
+<div class="date-display">@_now.ToString("ddd, MMM d")</div>
+
+@code {
+    private DateTime _now = DateTime.Now;
+    private System.Threading.Timer? _timer;
+
+    protected override void OnInitialized()
+    {
+        _timer = new System.Threading.Timer(_ => _ = InvokeAsync(Tick), null, 10000, 10000);
+    }
+
+    private void Tick()
+    {
+        var now = DateTime.Now;
+        // Only the minute is displayed - skip the render entirely while it hasn't changed.
+        if (now.Minute == _now.Minute && now.Day == _now.Day) { _now = now; return; }
+        _now = now;
+        StateHasChanged();
+    }
+
+    public void Dispose() => _timer?.Dispose();
+}
