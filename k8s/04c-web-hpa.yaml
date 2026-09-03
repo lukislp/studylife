@@ -3,8 +3,8 @@
 # handling for user partitioning - every web pod answers arbitrary incoming requests
 # statelessly, there are no "orphaned partitions" when scaling. minReplicas=1 (instead of the
 # previous fixed 2) for the same reason as the worker: "scaling down" only becomes visible with
-# a real lower bound. maxReplicas=4 as a Pi-appropriate upper bound (4x the 500m CPU limit from
-# k8s/04-web.yaml = 2000m).
+# a real lower bound. maxReplicas=4 as a Pi-appropriate upper bound (4x the 900m CPU limit from
+# k8s/04-web.yaml = 3600m, still under a single node's 4-core capacity).
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
