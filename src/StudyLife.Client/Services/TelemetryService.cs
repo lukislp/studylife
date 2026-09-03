@@ -57,7 +57,10 @@ public sealed class TelemetryService : IAsyncDisposable
     private readonly object _bufferLock = new();
     private Timer? _flushTimer;
     private string _sessionId = "";
-    private bool _sampled;
+    // null until EnsureSessionAsync has run (the sample rate comes from the server, see
+    // InitializeAsync): events recorded before that are buffered, not dropped, because
+    // MainLayout starts the whole app without waiting for this service.
+    private bool? _sampled;
     private bool? _consent;
     private string _language = "en";
     private bool _bootMarksRead;
@@ -124,6 +127,7 @@ public sealed class TelemetryService : IAsyncDisposable
             {
                 _sessionId = stored.Id;
                 _sampled = stored.Sampled;
+                ApplySamplingDecision();
                 return;
             }
         }
@@ -131,12 +135,21 @@ public sealed class TelemetryService : IAsyncDisposable
 
         _sessionId = GenerateSessionId();
         _sampled = Random.Shared.NextDouble() < _sampleRate;
+        ApplySamplingDecision();
         try
         {
-            var json = JsonSerializer.Serialize(new StoredSession(_sessionId, _sampled, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), _sampleRate));
+            var json = JsonSerializer.Serialize(new StoredSession(_sessionId, _sampled == true, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), _sampleRate));
             await _js.InvokeVoidAsync("localStorage.setItem", SessionStorageKey, json);
         }
         catch { /* best-effort persistence; the session still works for the rest of this page load */ }
+    }
+
+    /// <summary>Once the coin flip is known, a sampled-out session keeps only its `error`
+    /// events (which always bypass sampling) from what was buffered before the decision.</summary>
+    private void ApplySamplingDecision()
+    {
+        if (_sampled != false) return;
+        lock (_bufferLock) _buffer.RemoveAll(e => e.Type != "error");
     }
 
     private sealed record StoredSession(string Id, bool Sampled, long CreatedAt, double Rate = 0.10);
@@ -266,7 +279,7 @@ public sealed class TelemetryService : IAsyncDisposable
     private void Enqueue(TelemetryEventDto ev, bool alwaysSend = false)
     {
         if (_consent == false) return; // declined - never even buffer
-        if (!alwaysSend && !_sampled) return; // sampled-out session - only `error` bypasses this
+        if (!alwaysSend && _sampled == false) return; // sampled-out session - only `error` bypasses this; null = undecided, buffer
         bool shouldFlush;
         lock (_bufferLock)
         {
@@ -280,6 +293,7 @@ public sealed class TelemetryService : IAsyncDisposable
     private async Task FlushAsync()
     {
         if (_consent != true) return; // undecided: keep buffering without sending; declined: nothing to buffer anyway
+        if (_sampled is null) return; // session not decided yet (InitializeAsync still running) - keep buffering
 
         List<TelemetryEventDto> toSend;
         lock (_bufferLock)
@@ -361,7 +375,7 @@ public sealed class TelemetryService : IAsyncDisposable
     public static string? GetPendingTelemetryJson()
     {
         var self = _current;
-        if (self is null || self._consent != true) return null;
+        if (self is null || self._consent != true || self._sampled is null) return null;
         List<TelemetryEventDto> toSend;
         lock (self._bufferLock)
         {
