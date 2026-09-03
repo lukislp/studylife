@@ -1,3 +1,10 @@
+# [3.1.0](https://github.com/lukislp/studylife/compare/v3.0.1...v3.1.0) (2026-09-03)
+
+
+### Features
+
+* push data changes to connected clients over server-sent events ([0c90420](https://github.com/lukislp/studylife/commit/0c90420d49be10c2a8b6fd2d00b25fad2cb9ccef))
+
 ## [3.0.1](https://github.com/lukislp/studylife/compare/v3.0.0...v3.0.1) (2026-09-03)
 
 
