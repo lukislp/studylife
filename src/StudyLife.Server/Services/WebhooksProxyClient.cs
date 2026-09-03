@@ -26,10 +26,21 @@ public sealed class WebhooksProxyClient
     private readonly string? _baseUrl;
     private readonly string? _sharedSecret;
 
+    /// <summary>Upper bound on concurrently running PublishEventAsync calls per process. Callers
+    /// fire-and-forget these (`_ = _webhooks.PublishEventAsync(...)` after every session/note/
+    /// timer write), so without a bound a slow or hanging studylife-webhooks would accumulate
+    /// unobserved tasks and sockets without limit (2026-09 audit L4). Beyond the bound a publish
+    /// waits briefly for a slot and is then dropped with a warning - the events are best-effort
+    /// notifications, never the source of truth.</summary>
+    private const int MaxInFlight = 8;
+    private static readonly TimeSpan SlotWait = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
+    private readonly SemaphoreSlim _inFlight = new(MaxInFlight, MaxInFlight);
+
     public WebhooksProxyClient(IConfiguration configuration, ILogger<WebhooksProxyClient> logger, HttpClient? httpClient = null)
     {
         _logger = logger;
-        _http = httpClient ?? new HttpClient();
+        _http = httpClient ?? new HttpClient { Timeout = RequestTimeout };
         _baseUrl = NullIfEmpty(configuration["StudyLifeWebhooks:BaseUrl"])?.TrimEnd('/');
         _sharedSecret = NullIfEmpty(configuration["StudyLifeWebhooks:SharedSecret"]);
 
@@ -51,6 +62,11 @@ public sealed class WebhooksProxyClient
     public async Task PublishEventAsync(int userId, string eventType, object payload, CancellationToken ct)
     {
         if (!Enabled) return;
+        if (!await _inFlight.WaitAsync(SlotWait, ct))
+        {
+            _logger.LogWarning("studylife-webhooks event {EventType} dropped - {Max} publishes already in flight for {Wait}s", eventType, MaxInFlight, SlotWait.TotalSeconds);
+            return;
+        }
         try
         {
             var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/internal/events")
@@ -71,6 +87,10 @@ public sealed class WebhooksProxyClient
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "studylife-webhooks /internal/events call failed for event {EventType}", eventType);
+        }
+        finally
+        {
+            _inFlight.Release();
         }
     }
 

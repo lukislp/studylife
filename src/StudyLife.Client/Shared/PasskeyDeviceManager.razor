@@ -1,6 +1,7 @@
 @using System.Text
 @using System.Text.Json.Nodes
 @using StudyLife.Shared
+@using StudyLife.Client.Services
 @inject HttpClient Http
 @inject IJSRuntime JS
 @inject NavigationManager Nav
@@ -78,7 +79,7 @@
                                             }
                                             else
                                             {
-                                                <div class="pdm-row-meta">@string.Format(T.PasskeysCreatedFormat ?? "", d.CreatedAt.ToLocalTime().ToString("d")) · @LastUsedLabel(d)</div>
+                                                <div class="pdm-row-meta">@string.Format(T.PasskeysCreatedFormat ?? "", LocalDate.Short(d.CreatedAt.ToLocalTime())) · @LastUsedLabel(d)</div>
                                             }
                                         }
                                     </div>
@@ -578,6 +579,6 @@
 
     private string LastUsedLabel(PasskeyListItemDto d) =>
         d.LastUsedAt is { } lastUsed
-            ? string.Format(T.PasskeysLastUsedFormat ?? "", lastUsed.ToLocalTime().ToString("d"))
+            ? string.Format(T.PasskeysLastUsedFormat ?? "", LocalDate.Short(lastUsed.ToLocalTime()))
             : T.PasskeysNeverUsed ?? "";
 }
