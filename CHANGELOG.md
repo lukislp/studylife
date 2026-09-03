@@ -1,3 +1,10 @@
+# [3.2.0](https://github.com/lukislp/studylife/compare/v3.1.0...v3.2.0) (2026-09-03)
+
+
+### Features
+
+* authenticate to Redis as a dedicated ACL user and enable requirepass ([63b5853](https://github.com/lukislp/studylife/commit/63b585398d5730cefbdf272b0dde4d4c5e497c77))
+
 # [3.1.0](https://github.com/lukislp/studylife/compare/v3.0.1...v3.1.0) (2026-09-03)
 
 
