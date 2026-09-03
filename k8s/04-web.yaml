@@ -180,6 +180,10 @@ spec:
             # Service/Gateway. Scrape job: homelab-infra monitoring/01-prometheus.yaml "studylife".
             - name: Telemetry__MetricsPort
               value: "9464"
+            # Traces to the OpenTelemetry collector in the monitoring namespace (homelab-infra
+            # monitoring/11-otel-collector.yaml), 10 % sampled at the source (Program.cs).
+            - name: Telemetry__OtlpEndpoint
+              value: http://otel-collector.monitoring.svc.cluster.local:4317
           ports:
             - containerPort: 8080
             - containerPort: 8443
