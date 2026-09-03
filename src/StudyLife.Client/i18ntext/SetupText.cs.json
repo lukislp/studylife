@@ -281,5 +281,7 @@
   "MarketplaceByDeveloper": "od {0}",
   "MarketplaceViewSource": "Zobrazit zdrojový kód",
   "MarketplaceDemoNotice": "Instalace doplňků je na této demo instanci zakázána.",
-  "ClientKeysHeading": "Připojené doplňky"
+  "ClientKeysHeading": "Připojené doplňky",
+  "TelemetryHeading": "Hlášení o používání a chybách",
+  "TelemetryDesc": "Pomáhá nám odhalit chyby a zpomalení odesíláním anonymních dat o výkonu a chybách — nikdy tvé poznámky, session ani zdravotní údaje. Kdykoli to můžeš vypnout."
 }

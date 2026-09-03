@@ -281,5 +281,7 @@
   "MarketplaceByDeveloper": "von {0}",
   "MarketplaceViewSource": "Quellcode ansehen",
   "MarketplaceDemoNotice": "Das Installieren von Add-ons ist auf dieser Demo-Instanz deaktiviert.",
-  "ClientKeysHeading": "Verbundene Add-ons"
+  "ClientKeysHeading": "Verbundene Add-ons",
+  "TelemetryHeading": "Nutzungs- und Fehlerberichte",
+  "TelemetryDesc": "Hilft uns, Bugs und langsame Stellen zu finden, indem anonyme Performance- und Fehlerdaten gesendet werden — nie deine Notizen, Sessions oder Gesundheitsdaten. Du kannst das jederzeit deaktivieren."
 }

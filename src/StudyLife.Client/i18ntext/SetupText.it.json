@@ -281,5 +281,7 @@
   "MarketplaceByDeveloper": "di {0}",
   "MarketplaceViewSource": "Visualizza codice sorgente",
   "MarketplaceDemoNotice": "L'installazione di componenti aggiuntivi è disabilitata su questa istanza demo.",
-  "ClientKeysHeading": "Add-on collegati"
+  "ClientKeysHeading": "Add-on collegati",
+  "TelemetryHeading": "Report di utilizzo ed errori",
+  "TelemetryDesc": "Ci aiuta a individuare bug e rallentamenti inviando dati anonimi su prestazioni ed errori — mai le tue note, sessioni o dati sulla salute. Puoi disattivarlo in qualsiasi momento."
 }

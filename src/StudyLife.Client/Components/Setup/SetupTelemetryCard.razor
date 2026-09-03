@@ -1,0 +1,55 @@
+@using StudyLife.Client.Services
+@inject AppStateService State
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+@* Client telemetry opt-in (docs/ARCHITECTURE.md "Telemetry", phase 2) - the same
+   UserSettingsEntity.TelemetryConsent field TelemetryConsentModal writes on first answer; this
+   card is where it can be changed again afterward, next to the other privacy-relevant toggle on
+   this page (SetupProgressShareCard, right above). Self-contained component (own SetupText
+   instance), same pattern as SetupProgressShareCard - but goes through the NORMAL settings save
+   path (AppStateService.SaveSettingsAsync) since TelemetryConsent has no dedicated endpoint of
+   its own, unlike ProgressShareEnabled. *@
+
+<div class="setup-section">
+    <div class="ss-label">@T.TelemetryHeading</div>
+    <p class="ss-desc">@T.TelemetryDesc</p>
+
+    <div class="toggle-row">
+        <label class="toggle">
+            <input type="checkbox" checked="@_consent" @onchange="OnToggleChanged" disabled="@_busy" />
+            <span class="toggle-track"></span>
+        </label>
+        <span>@(_consent ? T.Enabled : T.Disabled)</span>
+    </div>
+</div>
+
+@code {
+    private I18nText.SetupText T = new();
+    private bool _consent;
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
+        var settings = await State.GetSettingsAsync();
+        _consent = settings.TelemetryConsent == true;
+    }
+
+    private async Task OnToggleChanged(ChangeEventArgs e)
+    {
+        _busy = true;
+        StateHasChanged();
+        try
+        {
+            var settings = await State.GetSettingsAsync();
+            settings.TelemetryConsent = (bool)(e.Value ?? false);
+            await State.SaveSettingsAsync(settings);
+            _consent = settings.TelemetryConsent == true;
+        }
+        finally
+        {
+            _busy = false;
+            StateHasChanged();
+        }
+    }
+}
