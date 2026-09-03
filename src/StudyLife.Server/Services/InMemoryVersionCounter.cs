@@ -1,16 +1,19 @@
+using System.Collections.Concurrent;
+
 namespace StudyLife.Server.Services;
 
 /// <summary>
-/// Default implementation (single-instance/SQLite mode): exactly the previous behavior of
-/// SessionHistoryCacheVersion/SettingsCacheVersion before the scalability rework - a simple
-/// in-process int, atomic via Interlocked/Volatile. Only correct within a SINGLE process; in
-/// multi-pod operation, RedisVersionCounter must be registered instead (see Program.cs).
+/// Single-instance implementation (default / SQLite mode, also the public demo host): one
+/// process-local counter per key. Never blocks - the Task-returning shape only exists so the
+/// same facades can sit in front of <see cref="RedisVersionCounter"/> in multi-pod mode.
 /// </summary>
 public class InMemoryVersionCounter : IVersionCounter
 {
-    private int _value;
+    private readonly ConcurrentDictionary<string, int> _values = new(StringComparer.Ordinal);
 
-    public Task<int> GetValueAsync() => Task.FromResult(Volatile.Read(ref _value));
+    public Task<int> GetValueAsync(string key) =>
+        Task.FromResult(_values.TryGetValue(key, out var value) ? value : 0);
 
-    public Task<int> IncrementAsync() => Task.FromResult(Interlocked.Increment(ref _value));
+    public Task<int> IncrementAsync(string key) =>
+        Task.FromResult(_values.AddOrUpdate(key, 1, (_, current) => current + 1));
 }

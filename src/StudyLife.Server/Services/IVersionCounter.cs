@@ -1,28 +1,23 @@
 namespace StudyLife.Server.Services;
 
 /// <summary>
-/// Abstraction making the two process-wide cache invalidation counters
-/// (<see cref="SessionHistoryCacheVersion"/>, <see cref="SettingsCacheVersion"/>) swappable
-/// between single-instance (<see cref="InMemoryVersionCounter"/>, exactly the behavior from
-/// before the scalability rework) and multi-pod (<see cref="RedisVersionCounter"/>, a real
+/// Abstraction making the two cache invalidation counters (<see cref="SessionHistoryCacheVersion"/>,
+/// <see cref="SettingsCacheVersion"/>) swappable between single-instance
+/// (<see cref="InMemoryVersionCounter"/>) and multi-pod (<see cref="RedisVersionCounter"/>, a real
 /// distributed atomic counter).
 ///
-/// Design decision Value++/async: the roughly dozen existing call sites
-/// (e.g. <c>_historyCacheVersion.Value++</c>, <c>$"...{_settingsCacheVersion.Value}"</c>)
-/// are synchronous property accesses. Instead of converting all of them to
-/// <c>await IncrementAsync()</c>/<c>await GetValueAsync()</c>,
-/// <see cref="SessionHistoryCacheVersion"/>/<see cref="SettingsCacheVersion"/> themselves remain
-/// thin synchronous facades (<c>GetAwaiter().GetResult()</c>) around this interface. For the
-/// in-memory case (default/SQLite mode) this is synchronous-ready anyway (Task.FromResult) and
-/// never actually blocks; in Redis mode it briefly blocks on a network round trip - a
-/// deliberately accepted trade-off for this learning project against the much larger effort of
-/// converting all existing call sites to async.
+/// Keyed per user since the 2026-09 audit (P3/P4): the counters used to be one process-wide (or
+/// one Redis-wide) integer, so ANY user's write invalidated EVERY user's cached sessions and
+/// settings and their ETags - and the facades read them synchronously via GetAwaiter().GetResult()
+/// on the request path, which in Redis mode parked a thread-pool thread per cache lookup. Both
+/// facades are async now and pass the AuthUserId as the key; the implementations only ever see an
+/// opaque key string.
 /// </summary>
 public interface IVersionCounter
 {
-    /// <summary>Read the current counter value without changing it (cache key construction).</summary>
-    Task<int> GetValueAsync();
+    /// <summary>Read the current counter value for a key without changing it (cache key construction). Unknown keys read as 0.</summary>
+    Task<int> GetValueAsync(string key);
 
-    /// <summary>Atomically increment the counter by 1 and return the new value (invalidation after a write).</summary>
-    Task<int> IncrementAsync();
+    /// <summary>Atomically increment a key's counter by 1 and return the new value (invalidation after a write).</summary>
+    Task<int> IncrementAsync(string key);
 }
