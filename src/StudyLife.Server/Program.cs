@@ -34,6 +34,7 @@ if (metricsPort is not null)
             .AddRuntimeInstrumentation()
             .AddMeter(
                 StudyLifeMetrics.MeterName,
+                ClientTelemetryMetrics.MeterName,
                 "Npgsql",
                 "Microsoft.EntityFrameworkCore",
                 "Microsoft.AspNetCore.RateLimiting",
@@ -327,6 +328,19 @@ builder.Services.AddRateLimiter(options =>
             QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
         });
     });
+
+    // Telemetry phase 2 (docs/ARCHITECTURE.md "Telemetry"): 30 batches/minute per user. The
+    // client's own cadence (flush every 20s or at 25 events) never comes close - this only bites
+    // a buggy/misbehaving client, protecting the meter and the ClientError log pipeline from
+    // being spammed. Per-user like Expensive above (not per-IP like the generic api bucket),
+    // since a shared IP (NAT, mobile carrier) sharing one household's api bucket is fine, but
+    // shouldn't also mean sharing one telemetry bucket across unrelated accounts.
+    options.AddPolicy(RateLimitPolicies.Telemetry, context =>
+    {
+        var key = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+            ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return FixedWindow(context, $"telemetry|{key}", permitLimit: 30, TimeSpan.FromMinutes(1));
+    });
 });
 
 var dbPath = Path.Combine(builder.Environment.ContentRootPath, "app_data", "studylife.db");
@@ -387,6 +401,10 @@ builder.Services.AddScoped<IOwnershipService, OwnershipService>();
 // Per-audience redirect_uri allow-list for the consent connect flow (2026-09 audit S1) - see
 // ConsentRedirectPolicy for the built-in shapes and the Consent:AllowedRedirectUris config.
 builder.Services.AddSingleton<ConsentRedirectPolicy>();
+// Telemetry phase 2 (docs/ARCHITECTURE.md "Telemetry"): normalizes a client-reported API route
+// against the server's own route table - singleton because the route table itself never changes
+// after startup and building the known-route set is the whole point of caching it once.
+builder.Services.AddSingleton<TelemetryRouteCatalog>();
 // Per-pod 30s cache of valid session-token lookups (2026-09 audit P6) - see AuthSessionCache.
 builder.Services.AddSingleton<AuthSessionCache>();
 // Registration gate (audit finding A10) - Registration:Mode (env Registration__Mode); see
@@ -823,7 +841,12 @@ if (DemoModeGuard.IsEnabled(app.Configuration))
             // operation - nothing persisted, so it's exempted here instead of appearing to
             // "fail to save" on the demo the way an actual blocked note edit correctly does.
             && !(context.Request.Path.StartsWithSegments("/api/dictate", out var dictateRemainder)
-                 && string.IsNullOrEmpty(dictateRemainder.Value)))
+                 && string.IsNullOrEmpty(dictateRemainder.Value))
+            // Telemetry phase 2: POST /api/telemetry must answer its own contract (204, nothing
+            // recorded - TelemetryController checks DemoModeGuard itself) rather than the generic
+            // 403 write-block, so a demo visitor's beacon never surfaces a confusing error.
+            && !(context.Request.Path.StartsWithSegments("/api/telemetry", out var telemetryRemainder)
+                 && string.IsNullOrEmpty(telemetryRemainder.Value)))
         {
             context.Response.StatusCode = StatusCodes.Status403Forbidden;
             await context.Response.WriteAsJsonAsync(new { error = "read-only demo instance - changes aren't saved" });
