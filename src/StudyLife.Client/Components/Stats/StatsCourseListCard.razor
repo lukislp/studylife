@@ -40,7 +40,7 @@
                 {
                     <span class="@row.TrendCssClass" title="@TrendTooltip">@row.TrendArrow @row.TrendLabel</span>
                 }
-                @if (row.DaysRemaining.HasValue)
+                @if (row.DaysRemaining.HasValue && !row.IsCompleted)
                 {
                     <span class="@(row.DaysRemaining < 0 ? "csr-overdue" : "")">
                         @(row.DaysRemaining >= 0 ? string.Format(DueInDaysFormat, row.DaysRemaining) : string.Format(OverdueByDaysFormat, -row.DaysRemaining.Value))

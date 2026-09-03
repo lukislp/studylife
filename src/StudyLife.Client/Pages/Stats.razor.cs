@@ -150,10 +150,13 @@ public partial class Stats
             .Select(r =>
             {
                 var goal = goals.FirstOrDefault(g => g.CourseId == r.Course.Id);
-                int? daysRemaining = goal?.TargetDate.HasValue == true
+                var isCompleted = settings.CompletedCourseIds.Contains(r.Course.Id);
+                // A completed course has no remaining deadline - without this guard a course
+                // finished after its target date showed "goal overdue by N days" right next to its
+                // "completed" badge.
+                int? daysRemaining = !isCompleted && goal?.TargetDate.HasValue == true
                     ? (goal!.TargetDate!.Value.Date - DateTime.Today).Days
                     : null;
-                var isCompleted = settings.CompletedCourseIds.Contains(r.Course.Id);
                 return new StatsCourseListCard.CourseStatRow(
                     r.Course, r.Hours, r.Count, isCompleted, daysRemaining,
                     goal?.CompletionNote, goal?.Grade, Math.Min(100, r.Hours / maxHours * 100),
