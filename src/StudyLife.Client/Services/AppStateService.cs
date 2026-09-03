@@ -308,7 +308,7 @@ public class AppStateService : IAsyncDisposable
         var cacheKey = "studylife-cache-v2:" + url;
         try
         {
-            var result = await _http.GetFromJsonAsync<T>(url);
+            var result = await _http.GetFromJsonAsync<T>(url, StudyLifeJson.Options);
             if (result != null) await StoreReadCacheAsync(cacheKey, result);
             return result;
         }
@@ -427,7 +427,7 @@ public class AppStateService : IAsyncDisposable
 
         try
         {
-            var dto = await _http.GetFromJsonAsync<UserSettingsDto>("api/settings");
+            var dto = await _http.GetFromJsonAsync<UserSettingsDto>("api/settings", StudyLifeJson.Options);
             if (dto != null)
             {
                 var incomingHash = ComputeSettingsHash(dto);
@@ -823,8 +823,8 @@ public class AppStateService : IAsyncDisposable
                     var sessionDto = JsonSerializer.Deserialize<StudySessionDto>(entry.Payload);
                     if (sessionDto == null) return true;
                     var sessionResponse = sessionDto.Id == 0
-                        ? await _http.PostAsJsonAsync("api/sessions", sessionDto)
-                        : await _http.PutAsJsonAsync($"api/sessions/{sessionDto.Id}", sessionDto);
+                        ? await _http.PostAsJsonAsync("api/sessions", sessionDto, StudyLifeJson.Options)
+                        : await _http.PutAsJsonAsync($"api/sessions/{sessionDto.Id}", sessionDto, StudyLifeJson.Options);
                     return IsEntryDone(sessionResponse);
                 case TypeDeleteSession:
                     var deleteSessionResponse = await _http.DeleteAsync($"api/sessions/{entry.Payload}");
@@ -848,7 +848,7 @@ public class AppStateService : IAsyncDisposable
                     // (see the class comment above / EnqueueSaveSettingsAsync). This also means
                     // a replayed settings write can never itself 409.
                     settingsDto.Version = null;
-                    var settingsResponse = await _http.PutAsJsonAsync("api/settings", settingsDto);
+                    var settingsResponse = await _http.PutAsJsonAsync("api/settings", settingsDto, StudyLifeJson.Options);
                     return IsEntryDone(settingsResponse);
                 case TypeSaveNote:
                     var noteDto = JsonSerializer.Deserialize<NoteDto>(entry.Payload);
@@ -857,11 +857,11 @@ public class AppStateService : IAsyncDisposable
                     if (noteDto.Id <= 0)
                     {
                         noteDto.Id = 0; // strip the temporary offline id → normal create
-                        noteResponse = await _http.PostAsJsonAsync("api/notes", noteDto);
+                        noteResponse = await _http.PostAsJsonAsync("api/notes", noteDto, StudyLifeJson.Options);
                     }
                     else
                     {
-                        noteResponse = await _http.PutAsJsonAsync($"api/notes/{noteDto.Id}", noteDto);
+                        noteResponse = await _http.PutAsJsonAsync($"api/notes/{noteDto.Id}", noteDto, StudyLifeJson.Options);
                     }
                     return IsEntryDone(noteResponse);
                 case TypeDeleteNote:
@@ -870,7 +870,7 @@ public class AppStateService : IAsyncDisposable
                 case TypeSaveCourseGoal:
                     var goalDto = JsonSerializer.Deserialize<CourseGoalDto>(entry.Payload);
                     if (goalDto == null) return true;
-                    var goalResponse = await _http.PutAsJsonAsync($"api/coursegoals/{goalDto.CourseId}", goalDto);
+                    var goalResponse = await _http.PutAsJsonAsync($"api/coursegoals/{goalDto.CourseId}", goalDto, StudyLifeJson.Options);
                     return IsEntryDone(goalResponse);
                 default:
                     return true; // unknown type → discard
@@ -925,7 +925,7 @@ public class AppStateService : IAsyncDisposable
     {
         try
         {
-            var dto = await _http.GetFromJsonAsync<AccountInfoDto>("api/auth/account-info");
+            var dto = await _http.GetFromJsonAsync<AccountInfoDto>("api/auth/account-info", StudyLifeJson.Options);
             _accountInfoCache = dto;
             return dto;
         }
@@ -956,7 +956,7 @@ public class AppStateService : IAsyncDisposable
         if (_isDemoCache is bool cached) return cached;
         try
         {
-            var dto = await _http.GetFromJsonAsync<DemoInfoDto>("api/auth/demo");
+            var dto = await _http.GetFromJsonAsync<DemoInfoDto>("api/auth/demo", StudyLifeJson.Options);
             _isDemoCache = dto?.Demo ?? false;
         }
         catch
@@ -994,7 +994,7 @@ public class AppStateService : IAsyncDisposable
     {
         try
         {
-            var dto = await _http.GetFromJsonAsync<UserSettingsDto>("api/settings");
+            var dto = await _http.GetFromJsonAsync<UserSettingsDto>("api/settings", StudyLifeJson.Options);
             _settingsCache = FromDto(dto!);
             _settingsHash = ComputeSettingsHash(dto!);
             await StoreReadCacheAsync(ReadCacheKeySettings, dto!);
@@ -1028,7 +1028,7 @@ public class AppStateService : IAsyncDisposable
         _settingsHash = ComputeSettingsHash(ToDto(settings));
         try
         {
-            var response = await _http.PutAsJsonAsync("api/settings", ToDto(settings));
+            var response = await _http.PutAsJsonAsync("api/settings", ToDto(settings), StudyLifeJson.Options);
             if (response.StatusCode == HttpStatusCode.Conflict)
                 await HandleSaveConflictAsync(settings);
             else
@@ -1060,7 +1060,7 @@ public class AppStateService : IAsyncDisposable
         settings.Version = fresh.Version;
         try
         {
-            var retryResponse = await _http.PutAsJsonAsync("api/settings", ToDto(settings));
+            var retryResponse = await _http.PutAsJsonAsync("api/settings", ToDto(settings), StudyLifeJson.Options);
             await ApplySaveResponseAsync(retryResponse); // no-ops on a repeat 409 or other failure
         }
         catch { await EnqueueSaveSettingsAsync(ToDto(settings)); /* went offline mid-retry */ }
@@ -1069,7 +1069,7 @@ public class AppStateService : IAsyncDisposable
     private async Task ApplySaveResponseAsync(HttpResponseMessage response)
     {
         if (!response.IsSuccessStatusCode) return;
-        var dto = await response.Content.ReadFromJsonAsync<UserSettingsDto>();
+        var dto = await response.Content.ReadFromJsonAsync<UserSettingsDto>(StudyLifeJson.Options);
         if (dto == null) return;
         _settingsCache = FromDto(dto);
         _settingsHash = ComputeSettingsHash(dto);
@@ -1181,7 +1181,7 @@ public class AppStateService : IAsyncDisposable
         if (_groupQuotasCache != null && _groupQuotasCacheProgramId == programId) return _groupQuotasCache;
         try
         {
-            var detail = await _http.GetFromJsonAsync<StudyProgramDetailDto>($"api/studyprograms/{programId}");
+            var detail = await _http.GetFromJsonAsync<StudyProgramDetailDto>($"api/studyprograms/{programId}", StudyLifeJson.Options);
             if (detail == null) return new Dictionary<string, int>();
             _groupQuotasCache = detail.GroupEctsQuotas;
             _groupQuotasCacheProgramId = programId;
@@ -1240,16 +1240,16 @@ public class AppStateService : IAsyncDisposable
         {
             if (session.Id == 0)
             {
-                var response = await _http.PostAsJsonAsync("api/sessions", ToDto(session));
+                var response = await _http.PostAsJsonAsync("api/sessions", ToDto(session), StudyLifeJson.Options);
                 if (response.IsSuccessStatusCode)
                 {
-                    var dto = await response.Content.ReadFromJsonAsync<StudySessionDto>();
+                    var dto = await response.Content.ReadFromJsonAsync<StudySessionDto>(StudyLifeJson.Options);
                     if (dto != null) session.Id = dto.Id;
                 }
             }
             else
             {
-                await _http.PutAsJsonAsync($"api/sessions/{session.Id}", ToDto(session));
+                await _http.PutAsJsonAsync($"api/sessions/{session.Id}", ToDto(session), StudyLifeJson.Options);
             }
         }
         catch { await EnqueueSaveSessionAsync(ToDto(session)); /* offline: replay later */ }

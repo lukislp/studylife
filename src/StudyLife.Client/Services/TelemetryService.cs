@@ -87,7 +87,7 @@ public sealed class TelemetryService : IAsyncDisposable
         try
         {
             var capabilities = await _http.GetFromJsonAsync<SystemCapabilitiesResponseDto>(
-                $"api/system/capabilities?nocache={DateTime.UtcNow.Ticks}");
+                $"api/system/capabilities?nocache={DateTime.UtcNow.Ticks}", StudyLifeJson.Options);
             if (capabilities is not null)
                 _sampleRate = Math.Clamp(capabilities.TelemetryClientSampleRatio, 0, 1);
         }
@@ -317,7 +317,7 @@ public sealed class TelemetryService : IAsyncDisposable
 
         try
         {
-            await _http.PostAsJsonAsync("api/telemetry", await BuildBatchAsync(toSend));
+            await _http.PostAsJsonAsync("api/telemetry", await BuildBatchAsync(toSend), StudyLifeJson.Options);
         }
         catch { /* offline/error - a lost telemetry batch is never worth retrying at the cost of complexity */ }
     }
@@ -395,7 +395,7 @@ public sealed class TelemetryService : IAsyncDisposable
             Connection = "unknown",
             Events = toSend,
         };
-        return JsonSerializer.Serialize(batch, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        return JsonSerializer.Serialize(batch, StudyLifeJson.Options);
     }
 
     /// <summary>window.onerror/unhandledrejection (js/interop.js) - "type" is the JS error's
