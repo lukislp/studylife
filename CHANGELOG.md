@@ -1,3 +1,10 @@
+## [3.6.1](https://github.com/lukislp/studylife/compare/v3.6.0...v3.6.1) (2026-09-03)
+
+
+### Bug Fixes
+
+* take telemetry initialisation off the app startup path ([37e8112](https://github.com/lukislp/studylife/commit/37e8112bb24932dbee95182f20363c32bd6b7f0f))
+
 # [3.6.0](https://github.com/lukislp/studylife/compare/v3.5.0...v3.6.0) (2026-09-03)
 
 
