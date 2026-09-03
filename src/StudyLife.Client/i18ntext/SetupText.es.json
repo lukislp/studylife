@@ -280,5 +280,6 @@
   "MarketplaceScopesLabel": "Solicita acceso a:",
   "MarketplaceByDeveloper": "por {0}",
   "MarketplaceViewSource": "Ver código fuente",
-  "MarketplaceDemoNotice": "La instalación de complementos está deshabilitada en esta instancia de demostración."
+  "MarketplaceDemoNotice": "La instalación de complementos está deshabilitada en esta instancia de demostración.",
+  "ClientKeysHeading": "Complementos conectados"
 }

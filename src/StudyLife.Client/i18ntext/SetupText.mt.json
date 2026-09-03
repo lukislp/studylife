@@ -280,5 +280,6 @@
   "MarketplaceScopesLabel": "Qed jitlob aċċess għal:",
   "MarketplaceByDeveloper": "minn {0}",
   "MarketplaceViewSource": "Ara l-kodiċi sors",
-  "MarketplaceDemoNotice": "L-installazzjoni tal-add-ons hija diżattivata fuq din l-istanza tad-demo."
+  "MarketplaceDemoNotice": "L-installazzjoni tal-add-ons hija diżattivata fuq din l-istanza tad-demo.",
+  "ClientKeysHeading": "Add-ons konnessi"
 }

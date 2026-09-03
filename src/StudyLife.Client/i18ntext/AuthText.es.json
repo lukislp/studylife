@@ -75,5 +75,7 @@
   "LoginPageTitle": "StudyLife — Iniciar sesión",
   "RegisterClosed": "El registro está cerrado actualmente.",
   "RegisterInviteRequiredHint": "Se necesita un enlace de invitación para registrarse. Usa el enlace que se te proporcionó.",
-  "RegisterInviteInvalid": "Este enlace de invitación no es válido, ha caducado o ya se ha utilizado."
+  "RegisterInviteInvalid": "Este enlace de invitación no es válido, ha caducado o ya se ha utilizado.",
+  "PasskeysRevokeOthers": "Cerrar sesión en todos los demás dispositivos",
+  "PasskeysRevokeOthersDone": "Se ha cerrado la sesión en todos los demás dispositivos."
 }

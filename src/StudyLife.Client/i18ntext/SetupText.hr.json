@@ -280,5 +280,6 @@
   "MarketplaceScopesLabel": "Traži pristup:",
   "MarketplaceByDeveloper": "autora {0}",
   "MarketplaceViewSource": "Prikaži izvorni kod",
-  "MarketplaceDemoNotice": "Instaliranje dodataka onemogućeno je na ovoj demo instanci."
+  "MarketplaceDemoNotice": "Instaliranje dodataka onemogućeno je na ovoj demo instanci.",
+  "ClientKeysHeading": "Povezani dodaci"
 }

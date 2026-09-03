@@ -280,5 +280,6 @@
   "MarketplaceScopesLabel": "Solicită acces la:",
   "MarketplaceByDeveloper": "de {0}",
   "MarketplaceViewSource": "Vezi codul sursă",
-  "MarketplaceDemoNotice": "Instalarea suplimentelor este dezactivată pe această instanță demonstrativă."
+  "MarketplaceDemoNotice": "Instalarea suplimentelor este dezactivată pe această instanță demonstrativă.",
+  "ClientKeysHeading": "Suplimente conectate"
 }

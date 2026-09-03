@@ -75,5 +75,7 @@
   "LoginPageTitle": "StudyLife — Přihlášení",
   "RegisterClosed": "Registrace je momentálně uzavřena.",
   "RegisterInviteRequiredHint": "K registraci je potřeba pozvánka. Použij odkaz, který jsi obdržel/a.",
-  "RegisterInviteInvalid": "Tento odkaz s pozvánkou je neplatný, vypršel nebo už byl použit."
+  "RegisterInviteInvalid": "Tento odkaz s pozvánkou je neplatný, vypršel nebo už byl použit.",
+  "PasskeysRevokeOthers": "Odhlásit se na všech ostatních zařízeních",
+  "PasskeysRevokeOthersDone": "Všechna ostatní zařízení byla odhlášena."
 }

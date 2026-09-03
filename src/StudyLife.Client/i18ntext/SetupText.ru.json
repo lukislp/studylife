@@ -280,5 +280,6 @@
   "MarketplaceScopesLabel": "Запрашивает доступ к:",
   "MarketplaceByDeveloper": "от {0}",
   "MarketplaceViewSource": "Просмотреть исходный код",
-  "MarketplaceDemoNotice": "Установка дополнений отключена на этом демо-экземпляре."
+  "MarketplaceDemoNotice": "Установка дополнений отключена на этом демо-экземпляре.",
+  "ClientKeysHeading": "Подключённые дополнения"
 }

@@ -75,5 +75,7 @@
   "LoginPageTitle": "StudyLife — Вхід",
   "RegisterClosed": "Наразі реєстрація закрита.",
   "RegisterInviteRequiredHint": "Для реєстрації потрібне запрошення. Скористайтеся посиланням, яке ви отримали.",
-  "RegisterInviteInvalid": "Це посилання-запрошення недійсне, прострочене або вже використане."
+  "RegisterInviteInvalid": "Це посилання-запрошення недійсне, прострочене або вже використане.",
+  "PasskeysRevokeOthers": "Вийти на всіх інших пристроях",
+  "PasskeysRevokeOthersDone": "Усі інші пристрої вийшли з системи."
 }

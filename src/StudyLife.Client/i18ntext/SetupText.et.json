@@ -280,5 +280,6 @@
   "MarketplaceScopesLabel": "Taotleb juurdepääsu:",
   "MarketplaceByDeveloper": "arendaja {0}",
   "MarketplaceViewSource": "Vaata lähtekoodi",
-  "MarketplaceDemoNotice": "Lisandmoodulite paigaldamine on selles demoversioonis keelatud."
+  "MarketplaceDemoNotice": "Lisandmoodulite paigaldamine on selles demoversioonis keelatud.",
+  "ClientKeysHeading": "Ühendatud lisad"
 }

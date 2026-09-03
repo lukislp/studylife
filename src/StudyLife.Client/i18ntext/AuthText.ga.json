@@ -75,5 +75,7 @@
   "LoginPageTitle": "StudyLife — Logáil isteach",
   "RegisterClosed": "Tá an clárú dúnta faoi láthair.",
   "RegisterInviteRequiredHint": "Tá nasc cuiridh ag teastáil chun clárú. Bain úsáid as an nasc a fuair tú.",
-  "RegisterInviteInvalid": "Tá an nasc cuiridh seo neamhbhailí, imithe in éag, nó úsáidte cheana."
+  "RegisterInviteInvalid": "Tá an nasc cuiridh seo neamhbhailí, imithe in éag, nó úsáidte cheana.",
+  "PasskeysRevokeOthers": "Logáil amach ar gach gléas eile",
+  "PasskeysRevokeOthersDone": "Logáladh amach gach gléas eile."
 }

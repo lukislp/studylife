@@ -280,5 +280,6 @@
   "MarketplaceScopesLabel": "Vyžaduje přístup k:",
   "MarketplaceByDeveloper": "od {0}",
   "MarketplaceViewSource": "Zobrazit zdrojový kód",
-  "MarketplaceDemoNotice": "Instalace doplňků je na této demo instanci zakázána."
+  "MarketplaceDemoNotice": "Instalace doplňků je na této demo instanci zakázána.",
+  "ClientKeysHeading": "Připojené doplňky"
 }
