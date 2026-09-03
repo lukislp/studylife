@@ -1,3 +1,11 @@
+## [3.2.5](https://github.com/lukislp/studylife/compare/v3.2.4...v3.2.5) (2026-09-03)
+
+
+### Bug Fixes
+
+* gate releases on Trivy, pin model downloads, bound the Flux range, harden rollouts ([5109fff](https://github.com/lukislp/studylife/commit/5109fffae6e7013f631318c2fec9327cd8dc17dd)), closes [HI#rated](https://github.com/HI/issues/rated)
+* surge-only rollouts with a graceful shutdown window for web and worker ([4a50e9c](https://github.com/lukislp/studylife/commit/4a50e9c5faf58b0ac54343ee20243854fbf9b7df))
+
 ## [3.2.4](https://github.com/lukislp/studylife/compare/v3.2.3...v3.2.4) (2026-09-03)
 
 
