@@ -13,6 +13,14 @@ namespace StudyLife.Client.Services;
 public readonly record struct CardioFitnessPoint(DateTime Date, double Vo2Max);
 
 /// <summary>
+/// One night's main sleep, as returned by <see cref="INativeHealthData.GetRecentSleepNightsAsync"/>:
+/// onset as minutes after 6pm (wrapping at 24h, same anchor as the older onset-only API) and the
+/// total asleep duration in minutes. A record struct for the same Mono AOT reason as
+/// <see cref="CardioFitnessPoint"/>.
+/// </summary>
+public readonly record struct SleepNight(double OnsetMinutesAfter6pm, double DurationMinutes);
+
+/// <summary>
 /// Additive hook for Apple Health data (same pattern as INativePush/INativeAppAuth/
 /// INativeFileExport): HealthKit is iOS-only and the data never leaves the device - the
 /// Dashboard's readiness-score tile (Index.Health.razor.cs) simply stays hidden in the
@@ -35,6 +43,16 @@ public interface INativeHealthData
     /// with a detected sleep session (gaps simply absent). Null if authorization was never
     /// granted/denied.</summary>
     Task<IReadOnlyList<double>?> GetRecentSleepOnsetMinutesAsync(int nights) => Task.FromResult<IReadOnlyList<double>?>(null);
+
+    /// <summary>One entry per night with a detected MAIN sleep in the last <paramref name="nights"/>
+    /// nights, oldest first. Supersedes <see cref="GetRecentSleepOnsetMinutesAsync"/> for the
+    /// dashboard: that older bridge split a night at every gap of more than an hour between
+    /// asleep samples and also counted daytime naps as "nights", so a single nap or a long
+    /// nocturnal wake produced onset values hours away from the real bedtime and a spread of
+    /// 150+ minutes for a perfectly regular sleeper. Implementations must return exactly one
+    /// session per sleep day (the longest one) and drop anything shorter than a real night's
+    /// sleep. Null if authorization was never granted/denied.</summary>
+    Task<IReadOnlyList<SleepNight>?> GetRecentSleepNightsAsync(int nights) => Task.FromResult<IReadOnlyList<SleepNight>?>(null);
 
     /// <summary>Step count over the last <paramref name="minutesAgo"/> minutes up to now - used
     /// by the Focus Timer's movement-break nudge (OnFocusMilestone) to check whether the user
