@@ -1,3 +1,13 @@
+# [3.4.0](https://github.com/lukislp/studylife/compare/v3.3.0...v3.4.0) (2026-09-03)
+
+
+### Features
+
+* add client TelemetryService and boot/vitals/API/SSE instrumentation ([add60a4](https://github.com/lukislp/studylife/commit/add60a4d05d969d1770a09f7fe3a52cc12cbed09))
+* add POST /api/telemetry server endpoint and client meter ([f7a6602](https://github.com/lukislp/studylife/commit/f7a66029c240dbad25e2281fdc780585c306eb79))
+* add telemetry consent modal and settings toggle ([2985379](https://github.com/lukislp/studylife/commit/298537907ebb88606e445cfb8e0e1b6156756567))
+* add TelemetryConsent user setting through all layers ([17f1811](https://github.com/lukislp/studylife/commit/17f181197152ed129f686b744bbfab4d5bda3d97))
+
 # [3.3.0](https://github.com/lukislp/studylife/compare/v3.2.9...v3.3.0) (2026-09-03)
 
 
