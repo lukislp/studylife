@@ -1,3 +1,24 @@
+# [3.0.0](https://github.com/lukislp/studylife/compare/v2.17.3...v3.0.0) (2026-09-03)
+
+
+### Bug Fixes
+
+* apply dotnet format whitespace rules to the new tests ([2c3d08a](https://github.com/lukislp/studylife/commit/2c3d08a8ef2165e31a404f9777c8cdfa7ebeed74))
+* bound planner, ICS import, history window and push endpoint inputs ([19d17e2](https://github.com/lukislp/studylife/commit/19d17e26a1a4b9bb3112fb28525eefe93beb664b))
+* make forwarded-header trust configurable and cap recovery logins globally ([0bd24d9](https://github.com/lukislp/studylife/commit/0bd24d985aa2dd7720a5913e9ef43aad003b30e2))
+* restrict consent redirect_uri to per-audience allow-list and show the target ([a0935b8](https://github.com/lukislp/studylife/commit/a0935b8c7ba50d2123ac8c8f8b84c0ae8dd59968))
+
+
+### Features
+
+* revoke other sessions on credential changes and make add-on keys revocable ([6801f90](https://github.com/lukislp/studylife/commit/6801f904233d0dbad6e511cfaae25b19b02a56c3))
+
+
+### BREAKING CHANGES
+
+* /connect/mcp from an HTTP-mode studylife-mcp server is
+rejected until Consent:AllowedRedirectUris:mcp lists its callback URL.
+
 ## [2.17.3](https://github.com/lukislp/studylife/compare/v2.17.2...v2.17.3) (2026-09-03)
 
 
