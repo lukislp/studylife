@@ -1,3 +1,10 @@
+## [3.2.9](https://github.com/lukislp/studylife/compare/v3.2.8...v3.2.9) (2026-09-03)
+
+
+### Bug Fixes
+
+* **deps:** Bump xunit.runner.visualstudio from 3.1.4 to 4.0.0 ([47a32b9](https://github.com/lukislp/studylife/commit/47a32b90ee72d33270aaedb3696bf932317175ec))
+
 ## [3.2.8](https://github.com/lukislp/studylife/compare/v3.2.7...v3.2.8) (2026-09-03)
 
 
