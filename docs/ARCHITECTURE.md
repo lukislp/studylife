@@ -581,3 +581,20 @@ Keeps the native app's (`studylife-app` repo) iOS lock-screen/Dynamic-Island foc
   study days). The Planner has counted toward the coverage target since the protective rule was lifted
   (`tools/coverage-report.py`).
 
+## Apple Health tiles (native iOS app only)
+
+`INativeHealthData` (client) is implemented by studylife-app's `NativeHealthData` over
+`HealthBridge.swift`; in the browser the `NoNativeHealthData` default keeps every tile hidden.
+Two dashboard tiles derive from it:
+
+- **Readiness** — today's HRV (SDNN) as a personal rolling Z-score against the previous days
+  (`Index.Health.razor.cs`, at least 14 days).
+- **Sleep consistency** — how variable bedtime has been over the last 30 nights. The bridge
+  returns one `SleepNight` (onset as minutes after 6pm, asleep duration) per *sleep day*: asleep
+  samples are clustered with a 3 h gap tolerance, assigned to the day that started at 18:00, and
+  only the longest cluster of at least 3 h per day counts, so naps and long nocturnal wakes no
+  longer create phantom "nights". The displayed spread is `StudyMetrics.RobustSpread` (scaled
+  median absolute deviation, SD-comparable for normal data) so a single leftover outlier cannot
+  turn ±25 min into ±150 min, and the average duration is shown alongside because the Health app
+  only ever shows durations — 2026-09-03 the tile read "± 152 min" for a user whose Health app
+  showed a steady 6 h 59 min. `GetRecentSleepOnsetMinutesAsync` remains for older app builds.

@@ -106,7 +106,7 @@
   "ReadinessAroundBaseline": "În jurul mediei tale",
   "ReadinessBelowBaseline": "Sub media ta",
   "SleepConsistencyLabel": "Consistența somnului",
-  "SleepConsistencyValueFormat": "± {0} min (30 de zile)",
+  "SleepConsistencyValueFormat": "Adormire ± {0} min · somn mediu {1}",
   "SleepConsistencyGood": "Foarte regulat",
   "SleepConsistencyModerate": "Ușor variabil",
   "SleepConsistencyPoor": "Neregulat",

@@ -106,7 +106,7 @@
   "ReadinessAroundBaseline": "Okolo Vášho priemeru",
   "ReadinessBelowBaseline": "Pod Vaším priemerom",
   "SleepConsistencyLabel": "Pravidelnosť spánku",
-  "SleepConsistencyValueFormat": "± {0} min (30 dní)",
+  "SleepConsistencyValueFormat": "Zaspávanie ± {0} min · Ø spánok {1}",
   "SleepConsistencyGood": "Veľmi pravidelný",
   "SleepConsistencyModerate": "Mierne nepravidelný",
   "SleepConsistencyPoor": "Nepravidelný",

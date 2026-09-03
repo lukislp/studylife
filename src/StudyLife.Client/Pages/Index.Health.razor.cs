@@ -1,3 +1,6 @@
+using StudyLife.Client.Services;
+using StudyLife.Shared;
+
 namespace StudyLife.Client.Pages;
 
 public partial class Index
@@ -59,12 +62,17 @@ public partial class Index
     }
 
     // Sleep consistency: unlike readiness, this isn't "today vs. baseline" - it's "how variable
-    // has bedtime been lately," so the displayed statistic is the rolling standard deviation of
-    // onset times itself, not a Z-score. Needs at least SleepConsistencyMinNights of history.
+    // has bedtime been lately," so the displayed statistic is the spread of onset times itself,
+    // not a Z-score. The spread is StudyMetrics.RobustSpread (scaled median absolute deviation)
+    // rather than a plain standard deviation: one nap or one mis-clustered night must not turn
+    // "+-25 min" into "+-150 min". The average sleep duration is shown next to it so the tile can
+    // be sanity-checked against the Health app, which only ever shows durations. Needs at least
+    // SleepConsistencyMinNights of history.
     private bool _sleepConsistencyVisible;
     private double _sleepConsistencyPercent;
     private string _sleepConsistencyStatus = "";
-    private double _sleepConsistencyStdDevMinutes;
+    private double _sleepConsistencySpreadMinutes;
+    private double _sleepAverageDurationMinutes;
     private const int SleepConsistencyMinNights = 14;
 
     private string SleepConsistencyStatusText => _sleepConsistencyStatus switch
@@ -76,25 +84,41 @@ public partial class Index
 
     private string SleepConsistencyValueText => string.Format(
         T.SleepConsistencyValueFormat ?? "",
-        _sleepConsistencyStdDevMinutes.ToString("0"));
+        _sleepConsistencySpreadMinutes.ToString("0"),
+        FormatSleepDuration(_sleepAverageDurationMinutes));
 
-    private void BuildSleepConsistency(IReadOnlyList<double>? sleepOnsetMinutes)
+    // "6 h 59 min" - unit abbreviations that read the same in all 26 UI languages.
+    private static string FormatSleepDuration(double minutes)
+    {
+        var total = (int)Math.Round(minutes);
+        return $"{total / 60} h {total % 60:00} min";
+    }
+
+    private void BuildSleepConsistency(IReadOnlyList<SleepNight>? nights)
     {
         _sleepConsistencyVisible = false;
         _sleepConsistencyPercent = 0;
         _sleepConsistencyStatus = "";
-        _sleepConsistencyStdDevMinutes = 0;
+        _sleepConsistencySpreadMinutes = 0;
+        _sleepAverageDurationMinutes = 0;
 
-        if (sleepOnsetMinutes == null || sleepOnsetMinutes.Count < SleepConsistencyMinNights) return;
+        if (nights == null || nights.Count < SleepConsistencyMinNights) return;
 
-        var mean = sleepOnsetMinutes.Average();
-        var variance = sleepOnsetMinutes.Sum(v => (v - mean) * (v - mean)) / sleepOnsetMinutes.Count;
-        var stdDev = Math.Sqrt(variance);
+        var onsets = new double[nights.Count];
+        var durationSum = 0.0;
+        for (var i = 0; i < nights.Count; i++)
+        {
+            onsets[i] = nights[i].OnsetMinutesAfter6pm;
+            durationSum += nights[i].DurationMinutes;
+        }
+
+        var spread = StudyMetrics.RobustSpread(onsets);
 
         // 0 min spread -> 100%, 90+ min spread -> 0%.
-        _sleepConsistencyPercent = Math.Clamp(100 - stdDev / 90.0 * 100, 0, 100);
-        _sleepConsistencyStatus = stdDev <= 30 ? "good" : stdDev >= 60 ? "poor" : "moderate";
-        _sleepConsistencyStdDevMinutes = stdDev;
+        _sleepConsistencyPercent = Math.Clamp(100 - spread / 90.0 * 100, 0, 100);
+        _sleepConsistencyStatus = spread <= 30 ? "good" : spread >= 60 ? "poor" : "moderate";
+        _sleepConsistencySpreadMinutes = spread;
+        _sleepAverageDurationMinutes = durationSum / nights.Count;
         _sleepConsistencyVisible = true;
     }
 }

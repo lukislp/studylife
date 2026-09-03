@@ -106,7 +106,7 @@
   "ReadinessAroundBaseline": "Okoli tvojega povprečja",
   "ReadinessBelowBaseline": "Pod tvojim povprečjem",
   "SleepConsistencyLabel": "Doslednost spanja",
-  "SleepConsistencyValueFormat": "± {0} min (30 dni)",
+  "SleepConsistencyValueFormat": "Uspavanje ± {0} min · Ø spanje {1}",
   "SleepConsistencyGood": "Zelo redno",
   "SleepConsistencyModerate": "Nekoliko spremenljivo",
   "SleepConsistencyPoor": "Neredno",

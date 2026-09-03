@@ -262,7 +262,7 @@ public partial class Index
         var groupQuotasTask = State.GetActiveGroupQuotasAsync();
         var studyProgramsTask = State.GetJsonCachedAsync<List<StudyProgramSummaryDto>>("api/studyprograms");
         var hrvTask = Health.IsAvailable ? Health.GetRecentHrvAsync(30) : Task.FromResult<IReadOnlyList<double>?>(null);
-        var sleepOnsetTask = Health.IsAvailable ? Health.GetRecentSleepOnsetMinutesAsync(30) : Task.FromResult<IReadOnlyList<double>?>(null);
+        var sleepNightsTask = Health.IsAvailable ? Health.GetRecentSleepNightsAsync(30) : Task.FromResult<IReadOnlyList<SleepNight>?>(null);
         var dueForHeavyRefresh = _lastHeavyFetchAt == DateTime.MinValue || DateTime.UtcNow - _lastHeavyFetchAt >= HeavyFetchThrottle;
         var heavyHistoryTask = refreshHeavyHistory && dueForHeavyRefresh
             ? State.GetHistoryAsync(AchievementHistoryDays)
@@ -538,7 +538,7 @@ public partial class Index
         }
         await BuildLatestNoteAsync(allCourses);
         BuildReadinessScore(await hrvTask);
-        BuildSleepConsistency(await sleepOnsetTask);
+        BuildSleepConsistency(await sleepNightsTask);
 
         // Deliberately a separate, much longer-range fetch than `history` (HistoryDays = 400) above -
         // achievements and the month/year comparison are meant to reflect the whole journey, not just

@@ -106,7 +106,7 @@
   "ReadinessAroundBaseline": "Kring ditt genomsnitt",
   "ReadinessBelowBaseline": "Under ditt genomsnitt",
   "SleepConsistencyLabel": "Sömnkonsistens",
-  "SleepConsistencyValueFormat": "± {0} min (30 dagar)",
+  "SleepConsistencyValueFormat": "Insomning ± {0} min · Ø sömn {1}",
   "SleepConsistencyGood": "Mycket regelbunden",
   "SleepConsistencyModerate": "Något varierande",
   "SleepConsistencyPoor": "Oregelbunden",
