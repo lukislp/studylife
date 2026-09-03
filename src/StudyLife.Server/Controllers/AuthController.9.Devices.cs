@@ -32,6 +32,12 @@ public partial class AuthController
     {
         var sessionId = (int)HttpContext.Items[AuthSessionService.SessionItemKey]!; // guaranteed by [Authorize(SessionOnly)]
         await _db.AuthSessions.Where(s => s.Id == sessionId).ExecuteDeleteAsync();
+        // The handler's per-pod session cache (AuthSessionCache) would otherwise keep answering
+        // for this token for up to 30 more seconds on THIS pod - the explicit sign-out must be
+        // immediate here, whatever the other pods do. Resolved from RequestServices instead of
+        // the constructor so this partial does not touch the shared constructor signature.
+        if (HttpContext.Items[AuthSessionService.SessionTokenHashItemKey] is string tokenHash)
+            HttpContext.RequestServices.GetRequiredService<AuthSessionCache>().Remove(tokenHash);
         return NoContent();
     }
 

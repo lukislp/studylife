@@ -292,6 +292,8 @@ builder.Services.AddScoped<IOwnershipService, OwnershipService>();
 // Per-audience redirect_uri allow-list for the consent connect flow (2026-09 audit S1) - see
 // ConsentRedirectPolicy for the built-in shapes and the Consent:AllowedRedirectUris config.
 builder.Services.AddSingleton<ConsentRedirectPolicy>();
+// Per-pod 30s cache of valid session-token lookups (2026-09 audit P6) - see AuthSessionCache.
+builder.Services.AddSingleton<AuthSessionCache>();
 // Registration gate (audit finding A10) - Registration:Mode (env Registration__Mode); see
 // RegistrationGateService for the open/invite/closed semantics and the bootstrap bypass.
 builder.Services.AddScoped<IRegistrationGateService, RegistrationGateService>();
