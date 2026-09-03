@@ -10,16 +10,31 @@
 // Bumped to v4: see service-worker.published.js for why (the fetch handler used to cache
 // navigation responses regardless of HTTP status, so a single transient 502/500 could get
 // stuck as the permanent offline fallback for "/").
-const CACHE_NAME = 'studylife-dev-cache-v4';
+const CACHE_NAME = 'studylife-dev-cache-v5';
 
 // Blazor's build generates service-worker-assets.js (self.assetsManifest) even for dev
 // builds - see service-worker.published.js for the full rationale on why importing it
 // to precache hash-versioned assets at install time is safe here too.
 self.importScripts('service-worker-assets.js');
 
+// Not everything in the manifest is worth downloading on install. The manifest lists all 26
+// languages' i18n tables (416 JSON files, ~1.7 MB raw) plus debug symbols and source maps, and
+// cache.addAll fetches them all while the WASM runtime itself is still downloading - on a first
+// visit that is ~400 extra requests competing for the same connection. Only the tables of the
+// default language and the English fallback are precached; every other language still loads
+// normally from the network when selected (network-first below), it just isn't available
+// offline. Bumped CACHE_NAME to v5 so existing installs drop the old, larger precache.
+const OFFLINE_I18N_LANGUAGES = ['de', 'en'];
+function shouldPrecache(asset) {
+    if (/\.(pdb|map)$/i.test(asset.url)) return false;
+    const i18n = asset.url.match(/_content\/i18ntext\/.*\.([a-z]{2})\.json$/);
+    if (i18n) return OFFLINE_I18N_LANGUAGES.includes(i18n[1]);
+    return true;
+}
+
 self.addEventListener('install', event => event.waitUntil(
     caches.open(CACHE_NAME)
-        .then(cache => cache.addAll(self.assetsManifest.assets.map(
+        .then(cache => cache.addAll(self.assetsManifest.assets.filter(shouldPrecache).map(
             asset => new Request(asset.url, { integrity: asset.hash, cache: 'no-cache' })
         )))
         .then(() => self.skipWaiting())

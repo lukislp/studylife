@@ -123,7 +123,7 @@ public class StudyProgramsController : ControllerBase
             // SettingsController.Get() caches for 15s via SettingsCacheVersion - without this
             // bump, a client polling shortly after the deletion would still see the old (now
             // invalid) ActiveStudyProgramId.
-            _settingsCacheVersion.Value++;
+            await _settingsCacheVersion.BumpAsync(_currentUser.AuthUserId);
         }
 
         await transaction.CommitAsync();

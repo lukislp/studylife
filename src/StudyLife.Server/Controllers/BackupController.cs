@@ -186,7 +186,7 @@ public class BackupController : ControllerBase
         var settingsEntity = await _db.Settings.GetOrCreateAsync(_db);
         settingsEntity.LastBackupDownloadAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
-        _settingsCacheVersion.Value++;
+        await _settingsCacheVersion.BumpAsync(settingsEntity.AuthUserId);
     }
 
     public record EncryptedBackupRequest(string Password);
@@ -630,7 +630,7 @@ public class BackupController : ControllerBase
         await _db.SaveChangesAsync();
         imported["settings"] = 1;
 
-        _settingsCacheVersion.Value++;
+        await _settingsCacheVersion.BumpAsync(HttpContext.SessionAuthUserId()!.Value); // ImportJson is [Authorize(SessionOnly)]
         await transaction.CommitAsync();
 
         return Ok(new BackupImportResponseDto { Imported = imported, Dropped = dropped });

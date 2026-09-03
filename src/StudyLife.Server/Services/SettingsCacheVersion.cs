@@ -1,14 +1,12 @@
+using System.Globalization;
+
 namespace StudyLife.Server.Services;
 
 /// <summary>
-/// Singleton counter folded into the Settings cache key. SettingsController is transient
-/// per-request, so a plain field there wouldn't survive across requests - bumping this on every
-/// write makes the previously cached entry unreachable (and eventually evicted) without having to
-/// remove it from the cache directly.
-///
-/// Thin synchronous facade around <see cref="IVersionCounter"/> (in-memory in single-instance
-/// mode, Redis in multi-pod mode - see Program.cs) - see the IVersionCounter comment for the
-/// design rationale behind the synchronous GetAwaiter().GetResult() delegation.
+/// Per-user counter folded into the Settings cache key (SettingsController.Get). Same design as
+/// <see cref="SessionHistoryCacheVersion"/>: bumping after a write makes that user's cached
+/// settings (and the ETag derived from the key) unreachable without touching the cache, other
+/// users are unaffected, and every access is async (2026-09 audit P3/P4).
 /// </summary>
 public class SettingsCacheVersion
 {
@@ -19,15 +17,11 @@ public class SettingsCacheVersion
         _counter = counter;
     }
 
-    /// <summary>
-    /// Read: current counter value. Write (only used via <c>Value++</c>): atomically increments
-    /// the counter by 1 - the "new" value the compiler computes for <c>Value++</c> is
-    /// deliberately ignored, so that even in Redis mode IncrementAsync (a real atomic INCR) is
-    /// used instead of a racy read-modify-write.
-    /// </summary>
-    public int Value
-    {
-        get => _counter.GetValueAsync().GetAwaiter().GetResult();
-        set => _counter.IncrementAsync().GetAwaiter().GetResult();
-    }
+    public Task<int> GetAsync(int authUserId) => _counter.GetValueAsync(Key(authUserId));
+
+    /// <summary>Atomically increments the user's counter (a real INCR in Redis mode, never a
+    /// racy read-modify-write) - call after every write that changes that user's settings.</summary>
+    public Task<int> BumpAsync(int authUserId) => _counter.IncrementAsync(Key(authUserId));
+
+    private static string Key(int authUserId) => authUserId.ToString(CultureInfo.InvariantCulture);
 }
