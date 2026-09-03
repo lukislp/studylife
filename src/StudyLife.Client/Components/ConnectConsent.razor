@@ -29,6 +29,7 @@
         else
         {
             <p class="ss-desc">@Intro</p>
+            <p class="ss-desc"><strong>@string.Format(T.ConnectRedirectTarget ?? "", _redirectAuthority)</strong></p>
             @if (_error != null)
             {
                 <p class="ss-desc" style="color:var(--danger, #e74c3c)">@_error</p>
@@ -57,6 +58,11 @@
     private bool _invalidRequest;
     private string _redirectUri = "";
     private string _state = "";
+    /// <summary>Host (plus port when non-default) of the redirect target, shown on the consent
+    /// card so the user can see WHERE the connection hands off to before clicking Connect - the
+    /// server-side allow-list (ConsentRedirectPolicy) is the real guard, this is the human-visible
+    /// half of the same defense.</summary>
+    private string _redirectAuthority = "";
 
     // "tray" deliberately falls through to the Mcp default below for PageTitle/Heading, not a
     // dedicated ConnectTray* pair: studylife-tray is a native desktop app, not a browser
@@ -103,6 +109,7 @@
             _invalidRequest = true;
             return Task.CompletedTask;
         }
+        _redirectAuthority = new Uri(_redirectUri).Authority;
 
         if (string.IsNullOrEmpty(TokenStore.Token))
         {

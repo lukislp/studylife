@@ -19,5 +19,6 @@
   "ConnectInvalidRequest": "Tá an t-iarratas naisc seo neamhbhailí nó tá sé imithe in éag.",
   "ConnectClientPageTitle": "StudyLife — Ceangail",
   "ConnectClientHeading": "Ceangail breiseán",
-  "ConnectClientNotRegistered": "Níl an breiseán seo cláraithe ar do chuid StudyLife fós."
+  "ConnectClientNotRegistered": "Níl an breiseán seo cláraithe ar do chuid StudyLife fós.",
+  "ConnectRedirectTarget": "Tar éis ceangal a dhéanamh, seolfar ar aghaidh thú chuig: {0}"
 }

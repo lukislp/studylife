@@ -19,5 +19,6 @@
   "ConnectInvalidRequest": "Denne forbindelsesanmodning er ugyldig eller udløbet.",
   "ConnectClientPageTitle": "StudyLife — Forbind",
   "ConnectClientHeading": "Forbind tilføjelse",
-  "ConnectClientNotRegistered": "Denne tilføjelse er endnu ikke registreret på din StudyLife-instans."
+  "ConnectClientNotRegistered": "Denne tilføjelse er endnu ikke registreret på din StudyLife-instans.",
+  "ConnectRedirectTarget": "Efter tilslutningen bliver du sendt videre til: {0}"
 }

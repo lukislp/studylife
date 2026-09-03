@@ -19,5 +19,6 @@
   "ConnectInvalidRequest": "Ez a csatlakozási kérés érvénytelen vagy lejárt.",
   "ConnectClientPageTitle": "StudyLife — Kapcsolódás",
   "ConnectClientHeading": "Bővítmény összekapcsolása",
-  "ConnectClientNotRegistered": "Ez a bővítmény még nincs regisztrálva a StudyLife-fiókodban."
+  "ConnectClientNotRegistered": "Ez a bővítmény még nincs regisztrálva a StudyLife-fiókodban.",
+  "ConnectRedirectTarget": "A csatlakozás után ide irányítunk át: {0}"
 }

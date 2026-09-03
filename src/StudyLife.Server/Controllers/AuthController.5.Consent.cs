@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Auth;
 using StudyLife.Server.Data;
+using StudyLife.Server.Services;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Controllers;
@@ -34,26 +35,22 @@ public partial class AuthController
     private sealed record PendingConsentAssertion(int UserId, string Audience, string ApiKey);
 
     /// <summary>
-    /// Redirect URI policy shared by every consent "connect" action (McpConnect/CaptureConnect):
-    /// normally an absolute https URL - chrome.identity's https://&lt;id&gt;.chromiumapp.org/
-    /// callback for the capture extension is a perfectly ordinary https origin, no special-casing
-    /// needed there. The one addition is the RFC 8252 §8.3 native-app loopback exception, for a
-    /// stdio/CLI consumer with no https origin of its own (studylife-mcp's `mcp --login`): EXACTLY
-    /// http://127.0.0.1:&lt;port&gt;/... or http://localhost:&lt;port&gt;/..., any port, any path.
-    /// Nothing else non-https is ever accepted (in particular no other http host) - this can
-    /// therefore never become an open redirect to an attacker-controlled plain-http origin; the
-    /// assertion handed to whatever URI passes here is single-use, short-lived, and only ever
-    /// exchangeable server-to-server (see RedeemConsentAssertionAsync) regardless.
+    /// SYNTACTIC redirect URI gate: an absolute https URL, or the RFC 8252 §8.3 native-app
+    /// loopback exception (EXACTLY http://127.0.0.1:&lt;port&gt;/... or http://localhost:&lt;port&gt;/...,
+    /// any port, any path). Nothing else non-https is ever accepted. This alone is NOT sufficient
+    /// for the five hardcoded audiences anymore: the assertion-exchange endpoints are anonymous
+    /// and the assertion is their only credential, so any https host that passed here could
+    /// redeem it (2026-09 audit S1). BuildConnectRedirectAsync therefore additionally requires
+    /// ConsentRedirectPolicy.IsAllowed - the per-audience allow-list. This method stays as the
+    /// shared first-stage check, and internal instead of private because DeveloperController
+    /// reuses it as-is when validating an OAuthClientEntity's AllowedRedirectUris at
+    /// registration time (those are then matched exactly by AuthController.10.OAuthClients.cs).
     /// </summary>
-    /// <summary>internal instead of private: reused as-is by DeveloperController when validating
-    /// an OAuthClientEntity's AllowedRedirectUris list at registration time.</summary>
     internal static bool IsAllowedRedirectUri(string? redirectUri)
     {
         if (!Uri.TryCreate(redirectUri, UriKind.Absolute, out var uri)) return false;
         if (uri.Scheme == Uri.UriSchemeHttps) return true;
-        return uri.Scheme == Uri.UriSchemeHttp
-            && (string.Equals(uri.Host, "127.0.0.1", StringComparison.Ordinal)
-                || string.Equals(uri.Host, "localhost", StringComparison.OrdinalIgnoreCase));
+        return ConsentRedirectPolicy.IsLoopback(uri);
     }
 
     /// <summary>
@@ -69,12 +66,15 @@ public partial class AuthController
     private async Task<(string? RedirectTo, ActionResult? Error)> BuildConnectRedirectAsync(
         string audience, string redirectUri, string state, Func<AuthUserEntity, DateTime, string> rotateKey)
     {
-        // No open-redirect surface beyond this: the assertion is single-use, short-lived, and
-        // only ever exchangeable server-to-server (see RedeemConsentAssertionAsync) - an attacker
-        // who could steer redirectUri anywhere allowed could still only make the BROWSER navigate
-        // there with an assertion that only the real consumer's own backend can redeem for a key.
+        // Two-stage check. The syntactic gate alone is not enough: the exchange endpoints below
+        // are anonymous and take nothing but the assertion, so ANY party receiving the browser
+        // redirect can redeem it for the freshly rotated key - the redirect target must therefore
+        // be a callback this audience is actually known to use (ConsentRedirectPolicy), not
+        // merely "some https URL" (2026-09 audit S1).
         if (!IsAllowedRedirectUri(redirectUri))
             return (null, BadRequest("redirectUri must be an absolute https URL, or an http://127.0.0.1|localhost loopback URL (RFC 8252)."));
+        if (!_consentRedirects.IsAllowed(audience, redirectUri))
+            return (null, BadRequest("redirectUri is not an allowed callback for this audience (see Consent:AllowedRedirectUris)."));
 
         var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)] on both callers
         var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);

@@ -19,5 +19,6 @@
   "ConnectInvalidRequest": "Questa richiesta di connessione non è valida o è scaduta.",
   "ConnectClientPageTitle": "StudyLife — Connetti",
   "ConnectClientHeading": "Connetti componente aggiuntivo",
-  "ConnectClientNotRegistered": "Questo componente aggiuntivo non è ancora registrato sulla tua istanza StudyLife."
+  "ConnectClientNotRegistered": "Questo componente aggiuntivo non è ancora registrato sulla tua istanza StudyLife.",
+  "ConnectRedirectTarget": "Dopo la connessione verrai reindirizzato a: {0}"
 }

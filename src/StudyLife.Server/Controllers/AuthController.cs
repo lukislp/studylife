@@ -45,9 +45,11 @@ public partial class AuthController : ControllerBase
     private readonly SystemSecretsService _systemSecrets;
     private readonly IOwnershipService _ownership;
     private readonly IRegistrationGateService _registrationGate;
+    private readonly ConsentRedirectPolicy _consentRedirects;
 
     public AuthController(StudyLifeDb db, IDistributedCache cache, IConfiguration config,
-        SystemSecretsService systemSecrets, IOwnershipService ownership, IRegistrationGateService registrationGate)
+        SystemSecretsService systemSecrets, IOwnershipService ownership, IRegistrationGateService registrationGate,
+        ConsentRedirectPolicy consentRedirects)
     {
         _db = db;
         _cache = cache;
@@ -55,6 +57,7 @@ public partial class AuthController : ControllerBase
         _systemSecrets = systemSecrets;
         _ownership = ownership;
         _registrationGate = registrationGate;
+        _consentRedirects = consentRedirects;
     }
 
     // WebAuthn challenge cache on IDistributedCache instead of IMemoryCache: with multiple

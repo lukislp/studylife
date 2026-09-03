@@ -19,5 +19,6 @@
   "ConnectInvalidRequest": "Esta solicitud de conexión no es válida o ha caducado.",
   "ConnectClientPageTitle": "StudyLife — Conectar",
   "ConnectClientHeading": "Conectar complemento",
-  "ConnectClientNotRegistered": "Este complemento aún no está registrado en tu instancia de StudyLife."
+  "ConnectClientNotRegistered": "Este complemento aún no está registrado en tu instancia de StudyLife.",
+  "ConnectRedirectTarget": "Después de conectar se te redirigirá a: {0}"
 }

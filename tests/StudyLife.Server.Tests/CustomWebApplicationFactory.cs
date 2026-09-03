@@ -56,6 +56,10 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         // the actual "unset defaults to invite" production behavior is pinned separately by the
         // pure unit test RegistrationModeConfigTests.Unset_DefaultsToInvite (no host needed there).
         builder.UseSetting("Registration:Mode", "open");
+        // The mcp audience's consent flow only accepts loopback or explicitly configured
+        // callbacks (ConsentRedirectPolicy) - the https callback the mcp flow tests use has to be
+        // on that list, exactly like a real HTTP-mode studylife-mcp deployment configures its own.
+        builder.UseSetting("Consent:AllowedRedirectUris:mcp:0", "https://mcp.example.com/auth/studylife/callback");
 
         // Runs AFTER the registrations from Program.cs, but BEFORE the host starts - rerouting the
         // descriptors therefore takes effect before Program.cs's Migrate() block touches the DB for the first time.

@@ -19,5 +19,6 @@
   "ConnectInvalidRequest": "Această cerere de conectare este invalidă sau a expirat.",
   "ConnectClientPageTitle": "StudyLife — Conectare",
   "ConnectClientHeading": "Conectează suplimentul",
-  "ConnectClientNotRegistered": "Acest supliment nu este încă înregistrat pe instanța dvs. StudyLife."
+  "ConnectClientNotRegistered": "Acest supliment nu este încă înregistrat pe instanța dvs. StudyLife.",
+  "ConnectRedirectTarget": "După conectare vei fi redirecționat către: {0}"
 }
