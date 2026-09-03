@@ -236,4 +236,37 @@ public class IcsImportParserTests
         Assert.Equal(new DateTime(2026, 1, 16, 10, 0, 0), e.StartTime);
         Assert.Equal(new DateTime(2026, 1, 16, 11, 0, 0), e.EndTime);
     }
+
+    [Fact]
+    public void Parse_ManyContinuationLines_UnfoldsCorrectly_InLinearTime()
+    {
+        // 2026-09 audit S3: the unfolder used to re-copy the whole growing string per
+        // continuation line (O(n²)) - 200k two-character continuation lines took minutes. With
+        // the StringBuilder implementation this is well under a second; the generous bound only
+        // guards against a regression back to quadratic behavior, not against a slow CI box.
+        const int continuations = 200_000;
+        var sb = new System.Text.StringBuilder("BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nDTSTART:20260116T100000\r\nDTEND:20260116T110000\r\nSUMMARY:A");
+        for (var i = 0; i < continuations; i++) sb.Append("\r\n B");
+        sb.Append("\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n");
+
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        var events = IcsImportParser.Parse(sb.ToString());
+        stopwatch.Stop();
+
+        var e = Assert.Single(events);
+        Assert.Equal(1 + continuations, e.Title.Length);
+        Assert.StartsWith("AB", e.Title);
+        Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(10), $"took {stopwatch.Elapsed}");
+    }
+
+    [Fact]
+    public void Parse_ContinuationLineBeforeAnyProperty_IsIgnored_AndLastLineWithoutNewlineIsKept()
+    {
+        var ics = " stray continuation\r\nBEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nDTSTART:20260116T100000\r\nDTEND:20260116T110000\r\nSUMMARY:Ohne\r\n  Zeilenende\r\nEND:VEVENT\r\nEND:VCALENDAR";
+
+        var events = IcsImportParser.Parse(ics);
+
+        var e = Assert.Single(events);
+        Assert.Equal("Ohne Zeilenende", e.Title);
+    }
 }

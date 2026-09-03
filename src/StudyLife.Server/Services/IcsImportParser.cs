@@ -62,13 +62,32 @@ public static class IcsImportParser
     {
         var rawLines = content.Replace("\r\n", "\n").Replace("\r", "\n").Split('\n');
         var result = new List<string>();
+        // Accumulate each logical line in a StringBuilder and flush it once the next non-
+        // continuation line starts. The previous `result[^1] += raw[1..]` re-copied the whole
+        // growing string per continuation line - O(n²) over a 10 MB upload made of millions of
+        // two-character continuation lines pinned a request thread for minutes (2026-09 audit S3).
+        var current = new System.Text.StringBuilder();
+        var hasCurrent = false;
         foreach (var raw in rawLines)
         {
-            if ((raw.StartsWith(' ') || raw.StartsWith('\t')) && result.Count > 0)
-                result[^1] += raw[1..];
-            else if (raw.Length > 0)
-                result.Add(raw);
+            if ((raw.StartsWith(' ') || raw.StartsWith('\t')) && hasCurrent)
+            {
+                current.Append(raw, 1, raw.Length - 1);
+                continue;
+            }
+            if (hasCurrent)
+            {
+                result.Add(current.ToString());
+                current.Clear();
+                hasCurrent = false;
+            }
+            if (raw.Length > 0)
+            {
+                current.Append(raw);
+                hasCurrent = true;
+            }
         }
+        if (hasCurrent) result.Add(current.ToString());
         return result;
     }
 
