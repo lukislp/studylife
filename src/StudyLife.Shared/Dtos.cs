@@ -1290,6 +1290,12 @@ public class PushPublicKeyResponseDto
 public class SystemCapabilitiesResponseDto
 {
     public bool RawBackupSupported { get; set; }
+
+    /// <summary>Share of client sessions that report timing telemetry (0..1); errors are always
+    /// reported. Server-side so an operator can turn it up on a small deployment (one user at
+    /// 10 % would wait days for a single boot sample) and down again when volume grows, without
+    /// a client release. Telemetry:ClientSampleRatio, default 0.10.</summary>
+    public double TelemetryClientSampleRatio { get; set; } = 0.10;
 }
 
 // Audit finding M4: JSON export/import ("v2") - BackupController.Export/ImportJson. Unlike the
