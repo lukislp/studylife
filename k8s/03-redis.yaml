@@ -42,7 +42,14 @@ data:
     # time too many at worst, never incorrectly. maxmemory chosen to fit under the 128Mi
     # container limit below.
     maxmemory 96mb
-    maxmemory-policy allkeys-lru
+    # volatile-lru, not allkeys-lru (2026-09 audit): only keys WITH a TTL are eviction
+    # candidates. That protects the DataProtection key ring (dataprotection:keys, no TTL) and the
+    # per-user cache version counters from being evicted under memory pressure - with allkeys-lru
+    # a burst of cache writes could silently drop the key ring and invalidate every protected
+    # payload across all pods. Everything that is a real cache (CacheHelper entries, WebAuthn
+    # challenges, consent assertions, rate-limit windows, shard leases) carries a TTL and stays
+    # evictable exactly as before.
+    maxmemory-policy volatile-lru
     # Client TLS (app<->Redis) active, cluster bus (Redis<->Redis gossip/replication)
     # DELIBERATELY still plaintext - tested live locally and reverted: "tls-cluster yes" via a
     # rolling update across all 6 pods reliably breaks the gossip protocol (cluster_state:fail,
