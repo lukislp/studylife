@@ -628,6 +628,10 @@ convention so the same instruments can be exported via OTLP to a collector later
 read by an own dashboard through the Prometheus HTTP API — the export format is a
 configuration decision, not a code change.
 
+The client sample rate itself is server-provided (`Telemetry:ClientSampleRatio` via
+`api/system/capabilities`, default 0.10; prod runs 1.0 while it has a handful of users) so it can
+change without a client release; a stored session re-rolls its coin flip when the rate changes.
+
 **Phase 4 — traces.** `Telemetry:OtlpEndpoint` (env `Telemetry__OtlpEndpoint`) enables OTLP
 trace export; in Kubernetes it points at `otel-collector.monitoring.svc.cluster.local:4317`
 (homelab-infra `monitoring/11-otel-collector.yaml`), which forwards to Grafana Tempo (7 days).

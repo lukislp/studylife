@@ -38,7 +38,9 @@ public sealed class TelemetryService : IAsyncDisposable
     private const int FlushEventThreshold = 25;
     private const int MaxEventsPerBatch = 50;
     private const string SessionStorageKey = "studylife-telemetry-session";
-    private const double SampleRate = 0.10;
+    // Server-provided (api/system/capabilities, Telemetry:ClientSampleRatio); 0.10 until the
+    // capabilities call answers, and forever if it fails.
+    private double _sampleRate = 0.10;
 
     private static readonly HashSet<string> SseEventKinds = new(StringComparer.Ordinal) { "connected", "reconnect", "fallback_poll" };
 
@@ -79,6 +81,14 @@ public sealed class TelemetryService : IAsyncDisposable
     /// timer and the JS-side pagehide/visibilitychange/window.onerror hooks.</summary>
     public async Task InitializeAsync()
     {
+        try
+        {
+            var capabilities = await _http.GetFromJsonAsync<SystemCapabilitiesResponseDto>(
+                $"api/system/capabilities?nocache={DateTime.UtcNow.Ticks}");
+            if (capabilities is not null)
+                _sampleRate = Math.Clamp(capabilities.TelemetryClientSampleRatio, 0, 1);
+        }
+        catch { /* keep the default - never block startup on this */ }
         await EnsureSessionAsync();
         try
         {
@@ -106,7 +116,11 @@ public sealed class TelemetryService : IAsyncDisposable
             var stored = string.IsNullOrEmpty(json) ? null : JsonSerializer.Deserialize<StoredSession>(json);
             var ageOk = stored is not null
                 && DateTimeOffset.UtcNow - DateTimeOffset.FromUnixTimeMilliseconds(stored.CreatedAt) < TimeSpan.FromHours(24);
-            if (stored is { Id.Length: > 0 } && ageOk)
+            // A stored coin flip only stays valid for the rate it was flipped at - when the
+            // operator changes Telemetry:ClientSampleRatio the next page load re-rolls instead of
+            // honouring a decision made under the old rate for up to 24 h.
+            var rateOk = stored is not null && Math.Abs(stored.Rate - _sampleRate) < 0.0001;
+            if (stored is { Id.Length: > 0 } && ageOk && rateOk)
             {
                 _sessionId = stored.Id;
                 _sampled = stored.Sampled;
@@ -116,16 +130,16 @@ public sealed class TelemetryService : IAsyncDisposable
         catch { /* corrupt/unavailable storage - fall through to a fresh session */ }
 
         _sessionId = GenerateSessionId();
-        _sampled = Random.Shared.NextDouble() < SampleRate;
+        _sampled = Random.Shared.NextDouble() < _sampleRate;
         try
         {
-            var json = JsonSerializer.Serialize(new StoredSession(_sessionId, _sampled, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()));
+            var json = JsonSerializer.Serialize(new StoredSession(_sessionId, _sampled, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), _sampleRate));
             await _js.InvokeVoidAsync("localStorage.setItem", SessionStorageKey, json);
         }
         catch { /* best-effort persistence; the session still works for the rest of this page load */ }
     }
 
-    private sealed record StoredSession(string Id, bool Sampled, long CreatedAt);
+    private sealed record StoredSession(string Id, bool Sampled, long CreatedAt, double Rate = 0.10);
 
     // 22 chars of a 128-bit random value, base64url-ish alphabet restricted to the contract's
     // [A-Za-z0-9_-]{16,32} - well within bounds and collision-safe enough for a correlation id.

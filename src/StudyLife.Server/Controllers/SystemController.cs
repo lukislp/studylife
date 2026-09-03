@@ -61,7 +61,13 @@ public class SystemController : ControllerBase
         // stale capability info would otherwise show/hide UI incorrectly (see the
         // /api fallback comment in Program.cs about NSURLCache poisoning).
         Response.Headers.CacheControl = "no-store";
-        return Ok(new SystemCapabilitiesResponseDto { RawBackupSupported = _rawBackupSupported });
+        var configuration = HttpContext.RequestServices.GetRequiredService<IConfiguration>();
+        var sampleRatio = configuration.GetValue<double?>("Telemetry:ClientSampleRatio") ?? 0.10;
+        return Ok(new SystemCapabilitiesResponseDto
+        {
+            RawBackupSupported = _rawBackupSupported,
+            TelemetryClientSampleRatio = Math.Clamp(sampleRatio, 0, 1),
+        });
     }
 
     /// <summary>
