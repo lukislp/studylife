@@ -281,5 +281,7 @@
   "MarketplaceByDeveloper": "izstrādātājs {0}",
   "MarketplaceViewSource": "Skatīt pirmkodu",
   "MarketplaceDemoNotice": "Papildinājumu instalēšana šajā demonstrācijas versijā ir atspējota.",
-  "ClientKeysHeading": "Pievienotie papildinājumi"
+  "ClientKeysHeading": "Pievienotie papildinājumi",
+  "TelemetryHeading": "Lietošanas un kļūdu pārskati",
+  "TelemetryDesc": "Palīdz mums atrast kļūdas un lēnās vietas, sūtot anonīmus veiktspējas un kļūdu datus — nekad tavas piezīmes, sesijas vai veselības datus. To vari izslēgt jebkurā laikā."
 }

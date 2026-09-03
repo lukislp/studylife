@@ -281,5 +281,7 @@
   "MarketplaceByDeveloper": "od {0}",
   "MarketplaceViewSource": "Zobacz kod źródłowy",
   "MarketplaceDemoNotice": "Instalowanie dodatków jest wyłączone w tej instancji demonstracyjnej.",
-  "ClientKeysHeading": "Połączone dodatki"
+  "ClientKeysHeading": "Połączone dodatki",
+  "TelemetryHeading": "Raporty użycia i błędów",
+  "TelemetryDesc": "Pomaga nam wykrywać usterki i spowolnienia poprzez wysyłanie anonimowych danych o wydajności i błędach — nigdy Twoje notatki, sesje ani dane zdrowotne. Możesz to wyłączyć w każdej chwili."
 }

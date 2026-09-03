@@ -281,5 +281,7 @@
   "MarketplaceByDeveloper": "avtor {0}",
   "MarketplaceViewSource": "Prikaži izvorno kodo",
   "MarketplaceDemoNotice": "Nameščanje dodatkov je na tej demo namestitvi onemogočeno.",
-  "ClientKeysHeading": "Povezani dodatki"
+  "ClientKeysHeading": "Povezani dodatki",
+  "TelemetryHeading": "Poročila o uporabi in napakah",
+  "TelemetryDesc": "Pomaga nam odkriti hrošče in počasna mesta s pošiljanjem anonimnih podatkov o zmogljivosti in napakah — nikoli tvojih zapiskov, sej ali zdravstvenih podatkov. To lahko kadar koli izklopiš."
 }

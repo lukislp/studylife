@@ -1,0 +1,59 @@
+@using StudyLife.Client.Services
+@inject AppStateService State
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+@* Shown once from MainLayout after settings are first loaded, when TelemetryConsent is still
+   null (docs/ARCHITECTURE.md "Telemetry", phase 2) - never again afterward, on either answer.
+   Deliberately no backdrop-click-to-dismiss and no close button (unlike every other modal in
+   this app): a consent prompt needs an explicit choice, not an implicit dismiss that would leave
+   the setting undecided and the modal reappearing on the next load. *@
+
+@if (Show)
+{
+    <div class="modal-overlay">
+        <div class="modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>@T.Heading</h3>
+            </div>
+            <div class="modal-body">
+                <p class="ss-desc">@T.ExplainWhatText</p>
+                <p class="ss-desc">@T.ExplainChangeText</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" @onclick="() => AnswerAsync(false)" disabled="@_busy">
+                    @T.DeclineButton
+                </button>
+                <button type="button" class="btn-primary" @onclick="() => AnswerAsync(true)" disabled="@_busy">
+                    @T.AcceptButton
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Show { get; set; }
+    [Parameter] public EventCallback OnAnswered { get; set; }
+
+    private I18nText.TelemetryConsentModalText T = new();
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        T = await I18nText.GetTextTableAsync<I18nText.TelemetryConsentModalText>(this);
+    }
+
+    private async Task AnswerAsync(bool consent)
+    {
+        _busy = true;
+        StateHasChanged();
+        try
+        {
+            var settings = await State.GetSettingsAsync();
+            settings.TelemetryConsent = consent;
+            await State.SaveSettingsAsync(settings);
+            await OnAnswered.InvokeAsync();
+        }
+        finally { _busy = false; }
+    }
+}

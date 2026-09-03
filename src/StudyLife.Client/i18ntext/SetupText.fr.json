@@ -281,5 +281,7 @@
   "MarketplaceByDeveloper": "par {0}",
   "MarketplaceViewSource": "Voir le code source",
   "MarketplaceDemoNotice": "L'installation d'extensions est désactivée sur cette instance de démonstration.",
-  "ClientKeysHeading": "Extensions connectées"
+  "ClientKeysHeading": "Extensions connectées",
+  "TelemetryHeading": "Rapports d'utilisation et d'erreurs",
+  "TelemetryDesc": "Nous aide à repérer les bugs et les ralentissements en envoyant des données anonymes de performance et d'erreurs — jamais tes notes, séances ou données de santé. Tu peux désactiver cela à tout moment."
 }

@@ -259,6 +259,11 @@
              HttpClient), see SetupProgressShareCard. -->
         <SetupProgressShareCard />
 
+        <!-- Client telemetry opt-in (docs/ARCHITECTURE.md "Telemetry", phase 2) - same field
+             the TelemetryConsentModal writes on first answer, changeable again here. See
+             SetupTelemetryCard. -->
+        <SetupTelemetryCard />
+
         <!-- Home Assistant: long-lived per-user API key (phase 3) - self-contained component
              modeled after SetupProgressShareCard (own SetupText instance + own
              HTTP calls), see SetupHomeAssistantCard. -->

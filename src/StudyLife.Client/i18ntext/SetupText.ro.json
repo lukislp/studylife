@@ -281,5 +281,7 @@
   "MarketplaceByDeveloper": "de {0}",
   "MarketplaceViewSource": "Vezi codul sursă",
   "MarketplaceDemoNotice": "Instalarea suplimentelor este dezactivată pe această instanță demonstrativă.",
-  "ClientKeysHeading": "Suplimente conectate"
+  "ClientKeysHeading": "Suplimente conectate",
+  "TelemetryHeading": "Rapoarte de utilizare și erori",
+  "TelemetryDesc": "Ne ajută să detectăm buguri și puncte lente prin trimiterea de date anonime despre performanță și erori — niciodată notițele, sesiunile sau datele tale de sănătate. Poți dezactiva asta oricând."
 }
