@@ -55,7 +55,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: studylife
-          image: ghcr.io/lukislp/studylife-server:3.2.9 # {"$imagepolicy": "flux-system:studylife-server"}
+          image: ghcr.io/lukislp/studylife-server:3.3.0 # {"$imagepolicy": "flux-system:studylife-server"}
           # Audit finding O4: committed directly as "Always" (see the matching comment on
           # k8s/04-web.yaml for the full rationale and the dev-cluster/"kind" override needed for
           # a locally-loaded image).
