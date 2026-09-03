@@ -1,3 +1,10 @@
+# [3.7.0](https://github.com/lukislp/studylife/compare/v3.6.1...v3.7.0) (2026-09-03)
+
+
+### Features
+
+* source-generate JSON metadata for the client's hot-path DTOs ([f3accea](https://github.com/lukislp/studylife/commit/f3acceaf760a7d99c06aa0fb4ea2b963b4138c94))
+
 ## [3.6.1](https://github.com/lukislp/studylife/compare/v3.6.0...v3.6.1) (2026-09-03)
 
 
