@@ -19,7 +19,10 @@ public sealed class RejectOversizedBodyAttribute(long maxBytes) : Attribute, IRe
     {
         if (context.HttpContext.Request.ContentLength is { } length && length > maxBytes)
         {
-            context.Result = new ObjectResult(new { error = $"Request body is too large (max {maxBytes / (1024 * 1024)} MB)." })
+            // KB for small limits (e.g. the 32 KB telemetry batch guard) instead of always
+            // rounding to MB, which used to read as a useless "max 0 MB" below one megabyte.
+            var limitText = maxBytes >= 1024 * 1024 ? $"{maxBytes / (1024 * 1024)} MB" : $"{maxBytes / 1024} KB";
+            context.Result = new ObjectResult(new { error = $"Request body is too large (max {limitText})." })
             {
                 StatusCode = StatusCodes.Status413PayloadTooLarge,
             };

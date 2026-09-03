@@ -23,7 +23,7 @@ builder.Services.AddScoped<SessionTokenStore>();
 builder.Services.AddScoped(sp =>
 {
     var baseAddress = new Uri(builder.HostEnvironment.BaseAddress);
-    var handler = new SessionHandler(sp.GetRequiredService<SessionTokenStore>(), baseAddress)
+    var handler = new SessionHandler(sp.GetRequiredService<SessionTokenStore>(), baseAddress, sp)
     {
         InnerHandler = new HttpClientHandler()
     };
@@ -32,6 +32,12 @@ builder.Services.AddScoped(sp =>
 builder.Services.AddScoped<AppStateService>();
 builder.Services.AddScoped<TimerService>();
 builder.Services.AddScoped<NotificationService>();
+// Telemetry phase 2 (docs/ARCHITECTURE.md "Telemetry"): AppStateService must already be
+// resolvable when TelemetryService is constructed (it reads settings/consent from it) - both
+// scoped, and TelemetryService depends on AppStateService one-directionally only, so DI resolves
+// this without a cycle.
+builder.Services.AddScoped<TelemetryService>();
+builder.Services.AddScoped<IClientPlatform, BrowserClientPlatform>();
 
 // Marketplace catalog: reads studylife-marketplace's public listings/ directory directly from
 // GitHub's REST API - a separate typed HttpClient (NOT the session-token one above), since this
@@ -52,6 +58,7 @@ builder.Services.AddScoped<INativePush, NoNativePush>();
 builder.Services.AddScoped<INativeIcsIntake, NoNativeIcsIntake>();
 builder.Services.AddScoped<INativeFileExport, NoNativeFileExport>();
 builder.Services.AddScoped<INativeHealthData, NoNativeHealthData>();
+builder.Services.AddScoped<INativeTelemetry, NoNativeTelemetry>();
 
 var host = builder.Build();
 

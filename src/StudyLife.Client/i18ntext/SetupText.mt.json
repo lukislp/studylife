@@ -281,5 +281,7 @@
   "MarketplaceByDeveloper": "minn {0}",
   "MarketplaceViewSource": "Ara l-kodiċi sors",
   "MarketplaceDemoNotice": "L-installazzjoni tal-add-ons hija diżattivata fuq din l-istanza tad-demo.",
-  "ClientKeysHeading": "Add-ons konnessi"
+  "ClientKeysHeading": "Add-ons konnessi",
+  "TelemetryHeading": "Rapporti ta' Użu u Żbalji",
+  "TelemetryDesc": "Jgħinna nsibu bugs u postijiet bil-mod billi jintbagħtu dejta anonima dwar il-prestazzjoni u l-iżbalji — qatt in-noti, is-sessjonijiet, jew id-dejta tas-saħħa tiegħek. Tista' tiddiżattivah fi kwalunkwe ħin."
 }

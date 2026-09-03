@@ -17,7 +17,7 @@ namespace StudyLife.Server.Migrations.Postgres
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.9")
+                .HasAnnotation("ProductVersion", "10.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -983,6 +983,9 @@ namespace StudyLife.Server.Migrations.Postgres
 
                     b.Property<DateTime?>("TargetGraduationDate")
                         .HasColumnType("timestamp without time zone");
+
+                    b.Property<bool?>("TelemetryConsent")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Theme")
                         .IsRequired()

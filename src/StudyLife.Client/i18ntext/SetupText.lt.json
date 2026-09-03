@@ -281,5 +281,7 @@
   "MarketplaceByDeveloper": "kūrėjas {0}",
   "MarketplaceViewSource": "Peržiūrėti šaltinio kodą",
   "MarketplaceDemoNotice": "Priedų diegimas šioje demonstracinėje versijoje išjungtas.",
-  "ClientKeysHeading": "Prijungti priedai"
+  "ClientKeysHeading": "Prijungti priedai",
+  "TelemetryHeading": "Naudojimo ir klaidų ataskaitos",
+  "TelemetryDesc": "Padeda mums rasti klaidas ir lėtas vietas siunčiant anonimiškus našumo ir klaidų duomenis — niekada tavo pastabų, sesijų ar sveikatos duomenų. Tai gali išjungti bet kada."
 }

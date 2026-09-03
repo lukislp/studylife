@@ -49,15 +49,19 @@
         <a class="dismiss">🗙</a>
     </div>
 
-    <script src="_framework/blazor.webassembly.js"></script>
+    <!-- autostart="false": boot-start.js calls Blazor.start() itself right after this loads -
+         the ONLY reason is loadBootResource, the sole hook into the wasm-download/runtime-init
+         phase for the boot timeline telemetry (docs/ARCHITECTURE.md "Telemetry", phase 2). -->
+    <script src="_framework/blazor.webassembly.js" autostart="false"></script>
+    <script src="js/boot-start.js"></script>
     <!-- All JS interop functions used via IJSRuntime.Invoke(Void)Async by bare name (error
          diagnostics banner, scroll helpers, calendar swipe, cross-tab write-queue lock,
          completion sound, wake lock, theme/culture, notifications, push, service worker
-         registration, global search hotkey, TTS speakText, voice dictation) - moved out of
-         index.html into this external classic script so script-src can drop 'unsafe-inline'.
-         Being a classic (non-module) script, top-level function declarations still land on
-         window exactly as they did inline, so every existing InvokeVoidAsync("functionName")
-         call site keeps working unchanged. -->
+         registration, global search hotkey, TTS speakText, voice dictation, client telemetry) -
+         moved out of index.html into this external classic script so script-src can drop
+         'unsafe-inline'. Being a classic (non-module) script, top-level function declarations
+         still land on window exactly as they did inline, so every existing
+         InvokeVoidAsync("functionName") call site keeps working unchanged. -->
     <script src="js/interop.js"></script>
 </body>
 </html>
