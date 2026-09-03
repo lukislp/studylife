@@ -135,8 +135,9 @@ public class ConsentAudienceAndLoopbackTests : IClassFixture<CustomWebApplicatio
     }
 
     [Fact]
-    public async Task Connect_WithHttpsRedirectUri_IsUnaffectedByTheLoopbackException()
+    public async Task Connect_WithConfiguredHttpsRedirectUri_IsAccepted()
     {
+        // RedirectUri is on the test factory's Consent:AllowedRedirectUris:mcp list.
         var sessionClient = _factory.CreateClient();
 
         var response = await sessionClient.PostAsJsonAsync("/api/auth/mcp-connect",
@@ -144,5 +145,41 @@ public class ConsentAudienceAndLoopbackTests : IClassFixture<CustomWebApplicatio
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         await ClearBothKeysAsync();
+    }
+
+    /// <summary>2026-09 audit S1: an https callback that is NOT on the audience's allow-list
+    /// used to be accepted (any absolute https URL passed), handing the single-use assertion -
+    /// and with it the freshly rotated key, via the anonymous exchange endpoint - to whoever
+    /// controls that host. Must be a 400 now, and the key slot must stay untouched (no rotation
+    /// side effect for a rejected request).</summary>
+    [Theory]
+    [InlineData("https://attacker.example/cb")]
+    [InlineData("https://mcp.example.com/auth/studylife/callback/")] // near-miss of the configured URI
+    [InlineData("https://mcp.example.com.attacker.example/auth/studylife/callback")]
+    public async Task McpConnect_WithUnlistedHttpsRedirectUri_ReturnsBadRequest_AndDoesNotRotateKey(string redirectUri)
+    {
+        await ClearBothKeysAsync();
+        var sessionClient = _factory.CreateClient();
+
+        var response = await sessionClient.PostAsJsonAsync("/api/auth/mcp-connect",
+            new McpConnectRequestDto { RedirectUri = redirectUri, State = "s" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var hash = await _factory.WithDbAsync(db => db.AuthUsers.Where(u => u.Id == 1).Select(u => u.McpApiKeyHash).FirstAsync());
+        Assert.Null(hash);
+    }
+
+    [Theory]
+    [InlineData("https://attacker.example/cb")]
+    [InlineData("http://127.0.0.1:8765/callback")] // loopback is a native-app shape, never a browser extension's
+    [InlineData("https://chromiumapp.org/")] // bare suffix host without an extension id
+    public async Task CaptureConnect_WithNonExtensionRedirectUri_ReturnsBadRequest(string redirectUri)
+    {
+        var sessionClient = _factory.CreateClient();
+
+        var response = await sessionClient.PostAsJsonAsync("/api/auth/capture-connect",
+            new CaptureConnectRequestDto { RedirectUri = redirectUri, State = "s" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 }

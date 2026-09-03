@@ -75,5 +75,7 @@
   "LoginPageTitle": "StudyLife — Logga in",
   "RegisterClosed": "Registrering är för närvarande stängd.",
   "RegisterInviteRequiredHint": "En inbjudningslänk krävs för att registrera sig. Använd länken du har fått.",
-  "RegisterInviteInvalid": "Den här inbjudningslänken är ogiltig, har gått ut eller har redan använts."
+  "RegisterInviteInvalid": "Den här inbjudningslänken är ogiltig, har gått ut eller har redan använts.",
+  "PasskeysRevokeOthers": "Logga ut på alla andra enheter",
+  "PasskeysRevokeOthersDone": "Alla andra enheter har loggats ut."
 }

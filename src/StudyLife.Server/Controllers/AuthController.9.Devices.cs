@@ -108,6 +108,73 @@ public partial class AuthController
 
         _db.PasskeyCredentials.Remove(credential);
         await _db.SaveChangesAsync();
+        // Removing a passkey usually means "that device is gone / no longer trusted" - the
+        // sessions it holds must not outlive the credential by up to 180 days. Only the caller's
+        // own session survives (2026-09 audit S7).
+        await RevokeOtherSessionsAsync(userId);
         return NoContent();
+    }
+
+    /// <summary>
+    /// "Sign out everywhere else": deletes every session of the account except the one making
+    /// this call, so a device the user no longer controls loses access immediately instead of
+    /// at its sliding expiry. The current session stays - the user is acting from a device they
+    /// evidently still hold.
+    /// </summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpPost("sessions/revoke-others")]
+    public async Task<IActionResult> RevokeOtherSessions()
+    {
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
+        await RevokeOtherSessionsAsync(userId);
+        return NoContent();
+    }
+
+    private Task<int> RevokeOtherSessionsAsync(int userId)
+    {
+        var currentSessionId = (int)HttpContext.Items[AuthSessionService.SessionItemKey]!; // set for every session-authenticated request
+        return _db.AuthSessions.Where(s => s.AuthUserId == userId && s.Id != currentSessionId).ExecuteDeleteAsync();
+    }
+
+    /// <summary>
+    /// The add-on keys issued to THIS user via the generic consent flow
+    /// (AuthController.10.OAuthClients.cs) - one row per consent click. Joined with the client
+    /// registration for a display name; a key whose registration has since been deleted still
+    /// lists (with ClientName null) so it can be revoked. Session-only like the other
+    /// credential-management endpoints: an API key must never be able to enumerate or revoke
+    /// its siblings.
+    /// </summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpGet("client-keys")]
+    public async Task<ActionResult<List<ClientApiKeyListItemDto>>> ListClientKeys()
+    {
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
+        var keys = await _db.ClientApiKeys.AsNoTracking()
+            .Where(k => k.AuthUserId == userId)
+            .OrderBy(k => k.CreatedAt)
+            .ToListAsync();
+        var clientIds = keys.Select(k => k.ClientId).Distinct().ToList();
+        var names = await _db.OAuthClients.AsNoTracking()
+            .Where(c => clientIds.Contains(c.ClientId))
+            .ToDictionaryAsync(c => c.ClientId, c => c.Name);
+        return keys.Select(k => new ClientApiKeyListItemDto
+        {
+            Id = k.Id,
+            ClientId = k.ClientId,
+            ClientName = names.GetValueOrDefault(k.ClientId),
+            GrantedScopes = ApiKeyScopes.Parse(k.GrantedScopes).Select(e => $"{e.Controller}.{e.Action}").OrderBy(s => s).ToList(),
+            CreatedAt = k.CreatedAt,
+        }).ToList();
+    }
+
+    /// <summary>Revokes one issued add-on key. The next request carrying it fails
+    /// authentication (the handler looks the hash up per request, nothing is cached).</summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpDelete("client-keys/{id:int}")]
+    public async Task<IActionResult> RevokeClientKey(int id)
+    {
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
+        var deleted = await _db.ClientApiKeys.Where(k => k.Id == id && k.AuthUserId == userId).ExecuteDeleteAsync();
+        return deleted == 0 ? NotFound() : NoContent();
     }
 }

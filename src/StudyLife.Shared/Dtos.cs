@@ -1058,6 +1058,25 @@ public class DemoInfoDto
 }
 
 /// <summary>
+/// One row of GET /api/auth/client-keys: an API key a dynamically registered add-on
+/// (OAuthClientEntity) was issued for THIS user through the generic consent flow. Lets the user
+/// see and revoke (DELETE /api/auth/client-keys/{id}) what they connected - before this, an issued
+/// client key could only ever be invalidated by database surgery.
+/// </summary>
+public class ClientApiKeyListItemDto
+{
+    public int Id { get; set; }
+    public string ClientId { get; set; } = "";
+    /// <summary>Display name of the registration at list time; null once the developer has
+    /// deleted the client (its issued keys are deleted along with it, so this is only ever null
+    /// in a race between deletion and listing).</summary>
+    public string? ClientName { get; set; }
+    /// <summary>"Controller.Action" pairs frozen at consent time (ClientApiKeyEntity.GrantedScopes).</summary>
+    public List<string> GrantedScopes { get; set; } = new();
+    public DateTime CreatedAt { get; set; }
+}
+
+/// <summary>
 /// Response of GET /api/auth/account-info - client info about one's own account that isn't
 /// a setting (hence its own DTO instead of a field on UserSettingsDto, which would otherwise also
 /// have to go through ComputeSettingsHash, even though IsOwner isn't user-configurable).

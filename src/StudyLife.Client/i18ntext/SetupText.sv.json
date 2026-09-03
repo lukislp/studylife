@@ -280,5 +280,6 @@
   "MarketplaceScopesLabel": "Begär åtkomst till:",
   "MarketplaceByDeveloper": "av {0}",
   "MarketplaceViewSource": "Visa källkod",
-  "MarketplaceDemoNotice": "Det går inte att installera tillägg på den här demoinstansen."
+  "MarketplaceDemoNotice": "Det går inte att installera tillägg på den här demoinstansen.",
+  "ClientKeysHeading": "Anslutna tillägg"
 }

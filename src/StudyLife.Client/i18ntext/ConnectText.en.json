@@ -19,5 +19,6 @@
   "ConnectInvalidRequest": "This connection request is invalid or has expired.",
   "ConnectClientPageTitle": "StudyLife — Connect",
   "ConnectClientHeading": "Connect add-on",
-  "ConnectClientNotRegistered": "This add-on isn't registered on your StudyLife instance yet."
+  "ConnectClientNotRegistered": "This add-on isn't registered on your StudyLife instance yet.",
+  "ConnectRedirectTarget": "After connecting you will be redirected to: {0}"
 }

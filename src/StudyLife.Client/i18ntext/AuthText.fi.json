@@ -75,5 +75,7 @@
   "LoginPageTitle": "StudyLife — Kirjaudu sisään",
   "RegisterClosed": "Rekisteröityminen on tällä hetkellä suljettu.",
   "RegisterInviteRequiredHint": "Rekisteröitymiseen tarvitaan kutsulinkki. Käytä linkkiä, jonka sait.",
-  "RegisterInviteInvalid": "Tämä kutsulinkki on virheellinen, vanhentunut tai jo käytetty."
+  "RegisterInviteInvalid": "Tämä kutsulinkki on virheellinen, vanhentunut tai jo käytetty.",
+  "PasskeysRevokeOthers": "Kirjaudu ulos kaikilta muilta laitteilta",
+  "PasskeysRevokeOthersDone": "Kaikki muut laitteet on kirjattu ulos."
 }

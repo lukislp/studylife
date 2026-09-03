@@ -82,7 +82,7 @@ public class BackgroundTaskServiceWeeklyReportPinnedRichDataTests : IClassFixtur
         await BackgroundTaskTestSettings.PutAsync(_client, s => s.WeeklyReportEnabled = true);
         using var gone = new GoneEndpoint();
         var (p256dh, auth) = FakePushKeys.Generate();
-        await _client.PostAsJsonAsync("/api/push/subscribe", new PushSubscribeRequest(gone.Url, p256dh, auth));
+        await PushTestSubscriptions.InsertAsync(_factory, gone.Url, p256dh, auth);
 
         async Task SeedSessionAsync(int courseId, string name, DateTime start, double hours) =>
             await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
@@ -271,7 +271,7 @@ public class BackgroundTaskServiceMonthlyReportPinnedRichDataTests : IClassFixtu
 
         using var gone = new GoneEndpoint();
         var (p256dh, auth) = FakePushKeys.Generate();
-        await _client.PostAsJsonAsync("/api/push/subscribe", new PushSubscribeRequest(gone.Url, p256dh, auth));
+        await PushTestSubscriptions.InsertAsync(_factory, gone.Url, p256dh, auth);
 
         var service = PinnedClock.CreateService(_factory);
         await service.RunMonthlyReportAsync(db, () => db.PushSubscriptions.ToListAsync());
@@ -389,7 +389,7 @@ public class BackgroundTaskServiceComebackNudgePinnedClockTests : IClassFixture<
         await BackgroundTaskTestSettings.PutAsync(_client, s => s.ComebackNudgeEnabled = true);
         using var gone = new GoneEndpoint();
         var (p256dh, auth) = FakePushKeys.Generate();
-        await _client.PostAsJsonAsync("/api/push/subscribe", new PushSubscribeRequest(gone.Url, p256dh, auth));
+        await PushTestSubscriptions.InsertAsync(_factory, gone.Url, p256dh, auth);
 
         // Exactly 1 day of pause relative to the pinned "today" (2027-08-01): studied the day
         // before yesterday (Jul 30), nothing yesterday (Jul 31) or today (Aug 1).
@@ -441,7 +441,7 @@ public class BackgroundTaskServiceStreakRiskPinnedClockTests : IClassFixture<Cus
         await BackgroundTaskTestSettings.PutAsync(_client, s => s.StreakRiskRemindersEnabled = true);
         using var gone = new GoneEndpoint();
         var (p256dh, auth) = FakePushKeys.Generate();
-        await _client.PostAsJsonAsync("/api/push/subscribe", new PushSubscribeRequest(gone.Url, p256dh, auth));
+        await PushTestSubscriptions.InsertAsync(_factory, gone.Url, p256dh, auth);
 
         // 3-day streak ending yesterday (Jul 29-31 relative to the pinned "today" 2027-08-01),
         // nothing today -> CalcStreak == 3, which breaks today unless a session happens.
@@ -492,7 +492,7 @@ public class BackgroundTaskServiceDailyMotivationPinnedClockTests : IClassFixtur
         });
         using var gone = new GoneEndpoint();
         var (p256dh, auth) = FakePushKeys.Generate();
-        await _client.PostAsJsonAsync("/api/push/subscribe", new PushSubscribeRequest(gone.Url, p256dh, auth));
+        await PushTestSubscriptions.InsertAsync(_factory, gone.Url, p256dh, auth);
 
         var service = PinnedClock.CreateService(_factory);
         using var scope = _factory.Services.CreateScope();

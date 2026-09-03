@@ -75,5 +75,7 @@
   "LoginPageTitle": "StudyLife — Pieteikšanās",
   "RegisterClosed": "Reģistrācija pašlaik ir slēgta.",
   "RegisterInviteRequiredHint": "Reģistrācijai nepieciešama uzaicinājuma saite. Izmanto saņemto saiti.",
-  "RegisterInviteInvalid": "Šī uzaicinājuma saite nav derīga, ir beigusies vai jau izmantota."
+  "RegisterInviteInvalid": "Šī uzaicinājuma saite nav derīga, ir beigusies vai jau izmantota.",
+  "PasskeysRevokeOthers": "Izrakstīties visās citās ierīcēs",
+  "PasskeysRevokeOthersDone": "Visas citas ierīces ir izrakstītas."
 }

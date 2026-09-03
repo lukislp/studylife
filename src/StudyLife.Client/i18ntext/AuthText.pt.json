@@ -75,5 +75,7 @@
   "LoginPageTitle": "StudyLife — Iniciar sessão",
   "RegisterClosed": "O registo está atualmente fechado.",
   "RegisterInviteRequiredHint": "É necessário um link de convite para se registar. Utiliza o link que te foi fornecido.",
-  "RegisterInviteInvalid": "Este link de convite é inválido, expirou ou já foi utilizado."
+  "RegisterInviteInvalid": "Este link de convite é inválido, expirou ou já foi utilizado.",
+  "PasskeysRevokeOthers": "Terminar sessão em todos os outros dispositivos",
+  "PasskeysRevokeOthersDone": "Todos os outros dispositivos foram desconectados."
 }

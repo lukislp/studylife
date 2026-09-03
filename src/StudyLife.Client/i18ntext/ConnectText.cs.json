@@ -19,5 +19,6 @@
   "ConnectInvalidRequest": "Tento požadavek na připojení je neplatný nebo vypršel.",
   "ConnectClientPageTitle": "StudyLife — Připojení",
   "ConnectClientHeading": "Připojit doplněk",
-  "ConnectClientNotRegistered": "Tento doplněk zatím není ve vaší instanci StudyLife registrován."
+  "ConnectClientNotRegistered": "Tento doplněk zatím není ve vaší instanci StudyLife registrován.",
+  "ConnectRedirectTarget": "Po připojení budeš přesměrován na: {0}"
 }

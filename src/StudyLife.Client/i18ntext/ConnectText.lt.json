@@ -19,5 +19,6 @@
   "ConnectInvalidRequest": "Šis prijungimo užklausimas negalioja arba baigėsi jo galiojimo laikas.",
   "ConnectClientPageTitle": "StudyLife — Prijungti",
   "ConnectClientHeading": "Prijungti priedą",
-  "ConnectClientNotRegistered": "Šis priedas dar neužregistruotas jūsų StudyLife egzemplioriuje."
+  "ConnectClientNotRegistered": "Šis priedas dar neužregistruotas jūsų StudyLife egzemplioriuje.",
+  "ConnectRedirectTarget": "Prisijungus būsi nukreiptas į: {0}"
 }

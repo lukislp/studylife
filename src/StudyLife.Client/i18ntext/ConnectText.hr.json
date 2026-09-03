@@ -19,5 +19,6 @@
   "ConnectInvalidRequest": "Ovaj zahtjev za povezivanje nije valjan ili je istekao.",
   "ConnectClientPageTitle": "StudyLife — Povezivanje",
   "ConnectClientHeading": "Poveži dodatak",
-  "ConnectClientNotRegistered": "Ovaj dodatak još nije registriran na vašoj StudyLife instanci."
+  "ConnectClientNotRegistered": "Ovaj dodatak još nije registriran na vašoj StudyLife instanci.",
+  "ConnectRedirectTarget": "Nakon povezivanja bit ćeš preusmjeren na: {0}"
 }

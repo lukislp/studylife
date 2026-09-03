@@ -31,9 +31,22 @@ public class PushController : ControllerBase
     public ActionResult<PushPublicKeyResponseDto> GetPublicKey() =>
         Ok(new PushPublicKeyResponseDto { PublicKey = _vapidKeys.PublicKey });
 
+    /// <summary>Upper bound for the two base64url key strings a browser hands over with a
+    /// subscription (p256dh is 65 bytes, auth 16 bytes - well under 200 chars encoded); anything
+    /// larger is not a real PushSubscription and would only bloat the column.</summary>
+    private const int MaxKeyLength = 512;
+
     [HttpPost("subscribe")]
     public async Task<IActionResult> Subscribe(PushSubscribeRequest dto)
     {
+        // The endpoint is a URL the WORKER later POSTs to unattended - see OutboundUrlPolicy for
+        // why it must be a public https origin and nothing else (2026-09 audit S4).
+        if (!OutboundUrlPolicy.IsAcceptablePushEndpoint(dto.Endpoint))
+            return BadRequest("Endpoint must be a public https URL.");
+        if (string.IsNullOrWhiteSpace(dto.P256dh) || dto.P256dh.Length > MaxKeyLength
+            || string.IsNullOrWhiteSpace(dto.Auth) || dto.Auth.Length > MaxKeyLength)
+            return BadRequest("P256dh and Auth are required and must be at most 512 characters.");
+
         var userAgent = Request.Headers.UserAgent.ToString();
         if (string.IsNullOrWhiteSpace(userAgent)) userAgent = null;
 

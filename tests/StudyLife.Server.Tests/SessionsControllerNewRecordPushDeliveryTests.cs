@@ -86,8 +86,7 @@ public class SessionsControllerNewRecordWebPushSuccessTests : IClassFixture<Cust
         await NewRecordPushDelivery.EnableNewRecordAsync(_client);
         using var pushService = new CreatedEndpoint();
         var (p256dh, auth) = FakePushKeys.Generate();
-        (await _client.PostAsJsonAsync("/api/push/subscribe",
-            new PushSubscribeRequest(pushService.Url, p256dh, auth))).EnsureSuccessStatusCode();
+        await PushTestSubscriptions.InsertAsync(_factory, pushService.Url, p256dh, auth);
 
         var record = await NewRecordPushDelivery.TriggerRecordAsync(_client);
 
@@ -116,8 +115,7 @@ public class SessionsControllerNewRecordWebPushGoneTests : IClassFixture<CustomW
         await NewRecordPushDelivery.EnableNewRecordAsync(_client);
         using var gone = new GoneEndpoint();
         var (p256dh, auth) = FakePushKeys.Generate();
-        (await _client.PostAsJsonAsync("/api/push/subscribe",
-            new PushSubscribeRequest(gone.Url, p256dh, auth))).EnsureSuccessStatusCode();
+        await PushTestSubscriptions.InsertAsync(_factory, gone.Url, p256dh, auth);
 
         var record = await NewRecordPushDelivery.TriggerRecordAsync(_client);
 

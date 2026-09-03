@@ -280,5 +280,6 @@
   "MarketplaceScopesLabel": "Запитує доступ до:",
   "MarketplaceByDeveloper": "від {0}",
   "MarketplaceViewSource": "Переглянути вихідний код",
-  "MarketplaceDemoNotice": "Встановлення доповнень вимкнено на цьому демо-екземплярі."
+  "MarketplaceDemoNotice": "Встановлення доповнень вимкнено на цьому демо-екземплярі.",
+  "ClientKeysHeading": "Підключені доповнення"
 }

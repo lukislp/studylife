@@ -75,5 +75,7 @@
   "LoginPageTitle": "StudyLife — Connexion",
   "RegisterClosed": "Les inscriptions sont actuellement fermées.",
   "RegisterInviteRequiredHint": "Un lien d'invitation est requis pour s'inscrire. Merci d'utiliser le lien qui vous a été communiqué.",
-  "RegisterInviteInvalid": "Ce lien d'invitation est invalide, expiré ou déjà utilisé."
+  "RegisterInviteInvalid": "Ce lien d'invitation est invalide, expiré ou déjà utilisé.",
+  "PasskeysRevokeOthers": "Se déconnecter de tous les autres appareils",
+  "PasskeysRevokeOthersDone": "Tous les autres appareils ont été déconnectés."
 }

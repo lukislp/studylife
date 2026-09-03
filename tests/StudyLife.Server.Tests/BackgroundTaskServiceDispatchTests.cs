@@ -154,8 +154,20 @@ public class BackgroundTaskServiceExecuteAsyncTests : IClassFixture<CustomWebApp
         // one) - fails immediately without network access (see
         // BackgroundTaskServicePushNotificationTests), so that this integration test doesn't
         // depend on network timeouts.
-        await _client.PostAsJsonAsync("/api/push/subscribe",
-            new PushSubscribeRequest("this is not a url", "p256dh-key-value", "auth-key-value"));
+        // Inserted directly: PushController.Subscribe now rejects non-https endpoints
+        // (OutboundUrlPolicy), so the deliberately broken endpoint has to bypass the API.
+        await _factory.WithDbAsync(db =>
+        {
+            db.PushSubscriptions.Add(new PushSubscriptionEntity
+            {
+                AuthUserId = 1,
+                Endpoint = "this is not a url",
+                P256dh = "p256dh-key-value",
+                Auth = "auth-key-value",
+                CreatedAt = DateTime.UtcNow,
+            });
+            return db.SaveChangesAsync();
+        });
 
         var service = BackgroundTaskServiceTestFactory.Create(_factory);
         using var cts = new CancellationTokenSource();
@@ -469,9 +481,7 @@ public class BackgroundTaskServiceWebPushDeliveredTests : IClassFixture<CustomWe
         await BackgroundTaskTestSettings.PutAsync(_client, s => s.InactivityRemindersEnabled = true);
         using var accepted = new CreatedEndpoint();
         var (p256dh, auth) = FakePushKeys.Generate();
-        var subscribeResponse = await _client.PostAsJsonAsync("/api/push/subscribe",
-            new PushSubscribeRequest(accepted.Url, p256dh, auth));
-        Assert.Equal(HttpStatusCode.OK, subscribeResponse.StatusCode);
+        await PushTestSubscriptions.InsertAsync(_factory, accepted.Url, p256dh, auth);
 
         await _factory.WithDbAsync(db => _service.RunInactivityReminderCheckAsync(db, () => db.PushSubscriptions.ToListAsync()));
 

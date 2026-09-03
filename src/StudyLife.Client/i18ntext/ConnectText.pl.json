@@ -19,5 +19,6 @@
   "ConnectInvalidRequest": "To żądanie połączenia jest nieprawidłowe lub wygasło.",
   "ConnectClientPageTitle": "StudyLife — Połącz",
   "ConnectClientHeading": "Połącz dodatek",
-  "ConnectClientNotRegistered": "Ten dodatek nie jest jeszcze zarejestrowany w Twojej instancji StudyLife."
+  "ConnectClientNotRegistered": "Ten dodatek nie jest jeszcze zarejestrowany w Twojej instancji StudyLife.",
+  "ConnectRedirectTarget": "Po połączeniu zostaniesz przekierowany do: {0}"
 }

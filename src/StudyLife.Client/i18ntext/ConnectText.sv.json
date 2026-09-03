@@ -19,5 +19,6 @@
   "ConnectInvalidRequest": "Den här anslutningsbegäran är ogiltig eller har gått ut.",
   "ConnectClientPageTitle": "StudyLife — Anslut",
   "ConnectClientHeading": "Anslut tillägg",
-  "ConnectClientNotRegistered": "Det här tillägget är ännu inte registrerat på din StudyLife-instans."
+  "ConnectClientNotRegistered": "Det här tillägget är ännu inte registrerat på din StudyLife-instans.",
+  "ConnectRedirectTarget": "Efter anslutningen skickas du vidare till: {0}"
 }

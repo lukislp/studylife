@@ -158,6 +158,9 @@
                     <button type="button" class="btn-secondary" @onclick="LogoutAsync" disabled="@_working">
                         @T.PasskeysLogout
                     </button>
+                    <button type="button" class="btn-secondary" @onclick="RevokeOtherSessionsAsync" disabled="@_working">
+                        @T.PasskeysRevokeOthers
+                    </button>
                 }
             </div>
         </div>
@@ -510,6 +513,29 @@
             else _error = T.PasskeysActionFailed;
         }
         catch
+        {
+            _error = T.PasskeysActionFailed;
+        }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    /// <summary>"Sign out everywhere else": kills every other session of this account server-
+    /// side (the current one stays) - the counterpart to LogoutAsync for the "a device I no
+    /// longer control is still signed in" case.</summary>
+    private async Task RevokeOtherSessionsAsync()
+    {
+        _working = true;
+        _error = null;
+        try
+        {
+            var response = await Http.PostAsync("api/auth/sessions/revoke-others", null);
+            if (response.IsSuccessStatusCode) _info = T.PasskeysRevokeOthersDone;
+            else _error = T.PasskeysActionFailed;
+        }
+        catch (HttpRequestException)
         {
             _error = T.PasskeysActionFailed;
         }
