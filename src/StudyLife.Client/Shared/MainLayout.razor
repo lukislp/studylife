@@ -277,6 +277,7 @@
             await notificationsTask;
             T = await i18nTask;
             _lang = await currentLanguageTask;
+            LocalDate.Language = _lang;
 
             var settings = await settingsTask;
             // Best-effort: never let a missing/failing JS helper (e.g. stale cached index.html
@@ -531,6 +532,7 @@
     private async Task SetLanguageAsync(string lang)
     {
         _lang = lang;
+        LocalDate.Language = lang;
         _langPopupOpen = false;
         await I18nText.SetCurrentLanguageAsync(lang);
         // Keep <html lang> in sync - on Chromium browsers this controls the format of native
