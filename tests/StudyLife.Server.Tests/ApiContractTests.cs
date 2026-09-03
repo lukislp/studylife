@@ -408,6 +408,7 @@ public class DtoContractSnapshotTests : IClassFixture<CustomWebApplicationFactor
             "progressShareEnabled", "progressShareToken", "streakRiskRemindersEnabled",
             "weeklyGoalNudgeEnabled", "courseAlmostDoneRemindersEnabled", "bestStudyTimeRemindersEnabled",
             "comebackNudgeEnabled", "newRecordNotificationsEnabled", "monthlyReportEnabled",
+            "telemetryConsent",
         };
 
         var settings = new UserSettingsDto
