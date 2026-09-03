@@ -125,6 +125,11 @@ spec:
             - name: Cache__Password
               valueFrom:
                 secretKeyRef: {name: redis-auth, key: password, optional: true}
+            # The dedicated ACL user the app authenticates as (Program.cs Cache:User) - created
+            # on the Redis side by the `--user` line in k8s/03-redis.yaml from the same Secret.
+            - name: Cache__User
+              valueFrom:
+                secretKeyRef: {name: redis-auth, key: username, optional: true}
             # DataProtection key-ring-at-rest encryption (Program.cs, ProtectKeysWithCertificate)
             # - required whenever Cache__Provider=Redis is set below, same as
             # Cache__ConnectionString.

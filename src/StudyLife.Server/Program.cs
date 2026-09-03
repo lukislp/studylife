@@ -97,6 +97,14 @@ if (isRedisCache)
     var redisPassword = builder.Configuration["Cache:Password"];
     if (!string.IsNullOrEmpty(redisPassword))
         redisOptions.Password = redisPassword;
+    // Cache:User (env Cache__User) selects a dedicated Redis ACL user instead of "default". This
+    // is what makes enabling AUTH a zero-downtime change: the ACL user can exist (and be used by
+    // the app) while the default user is still open, and the default user is locked with
+    // requirepass only afterwards - see docs/SCALING.md "Redis AUTH". Without it, an app that
+    // sends AUTH to a Redis with no password configured fails to connect at all.
+    var redisUser = builder.Configuration["Cache:User"];
+    if (!string.IsNullOrEmpty(redisUser))
+        redisOptions.User = redisUser;
     if (redisOptions.Ssl)
     {
         // The Redis certificate comes from our own internal CA (k8s/07b-cert-manager-issuers.yaml),
