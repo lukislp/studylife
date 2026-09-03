@@ -103,6 +103,14 @@ spec:
               value: app.studylife.mobile
             - name: Apns__UseSandbox
               value: "true"
+            # Redis AUTH password, read from the SAME Secret the Redis StatefulSet uses
+            # (k8s/03-redis.yaml, secret "redis-auth", key "password") and merged into the
+            # connection options by Program.cs (Cache:Password). optional: the Secret may not
+            # exist yet - AUTH stays off until the operator creates it AND enables requirepass in
+            # 03-redis.yaml (docs/SCALING.md "Redis AUTH"), in either order, without a crash-loop.
+            - name: Cache__Password
+              valueFrom:
+                secretKeyRef: { name: redis-auth, key: password, optional: true }
             # DataProtection key-ring-at-rest encryption (Program.cs, ProtectKeysWithCertificate)
             # - identical to k8s/04-web.yaml, required whenever Cache__Provider=Redis. The
             # worker runs the same AddDataProtection() setup as web (shared Program.cs), so it

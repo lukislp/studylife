@@ -76,15 +76,18 @@ public class StudyLifeAuthenticationHandler : AuthenticationHandler<StudyLifeAut
     private const string AuthTypeCalendarToken = "calendarToken";
 
     private readonly StudyLifeDb _db;
+    private readonly AuthSessionCache _sessionCache;
 
     public StudyLifeAuthenticationHandler(
         Microsoft.Extensions.Options.IOptionsMonitor<StudyLifeAuthenticationSchemeOptions> options,
         ILoggerFactory logger,
         UrlEncoder encoder,
-        StudyLifeDb db)
+        StudyLifeDb db,
+        AuthSessionCache sessionCache)
         : base(options, logger, encoder)
     {
         _db = db;
+        _sessionCache = sessionCache;
     }
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
@@ -119,7 +122,21 @@ public class StudyLifeAuthenticationHandler : AuthenticationHandler<StudyLifeAut
         var sessionToken = request.Headers[AuthSessionService.TokenHeaderName].FirstOrDefault();
         if (!string.IsNullOrEmpty(sessionToken))
         {
-            var session = await AuthSessionService.ValidateAndRefreshAsync(_db, sessionToken, DateTime.UtcNow);
+            var utcNow = DateTime.UtcNow;
+            var tokenHash = AuthSessionService.HashToken(sessionToken);
+            Context.Items[AuthSessionService.SessionTokenHashItemKey] = tokenHash;
+
+            // Per-pod 30s cache in front of the DB lookup (2026-09 audit P6) - only VALID
+            // sessions are ever cached, and the expiry columns are re-checked on every hit; see
+            // AuthSessionCache for the accepted staleness window on revocation from elsewhere.
+            if (_sessionCache.TryGet(tokenHash, utcNow, out var cached))
+            {
+                Context.Items[CurrentUserAccessor.HttpContextItemKey] = cached.AuthUserId;
+                Context.Items[AuthSessionService.SessionItemKey] = cached.SessionId;
+                return AuthenticateResult.Success(BuildTicket(cached.AuthUserId, AuthTypeSession));
+            }
+
+            var session = await AuthSessionService.ValidateAndRefreshAsync(_db, sessionToken, utcNow);
             if (session is null)
             {
                 // Consumed only by PublicUnlessInvalidSessionRequirement - see its comment.
@@ -127,6 +144,7 @@ public class StudyLifeAuthenticationHandler : AuthenticationHandler<StudyLifeAut
                 return AuthenticateResult.Fail("Invalid or expired session token.");
             }
 
+            _sessionCache.Set(tokenHash, new AuthSessionCache.Entry(session.Id, session.AuthUserId, session.ExpiresAt, session.HardExpiresAt));
             Context.Items[CurrentUserAccessor.HttpContextItemKey] = session.AuthUserId;
             Context.Items[AuthSessionService.SessionItemKey] = session.Id;
             return AuthenticateResult.Success(BuildTicket(session.AuthUserId, AuthTypeSession));

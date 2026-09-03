@@ -117,6 +117,14 @@ spec:
               value: /etc/studylife-web-backend-tls/tls.crt
             - name: WebBackendTls__KeyPath
               value: /etc/studylife-web-backend-tls/tls.key
+            # Redis AUTH password, read from the SAME Secret the Redis StatefulSet uses
+            # (k8s/03-redis.yaml, secret "redis-auth", key "password") and merged into the
+            # connection options by Program.cs (Cache:Password). optional: the Secret may not
+            # exist yet - AUTH stays off until the operator creates it AND enables requirepass in
+            # 03-redis.yaml (docs/SCALING.md "Redis AUTH"), in either order, without a crash-loop.
+            - name: Cache__Password
+              valueFrom:
+                secretKeyRef: { name: redis-auth, key: password, optional: true }
             # DataProtection key-ring-at-rest encryption (Program.cs, ProtectKeysWithCertificate)
             # - required whenever Cache__Provider=Redis is set below, same as
             # Cache__ConnectionString.
