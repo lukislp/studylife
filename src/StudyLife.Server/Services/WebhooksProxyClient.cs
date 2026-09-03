@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net.Http.Json;
 
 namespace StudyLife.Server.Services;
@@ -64,9 +65,12 @@ public sealed class WebhooksProxyClient
         if (!Enabled) return;
         if (!await _inFlight.WaitAsync(SlotWait, ct))
         {
+            StudyLifeMetrics.WebhookPublishes.Add(1, StudyLifeMetrics.Outcome("dropped"));
             _logger.LogWarning("studylife-webhooks event {EventType} dropped - {Max} publishes already in flight for {Wait}s", eventType, MaxInFlight, SlotWait.TotalSeconds);
             return;
         }
+        var started = Stopwatch.GetTimestamp();
+        var outcome = "failed";
         try
         {
             var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/internal/events")
@@ -81,6 +85,7 @@ public sealed class WebhooksProxyClient
             };
             request.Headers.Add("X-StudyLife-Shared-Secret", _sharedSecret);
             var response = await _http.SendAsync(request, ct);
+            outcome = response.IsSuccessStatusCode ? "ok" : "http_error";
             if (!response.IsSuccessStatusCode)
                 _logger.LogWarning("studylife-webhooks /internal/events returned {Status} for event {EventType}", response.StatusCode, eventType);
         }
@@ -91,6 +96,8 @@ public sealed class WebhooksProxyClient
         finally
         {
             _inFlight.Release();
+            StudyLifeMetrics.WebhookPublishes.Add(1, StudyLifeMetrics.Outcome(outcome));
+            StudyLifeMetrics.WebhookPublishDuration.Record(Stopwatch.GetElapsedTime(started).TotalSeconds);
         }
     }
 

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
 using WebPush;
@@ -144,6 +145,7 @@ public partial class BackgroundTaskService : BackgroundService
     {
         while (!stoppingToken.IsCancellationRequested)
         {
+            var tickStarted = Stopwatch.GetTimestamp();
             var now = DateTime.UtcNow;
             var runCourseGoalReminder = now >= _nextCourseGoalReminderRun;
             var runInactivityReminder = now >= _nextInactivityReminderRun;
@@ -456,6 +458,7 @@ public partial class BackgroundTaskService : BackgroundService
                 }
             }
 
+            StudyLifeMetrics.WorkerTickDuration.Record(Stopwatch.GetElapsedTime(tickStarted).TotalSeconds);
             await Task.Delay(TickInterval, stoppingToken);
         }
     }

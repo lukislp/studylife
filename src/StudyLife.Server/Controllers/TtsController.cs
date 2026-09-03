@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
@@ -83,7 +84,10 @@ public class TtsController : ControllerBase
 
         var voice = _voices.TryGet(lang);
         if (voice == null)
+        {
+            StudyLifeMetrics.TtsRequests.Add(1, StudyLifeMetrics.Result("unavailable"));
             return NotFound(new { error = $"no TTS voice available for language '{lang}'" });
+        }
 
         var text = MarkdownToSpeechText.Extract(note.Content, note.IsMarkdown);
         if (string.IsNullOrWhiteSpace(text))
@@ -93,10 +97,18 @@ public class TtsController : ControllerBase
         // player anyway (2026-09 audit S10). 422 (not 400): the request is well-formed, the note
         // is just too long to read aloud - the client shows that as a distinct message.
         if (text.Length > MaxSpeechCharacters)
+        {
+            StudyLifeMetrics.TtsRequests.Add(1, StudyLifeMetrics.Result("rejected"));
             return UnprocessableEntity(new { error = $"note is too long to read aloud (limit {MaxSpeechCharacters} characters)" });
+        }
 
         var cacheKey = CacheKey(lang, text);
-        if (_cache.TryGet(cacheKey, out var cached)) return File(cached, "audio/wav");
+        if (_cache.TryGet(cacheKey, out var cached))
+        {
+            StudyLifeMetrics.TtsRequests.Add(1, StudyLifeMetrics.Result("cache_hit"));
+            return File(cached, "audio/wav");
+        }
+        StudyLifeMetrics.TtsRequests.Add(1, StudyLifeMetrics.Result("synthesized"));
 
         var phonemizer = _phonemizer;
         var cache = _cache;
@@ -128,9 +140,11 @@ public class TtsController : ControllerBase
     private static byte[] SynthesizeAndCache(
         string cacheKey, string text, PiperVoice voice, EspeakPhonemizer phonemizer, TtsAudioCache cache)
     {
+        var started = Stopwatch.GetTimestamp();
         var phonemeChunks = TextChunker.Chunk(text)
             .Select(chunk => (Phonemes: phonemizer.Phonemize(chunk.Text, voice.EspeakVoice), chunk.LongPause));
         var wav = voice.SynthesizeWav(phonemeChunks);
+        StudyLifeMetrics.TtsSynthesisDuration.Record(Stopwatch.GetElapsedTime(started).TotalSeconds);
         cache.Set(cacheKey, wav, CacheTtl);
         return wav;
     }

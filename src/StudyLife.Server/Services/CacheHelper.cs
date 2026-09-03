@@ -47,6 +47,7 @@ public static class CacheHelper
 
         if (IfNoneMatchHits(controller.Request, etag))
         {
+            StudyLifeMetrics.CacheRequests.Add(1, StudyLifeMetrics.Result("not_modified"));
             SetHeaders(controller.Response, clientMaxAge, etag);
             return controller.StatusCode(StatusCodes.Status304NotModified);
         }
@@ -55,10 +56,12 @@ public static class CacheHelper
         T? result;
         if (cached is not null)
         {
+            StudyLifeMetrics.CacheRequests.Add(1, StudyLifeMetrics.Result("hit"));
             result = JsonSerializer.Deserialize<T>(cached);
         }
         else
         {
+            StudyLifeMetrics.CacheRequests.Add(1, StudyLifeMetrics.Result("miss"));
             result = await factory();
             var bytes = JsonSerializer.SerializeToUtf8Bytes(result);
             await cache.SetAsync(key, bytes, new DistributedCacheEntryOptions().SetAbsoluteExpiration(ttl));

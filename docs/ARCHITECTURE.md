@@ -598,3 +598,33 @@ Two dashboard tiles derive from it:
   turn ±25 min into ±150 min, and the average duration is shown alongside because the Health app
   only ever shows durations — 2026-09-03 the tile read "± 152 min" for a user whose Health app
   showed a steady 6 h 59 min. `GetRecentSleepOnsetMinutesAsync` remains for older app builds.
+
+## Telemetry
+
+Decided 2026-09-03: full operational telemetry, minus anything without value or anything that
+must not leave the device (HealthKit values, note/course content, IPs, click paths). The plan
+has six phases; this section grows with each.
+
+**Phase 1 — server metrics (this repo).** `Telemetry:MetricsPort` (env `Telemetry__MetricsPort`)
+switches metrics on and opens a dedicated Kestrel listener that answers nothing but
+`GET /metrics` in Prometheus exposition format (OpenTelemetry .NET with the Prometheus exporter;
+`Program.cs`). Unset = off, which is the default for the Pi/docker-compose and every test. In
+Kubernetes the port is 9464 on web and worker pods, reachable only from the Prometheus pod in
+the `monitoring` namespace (`k8s/12-network-policies.yaml`); the scrape job and the Grafana
+dashboard live in homelab-infra (`monitoring/01-prometheus.yaml`, `05-grafana-dashboards.yaml`).
+
+What is recorded:
+
+- Framework meters: ASP.NET Core request duration/status per route, Kestrel connections, rate
+  limiter decisions (incl. the "expensive" concurrency policy), outbound HttpClient calls,
+  EF Core and Npgsql query/connection metrics, .NET runtime (GC, thread pool, exceptions).
+- `Services/StudyLifeMetrics.cs` (meter `StudyLife.Server`): response-cache outcomes
+  (`not_modified`/`hit`/`miss`), SSE streams started/open, TTS requests by result and ONNX
+  synthesis duration, webhook publishes by outcome and duration, worker tick duration,
+  per-pod auth-session cache hit/miss.
+
+Nothing carries a user id, IP, or content; tags are fixed enumerations. Names follow the OTel
+convention so the same instruments can be exported via OTLP to a collector later (phase 4) or
+read by an own dashboard through the Prometheus HTTP API — the export format is a
+configuration decision, not a code change.
+
