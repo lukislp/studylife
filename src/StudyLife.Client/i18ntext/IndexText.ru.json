@@ -106,7 +106,7 @@
   "ReadinessAroundBaseline": "Около вашего среднего уровня",
   "ReadinessBelowBaseline": "Ниже вашего среднего уровня",
   "SleepConsistencyLabel": "Постоянство сна",
-  "SleepConsistencyValueFormat": "± {0} мин (30 дней)",
+  "SleepConsistencyValueFormat": "Засыпание ± {0} мин · Ø сон {1}",
   "SleepConsistencyGood": "Очень регулярный",
   "SleepConsistencyModerate": "Немного изменчивый",
   "SleepConsistencyPoor": "Нерегулярный",

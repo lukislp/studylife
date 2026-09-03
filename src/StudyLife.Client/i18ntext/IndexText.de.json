@@ -106,7 +106,7 @@
   "ReadinessAroundBaseline": "Um deinen Normalwert",
   "ReadinessBelowBaseline": "Unter deinem Normalwert",
   "SleepConsistencyLabel": "Schlaf-Konsistenz",
-  "SleepConsistencyValueFormat": "± {0} Min. (30 Tage)",
+  "SleepConsistencyValueFormat": "Einschlafzeit ± {0} Min. · Ø Schlaf {1}",
   "SleepConsistencyGood": "Sehr regelmäßig",
   "SleepConsistencyModerate": "Etwas unregelmäßig",
   "SleepConsistencyPoor": "Unregelmäßig",

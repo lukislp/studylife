@@ -106,7 +106,7 @@
   "ReadinessAroundBaseline": "Oko tvog prosjeka",
   "ReadinessBelowBaseline": "Ispod tvog prosjeka",
   "SleepConsistencyLabel": "Dosljednost sna",
-  "SleepConsistencyValueFormat": "± {0} min (30 dana)",
+  "SleepConsistencyValueFormat": "Uspavljivanje ± {0} min · Ø san {1}",
   "SleepConsistencyGood": "Vrlo redovito",
   "SleepConsistencyModerate": "Donekle promjenjivo",
   "SleepConsistencyPoor": "Neredovito",

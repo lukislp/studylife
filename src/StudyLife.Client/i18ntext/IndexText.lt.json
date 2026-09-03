@@ -106,7 +106,7 @@
   "ReadinessAroundBaseline": "Ties jūsų vidurkiu",
   "ReadinessBelowBaseline": "Žemiau jūsų vidurkio",
   "SleepConsistencyLabel": "Miego reguliarumas",
-  "SleepConsistencyValueFormat": "± {0} min (30 dienų)",
+  "SleepConsistencyValueFormat": "Užmigimas ± {0} min · Ø miegas {1}",
   "SleepConsistencyGood": "Labai reguliarus",
   "SleepConsistencyModerate": "Šiek tiek nepastovus",
   "SleepConsistencyPoor": "Nereguliarus",

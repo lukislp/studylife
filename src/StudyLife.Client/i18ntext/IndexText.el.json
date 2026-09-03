@@ -106,7 +106,7 @@
   "ReadinessAroundBaseline": "Γύρω από τον μέσο όρο σας",
   "ReadinessBelowBaseline": "Κάτω από τον μέσο όρο σας",
   "SleepConsistencyLabel": "Συνέπεια ύπνου",
-  "SleepConsistencyValueFormat": "± {0} λεπτά (30 ημέρες)",
+  "SleepConsistencyValueFormat": "Ώρα ύπνου ± {0} λεπτά · μέσος ύπνος {1}",
   "SleepConsistencyGood": "Πολύ σταθερός",
   "SleepConsistencyModerate": "Κάπως ασταθής",
   "SleepConsistencyPoor": "Ακανόνιστος",

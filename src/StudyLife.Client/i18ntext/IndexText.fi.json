@@ -106,7 +106,7 @@
   "ReadinessAroundBaseline": "Keskiarvosi tasolla",
   "ReadinessBelowBaseline": "Alle keskiarvosi",
   "SleepConsistencyLabel": "Unen säännöllisyys",
-  "SleepConsistencyValueFormat": "± {0} min (30 päivää)",
+  "SleepConsistencyValueFormat": "Nukahtaminen ± {0} min · Ø uni {1}",
   "SleepConsistencyGood": "Erittäin säännöllinen",
   "SleepConsistencyModerate": "Hieman vaihteleva",
   "SleepConsistencyPoor": "Epäsäännöllinen",
