@@ -153,6 +153,32 @@
 .card-focus-score { grid-column: 1 / -1; grid-row: 13; }
 .card-best-record { grid-column: 1 / -1; grid-row: 14; }
 
+/* Progressive-render placeholder (2026-09 audit): shown instead of a card's real content while
+   its data group is still loading, so nothing ever displays a zero/empty value that later flips
+   to real data - see docs/ARCHITECTURE.md "Telemetry" boot timeline. */
+.dash-card.is-loading {
+    position: relative;
+    overflow: hidden;
+    min-height: 6.5rem;
+}
+
+.dash-card.is-loading::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, var(--bg3), transparent);
+    animation: dash-skeleton-sweep 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dash-card.is-loading::after { animation: none; opacity: 0.6; }
+}
+
+@keyframes dash-skeleton-sweep {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
 .dash-inactivity-banner,
 .dash-anomaly-banner,
 .dash-backup-banner { margin: 0 0 1.5rem 0; display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
