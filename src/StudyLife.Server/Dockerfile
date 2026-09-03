@@ -37,12 +37,24 @@ ENV ASPNETCORE_HTTP_PORTS=
 # on this hardware class. A measured choice, not a guess deferred to a later step.
 RUN apt-get update && apt-get install -y --no-install-recommends curl espeak-ng libgomp1 && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /app/tts-voices \
-    && curl -fsSL -o /app/tts-voices/de.onnx https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/low/de_DE-thorsten-low.onnx \
-    && curl -fsSL -o /app/tts-voices/de.onnx.json https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/low/de_DE-thorsten-low.onnx.json \
-    && curl -fsSL -o /app/tts-voices/en.onnx https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/amy/low/en_US-amy-low.onnx \
-    && curl -fsSL -o /app/tts-voices/en.onnx.json https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/amy/low/en_US-amy-low.onnx.json \
+    # Pinned to a piper-voices commit and checksum-verified (2026-09 audit M4): resolve/main is
+    # mutable, so the upstream owner (or an account compromise) could change ~275 MB of model bytes
+    # that end up executing inside this image without anyone here noticing. The sha256 values are
+    # HuggingFace's own LFS object ids for the .onnx files and locally computed for the two JSON
+    # sidecars; bump commit + sums together when upgrading a voice.
+    && curl -fsSL -o /app/tts-voices/de.onnx https://huggingface.co/rhasspy/piper-voices/resolve/39ab474be869e9181350af6a65e4953eef67aaa0/de/de_DE/thorsten/low/de_DE-thorsten-low.onnx \
+    && curl -fsSL -o /app/tts-voices/de.onnx.json https://huggingface.co/rhasspy/piper-voices/resolve/39ab474be869e9181350af6a65e4953eef67aaa0/de/de_DE/thorsten/low/de_DE-thorsten-low.onnx.json \
+    && curl -fsSL -o /app/tts-voices/en.onnx https://huggingface.co/rhasspy/piper-voices/resolve/39ab474be869e9181350af6a65e4953eef67aaa0/en/en_US/amy/low/en_US-amy-low.onnx \
+    && curl -fsSL -o /app/tts-voices/en.onnx.json https://huggingface.co/rhasspy/piper-voices/resolve/39ab474be869e9181350af6a65e4953eef67aaa0/en/en_US/amy/low/en_US-amy-low.onnx.json \
     && mkdir -p /app/stt-model \
-    && curl -fsSL -o /app/stt-model/ggml-base.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin
+    && curl -fsSL -o /app/stt-model/ggml-base.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/5359861c739e955e79d9a303bcbc70fb988958b1/ggml-base.bin \
+    && printf '%s  %s\n' \
+        9ac27fad17cec5c1a791161976a64f026f16fc058b400b1fea62565b8b2cf375 /app/tts-voices/de.onnx \
+        df38e892ed949f62d0c40978bc666de0b341c5f7921840ae7c72f4df8e8ffa05 /app/tts-voices/de.onnx.json \
+        a5a91abb7de0f104358a25aded480ddacf1ff0762886325886ec406a2e86aab3 /app/tts-voices/en.onnx \
+        2250a9a605b8dc35a116717fadc5056695dd809e34a15d02f72a0f52d53d3ebb /app/tts-voices/en.onnx.json \
+        60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe /app/stt-model/ggml-base.bin \
+        | sha256sum -c -
 
 FROM base AS final
 # TARGETARCH is set automatically by "docker buildx build --platform ..." (amd64/arm64) -

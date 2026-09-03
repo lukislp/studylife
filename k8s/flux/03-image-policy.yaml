@@ -13,4 +13,7 @@ spec:
     name: studylife-server
   policy:
     semver:
-      range: ">=0.0.0"
+      # Bounded to the current major (2026-09 audit I1): a mis-tagged or premature major would
+      # otherwise roll out unattended within five minutes. Bump this range deliberately as part
+      # of a major release, never let the automation discover one.
+      range: ">=3.0.0 <4.0.0"
