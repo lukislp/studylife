@@ -1,3 +1,10 @@
+# [3.3.0](https://github.com/lukislp/studylife/compare/v3.2.9...v3.3.0) (2026-09-03)
+
+
+### Features
+
+* expose OpenTelemetry server metrics on a dedicated listener ([1ec67c8](https://github.com/lukislp/studylife/commit/1ec67c8cf857b4eba00f0e4ca84ac1e9e7c6063e))
+
 ## [3.2.9](https://github.com/lukislp/studylife/compare/v3.2.8...v3.2.9) (2026-09-03)
 
 
