@@ -30,6 +30,11 @@ public static class AuthSessionService
     /// <summary>Header through which the client sends its session token (sibling of X-Api-Key).</summary>
     public const string TokenHeaderName = "X-Session-Token";
 
+    /// <summary>HttpContext.Items key: SHA-256 hash of the X-Session-Token this request
+    /// authenticated with - what AuthSessionCache is keyed by, so Logout can evict exactly the
+    /// caller's own cache entry (AuthController.Logout).</summary>
+    public const string SessionTokenHashItemKey = "AuthSessionTokenHash";
+
     /// <summary>HttpContext.Items key: which of the four API-key slots matched (see
     /// AuthUserEntity.ApiKeyHash/AiApiKeyHash/McpApiKeyHash/CaptureApiKeyHash), as "ha"/"ai"/
     /// "mcp"/"capture" - set by the gate in Program.cs ONLY on the key-authenticated branch (a
