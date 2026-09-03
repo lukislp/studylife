@@ -1,3 +1,15 @@
+## [2.17.3](https://github.com/lukislp/studylife/compare/v2.17.2...v2.17.3) (2026-09-03)
+
+
+### Bug Fixes
+
+* add composite AuthUserId indexes for the hot query paths ([75f6450](https://github.com/lukislp/studylife/commit/75f6450df0b345ead44ce5e94c985396e64e1946))
+* apply dotnet format whitespace rules to the new tests ([dd14d3f](https://github.com/lukislp/studylife/commit/dd14d3fa475b6e68640bc45659bb0cce6791fff7))
+* keep synthesized TTS audio in a bounded per-pod cache instead of Redis ([0fc9869](https://github.com/lukislp/studylife/commit/0fc9869df86e560de696a304bd6045ffb199bb98))
+* key cache version counters per user, make them async, raise cache TTLs ([e9114bf](https://github.com/lukislp/studylife/commit/e9114bf43ba60bdbcafa4af9acddbf2ccb3de271))
+* let CacheHelper's Cache-Control survive the blanket no-store on /api ([a2228b5](https://github.com/lukislp/studylife/commit/a2228b534dde4928ece1051a3cc1bc1ffe5fa7b5))
+* self-host fonts, trim the service-worker precache, defer print.css ([615c744](https://github.com/lukislp/studylife/commit/615c744471cab7a16b87a0d01f4570ec972ae6e1))
+
 ## [2.17.2](https://github.com/lukislp/studylife/compare/v2.17.1...v2.17.2) (2026-09-03)
 
 
