@@ -665,6 +665,15 @@ and the instance isn't in demo mode; Accept/Decline write the field through the 
 save path and the modal never shows again either way. `Components/Setup/SetupTelemetryCard.razor`
 (next to the progress-share card on the setup page) lets it be changed again afterward.
 
+**Progressive dashboard render (2026-09):** `dashboardReadyMs` used to cover the entire startup
+chain of both `MainLayout.OnInitializedAsync` and `Index.LoadDataAsync` awaiting everything before
+rendering anything — a phone measured a ~210ms WebView paint but a ~1.3s wait for the visible
+dashboard. Both now render as soon as their cheapest prerequisites are ready (`MainLayout`: session
+check, i18n, language, theme; `Index`: settings+courses) and fill in the rest in phases afterward
+(a `.dash-card.is-loading` skeleton stands in for a still-loading card so no value ever flips from
+wrong to right), which is what should show up as a lower
+`studylife_client_boot_dashboard_ready_duration_seconds`.
+
 What is collected (client-side, `Services/TelemetryService.cs`): boot timeline (HTML/boot-script/
 wasm-download/runtime-ready/first-render/dashboard-ready durations, cold vs. warm, download
 bytes, service-worker cache hit — `performance.mark` calls in `wwwroot/js/boot-loading.js`,

@@ -42,48 +42,65 @@
     }
 
     <div class="dash-grid">
-        <DashboardTodaySessionsCard Label="@T.TodaySessionsLabel" Sessions="@_todaySessions" RecurringHint="@T.RecurringSessionHint" EmptyText="@T.NoSessionsPlannedToday" AddLinkText="@T.AddOneLink" />
+        @if (_sessionsLoading)
+        {
+            <div class="dash-card card-today is-loading" aria-hidden="true"></div>
+            <div class="dash-card card-next is-loading" aria-hidden="true"></div>
+        }
+        else
+        {
+            <DashboardTodaySessionsCard Label="@T.TodaySessionsLabel" Sessions="@_todaySessions" RecurringHint="@T.RecurringSessionHint" EmptyText="@T.NoSessionsPlannedToday" AddLinkText="@T.AddOneLink" />
 
-        <DashboardNextSessionCard ActiveSession="@_activeSession" UpcomingSession="@_upcomingSession" NowLabel="@T.NowLabel" UpNextLabel="@T.UpNextLabel" UntilTimeFormat="@T.UntilTime" StartsAtFormat="@T.StartsAt" EnterFocusText="@T.EnterFocus" AllClearForNowText="@T.AllClearForNow" PlanASessionText="@T.PlanASession" />
+            <DashboardNextSessionCard ActiveSession="@_activeSession" UpcomingSession="@_upcomingSession" NowLabel="@T.NowLabel" UpNextLabel="@T.UpNextLabel" UntilTimeFormat="@T.UntilTime" StartsAtFormat="@T.StartsAt" EnterFocusText="@T.EnterFocus" AllClearForNowText="@T.AllClearForNow" PlanASessionText="@T.PlanASession" />
+        }
 
-        <!-- Stats -->
-        <div class="dash-card card-stats">
-            <div class="card-label">@T.ThisWeekLabel</div>
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <div class="stat-val">@_weekSessions</div>
-                    <div class="stat-key">@T.SessionsUnit</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-val">@_weekHours</div>
-                    <div class="stat-key">@T.HoursUnit</div>
-                    @if (_weekDeltaLabel != null)
-                    {
-                        <div class="stat-delta @(_weekDeltaUp ? "delta-up" : "delta-down")">@(_weekDeltaUp ? "▲" : "▼") @_weekDeltaLabel</div>
-                    }
-                </div>
-                <div class="stat-item stat-item-streak">
-                    <div class="stat-val">
-                        @_streak
-                        @if (_streak > 0 && _streak >= _longestStreak)
+        @if (_sessionsLoading)
+        {
+            <div class="dash-card card-stats is-loading" aria-hidden="true"></div>
+        }
+        else
+        {
+            <!-- Stats -->
+            <div class="dash-card card-stats">
+                <div class="card-label">@T.ThisWeekLabel</div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-val">@_weekSessions</div>
+                        <div class="stat-key">@T.SessionsUnit</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-val">@_weekHours</div>
+                        <div class="stat-key">@T.HoursUnit</div>
+                        @if (_weekDeltaLabel != null)
                         {
-                            <span class="streak-flame streak-flame-record" title="@T.StreakNewRecord">🔥</span>
-                        }
-                        else if (_longestStreak > 0 && _streak > 0 && _streak >= _longestStreak - 2)
-                        {
-                            <span class="streak-flame streak-flame-close" title="@T.StreakAlmostRecord">🔥</span>
+                            <div class="stat-delta @(_weekDeltaUp ? "delta-up" : "delta-down")">@(_weekDeltaUp ? "▲" : "▼") @_weekDeltaLabel</div>
                         }
                     </div>
-                    <div class="stat-key">@T.DayStreakUnit</div>
-                    @if (_longestStreak > 0)
-                    {
-                        <div class="stat-sub">@string.Format(T.StreakRecordFormat ?? "", _longestStreak)</div>
-                    }
+                    <div class="stat-item stat-item-streak">
+                        <div class="stat-val">
+                            @_streak
+                            @if (_streak > 0 && _streak >= _longestStreak)
+                            {
+                                <span class="streak-flame streak-flame-record" title="@T.StreakNewRecord">🔥</span>
+                            }
+                            else if (_longestStreak > 0 && _streak > 0 && _streak >= _longestStreak - 2)
+                            {
+                                <span class="streak-flame streak-flame-close" title="@T.StreakAlmostRecord">🔥</span>
+                            }
+                        </div>
+                        <div class="stat-key">@T.DayStreakUnit</div>
+                        @if (_longestStreak > 0)
+                        {
+                            <div class="stat-sub">@string.Format(T.StreakRecordFormat ?? "", _longestStreak)</div>
+                        }
+                    </div>
                 </div>
             </div>
-        </div>
+        }
 
-        <!-- Courses quick view -->
+        <!-- Courses quick view: ready as soon as settings+courses load (phase 1), tags/deadline
+             badges (goals, phase 3) simply appear on the pills afterward - not a wrong value that
+             flips, just a decoration arriving slightly later. -->
         <div class="dash-card card-courses">
             <div class="card-label">@T.YourCourses</div>
             <div class="course-list">
@@ -110,15 +127,35 @@
             </div>
         </div>
 
-        <DashboardQuotaCard Data="@WeekQuotaData" OnTrackText="@T.OnTrack" BelowTargetText="@T.BelowTarget" PlanNowLinkText="@T.PlanNowLink" />
+        @if (_sessionsLoading)
+        {
+            <div class="dash-card card-quota-week is-loading" aria-hidden="true"></div>
+            <div class="dash-card card-quota is-loading" aria-hidden="true"></div>
+            <div class="dash-card card-trend is-loading" aria-hidden="true"></div>
+        }
+        else
+        {
+            <DashboardQuotaCard Data="@WeekQuotaData" OnTrackText="@T.OnTrack" BelowTargetText="@T.BelowTarget" PlanNowLinkText="@T.PlanNowLink" />
 
-        <DashboardQuotaCard Data="@MonthQuotaData" OnTrackText="@T.OnTrack" BelowTargetText="@T.BelowTarget" PlanNowLinkText="@T.PlanNowLink" />
+            <DashboardQuotaCard Data="@MonthQuotaData" OnTrackText="@T.OnTrack" BelowTargetText="@T.BelowTarget" PlanNowLinkText="@T.PlanNowLink" />
 
-        <DashboardTrendChart Label="@T.Last8Weeks" Weeks="@_weeklyTrend" />
+            <DashboardTrendChart Label="@T.Last8Weeks" Weeks="@_weeklyTrend" />
+        }
 
-        <DashboardUpcomingGoalsCard Label="@T.UpcomingCourseGoals" Goals="@_upcomingGoals" InDaysFormat="@T.InDays" OverdueByDaysFormat="@T.OverdueByDays" EmptyText="@T.NoOpenCourseGoals" SetAGoalText="@T.SetAGoal" />
+        @if (_goalsLoading)
+        {
+            <div class="dash-card card-exams is-loading" aria-hidden="true"></div>
+            <div class="dash-card card-progress is-loading" aria-hidden="true"></div>
+        }
+        else
+        {
+            <DashboardUpcomingGoalsCard Label="@T.UpcomingCourseGoals" Goals="@_upcomingGoals" InDaysFormat="@T.InDays" OverdueByDaysFormat="@T.OverdueByDays" EmptyText="@T.NoOpenCourseGoals" SetAGoalText="@T.SetAGoal" />
 
-        <DashboardProgressCard Label="@T.StudyProgress" EctsEarned="@_ectsEarned" EctsTotal="@_ectsTotal" EctsPercent="@_ectsPercent" AvgGradeWeightedLabel="@T.AvgGradeWeighted" AverageGradeLabel="@_averageGradeLabel" ForecastLabel="@T.ForecastLabel" ForecastText="@(_forecastAlreadyDone ? T.ForecastAlreadyDone : _forecastAvailable ? string.Format(T.ForecastCompletionText ?? "", _forecastDateLabel) : T.ForecastNotEnoughData)" />
+            <!-- EctsEarned/EctsTotal/AverageGrade are ready as soon as the goals group (phase 3)
+                 completes; ForecastText additionally guards phase 5 (achievements/heavy history) -
+                 see the ForecastText property. -->
+            <DashboardProgressCard Label="@T.StudyProgress" EctsEarned="@_ectsEarned" EctsTotal="@_ectsTotal" EctsPercent="@_ectsPercent" AvgGradeWeightedLabel="@T.AvgGradeWeighted" AverageGradeLabel="@_averageGradeLabel" ForecastLabel="@T.ForecastLabel" ForecastText="@ForecastText" />
+        }
 
         @if (_gradGoalVisible)
         {
@@ -134,15 +171,26 @@
                                          ExpiredText="@T.GraduationGoalExpired" />
         }
 
-        <DashboardCourseDonutCard Label="@T.CourseFocus30Days" Slices="@_miniDonutSlices" Gradient="@_miniDonutGradient" TotalHours="@_miniDonutTotalHours" EmptyText="@T.NoCompletedSessions30Days" StatsLinkHint="@T.CourseFocusOpenStatsHint" />
+        @if (_sessionsLoading)
+        {
+            <div class="dash-card card-mini-donut is-loading" aria-hidden="true"></div>
+            <div class="dash-card card-today-focus is-loading" aria-hidden="true"></div>
+            <div class="dash-card card-recent is-loading" aria-hidden="true"></div>
+            <div class="dash-card card-note-preview is-loading" aria-hidden="true"></div>
+            <div class="dash-card card-neglect is-loading" aria-hidden="true"></div>
+        }
+        else
+        {
+            <DashboardCourseDonutCard Label="@T.CourseFocus30Days" Slices="@_miniDonutSlices" Gradient="@_miniDonutGradient" TotalHours="@_miniDonutTotalHours" EmptyText="@T.NoCompletedSessions30Days" StatsLinkHint="@T.CourseFocusOpenStatsHint" />
 
-        <DashboardTodayRingCard Label="@T.TodayRingLabel" RingPercent="@_todayRingPercent" HoursLabel="@_todayHoursLabel" TargetLabel="@(string.Format(T.OfTarget ?? "", _dailyTargetLabel))" StreakStrip="@_streakStrip" Exceeded="_todayRingExceeded" ExceededHint="@T.TodayRingExceededHint" />
+            <DashboardTodayRingCard Label="@T.TodayRingLabel" RingPercent="@_todayRingPercent" HoursLabel="@_todayHoursLabel" TargetLabel="@(string.Format(T.OfTarget ?? "", _dailyTargetLabel))" StreakStrip="@_streakStrip" Exceeded="_todayRingExceeded" ExceededHint="@T.TodayRingExceededHint" />
 
-        <DashboardRecentSessionsCard Label="@T.RecentlyCompleted" Sessions="@_recentSessions" EmptyText="@T.NoCompletedSessionsYet" />
+            <DashboardRecentSessionsCard Label="@T.RecentlyCompleted" Sessions="@_recentSessions" EmptyText="@T.NoCompletedSessionsYet" />
 
-        <DashboardNotePreviewCard Label="@T.LatestNote" Note="@_latestNote" Excerpt="@_latestNoteExcerpt" CourseName="@_latestNoteCourseName" UntitledText="@T.Untitled" GoToNotesText="@T.GoToNotes" EmptyText="@T.NoNotesYet" WriteFirstNoteText="@T.WriteFirstNote" />
+            <DashboardNotePreviewCard Label="@T.LatestNote" Note="@_latestNote" Excerpt="@_latestNoteExcerpt" CourseName="@_latestNoteCourseName" UntitledText="@T.Untitled" GoToNotesText="@T.GoToNotes" EmptyText="@T.NoNotesYet" WriteFirstNoteText="@T.WriteFirstNote" />
 
-        <DashboardNeglectedCourseCard Label="@T.BalanceCheck" Course="@_neglectedCourse" Hint="@_neglectedCourseHint" EmptyText="@T.NoActiveCoursesToCompare" />
+            <DashboardNeglectedCourseCard Label="@T.BalanceCheck" Course="@_neglectedCourse" Hint="@_neglectedCourseHint" EmptyText="@T.NoActiveCoursesToCompare" />
+        }
 
         @if (_productivityHintVisible)
         {
@@ -154,51 +202,90 @@
                                            PlanLinkText="@T.PlanNowLink" />
         }
 
-        <DashboardAchievementsCard HeaderText="@(string.Format(T.AchievementsUnlockedCount ?? "", _achievementsUnlocked, _achievements.Count))" Achievements="@_achievements" />
+        @if (_achievementsLoading)
+        {
+            <div class="dash-card card-achievements is-loading" aria-hidden="true"></div>
+        }
+        else
+        {
+            <DashboardAchievementsCard HeaderText="@(string.Format(T.AchievementsUnlockedCount ?? "", _achievementsUnlocked, _achievements.Count))" Achievements="@_achievements" />
+        }
 
-        <!-- Topics progress -->
-        <div class="dash-card card-topics-progress">
-            <div class="card-label">@T.TopicsProgressDashLabel</div>
-            @if (_topicsTotal == 0)
-            {
-                <div class="empty-state">@T.NoTopicsTrackedYet</div>
-            }
-            else
-            {
-                <div class="quota-row">
-                    <div class="quota-hours">
-                        <span class="stat-val">@_topicsCompleted</span>
-                        <span class="quota-target">/ @_topicsTotal @T.TopicsUnit</span>
+        @if (_goalsLoading)
+        {
+            <div class="dash-card card-topics-progress is-loading" aria-hidden="true"></div>
+        }
+        else
+        {
+            <!-- Topics progress -->
+            <div class="dash-card card-topics-progress">
+                <div class="card-label">@T.TopicsProgressDashLabel</div>
+                @if (_topicsTotal == 0)
+                {
+                    <div class="empty-state">@T.NoTopicsTrackedYet</div>
+                }
+                else
+                {
+                    <div class="quota-row">
+                        <div class="quota-hours">
+                            <span class="stat-val">@_topicsCompleted</span>
+                            <span class="quota-target">/ @_topicsTotal @T.TopicsUnit</span>
+                        </div>
+                        <div class="quota-badge badge-ok">@_topicsPercent.ToString("0")%</div>
                     </div>
-                    <div class="quota-badge badge-ok">@_topicsPercent.ToString("0")%</div>
-                </div>
-                <div class="quota-bar-track">
-                    <div class="quota-bar-fill fill-ok" style="width: @_topicsPercent%"></div>
-                </div>
-            }
-        </div>
+                    <div class="quota-bar-track">
+                        <div class="quota-bar-fill fill-ok" style="width: @_topicsPercent%"></div>
+                    </div>
+                }
+            </div>
+        }
 
-        <DashboardMonthComparisonCard Label="@T.MonthComparisonLabel" CurrentLabel="@_monthCompCurrentLabel" VsLastMonthText="@T.VsLastMonth" VsLastMonthLabel="@_monthCompVsLastMonthLabel" VsLastMonthUp="@_monthCompVsLastMonthUp" HasYearData="@_monthCompHasYearData" VsLastYearText="@T.VsLastYear" VsLastYearLabel="@_monthCompVsLastYearLabel" VsLastYearUp="@_monthCompVsLastYearUp" />
+        @if (_achievementsLoading)
+        {
+            <div class="dash-card card-month-comparison is-loading" aria-hidden="true"></div>
+        }
+        else
+        {
+            <DashboardMonthComparisonCard Label="@T.MonthComparisonLabel" CurrentLabel="@_monthCompCurrentLabel" VsLastMonthText="@T.VsLastMonth" VsLastMonthLabel="@_monthCompVsLastMonthLabel" VsLastMonthUp="@_monthCompVsLastMonthUp" HasYearData="@_monthCompHasYearData" VsLastYearText="@T.VsLastYear" VsLastYearLabel="@_monthCompVsLastYearLabel" VsLastYearUp="@_monthCompVsLastYearUp" />
+        }
 
         @if (_focusScoreVisible)
         {
             <DashboardFocusScoreCard Label="@T.FocusScoreLabel" Percent="@_focusScorePercent" StatusText="@FocusScoreStatusText" RatioText="@FocusScoreRatioText" />
         }
 
-        @if (_readinessVisible)
+        @* Readiness/sleep tiles are native-app-only (Health.IsAvailable); the loading skeleton
+           only shows there - on the web client hrvTask/sleepNightsTask resolve to null instantly
+           (see LoadDataAsync), so _healthLoading is never visibly true and no skeleton flashes. *@
+        @if (Health.IsAvailable && _healthLoading)
+        {
+            <div class="dash-card card-readiness-score is-loading" aria-hidden="true"></div>
+        }
+        else if (_readinessVisible)
         {
             <DashboardReadinessScoreCard Label="@T.ReadinessScoreLabel" Percent="@_readinessPercent" StatusText="@ReadinessStatusText" RatioText="@ReadinessValueText" />
         }
 
-        @if (_sleepConsistencyVisible)
+        @if (Health.IsAvailable && _healthLoading)
+        {
+            <div class="dash-card card-sleep-consistency is-loading" aria-hidden="true"></div>
+        }
+        else if (_sleepConsistencyVisible)
         {
             <DashboardSleepConsistencyCard Label="@T.SleepConsistencyLabel" Percent="@_sleepConsistencyPercent" StatusText="@SleepConsistencyStatusText" ValueText="@SleepConsistencyValueText" />
         }
 
-        <DashboardBestRecordCard Label="@T.BestRecordLabel"
-                                  DayLabel="@T.BestRecordDayLabel" BestDayHours="@_bestDayHoursLabel" BestDayDate="@_bestDayDateLabel" BestDayIsNew="_bestDayIsNew"
-                                  WeekLabel="@T.BestRecordWeekLabel" BestWeekHours="@_bestWeekHoursLabel" BestWeekRange="@_bestWeekRangeLabel" BestWeekIsNew="_bestWeekIsNew"
-                                  NewRecordText="@T.BestRecordNewRecordText" />
+        @if (_achievementsLoading)
+        {
+            <div class="dash-card card-best-record is-loading" aria-hidden="true"></div>
+        }
+        else
+        {
+            <DashboardBestRecordCard Label="@T.BestRecordLabel"
+                                      DayLabel="@T.BestRecordDayLabel" BestDayHours="@_bestDayHoursLabel" BestDayDate="@_bestDayDateLabel" BestDayIsNew="_bestDayIsNew"
+                                      WeekLabel="@T.BestRecordWeekLabel" BestWeekHours="@_bestWeekHoursLabel" BestWeekRange="@_bestWeekRangeLabel" BestWeekIsNew="_bestWeekIsNew"
+                                      NewRecordText="@T.BestRecordNewRecordText" />
+        }
     </div>
 </div>
 }
