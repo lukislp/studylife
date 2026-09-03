@@ -431,7 +431,10 @@ jobs:
           retention-days: 1
 
   docker-manifest-merge:
-    needs: [get-version, docker-server]
+    # trivy-server is a real gate now (2026-09 audit I1): the per-arch images are already pushed
+    # by digest, but the version tag Flux watches only appears here - so a CRITICAL finding stops
+    # the release BEFORE anything can auto-deploy, instead of being reported after the fact.
+    needs: [get-version, docker-server, trivy-server]
     if: github.event_name == 'push' && needs.get-version.outputs.published == 'true'
     runs-on: ubuntu-latest
     concurrency:
@@ -483,7 +486,13 @@ jobs:
         run: docker buildx imagetools inspect "${{ env.IMAGE }}:${{ env.NEXT_VERSION }}"
 
   trivy-server:
-    needs: [get-version, docker-manifest-merge]
+    # Scans the amd64 image BY DIGEST (pushed untagged by docker-server) and blocks
+    # docker-manifest-merge - i.e. the publication of the version tag Flux deploys - on any
+    # CRITICAL finding (2026-09 audit I1). It used to run after the tag was already live with
+    # exit-code 0, so a Critical CVE was in prod before anyone read the table. HIGH stays
+    # report-only: the Ubuntu base image carries HIGH-rated OS packages most weeks, and blocking
+    # on those would mean no releases at all until Canonical ships the fix.
+    needs: [get-version, docker-server]
     if: github.event_name == 'push' && needs.get-version.outputs.published == 'true'
     runs-on: ubuntu-latest
     concurrency:
@@ -495,17 +504,32 @@ jobs:
     env:
       NEXT_VERSION: ${{ needs.get-version.outputs.next_version }}
     steps:
+      - uses: actions/download-artifact@v8.0.1
+        with:
+          name: digests-amd64
+          path: /tmp/digests
+      - name: Resolve amd64 digest reference
+        run: echo "IMAGE_REF=${{ env.IMAGE }}@sha256:$(ls /tmp/digests | head -1)" >> "$GITHUB_ENV"
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+      - name: Report HIGH and CRITICAL (informational)
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
         with:
-          image-ref: ${{ env.IMAGE }}:${{ env.NEXT_VERSION }}
+          image-ref: ${{ env.IMAGE_REF }}
           format: table
           severity: HIGH,CRITICAL
           exit-code: "0"
+      - name: Gate on CRITICAL
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE_REF }}
+          format: table
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
 
   semantic-release:
     # Runs before docker-server now (see that job's comment) - the real tag/release must exist

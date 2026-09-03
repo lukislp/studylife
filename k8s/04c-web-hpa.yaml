@@ -24,9 +24,21 @@ spec:
         target:
           type: Utilization
           averageUtilization: 70
+    # Memory as a second signal (2026-09 audit M8): the documented failure mode of this pod is
+    # OOM from resident speech models, which CPU utilization does not see coming.
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 75
   behavior:
     # Same trade-off as for the worker: cautious scale-down (5-minute stabilization window
     # instead of immediate), so a brief drop in a load spike doesn't immediately trigger
-    # shrinking (flapping). Scale-up stays on the aggressive default behavior.
+    # shrinking (flapping).
     scaleDown:
       stabilizationWindowSeconds: 300
+    # A single long TTS synthesis saturates the small CPU request for a minute - without a
+    # stabilization window that alone fanned out additional pods (each ~600Mi of models).
+    scaleUp:
+      stabilizationWindowSeconds: 120
