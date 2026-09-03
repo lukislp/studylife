@@ -329,7 +329,6 @@ public class SessionsController : ControllerBase
     /// the clamp in GetHistory.</summary>
     private const int MaxHistoryDays = 3650;
 
-    private static readonly SemaphoreSlim _newRecordLock = new(1, 1);
 
     private async Task CheckNewRecordAsync(StudySessionEntity entity)
     {
@@ -342,40 +341,48 @@ public class SessionsController : ControllerBase
         var now = DateTime.Now;
         if (!(entity.IsCompleted || entity.EndTime <= now)) return;
 
-        await _newRecordLock.WaitAsync();
+        // Dedup per session id: prevents a repeat push if the same session is later
+        // edited/moved again (a record conceptually "happens" only once).
+        var key = $"newrecord:{entity.Id}";
+        if (await _db.SentReminders.AnyAsync(r => r.Key == key)) return;
+
+        var duration = entity.EndTime - entity.StartTime;
+
+        var others = await _db.Sessions
+            .Where(s => s.Id != entity.Id && (s.IsCompleted || s.EndTime <= now))
+            .Select(s => new { s.StartTime, s.EndTime })
+            .ToListAsync();
+        // Without a baseline (the very first studied session), a "record" is trivial and
+        // would just feel like unmotivated spam - only meaningful from the second studied
+        // session onward.
+        if (others.Count == 0) return;
+
+        var previousMaxHours = others.Max(s => (s.EndTime - s.StartTime).TotalHours);
+        if (duration.TotalHours <= previousMaxHours) return;
+
+        // Claim BEFORE sending: the unique index on SentReminders (AuthUserId, Key) is the
+        // arbiter between concurrent writes of the same session, so exactly one request sends
+        // the push. This replaces a process-wide SemaphoreSlim that serialized every session
+        // write on the pod and was held across the outbound push HTTP calls - one slow push
+        // provider stalled all POST/PUT /api/sessions (2026-09 audit P5). The DB constraint
+        // also works across pods, which the in-process lock never did.
+        var claim = new SentReminderEntity { Key = key, SentAt = now };
+        _db.SentReminders.Add(claim);
         try
         {
-            // Dedup per session id: prevents a repeat push if the same session is later
-            // edited/moved again (a record conceptually "happens" only once).
-            var key = $"newrecord:{entity.Id}";
-            if (await _db.SentReminders.AnyAsync(r => r.Key == key)) return;
-
-            var duration = entity.EndTime - entity.StartTime;
-
-            var others = await _db.Sessions
-                .Where(s => s.Id != entity.Id && (s.IsCompleted || s.EndTime <= now))
-                .Select(s => new { s.StartTime, s.EndTime })
-                .ToListAsync();
-            // Without a baseline (the very first studied session), a "record" is trivial and
-            // would just feel like unmotivated spam - only meaningful from the second studied
-            // session onward.
-            if (others.Count == 0) return;
-
-            var previousMaxHours = others.Max(s => (s.EndTime - s.StartTime).TotalHours);
-            if (duration.TotalHours <= previousMaxHours) return;
-
-            await SendNewRecordPushAsync(duration);
-            _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId, WebhookEventTypes.NewRecordSet,
-                new { sessionId = entity.Id, durationMinutes = duration.TotalMinutes, previousBestMinutes = previousMaxHours * 60 },
-                CancellationToken.None);
-
-            _db.SentReminders.Add(new SentReminderEntity { Key = key, SentAt = now });
             await _db.SaveChangesAsync();
         }
-        finally
+        catch (DbUpdateException)
         {
-            _newRecordLock.Release();
+            _db.Entry(claim).State = EntityState.Detached; // a concurrent request won the claim
+            return;
         }
+
+        await SendNewRecordPushAsync(duration);
+        _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId, WebhookEventTypes.NewRecordSet,
+            new { sessionId = entity.Id, durationMinutes = duration.TotalMinutes, previousBestMinutes = previousMaxHours * 60 },
+            CancellationToken.None);
+        await _db.SaveChangesAsync(); // persists the removal of expired subscriptions collected by the push
     }
 
     // Small, locally kept push-sending path instead of reusing
