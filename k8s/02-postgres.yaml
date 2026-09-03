@@ -70,8 +70,9 @@ spec:
   # addition to the replica redundancy above, this also protects against data
   # corruption/accidental DELETE (replicas only protect against node failure, not against a
   # faulty write that gets replicated to all replicas immediately). The "r2-backup-credentials"
-  # secret + the "studylifebackup" bucket exist, hence active. retentionPolicy "7d" - CNPG's own
-  # operator automatically deletes backups/WALs beyond this window (confirmed against the
+  # secret + the "studylifebackup" bucket exist, hence active. retentionPolicy "3d" (lowered from
+  # 7d 2026-09-03 - a week of history wasn't needed, and R2 storage/cost scales with it) - CNPG's
+  # own operator automatically deletes backups/WALs beyond this window (confirmed against the
   # installed CNPG 1.24 CRD schema, no additional CronJob needed).
   backup:
     barmanObjectStore:
@@ -82,4 +83,4 @@ spec:
         secretAccessKey: { name: r2-backup-credentials, key: ACCESS_SECRET_KEY }
       wal: { compression: gzip }
       data: { compression: gzip }
-    retentionPolicy: "7d"
+    retentionPolicy: "3d"
