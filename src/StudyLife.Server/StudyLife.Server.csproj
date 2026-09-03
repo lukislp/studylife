@@ -90,6 +90,16 @@
     <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.11" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <!-- Telemetry (docs/ARCHITECTURE.md "Telemetry"): OpenTelemetry metrics from ASP.NET Core,
+         HttpClient, the .NET runtime, the built-in Npgsql/EF Core meters and our own StudyLifeMetrics meter, exposed
+         in Prometheus format on a dedicated non-public listener (Telemetry:MetricsPort). The
+         Prometheus exporter has been "beta" for years while being the de-facto standard; a
+         switch to OTLP/another backend is a package + one-line change here, not a code change. -->
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.18.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.18.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.18.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.18.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.18.0-beta.1" />
     <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.53.3" />
     <PackageReference Include="WebPush" Version="1.0.13" />
     <ProjectReference Include="..\StudyLife.Client\StudyLife.Client.csproj" />

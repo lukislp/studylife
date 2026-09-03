@@ -45,6 +45,8 @@ public class EventsController : ControllerBase
         var events = Channel.CreateUnbounded<string>(new UnboundedChannelOptions { SingleReader = true });
         using var subscription = _signal.Subscribe(userId, kind => events.Writer.TryWrite(kind));
 
+        StudyLifeMetrics.SseStreamsStarted.Add(1);
+        StudyLifeMetrics.SseStreamsOpen.Add(1);
         try
         {
             await WriteAsync(": connected\n\n", cancellationToken);
@@ -62,6 +64,10 @@ public class EventsController : ControllerBase
         catch (OperationCanceledException)
         {
             // The client went away - the normal end of every stream, nothing to report.
+        }
+        finally
+        {
+            StudyLifeMetrics.SseStreamsOpen.Add(-1);
         }
     }
 

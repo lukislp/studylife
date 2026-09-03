@@ -286,3 +286,25 @@ spec:
       ports:
         - { protocol: TCP, port: 8080 }
         - { protocol: TCP, port: 8443 }
+---
+# Prometheus (monitoring namespace, homelab-infra) scrapes the OpenTelemetry metrics listener
+# of web and worker pods (Program.cs Telemetry:MetricsPort = 9464, see k8s/04-web.yaml). Only
+# that port and only from the Prometheus pod - the listener itself answers nothing but
+# GET /metrics, so even a wider allowance would expose no app surface, but there is no reason
+# to grant one.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-to-metrics
+  namespace: studylife-scale
+spec:
+  podSelector:
+    matchExpressions:
+      - { key: app, operator: In, values: [studylife-web, studylife-worker] }
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+          podSelector: { matchLabels: { app: prometheus } }
+      ports:
+        - { protocol: TCP, port: 9464 }

@@ -33,9 +33,11 @@ public sealed class AuthSessionCache
         if (_cache.TryGetValue(tokenHash, out Entry? cached) && cached is not null
             && cached.ExpiresAt > utcNow && cached.HardExpiresAt > utcNow)
         {
+            StudyLifeMetrics.AuthSessionCacheLookups.Add(1, StudyLifeMetrics.Result("hit"));
             entry = cached;
             return true;
         }
+        StudyLifeMetrics.AuthSessionCacheLookups.Add(1, StudyLifeMetrics.Result("miss"));
         entry = null!;
         return false;
     }

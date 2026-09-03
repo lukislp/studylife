@@ -1,3 +1,6 @@
+using System.Reflection;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 using System.Threading.RateLimiting;
@@ -10,6 +13,33 @@ using StudyLife.Server.OpenApi;
 using StudyLife.Server.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Telemetry (docs/ARCHITECTURE.md "Telemetry"): metrics are on only when Telemetry:MetricsPort
+// (env Telemetry__MetricsPort) names a port. That port gets its own Kestrel listener (below)
+// that answers NOTHING but GET /metrics, so the scrape surface never shares a socket with the
+// public app ports; Kubernetes exposes it to the monitoring namespace only (k8s/12-network-
+// policies.yaml). Off by default = the Pi/docker-compose and every test run behave exactly as
+// before. OpenTelemetry rather than a Prometheus-specific library so the same instruments can
+// later feed an OTLP collector or an own dashboard without touching a single call site.
+var metricsPort = builder.Configuration.GetValue<int?>("Telemetry:MetricsPort");
+if (metricsPort is not null)
+{
+    var serverVersion = System.Reflection.Assembly.GetEntryAssembly()
+        ?.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+    builder.Services.AddOpenTelemetry()
+        .ConfigureResource(resource => resource.AddService("studylife-server", serviceVersion: serverVersion))
+        .WithMetrics(metrics => metrics
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddRuntimeInstrumentation()
+            .AddMeter(
+                StudyLifeMetrics.MeterName,
+                "Npgsql",
+                "Microsoft.EntityFrameworkCore",
+                "Microsoft.AspNetCore.RateLimiting",
+                "Microsoft.AspNetCore.Server.Kestrel")
+            .AddPrometheusExporter());
+}
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
@@ -65,15 +95,23 @@ builder.Services.AddHsts(options =>
 // disappear without replacement when 8443 is set, and probes/Uptime Kuma (still plain HTTP) would break.
 var webBackendTlsCertPath = builder.Configuration["WebBackendTls:CertPath"];
 var webBackendTlsKeyPath = builder.Configuration["WebBackendTls:KeyPath"];
-if (!string.IsNullOrEmpty(webBackendTlsCertPath) && !string.IsNullOrEmpty(webBackendTlsKeyPath))
+var webBackendTls = !string.IsNullOrEmpty(webBackendTlsCertPath) && !string.IsNullOrEmpty(webBackendTlsKeyPath);
+// The metrics listener (Telemetry:MetricsPort, see the top of this file) needs the same explicit
+// endpoint list for the same reason: one Listen() call replaces ASPNETCORE_URLS entirely.
+if (webBackendTls || metricsPort is not null)
 {
     builder.WebHost.ConfigureKestrel(options =>
     {
         options.ListenAnyIP(8080);
-        options.ListenAnyIP(8443, listenOptions =>
+        if (webBackendTls)
         {
-            listenOptions.UseHttps(X509Certificate2.CreateFromPemFile(webBackendTlsCertPath, webBackendTlsKeyPath));
-        });
+            options.ListenAnyIP(8443, listenOptions =>
+            {
+                listenOptions.UseHttps(X509Certificate2.CreateFromPemFile(webBackendTlsCertPath!, webBackendTlsKeyPath!));
+            });
+        }
+        if (metricsPort is not null)
+            options.ListenAnyIP(metricsPort.Value);
     });
 }
 
@@ -550,6 +588,26 @@ if (!EF.IsDesignTime)
 // ForwardedHeaders:KnownNetworks/KnownProxies/ForwardLimit configuration that narrows it per
 // deployment, and the documented flat-pod-network limitation on Kubernetes.
 app.UseForwardedHeaders(ForwardedHeadersConfig.Build(builder.Configuration));
+
+// Metrics scrape surface (see Telemetry:MetricsPort at the top): GET /metrics is answered only
+// on the dedicated listener, and that listener answers nothing else - a request for the app or
+// the API that somehow reaches the metrics port gets a bare 404 before routing, static files
+// or authentication ever see it. On the public ports /metrics is just an unknown path and
+// falls through to the SPA shell like any other.
+if (metricsPort is not null)
+{
+    app.UseOpenTelemetryPrometheusScrapingEndpoint(context =>
+        context.Connection.LocalPort == metricsPort.Value && context.Request.Path == "/metrics");
+    app.Use(async (context, next) =>
+    {
+        if (context.Connection.LocalPort == metricsPort.Value)
+        {
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            return;
+        }
+        await next();
+    });
+}
 
 // Scalability branch: shows WHICH instance answered a response - only for
 // observing load balancing (browser DevTools/curl -v, response header), no
