@@ -116,10 +116,23 @@ if (isRedisCache)
     // Two functionally separate counters need two separate Redis keys - hence constructed here via
     // a factory with a fixed key instead of registering IVersionCounter itself as a DI singleton
     // (that wouldn't allow two different instances for sessions/settings).
+    // Change signal over Redis pub/sub (see IChangeSignal): feeds the SSE stream (EventsController)
+    // on every pod and lets each pod keep a local copy of the version counters that is dropped
+    // the moment the owning user writes anywhere in the cluster (SignalInvalidatedVersionCounter)
+    // - the counter read that used to be one Redis round trip per cached GET now stays in memory
+    // between writes.
+    builder.Services.AddSingleton<IChangeSignal>(sp => new RedisChangeSignal(
+        sp.GetRequiredService<StackExchange.Redis.IConnectionMultiplexer>()));
     builder.Services.AddSingleton(sp => new SessionHistoryCacheVersion(
-        new RedisVersionCounter(sp.GetRequiredService<StackExchange.Redis.IConnectionMultiplexer>(), "version:sessionhistory")));
+        new SignalInvalidatedVersionCounter(
+            new RedisVersionCounter(sp.GetRequiredService<StackExchange.Redis.IConnectionMultiplexer>(), "version:sessionhistory"),
+            sp.GetRequiredService<IChangeSignal>(), ChangeKinds.Sessions),
+        sp.GetRequiredService<IChangeSignal>()));
     builder.Services.AddSingleton(sp => new SettingsCacheVersion(
-        new RedisVersionCounter(sp.GetRequiredService<StackExchange.Redis.IConnectionMultiplexer>(), "version:settings")));
+        new SignalInvalidatedVersionCounter(
+            new RedisVersionCounter(sp.GetRequiredService<StackExchange.Redis.IConnectionMultiplexer>(), "version:settings"),
+            sp.GetRequiredService<IChangeSignal>(), ChangeKinds.Settings),
+        sp.GetRequiredService<IChangeSignal>()));
 
     // DataProtection key ring persisted to Redis, ONLY in the Redis branch - same reasoning as
     // every other "needs a shared coordination point across replicas" feature above. Without this,
@@ -156,8 +169,12 @@ if (isRedisCache)
 else
 {
     builder.Services.AddDistributedMemoryCache();
-    builder.Services.AddSingleton(_ => new SessionHistoryCacheVersion(new InMemoryVersionCounter()));
-    builder.Services.AddSingleton(_ => new SettingsCacheVersion(new InMemoryVersionCounter()));
+    // Single process: the in-memory counters need no L1 cache, the change signal is a local
+    // fan-out - still wired so the SSE stream (EventsController) works on the single-instance
+    // and demo hosts exactly like in multi-pod mode.
+    builder.Services.AddSingleton<IChangeSignal>(new InMemoryChangeSignal());
+    builder.Services.AddSingleton(sp => new SessionHistoryCacheVersion(new InMemoryVersionCounter(), sp.GetRequiredService<IChangeSignal>()));
+    builder.Services.AddSingleton(sp => new SettingsCacheVersion(new InMemoryVersionCounter(), sp.GetRequiredService<IChangeSignal>()));
 }
 
 builder.Services.AddResponseCompression(options =>
