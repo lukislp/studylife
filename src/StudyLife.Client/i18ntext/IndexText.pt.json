@@ -106,7 +106,7 @@
   "ReadinessAroundBaseline": "Na tua média",
   "ReadinessBelowBaseline": "Abaixo da tua média",
   "SleepConsistencyLabel": "Consistência do sono",
-  "SleepConsistencyValueFormat": "± {0} min (30 dias)",
+  "SleepConsistencyValueFormat": "Hora de dormir ± {0} min · sono médio {1}",
   "SleepConsistencyGood": "Muito regular",
   "SleepConsistencyModerate": "Um pouco variável",
   "SleepConsistencyPoor": "Irregular",

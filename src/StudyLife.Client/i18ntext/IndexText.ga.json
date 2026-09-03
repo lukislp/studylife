@@ -106,7 +106,7 @@
   "ReadinessAroundBaseline": "Ar do mheán",
   "ReadinessBelowBaseline": "Faoi bhun do mheáin",
   "SleepConsistencyLabel": "Comhsheasmhacht codlata",
-  "SleepConsistencyValueFormat": "± {0} nóim (30 lá)",
+  "SleepConsistencyValueFormat": "Am codlata ± {0} nóim · meánchodladh {1}",
   "SleepConsistencyGood": "An-rialta",
   "SleepConsistencyModerate": "Beagán éagsúil",
   "SleepConsistencyPoor": "Neamhrialta",

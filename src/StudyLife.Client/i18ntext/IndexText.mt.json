@@ -106,7 +106,7 @@
   "ReadinessAroundBaseline": "Qrib il-medja tiegħek",
   "ReadinessBelowBaseline": "Taħt il-medja tiegħek",
   "SleepConsistencyLabel": "Konsistenza tal-irqad",
-  "SleepConsistencyValueFormat": "± {0} min (30 jum)",
+  "SleepConsistencyValueFormat": "Ħin tal-irqad ± {0} min · irqad medju {1}",
   "SleepConsistencyGood": "Regolari ħafna",
   "SleepConsistencyModerate": "Xi ftit varjabbli",
   "SleepConsistencyPoor": "Irregolari",

@@ -106,7 +106,7 @@
   "ReadinessAroundBaseline": "Around your baseline",
   "ReadinessBelowBaseline": "Below your baseline",
   "SleepConsistencyLabel": "Sleep consistency",
-  "SleepConsistencyValueFormat": "± {0} min (30 days)",
+  "SleepConsistencyValueFormat": "Bedtime ± {0} min · avg sleep {1}",
   "SleepConsistencyGood": "Very regular",
   "SleepConsistencyModerate": "Somewhat variable",
   "SleepConsistencyPoor": "Irregular",

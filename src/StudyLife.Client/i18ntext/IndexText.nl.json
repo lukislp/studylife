@@ -106,7 +106,7 @@
   "ReadinessAroundBaseline": "Rond jouw gemiddelde",
   "ReadinessBelowBaseline": "Onder jouw gemiddelde",
   "SleepConsistencyLabel": "Slaapconsistentie",
-  "SleepConsistencyValueFormat": "± {0} min (30 dagen)",
+  "SleepConsistencyValueFormat": "Inslaaptijd ± {0} min · Ø slaap {1}",
   "SleepConsistencyGood": "Zeer regelmatig",
   "SleepConsistencyModerate": "Enigszins wisselend",
   "SleepConsistencyPoor": "Onregelmatig",

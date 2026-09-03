@@ -106,7 +106,7 @@
   "ReadinessAroundBaseline": "Az átlagod körül",
   "ReadinessBelowBaseline": "Az átlagod alatt",
   "SleepConsistencyLabel": "Alvás egyenletessége",
-  "SleepConsistencyValueFormat": "± {0} perc (30 nap)",
+  "SleepConsistencyValueFormat": "Elalvás ± {0} perc · Ø alvás {1}",
   "SleepConsistencyGood": "Nagyon egyenletes",
   "SleepConsistencyModerate": "Kissé változó",
   "SleepConsistencyPoor": "Rendszertelen",

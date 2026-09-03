@@ -106,7 +106,7 @@
   "ReadinessAroundBaseline": "Ap jūsu vidējo rādītāju",
   "ReadinessBelowBaseline": "Zem jūsu vidējā rādītāja",
   "SleepConsistencyLabel": "Miega regularitāte",
-  "SleepConsistencyValueFormat": "± {0} min (30 dienas)",
+  "SleepConsistencyValueFormat": "Iemigšana ± {0} min · Ø miegs {1}",
   "SleepConsistencyGood": "Ļoti regulārs",
   "SleepConsistencyModerate": "Nedaudz mainīgs",
   "SleepConsistencyPoor": "Neregulārs",
