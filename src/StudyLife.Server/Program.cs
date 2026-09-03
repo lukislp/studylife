@@ -564,13 +564,17 @@ app.UseWhen(
 // each listing's actual JSON content (GitHub's own contents-API "download_url" always points
 // there, confirmed live). Found via a real browser test, not just a code read-through - Chrome's
 // console names the exact blocked host.
+// Fonts are self-hosted since the 2026-09 audit (wwwroot/fonts, @font-face in base.css) - the
+// former Google Fonts @import cost two extra origins (DNS+TLS each) serialized before the first
+// paint, so fonts.googleapis.com/fonts.gstatic.com are gone from style-src, font-src and
+// connect-src alike; 'self' covers the woff2 files and the service worker fetching them.
 var csp = "default-src 'self'; "
     + "script-src 'self' 'wasm-unsafe-eval'; "
-    + "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-    + "font-src 'self' https://fonts.gstatic.com; "
+    + "style-src 'self' 'unsafe-inline'; "
+    + "font-src 'self'; "
     + "img-src 'self' data:; "
     + "media-src 'self' data:; "
-    + "connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://api.github.com https://raw.githubusercontent.com"
+    + "connect-src 'self' https://api.github.com https://raw.githubusercontent.com"
     + (app.Environment.IsDevelopment() ? " ws: wss:; " : "; ")
     + "base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'";
 app.Use(async (context, next) =>
