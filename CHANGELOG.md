@@ -1,3 +1,10 @@
+## [3.2.4](https://github.com/lukislp/studylife/compare/v3.2.3...v3.2.4) (2026-09-03)
+
+
+### Bug Fixes
+
+* bound webhook publishes and format short dates per UI language ([c08141e](https://github.com/lukislp/studylife/commit/c08141ea46bb0e7959ab1b85a19dadd97bde21dc))
+
 ## [3.2.3](https://github.com/lukislp/studylife/compare/v3.2.2...v3.2.3) (2026-09-03)
 
 
