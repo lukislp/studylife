@@ -600,12 +600,22 @@ app.Use(async (context, next) =>
 // live via a direct authenticated request: still "private, no-cache"). OnStarting is the actual
 // correct primitive for this - it fires right before headers are sent regardless of when exactly
 // that happens, so it reliably runs after any Cache-Control the controller already set.
+// ...but ONLY where the controller set no Cache-Control of its own. The first version of this
+// middleware overwrote unconditionally, which silently killed the whole ETag/304 mechanism in
+// CacheHelper (SessionsController/SettingsController/CoursesController): "no-store" forbids the
+// browser from keeping the response at all, so it never has an ETag to send back as
+// If-None-Match, and every 30s poll and every dashboard navigation re-downloaded the full body
+// (2026-09 audit L1). CacheHelper's "private, no-cache" already forces revalidation on every
+// use - which is exactly what protects the native app's NSURLCache from serving stale data, the
+// original reason for this middleware. Heuristic caching (the actual bug) only ever applies to
+// responses WITHOUT an explicit directive, and those still get no-store here.
 app.Use((context, next) =>
 {
     if (context.Request.Path.StartsWithSegments("/api"))
         context.Response.OnStarting(() =>
         {
-            context.Response.Headers.CacheControl = "no-store";
+            if (Microsoft.Extensions.Primitives.StringValues.IsNullOrEmpty(context.Response.Headers.CacheControl))
+                context.Response.Headers.CacheControl = "no-store";
             return Task.CompletedTask;
         });
     return next();
