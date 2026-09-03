@@ -1,3 +1,10 @@
+## [3.2.6](https://github.com/lukislp/studylife/compare/v3.2.5...v3.2.6) (2026-09-03)
+
+
+### Bug Fixes
+
+* **deps:** batch the first Dependabot round into one release ([b6efb55](https://github.com/lukislp/studylife/commit/b6efb55acbb4fc4b5d45cbc6d76d30b5ad0a0fd9))
+
 ## [3.2.5](https://github.com/lukislp/studylife/compare/v3.2.4...v3.2.5) (2026-09-03)
 
 
