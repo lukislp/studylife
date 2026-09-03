@@ -323,6 +323,10 @@ if (speechEnabled)
     builder.Services.AddSingleton(new StudyLife.Tts.PiperVoiceRegistry(
         builder.Configuration["Tts:VoicesDirectory"] ?? Path.Combine(builder.Environment.ContentRootPath, "tts-voices")));
     builder.Services.AddSingleton<StudyLife.Tts.EspeakPhonemizer>();
+    // Synthesized audio lives in its own bounded per-pod cache, NOT in IDistributedCache - see
+    // TtsAudioCache for why sharing the LRU pool with login challenges was a problem.
+    builder.Services.AddSingleton(new TtsAudioCache(
+        builder.Configuration.GetValue("Tts:CacheSizeMb", 32) * 1024L * 1024L));
     // Voice dictation: one multilingual Whisper model (see Dockerfile), unlike PiperVoiceRegistry's
     // per-language voices - covers all of StudyLife's languages, so no per-language registry is
     // needed here. Loaded lazily on first use, same as PiperVoiceRegistry (see WhisperTranscriber's
