@@ -38,8 +38,12 @@ public class MetricsController : ControllerBase
         var (programDto, catalog, groupQuotas) = resolved.Value;
 
         var activeCourseIds = catalog.Select(c => c.Id).ToHashSet();
-        var allSessions = await _db.Sessions.AsNoTracking().ToListAsync();
-        var scoped = allSessions.Select(SessionsController.ToDto).Where(s => activeCourseIds.Contains(s.CourseId)).ToList();
+        // The programme filter runs in SQL: sessions of other programmes (same user) never leave
+        // the database, instead of every row being materialized and mapped only to be dropped.
+        var scoped = (await _db.Sessions.AsNoTracking()
+                .Where(s => activeCourseIds.Contains(s.CourseId))
+                .ToListAsync())
+            .Select(SessionsController.ToDto).ToList();
         var studiedHistory = scoped.Where(s => StudyMetrics.IsStudied(s, asOf)).ToList();
 
         var goals = await _db.CourseGoals.AsNoTracking()
@@ -154,9 +158,11 @@ public class MetricsController : ControllerBase
 
         var activeCourseIds = catalog.Select(c => c.Id).ToHashSet();
         var now = DateTime.Now;
-        var studiedHistory = (await _db.Sessions.AsNoTracking().ToListAsync())
+        var studiedHistory = (await _db.Sessions.AsNoTracking()
+                .Where(s => activeCourseIds.Contains(s.CourseId))
+                .ToListAsync())
             .Select(SessionsController.ToDto)
-            .Where(s => activeCourseIds.Contains(s.CourseId) && StudyMetrics.IsStudied(s, now))
+            .Where(s => StudyMetrics.IsStudied(s, now))
             .ToList();
 
         var notesCount = await _db.Notes.AsNoTracking().CountAsync();

@@ -88,6 +88,15 @@ if (isRedisCache)
         ?? throw new InvalidOperationException(
             "Cache:ConnectionString (bzw. ENV Cache__ConnectionString) muss gesetzt sein, wenn Cache:Provider=Redis.");
     var redisOptions = StackExchange.Redis.ConfigurationOptions.Parse(redisConnectionString);
+    // Redis AUTH: the password can ride along inside the connection string ("...,password=x")
+    // OR arrive separately as Cache:Password (env Cache__Password). The separate key exists so
+    // Kubernetes can source it from the SAME `redis-auth` Secret the Redis StatefulSet reads
+    // (k8s/03-redis.yaml, 04-web.yaml, 05-worker.yaml) - the 2026-08-27 AUTH rollout had to be
+    // reverted precisely because the app-side connection string never received the password
+    // while Redis already required it (NOAUTH crash-loop). One secret, two consumers, no drift.
+    var redisPassword = builder.Configuration["Cache:Password"];
+    if (!string.IsNullOrEmpty(redisPassword))
+        redisOptions.Password = redisPassword;
     if (redisOptions.Ssl)
     {
         // The Redis certificate comes from our own internal CA (k8s/07b-cert-manager-issuers.yaml),
@@ -203,33 +212,30 @@ builder.Services.AddRateLimiter(options =>
         // the endpoint is unauthenticated and a 12-character code is the only secret,
         // so brute-force throttling is the actual line of defense here.
         if (context.Request.Path.StartsWithSegments("/api/auth/recovery/login"))
-        {
-            return RateLimitPartition.GetFixedWindowLimiter($"recovery|{clientIp}",
-                _ => new FixedWindowRateLimiterOptions
-                {
-                    PermitLimit = 5,
-                    Window = TimeSpan.FromMinutes(15),
-                    QueueLimit = 0
-                });
-        }
+            return FixedWindow(context, $"recovery|{clientIp}", permitLimit: 5, TimeSpan.FromMinutes(15));
 
-        return RateLimitPartition.GetFixedWindowLimiter($"api|{clientIp}",
-            _ => new FixedWindowRateLimiterOptions
+        return FixedWindow(context, $"api|{clientIp}", permitLimit: 300, TimeSpan.FromSeconds(60));
+    });
+
+    // The framework's FixedWindowRateLimiter counts per PROCESS. Behind the HPA (up to four web
+    // pods, k8s/04c-web-hpa.yaml) that quietly multiplied every limit by the replica count and
+    // made the effective limit depend on which pod the load balancer picked (2026-09 audit,
+    // rate-limiter section). In Redis mode the counter therefore lives in Redis, shared by all
+    // replicas (RedisFixedWindowRateLimiter, INCR + PEXPIRE); the single-instance/demo host
+    // keeps the in-memory limiter - one process, one bucket, nothing to share.
+    RateLimitPartition<string> FixedWindow(HttpContext context, string key, int permitLimit, TimeSpan window) =>
+        isRedisCache
+            ? RateLimitPartition.Get(key, _ => new RedisFixedWindowRateLimiter(
+                context.RequestServices.GetRequiredService<StackExchange.Redis.IConnectionMultiplexer>(), key, permitLimit, window))
+            : RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 300,
-                Window = TimeSpan.FromSeconds(60),
+                PermitLimit = permitLimit,
+                Window = window,
                 QueueLimit = 0
             });
-    });
     var globalRecoveryLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
         context.Request.Path.StartsWithSegments("/api/auth/recovery/login")
-            ? RateLimitPartition.GetFixedWindowLimiter("recovery|global",
-                _ => new FixedWindowRateLimiterOptions
-                {
-                    PermitLimit = 30,
-                    Window = TimeSpan.FromMinutes(15),
-                    QueueLimit = 0
-                })
+            ? FixedWindow(context, "recovery|global", permitLimit: 30, TimeSpan.FromMinutes(15))
             : RateLimitPartition.GetNoLimiter("no-limit"));
     options.GlobalLimiter = PartitionedRateLimiter.CreateChained(perClientLimiter, globalRecoveryLimiter);
 });
@@ -292,6 +298,8 @@ builder.Services.AddScoped<IOwnershipService, OwnershipService>();
 // Per-audience redirect_uri allow-list for the consent connect flow (2026-09 audit S1) - see
 // ConsentRedirectPolicy for the built-in shapes and the Consent:AllowedRedirectUris config.
 builder.Services.AddSingleton<ConsentRedirectPolicy>();
+// Per-pod 30s cache of valid session-token lookups (2026-09 audit P6) - see AuthSessionCache.
+builder.Services.AddSingleton<AuthSessionCache>();
 // Registration gate (audit finding A10) - Registration:Mode (env Registration__Mode); see
 // RegistrationGateService for the open/invite/closed semantics and the bootstrap bypass.
 builder.Services.AddScoped<IRegistrationGateService, RegistrationGateService>();

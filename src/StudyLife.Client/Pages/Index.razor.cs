@@ -177,6 +177,13 @@ public partial class Index
         State.OnSessionsChanged += OnSessionsChanged;
         State.OnSettingsChanged += OnSettingsChanged;
         _isOwnerTask = State.GetIsOwnerAsync();
+        // LoadDataAsync can only run once T has loaded (it formats labels), but its three
+        // biggest fetches are memoized in AppStateService - kicking them off here lets them
+        // travel in parallel with the i18n table instead of one full round trip after it
+        // (2026-09 audit L6). LoadDataAsync's own awaits then hit already-resolved tasks.
+        _ = State.GetSettingsAsync();
+        _ = State.GetCoursesAsync();
+        _ = State.GetSessionsAsync();
         return Task.CompletedTask;
     }
 

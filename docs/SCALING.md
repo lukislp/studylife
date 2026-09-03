@@ -627,16 +627,20 @@ this cluster is therefore just `requirepass` + `masterauth` (same value) - no AC
      kubectl -n studylife-scale exec redis-cluster-$i -- redis-cli -a <password> --no-auth-warning cluster info | grep cluster_state
    done
    ```
-4. **Update `Cache__ConnectionString`** (`k8s/01-config-and-secret.yaml`'s `studylife-config`
-   ConfigMap, or `k8s/dev/01-secrets.yaml` on the learning cluster) to append `password=<same
-   value>` to the existing comma-separated connection string - via a targeted `kubectl patch`, NOT
-   a bulk re-apply of the file (same discipline as "Prod Secret vs. Learning-Cluster Placeholder"
-   below - this file, while not credential-bearing itself, is still a shared ConfigMap other
-   fields of which shouldn't be blindly overwritten):
+4. **Nothing to patch on the app side anymore.** Since the 2026-09 audit pass, `Program.cs`
+   reads `Cache:Password` (env `Cache__Password`) and merges it into the Redis connection
+   options, and `k8s/04-web.yaml` / `k8s/05-worker.yaml` already source that variable from the
+   very same `redis-auth` Secret created in step 1 (`secretKeyRef`, `optional: true` - the
+   variable is simply absent while the Secret does not exist). The 2026-08-27 attempt failed
+   exactly here: Redis started requiring a password that the app's connection string never
+   received, so every fresh pod connection crash-looped with NOAUTH and the change had to be
+   reverted (commit ef804ad). With one Secret feeding both sides that drift cannot recur; the
+   connection string itself stays password-free. Verify the wiring BEFORE step 3:
    ```bash
-   kubectl -n studylife-scale patch configmap studylife-config --type merge -p \
-     '{"data":{"Cache__ConnectionString":"redis-cluster-0.redis-cluster:6380,redis-cluster-1.redis-cluster:6380,redis-cluster-2.redis-cluster:6380,redis-cluster-3.redis-cluster:6380,redis-cluster-4.redis-cluster:6380,redis-cluster-5.redis-cluster:6380,ssl=true,password=<same value>"}'
+   kubectl -n studylife-scale exec deploy/studylife-web -- sh -c 'test -n "$Cache__Password" && echo present'
    ```
+   (Prints `present` only once the Secret exists AND web has been restarted after creating it -
+   do that restart first, then proceed with the Redis pods in step 3.)
 5. **Restart web and worker** so they pick up the changed ConfigMap (neither watches it live):
    ```bash
    kubectl -n studylife-scale rollout restart deployment/studylife-web deployment/studylife-worker
