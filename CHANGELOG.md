@@ -1,3 +1,10 @@
+## [3.2.8](https://github.com/lukislp/studylife/compare/v3.2.7...v3.2.8) (2026-09-03)
+
+
+### Bug Fixes
+
+* **deps:** Bump the dotnet group with 1 update ([debc083](https://github.com/lukislp/studylife/commit/debc08329da207f3f266e7f3db944b9d40e622e6))
+
 ## [3.2.7](https://github.com/lukislp/studylife/compare/v3.2.6...v3.2.7) (2026-09-03)
 
 
