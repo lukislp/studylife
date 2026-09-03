@@ -154,31 +154,28 @@ spec:
       containers:
         - name: redis
           image: redis:7-alpine
-          command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
-          # Audit finding O6 (round 2), Redis AUTH (opt-in, see docs/SCALING.md "Redis AUTH
-          # (Opt-In)" for the full ordered enable procedure - DO NOT uncomment any of this
-          # without reading it first, the probes/exporter below must change in the SAME step or
-          # this StatefulSet crash-loops):
-          #
-          # command: ["redis-server", "/usr/local/etc/redis/redis.conf",
-          #   "--requirepass", "$(REDIS_PASSWORD)", "--masterauth", "$(REDIS_PASSWORD)"]
-          #   requirepass: required on every client connection (app, redis-cli, the exporter
-          #   sidecar) - without it AUTH is a no-op. masterauth: ALSO required in cluster mode -
-          #   each replica connects to its master as a normal CLIENT (REPLCONF/PSYNC run over the
-          #   regular data port, same one requirepass just locked down), so replication breaks the
-          #   moment requirepass is set unless masterauth carries the same password. The cluster
-          #   BUS (port 16379, node-to-node gossip) is UNAFFECTED either way - Redis has no AUTH
-          #   mechanism for the bus protocol at all, regardless of requirepass/masterauth; it
-          #   stays protected exactly as it already is today (NetworkPolicy restricting 16379 to
-          #   redis-cluster pods only, see k8s/12-network-policies.yaml, unrelated to this change).
-          #   "$(REDIS_PASSWORD)" is Kubernetes' own container command/args substitution (NOT a
-          #   shell - no "sh -c" needed) from the env var below.
-          #
-          # env:
-          #   - name: REDIS_PASSWORD
-          #     valueFrom:
-          #       secretKeyRef: { name: redis-auth, key: password }
-          #
+          # Redis AUTH (audit O6 round 2, enabled 2026-09 via the zero-downtime ACL path in
+          # docs/SCALING.md "Redis AUTH"): requirepass locks the default user, masterauth lets
+          # each replica keep authenticating to its master (replication runs over the regular
+          # data port as a normal client; the cluster BUS on 16379 has no AUTH at all and stays
+          # protected by the NetworkPolicy alone), and the `user` line creates the dedicated ACL
+          # user the app authenticates as (k8s/04-web.yaml / 05-worker.yaml Cache__User +
+          # Cache__Password, Program.cs). All three read the ONE `redis-auth` Secret, so the
+          # app and Redis can never disagree about the password again (the 2026-08-27 attempt
+          # failed exactly there). Each ACL rule token is its own argv element on purpose:
+          # redis-server joins them into `user studylife on >… ~* &* +@all`; one quoted argv with
+          # spaces would become a single quoted token and a user literally named "studylife on …".
+          # "$(REDIS_PASSWORD)"/"$(REDIS_USERNAME)" are Kubernetes' own args substitution (no shell).
+          command: ["redis-server", "/usr/local/etc/redis/redis.conf",
+            "--requirepass", "$(REDIS_PASSWORD)", "--masterauth", "$(REDIS_PASSWORD)",
+            "--user", "$(REDIS_USERNAME)", "on", ">$(REDIS_PASSWORD)", "~*", "&*", "+@all"]
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: redis-auth, key: password }
+            - name: REDIS_USERNAME
+              valueFrom:
+                secretKeyRef: { name: redis-auth, key: username }
           # Accepted tradeoff: "$(REDIS_PASSWORD)" expands into the actual process command line,
           # so the plaintext password becomes visible to anything that can already exec into this
           # pod (e.g. "ps aux", /proc/1/cmdline) - same trust boundary as every other
@@ -209,29 +206,16 @@ spec:
             - name: tls
               mountPath: /tls
               readOnly: true
-          # Redis AUTH (opt-in, see the command comment above) - "ping" without credentials fails
-          # with "NOAUTH Authentication required" (redis-cli exits non-zero) the instant
-          # requirepass is active, which would otherwise mark every pod NotReady/kill it in a
-          # loop. Swap BOTH probes below together with the command/env change above:
-          #
-          # readinessProbe:
-          #   exec: { command: ["sh", "-c", "redis-cli -a \"$REDIS_PASSWORD\" --no-auth-warning ping"] }
-          #   initialDelaySeconds: 3
-          #   periodSeconds: 5
-          # livenessProbe:
-          #   exec: { command: ["sh", "-c", "redis-cli -a \"$REDIS_PASSWORD\" --no-auth-warning ping"] }
-          #   initialDelaySeconds: 10
-          #   periodSeconds: 10
-          #
-          # ("sh -c" needed here, unlike the command/args field above: exec probe commands are NOT
-          # subject to Kubernetes' own "$(VAR)" substitution, only a real shell expands "$VAR" -
-          # the probe process still inherits this container's env, REDIS_PASSWORD included.)
+          # With requirepass active a bare "ping" answers NOAUTH (redis-cli exits non-zero) and
+          # would mark every pod NotReady. "sh -c" is needed here, unlike the command/args field
+          # above: exec probe commands are NOT subject to Kubernetes' "$(VAR)" substitution, only a
+          # real shell expands "$VAR" - the probe process inherits this container's env.
           readinessProbe:
-            exec: { command: ["redis-cli", "ping"] }
+            exec: { command: ["sh", "-c", "redis-cli -a \"$REDIS_PASSWORD\" --no-auth-warning ping"] }
             initialDelaySeconds: 3
             periodSeconds: 5
           livenessProbe:
-            exec: { command: ["redis-cli", "ping"] }
+            exec: { command: ["sh", "-c", "redis-cli -a \"$REDIS_PASSWORD\" --no-auth-warning ping"] }
             initialDelaySeconds: 10
             periodSeconds: 10
         # Sidecar instead of a separate deployment - one exporter per Redis pod, connects to its
@@ -240,23 +224,17 @@ spec:
         # WITHOUT any app code change - the basis of the worker shard dashboard.
         - name: redis-exporter
           image: oliver006/redis_exporter:v1.66.0
-          # Redis AUTH (opt-in, see the "redis" container's command comment above) - once
-          # requirepass is active, this exporter also needs the password, or every scrape starts
-          # failing (NOAUTH) and the shard-claim dashboard silently goes stale, even though the
-          # exporter's OWN /health below stays green (that only checks the exporter process
-          # itself, not its Redis connection). Add in the SAME step as the "redis" container change:
-          #
-          # args:
-          #   - --redis.addr=redis://localhost:6379
-          #   - --redis.password=$(REDIS_PASSWORD)
-          #   - --check-keys=worker:shard:*
-          # env:
-          #   - name: REDIS_PASSWORD
-          #     valueFrom:
-          #       secretKeyRef: { name: redis-auth, key: password }
+          # With requirepass active this exporter needs the password too, or every scrape fails
+          # (NOAUTH) and the shard-claim dashboard silently goes stale while the exporter's OWN
+          # /health below stays green (it only checks the exporter process, not its Redis link).
           args:
             - --redis.addr=redis://localhost:6379
+            - --redis.password=$(REDIS_PASSWORD)
             - --check-keys=worker:shard:*
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: redis-auth, key: password }
           ports:
             - containerPort: 9121
           resources:
