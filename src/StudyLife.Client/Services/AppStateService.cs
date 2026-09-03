@@ -229,6 +229,7 @@ public class AppStateService : IAsyncDisposable
     /// instead of at the next login's first cache touch.</summary>
     private async Task PurgeOnLogoutAsync()
     {
+        try { await _jsRuntime.InvokeVoidAsync("stopChangeStream"); } catch { /* no stream to stop */ }
         await PurgeCachesAndQueueAsync();
         try { await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", UserIdMarkerKey); }
         catch { /* best effort */ }
@@ -318,7 +319,45 @@ public class AppStateService : IAsyncDisposable
         _sessionTokenStore.OnLoggedOutAsync = PurgeOnLogoutAsync;
         _refreshTimer = new Timer(async _ => await PollAsync(), null,
             TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+        // Push half of the cross-client sync (see EventsController): the server tells this
+        // client WHEN to refetch, the 30s poll above stays as the fallback (and costs almost
+        // nothing now that unchanged responses are 304s). Fire-and-forget: a host that cannot
+        // stream simply never triggers OnServerChange.
+        if (!string.IsNullOrEmpty(_sessionTokenStore.Token))
+            _ = StartChangeStreamAsync();
     }
+
+    private DotNetObjectReference<AppStateService>? _changeStreamRef;
+
+    private async Task StartChangeStreamAsync()
+    {
+        try
+        {
+            _changeStreamRef ??= DotNetObjectReference.Create(this);
+            var url = new Uri(_http.BaseAddress!, "api/events").ToString();
+            await _jsRuntime.InvokeVoidAsync("startChangeStream", url, _sessionTokenStore.Token, _changeStreamRef);
+        }
+        catch { /* JS interop unavailable (tests, native shell without the helper) - poll only */ }
+    }
+
+    /// <summary>Called from js/interop.js for every server-sent change event. Runs the same
+    /// PollAsync the timer uses, so the refetch, hash comparison and change events are one code
+    /// path; concurrent events collapse into at most one follow-up poll.</summary>
+    [JSInvokable]
+    public async Task OnServerChange(string kind)
+    {
+        if (Interlocked.Exchange(ref _pushPollPending, 1) == 1) return;
+        try
+        {
+            await PollAsync();
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _pushPollPending, 0);
+        }
+    }
+
+    private int _pushPollPending;
 
     private async Task PollAsync()
     {

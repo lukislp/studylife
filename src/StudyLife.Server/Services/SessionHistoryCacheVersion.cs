@@ -16,17 +16,27 @@ namespace StudyLife.Server.Services;
 public class SessionHistoryCacheVersion
 {
     private readonly IVersionCounter _counter;
+    private readonly IChangeSignal? _signal;
 
-    public SessionHistoryCacheVersion(IVersionCounter counter)
+    /// <param name="signal">Published AFTER every bump so connected clients (EventsController)
+    /// refetch immediately and other pods drop their local copy of the counter
+    /// (SignalInvalidatedVersionCounter). Optional for tests that only need the counter.</param>
+    public SessionHistoryCacheVersion(IVersionCounter counter, IChangeSignal? signal = null)
     {
         _counter = counter;
+        _signal = signal;
     }
 
     public Task<int> GetAsync(int authUserId) => _counter.GetValueAsync(Key(authUserId));
 
     /// <summary>Atomically increments the user's counter (a real INCR in Redis mode, never a
     /// racy read-modify-write) - call after every write that changes that user's sessions.</summary>
-    public Task<int> BumpAsync(int authUserId) => _counter.IncrementAsync(Key(authUserId));
+    public async Task<int> BumpAsync(int authUserId)
+    {
+        var value = await _counter.IncrementAsync(Key(authUserId));
+        if (_signal is not null) await _signal.PublishAsync(authUserId, ChangeKinds.Sessions);
+        return value;
+    }
 
     private static string Key(int authUserId) => authUserId.ToString(CultureInfo.InvariantCulture);
 }
