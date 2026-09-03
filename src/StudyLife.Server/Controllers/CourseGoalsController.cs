@@ -14,14 +14,16 @@ public class CourseGoalsController : ControllerBase
     private readonly ICourseResolver _courseResolver;
     private readonly WebhooksProxyClient _webhooks;
     private readonly ICurrentUserAccessor _currentUser;
+    private readonly SettingsCacheVersion _settingsCacheVersion;
 
     public CourseGoalsController(StudyLifeDb db, ICourseResolver courseResolver,
-        WebhooksProxyClient webhooks, ICurrentUserAccessor currentUser)
+        WebhooksProxyClient webhooks, ICurrentUserAccessor currentUser, SettingsCacheVersion settingsCacheVersion)
     {
         _db = db;
         _courseResolver = courseResolver;
         _webhooks = webhooks;
         _currentUser = currentUser;
+        _settingsCacheVersion = settingsCacheVersion;
     }
 
     [HttpGet]
@@ -59,6 +61,10 @@ public class CourseGoalsController : ControllerBase
         entity.CompletedTopics = dto.CompletedTopics;
         entity.Tag = dto.Tag;
         await _db.SaveChangesAsync();
+        // Goals feed the cached metrics endpoints (average grade, upcoming goals, topic progress)
+        // but have no counter of their own - bumping the settings version is what makes a goal
+        // change visible on the next /api/metrics call instead of after the cache TTL.
+        await _settingsCacheVersion.BumpAsync(_currentUser.AuthUserId);
 
         var payload = new { courseId = entity.CourseId, courseName = entity.CourseName };
         _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId,
@@ -79,6 +85,10 @@ public class CourseGoalsController : ControllerBase
         if (entity == null) return NotFound();
         _db.CourseGoals.Remove(entity);
         await _db.SaveChangesAsync();
+        // Goals feed the cached metrics endpoints (average grade, upcoming goals, topic progress)
+        // but have no counter of their own - bumping the settings version is what makes a goal
+        // change visible on the next /api/metrics call instead of after the cache TTL.
+        await _settingsCacheVersion.BumpAsync(_currentUser.AuthUserId);
         _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId, WebhookEventTypes.CourseGoalDeleted,
             new { courseId = entity.CourseId, courseName = entity.CourseName }, CancellationToken.None);
         return NoContent();

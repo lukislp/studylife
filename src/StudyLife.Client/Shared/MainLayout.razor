@@ -95,8 +95,7 @@
             </NavLink>
         </div>
         <div class="sidebar-foot">
-            <div class="time-display">@DateTime.Now.ToString("HH:mm")</div>
-            <div class="date-display">@DateTime.Now.ToString("ddd, MMM d")</div>
+            <SidebarClock />
         </div>
     </nav>
 
@@ -342,8 +341,10 @@
     /// </summary>
     private async Task OnClockTickAsync()
     {
-        StateHasChanged(); // Clock/date in the sidebar, as before
-
+        // No StateHasChanged() here anymore: the clock renders itself (SidebarClock), and a
+        // layout-level re-render every ten seconds used to cascade through @Body into every
+        // dashboard/stats card (2026-09 audit L7). This tick only drives the periodic update
+        // check below, which re-renders exactly when it has something new to show.
         if (_updateAvailable) return;
 
         var nowUtc = DateTime.UtcNow;
