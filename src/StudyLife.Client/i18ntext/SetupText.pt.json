@@ -280,5 +280,6 @@
   "MarketplaceScopesLabel": "Solicita acesso a:",
   "MarketplaceByDeveloper": "por {0}",
   "MarketplaceViewSource": "Ver código-fonte",
-  "MarketplaceDemoNotice": "A instalação de extras está desativada nesta instância de demonstração."
+  "MarketplaceDemoNotice": "A instalação de extras está desativada nesta instância de demonstração.",
+  "ClientKeysHeading": "Add-ons ligados"
 }

@@ -80,7 +80,9 @@ public class RecoveryCodeTests : IClassFixture<CustomWebApplicationFactory>
         var replay = await anon.PostAsJsonAsync("/api/auth/recovery/login",
             new RecoveryLoginRequestDto { Code = second.Codes[0] });
         Assert.Equal(HttpStatusCode.Unauthorized, replay.StatusCode);
-        var statusAfter = await _client.GetFromJsonAsync<RecoveryStatusDto>("/api/auth/recovery/status");
+        // Via the RECOVERED session: the recovery login revoked every prior session of the
+        // account (2026-09 audit S7), including the factory's seeded one behind _client.
+        var statusAfter = await recovered.GetFromJsonAsync<RecoveryStatusDto>("/api/auth/recovery/status");
         Assert.Equal(7, statusAfter!.UnusedCount);
     }
 

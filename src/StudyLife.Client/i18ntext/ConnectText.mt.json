@@ -19,5 +19,6 @@
   "ConnectInvalidRequest": "Din it-talba ta' konnessjoni mhijiex valida jew skadiet.",
   "ConnectClientPageTitle": "StudyLife — Qabbad",
   "ConnectClientHeading": "Qabbad l-add-on",
-  "ConnectClientNotRegistered": "Dan l-add-on għadu mhux irreġistrat fuq l-istanza StudyLife tiegħek."
+  "ConnectClientNotRegistered": "Dan l-add-on għadu mhux irreġistrat fuq l-istanza StudyLife tiegħek.",
+  "ConnectRedirectTarget": "Wara li tikkonnettja tintbagħat lejn: {0}"
 }

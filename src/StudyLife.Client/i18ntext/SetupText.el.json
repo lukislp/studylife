@@ -280,5 +280,6 @@
   "MarketplaceScopesLabel": "Ζητά πρόσβαση σε:",
   "MarketplaceByDeveloper": "από {0}",
   "MarketplaceViewSource": "Προβολή πηγαίου κώδικα",
-  "MarketplaceDemoNotice": "Η εγκατάσταση προσθέτων είναι απενεργοποιημένη σε αυτήν την επίδειξη."
+  "MarketplaceDemoNotice": "Η εγκατάσταση προσθέτων είναι απενεργοποιημένη σε αυτήν την επίδειξη.",
+  "ClientKeysHeading": "Συνδεδεμένα πρόσθετα"
 }

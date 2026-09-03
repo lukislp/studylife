@@ -75,5 +75,7 @@
   "LoginPageTitle": "StudyLife — Logowanie",
   "RegisterClosed": "Rejestracja jest obecnie zamknięta.",
   "RegisterInviteRequiredHint": "Do rejestracji wymagany jest link z zaproszeniem. Użyj linku, który otrzymałeś/aś.",
-  "RegisterInviteInvalid": "Ten link z zaproszeniem jest nieprawidłowy, wygasł lub został już użyty."
+  "RegisterInviteInvalid": "Ten link z zaproszeniem jest nieprawidłowy, wygasł lub został już użyty.",
+  "PasskeysRevokeOthers": "Wyloguj na wszystkich innych urządzeniach",
+  "PasskeysRevokeOthersDone": "Wszystkie inne urządzenia zostały wylogowane."
 }

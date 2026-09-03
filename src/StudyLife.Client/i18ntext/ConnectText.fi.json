@@ -19,5 +19,6 @@
   "ConnectInvalidRequest": "Tämä yhdistämispyyntö on virheellinen tai vanhentunut.",
   "ConnectClientPageTitle": "StudyLife — Yhdistä",
   "ConnectClientHeading": "Yhdistä lisäosa",
-  "ConnectClientNotRegistered": "Tätä lisäosaa ei ole vielä rekisteröity StudyLife-instanssiisi."
+  "ConnectClientNotRegistered": "Tätä lisäosaa ei ole vielä rekisteröity StudyLife-instanssiisi.",
+  "ConnectRedirectTarget": "Yhdistämisen jälkeen sinut ohjataan osoitteeseen: {0}"
 }

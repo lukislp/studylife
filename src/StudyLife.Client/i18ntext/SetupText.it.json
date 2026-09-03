@@ -280,5 +280,6 @@
   "MarketplaceScopesLabel": "Richiede l'accesso a:",
   "MarketplaceByDeveloper": "di {0}",
   "MarketplaceViewSource": "Visualizza codice sorgente",
-  "MarketplaceDemoNotice": "L'installazione di componenti aggiuntivi è disabilitata su questa istanza demo."
+  "MarketplaceDemoNotice": "L'installazione di componenti aggiuntivi è disabilitata su questa istanza demo.",
+  "ClientKeysHeading": "Add-on collegati"
 }

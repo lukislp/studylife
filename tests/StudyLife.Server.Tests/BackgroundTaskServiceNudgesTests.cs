@@ -720,8 +720,7 @@ public class BackgroundTaskServiceCourseAlmostDoneExpiredSubscriptionTests : ICl
 
         using var gone = new GoneEndpoint();
         var (p256dh, auth) = FakePushKeys.Generate();
-        var subscribeResponse = await _client.PostAsJsonAsync("/api/push/subscribe", new PushSubscribeRequest(gone.Url, p256dh, auth));
-        subscribeResponse.EnsureSuccessStatusCode();
+        await PushTestSubscriptions.InsertAsync(_factory, gone.Url, p256dh, auth);
 
         await _service.RunCourseAlmostDoneCheckAsync(db, () => db.PushSubscriptions.ToListAsync());
 
@@ -764,7 +763,7 @@ public class BackgroundTaskServiceStreakRiskExpiredSubscriptionTests : IClassFix
         });
         using var gone = new GoneEndpoint();
         var (p256dh, auth) = FakePushKeys.Generate();
-        await _client.PostAsJsonAsync("/api/push/subscribe", new PushSubscribeRequest(gone.Url, p256dh, auth));
+        await PushTestSubscriptions.InsertAsync(_factory, gone.Url, p256dh, auth);
 
         for (var daysAgo = 3; daysAgo >= 1; daysAgo--)
         {
@@ -839,7 +838,7 @@ public class BackgroundTaskServiceWeeklyGoalNudgeExpiredSubscriptionTests : ICla
         });
         using var gone = new GoneEndpoint();
         var (p256dh, auth) = FakePushKeys.Generate();
-        await _client.PostAsJsonAsync("/api/push/subscribe", new PushSubscribeRequest(gone.Url, p256dh, auth));
+        await PushTestSubscriptions.InsertAsync(_factory, gone.Url, p256dh, auth);
         // No sessions this week -> 0h studied, always far below 50% of the prorated 20h path
         // (from Thursday 00:00 on, the elapsed fraction is >= 3/7, i.e. expectedSoFar >= 8.5h).
 
@@ -910,7 +909,7 @@ public class BackgroundTaskServiceBestStudyTimeExpiredSubscriptionTests : IClass
         await BackgroundTaskTestSettings.PutAsync(_client, s => s.BestStudyTimeRemindersEnabled = true);
         using var gone = new GoneEndpoint();
         var (p256dh, auth) = FakePushKeys.Generate();
-        await _client.PostAsJsonAsync("/api/push/subscribe", new PushSubscribeRequest(gone.Url, p256dh, auth));
+        await PushTestSubscriptions.InsertAsync(_factory, gone.Url, p256dh, auth);
 
         var seedNow = DateTime.Now;
         // If the current time is inside some bucket's window, seed exactly that bucket so the

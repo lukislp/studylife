@@ -75,5 +75,7 @@
   "LoginPageTitle": "StudyLife — Inloggen",
   "RegisterClosed": "Registratie is momenteel gesloten.",
   "RegisterInviteRequiredHint": "Er is een uitnodigingslink nodig om je te registreren. Gebruik de link die je hebt gekregen.",
-  "RegisterInviteInvalid": "Deze uitnodigingslink is ongeldig, verlopen of al gebruikt."
+  "RegisterInviteInvalid": "Deze uitnodigingslink is ongeldig, verlopen of al gebruikt.",
+  "PasskeysRevokeOthers": "Afmelden op alle andere apparaten",
+  "PasskeysRevokeOthersDone": "Alle andere apparaten zijn afgemeld."
 }

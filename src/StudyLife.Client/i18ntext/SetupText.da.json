@@ -280,5 +280,6 @@
   "MarketplaceScopesLabel": "Anmoder om adgang til:",
   "MarketplaceByDeveloper": "af {0}",
   "MarketplaceViewSource": "Se kildekode",
-  "MarketplaceDemoNotice": "Installation af tilføjelser er deaktiveret på denne demoinstans."
+  "MarketplaceDemoNotice": "Installation af tilføjelser er deaktiveret på denne demoinstans.",
+  "ClientKeysHeading": "Tilsluttede tilføjelser"
 }

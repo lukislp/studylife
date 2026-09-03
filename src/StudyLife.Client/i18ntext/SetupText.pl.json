@@ -280,5 +280,6 @@
   "MarketplaceScopesLabel": "Wymaga dostępu do:",
   "MarketplaceByDeveloper": "od {0}",
   "MarketplaceViewSource": "Zobacz kod źródłowy",
-  "MarketplaceDemoNotice": "Instalowanie dodatków jest wyłączone w tej instancji demonstracyjnej."
+  "MarketplaceDemoNotice": "Instalowanie dodatków jest wyłączone w tej instancji demonstracyjnej.",
+  "ClientKeysHeading": "Połączone dodatki"
 }

@@ -207,6 +207,10 @@ public class SessionsController : ControllerBase
     [HttpGet("history")]
     public async Task<ActionResult<IEnumerable<StudySessionDto>>> GetHistory([FromQuery] int days = 365, [FromQuery] bool onlyCompleted = true)
     {
+        // Clamp instead of trusting the caller: Math.Abs(int.MinValue) throws (a 500 for
+        // ?days=-2147483648), and an arbitrarily large window is a full-history scan per request.
+        // 3650 is the widest window any client asks for (Stats/Wrapped achievements history).
+        days = Math.Clamp(days == int.MinValue ? MaxHistoryDays : Math.Abs(days), 1, MaxHistoryDays);
         var cacheKey = $"history:{_currentUser.AuthUserId}:{days}:{onlyCompleted}:{await _historyCacheVersion.GetAsync(_currentUser.AuthUserId)}";
         return await _cache.GetOrSetAsync<IEnumerable<StudySessionDto>>(this, cacheKey, CacheTtl, async () =>
         {
@@ -321,6 +325,9 @@ public class SessionsController : ControllerBase
     // with SQLite anyway.
     /// <summary>Memory bound for the version-keyed GET caches, not a freshness mechanism - see GetAll.</summary>
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(10);
+    /// <summary>Widest history window any client asks for (Stats/Wrapped achievements) - see
+    /// the clamp in GetHistory.</summary>
+    private const int MaxHistoryDays = 3650;
 
     private static readonly SemaphoreSlim _newRecordLock = new(1, 1);
 
