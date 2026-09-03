@@ -128,6 +128,13 @@ public class UserSettingsDto
     public bool NewRecordNotificationsEnabled { get; set; }
     /// <summary>Monthly recap push (RunMonthlyReportAsync), analogous to WeeklyReportEnabled. Default true.</summary>
     public bool MonthlyReportEnabled { get; set; } = true;
+    /// <summary>
+    /// Client telemetry opt-in (docs/ARCHITECTURE.md "Telemetry", phase 2). Null = undecided -
+    /// the consent modal (TelemetryConsentModal.razor) shows once and writes true/false here via
+    /// the normal settings save path; it never shows again afterward. Only true actually enables
+    /// POST /api/telemetry to record anything (see TelemetryController).
+    /// </summary>
+    public bool? TelemetryConsent { get; set; }
 }
 
 /// <summary>

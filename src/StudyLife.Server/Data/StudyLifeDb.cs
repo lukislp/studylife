@@ -705,6 +705,15 @@ public class UserSettingsEntity
     /// other opt-in toggles in this batch).
     /// </summary>
     public bool MonthlyReportEnabled { get; set; } = true;
+    /// <summary>
+    /// Client telemetry opt-in (docs/ARCHITECTURE.md "Telemetry", phase 2). Null = undecided
+    /// (the consent modal hasn't been answered yet, or an existing user predates this field);
+    /// TelemetryController only accepts and records a batch when this is exactly true - both
+    /// null and explicit false drop it with 204. Deliberately nullable bool rather than a plain
+    /// bool defaulting to false, so the modal can tell "never asked" apart from "asked and
+    /// declined" and never show itself again after either answer.
+    /// </summary>
+    public bool? TelemetryConsent { get; set; }
 }
 
 public class PushSubscriptionEntity
