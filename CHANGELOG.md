@@ -1,3 +1,10 @@
+## [3.2.1](https://github.com/lukislp/studylife/compare/v3.2.0...v3.2.1) (2026-09-03)
+
+
+### Bug Fixes
+
+* lower CNPG backup retention from 7d to 3d ([fb0cb3f](https://github.com/lukislp/studylife/commit/fb0cb3ff7cab76983705dca430a2946da4f9ccb0))
+
 # [3.2.0](https://github.com/lukislp/studylife/compare/v3.1.0...v3.2.0) (2026-09-03)
 
 
