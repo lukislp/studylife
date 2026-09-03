@@ -1,4 +1,5 @@
 @using StudyLife.Shared
+@using StudyLife.Client.Services
 @inject HttpClient Http
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
@@ -80,7 +81,7 @@
         {
             var k = key;
             <div class="toggle-row" style="justify-content:space-between;flex-wrap:wrap">
-                <span>@(k.ClientName ?? k.ClientId) — <strong>@T.ConnectionConnected</strong> <span class="ss-desc">(@k.CreatedAt.ToLocalTime().ToString("d"))</span></span>
+                <span>@(k.ClientName ?? k.ClientId) — <strong>@T.ConnectionConnected</strong> <span class="ss-desc">(@LocalDate.Short(k.CreatedAt.ToLocalTime()))</span></span>
                 <button type="button" class="btn-danger" @onclick="() => DisconnectClientKey(k)" disabled="@_clientKeyBusy">
                     @(_clientKeyBusy ? "…" : T.DisconnectButton)
                 </button>
