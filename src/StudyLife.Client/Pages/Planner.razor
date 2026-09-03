@@ -283,7 +283,7 @@
         _coursesTask = State.GetCoursesAsync();
         _sessionsTask = State.GetSessionsAsync();
         _goalsTask = State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals");
-        _historyTask = State.GetJsonCachedAsync<List<StudySessionDto>>($"api/sessions/history?days={NeglectHistoryDays}&onlyCompleted=false");
+        _historyTask = State.GetHistoryAsync(NeglectHistoryDays, onlyCompleted: false);
         return Task.CompletedTask;
     }
 

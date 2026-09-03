@@ -91,9 +91,9 @@ public partial class Stats
         _coursesTask = State.GetCoursesAsync();
         _sessionsTask = State.GetSessionsAsync();
         _notesTask = State.GetJsonCachedAsync<List<NoteDto>>("api/notes");
-        _historyAllTask = State.GetJsonCachedAsync<List<StudySessionDto>>($"api/sessions/history?days={HistoryDays}");
+        _historyAllTask = State.GetHistoryAsync(HistoryDays);
         _groupQuotasTask = State.GetActiveGroupQuotasAsync();
-        _historyAllTimeTask = State.GetJsonCachedAsync<List<StudySessionDto>>("api/sessions/history?days=3650");
+        _historyAllTimeTask = State.GetHistoryAsync(3650);
         _cardioFitnessTask = Health.IsAvailable
             ? Health.GetCardioFitnessPointsAsync(365)
             : Task.FromResult<IReadOnlyList<StudyLife.Client.Services.CardioFitnessPoint>?>(null);

@@ -59,7 +59,7 @@ public partial class Report
         _settingsTask = State.GetSettingsAsync();
         _coursesTask = State.GetCoursesAsync();
         _goalsUnfilteredTask = State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals");
-        _historyTask = State.GetJsonCachedAsync<List<StudySessionDto>>($"api/sessions/history?days={HistoryDays}");
+        _historyTask = State.GetHistoryAsync(HistoryDays);
         _programsTask = State.GetJsonCachedAsync<List<StudyProgramSummaryDto>>("api/studyprograms");
         _groupQuotasTask = State.GetActiveGroupQuotasAsync();
         return Task.CompletedTask;
