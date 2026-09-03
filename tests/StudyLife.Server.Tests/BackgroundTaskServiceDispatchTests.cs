@@ -160,7 +160,11 @@ public class BackgroundTaskServiceExecuteAsyncTests : IClassFixture<CustomWebApp
         {
             db.PushSubscriptions.Add(new PushSubscriptionEntity
             {
-                AuthUserId = 1, Endpoint = "this is not a url", P256dh = "p256dh-key-value", Auth = "auth-key-value", CreatedAt = DateTime.UtcNow,
+                AuthUserId = 1,
+                Endpoint = "this is not a url",
+                P256dh = "p256dh-key-value",
+                Auth = "auth-key-value",
+                CreatedAt = DateTime.UtcNow,
             });
             return db.SaveChangesAsync();
         });

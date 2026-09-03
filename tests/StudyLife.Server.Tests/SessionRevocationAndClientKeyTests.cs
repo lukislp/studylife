@@ -135,8 +135,13 @@ public class ClientKeyManagementTests : IClassFixture<CustomWebApplicationFactor
     {
         db.OAuthClients.Add(new OAuthClientEntity
         {
-            ClientId = clientId, Name = "Example Add-on", Description = "A test add-on.",
-            AllowedRedirectUris = RedirectUri, RequestedScopes = "Courses.GetAll", OwnerAuthUserId = 1, CreatedAt = DateTime.UtcNow,
+            ClientId = clientId,
+            Name = "Example Add-on",
+            Description = "A test add-on.",
+            AllowedRedirectUris = RedirectUri,
+            RequestedScopes = "Courses.GetAll",
+            OwnerAuthUserId = 1,
+            CreatedAt = DateTime.UtcNow,
         });
         await db.SaveChangesAsync();
     });
