@@ -64,8 +64,13 @@ public class ApiCacheHeaderTests : IClassFixture<CustomWebApplicationFactory>
         var now = DateTime.Now;
         var created = await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
         {
-            CourseId = 31, CourseName = "x", CourseColor = "#000000",
-            StartTime = now.AddDays(3), EndTime = now.AddDays(3).AddHours(1), IsCompleted = false, TimerModeId = 1,
+            CourseId = 31,
+            CourseName = "x",
+            CourseColor = "#000000",
+            StartTime = now.AddDays(3),
+            EndTime = now.AddDays(3).AddHours(1),
+            IsCompleted = false,
+            TimerModeId = 1,
         });
         Assert.Equal(HttpStatusCode.OK, created.StatusCode);
 
