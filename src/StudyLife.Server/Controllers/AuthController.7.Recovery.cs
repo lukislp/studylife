@@ -90,7 +90,13 @@ public partial class AuthController
         // that device (or anyone holding its token) still has must die with it. Done before the
         // new session is issued so the fresh token is the only valid one afterwards (2026-09
         // audit S7).
-        await _db.AuthSessions.Where(s => s.AuthUserId == code.AuthUserId).ExecuteDeleteAsync();
+        var priorSessions = _db.AuthSessions.Where(s => s.AuthUserId == code.AuthUserId);
+        var revokedHashes = await priorSessions.Select(s => s.TokenHash).ToListAsync();
+        await priorSessions.ExecuteDeleteAsync();
+        // Same reasoning as RevokeOtherSessionsAsync: the revoked tokens must also leave this
+        // pod's AuthSessionCache, not just the table.
+        var sessionCache = HttpContext.RequestServices.GetRequiredService<AuthSessionCache>();
+        foreach (var revokedHash in revokedHashes) sessionCache.Remove(revokedHash);
         var token = AuthSessionService.IssueSession(_db, code.AuthUserId, now);
         await _db.SaveChangesAsync();
         return new PasskeyCompleteResponseDto { Token = token, DisplayName = user?.DisplayName ?? "" };
