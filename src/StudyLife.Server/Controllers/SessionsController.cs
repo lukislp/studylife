@@ -46,13 +46,15 @@ public class SessionsController : ControllerBase
     }
 
     [HttpGet]
-    public Task<ActionResult<IEnumerable<StudySessionDto>>> GetAll()
+    public async Task<ActionResult<IEnumerable<StudySessionDto>>> GetAll()
     {
-        var cacheKey = $"sessions:all:{_currentUser.AuthUserId}:{_historyCacheVersion.Value}";
-        // 15s TTL - half the 30s client poll interval, so near-simultaneous polls from
-        // multiple open clients collapse onto one query while real changes still show
-        // up within about one poll cycle.
-        return _cache.GetOrSetAsync<IEnumerable<StudySessionDto>>(this, cacheKey, TimeSpan.FromSeconds(15), async () =>
+        var cacheKey = $"sessions:all:{_currentUser.AuthUserId}:{await _historyCacheVersion.GetAsync(_currentUser.AuthUserId)}";
+        // The key already changes on every write (per-user version counter), so the TTL is only
+        // a memory bound, not a freshness mechanism. It used to be 15s - shorter than the 30s
+        // client poll, so the entry had always expired before the next poll and every poll paid
+        // the full query + serialization + cache write (2026-09 audit). Ten minutes lets polls
+        // and multiple open clients actually share the entry; stale versions age out by themselves.
+        return await _cache.GetOrSetAsync<IEnumerable<StudySessionDto>>(this, cacheKey, CacheTtl, async () =>
         {
             // No date bounds - the client fetches this once and does all week/day navigation
             // itself (see AppStateService.cs), so a server-side window here just hides sessions
@@ -84,7 +86,7 @@ public class SessionsController : ControllerBase
         entity.CourseColor = course.Color;
         _db.Sessions.Add(entity);
         await _db.SaveChangesAsync();
-        _historyCacheVersion.Value++;
+        await _historyCacheVersion.BumpAsync(_currentUser.AuthUserId);
         await CheckNewRecordAsync(entity);
         PublishSessionWebhookEvents(entity, isNewSession: true, wasCompletedBefore: false);
         return ToDto(entity);
@@ -135,7 +137,7 @@ public class SessionsController : ControllerBase
         }
 
         await _db.SaveChangesAsync();
-        _historyCacheVersion.Value++;
+        await _historyCacheVersion.BumpAsync(_currentUser.AuthUserId);
         await CheckNewRecordAsync(entity);
         PublishSessionWebhookEvents(entity, isNewSession: false, wasCompletedBefore);
         return Ok(ToDto(entity));
@@ -148,7 +150,7 @@ public class SessionsController : ControllerBase
         if (entity == null) return NotFound();
         _db.Sessions.Remove(entity);
         await _db.SaveChangesAsync();
-        _historyCacheVersion.Value++;
+        await _historyCacheVersion.BumpAsync(_currentUser.AuthUserId);
         _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId, WebhookEventTypes.SessionDeleted,
             new { sessionId = entity.Id, courseName = entity.CourseName }, CancellationToken.None);
         return NoContent();
@@ -189,7 +191,7 @@ public class SessionsController : ControllerBase
         if (fromDate.HasValue) query = query.Where(s => s.StartTime.Date >= fromDate.Value.Date);
         _db.Sessions.RemoveRange(await query.ToListAsync());
         await _db.SaveChangesAsync();
-        _historyCacheVersion.Value++;
+        await _historyCacheVersion.BumpAsync(_currentUser.AuthUserId);
         return NoContent();
     }
 
@@ -203,10 +205,10 @@ public class SessionsController : ControllerBase
     /// "This week" tile).
     /// </summary>
     [HttpGet("history")]
-    public Task<ActionResult<IEnumerable<StudySessionDto>>> GetHistory([FromQuery] int days = 365, [FromQuery] bool onlyCompleted = true)
+    public async Task<ActionResult<IEnumerable<StudySessionDto>>> GetHistory([FromQuery] int days = 365, [FromQuery] bool onlyCompleted = true)
     {
-        var cacheKey = $"history:{_currentUser.AuthUserId}:{days}:{onlyCompleted}:{_historyCacheVersion.Value}";
-        return _cache.GetOrSetAsync<IEnumerable<StudySessionDto>>(this, cacheKey, TimeSpan.FromSeconds(60), async () =>
+        var cacheKey = $"history:{_currentUser.AuthUserId}:{days}:{onlyCompleted}:{await _historyCacheVersion.GetAsync(_currentUser.AuthUserId)}";
+        return await _cache.GetOrSetAsync<IEnumerable<StudySessionDto>>(this, cacheKey, CacheTtl, async () =>
         {
             // Audit finding Z1: StartTime/EndTime columns are naive local (see docs/ARCHITECTURE.md
             // "Single-Timezone Invariant"), so the window boundary compared against them must be
@@ -317,6 +319,9 @@ public class SessionsController : ControllerBase
     // record" push. For this app's single-instance deployment (one Kestrel process on the
     // Pi) an in-process lock is sufficient; a DB transaction wouldn't be any more precise
     // with SQLite anyway.
+    /// <summary>Memory bound for the version-keyed GET caches, not a freshness mechanism - see GetAll.</summary>
+    private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(10);
+
     private static readonly SemaphoreSlim _newRecordLock = new(1, 1);
 
     private async Task CheckNewRecordAsync(StudySessionEntity entity)
