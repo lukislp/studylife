@@ -7928,12 +7928,21 @@
       },
       "SystemCapabilitiesResponseDto": {
         "required": [
-          "rawBackupSupported"
+          "rawBackupSupported",
+          "telemetryClientSampleRatio"
         ],
         "type": "object",
         "properties": {
           "rawBackupSupported": {
             "type": "boolean"
+          },
+          "telemetryClientSampleRatio": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
           }
         }
       },

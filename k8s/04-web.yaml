@@ -184,6 +184,11 @@ spec:
             # monitoring/11-otel-collector.yaml), 10 % sampled at the source (Program.cs).
             - name: Telemetry__OtlpEndpoint
               value: http://otel-collector.monitoring.svc.cluster.local:4317
+            # Share of browser/app sessions that report timings (errors always). 1.0 while this
+            # deployment has a handful of users - at the default 10 % a single user would wait
+            # days for one boot sample; lower it again when volume grows.
+            - name: Telemetry__ClientSampleRatio
+              value: "1.0"
           ports:
             - containerPort: 8080
             - containerPort: 8443
