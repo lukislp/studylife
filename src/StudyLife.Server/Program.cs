@@ -1,5 +1,7 @@
 using System.Reflection;
+using Npgsql;
 using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
 using OpenTelemetry.Resources;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
@@ -22,13 +24,36 @@ var builder = WebApplication.CreateBuilder(args);
 // before. OpenTelemetry rather than a Prometheus-specific library so the same instruments can
 // later feed an OTLP collector or an own dashboard without touching a single call site.
 var metricsPort = builder.Configuration.GetValue<int?>("Telemetry:MetricsPort");
-if (metricsPort is not null)
+// Traces (phase 4): Telemetry:OtlpEndpoint (env Telemetry__OtlpEndpoint, e.g.
+// http://otel-collector.monitoring.svc.cluster.local:4317) switches on OTLP trace export. Sampled
+// at the source (Telemetry:TraceSampleRatio, default 10 %) with a parent-based sampler so one
+// request is either fully traced across Kestrel -> Redis -> Postgres or not at all; the SSE
+// stream and health/metrics endpoints are never traced (an SSE span would live for hours). Loki
+// gets the same trace id through the console logger's activity scopes (appsettings.json
+// Logging:Console:IncludeScopes), which is what Grafana's log-to-trace link keys on.
+var otlpEndpoint = builder.Configuration["Telemetry:OtlpEndpoint"];
+var traceSampleRatio = builder.Configuration.GetValue<double?>("Telemetry:TraceSampleRatio") ?? 0.10;
+if (metricsPort is not null || !string.IsNullOrEmpty(otlpEndpoint))
 {
     var serverVersion = System.Reflection.Assembly.GetEntryAssembly()
         ?.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-    builder.Services.AddOpenTelemetry()
-        .ConfigureResource(resource => resource.AddService("studylife-server", serviceVersion: serverVersion))
-        .WithMetrics(metrics => metrics
+    var openTelemetry = builder.Services.AddOpenTelemetry()
+        .ConfigureResource(resource => resource.AddService("studylife-server", serviceVersion: serverVersion));
+    if (!string.IsNullOrEmpty(otlpEndpoint))
+    {
+        openTelemetry.WithTracing(tracing => tracing
+            .AddAspNetCoreInstrumentation(options => options.Filter = context =>
+                context.Request.Path.StartsWithSegments("/api")
+                && !context.Request.Path.StartsWithSegments("/api/events")
+                && !context.Request.Path.StartsWithSegments("/api/telemetry"))
+            .AddHttpClientInstrumentation()
+            .AddNpgsql()
+            .SetSampler(new ParentBasedSampler(new TraceIdRatioBasedSampler(traceSampleRatio)))
+            .AddOtlpExporter(options => options.Endpoint = new Uri(otlpEndpoint)));
+    }
+    if (metricsPort is not null)
+    {
+        openTelemetry.WithMetrics(metrics => metrics
             .AddAspNetCoreInstrumentation()
             .AddHttpClientInstrumentation()
             .AddRuntimeInstrumentation()
@@ -40,6 +65,7 @@ if (metricsPort is not null)
                 "Microsoft.AspNetCore.RateLimiting",
                 "Microsoft.AspNetCore.Server.Kestrel")
             .AddPrometheusExporter());
+    }
 }
 
 builder.Services.AddControllersWithViews();
