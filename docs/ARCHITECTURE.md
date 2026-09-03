@@ -628,6 +628,18 @@ convention so the same instruments can be exported via OTLP to a collector later
 read by an own dashboard through the Prometheus HTTP API — the export format is a
 configuration decision, not a code change.
 
+**Phase 4 — traces.** `Telemetry:OtlpEndpoint` (env `Telemetry__OtlpEndpoint`) enables OTLP
+trace export; in Kubernetes it points at `otel-collector.monitoring.svc.cluster.local:4317`
+(homelab-infra `monitoring/11-otel-collector.yaml`), which forwards to Grafana Tempo (7 days).
+Spans: the incoming `/api/*` request (never `/api/events` — an SSE span would live for hours —
+nor `/api/telemetry`, health or metrics), outbound HttpClient calls (push, webhooks, AI, HF)
+and every Npgsql command. Sampling happens at the source: `Telemetry:TraceSampleRatio`
+(default 0.10) behind a parent-based sampler, so a request is traced completely or not at all.
+The console logger emits activity scopes (`Logging:Console:IncludeScopes`), which puts
+`TraceId:<32 hex>` into every log line written during a request; promtail ships that to Loki
+and Grafana's Loki datasource turns it into a link to the trace in Tempo (and back via
+pod/namespace). Span attributes never include SQL parameter values or request bodies.
+
 **Phase 2 — client beacon.** `POST /api/telemetry` (`Controllers/TelemetryController.cs`,
 policy `SessionOnly`, `[EnableRateLimiting("telemetry")]` at 30 batches/minute per user, a 32 KB
 body guard via `[RejectOversizedBody]`, ≤ 50 events/batch) accepts a batch of client-observed
