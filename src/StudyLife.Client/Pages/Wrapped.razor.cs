@@ -60,8 +60,8 @@ public partial class Wrapped
     {
         _settingsTask = State.GetSettingsAsync();
         _coursesTask = State.GetCoursesAsync();
-        _periodHistoryTask = State.GetJsonCachedAsync<List<StudySessionDto>>("api/sessions/history");
-        _allTimeHistoryTask = State.GetJsonCachedAsync<List<StudySessionDto>>("api/sessions/history?days=3650");
+        _periodHistoryTask = State.GetHistoryAsync(365);
+        _allTimeHistoryTask = State.GetHistoryAsync(3650);
         return Task.CompletedTask;
     }
 
