@@ -74,7 +74,7 @@
          pulls in Microsoft.OpenApi 2.0.0 transitively, which NuGet flags with a known
          high-severity advisory (CVE-2026-49451, stack-overflow via a circular schema reference),
          fixed in 2.7.5. Same pattern as the System.Security.Cryptography.Xml pin below. -->
-    <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
+    <PackageReference Include="Microsoft.OpenApi" Version="2.12.2" />
     <PackageReference Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="10.0.11" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
