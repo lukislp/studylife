@@ -280,5 +280,6 @@
   "MarketplaceScopesLabel": "Hozzáférést kér ehhez:",
   "MarketplaceByDeveloper": "készítette: {0}",
   "MarketplaceViewSource": "Forráskód megtekintése",
-  "MarketplaceDemoNotice": "A bővítmények telepítése le van tiltva ezen a demó példányon."
+  "MarketplaceDemoNotice": "A bővítmények telepítése le van tiltva ezen a demó példányon.",
+  "ClientKeysHeading": "Csatlakoztatott kiegészítők"
 }

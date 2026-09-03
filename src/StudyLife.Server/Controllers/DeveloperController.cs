@@ -105,6 +105,11 @@ public class DeveloperController : ControllerBase
         var entity = await _db.OAuthClients.FirstOrDefaultAsync(c => c.ClientId == clientId && c.OwnerAuthUserId == userId);
         if (entity is null) return NotFound();
         _db.OAuthClients.Remove(entity);
+        // Keys issued to end users for this client keep authenticating on their own (the scope
+        // snapshot lives on the key row, see ClientApiKeyEntity.GrantedScopes) - a deleted
+        // registration must take its issued keys with it, otherwise they become unrevocable
+        // orphans (2026-09 audit S5).
+        await _db.ClientApiKeys.Where(k => k.ClientId == clientId).ExecuteDeleteAsync();
         await _db.SaveChangesAsync();
         return NoContent();
     }

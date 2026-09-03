@@ -280,5 +280,6 @@
   "MarketplaceScopesLabel": "Requests access to:",
   "MarketplaceByDeveloper": "by {0}",
   "MarketplaceViewSource": "View source",
-  "MarketplaceDemoNotice": "Installing add-ons is disabled on this demo instance."
+  "MarketplaceDemoNotice": "Installing add-ons is disabled on this demo instance.",
+  "ClientKeysHeading": "Connected add-ons"
 }

@@ -75,5 +75,7 @@
   "LoginPageTitle": "StudyLife — Prisijungimas",
   "RegisterClosed": "Registracija šiuo metu uždaryta.",
   "RegisterInviteRequiredHint": "Registracijai reikalinga pakvietimo nuoroda. Naudokite gautą nuorodą.",
-  "RegisterInviteInvalid": "Ši pakvietimo nuoroda negalioja, baigėsi arba jau panaudota."
+  "RegisterInviteInvalid": "Ši pakvietimo nuoroda negalioja, baigėsi arba jau panaudota.",
+  "PasskeysRevokeOthers": "Atsijungti visuose kituose įrenginiuose",
+  "PasskeysRevokeOthersDone": "Visi kiti įrenginiai atjungti."
 }

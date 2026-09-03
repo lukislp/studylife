@@ -280,5 +280,6 @@
   "MarketplaceScopesLabel": "Изисква достъп до:",
   "MarketplaceByDeveloper": "от {0}",
   "MarketplaceViewSource": "Преглед на кода",
-  "MarketplaceDemoNotice": "Инсталирането на добавки е деактивирано в тази демо инстанция."
+  "MarketplaceDemoNotice": "Инсталирането на добавки е деактивирано в тази демо инстанция.",
+  "ClientKeysHeading": "Свързани добавки"
 }

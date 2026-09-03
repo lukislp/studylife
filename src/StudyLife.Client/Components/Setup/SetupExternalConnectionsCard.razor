@@ -69,6 +69,24 @@
             </button>
         }
     </div>
+
+    @* Marketplace/dynamically registered add-ons (OAuthClientEntity): one row per key issued
+       through the generic consent flow. Only rendered when there is something to show - most
+       installations have none, and an empty heading would just be noise. *@
+    @if (_clientKeys.Count > 0)
+    {
+        <div class="ss-label" style="margin-top:1rem">@T.ClientKeysHeading</div>
+        @foreach (var key in _clientKeys)
+        {
+            var k = key;
+            <div class="toggle-row" style="justify-content:space-between;flex-wrap:wrap">
+                <span>@(k.ClientName ?? k.ClientId) — <strong>@T.ConnectionConnected</strong> <span class="ss-desc">(@k.CreatedAt.ToLocalTime().ToString("d"))</span></span>
+                <button type="button" class="btn-danger" @onclick="() => DisconnectClientKey(k)" disabled="@_clientKeyBusy">
+                    @(_clientKeyBusy ? "…" : T.DisconnectButton)
+                </button>
+            </div>
+        }
+    }
 </div>
 
 @code {
@@ -84,10 +102,17 @@
     private bool _focusGuardBusy;
     private bool _focusTunesBusy;
     private bool _trayBusy;
+    private List<ClientApiKeyListItemDto> _clientKeys = new();
+    private bool _clientKeyBusy;
 
     protected override async Task OnInitializedAsync()
     {
         T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
+        try
+        {
+            _clientKeys = await Http.GetFromJsonAsync<List<ClientApiKeyListItemDto>>("api/auth/client-keys") ?? new();
+        }
+        catch { /* offline: no add-on rows */ }
         try
         {
             var mcpStatus = await Http.GetFromJsonAsync<McpApiKeyStatusDto>("api/settings/mcp-api-key");
@@ -162,6 +187,17 @@
             if (response.IsSuccessStatusCode) _focusTunesConnected = false;
         }
         finally { _focusTunesBusy = false; }
+    }
+
+    private async Task DisconnectClientKey(ClientApiKeyListItemDto key)
+    {
+        _clientKeyBusy = true;
+        try
+        {
+            var response = await Http.DeleteAsync($"api/auth/client-keys/{key.Id}");
+            if (response.IsSuccessStatusCode) _clientKeys.Remove(key);
+        }
+        finally { _clientKeyBusy = false; }
     }
 
     private async Task DisconnectTray()

@@ -280,5 +280,6 @@
   "MarketplaceScopesLabel": "Pyytää käyttöoikeutta:",
   "MarketplaceByDeveloper": "kehittäjä {0}",
   "MarketplaceViewSource": "Näytä lähdekoodi",
-  "MarketplaceDemoNotice": "Lisäosien asentaminen on poistettu käytöstä tässä demoversiossa."
+  "MarketplaceDemoNotice": "Lisäosien asentaminen on poistettu käytöstä tässä demoversiossa.",
+  "ClientKeysHeading": "Yhdistetyt lisäosat"
 }

@@ -86,6 +86,11 @@ public partial class AuthController
         var now = DateTime.UtcNow;
         code.UsedAt = now;
         var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == code.AuthUserId);
+        // A recovery login IS the "I lost the device that was signed in" case - every session
+        // that device (or anyone holding its token) still has must die with it. Done before the
+        // new session is issued so the fresh token is the only valid one afterwards (2026-09
+        // audit S7).
+        await _db.AuthSessions.Where(s => s.AuthUserId == code.AuthUserId).ExecuteDeleteAsync();
         var token = AuthSessionService.IssueSession(_db, code.AuthUserId, now);
         await _db.SaveChangesAsync();
         return new PasskeyCompleteResponseDto { Token = token, DisplayName = user?.DisplayName ?? "" };

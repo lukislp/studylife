@@ -75,5 +75,7 @@
   "LoginPageTitle": "StudyLife — Prijava",
   "RegisterClosed": "Registracija je trenutno zatvorena.",
   "RegisterInviteRequiredHint": "Za registraciju je potrebna poveznica s pozivnicom. Upotrijebi poveznicu koju si dobio/la.",
-  "RegisterInviteInvalid": "Ova poveznica s pozivnicom nije valjana, istekla je ili je već iskorištena."
+  "RegisterInviteInvalid": "Ova poveznica s pozivnicom nije valjana, istekla je ili je već iskorištena.",
+  "PasskeysRevokeOthers": "Odjavi se na svim ostalim uređajima",
+  "PasskeysRevokeOthersDone": "Svi ostali uređaji su odjavljeni."
 }
