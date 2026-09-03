@@ -1,3 +1,10 @@
+# [3.5.0](https://github.com/lukislp/studylife/compare/v3.4.0...v3.5.0) (2026-09-03)
+
+
+### Features
+
+* export request traces to the OpenTelemetry collector ([324877d](https://github.com/lukislp/studylife/commit/324877d0ed8f2851794b7792db09fdf393839f75))
+
 # [3.4.0](https://github.com/lukislp/studylife/compare/v3.3.0...v3.4.0) (2026-09-03)
 
 
