@@ -1,3 +1,10 @@
+## [2.17.1](https://github.com/lukislp/studylife/compare/v2.17.0...v2.17.1) (2026-09-03)
+
+
+### Bug Fixes
+
+* raise studylife-web CPU request/limit to stop HPA flapping on bulk operations ([7314cc2](https://github.com/lukislp/studylife/commit/7314cc25ac7bd1e2e62a41a268ddaa7dcd2c5a96))
+
 # [2.17.0](https://github.com/lukislp/studylife/compare/v2.16.1...v2.17.0) (2026-08-31)
 
 
