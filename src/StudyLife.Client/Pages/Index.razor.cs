@@ -278,6 +278,20 @@ public partial class Index
         // fetch (GET api/sessions/history, ~500ms measured on a phone) has returned. The tasks
         // themselves already started above/below regardless of phase order, so this only changes
         // WHEN each result is awaited/rendered, never what is fetched.
+        // Per-phase timing for the client telemetry (page label set is fixed: phase1..5 + render1..5),
+        // so "where does the dashboard spend its time on a phone" is answered by data, not guesses.
+        var loadStopwatch = System.Diagnostics.Stopwatch.StartNew();
+        var phaseIndex = 0;
+        async Task RenderPhaseAsync()
+        {
+            phaseIndex++;
+            var phaseDoneMs = loadStopwatch.Elapsed.TotalMilliseconds;
+            await InvokeAsync(StateHasChanged);
+            var renderMs = loadStopwatch.Elapsed.TotalMilliseconds - phaseDoneMs;
+            Telemetry.RecordNavigation($"page-dashboard:phase{phaseIndex}", phaseDoneMs);
+            Telemetry.RecordNavigation($"page-dashboard:render{phaseIndex}", renderMs);
+        }
+
         var settingsTask = State.GetSettingsAsync();
         var coursesTask = State.GetCoursesAsync();
         var sessionsTask = State.GetSessionsAsync();
@@ -312,7 +326,7 @@ public partial class Index
         // the course list and ECTS. Custom course ids never collide with the built-in
         // catalog (1-62) thanks to CustomCourseIdOffset (100000+), so the filter is unambiguous.
         var activeCourseIds = allCourses.Select(c => c.Id).ToHashSet();
-        await InvokeAsync(StateHasChanged);
+        await RenderPhaseAsync();
 
         // ── Phase 2: sessions/history-driven tiles (today/next session, week stats, quotas,
         // trend, today ring, recent sessions, donut, neglected course, insights, latest note).
@@ -541,7 +555,7 @@ public partial class Index
         await BuildLatestNoteAsync(allCourses);
 
         _sessionsLoading = false;
-        await InvokeAsync(StateHasChanged);
+        await RenderPhaseAsync();
 
         // ── Phase 3: goals/programs/quotas (upcoming goals, ECTS/avg grade, topics progress).
         // Active-programme scope: goals/grades from other programmes must not factor into either
@@ -590,7 +604,7 @@ public partial class Index
         _programsCompleted = studyPrograms.Count(p => p.IsCompleted);
 
         _goalsLoading = false;
-        await InvokeAsync(StateHasChanged);
+        await RenderPhaseAsync();
 
         // ── Phase 4: health tiles (HealthKit HRV/sleep - native-app-only, can be genuinely slow
         // on-device; resolves instantly to null on the web client, see hrvTask/sleepNightsTask above).
@@ -598,7 +612,7 @@ public partial class Index
         BuildSleepConsistency(await sleepNightsTask);
 
         _healthLoading = false;
-        await InvokeAsync(StateHasChanged);
+        await RenderPhaseAsync();
 
         // ── Phase 5: achievements/heavy history. Deliberately a separate, much longer-range fetch
         // than `history` (HistoryDays = 400) above - achievements and the month/year comparison are
@@ -625,7 +639,7 @@ public partial class Index
         BuildForecast(settings, allCourses, _allTimeHistory);
 
         _achievementsLoading = false;
-        await InvokeAsync(StateHasChanged);
+        await RenderPhaseAsync();
     }
 
     private static string FormatHoursLabel(double hours)
