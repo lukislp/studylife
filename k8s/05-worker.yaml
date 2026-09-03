@@ -26,10 +26,17 @@ spec:
   # Kubernetes automatically creates 1 replica on initial creation, then the HPA takes over fully.
   selector:
     matchLabels: {app: studylife-worker}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   template:
     metadata:
       labels: {app: studylife-worker}
     spec:
+      # A tick in flight (push sending, report generation) may take a few seconds to wind down.
+      terminationGracePeriodSeconds: 60
       serviceAccountName: studylife-worker
       # Soft (preferred), not hard - see the k8s/04-web.yaml comment: works identically on 1 node
       # (fallback: co-location instead of Pending) and on N nodes (real spreading).
