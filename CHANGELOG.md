@@ -1,3 +1,10 @@
+# [3.6.0](https://github.com/lukislp/studylife/compare/v3.5.0...v3.6.0) (2026-09-03)
+
+
+### Features
+
+* make the client telemetry sample rate a server setting ([e884f2f](https://github.com/lukislp/studylife/commit/e884f2f1a46317e0f0e1e91b4f3123cc4d6c5d0c))
+
 # [3.5.0](https://github.com/lukislp/studylife/compare/v3.4.0...v3.5.0) (2026-09-03)
 
 
