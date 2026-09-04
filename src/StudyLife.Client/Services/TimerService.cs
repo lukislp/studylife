@@ -299,6 +299,9 @@ public class TimerService
                 // Exact wall-clock end instead of deriving it from the last tick (same
                 // local-time semantics as before - consumers like Home Assistant expect it).
                 PhaseEndsAt = _isRunning ? _phaseEndsAtUtc?.ToLocalTime() : null,
+                // Our clock at send time, so the server can express PhaseEndsAt in ITS clock for
+                // the other devices (see TimerStateDto.ClientNow).
+                ClientNow = DateTime.Now,
             };
         }
     }
