@@ -113,6 +113,24 @@ public static partial class StudyMetrics
     public static string FormatGrade(decimal grade, string format) => grade.ToString(format, GradeDisplayFormat);
 
     /// <summary>
+    /// The one "3h 20m" label shape of the whole app (dashboard tiles, stats cards, report,
+    /// wrapped). Rounds to the NEAREST whole minute instead of truncating: the hand-rolled
+    /// `(int)((h - (int)h) * 60)` this replaces turned a 1.4999-hour sum into "1h 29m", which
+    /// made totals visibly disagree with the sessions they came from. Rounding the TOTAL minutes
+    /// (not the minute part on its own) is what keeps a value that rounds up to a full hour from
+    /// printing as "1h 60m".
+    /// </summary>
+    /// <param name="omitZeroMinutes">Drops a " 0m" tail - the dashboard tiles' shape ("5h"); the
+    /// stats/report/wrapped labels always spell the minutes out ("5h 0m").</param>
+    public static string FormatHoursMinutes(double hours, bool omitZeroMinutes = false)
+    {
+        var totalMinutes = (int)Math.Round(hours * 60, MidpointRounding.AwayFromZero);
+        var h = totalMinutes / 60;
+        var m = totalMinutes % 60;
+        return m == 0 && omitZeroMinutes ? $"{h}h" : $"{h}h {m}m";
+    }
+
+    /// <summary>
     /// Result of <see cref="CalcForecast"/>. BaselineWeeksNeeded / RecentWeeklyHours /
     /// ReferenceWeeklyHours are only populated when Available=true - Index.razor additionally
     /// needs them for the graduation goal card (reverse calculation), Stats.razor only the date.

@@ -1,3 +1,4 @@
+@using StudyLife.Shared
 <div class="setup-section">
     <div class="ss-label">@Label</div>
     @if (DistinctCourses.Count > 0)
@@ -87,12 +88,12 @@
 @code {
     public record CourseHours(string Name, string Color, double Hours)
     {
-        public string HoursLabel => $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
+        public string HoursLabel => StudyMetrics.FormatHoursMinutes(Hours);
     }
 
     public record HeatDay(DateTime Date, double Hours, int Level, int SessionCount, List<CourseHours> Courses)
     {
-        public string HoursLabel(string noSessionText) => Hours <= 0 ? noSessionText : $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
+        public string HoursLabel(string noSessionText) => Hours <= 0 ? noSessionText : StudyMetrics.FormatHoursMinutes(Hours);
     }
 
     /// <summary>Record struct instead of a value tuple for DistinctCourses below - LINQ over a
@@ -143,5 +144,5 @@
 
     private int EffectiveLevel(HeatDay day) => _filterCourse == null ? day.Level : LevelFor(EffectiveHours(day));
 
-    private string HoursLabelFor(double hours) => hours <= 0 ? NoSessionText : $"{(int)hours}h {(int)((hours - (int)hours) * 60)}m";
+    private string HoursLabelFor(double hours) => hours <= 0 ? NoSessionText : StudyMetrics.FormatHoursMinutes(hours);
 }

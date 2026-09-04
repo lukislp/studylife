@@ -1,3 +1,4 @@
+@using StudyLife.Shared
 <div class="setup-section">
     <div class="ss-label">@Label</div>
     <div class="rhythm-grid">
@@ -43,7 +44,7 @@
 @code {
     public record BarPoint(string Label, double Hours, double Percent)
     {
-        public string HoursLabel => $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
+        public string HoursLabel => StudyMetrics.FormatHoursMinutes(Hours);
         // The Stats.razor builders normalize the max bucket to exactly 100 (Math.Min(100, x / max * 100)
         // with x == max), so "at the cap" reliably identifies the single (or tied) peak bar - no need
         // for a separate flag to be threaded through from Stats.razor.

@@ -249,6 +249,11 @@ public partial class Stats
         // monthly-trend charts as well as the per-course trend arrows. Deliberately separate from
         // the session list above (AppStateService, ±7/90-day window) - see /api/sessions/history.
         input.History = await _historyAllTask! ?? new();
+        // Phase 1 too, not only phase 3: the course rows/totals are built from the FULL history
+        // (StatsSummaryBuilder.BuildCore), so that a course last studied before the 12-month
+        // window still gets a row. Both fetches started together in StartRawFetches, so this only
+        // moves where the result is consumed.
+        input.HeavyHistory = await _historyAllTimeTask! ?? new();
         // Programme-aware: quotas of the ACTIVE programme (built-in: static, otherwise via fetch).
         input.GroupQuotas = await _groupQuotasTask!;
 
@@ -273,10 +278,9 @@ public partial class Stats
         // part of the shared builder: native health data never leaves the device.
         BuildCardioFitnessTrend(await cardioFitnessTask);
 
-        // Separate all-time fetch ONLY for the semester comparison: its average-hours figure for
-        // earlier semesters needs sessions beyond the 12-month window above - the same
-        // 10-year convention as the dashboard's AchievementHistoryDays.
-        input.HeavyHistory = await _historyAllTimeTask! ?? new();
+        // input.HeavyHistory is already filled (phase 1) - the semester comparison here needs the
+        // same all-time list, since its average-hours figure for earlier semesters reaches beyond
+        // the 12-month window.
         (input.StudyPrograms, input.ProgramCatalogs) = await LoadProgramCatalogsAsync();
 
         ApplyExtended(StatsSummaryBuilder.BuildExtended(input));

@@ -35,10 +35,10 @@ public class ReportSummaryBuilderTests
         ActiveStudyProgramId = 2,
     };
 
-    /// <summary>Course 1's target date (2026-06-30) already lies before Now, even though the
-    /// course is completed - the original code never checks CompletedAt for DaysRemaining, only
-    /// TargetDate, so this deliberately stays negative/"overdue" (harmless: StatusFor checks
-    /// IsCompleted first, so the completed badge wins in the UI regardless).</summary>
+    /// <summary>Course 1's target date (2026-06-30) already lies before Now, but the course is
+    /// completed - so the report reports no remaining days for it at all (same guard the stats
+    /// course rows have always had), rather than an "overdue by 66 days" next to its completed
+    /// badge.</summary>
     private static List<CourseGoalDto> Goals() => new()
     {
         new() { CourseId = 1, CourseName = "Artificial Intelligence", TargetDate = new DateTime(2026, 6, 30), CompletedAt = new DateTime(2026, 7, 1), Grade = 1.7m, CompletionNote = "Done well" },
@@ -111,7 +111,7 @@ public class ReportSummaryBuilderTests
         var course3 = rows.Single(r => r.Course.Id == 3);
 
         Assert.True(course1.IsCompleted);
-        Assert.Equal(-66, course1.DaysRemaining); // overdue, even though completed - see Goals()' doc comment
+        Assert.Null(course1.DaysRemaining); // completed -> no remaining deadline (was -66)
         Assert.Equal("Done well", course1.CompletionNote);
         Assert.Equal(1.7m, course1.Grade);
 

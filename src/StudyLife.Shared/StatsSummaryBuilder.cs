@@ -21,8 +21,9 @@ public class StatsSummaryInput
     /// programme-scoped). Defines the id set every session/goal/note below is filtered through.</summary>
     public List<CourseDto> AllCourses { get; set; } = new();
 
-    /// <summary>The near-term session list (GET /api/sessions) - the data basis of the course
-    /// list rows/totals (see StudyMetrics.CalcCourseHours).</summary>
+    /// <summary>The near-term session list (GET /api/sessions). Kept on the input (both callers
+    /// still fill it) but no longer read by the builder: the course rows it used to feed now come
+    /// from <see cref="HeavyHistory"/>, so a course last studied before this window keeps its row.</summary>
     public List<StudySessionDto> Sessions { get; set; } = new();
 
     /// <summary>Long-range history (GET /api/sessions/history?days=<see cref="HistoryDays"/>),
@@ -30,8 +31,9 @@ public class StatsSummaryInput
     public List<StudySessionDto> History { get; set; } = new();
 
     /// <summary>All-time history (GET /api/sessions/history?days=<see cref="AllTimeHistoryDays"/>)
-    /// - needed ONLY by the semester comparison, whose earlier semesters mostly fall outside the
-    /// <see cref="HistoryDays"/> window.</summary>
+    /// - the course list rows/totals (see StudyMetrics.CalcCourseHours) and the semester
+    /// comparison, whose earlier semesters mostly fall outside the <see cref="HistoryDays"/>
+    /// window. Needed by phase 1, not just phase 3.</summary>
     public List<StudySessionDto> HeavyHistory { get; set; } = new();
 
     /// <summary>GET /api/coursegoals, unscoped: the cross-programme comparison needs the full
@@ -121,15 +123,23 @@ public static class StatsSummaryBuilder
 
         var activeCourseIds = ActiveCourseIds(input);
         var goals = input.Goals.Where(g => activeCourseIds.Contains(g.CourseId)).ToList();
-        var sessions = input.Sessions.Where(s => activeCourseIds.Contains(s.CourseId)).ToList();
         var history = input.History.Where(s => activeCourseIds.Contains(s.CourseId)).ToList();
+        // Hours mean STUDIED hours on this page - a session that is merely scheduled for tonight
+        // must not already appear in a heatmap cell, a donut slice or a monthly stack. The
+        // charts below therefore consume `studiedHistory`; `history` stays for the helpers that
+        // apply the same filter themselves. See docs/ARCHITECTURE.md "Number semantics".
+        var studiedHistory = history.Where(s => StudyMetrics.IsStudied(s, now)).ToList();
+        var allTimeHistory = input.HeavyHistory.Where(s => activeCourseIds.Contains(s.CourseId)).ToList();
 
         var result = new StatsCoreSummaryDto();
 
         // Selected + completed + courses that actually have sessions - StudyMetrics.CalcCourseHours
-        // computes this relevant-id set internally from the three raw inputs below.
+        // computes this relevant-id set internally from the three raw inputs below. Deliberately
+        // the FULL history, not the near-term session window: a course finished two semesters ago
+        // otherwise dropped out of the list entirely, taking its hours, its trend arrow and its
+        // sparkline with it even though all three were computable.
         var raw = StudyMetrics.CalcCourseHours(
-            allCourses, settings.SelectedCourseIds, settings.CompletedCourseIds, sessions, now);
+            allCourses, settings.SelectedCourseIds, settings.CompletedCourseIds, allTimeHistory, now);
 
         var maxHours = raw.Count == 0 ? 1 : Math.Max(1, raw.Max(r => r.Hours));
         var trends = BuildCourseTrends(history, now, today);
@@ -179,7 +189,7 @@ public static class StatsSummaryBuilder
         result.GradeTimeline = BuildGradeTimeline(goals, allCourses);
         result.HoursGradeScatter = BuildHoursGradeScatter(goals, allCourses, raw);
         result.HoursEctsScatter = BuildHoursEctsScatter(allCourses, raw, settings);
-        result.GradeDistribution = BuildGradeDistribution(goals);
+        result.GradeDistribution = BuildGradeDistribution(goals, allCourses);
 
         // Programme-aware: quotas of the ACTIVE programme (built-in: static, otherwise via fetch).
         result.EctsTotal = CourseCatalog.CalcTotalEcts(allCourses, input.GroupQuotas);
@@ -187,12 +197,12 @@ public static class StatsSummaryBuilder
         result.EctsPercent = result.EctsTotal > 0 ? Math.Min(100.0, result.EctsEarned / (double)result.EctsTotal * 100) : 0;
 
         result.Forecast = BuildForecast(settings, allCourses, history, result.EctsTotal, result.EctsEarned, now);
-        result.Heatmap = BuildHeatmap(history, allCourses, today);
-        result.Donut = BuildDonut(history, allCourses, today);
-        result.Rhythm = BuildRhythm(history);
-        result.TimeHeatmap = BuildTimeHeatmap(history, allCourses);
-        result.MonthlyBreakdown = BuildMonthlyBreakdown(history, today);
-        result.MonthComparison = BuildMonthComparison(history, today);
+        result.Heatmap = BuildHeatmap(studiedHistory, allCourses, today);
+        result.Donut = BuildDonut(studiedHistory, allCourses, today);
+        result.Rhythm = BuildRhythm(studiedHistory);
+        result.TimeHeatmap = BuildTimeHeatmap(studiedHistory, allCourses);
+        result.MonthlyBreakdown = BuildMonthlyBreakdown(studiedHistory, today);
+        result.MonthComparison = BuildMonthComparison(studiedHistory, today);
         result.EctsTimeline = BuildEctsTimeline(goals, allCourses);
         result.EctsPlan = BuildEctsPlan(goals, allCourses, settings, result.EctsTotal, today);
         result.ProductivityWeeks = BuildProductivityScore(history, now, today);
@@ -246,8 +256,7 @@ public static class StatsSummaryBuilder
     /// <summary>"3h 20m" - the label shape shared by the totals tile, the semester comparison and
     /// the monthly stacks. Deliberately always spells out the minutes (unlike the dashboard's
     /// variant), because that is what this page has always shown.</summary>
-    private static string FormatHoursLabel(double hours) =>
-        $"{(int)hours}h {(int)((hours - (int)hours) * 60)}m";
+    private static string FormatHoursLabel(double hours) => StudyMetrics.FormatHoursMinutes(hours);
 
     /// <summary>Shared Monday-start week-bucket helper for the 12-week charts (sparklines,
     /// productivity, goal history, inactivity trend, course comparison, notes correlation) - same
@@ -330,11 +339,13 @@ public static class StatsSummaryBuilder
 
     // ── Grades ────────────────────────────────────────────────────────────────
 
-    private static List<StatsGradeBucketDto> BuildGradeDistribution(List<CourseGoalDto> goals)
+    private static List<StatsGradeBucketDto> BuildGradeDistribution(List<CourseGoalDto> goals, List<CourseDto> allCourses)
     {
         // Half-grade bands of the German scale (1.0 = best grade), "> 4.0" = failed.
-        // Unlike the grade history (BuildGradeHistory), deliberately WITHOUT a catalog join: the
-        // distribution counts every grade given, even without an assignable semester.
+        // Same catalog join as the grade history (BuildGradeHistory): a graded course with no
+        // catalog entry has to be treated identically by both cards, otherwise the distribution
+        // counted a grade the semester chart right next to it silently dropped.
+        var catalogIds = allCourses.Select(c => c.Id).ToHashSet();
         var buckets = new (string Label, decimal UpTo)[]
         {
             ("1,0–1,5", 1.5m), ("1,6–2,0", 2.0m), ("2,1–2,5", 2.5m),
@@ -343,7 +354,7 @@ public static class StatsSummaryBuilder
         var counts = new int[buckets.Length];
         foreach (var g in goals)
         {
-            if (!g.Grade.HasValue) continue;
+            if (!g.Grade.HasValue || !catalogIds.Contains(g.CourseId)) continue;
             for (var i = 0; i < buckets.Length; i++)
             {
                 if (g.Grade.Value <= buckets[i].UpTo) { counts[i]++; break; }
@@ -532,7 +543,10 @@ public static class StatsSummaryBuilder
                     continue;
                 }
                 var hours = hoursByDate.TryGetValue(date, out var h) ? h : 0;
-                var level = hours <= 0 ? 0 : hours < 1 ? 1 : hours < 2 ? 2 : hours < 4 ? 3 : 4;
+                // Bands are inclusive at the top (<= 1, <= 2, <= 4): with exclusive bounds a
+                // round 1.0 h jumped a whole level above 0.99 h, so the neatest days - the ones
+                // logged as whole hours - were consistently shaded darker than they earned.
+                var level = hours <= 0 ? 0 : hours <= 1 ? 1 : hours <= 2 ? 2 : hours <= 4 ? 3 : 4;
                 var sessionCount = sessionCountByDate.TryGetValue(date, out var sc) ? sc : 0;
                 var courses = byDateAndCourse.TryGetValue(date, out var cs) ? cs : new();
                 days.Add(new StatsHeatDayDto
@@ -804,13 +818,10 @@ public static class StatsSummaryBuilder
         var lastMonthHours = HoursInMonth(lastMonthDate.Year, lastMonthDate.Month);
 
         var delta = thisMonthHours - lastMonthHours;
-        var absDelta = Math.Abs(delta);
-        var dH = (int)Math.Floor(absDelta);
-        var dM = (int)((absDelta - dH) * 60);
         return new StatsMonthComparisonDto
         {
             Up = delta >= 0,
-            DeltaLabel = $"{dH}h{(dM > 0 ? $" {dM}m" : "")}",
+            DeltaLabel = StudyMetrics.FormatHoursMinutes(Math.Abs(delta), omitZeroMinutes: true),
         };
     }
 

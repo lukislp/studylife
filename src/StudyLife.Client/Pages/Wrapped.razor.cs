@@ -266,5 +266,5 @@ public partial class Wrapped
         }
     }
 
-    private static string FormatHours(double hours) => $"{(int)hours}h {(int)((hours - (int)hours) * 60)}m";
+    private static string FormatHours(double hours) => StudyMetrics.FormatHoursMinutes(hours);
 }

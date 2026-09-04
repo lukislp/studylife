@@ -171,12 +171,18 @@ public class DashboardSummaryBuilderTests
     {
         var s = DashboardSummaryBuilder.Build(Input()).Sessions;
 
-        Assert.Equal(8, s.WeekSessions);
-        Assert.Equal("11h 30m", s.WeekHoursLabel);
+        // studied-only: of the week's 8 sessions, #28 (running until 15:00), #29 (18:00 today) and
+        // #30 (Sunday) have not been studied yet -> 5 sessions, 2+1+1+1+1.5 = 6h 30m
+        // (was 8 / "11h 30m" when the three planned ones still counted).
+        Assert.Equal(5, s.WeekSessions);
+        Assert.Equal("6h 30m", s.WeekHoursLabel);
         Assert.Equal(5, s.Streak);
         Assert.Equal(5, s.LongestStreak);
+        // Like-for-like delta: 5 weekdays elapsed (Mon 31.08. - Fri 04.09.), so the previous week
+        // counts only Mon 24.08. - Fri 28.08. = 3+2+2+2 = 9h against this week's 6.5h -> 2h 30m
+        // DOWN (it read "up" before, comparing 11.5 planned hours against a full previous week).
         Assert.Equal("2h 30m", s.WeekDeltaLabel);
-        Assert.True(s.WeekDeltaUp);
+        Assert.False(s.WeekDeltaUp);
     }
 
     [Fact]
@@ -190,8 +196,11 @@ public class DashboardSummaryBuilderTests
         Assert.Equal(100.0 / 3, focus.Percent, 6);
     }
 
+    /// <summary>The two quota tiles are the deliberate exception to "hours = studied": they answer
+    /// "how much is on the plan for this week/month?", so every session of the window counts,
+    /// planned ones included - these numbers are therefore unchanged.</summary>
     [Fact]
-    public void Quotas_MatchTheOriginalPercentsAndLabels()
+    public void Quotas_CountPlannedSessionsToo_AndMatchTheOriginalPercentsAndLabels()
     {
         var s = DashboardSummaryBuilder.Build(Input()).Sessions;
 
@@ -219,9 +228,12 @@ public class DashboardSummaryBuilderTests
 
         Assert.Equal(new[] { "13.07", "20.07", "27.07", "03.08", "10.08", "17.08", "24.08", "31.08" },
             trend.Select(t => t.Label));
-        Assert.Equal(new[] { 0.0, 0.0, 0.0, 9.0, 9.0, 10.0, 9.0, 11.5 }, trend.Select(t => t.Hours));
-        Assert.Equal(86.956522, trend[5].Percent, 5);
-        Assert.Equal(100.0, trend[7].Percent, 6);
+        // studied-only: only the current bar moves - the three planned sessions (1+2+2 h) drop out
+        // of the 31.08. week, 11.5 -> 6.5. Every earlier week is fully in the past and unchanged.
+        Assert.Equal(new[] { 0.0, 0.0, 0.0, 9.0, 9.0, 10.0, 9.0, 6.5 }, trend.Select(t => t.Hours));
+        // The peak is now the 17.08. week (10h), not the current one: 10/10 vs. 6.5/10.
+        Assert.Equal(100.0, trend[5].Percent, 6);
+        Assert.Equal(65.0, trend[7].Percent, 6);
         Assert.True(trend[7].IsCurrent);
         Assert.All(trend.Take(7), t => Assert.False(t.IsCurrent));
     }
@@ -231,9 +243,12 @@ public class DashboardSummaryBuilderTests
     {
         var s = DashboardSummaryBuilder.Build(Input()).Sessions;
 
-        Assert.Equal(100.0, s.TodayRing.RingPercent, 6);
-        Assert.True(s.TodayRing.Exceeded);
-        Assert.Equal("4h 30m", s.TodayRing.HoursLabel);
+        // studied-only: of today's three sessions only #27 (1.5h, completed) counts - #28 runs
+        // until 15:00 and #29 starts at 18:00. 1.5h against the 27.5/2/7 = 3.9286h daily target =
+        // 38.18% (it used to read 4h 30m / a full, "exceeded" ring off two not-yet-studied hours).
+        Assert.Equal(38.181818, s.TodayRing.RingPercent, 5);
+        Assert.False(s.TodayRing.Exceeded);
+        Assert.Equal("1h 30m", s.TodayRing.HoursLabel);
         Assert.Equal("3.9h", s.TodayRing.DailyTargetLabel);
 
         Assert.Equal(new[] { "Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri" }, s.StreakStrip.Select(d => d.Label));
