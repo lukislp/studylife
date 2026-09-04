@@ -62,6 +62,9 @@
 @code {
     private I18nText.SetupText T = new();
 
+    [CascadingParameter]
+    public SetupOverviewDto? Overview { get; set; }
+
     private bool _hasKey;
     private bool _busy;
     private bool _reconnecting;
@@ -71,6 +74,11 @@
     protected override async Task OnInitializedAsync()
     {
         T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
+        if (Overview?.DeveloperApiKey is { } bundled)
+        {
+            _hasKey = bundled.HasKey;
+            return;
+        }
         try
         {
             var status = await Http.GetFromJsonAsync<DeveloperApiKeyStatusDto>("api/settings/developer-api-key");

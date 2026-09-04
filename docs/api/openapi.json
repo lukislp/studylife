@@ -4279,6 +4279,35 @@
         }
       }
     },
+    "/api/setup/overview": {
+      "get": {
+        "tags": [
+          "Setup"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupOverviewDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupOverviewDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupOverviewDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/stats/summary": {
       "get": {
         "tags": [
@@ -9008,6 +9037,192 @@
           }
         }
       },
+      "SetupOverviewDto": {
+        "required": [
+          "isOwner",
+          "isDemo"
+        ],
+        "type": "object",
+        "properties": {
+          "settings": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/UserSettingsDto"
+              }
+            ]
+          },
+          "capabilities": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SystemCapabilitiesResponseDto"
+              }
+            ]
+          },
+          "version": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/VersionResponseDto"
+              }
+            ]
+          },
+          "calendarToken": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "studyPrograms": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/StudyProgramSummaryDto"
+            }
+          },
+          "courseGoals": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/CourseGoalDto"
+            }
+          },
+          "haApiKey": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/HaApiKeyStatusDto"
+              }
+            ]
+          },
+          "aiApiKey": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AiApiKeyStatusDto"
+              }
+            ]
+          },
+          "mcpApiKey": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/McpApiKeyStatusDto"
+              }
+            ]
+          },
+          "captureApiKey": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CaptureApiKeyStatusDto"
+              }
+            ]
+          },
+          "focusGuardApiKey": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/FocusGuardApiKeyStatusDto"
+              }
+            ]
+          },
+          "focusTunesApiKey": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/FocusTunesApiKeyStatusDto"
+              }
+            ]
+          },
+          "trayApiKey": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TrayApiKeyStatusDto"
+              }
+            ]
+          },
+          "developerApiKey": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DeveloperApiKeyStatusDto"
+              }
+            ]
+          },
+          "webhookApiKeys": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/WebhookApiKeyDto"
+            }
+          },
+          "clientKeys": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ClientApiKeyListItemDto"
+            }
+          },
+          "invites": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/InviteListItemDto"
+            }
+          },
+          "restoreStatus": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RestoreStatusResponseDto"
+              }
+            ]
+          },
+          "isOwner": {
+            "type": "boolean"
+          },
+          "isDemo": {
+            "type": "boolean"
+          }
+        }
+      },
       "StatsBarPointDto": {
         "required": [
           "label",
@@ -11889,6 +12104,9 @@
     },
     {
       "name": "Settings"
+    },
+    {
+      "name": "Setup"
     },
     {
       "name": "Stats"

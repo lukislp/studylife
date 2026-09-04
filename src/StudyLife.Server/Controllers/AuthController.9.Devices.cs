@@ -163,12 +163,18 @@ public partial class AuthController
     public async Task<ActionResult<List<ClientApiKeyListItemDto>>> ListClientKeys()
     {
         var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var keys = await _db.ClientApiKeys.AsNoTracking()
+        return await LoadClientKeysAsync(_db, userId);
+    }
+
+    // internal instead of private: reused by SetupController (bundle endpoint).
+    internal static async Task<List<ClientApiKeyListItemDto>> LoadClientKeysAsync(StudyLifeDb db, int userId)
+    {
+        var keys = await db.ClientApiKeys.AsNoTracking()
             .Where(k => k.AuthUserId == userId)
             .OrderBy(k => k.CreatedAt)
             .ToListAsync();
         var clientIds = keys.Select(k => k.ClientId).Distinct().ToList();
-        var names = await _db.OAuthClients.AsNoTracking()
+        var names = await db.OAuthClients.AsNoTracking()
             .Where(c => clientIds.Contains(c.ClientId))
             .ToDictionaryAsync(c => c.ClientId, c => c.Name);
         return keys.Select(k => new ClientApiKeyListItemDto

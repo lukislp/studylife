@@ -66,6 +66,9 @@
 @code {
     private I18nText.SetupText T = new();
 
+    [CascadingParameter]
+    public SetupOverviewDto? Overview { get; set; }
+
     private bool _enabled;
     private string? _token;
     private bool _copied;
@@ -79,6 +82,12 @@
     protected override async Task OnInitializedAsync()
     {
         T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
+        if (Overview?.Settings is { } bundled)
+        {
+            _enabled = bundled.ProgressShareEnabled;
+            _token = bundled.ProgressShareToken;
+            return;
+        }
         try
         {
             var dto = await Http.GetFromJsonAsync<UserSettingsDto>("api/settings");

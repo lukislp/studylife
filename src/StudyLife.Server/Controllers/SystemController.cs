@@ -62,12 +62,19 @@ public class SystemController : ControllerBase
         // /api fallback comment in Program.cs about NSURLCache poisoning).
         Response.Headers.CacheControl = "no-store";
         var configuration = HttpContext.RequestServices.GetRequiredService<IConfiguration>();
+        return Ok(BuildCapabilities(configuration, _rawBackupSupported));
+    }
+
+    // internal instead of private: reused by SetupController (bundle endpoint) so both call
+    // sites compute the exact same DTO for the same rawBackupSupported input.
+    internal static SystemCapabilitiesResponseDto BuildCapabilities(IConfiguration configuration, bool rawBackupSupported)
+    {
         var sampleRatio = configuration.GetValue<double?>("Telemetry:ClientSampleRatio") ?? 0.10;
-        return Ok(new SystemCapabilitiesResponseDto
+        return new SystemCapabilitiesResponseDto
         {
-            RawBackupSupported = _rawBackupSupported,
+            RawBackupSupported = rawBackupSupported,
             TelemetryClientSampleRatio = Math.Clamp(sampleRatio, 0, 1),
-        });
+        };
     }
 
     /// <summary>
