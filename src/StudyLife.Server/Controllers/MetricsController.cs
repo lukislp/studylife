@@ -95,11 +95,20 @@ public class MetricsController : ControllerBase
         var today = asOf.Date;
         var weekStart = StudyMetrics.WeekStartOf(today);
         var weekEnd = weekStart.AddDays(7);
+        // Two different questions about the same week, same split as the dashboard (see
+        // docs/ARCHITECTURE.md "Number semantics"): `weekHours` is everything SCHEDULED in it
+        // (feeds WeekQuota - "how much is on the plan?"), `weekStudiedHours` only what has
+        // actually been studied (feeds Hours.Week - "how much did I do?").
         var weekHours = scoped.Where(s => s.StartTime.Date >= weekStart && s.StartTime.Date < weekEnd)
+            .Sum(s => (s.EndTime - s.StartTime).TotalHours);
+        var weekStudiedHours = studiedHistory.Where(s => s.StartTime.Date >= weekStart && s.StartTime.Date < weekEnd)
             .Sum(s => (s.EndTime - s.StartTime).TotalHours);
 
         var monthStart = new DateTime(today.Year, today.Month, 1);
+        // Planned month, for the same reason as the weekly quota above.
         var monthHours = scoped.Where(s => s.StartTime.Date >= monthStart)
+            .Sum(s => (s.EndTime - s.StartTime).TotalHours);
+        var monthStudiedHours = studiedHistory.Where(s => s.StartTime.Date >= monthStart)
             .Sum(s => (s.EndTime - s.StartTime).TotalHours);
 
         var totalHours = studiedHistory.Sum(s => (s.EndTime - s.StartTime).TotalHours);
@@ -134,7 +143,7 @@ public class MetricsController : ControllerBase
             AsOf = asOf,
             Program = programDto,
             Streak = new MetricsStreakDto { Current = streak, Longest = longestStreak },
-            Hours = new MetricsHoursDto { Week = weekHours, Month = monthHours, Total = totalHours, TotalSessions = totalSessions },
+            Hours = new MetricsHoursDto { Week = weekStudiedHours, Month = monthStudiedHours, Total = totalHours, TotalSessions = totalSessions },
             WeekQuota = ToQuotaDto(weekHours, settings.WeeklyGoalMinHours, settings.WeeklyGoalMaxHours, weekQuota),
             MonthQuota = ToQuotaDto(monthHours, settings.MonthlyGoalMinHours, settings.MonthlyGoalMaxHours, monthQuota),
             Ects = new MetricsEctsDto { Earned = ectsEarned, Total = ectsTotal },

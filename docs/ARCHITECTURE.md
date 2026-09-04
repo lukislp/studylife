@@ -737,7 +737,10 @@ not over; the **Stats course rows come from the full history** (`HeavyHistory`, 
 than the near-term session window, so a course last studied semesters ago keeps its row, its
 trend arrow and its sparkline; and every **"Xh Ym" label rounds to whole minutes** through the one
 shared `StudyMetrics.FormatHoursMinutes` (client label call sites included) instead of truncating
-each site's own way.
+each site's own way. **The Home Assistant/MCP metrics API follows the same rule (2026-09):**
+`GET /api/metrics/summary`'s `Hours.Week`/`Hours.Month` are studied-only, while `WeekQuota`/
+`MonthQuota` keep counting the planned window like the dashboard's quota tiles - see
+`MetricsController.ComputeSummaryAsync` and `docs/api/metrics-fixtures.json`.
 
 **Progressive render on every page (2026-09):** the same shape now applies to Calendar, Planner,
 Stats, Report, WeekPlan, Wrapped, Notes, Setup and Focus. `Shared/LocalizedComponentBase.cs`
