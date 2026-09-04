@@ -416,8 +416,16 @@ public class AppStateService : IAsyncDisposable
                 using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
                 using var reader = new StreamReader(stream);
                 string? data = null;
-                while (await reader.ReadLineAsync(cancellationToken) is { } line)
+                // Heartbeat watchdog: the server writes a frame at least every 25 s. A half-open
+                // connection (network switch, sleeping phone) never errors on read, it just goes
+                // silent - so a read that sees nothing for 75 s is treated as a dead stream and
+                // the loop reconnects instead of waiting forever.
+                using var idle = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                while (true)
                 {
+                    idle.CancelAfter(HeartbeatTimeout);
+                    var line = await reader.ReadLineAsync(idle.Token);
+                    if (line is null) break;
                     if (line.Length == 0)
                     {
                         // Blank line terminates a frame. v=2 frames ("state" on connect and every
@@ -478,6 +486,7 @@ public class AppStateService : IAsyncDisposable
     private int? _knownHistoryVersion;
     private int? _knownSettingsVersion;
     private volatile bool _streamConnected;
+    private static readonly TimeSpan HeartbeatTimeout = TimeSpan.FromSeconds(75); // 3x the server's 25 s heartbeat
 
     /// <summary>True while the change stream has an open connection. TelemetryService reads it once
     /// when it subscribes: on a fast network the stream connects before that service exists, so
