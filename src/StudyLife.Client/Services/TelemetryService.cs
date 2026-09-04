@@ -77,6 +77,9 @@ public sealed class TelemetryService : IAsyncDisposable
         _current = this;
         _state.OnSettingsChanged += OnSettingsChanged;
         _state.OnSseLifecycleEventRaised += OnSseLifecycleEvent;
+        // The stream may already be up (it starts as soon as a token exists, this service is
+        // constructed later) - count that connection too, otherwise a fast host never reports one.
+        if (_state.ChangeStreamConnected) OnSseLifecycleEvent("connected", 0);
     }
 
     /// <summary>Call once at app start (MainLayout.OnInitializedAsync, after settings are first
