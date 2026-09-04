@@ -166,10 +166,20 @@ spec:
           # redis-server joins them into `user studylife on >… ~* &* +@all`; one quoted argv with
           # spaces would become a single quoted token and a user literally named "studylife on …".
           # "$(REDIS_PASSWORD)"/"$(REDIS_USERNAME)" are Kubernetes' own args substitution (no shell).
+          # --cluster-announce-ip: without it a node keeps the pod IP it had when it FIRST joined
+          # in nodes.conf ("myself") and keeps advertising that dead address in CLUSTER NODES
+          # after every pod IP change - found 2026-09-04: four of six nodes announced IPs from
+          # the previous afternoon, StackExchange.Redis in every web/worker pod looped on
+          # connects to them (tens of SocketExceptions per second, request latency on the phone).
+          # The pod IP is the right announce address for this pod-IP-based cluster.
           command: ["redis-server", "/usr/local/etc/redis/redis.conf",
+            "--cluster-announce-ip", "$(POD_IP)",
             "--requirepass", "$(REDIS_PASSWORD)", "--masterauth", "$(REDIS_PASSWORD)",
             "--user", "$(REDIS_USERNAME)", "on", ">$(REDIS_PASSWORD)", "~*", "&*", "+@all"]
           env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef: { fieldPath: status.podIP }
             - name: REDIS_PASSWORD
               valueFrom:
                 secretKeyRef: { name: redis-auth, key: password }
