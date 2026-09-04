@@ -1,3 +1,11 @@
+# [3.10.0](https://github.com/lukislp/studylife/compare/v3.9.0...v3.10.0) (2026-09-04)
+
+
+### Features
+
+* extract the stats, wrapped and report computations into shared builders ([07e9891](https://github.com/lukislp/studylife/commit/07e9891c4b63a53f3fa0318739c73f0c3fc624e6))
+* serve the stats, wrapped and report summaries from the server ([9e842c8](https://github.com/lukislp/studylife/commit/9e842c8fd2351e259d4567331c2a1742cc49b4b7))
+
 # [3.9.0](https://github.com/lukislp/studylife/compare/v3.8.1...v3.9.0) (2026-09-04)
 
 
