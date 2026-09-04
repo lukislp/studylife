@@ -69,8 +69,8 @@ public class MetricsGoldenFixtureTests
 
     private record MetricsExpected(
         int Streak, int LongestStreak,
-        double WeekHours, double WeekQuotaPercent, bool WeekQuotaWarning, double WeekQuotaMissingHours,
-        double MonthHours, double MonthQuotaPercent, bool MonthQuotaWarning, double MonthQuotaMissingHours,
+        double WeekHours, double WeekStudiedHours, double WeekQuotaPercent, bool WeekQuotaWarning, double WeekQuotaMissingHours,
+        double MonthHours, double MonthStudiedHours, double MonthQuotaPercent, bool MonthQuotaWarning, double MonthQuotaMissingHours,
         decimal? AverageGrade, int EctsEarned, int EctsTotal,
         bool ForecastAvailable, DateTime? ForecastDate, double? ForecastRecentWeeklyHours);
 
@@ -130,6 +130,15 @@ public class MetricsGoldenFixtureTests
         var streak = StudyMetrics.CalcStreak(studied.Select(x => x.StartTime), today);
         var longestStreak = StudyMetrics.CalcLongestStreak(studied.Select(x => x.StartTime));
 
+        // MetricsHoursDto.Week/Month (unlike weekHours/monthHours above, which feed
+        // WeekQuota/MonthQuota only) are STUDIED-only - same window, same studied filter
+        // MetricsController.ComputeSummaryAsync applies. See docs/ARCHITECTURE.md "Number
+        // semantics" and the fixture's own $fieldNotes.
+        var weekStudiedHours = studied.Where(x => x.StartTime.Date >= weekStart && x.StartTime.Date < weekEnd)
+            .Sum(x => (x.EndTime - x.StartTime).TotalHours);
+        var monthStudiedHours = studied.Where(x => x.StartTime.Date >= monthStart)
+            .Sum(x => (x.EndTime - x.StartTime).TotalHours);
+
         var weekQuota = StudyMetrics.CalcQuota(weekHours, s.Settings.WeeklyGoalMinHours, s.Settings.WeeklyGoalMaxHours);
         var monthQuota = StudyMetrics.CalcQuota(monthHours, s.Settings.MonthlyGoalMinHours, s.Settings.MonthlyGoalMaxHours);
 
@@ -174,11 +183,13 @@ public class MetricsGoldenFixtureTests
         Assert.Equal(expected.LongestStreak, longestStreak);
 
         Assert.Equal(expected.WeekHours, weekHours, precision: 6);
+        Assert.Equal(expected.WeekStudiedHours, weekStudiedHours, precision: 6);
         Assert.Equal(expected.WeekQuotaPercent, weekQuota.Percent, precision: 6);
         Assert.Equal(expected.WeekQuotaWarning, weekQuota.Warning);
         Assert.Equal(expected.WeekQuotaMissingHours, weekQuota.MissingHours, precision: 6);
 
         Assert.Equal(expected.MonthHours, monthHours, precision: 6);
+        Assert.Equal(expected.MonthStudiedHours, monthStudiedHours, precision: 6);
         Assert.Equal(expected.MonthQuotaPercent, monthQuota.Percent, precision: 6);
         Assert.Equal(expected.MonthQuotaWarning, monthQuota.Warning);
         Assert.Equal(expected.MonthQuotaMissingHours, monthQuota.MissingHours, precision: 6);
