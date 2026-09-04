@@ -709,6 +709,15 @@ endpoints while writes stay blocked. `Pages/Setup.razor` fetches the bundle alon
 page's own capabilities/version/calendar-token/study-programs/course-goals fetches) uses its
 section when present and only falls back to its own GET otherwise - the progressive-render phases
 (`_settingsLoading`/`_secondaryLoading`) and their `RenderPhaseAsync()` points are unchanged.
+`Setup.razor` also subscribes to `AppStateService.OnServerChanged` and re-fetches/re-applies the
+bundle (coalesced, at most one fetch in flight) on the kinds its cards show (`settings`, `system`,
+`auth`, `webhooks`, `backup`, `coursegoals`, `studyprograms`, or an unknown kind), so another
+device or an add-on changing a key, an invite, a webhook, a backup or a course goal shows up here
+live, with each card re-applying only its own status fields from the new bundle instance in
+`OnParametersSet` (gated on its own busy/confirming flags, so a live refresh never clobbers a
+plaintext key just shown or a form the user is mid-edit on). Every write the page or a card
+performs calls `State.NoteOwnWrite(kind)` first, so that device's own change is never echoed back
+to itself as a refresh.
 
 **Stats, Wrapped and Report summaries (2026-09):** the same pattern as the dashboard for the three evaluation pages. `StatsSummaryBuilder` (phases Core/Notes/Extended), `WrappedSummaryBuilder` (Recap/Achievements) and `ReportSummaryBuilder` in `StudyLife.Shared` hold the pages' computations verbatim (golden tests in `StudyLife.Shared.Tests` pin the pre-extraction values); `GET api/stats/summary`, `api/wrapped/summary` and `api/report/summary` (all `?now=<client local DateTime>`, session-only, `Controllers/StatsController.cs`, `WrappedController.cs`, `ReportController.cs`) assemble the inputs exactly like the raw endpoints would return them - the cross-programme comparison's per-programme catalogs and quotas are loaded server-side in one go instead of the client's N+1 fan-out - and run the builders; endpoint parity tests fetch the raw endpoints through the test client, build locally and assert JSON equality. Cache keys `stats:summary:{user}:{minute}:{historyVersion}:{settingsVersion}:{notes token}`, `wrapped:summary:...` and `report:summary:...` (no notes), 60 s TTL, content-hash ETags. The pages start settings/courses and the summary request in `OnInitializingAsync` and only start the raw fetches when the summary fails (`AppStateService.TryGetSummaryAsync`), so the fallback keeps today's offline behaviour with identical numbers. The native cardio-fitness card on Stats stays client-only.
 

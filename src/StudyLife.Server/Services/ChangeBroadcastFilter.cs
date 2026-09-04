@@ -23,6 +23,13 @@ public sealed class ChangeBroadcastFilter : IAsyncResultFilter
         "telemetry", "auth", "push", "events", "planner", "dictate", "ai",
     };
 
+    // /api/auth is excluded as a whole (logins, passkeys, sessions are not user data), except
+    // the two lists the setup page shows: client keys and invites.
+    private static readonly HashSet<string> AuthBroadcastSubpaths = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "client-keys", "invites",
+    };
+
     private readonly ChangeSequence _sequence;
     private readonly IChangeSignal _signal;
     private readonly ICurrentUserAccessor _currentUser;
@@ -50,7 +57,8 @@ public sealed class ChangeBroadcastFilter : IAsyncResultFilter
         var userId = _currentUser.AuthUserId;
         if (userId == 0) return;
         var kind = KindFromPath(http.Request.Path);
-        if (kind is null || Excluded.Contains(kind)) return;
+        if (kind is null) return;
+        if (Excluded.Contains(kind) && !(kind.Equals("auth", StringComparison.OrdinalIgnoreCase) && AuthBroadcastSubpaths.Contains(SecondSegment(http.Request.Path)))) return;
         try
         {
             await _sequence.IncrementAsync(userId);
@@ -61,6 +69,13 @@ public sealed class ChangeBroadcastFilter : IAsyncResultFilter
             // Never let the notification fail the write that already succeeded.
             _logger.LogWarning(ex, "change broadcast for {Kind} failed", kind);
         }
+    }
+
+    /// <summary>"/api/auth/client-keys/3" -> "client-keys"; empty when there is no second segment.</summary>
+    internal static string SecondSegment(PathString path)
+    {
+        var parts = (path.Value ?? "").Split('/', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length >= 3 ? parts[2] : "";
     }
 
     /// <summary>"/api/notes/5" -> "notes"; null for anything that is not an /api route.</summary>

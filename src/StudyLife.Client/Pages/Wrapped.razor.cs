@@ -53,8 +53,6 @@ public partial class Wrapped
     // await-ing one after another (same pattern as Index.razor.cs/Setup.razor).
     private Task<UserSettings>? _settingsTask;
     private Task<List<CourseDto>>? _coursesTask;
-    private Task<List<StudySessionDto>?>? _periodHistoryTask;
-    private Task<List<StudySessionDto>?>? _allTimeHistoryTask;
 
     // Progressive render (2026-09 audit): default true so the first OnTextLoadedAsync run shows a
     // skeleton for the slides each flag covers instead of their zero/empty field defaults.
@@ -82,18 +80,78 @@ public partial class Wrapped
         // period line in the header is already correct on the very first shell render.
         _periodEnd = DateTime.Today;
         _periodStart = _periodEnd.AddDays(-WrappedSummaryBuilder.PeriodHistoryDays);
+
+        // Live updates (change stream): sessions/settings have their own events, notes/study
+        // programmes fall under the generic "something else changed" kind.
+        State.OnSessionsChanged += OnLiveDataChanged;
+        State.OnSettingsChanged += OnLiveDataChanged;
+        State.OnServerChanged += OnServerChanged;
         return Task.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        State.OnSessionsChanged -= OnLiveDataChanged;
+        State.OnSettingsChanged -= OnLiveDataChanged;
+        State.OnServerChanged -= OnServerChanged;
+    }
+
+    private void OnLiveDataChanged() => InvokeAsync(RefreshAsync);
+
+    private void OnServerChanged(string? kind)
+    {
+        if (kind is not (null or "notes" or "studyprograms")) return;
+        _ = InvokeAsync(RefreshAsync);
+    }
+
+    // Coalesced, non-overlapping live refresh - same shape as Stats.razor.cs: re-runs the load
+    // with fresh data but never resets _recapLoading/_achievementsLoading back to true, so the
+    // slides already on screen stay visible until fresh numbers replace them. An event arriving
+    // mid-refresh just schedules one more pass afterwards instead of overlapping it; a failed
+    // refresh is swallowed so the next event simply tries again.
+    private bool _refreshRunning;
+    private bool _refreshPending;
+
+    private async Task RefreshAsync()
+    {
+        if (_refreshRunning) { _refreshPending = true; return; }
+        _refreshRunning = true;
+        try
+        {
+            do
+            {
+                _refreshPending = false;
+                try { await LoadDataAsync(isRefresh: true); }
+                catch { /* background refresh failed - keep showing the last good state, next event retries */ }
+            } while (_refreshPending);
+        }
+        finally { _refreshRunning = false; }
     }
 
     protected override async Task OnTextLoadedAsync()
     {
         _langWatcher = new I18nLanguageWatcher(I18nText);
         await _langWatcher.InitAsync();
+        await LoadDataAsync();
+    }
 
-        var settings = await _settingsTask!;
-        var allCourses = await _coursesTask!;
+    private async Task LoadDataAsync(bool isRefresh = false)
+    {
+        // A live refresh takes a fresh instant and can't reuse OnInitializingAsync's tasks
+        // (those already resolved to the page's initial data) - it starts its own, exactly like
+        // the initial load did.
+        var now = isRefresh ? DateTime.Now : _now;
+        _now = now;
+        var settingsTask = isRefresh ? State.GetSettingsAsync() : _settingsTask!;
+        var coursesTask = isRefresh ? State.GetCoursesAsync() : _coursesTask!;
+        var summaryTask = isRefresh
+            ? State.TryGetSummaryAsync<WrappedSummaryDto>("api/wrapped/summary", now)
+            : _summaryTask!;
 
-        var summary = await _summaryTask!;
+        var settings = await settingsTask;
+        var allCourses = await coursesTask;
+
+        var summary = await summaryTask;
         if (summary != null)
         {
             ApplyRecap(summary.Recap);
@@ -108,8 +166,8 @@ public partial class Wrapped
         }
 
         // Fallback (offline or a server without api/wrapped/summary): raw fetches + local builder.
-        _periodHistoryTask = State.GetHistoryAsync(WrappedSummaryBuilder.PeriodHistoryDays);
-        _allTimeHistoryTask = State.GetHistoryAsync(WrappedSummaryBuilder.AllTimeHistoryDays);
+        var periodHistoryTask = State.GetHistoryAsync(WrappedSummaryBuilder.PeriodHistoryDays);
+        var allTimeHistoryTask = State.GetHistoryAsync(WrappedSummaryBuilder.AllTimeHistoryDays);
 
         // Every number below comes from WrappedSummaryBuilder (StudyLife.Shared), which the
         // server can run against the same inputs - this method only fetches, hands the raw
@@ -121,8 +179,8 @@ public partial class Wrapped
         {
             Settings = AppStateService.ToDto(settings),
             AllCourses = allCourses,
-            PeriodHistory = await _periodHistoryTask! ?? new(),
-            Now = _now,
+            PeriodHistory = await periodHistoryTask ?? new(),
+            Now = now,
         };
 
         // ── Phase 1: recap period (365 days) - total hours, sessions, streak, top course,
@@ -141,7 +199,7 @@ public partial class Wrapped
         var notesTask = State.GetJsonCachedAsync<List<NoteDto>>("api/notes");
         var studyProgramsTask = State.GetJsonCachedAsync<List<StudyProgramSummaryDto>>("api/studyprograms");
 
-        input.AllTimeHistory = await _allTimeHistoryTask! ?? new();
+        input.AllTimeHistory = await allTimeHistoryTask ?? new();
         input.GroupQuotas = await groupQuotasTask;
         input.Notes = await notesTask ?? new();
         input.StudyPrograms = await studyProgramsTask ?? new();

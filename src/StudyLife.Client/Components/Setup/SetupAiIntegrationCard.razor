@@ -1,5 +1,7 @@
 @using StudyLife.Shared
+@using StudyLife.Client.Services
 @inject HttpClient Http
+@inject AppStateService State
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
 @* Long-lived per-user API key for the studylife-ai integration - a SEPARATE slot from the
@@ -84,14 +86,18 @@
     private bool _reconnectSuccess;
     private bool _confirmingDisable;
 
+    // The Overview instance last applied to this card's fields - lets OnParametersSet tell a
+    // genuinely new bundle (another device/add-on changed something) apart from an unrelated
+    // re-render of the parent that hands down the same cascaded instance again.
+    private SetupOverviewDto? _appliedOverview;
+
     protected override async Task OnInitializedAsync()
     {
         if (OverviewTask is not null) Overview = await OverviewTask;
         T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
         if (Overview?.AiApiKey is { } bundled)
         {
-            _hasKey = bundled.HasKey;
-            _createdAt = bundled.CreatedAt;
+            ApplyOverview(bundled);
             return;
         }
         try
@@ -103,6 +109,23 @@
         catch { /* offline: card shows the "disabled" default */ }
     }
 
+    /// <summary>Live refresh: re-applies this card's section from a freshly re-fetched bundle,
+    /// but only while nothing is in flight here - a background refresh must never overwrite an
+    /// enable/disable/reconnect the user just triggered.</summary>
+    protected override void OnParametersSet()
+    {
+        if (Overview is null || ReferenceEquals(Overview, _appliedOverview)) return;
+        _appliedOverview = Overview;
+        if (_busy || _reconnecting || _confirmingDisable) return;
+        if (Overview.AiApiKey is { } bundled) ApplyOverview(bundled);
+    }
+
+    private void ApplyOverview(AiApiKeyStatusDto bundled)
+    {
+        _hasKey = bundled.HasKey;
+        _createdAt = bundled.CreatedAt;
+    }
+
     // Enable: generate a key and immediately discard the plaintext, same as AgentChatModal's
     // ActivateAsync - the server already registered it with studylife-ai by the time this
     // returns (or queued that registration in the outbox for retry), the user never sees it.
@@ -111,6 +134,7 @@
         _busy = true;
         try
         {
+            State.NoteOwnWrite("settings");
             var response = await Http.PostAsync("api/settings/ai-api-key/generate", null);
             if (response.IsSuccessStatusCode)
             {
@@ -132,6 +156,7 @@
         StateHasChanged();
         try
         {
+            State.NoteOwnWrite("settings");
             var response = await Http.PostAsync("api/settings/ai-api-key/generate", null);
             if (response.IsSuccessStatusCode)
             {
@@ -158,6 +183,7 @@
         _busy = true;
         try
         {
+            State.NoteOwnWrite("settings");
             var response = await Http.PostAsync("api/settings/ai-api-key/revoke", null);
             if (response.IsSuccessStatusCode)
             {

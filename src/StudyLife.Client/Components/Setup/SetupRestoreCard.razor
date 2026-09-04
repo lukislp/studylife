@@ -1,5 +1,7 @@
 @using StudyLife.Shared
+@using StudyLife.Client.Services
 @inject HttpClient Http
+@inject AppStateService State
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
 @* Restore counterpart to SetupBackupCard: uploads a previously downloaded .db backup
@@ -113,13 +115,18 @@
     // 512 MB, matching the endpoint's RequestSizeLimit.
     private const long MaxUploadBytes = 512L * 1024 * 1024;
 
+    // The Overview instance last applied to this card's fields - lets OnParametersSet tell a
+    // genuinely new bundle (another device/add-on changed something) apart from an unrelated
+    // re-render of the parent that hands down the same cascaded instance again.
+    private SetupOverviewDto? _appliedOverview;
+
     protected override async Task OnInitializedAsync()
     {
         if (OverviewTask is not null) Overview = await OverviewTask;
         T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
         if (Overview?.RestoreStatus is { } bundled)
         {
-            _pending = bundled.Pending;
+            ApplyOverview(bundled);
             return;
         }
         try
@@ -129,6 +136,20 @@
         }
         catch { /* offline/error: card still works, just without the pending banner */ }
     }
+
+    /// <summary>Live refresh: re-applies the pending-restore banner from a freshly re-fetched
+    /// bundle, but only while the user isn't mid-way through selecting/confirming/uploading a
+    /// restore or watching the post-restart message here - a background refresh must never flip
+    /// the card's state out from under an in-progress restore.</summary>
+    protected override void OnParametersSet()
+    {
+        if (Overview is null || ReferenceEquals(Overview, _appliedOverview)) return;
+        _appliedOverview = Overview;
+        if (_confirming || _uploading || _restarting) return;
+        if (Overview.RestoreStatus is { } bundled) ApplyOverview(bundled);
+    }
+
+    private void ApplyOverview(RestoreStatusResponseDto bundled) => _pending = bundled.Pending;
 
     private void OnFileSelected(InputFileChangeEventArgs e)
     {
@@ -159,6 +180,7 @@
             if (!string.IsNullOrEmpty(_password))
                 content.Add(new StringContent(_password), "password");
 
+            State.NoteOwnWrite("backup");
             var response = await Http.PostAsync("api/backup/restore", content);
             if (response.IsSuccessStatusCode)
             {
@@ -214,6 +236,7 @@
     {
         try
         {
+            State.NoteOwnWrite("backup");
             var response = await Http.PostAsync("api/backup/restore/cancel", null);
             if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
@@ -232,6 +255,7 @@
     {
         try
         {
+            State.NoteOwnWrite("backup");
             var response = await Http.PostAsync("api/backup/restore/restart", null);
             if (response.IsSuccessStatusCode)
             {

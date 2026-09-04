@@ -177,7 +177,46 @@
         _sessionsTask = State.GetSessionsAsync();
         _remoteTimerTask = RefreshRemoteTimerAsync();
         _settingsTask = State.GetSettingsAsync();
+
+        // Live updates (change stream): only the session banner and the remote-timer banner react
+        // here - the running timer/mode/wake lock/everything else on this page is untouched.
+        State.OnSessionsChanged += OnSessionsChangedLive;
+        State.OnServerChanged += OnServerChangedLive;
         return Task.CompletedTask;
+    }
+
+    /// <summary>Re-derives just the session banner (_activeSession/_upcomingSession) from the
+    /// freshly-synced session cache - mirrors the computation in OnTextLoadedAsync but never
+    /// touches the timer, mode, wake lock or anything else on this page.</summary>
+    private void OnSessionsChangedLive() => InvokeAsync(async () =>
+    {
+        try
+        {
+            var sessions = await State.GetSessionsAsync();
+            var now = DateTime.Now;
+            _activeSession = sessions.FirstOrDefault(s => !s.IsCompleted && s.StartTime <= now && s.EndTime >= now);
+            _upcomingSession = sessions
+                .Where(s => !s.IsCompleted && s.StartTime > now)
+                .OrderBy(s => s.StartTime)
+                .FirstOrDefault();
+        }
+        catch { /* background refresh failed - keep showing the last known banner state */ }
+        StateHasChanged();
+    });
+
+    /// <summary>"Timer running on another device" banner: on a "timerstate" change (another
+    /// device started/stopped/updated its timer), re-run the same fetch-and-apply
+    /// RefreshRemoteTimerAsync already uses at load time - a faster path alongside the existing
+    /// 30s ticker poll (OnRemoteTickAsync), which stays as the fallback/cadence for a device that
+    /// only starts while this page has been open a while.</summary>
+    private void OnServerChangedLive(string? kind)
+    {
+        if (kind != "timerstate") return;
+        _ = InvokeAsync(async () =>
+        {
+            try { await RefreshRemoteTimerAsync(); } catch { /* best-effort, banner is purely cosmetic */ }
+            StateHasChanged();
+        });
     }
 
     protected override async Task OnTextLoadedAsync()
@@ -650,7 +689,12 @@
         }
         // Refetch cadence: every 30s (even WITHOUT a visible banner, otherwise a start on
         // device A would never be noticed); immediately once the displayed phase ends.
-        if (++_remoteTickCount % 30 == 0 || (bannerVisible && _remoteSecondsLeft == 0))
+        // The 30 s refetch is only needed while no change stream is connected - with a stream
+        // the server announces every timer write (kind "timerstate", see OnServerChangedLive).
+        // The refetch when the banner's countdown hits zero stays: that is local timing, not a
+        // server change.
+        var periodicDue = ++_remoteTickCount % 30 == 0 && !State.ChangeStreamConnected;
+        if (periodicDue || (bannerVisible && _remoteSecondsLeft == 0))
             await RefreshRemoteTimerAsync();
         if (bannerVisible || _remoteTimer != null) StateHasChanged();
     }
@@ -664,6 +708,8 @@
         Timer.OnPaused -= OnTimerPaused;
         Timer.OnModeChanged -= OnModeChangedFromService;
         Timer.OnFocusMilestone -= OnFocusMilestone;
+        State.OnSessionsChanged -= OnSessionsChangedLive;
+        State.OnServerChanged -= OnServerChangedLive;
         // Conservative: release even if the (app-scoped) timer keeps running after
         // navigating away — the screen may sleep, which is acceptable off this page.
         ReleaseWakeLock();

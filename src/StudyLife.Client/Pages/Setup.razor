@@ -3,6 +3,7 @@
 @using StudyLife.Client.Services
 @using StudyLife.Shared
 @inherits LocalizedComponentBase<I18nText.SetupText>
+@implements IDisposable
 @inject AppStateService State
 @inject NotificationService NotificationSvc
 @inject HttpClient Http
@@ -561,7 +562,63 @@
         _overviewTask = FetchOverviewAsync();
         _settingsTask = State.FetchSettingsFromServerAsync();
         _notifStatusTask = NotificationSvc.GetPermissionStatusAsync();
+        State.OnServerChanged += OnServerChanged;
         return Task.CompletedTask;
+    }
+
+    // Kinds that can change something THIS page (or one of its cards) shows, coming from another
+    // device or an add-on - see ChangeBroadcastFilter for how the server derives them from the
+    // route. "sessions" has its own dedicated event elsewhere and is never shown here, so it's
+    // deliberately not in this set - anything not in the set (and not null) is ignored.
+    private static readonly HashSet<string> OverviewRefreshKinds = new(StringComparer.Ordinal)
+    {
+        "settings", "system", "auth", "webhooks", "backup", "coursegoals", "studyprograms",
+    };
+
+    private bool _overviewRefreshDirty;
+    private int _overviewRefreshPending;
+
+    /// <summary>
+    /// AppStateService.OnServerChanged handler: null means "something changed, unknown what" (a
+    /// missed frame after a reconnect) - treated the same as any kind in OverviewRefreshKinds,
+    /// since there's no way to tell whether it affected this page. Own writes are already
+    /// filtered out upstream by AppStateService's 5s NoteOwnWrite window, so every call here
+    /// really is another device/add-on.
+    /// </summary>
+    private void OnServerChanged(string? kind)
+    {
+        if (kind is not null && !OverviewRefreshKinds.Contains(kind)) return;
+        _ = RefreshOverviewCoalescedAsync();
+    }
+
+    /// <summary>
+    /// Re-fetches the overview bundle and re-applies it - coalesced the same way
+    /// AppStateService.RefreshCoalescedAsync is: at most one fetch runs at a time, and a signal
+    /// that arrives while one is already in flight just marks it dirty for one more pass instead
+    /// of starting a second, overlapping fetch (several kinds commonly arrive within the same
+    /// second after a single user action elsewhere, e.g. revoking a client key also bumps the
+    /// generic sequence).
+    /// </summary>
+    private async Task RefreshOverviewCoalescedAsync()
+    {
+        _overviewRefreshDirty = true;
+        if (Interlocked.Exchange(ref _overviewRefreshPending, 1) == 1) return;
+        try
+        {
+            while (_overviewRefreshDirty)
+            {
+                _overviewRefreshDirty = false;
+                var overview = await FetchOverviewAsync();
+                if (overview is null) continue; // offline/older server: keep showing the current bundle
+                await InvokeAsync(async () =>
+                {
+                    _overview = overview; // new instance -> the CascadingValue re-renders every card
+                    await ApplyOverviewToPage(overview);
+                    StateHasChanged();
+                });
+            }
+        }
+        finally { Interlocked.Exchange(ref _overviewRefreshPending, 0); }
     }
 
     // GET-only, side-effect-free bundle of this page's other read-only fetches - see
@@ -581,33 +638,7 @@
         // already carries its final value by the time ANY card first renders - see the fields'
         // comment on _overview.
         _overview = await _overviewTask!;
-        if (_overview?.Capabilities is { } bundledCaps)
-        {
-            _rawBackupSupported = bundledCaps.RawBackupSupported;
-        }
-        else
-        {
-            try
-            {
-                // Deliberately JsonDocument instead of GetFromJsonAsync<T>: the native app (MAUI,
-                // separate repo) links the client with IL trimming - reflection deserialization into a
-                // type only used here can be optimized away there and would end up as an exception in
-                // the catch, which would make the fail-open show the cards incorrectly.
-                // Cache-buster query: servers before 1.22 answered this path via the SPA
-                // fallback with 200+index.html WITHOUT cache headers - HTTP caches (especially the
-                // native app's NSURLCache, which survives reinstalls) were allowed to cache that
-                // heuristically and then permanently served HTML instead of JSON. A fresh query URL
-                // reliably bypasses any such stale entry on every HTTP stack.
-                using var capsResponse = await Http.GetAsync($"api/system/capabilities?nocache={DateTime.UtcNow.Ticks}");
-                if (capsResponse.IsSuccessStatusCode)
-                {
-                    using var caps = System.Text.Json.JsonDocument.Parse(
-                        await capsResponse.Content.ReadAsStringAsync());
-                    _rawBackupSupported = caps.RootElement.GetProperty("rawBackupSupported").GetBoolean();
-                }
-            }
-            catch { /* fail-open, see above */ }
-        }
+        await ApplyOverviewCapabilities(_overview);
         _settings = await _settingsTask!;
         _customModes = CustomTimerModes.Parse(_settings.CustomTimerModes);
         _allCourses = await State.GetCoursesAsync();
@@ -620,7 +651,62 @@
         // ── Phase 2: secondary extras - none of these gate the cards above, they just fill in
         // their own (smaller) cards a moment later (programme selector, notification card,
         // calendar subscription card).
-        if (_overview?.StudyPrograms is { } bundledPrograms)
+        _notifStatus = await _notifStatusTask!;
+        await ApplyOverviewSecondary(_overview);
+
+        _secondaryLoading = false;
+        await RenderPhaseAsync();
+    }
+
+    /// <summary>
+    /// Applies the Capabilities section of the setup overview bundle (or falls back to its own
+    /// request when the bundle doesn't have it) - the "rawBackupSupported" flag that gates the
+    /// backup/restore cards. Kept separate from <see cref="ApplyOverviewSecondary"/> so the
+    /// initial load can apply it as part of Phase 1 (it gates markup guarded by _settingsLoading,
+    /// not _secondaryLoading, so it must be ready before that flag flips) - a live refresh
+    /// (RefreshOverviewCoalescedAsync) applies both in one call via
+    /// <see cref="ApplyOverviewToPage"/> instead, since there is no phase boundary to preserve there.
+    /// </summary>
+    private async Task ApplyOverviewCapabilities(SetupOverviewDto? overview)
+    {
+        if (overview?.Capabilities is { } bundledCaps)
+        {
+            _rawBackupSupported = bundledCaps.RawBackupSupported;
+            return;
+        }
+        try
+        {
+            // Deliberately JsonDocument instead of GetFromJsonAsync<T>: the native app (MAUI,
+            // separate repo) links the client with IL trimming - reflection deserialization into a
+            // type only used here can be optimized away there and would end up as an exception in
+            // the catch, which would make the fail-open show the cards incorrectly.
+            // Cache-buster query: servers before 1.22 answered this path via the SPA
+            // fallback with 200+index.html WITHOUT cache headers - HTTP caches (especially the
+            // native app's NSURLCache, which survives reinstalls) were allowed to cache that
+            // heuristically and then permanently served HTML instead of JSON. A fresh query URL
+            // reliably bypasses any such stale entry on every HTTP stack.
+            using var capsResponse = await Http.GetAsync($"api/system/capabilities?nocache={DateTime.UtcNow.Ticks}");
+            if (capsResponse.IsSuccessStatusCode)
+            {
+                using var caps = System.Text.Json.JsonDocument.Parse(
+                    await capsResponse.Content.ReadAsStringAsync());
+                _rawBackupSupported = caps.RootElement.GetProperty("rawBackupSupported").GetBoolean();
+            }
+        }
+        catch { /* fail-open, see above */ }
+    }
+
+    /// <summary>
+    /// Applies the programme list / calendar token / app version / course goals sections of the
+    /// setup overview bundle, each falling back to its own request exactly as before this bundle
+    /// existed when the corresponding section is null. Shared by the initial load
+    /// (OnTextLoadedAsync, Phase 2) and by a live refresh (RefreshOverviewCoalescedAsync, via
+    /// <see cref="ApplyOverviewToPage"/>) - deliberately never touches _settings itself, only the
+    /// page-level values that come from the bundle.
+    /// </summary>
+    private async Task ApplyOverviewSecondary(SetupOverviewDto? overview)
+    {
+        if (overview?.StudyPrograms is { } bundledPrograms)
         {
             _programs = bundledPrograms;
             // Keeps GetJsonCachedAsync's own offline fallback warm for other pages/navigations
@@ -641,11 +727,11 @@
         }
         if (_programs.Count == 0)
             _programs = new() { new StudyProgramSummaryDto { Id = null, Name = _settings.DefaultProgramme, IsBuiltIn = true } };
-        _notifStatus = await _notifStatusTask!;
+
         // Session-authenticated, only set when a token already exists (see SetupOverviewDto's
         // CalendarToken doc) - a user who has never subscribed yet still falls back to GET
         // api/system/calendar-token below, which lazily creates one.
-        string? calendarToken = _overview?.CalendarToken;
+        string? calendarToken = overview?.CalendarToken;
         if (calendarToken is null)
         {
             try
@@ -666,7 +752,8 @@
         // with that couldn't be fetched by any calendar client in the world.
         _icsUrl = $"{Http.BaseAddress}api/sessions/ics";
         if (!string.IsNullOrEmpty(calendarToken)) _icsUrl += $"?calendarToken={calendarToken}";
-        if (_overview?.Version is { } bundledVersion)
+
+        if (overview?.Version is { } bundledVersion)
         {
             _appVersion = bundledVersion.Version;
         }
@@ -682,8 +769,9 @@
             catch { /* offline/network error: version line simply stays empty */ }
         }
         DetectClientVersion();
+
         List<CourseGoalDto> goals;
-        if (_overview?.CourseGoals is { } bundledGoals)
+        if (overview?.CourseGoals is { } bundledGoals)
         {
             goals = bundledGoals;
             await State.StoreReadCacheAsync("studylife-cache-v2:api/coursegoals", goals);
@@ -693,9 +781,16 @@
             goals = await State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals") ?? new();
         }
         _goals = goals.ToDictionary(g => g.CourseId);
+    }
 
-        _secondaryLoading = false;
-        await RenderPhaseAsync();
+    /// <summary>Everything a live refresh (RefreshOverviewCoalescedAsync) re-applies from a
+    /// freshly re-fetched bundle: capabilities, programme list, calendar URL, app version and
+    /// course goals - never _settings itself (settings edits keep their own flow, see
+    /// State.OnSettingsChanged).</summary>
+    private async Task ApplyOverviewToPage(SetupOverviewDto overview)
+    {
+        await ApplyOverviewCapabilities(overview);
+        await ApplyOverviewSecondary(overview);
     }
 
     private async Task LoadProgramsAsync()
@@ -736,6 +831,7 @@
     private async Task ToggleProgramCompleted()
     {
         if (ActiveProgram is not { Id: int id } program) return;
+        State.NoteOwnWrite("studyprograms");
         var response = await Http.PutAsJsonAsync($"api/studyprograms/{id}/completed",
             new SetStudyProgramCompletedDto { IsCompleted = !program.IsCompleted });
         if (response.IsSuccessStatusCode)
@@ -756,6 +852,7 @@
         _confirmingDeleteProgram = false;
         if (ActiveProgram is not { Id: int id }) return;
 
+        State.NoteOwnWrite("studyprograms");
         var response = await Http.DeleteAsync($"api/studyprograms/{id}");
         if (!response.IsSuccessStatusCode) return;
 
@@ -800,6 +897,7 @@
         StateHasChanged();
         try
         {
+            State.NoteOwnWrite("system");
             var response = await Http.PostAsync("api/system/regenerate-calendar-token", null);
             if (!response.IsSuccessStatusCode) return;
             var dto = await response.Content.ReadFromJsonAsync<RegenerateCalendarTokenResponseDto>();
@@ -848,6 +946,7 @@
     {
         try
         {
+            State.NoteOwnWrite("coursegoals");
             var response = await Http.PutAsJsonAsync($"api/coursegoals/{goal.CourseId}", goal);
             if (response.IsSuccessStatusCode)
             {
@@ -1022,5 +1121,10 @@
         await Task.Delay(2000);
         _saved = false;
         StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        State.OnServerChanged -= OnServerChanged;
     }
 }

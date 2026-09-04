@@ -1,5 +1,7 @@
 @using StudyLife.Shared
+@using StudyLife.Client.Services
 @inject HttpClient Http
+@inject AppStateService State
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
 @* Long-lived per-user API key for the studylife-developers portal - a SEPARATE slot
@@ -76,13 +78,18 @@
     private bool _reconnectSuccess;
     private bool _confirmingDisable;
 
+    // The Overview instance last applied to this card's fields - lets OnParametersSet tell a
+    // genuinely new bundle (another device/add-on changed something) apart from an unrelated
+    // re-render of the parent that hands down the same cascaded instance again.
+    private SetupOverviewDto? _appliedOverview;
+
     protected override async Task OnInitializedAsync()
     {
         if (OverviewTask is not null) Overview = await OverviewTask;
         T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
         if (Overview?.DeveloperApiKey is { } bundled)
         {
-            _hasKey = bundled.HasKey;
+            ApplyOverview(bundled);
             return;
         }
         try
@@ -93,11 +100,25 @@
         catch { /* offline: card shows the "disabled" default */ }
     }
 
+    /// <summary>Live refresh: re-applies this card's section from a freshly re-fetched bundle,
+    /// but only while nothing is in flight here - a background refresh must never overwrite an
+    /// enable/disable/reconnect the user just triggered.</summary>
+    protected override void OnParametersSet()
+    {
+        if (Overview is null || ReferenceEquals(Overview, _appliedOverview)) return;
+        _appliedOverview = Overview;
+        if (_busy || _reconnecting || _confirmingDisable) return;
+        if (Overview.DeveloperApiKey is { } bundled) ApplyOverview(bundled);
+    }
+
+    private void ApplyOverview(DeveloperApiKeyStatusDto bundled) => _hasKey = bundled.HasKey;
+
     private async Task Enable()
     {
         _busy = true;
         try
         {
+            State.NoteOwnWrite("settings");
             var response = await Http.PostAsync("api/settings/developer-api-key/generate", null);
             if (response.IsSuccessStatusCode) _hasKey = true;
         }
@@ -111,6 +132,7 @@
         StateHasChanged();
         try
         {
+            State.NoteOwnWrite("settings");
             var response = await Http.PostAsync("api/settings/developer-api-key/generate", null);
             if (response.IsSuccessStatusCode)
             {
@@ -135,6 +157,7 @@
         _busy = true;
         try
         {
+            State.NoteOwnWrite("settings");
             var response = await Http.PostAsync("api/settings/developer-api-key/revoke", null);
             if (response.IsSuccessStatusCode) _hasKey = false;
         }

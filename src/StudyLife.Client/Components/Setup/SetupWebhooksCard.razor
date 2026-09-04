@@ -1,6 +1,8 @@
 @using StudyLife.Shared
+@using StudyLife.Client.Services
 @inject HttpClient Http
 @inject IJSRuntime JS
+@inject AppStateService State
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
 @* Long-lived, NAMED API keys for studylife-webhooks (see WebhookApiKeyEntity): unlike every
@@ -89,6 +91,11 @@
     private bool _busy;
     private int? _confirmingRevokeId;
 
+    // The Overview instance last applied to this card's fields - lets OnParametersSet tell a
+    // genuinely new bundle (another device/add-on changed something) apart from an unrelated
+    // re-render of the parent that hands down the same cascaded instance again.
+    private SetupOverviewDto? _appliedOverview;
+
     protected override async Task OnInitializedAsync()
     {
         if (OverviewTask is not null) Overview = await OverviewTask;
@@ -105,12 +112,25 @@
         catch { /* offline: card shows an empty list */ }
     }
 
+    /// <summary>Live refresh: re-applies the key list from a freshly re-fetched bundle, but only
+    /// while nothing is in flight here (create/revoke, or the revoke confirmation modal) - a
+    /// background refresh must never overwrite the name the user is typing or hide a key just
+    /// generated (_generatedKey is never touched by this).</summary>
+    protected override void OnParametersSet()
+    {
+        if (Overview is null || ReferenceEquals(Overview, _appliedOverview)) return;
+        _appliedOverview = Overview;
+        if (_busy || _confirmingRevokeId is not null) return;
+        if (Overview.WebhookApiKeys is { } bundled) _keys = bundled;
+    }
+
     private async Task Generate()
     {
         if (string.IsNullOrWhiteSpace(_newKeyName)) return;
         _busy = true;
         try
         {
+            State.NoteOwnWrite("settings");
             var response = await Http.PostAsJsonAsync("api/settings/webhooks-api-keys",
                 new CreateWebhookApiKeyRequestDto { Name = _newKeyName.Trim() });
             if (response.IsSuccessStatusCode)
@@ -133,6 +153,7 @@
         _busy = true;
         try
         {
+            State.NoteOwnWrite("settings");
             var response = await Http.DeleteAsync($"api/settings/webhooks-api-keys/{id}");
             if (response.IsSuccessStatusCode)
                 _keys.RemoveAll(k => k.Id == id);
