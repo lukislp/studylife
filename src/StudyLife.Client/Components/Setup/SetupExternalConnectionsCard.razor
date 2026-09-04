@@ -93,6 +93,9 @@
 @code {
     private I18nText.SetupText T = new();
 
+    [CascadingParameter]
+    public SetupOverviewDto? Overview { get; set; }
+
     private bool _mcpConnected;
     private bool _captureConnected;
     private bool _focusGuardConnected;
@@ -109,41 +112,89 @@
     protected override async Task OnInitializedAsync()
     {
         T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
-        try
+
+        if (Overview?.ClientKeys is { } bundledClientKeys)
         {
-            _clientKeys = await Http.GetFromJsonAsync<List<ClientApiKeyListItemDto>>("api/auth/client-keys") ?? new();
+            _clientKeys = bundledClientKeys;
         }
-        catch { /* offline: no add-on rows */ }
-        try
+        else
         {
-            var mcpStatus = await Http.GetFromJsonAsync<McpApiKeyStatusDto>("api/settings/mcp-api-key");
-            _mcpConnected = mcpStatus?.HasKey ?? false;
+            try
+            {
+                _clientKeys = await Http.GetFromJsonAsync<List<ClientApiKeyListItemDto>>("api/auth/client-keys") ?? new();
+            }
+            catch { /* offline: no add-on rows */ }
         }
-        catch { /* offline: card shows the "not connected" default */ }
-        try
+
+        if (Overview?.McpApiKey is { } bundledMcp)
         {
-            var captureStatus = await Http.GetFromJsonAsync<CaptureApiKeyStatusDto>("api/settings/capture-api-key");
-            _captureConnected = captureStatus?.HasKey ?? false;
+            _mcpConnected = bundledMcp.HasKey;
         }
-        catch { /* offline: card shows the "not connected" default */ }
-        try
+        else
         {
-            var focusGuardStatus = await Http.GetFromJsonAsync<FocusGuardApiKeyStatusDto>("api/settings/focusguard-api-key");
-            _focusGuardConnected = focusGuardStatus?.HasKey ?? false;
+            try
+            {
+                var mcpStatus = await Http.GetFromJsonAsync<McpApiKeyStatusDto>("api/settings/mcp-api-key");
+                _mcpConnected = mcpStatus?.HasKey ?? false;
+            }
+            catch { /* offline: card shows the "not connected" default */ }
         }
-        catch { /* offline: card shows the "not connected" default */ }
-        try
+
+        if (Overview?.CaptureApiKey is { } bundledCapture)
         {
-            var focusTunesStatus = await Http.GetFromJsonAsync<FocusTunesApiKeyStatusDto>("api/settings/focustunes-api-key");
-            _focusTunesConnected = focusTunesStatus?.HasKey ?? false;
+            _captureConnected = bundledCapture.HasKey;
         }
-        catch { /* offline: card shows the "not connected" default */ }
-        try
+        else
         {
-            var trayStatus = await Http.GetFromJsonAsync<TrayApiKeyStatusDto>("api/settings/tray-api-key");
-            _trayConnected = trayStatus?.HasKey ?? false;
+            try
+            {
+                var captureStatus = await Http.GetFromJsonAsync<CaptureApiKeyStatusDto>("api/settings/capture-api-key");
+                _captureConnected = captureStatus?.HasKey ?? false;
+            }
+            catch { /* offline: card shows the "not connected" default */ }
         }
-        catch { /* offline: card shows the "not connected" default */ }
+
+        if (Overview?.FocusGuardApiKey is { } bundledFocusGuard)
+        {
+            _focusGuardConnected = bundledFocusGuard.HasKey;
+        }
+        else
+        {
+            try
+            {
+                var focusGuardStatus = await Http.GetFromJsonAsync<FocusGuardApiKeyStatusDto>("api/settings/focusguard-api-key");
+                _focusGuardConnected = focusGuardStatus?.HasKey ?? false;
+            }
+            catch { /* offline: card shows the "not connected" default */ }
+        }
+
+        if (Overview?.FocusTunesApiKey is { } bundledFocusTunes)
+        {
+            _focusTunesConnected = bundledFocusTunes.HasKey;
+        }
+        else
+        {
+            try
+            {
+                var focusTunesStatus = await Http.GetFromJsonAsync<FocusTunesApiKeyStatusDto>("api/settings/focustunes-api-key");
+                _focusTunesConnected = focusTunesStatus?.HasKey ?? false;
+            }
+            catch { /* offline: card shows the "not connected" default */ }
+        }
+
+        if (Overview?.TrayApiKey is { } bundledTray)
+        {
+            _trayConnected = bundledTray.HasKey;
+        }
+        else
+        {
+            try
+            {
+                var trayStatus = await Http.GetFromJsonAsync<TrayApiKeyStatusDto>("api/settings/tray-api-key");
+                _trayConnected = trayStatus?.HasKey ?? false;
+            }
+            catch { /* offline: card shows the "not connected" default */ }
+        }
     }
 
     private async Task DisconnectMcp()

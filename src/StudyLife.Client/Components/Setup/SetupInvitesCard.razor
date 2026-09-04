@@ -68,6 +68,10 @@
 
 @code {
     private I18nText.SetupText T = new();
+
+    [CascadingParameter]
+    public SetupOverviewDto? Overview { get; set; }
+
     private readonly List<InviteListItemDto> _invites = new();
     private bool _loading;
     private bool _busy;
@@ -79,6 +83,14 @@
     protected override async Task OnInitializedAsync()
     {
         T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
+        // Non-null (even an empty list) only for an owner session - see SetupOverviewDto.Invites.
+        // A later reload (after Generate/RevokeAsync) always goes through LoadAsync's own fetch.
+        if (Overview?.Invites is { } bundled)
+        {
+            _invites.Clear();
+            _invites.AddRange(bundled);
+            return;
+        }
         await LoadAsync();
     }
 
