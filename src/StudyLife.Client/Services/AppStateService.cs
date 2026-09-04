@@ -1331,7 +1331,10 @@ public class AppStateService : IAsyncDisposable
         RecurrenceGroupId = d.RecurrenceGroupId,
     };
 
-    private static StudySessionDto ToDto(StudySession s) => new()
+    /// <summary>Public so the dashboard can hand its cached client-model sessions to the
+    /// shared DashboardSummaryBuilder, which only ever sees Shared types (so the server can call
+    /// the exact same code).</summary>
+    public static StudySessionDto ToDto(StudySession s) => new()
     {
         Id = s.Id,
         CourseId = s.CourseId,
@@ -1389,7 +1392,8 @@ public class AppStateService : IAsyncDisposable
         ProgressShareToken = d.ProgressShareToken,
     };
 
-    private static UserSettingsDto ToDto(UserSettings s) => new()
+    /// <summary>Public for the same reason as the session overload above.</summary>
+    public static UserSettingsDto ToDto(UserSettings s) => new()
     {
         Version = s.Version, // always sent - see UserSettingsDto.Version and SaveSettingsAsync
         SelectedCourseIds = s.SelectedCourseIds,

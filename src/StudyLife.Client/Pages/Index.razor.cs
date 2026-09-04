@@ -9,10 +9,6 @@ namespace StudyLife.Client.Pages;
 
 public partial class Index
 {
-    /// <summary>One point of the weekly-trend chart data. Record struct instead of a plain value
-    /// tuple - see the trendData comment in LoadDataAsync for why.</summary>
-    private readonly record struct WeekTrendPoint(DateTime Start, double Hours);
-
     private string _greeting = "";
     private string _motivation = "";
     private List<StudySession> _todaySessions = new();
@@ -21,13 +17,11 @@ public partial class Index
     private List<CourseDto> _courses = new();
     private Dictionary<int, string?> _courseTags = new();
     // Countdown badge next to the course pills: days until CourseGoalDto.TargetDate, only for
-    // courses with a goal within the next CourseDeadlineCutoffDays - more distant dates aren't
-    // actionable yet and would just clutter the course list (same fetch as _upcomingGoals,
-    // no extra request). Deliberately UNCAPPED at the low end (negative days = overdue, like
-    // DashboardUpcomingGoalsCard) - an elapsed target date without a recorded grade shouldn't
-    // silently disappear from the course list just because it's "too old".
+    // courses with a goal within the next DashboardSummaryBuilder.CourseDeadlineCutoffDays (same
+    // fetch as _upcomingGoals, no extra request). Deliberately UNCAPPED at the low end (negative
+    // days = overdue, like DashboardUpcomingGoalsCard) - an elapsed target date without a
+    // recorded grade shouldn't silently disappear from the course list just because it's "too old".
     private Dictionary<int, int> _courseDeadlineDays = new();
-    private const int CourseDeadlineCutoffDays = 60;
     private int _weekSessions;
     private string _weekHours = "0h";
     private int _streak;
@@ -91,10 +85,10 @@ public partial class Index
     private string FocusScoreRatioText => string.Format(T.FocusScoreRatioFormat ?? "", _focusScoreStudied, _focusScorePlanned);
 
     // Forecast text lives inside DashboardProgressCard (Phase 3/goals group), but its value
-    // (_forecastAvailable/_forecastAlreadyDone) is only computed in BuildForecast during Phase 5
-    // (needs _allTimeHistory) - without this guard the card would show "not enough data" for
-    // every user between those two phases, a wrong value that then flips to the real forecast
-    // (exactly what the progressive-render rework must avoid).
+    // (_forecastAvailable/_forecastAlreadyDone) is only computed in Phase 5 (needs the all-time
+    // history) - without this guard the card would show "not enough data" for every user between
+    // those two phases, a wrong value that then flips to the real forecast (exactly what the
+    // progressive-render rework must avoid).
     private string ForecastText => _achievementsLoading
         ? "…"
         : _forecastAlreadyDone
@@ -119,7 +113,7 @@ public partial class Index
     private string _todayHoursLabel = "0h";
     private string _dailyTargetLabel = "0h";
     // True once today's studied hours reach/exceed the daily target - drives the gold ring color
-    // shift in DashboardTodayRingCard (Task 5). RingPercent itself stays capped at 100 (it's an angle).
+    // shift in DashboardTodayRingCard. RingPercent itself stays capped at 100 (it's an angle).
     private bool _todayRingExceeded;
 
     // Week-over-week delta
@@ -129,23 +123,15 @@ public partial class Index
     // Recently completed sessions
     private List<StudySession> _recentSessions = new();
 
-    // Shared long-range history for everything that looks further back than the ±7/90-day
-    // AppStateService cache covers (month quota, 8-week trend, streak, recent sessions, mini-donut,
-    // neglected-course) - see /api/sessions/history. `sessions` (AppStateService) stays the source for
-    // near-term data (today/active/upcoming), which it already covers correctly.
-    private const int HistoryDays = 400;
-
-    // Shared all-time fetch used by BuildAchievements and BuildMonthComparison, so both get the
-    // ~10-year lookback without firing two separate requests for it. Gated by refreshHeavyHistory
-    // (only true reloads triggered by session changes) and by _lastHeavyFetchAt below, since settings-only
-    // changes (e.g. a theme switch) and rapid-fire session edits shouldn't each re-run this ~10-year fetch.
-    // _allTimeHistoryRaw = unfiltered fetch cache (all programmes); _allTimeHistory = the
-    // view cheaply re-filtered from it on every reload, scoped to the ACTIVE programme,
-    // that BuildAchievements/BuildMonthComparison/BuildBestRecords/BuildForecast consume. The
-    // separation exists so a programme switch (settings-only reload) can change the scope
-    // without re-triggering the ~10-year fetch or permanently narrowing the cache.
+    // Shared all-time fetch used by the achievements/month-comparison/best-record/forecast tiles,
+    // so all four get the ~10-year lookback without firing separate requests for it. Gated by
+    // refreshHeavyHistory (only true reloads triggered by session changes) and by
+    // _lastHeavyFetchAt below, since settings-only changes (e.g. a theme switch) and rapid-fire
+    // session edits shouldn't each re-run this ~10-year fetch. This field is the unfiltered fetch
+    // cache (all programmes); DashboardSummaryBuilder re-scopes it to the ACTIVE programme on
+    // every build, so a programme switch (settings-only reload) can change the scope without
+    // re-triggering the fetch or permanently narrowing the cache.
     private List<StudySessionDto> _allTimeHistoryRaw = new();
-    private List<StudySessionDto> _allTimeHistory = new();
     private DateTime _lastHeavyFetchAt = DateTime.MinValue;
     private static readonly TimeSpan HeavyFetchThrottle = TimeSpan.FromMinutes(5);
 
@@ -167,7 +153,6 @@ public partial class Index
     private bool _showBackupStalenessHint;
     private bool _backupNeverDownloaded;
     private int _daysSinceLastBackup;
-    private const int BackupStalenessThresholdDays = 45;
     // Only the first registered user (owner of the installation) may use the raw .db download
     // this hint links to (BackupController.IsOwnerAsync) - for all other
     // users, LastBackupDownloadAt stays null forever, so the hint would permanently nudge toward an
@@ -278,10 +263,64 @@ public partial class Index
         // fetch (GET api/sessions/history, ~500ms measured on a phone) has returned. The tasks
         // themselves already started above/below regardless of phase order, so this only changes
         // WHEN each result is awaited/rendered, never what is fetched.
+        //
+        // Every number below comes from DashboardSummaryBuilder (StudyLife.Shared), which the
+        // server can run against the same inputs - this method only fetches, hands the raw inputs
+        // over, and copies the result into the fields the markup binds to. The builder is called
+        // once per phase (rather than once for everything) precisely so those phase boundaries
+        // survive: a single call would have to wait for the ~10-year history before showing
+        // anything at all.
         var settingsTask = State.GetSettingsAsync();
         var coursesTask = State.GetCoursesAsync();
+        var hrvTask = Health.IsAvailable ? Health.GetRecentHrvAsync(30) : Task.FromResult<IReadOnlyList<double>?>(null);
+        var sleepNightsTask = Health.IsAvailable ? Health.GetRecentSleepNightsAsync(30) : Task.FromResult<IReadOnlyList<SleepNight>?>(null);
+        // One wall-clock read for the whole build: the server runs DashboardSummaryBuilder with
+        // exactly this instant, so its numbers equal what the fallback below would compute here.
+        var now = DateTime.Now;
+        // Server path (2026-09): GET api/dashboard/summary returns the complete builder output in
+        // one small response instead of the six raw fetches (sessions, two history windows,
+        // goals, programmes, notes - up to ~1.5 MB and dozens of LINQ passes in WASM for an older
+        // account). Started alongside settings/courses so phase 1 still paints as early as before.
+        var summaryTask = TryFetchSummaryAsync(now);
+
+        // ── Phase 1: cheapest prerequisites - settings + courses. Everything below depends on at
+        // least one of these two, so this is the earliest the page can show anything real (the
+        // course list itself, plus the active-programme scope needed by every later computation).
+        var settings = await settingsTask;
+        var allCourses = await coursesTask;
+        var settingsDto = AppStateService.ToDto(settings);
+        _courses = DashboardSummaryBuilder.BuildCourseList(settingsDto, allCourses);
+        await InvokeAsync(StateHasChanged);
+
+        var summary = await summaryTask;
+        if (summary != null)
+        {
+            // Same phase boundaries as the fallback below, so the tiles appear in the same order
+            // and the loading flags keep their meaning - only the data now comes in one piece.
+            ApplySessionsSummary(summary.Sessions);
+            _sessionsLoading = false;
+            await InvokeAsync(StateHasChanged);
+
+            ApplyGoalsSummary(summary.Goals);
+            _goalsLoading = false;
+            await InvokeAsync(StateHasChanged);
+
+            BuildReadinessScore(await hrvTask);
+            BuildSleepConsistency(await sleepNightsTask);
+            _healthLoading = false;
+            await InvokeAsync(StateHasChanged);
+
+            ApplyProgressSummary(summary.Progress);
+            _achievementsLoading = false;
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        // ── Fallback: raw fetches + the same builder locally. Reached offline (AppStateService
+        // serves its read caches) or against a server without api/dashboard/summary. The fetches
+        // start here rather than at the top so the server path never issues them.
         var sessionsTask = State.GetSessionsAsync();
-        var historyTask = State.GetHistoryAsync(HistoryDays, onlyCompleted: false);
+        var historyTask = State.GetHistoryAsync(DashboardSummaryBuilder.HistoryDays, onlyCompleted: false);
         var isDemoTask = State.GetIsDemoAsync();
         // Same capability flag Setup.razor already uses to hide the raw-backup UI on Postgres
         // (SetupBackupCard/SetupRestoreCard) - the dashboard staleness hint below needs it too
@@ -291,309 +330,60 @@ public partial class Index
         var goalsTask = State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals");
         var groupQuotasTask = State.GetActiveGroupQuotasAsync();
         var studyProgramsTask = State.GetJsonCachedAsync<List<StudyProgramSummaryDto>>("api/studyprograms");
-        var hrvTask = Health.IsAvailable ? Health.GetRecentHrvAsync(30) : Task.FromResult<IReadOnlyList<double>?>(null);
-        var sleepNightsTask = Health.IsAvailable ? Health.GetRecentSleepNightsAsync(30) : Task.FromResult<IReadOnlyList<SleepNight>?>(null);
         var dueForHeavyRefresh = _lastHeavyFetchAt == DateTime.MinValue || DateTime.UtcNow - _lastHeavyFetchAt >= HeavyFetchThrottle;
         var heavyHistoryTask = refreshHeavyHistory && dueForHeavyRefresh
-            ? State.GetHistoryAsync(AchievementHistoryDays)
+            ? State.GetHistoryAsync(DashboardSummaryBuilder.AchievementHistoryDays)
             : null;
 
-        // ── Phase 1: cheapest prerequisites - settings + courses. Everything below depends on at
-        // least one of these two, so this is the earliest the page can show anything real (the
-        // course list itself, plus activeCourseIds needed to scope every later fetch).
-        var settings = await settingsTask;
-        var allCourses = await coursesTask;
-        _courses = allCourses.Where(c => settings.SelectedCourseIds.Contains(c.Id)).ToList();
-
-        // Active-programme scope: allCourses is already limited to the active programme
-        // (AppStateService.GetCoursesAsync), so this id set defines which sessions belong to "this"
-        // programme. ALL session-based tiles/charts below are filtered through it,
-        // so switching programmes also switches heatmap/weekly hours/streak & co. - not just
-        // the course list and ECTS. Custom course ids never collide with the built-in
-        // catalog (1-62) thanks to CustomCourseIdOffset (100000+), so the filter is unambiguous.
-        var activeCourseIds = allCourses.Select(c => c.Id).ToHashSet();
-        await InvokeAsync(StateHasChanged);
+        // The builder's input is filled in phase by phase, in the same order the page awaits its
+        // fetches - each phase only reads the fields its own group needs (see the phase methods).
+        var input = new DashboardSummaryInput
+        {
+            Settings = settingsDto,
+            AllCourses = allCourses,
+            IsOwner = _isOwner,
+        };
 
         // ── Phase 2: sessions/history-driven tiles (today/next session, week stats, quotas,
         // trend, today ring, recent sessions, donut, neglected course, insights, latest note).
-        // Also scope the near-term data (today/active/upcoming): a session from another
-        // programme showing up as "today's session" would be just as confusing as its history in the charts.
-        var sessions = (await sessionsTask).Where(s => activeCourseIds.Contains(s.CourseId)).ToList();
-        var today = DateTime.Today;
-        _todaySessions = sessions.Where(s => s.StartTime.Date == today).OrderBy(s => s.StartTime).ToList();
-
-        // Deliberately NOT State.GetActiveSessionAsync()/GetUpcomingSessionAsync(): those return the
-        // first matching session ACROSS ALL programmes; here the same logic runs on the scoped list,
-        // so e.g. "up next" shows the next session of THIS programme.
-        var nowForScope = DateTime.Now;
-        _activeSession = sessions.FirstOrDefault(s => !s.IsCompleted && s.StartTime <= nowForScope && s.EndTime >= nowForScope);
-        _upcomingSession = sessions.Where(s => !s.IsCompleted && s.StartTime > nowForScope).OrderBy(s => s.StartTime).FirstOrDefault();
-
-        // Long-range history (all sessions, not just completed - same semantics as the AppStateService
-        // cache, just further back) for anything that looks beyond the ±7/90-day window: month quota,
-        // 8-week trend, streak, recent sessions, mini-donut, neglected-course.
-        // historyAllPrograms stays unscoped for the inactivity nudge below; everything else uses
-        // `history`, filtered to the active programme.
-        var historyAllPrograms = await historyTask ?? new();
-        var history = historyAllPrograms.Where(s => activeCourseIds.Contains(s.CourseId)).ToList();
-        // "Studied" = timer-completed OR the scheduled time has simply passed - see StudyMetrics.IsStudied.
-        var now = DateTime.Now;
-        var completedHistory = history.Where(s => StudyMetrics.IsStudied(s, now)).ToList();
-
-        var weekStart = StudyMetrics.WeekStartOf(today);
-        var weekEnd = weekStart.AddDays(7);
-        var weekSessions = history.Where(s => s.StartTime.Date >= weekStart && s.StartTime.Date < weekEnd).ToList();
-        _weekSessions = weekSessions.Count;
-        var totalMinutes = weekSessions.Sum(s => (s.EndTime - s.StartTime).TotalMinutes);
-        _weekHours = $"{Math.Floor(totalMinutes / 60)}h{(totalMinutes % 60 > 0 ? $" {(int)(totalMinutes % 60)}m" : "")}";
-        _streak = StudyMetrics.CalcStreak(completedHistory.Select(s => s.StartTime), today);
-        _longestStreak = StudyMetrics.CalcLongestStreak(completedHistory.Select(s => s.StartTime));
-
-        // Focus score: today's plan adherence, studied (same "studied" definition as completedHistory
-        // above) vs. planned sessions today. Meaningless with zero planned sessions -> hide the card.
-        _focusScorePlanned = _todaySessions.Count;
-        _focusScoreStudied = _todaySessions.Count(s => s.IsCompleted || s.EndTime <= DateTime.Now);
-        _focusScoreVisible = _focusScorePlanned > 0;
-        _focusScorePercent = _focusScoreVisible ? Math.Min(100.0, _focusScoreStudied / (double)_focusScorePlanned * 100) : 0;
-
-        // Inactivity nudge deliberately UNSCOPED (historyAllPrograms): it mirrors the server-side
-        // InactivityReminderService, which is programme-agnostic - "have you studied at all?" shouldn't
-        // fire just because the last studying happened for a different programme.
-        var lastPastSession = historyAllPrograms.Where(s => s.StartTime <= DateTime.Now).OrderByDescending(s => s.StartTime).FirstOrDefault();
-        var inactivityThreshold = settings.InactivityThresholdDays > 0 ? settings.InactivityThresholdDays : 5;
-        if (lastPastSession == null)
-        {
-            _daysSinceLastSession = inactivityThreshold;
-            _showInactivityNudge = true;
-        }
-        else
-        {
-            _daysSinceLastSession = (today - lastPastSession.StartTime.Date).Days;
-            _showInactivityNudge = _daysSinceLastSession > inactivityThreshold;
-        }
-
-        // Backup staleness hint (manual offsite download, see field comment above) - only for
-        // the owner, see the _isOwner field comment. Suppressed on public demo instances:
-        // the demo user IS the owner and never has a backup timestamp, so the banner would
-        // permanently nag every visitor about backing up throwaway seed data - and the
-        // backup endpoints are 403-blocked there anyway. ALSO suppressed whenever
-        // rawBackupSupported is false (Postgres mode): GET/POST api/backup/database(/encrypted)
-        // - the only actions that ever advance LastBackupDownloadAt - return 501 there
-        // (BackupController.IsRawBackupAvailable), so the hint would otherwise nag toward an
-        // action this deployment structurally cannot perform. A Postgres install typically
-        // means CNPG's own continuous WAL archiving + daily backups to an external object
-        // store (see k8s/02-postgres.yaml) already cover what this hint originally existed for
-        // (protection against total device loss) - fail-open to `true` (still show it) if the
-        // capabilities fetch itself fails, same as everywhere else this flag is read.
-        var isDemo = await isDemoTask;
-        var rawBackupSupported = true;
+        input.Sessions = (await sessionsTask).Select(AppStateService.ToDto).ToList();
+        input.Now = now;
+        input.History = await historyTask ?? new();
+        input.IsDemo = await isDemoTask;
+        // Fail-open to `true` (still show the backup hint) if the capabilities fetch itself
+        // fails, same as everywhere else this flag is read.
         try
         {
             var capabilities = await capabilitiesTask;
-            if (capabilities is not null) rawBackupSupported = capabilities.RawBackupSupported;
+            if (capabilities is not null) input.RawBackupSupported = capabilities.RawBackupSupported;
         }
         catch { /* older server or transient error - fail open, same as Setup.razor's own fetch */ }
+        input.Notes = await State.GetJsonCachedAsync<List<NoteDto>>("api/notes") ?? new();
 
-        if (settings.LastBackupDownloadAt == null)
-        {
-            _backupNeverDownloaded = true;
-            _daysSinceLastBackup = 0;
-            _showBackupStalenessHint = _isOwner && !isDemo && rawBackupSupported;
-        }
-        else
-        {
-            _backupNeverDownloaded = false;
-            _daysSinceLastBackup = (today - settings.LastBackupDownloadAt.Value.Date).Days;
-            _showBackupStalenessHint = _isOwner && !isDemo && rawBackupSupported && _daysSinceLastBackup > BackupStalenessThresholdDays;
-        }
-
-        // Weekly quota (configurable target, default 25-30 h/week)
-        var weekMin = settings.WeeklyGoalMinHours;
-        var weekMax = settings.WeeklyGoalMaxHours;
-        _weekQuotaMin = weekMin;
-        _weekQuotaMax = weekMax;
-        var weekHoursVal = totalMinutes / 60.0;
-        var weekQuota = StudyMetrics.CalcQuota(weekHoursVal, weekMin, weekMax);
-        _weekQuotaPercent = weekQuota.Percent;
-        _weekQuotaMinPercent = weekQuota.MinPercent;
-        _weekQuotaWarning = weekQuota.Warning;
-        var wH = (int)Math.Floor(weekHoursVal);
-        var wM = (int)((weekHoursVal - wH) * 60);
-        _weekQuotaHours = $"{wH}h{(wM > 0 ? $" {wM}m" : "")}";
-        if (_weekQuotaWarning)
-        {
-            var wmH = (int)Math.Floor(weekQuota.MissingHours);
-            var wmM = (int)((weekQuota.MissingHours - wmH) * 60);
-            _weekQuotaMissing = wmM > 0 ? $"{wmH}h {wmM}m" : $"{wmH}h";
-        }
-
-        // Monthly quota: absolute monthly goal (settings.MonthlyGoalMinHours/MaxHours, independently
-        // configurable from the weekly goal - see Setup.razor's monthly-goal card). Deliberately
-        // NOT prorated (anymore): the card previously showed the elapsed-weeks share via
-        // StudyMetrics.ProrateMonthlyTarget, which made the displayed target (e.g. "20-26 h")
-        // contradict the configured goal ("100-130 h") for most of the month and read as a bug.
-        // The full goal now applies to the label, the bar, and the warning alike - early-month
-        // progress simply shows as a small fill against the whole month's target.
-        var monthStart = new DateTime(today.Year, today.Month, 1);
-        var monthSessions = history.Where(s => s.StartTime.Date >= monthStart).ToList();
-        var monthMinutes = monthSessions.Sum(s => (s.EndTime - s.StartTime).TotalMinutes);
-        var monthHoursVal = monthMinutes / 60.0;
-
-        _monthTargetMin = settings.MonthlyGoalMinHours;
-        _monthTargetMax = settings.MonthlyGoalMaxHours;
-        var monthQuota = StudyMetrics.CalcQuota(monthHoursVal, _monthTargetMin, _monthTargetMax);
-        _quotaPercent = monthQuota.Percent;
-        _quotaMinPercent = monthQuota.MinPercent;
-        _quotaWarning = monthQuota.Warning;
-
-        var hFull = (int)Math.Floor(monthHoursVal);
-        var mRest = (int)((monthHoursVal - hFull) * 60);
-        _monthHours = $"{hFull}h{(mRest > 0 ? $" {mRest}m" : "")}";
-
-        if (_quotaWarning)
-        {
-            var mH = (int)Math.Floor(monthQuota.MissingHours);
-            var mM = (int)((monthQuota.MissingHours - mH) * 60);
-            _quotaMissing = mM > 0 ? $"{mH}h {mM}m" : $"{mH}h";
-        }
-
-        // Weekly trend (last 8 weeks, same "all sessions" semantics as the week_hours tile above)
-        // Record struct instead of a value tuple: LINQ (.Max/.Select below) over a List<(...)> of
-        // value tuples has triggered a Mono AOT crash at compile time (not call time) in the
-        // native app shell (studylife-app, BlazorWebView) that links this same Client project -
-        // see project_studylife_app_ios_aot_linq_tuple_crash. A record struct sidesteps it while
-        // keeping the same positional-deconstruction ergonomics.
-        const int trendWeeks = 8;
-        var trendData = new List<WeekTrendPoint>();
-        for (var i = trendWeeks - 1; i >= 0; i--)
-        {
-            var wStart = weekStart.AddDays(-7 * i);
-            var wEnd = wStart.AddDays(7);
-            var hours = history
-                .Where(s => s.StartTime.Date >= wStart && s.StartTime.Date < wEnd)
-                .Sum(s => (s.EndTime - s.StartTime).TotalMinutes) / 60.0;
-            trendData.Add(new WeekTrendPoint(wStart, hours));
-        }
-        var maxTrendHours = Math.Max(1, trendData.Max(t => t.Hours));
-        _weeklyTrend = trendData
-            .Select(t => new DashboardTrendChart.WeekTrend(
-                t.Start.ToString("dd.MM"),
-                t.Hours,
-                Math.Min(100, t.Hours / maxTrendHours * 100),
-                t.Start == weekStart))
-            .ToList();
-
-        // Week-over-week delta (current week vs. the one right before it, from the same trend data)
-        var lastWeekHoursVal = trendData[^2].Hours;
-        var deltaHours = weekHoursVal - lastWeekHoursVal;
-        _weekDeltaUp = deltaHours >= 0;
-        var absDelta = Math.Abs(deltaHours);
-        var dH = (int)Math.Floor(absDelta);
-        var dM = (int)((absDelta - dH) * 60);
-        _weekDeltaLabel = $"{dH}h{(dM > 0 ? $" {dM}m" : "")}";
-
-        // Recently completed sessions (quick "what did I last study" recall)
-        _recentSessions = completedHistory
-            .OrderByDescending(s => s.StartTime)
-            .Take(5)
-            .Select(FromHistoryDto)
-            .ToList();
-
-        // Today's ring - same "all sessions, not IsCompleted-filtered" semantics as the week/trend tiles above.
-        // Daily target derived from the weekly quota (25-30h/week ÷ 7).
-        var todayMinutes = _todaySessions.Sum(s => (s.EndTime - s.StartTime).TotalMinutes);
-        var todayHoursVal = todayMinutes / 60.0;
-        var dailyTargetHours = (weekMin + weekMax) / 2.0 / 7.0;
-        var todayRingPercentRaw = todayHoursVal / dailyTargetHours * 100;
-        _todayRingPercent = Math.Min(100, todayRingPercentRaw);
-        _todayRingExceeded = todayRingPercentRaw >= 100;
-        var tH = (int)Math.Floor(todayHoursVal);
-        var tM = (int)((todayHoursVal - tH) * 60);
-        _todayHoursLabel = $"{tH}h{(tM > 0 ? $" {tM}m" : "")}";
-        _dailyTargetLabel = $"{dailyTargetHours.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)}h";
-
-        // 7-day streak strip (studied = at least one completed session that day)
-        _streakStrip = Enumerable.Range(0, 7)
-            .Select(i => today.AddDays(-6 + i))
-            .Select(day => new DashboardTodayRingCard.DayDot(
-                day.ToString("ddd", System.Globalization.CultureInfo.InvariantCulture),
-                completedHistory.Any(s => s.StartTime.Date == day),
-                day == today))
-            .ToList();
-
-        BuildMiniDonut(completedHistory, allCourses);
-        BuildNeglectedCourse(settings, allCourses, completedHistory);
-        BuildProductivityHint(completedHistory, settings, _todaySessions);
-        BuildWeekdayInsight(completedHistory);
-        BuildAnomalyHint(completedHistory);
-        // Rotation (Task 4): if the weekday variant was picked for this page load AND has enough
-        // data, it replaces the time-of-day insight's output wholesale. BuildProductivityHint above
-        // is never modified for this - its own visibility/planned/status/plan-link logic stays intact
-        // as the fallback whenever the weekday variant isn't available.
-        if (_insightVariant == 1 && _weekdayInsightAvailable)
-        {
-            _productivityHintVisible = true;
-            _productivityInsight = _weekdayInsightText;
-            _productivityPlanned = false;
-            _productivityStatus = null;
-            _productivityShowPlanLink = false;
-        }
-        await BuildLatestNoteAsync(allCourses);
+        var sessionsSummary = DashboardSummaryBuilder.BuildSessions(input);
+        ApplySessionsSummary(sessionsSummary);
 
         _sessionsLoading = false;
         await InvokeAsync(StateHasChanged);
 
         // ── Phase 3: goals/programs/quotas (upcoming goals, ECTS/avg grade, topics progress).
-        // Active-programme scope: goals/grades from other programmes must not factor into either
-        // the average grade or the upcoming deadlines (same activeCourseIds set
-        // as above for history/sessions).
-        var goals = (await goalsTask ?? new())
-            .Where(g => activeCourseIds.Contains(g.CourseId))
-            .ToList();
-        _courseTags = goals.ToDictionary(g => g.CourseId, g => g.Tag);
-        _courseDeadlineDays = goals
-            .Where(g => g.TargetDate.HasValue && g.CompletedAt == null)
-            .Select(g => new { g.CourseId, Days = (g.TargetDate!.Value.Date - today).Days })
-            .Where(x => x.Days <= CourseDeadlineCutoffDays)
-            .ToDictionary(x => x.CourseId, x => x.Days);
-        _upcomingGoals = StudyMetrics.CalcUpcomingCourseGoals(goals, today)
-            .Select(g => new DashboardUpcomingGoalsCard.UpcomingGoal(g.CourseName, g.TargetDate))
-            .ToList();
+        // The study-programme list is small/cheap enough to refetch on every reload instead of
+        // hiding it behind refreshHeavyHistory; it is only consumed later by the achievements
+        // group (phase 5) but belongs conceptually with the other goals/programs/quotas data.
+        input.Goals = await goalsTask ?? new();
+        input.GroupQuotas = await groupQuotasTask;
+        input.StudyPrograms = await studyProgramsTask ?? new();
 
-        // ECTS & average grade (mirrors Stats.razor's Ects-weighted calculation).
-        // Programme-aware: the group quotas of the ACTIVE programme (built-in: the static
-        // CourseCatalog.GroupEctsQuotas; custom: fetched per programme via AppStateService).
-        var groupQuotas = await groupQuotasTask;
-        _ectsTotal = CourseCatalog.CalcTotalEcts(allCourses, groupQuotas);
-        _ectsEarned = CourseCatalog.CalcEctsEarned(allCourses, settings.CompletedCourseIds, groupQuotas);
-        _ectsPercent = _ectsTotal > 0 ? Math.Min(100.0, _ectsEarned / (double)_ectsTotal * 100) : 0;
-
-        var averageGrade = StudyMetrics.CalcWeightedAverageGrade(goals
-            .Where(g => g.Grade.HasValue)
-            .Select(g => new StudyMetrics.GradedCourse(g.Grade!.Value, allCourses.FirstOrDefault(c => c.Id == g.CourseId)?.Ects ?? 5)));
-        _averageGradeLabel = averageGrade.HasValue ? StudyMetrics.FormatGrade(averageGrade.Value) : "–";
-
-        var topics = StudyMetrics.CalcTopicsProgress(allCourses, settings.SelectedCourseIds, goals);
-        _topicsCompleted = topics.Completed;
-        _topicsTotal = topics.Total;
-        _topicsPercent = topics.Percent;
-
-        // Programmes-completed achievement: counts across ALL of the user's programmes (deliberately
-        // NOT scoped to activeCourseIds - "how many programmes have you completed in total"
-        // is by definition a cross-programme milestone). IsCompleted is
-        // a purely manual flag (StudyProgramsController), the built-in programme never counts
-        // (no DB entry, IsCompleted always false). Small/cheap enough to
-        // refetch on every reload instead of hiding it behind refreshHeavyHistory. Only consumed
-        // later by BuildAchievements (Phase 5) - fetched here anyway since it's cheap and belongs
-        // conceptually with the other goals/programs/quotas data.
-        var studyPrograms = await studyProgramsTask ?? new();
-        _programsCompleted = studyPrograms.Count(p => p.IsCompleted);
+        var goalsSummary = DashboardSummaryBuilder.BuildGoals(input);
+        ApplyGoalsSummary(goalsSummary);
 
         _goalsLoading = false;
         await InvokeAsync(StateHasChanged);
 
         // ── Phase 4: health tiles (HealthKit HRV/sleep - native-app-only, can be genuinely slow
-        // on-device; resolves instantly to null on the web client, see hrvTask/sleepNightsTask above).
+        // on-device; resolves instantly to null on the web client, see hrvTask/sleepNightsTask
+        // above). Deliberately NOT part of the shared builder: native health data never leaves
+        // the device.
         BuildReadinessScore(await hrvTask);
         BuildSleepConsistency(await sleepNightsTask);
 
@@ -601,41 +391,131 @@ public partial class Index
         await InvokeAsync(StateHasChanged);
 
         // ── Phase 5: achievements/heavy history. Deliberately a separate, much longer-range fetch
-        // than `history` (HistoryDays = 400) above - achievements and the month/year comparison are
-        // meant to reflect the whole journey, not just the last ~13 months. Shared between both so
-        // it's only fetched once. Only redone when refreshHeavyHistory is requested (session data
-        // actually changed, not a settings-only change) AND at least HeavyFetchThrottle has passed
-        // since the last fetch (or this is the first load) - a second safety net so rapid-fire
-        // session edits (e.g. several Focus Timer sessions in a row) don't each re-hammer the
-        // ~10-year endpoint.
+        // than the phase-2 history above - achievements and the month/year comparison are meant to
+        // reflect the whole journey, not just the last ~13 months. Only redone when
+        // refreshHeavyHistory is requested (session data actually changed, not a settings-only
+        // change) AND at least HeavyFetchThrottle has passed since the last fetch (or this is the
+        // first load) - a second safety net so rapid-fire session edits (e.g. several Focus Timer
+        // sessions in a row) don't each re-hammer the ~10-year endpoint. When the throttle skips
+        // it, the retained cache from the previous fetch is handed to the builder unchanged.
         if (heavyHistoryTask != null)
         {
             _allTimeHistoryRaw = await heavyHistoryTask ?? new();
             _lastHeavyFetchAt = DateTime.UtcNow;
         }
-        // Scoped to the active programme + rebuilt on EVERY reload (including settings-only, e.g.
-        // a programme switch in setup or a changed desired graduation date, detected via poll): the
-        // filtering/computing is cheap and in-memory, only the ~10-year fetch above is expensive and
-        // therefore stays gated behind refreshHeavyHistory + throttle.
-        _allTimeHistory = _allTimeHistoryRaw.Where(s => activeCourseIds.Contains(s.CourseId)).ToList();
+        input.HeavyHistory = _allTimeHistoryRaw;
 
-        BuildAchievements(settings, activeCourseIds);
-        BuildMonthComparison();
-        BuildBestRecords();
-        BuildForecast(settings, allCourses, _allTimeHistory);
+        ApplyProgressSummary(DashboardSummaryBuilder.BuildProgress(input, sessionsSummary, goalsSummary));
 
         _achievementsLoading = false;
         await InvokeAsync(StateHasChanged);
     }
 
-    private static string FormatHoursLabel(double hours)
+    /// <summary>
+    /// GET api/dashboard/summary for the given client instant. Returns null on any failure
+    /// (offline, older server, transient error) so the caller falls back to the raw fetches and
+    /// the local builder; deliberately no read cache of its own, because the fallback already
+    /// computes from AppStateService's cached raw data with a fresh "now", which is the more
+    /// accurate offline answer than a summary frozen at an earlier instant.
+    /// </summary>
+    private async Task<DashboardSummaryDto?> TryFetchSummaryAsync(DateTime now)
     {
-        var h = (int)Math.Floor(hours);
-        var m = (int)((hours - h) * 60);
-        return $"{h}h{(m > 0 ? $" {m}m" : "")}";
+        try
+        {
+            return await Http.GetFromJsonAsync<DashboardSummaryDto>(
+                $"api/dashboard/summary?now={now:yyyy-MM-ddTHH:mm:ss}", StudyLifeJson.Options);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
-    private static StudySession FromHistoryDto(StudySessionDto d) => new()
+    /// <summary>Phase 2 result -> the fields the markup binds to. Only the localized strings are
+    /// assembled here; every number/label already comes formatted from the builder.</summary>
+    private void ApplySessionsSummary(DashboardSessionsSummaryDto s)
+    {
+        _todaySessions = s.TodaySessions.Select(ToSession).ToList();
+        _activeSession = s.ActiveSession == null ? null : ToSession(s.ActiveSession);
+        _upcomingSession = s.UpcomingSession == null ? null : ToSession(s.UpcomingSession);
+
+        _weekSessions = s.WeekSessions;
+        _weekHours = s.WeekHoursLabel;
+        _streak = s.Streak;
+        _longestStreak = s.LongestStreak;
+
+        _focusScoreVisible = s.FocusScore.Visible;
+        _focusScorePercent = s.FocusScore.Percent;
+        _focusScoreStudied = s.FocusScore.Studied;
+        _focusScorePlanned = s.FocusScore.Planned;
+
+        _showInactivityNudge = s.Inactivity.Show;
+        _daysSinceLastSession = s.Inactivity.DaysSinceLastSession;
+
+        _showBackupStalenessHint = s.BackupHint.Show;
+        _backupNeverDownloaded = s.BackupHint.NeverDownloaded;
+        _daysSinceLastBackup = s.BackupHint.DaysSinceLastBackup;
+
+        _weekQuotaMin = s.WeekQuota.TargetMin;
+        _weekQuotaMax = s.WeekQuota.TargetMax;
+        _weekQuotaPercent = s.WeekQuota.Percent;
+        _weekQuotaMinPercent = s.WeekQuota.MinPercent;
+        _weekQuotaWarning = s.WeekQuota.Warning;
+        _weekQuotaHours = s.WeekQuota.HoursLabel;
+        _weekQuotaMissing = s.WeekQuota.MissingLabel;
+
+        _monthTargetMin = s.MonthQuota.TargetMin;
+        _monthTargetMax = s.MonthQuota.TargetMax;
+        _quotaPercent = s.MonthQuota.Percent;
+        _quotaMinPercent = s.MonthQuota.MinPercent;
+        _quotaWarning = s.MonthQuota.Warning;
+        _monthHours = s.MonthQuota.HoursLabel;
+        _quotaMissing = s.MonthQuota.MissingLabel;
+
+        _weeklyTrend = s.WeeklyTrend
+            .Select(w => new DashboardTrendChart.WeekTrend(w.Label, w.Hours, w.Percent, w.IsCurrent))
+            .ToList();
+        _weekDeltaLabel = s.WeekDeltaLabel;
+        _weekDeltaUp = s.WeekDeltaUp;
+
+        _recentSessions = s.RecentSessions.Select(ToSession).ToList();
+
+        _todayRingPercent = s.TodayRing.RingPercent;
+        _todayRingExceeded = s.TodayRing.Exceeded;
+        _todayHoursLabel = s.TodayRing.HoursLabel;
+        _dailyTargetLabel = s.TodayRing.DailyTargetLabel;
+        _streakStrip = s.StreakStrip
+            .Select(d => new DashboardTodayRingCard.DayDot(d.Label, d.Studied, d.IsToday))
+            .ToList();
+
+        ApplyMiniDonut(s.MiniDonut);
+        ApplyNeglectedCourse(s.NeglectedCourse);
+        ApplyInsights(s.ProductivityHint, s.WeekdayInsight);
+        ApplyAnomalyHint(s.AnomalyHint);
+        ApplyLatestNote(s.LatestNote);
+    }
+
+    /// <summary>Phase 3 result -> fields.</summary>
+    private void ApplyGoalsSummary(DashboardGoalsSummaryDto g)
+    {
+        _courseTags = g.CourseTags;
+        _courseDeadlineDays = g.CourseDeadlineDays;
+        _upcomingGoals = g.UpcomingGoals
+            .Select(x => new DashboardUpcomingGoalsCard.UpcomingGoal(x.CourseName, x.TargetDate))
+            .ToList();
+
+        _ectsEarned = g.EctsEarned;
+        _ectsTotal = g.EctsTotal;
+        _ectsPercent = g.EctsPercent;
+        _averageGradeLabel = g.AverageGradeLabel;
+
+        _topicsCompleted = g.TopicsCompleted;
+        _topicsTotal = g.TopicsTotal;
+        _topicsPercent = g.TopicsPercent;
+    }
+
+    /// <summary>Maps a shared session DTO back to the client model the dashboard cards take.</summary>
+    private static StudySession ToSession(StudySessionDto d) => new()
     {
         Id = d.Id,
         CourseId = d.CourseId,
@@ -647,6 +527,7 @@ public partial class Index
         Notes = d.Notes,
         IsCompleted = d.IsCompleted,
         TimerModeId = d.TimerModeId,
+        RecurrenceGroupId = d.RecurrenceGroupId,
     };
 
     private void OnSessionsChanged() => InvokeAsync(async () =>

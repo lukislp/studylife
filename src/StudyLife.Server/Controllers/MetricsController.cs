@@ -28,6 +28,7 @@ public class MetricsController : ControllerBase
     private readonly SessionHistoryCacheVersion _historyVersion;
     private readonly SettingsCacheVersion _settingsVersion;
     private readonly ICurrentUserAccessor _currentUser;
+    private readonly IProgrammeScopeResolver _scope;
 
     /// <summary>Upper bound for a cached metrics response - the version-keyed cache key already
     /// changes on every session/settings/goal write, so this only covers inputs that bump no
@@ -35,13 +36,14 @@ public class MetricsController : ControllerBase
     private static readonly TimeSpan CacheTtl = TimeSpan.FromSeconds(60);
 
     public MetricsController(StudyLifeDb db, IDistributedCache cache, SessionHistoryCacheVersion historyVersion,
-        SettingsCacheVersion settingsVersion, ICurrentUserAccessor currentUser)
+        SettingsCacheVersion settingsVersion, ICurrentUserAccessor currentUser, IProgrammeScopeResolver scope)
     {
         _db = db;
         _cache = cache;
         _historyVersion = historyVersion;
         _settingsVersion = settingsVersion;
         _currentUser = currentUser;
+        _scope = scope;
     }
 
     /// <summary>
@@ -277,28 +279,14 @@ public class MetricsController : ControllerBase
     /// StudyProgramCatalog.LoadCoursesAsync/LoadGroupQuotasAsync, the same helpers
     /// BackgroundTaskService.Reports and StudyProgramsController already use.
     /// </summary>
+    /// <summary>Programme scoping lives in <see cref="IProgrammeScopeResolver"/> (shared with the
+    /// dashboard summary endpoint); this adapter only reshapes it into the DTO this controller
+    /// exposes to Home Assistant.</summary>
     private async Task<(MetricsProgramDto Program, List<CourseDto> Catalog, IReadOnlyDictionary<string, int> GroupQuotas)?> ResolveProgrammeAsync(
         int? programParam, int? activeStudyProgramId)
     {
-        int? programId;
-        if (programParam.HasValue)
-            programId = programParam.Value == 0 ? null : programParam.Value;
-        else
-            programId = activeStudyProgramId;
-
-        if (programId == null)
-        {
-            return (
-                new MetricsProgramDto { Id = null, Name = CourseCatalog.BuiltInProgramName, IsBuiltIn = true },
-                CourseCatalog.AppliedAICourses,
-                CourseCatalog.GroupEctsQuotas);
-        }
-
-        var program = await _db.StudyPrograms.AsNoTracking().FirstOrDefaultAsync(p => p.Id == programId.Value);
-        if (program == null) return null;
-
-        var catalog = await StudyProgramCatalog.LoadCoursesAsync(_db, programId.Value);
-        var groupQuotas = await StudyProgramCatalog.LoadGroupQuotasAsync(_db, programId.Value);
-        return (new MetricsProgramDto { Id = program.Id, Name = program.Name, IsBuiltIn = false }, catalog, groupQuotas);
+        var scope = await _scope.ResolveAsync(programParam, activeStudyProgramId);
+        if (scope == null) return null;
+        return (new MetricsProgramDto { Id = scope.ProgramId, Name = scope.Name, IsBuiltIn = scope.IsBuiltIn }, scope.Catalog, scope.GroupQuotas);
     }
 }
