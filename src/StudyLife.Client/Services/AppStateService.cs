@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Components.WebAssembly.Http;
 using Microsoft.JSInterop;
 using StudyLife.Client.Models;
 using StudyLife.Shared;
@@ -230,7 +231,7 @@ public class AppStateService : IAsyncDisposable
     private async Task PurgeOnLogoutAsync()
     {
         InvalidateHistoryMemo();
-        try { await _jsRuntime.InvokeVoidAsync("stopChangeStream"); } catch { /* no stream to stop */ }
+        StopChangeStream();
         await PurgeCachesAndQueueAsync();
         try { await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", UserIdMarkerKey); }
         catch { /* best effort */ }
@@ -350,29 +351,100 @@ public class AppStateService : IAsyncDisposable
             TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
         // Push half of the cross-client sync (see EventsController): the server tells this
         // client WHEN to refetch, the 30s poll above stays as the fallback (and costs almost
-        // nothing now that unchanged responses are 304s). Fire-and-forget: a host that cannot
-        // stream simply never triggers OnServerChange.
-        if (!string.IsNullOrEmpty(_sessionTokenStore.Token))
-            _ = StartChangeStreamAsync();
+        // nothing now that unchanged responses are 304s). Started as soon as a token exists -
+        // now (web: Program.cs initialised the store before anything else) or later (native app:
+        // AppRoot initialises the store after this service was constructed, logins on either
+        // host). A constructor-only check silently left the app without a stream.
+        _sessionTokenStore.OnTokenAvailable += StartChangeStream;
+        StartChangeStream();
     }
 
-    private DotNetObjectReference<AppStateService>? _changeStreamRef;
+    private CancellationTokenSource? _changeStreamCts;
 
-    private async Task StartChangeStreamAsync()
+    /// <summary>
+    /// Server-sent change events (GET api/events), read in C# through the same HttpClient as
+    /// every other call. This used to be a JS fetch in interop.js; it moved here because (1) the
+    /// native app never started it - the token was not loaded yet when this service was
+    /// constructed - and (2) a JS fetch from the app's WebView origin (app://...) to the server
+    /// would be cross-origin and the server has no CORS, whereas the .NET HttpClient in the
+    /// app is a native handler and SessionHandler attaches the token on both hosts. On WASM the
+    /// request opts into response streaming so events arrive as they are written.
+    /// Semantics kept from the JS version: 401/403 end the stream for good (no session), six
+    /// consecutive failures without a connection fall back to the 30 s poll, otherwise reconnect
+    /// with exponential backoff (2 s .. 60 s), lifecycle events feed the client telemetry.
+    /// </summary>
+    private void StartChangeStream()
     {
-        try
-        {
-            _changeStreamRef ??= DotNetObjectReference.Create(this);
-            var url = new Uri(_http.BaseAddress!, "api/events").ToString();
-            await _jsRuntime.InvokeVoidAsync("startChangeStream", url, _sessionTokenStore.Token, _changeStreamRef);
-        }
-        catch { /* JS interop unavailable (tests, native shell without the helper) - poll only */ }
+        if (string.IsNullOrEmpty(_sessionTokenStore.Token) || _changeStreamCts != null) return;
+        var cts = new CancellationTokenSource();
+        _changeStreamCts = cts;
+        _ = RunChangeStreamAsync(cts.Token);
     }
 
-    /// <summary>Called from js/interop.js for every server-sent change event. Runs the same
+    private void StopChangeStream()
+    {
+        var cts = _changeStreamCts;
+        _changeStreamCts = null;
+        try { cts?.Cancel(); } catch { /* already disposed */ }
+        cts?.Dispose();
+    }
+
+    private async Task RunChangeStreamAsync(CancellationToken cancellationToken)
+    {
+        var backoffMs = 2000;
+        var failuresWithoutConnection = 0;
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            var attempt = System.Diagnostics.Stopwatch.StartNew();
+            try
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Get, "api/events");
+                request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("text/event-stream"));
+                request.SetBrowserResponseStreamingEnabled(true);
+                request.SetBrowserRequestCache(BrowserRequestCache.NoStore);
+                using var response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+                if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden) return;
+                response.EnsureSuccessStatusCode();
+                failuresWithoutConnection = 0;
+                backoffMs = 2000;
+                OnSseLifecycle("connected", attempt.Elapsed.TotalMilliseconds);
+
+                using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+                using var reader = new StreamReader(stream);
+                string? data = null;
+                while (await reader.ReadLineAsync(cancellationToken) is { } line)
+                {
+                    if (line.Length == 0)
+                    {
+                        // Blank line terminates an event; heartbeat comments (": ping") carry no data.
+                        if (data != null) { var kind = data; data = null; _ = OnServerChange(kind); }
+                        continue;
+                    }
+                    if (line.StartsWith("data: ", StringComparison.Ordinal)) data = line[6..];
+                }
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+            catch
+            {
+                if (++failuresWithoutConnection >= 6)
+                {
+                    OnSseLifecycle("fallback_poll", attempt.Elapsed.TotalMilliseconds);
+                    return;
+                }
+            }
+            if (cancellationToken.IsCancellationRequested) return;
+            OnSseLifecycle("reconnect", backoffMs);
+            try { await Task.Delay(backoffMs, cancellationToken); } catch (OperationCanceledException) { return; }
+            backoffMs = Math.Min(backoffMs * 2, 60000);
+        }
+    }
+
+    /// <summary>Called by RunChangeStreamAsync for every server-sent change event. Runs the same
     /// PollAsync the timer uses, so the refetch, hash comparison and change events are one code
     /// path; concurrent events collapse into at most one follow-up poll.</summary>
-    [JSInvokable]
     public async Task OnServerChange(string kind)
     {
         if (Interlocked.Exchange(ref _pushPollPending, 1) == 1) return;
@@ -387,13 +459,12 @@ public class AppStateService : IAsyncDisposable
     }
 
     /// <summary>Telemetry phase 2 (docs/ARCHITECTURE.md "Telemetry"): raised from the same
-    /// dotnetRef js/interop.js's startChangeStream already holds for OnServerChange above -
+    /// change-stream reader in RunChangeStreamAsync (formerly a JS fetch in interop.js) -
     /// TelemetryService subscribes to this instead of AppStateService taking a dependency on it
     /// (which would risk a DI cycle, since TelemetryService itself reads settings/consent from
     /// AppStateService). Args: event kind (connected/reconnect/fallback_poll), duration ms.</summary>
     public event Action<string, double>? OnSseLifecycleEventRaised;
 
-    [JSInvokable]
     public void OnSseLifecycle(string kind, double durationMs) => OnSseLifecycleEventRaised?.Invoke(kind, durationMs);
 
     private int _pushPollPending;

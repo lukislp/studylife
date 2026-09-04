@@ -70,6 +70,9 @@ public sealed class SessionHandler : DelegatingHandler
         {
             var path = request.RequestUri!.AbsolutePath.TrimStart('/');
             if (path.StartsWith("api/telemetry", StringComparison.OrdinalIgnoreCase)) return;
+            // The change stream (api/events) is one open request that lives for minutes - it has
+            // its own lifecycle telemetry (connected/reconnect/fallback_poll), not a duration.
+            if (path.StartsWith("api/events", StringComparison.OrdinalIgnoreCase)) return;
             if (path.StartsWith("api/auth/", StringComparison.OrdinalIgnoreCase)) return;
 
             _services.GetService<TelemetryService>()?.RecordApi(

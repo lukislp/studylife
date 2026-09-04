@@ -27,6 +27,14 @@ public sealed class SessionTokenStore
     /// MainLayout then redirects to the login page.</summary>
     public event Action? OnSessionInvalidated;
 
+    /// <summary>Raised whenever a session token becomes available: after the stored token was
+    /// loaded (InitializeAsync) and after a login (SetTokenAsync). Lets services that need a
+    /// live session (AppStateService's change stream) start at the right moment instead of
+    /// checking Token once in their constructor - in the native app the store is initialised by
+    /// the root component AFTER those services were constructed, so a constructor check never
+    /// saw the token there (no change stream in the app until 2026-09).</summary>
+    public event Action? OnTokenAvailable;
+
     /// <summary>
     /// Set by AppStateService's constructor (plain composition, not DI - AppStateService already
     /// depends on SessionTokenStore, so the reverse would be circular) to purge every
@@ -50,6 +58,7 @@ public sealed class SessionTokenStore
         {
             Token = null; // localStorage not available (e.g. private mode) - app keeps running without a session
         }
+        if (Token != null) OnTokenAvailable?.Invoke();
     }
 
     public async Task SetTokenAsync(string token)
@@ -57,6 +66,7 @@ public sealed class SessionTokenStore
         Token = token;
         try { await _js.InvokeVoidAsync("localStorage.setItem", StorageKey, token); }
         catch { /* quota/private mode - session then only lives until the next reload, uncritical */ }
+        OnTokenAvailable?.Invoke();
     }
 
     public async Task ClearAsync()
