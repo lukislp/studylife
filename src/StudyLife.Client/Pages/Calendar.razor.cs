@@ -29,6 +29,14 @@ public partial class Calendar
     // so a deliberate jump to "today" re-centers again.
     private bool _scrolledToNow;
 
+    // Progressive render (2026-09): gates the cal-outer grid until settings+courses+sessions
+    // have loaded and BuildWeek() has run - everything the grid needs to render correctly
+    // (course colors, session placement, week/day labels). Goals and templates (phase 2) only
+    // feed the session dialog/templates modal, neither of which is open at load, so no separate
+    // flag is needed for them - see OnTextLoadedAsync.
+    protected override bool RenderShellBeforeData => true;
+    private bool _gridLoading = true;
+
     // All fetches below are independent of each other, and of the text-table fetch that
     // LocalizedComponentBase starts in parallel - kicked off here (OnInitializingAsync, runs
     // alongside that fetch) instead of await-ing one after another, same pattern as
@@ -54,12 +62,23 @@ public partial class Calendar
     protected override async Task OnTextLoadedAsync()
     {
         State.OnChange += OnStateChanged;
+
+        // ── Phase 1: settings + courses + sessions - the minimum the grid itself needs
+        // (course colors/filter pills, session placement, BuildWeek's week/day label).
         var settings = await _settingsTask!;
         var allCourses = await _coursesTask!;
         _courses = allCourses
             .Where(c => settings.SelectedCourseIds.Contains(c.Id) && !settings.CompletedCourseIds.Contains(c.Id))
             .ToList();
         _sessions = await _sessionsTask!;
+        BuildWeek();
+
+        _gridLoading = false;
+        await RenderPhaseAsync();
+
+        // ── Phase 2: goals + templates. Both only feed the session dialog (topic suggestion,
+        // "from template" dropdown) and the templates modal - neither is open yet at load time,
+        // so nothing currently on screen needs to wait for this phase.
         try
         {
             _goals = await _goalsTask! ?? new();
@@ -80,7 +99,7 @@ public partial class Calendar
             // works fully without them - same degradation as with _goals.
             _templates = new();
         }
-        BuildWeek();
+        await RenderPhaseAsync();
 
         // Fetch a .ics shared from the native app shell (always a no-op in the browser) -
         // AFTER loading courses, because the review flow preselects a default course.
@@ -150,6 +169,10 @@ public partial class Calendar
         // .cal-now-line to scroll to at all (see CalendarDayColumn.razor: IsToday gate).
         // Placed outside "if (firstRender)" so GoToday() can reset the flag
         // and deliberately re-center, without firing on every other re-render.
+        // This also keeps the call from ever hitting the grid skeleton (progressive render):
+        // _days is empty until Phase 1's BuildWeek() runs, so VisibleDays.Any(...) is false
+        // on the pre-data render and this only fires once the real grid (with a possible
+        // .cal-now-line) is actually in the DOM.
         if (!_scrolledToNow && VisibleDays.Any(d => d.Date == DateTime.Today))
         {
             _scrolledToNow = true;

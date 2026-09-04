@@ -21,7 +21,14 @@
         </div>
     </div>
 
-    @if (_loaded)
+    @if (!_loaded)
+    {
+        <div class="sl-skeleton-row">
+            <div class="sl-skeleton" aria-hidden="true"></div>
+            <div class="sl-skeleton sl-skeleton-xl" aria-hidden="true"></div>
+        </div>
+    }
+    else
     {
         <div class="report-doc">
             <div class="report-doc-head">

@@ -34,20 +34,30 @@
         </div>
     }
 
-    <FocusTimerDisplay CurrentMode="_currentMode" IsBreak="_isBreak" FormattedTime="@FormatTime(_secondsLeft)"
-                        CurrentRound="_currentRound" PhaseBreakLabel="@T.PhaseBreakLabel" PhaseFocusLabel="@T.PhaseFocusLabel" />
+    @if (_modeLoading)
+    {
+        <!-- Sessions/remote-timer/settings/mode-selection are one phase (see OnTextLoadedAsync) -
+             the timer must never render with a provisional mode, so the whole timer card +
+             controls stay a skeleton until that phase is fully done. -->
+        <div class="sl-skeleton sl-skeleton-xl" aria-hidden="true"></div>
+    }
+    else
+    {
+        <FocusTimerDisplay CurrentMode="_currentMode" IsBreak="_isBreak" FormattedTime="@FormatTime(_secondsLeft)"
+                            CurrentRound="_currentRound" PhaseBreakLabel="@T.PhaseBreakLabel" PhaseFocusLabel="@T.PhaseFocusLabel" />
 
-    <div class="timer-controls-row">
-        <FocusTimerControls IsRunning="_isRunning" ResetTitle="@T.Reset" SkipTitle="@T.TryAnotherMode"
-                             OnReset="ResetTimer" OnToggle="ToggleTimer" OnNext="NextMode" />
+        <div class="timer-controls-row">
+            <FocusTimerControls IsRunning="_isRunning" ResetTitle="@T.Reset" SkipTitle="@T.TryAnotherMode"
+                                 OnReset="ResetTimer" OnToggle="ToggleTimer" OnNext="NextMode" />
 
-        <FocusAmbientControl IsOpen="_ambientPopoverOpen" SoundType="_ambientType" Volume="_ambientVolume"
-                             AmbientSoundTitle="@T.AmbientSoundLabel" OffLabel="@T.AmbientOff"
-                             WhiteNoiseLabel="@T.AmbientWhiteNoise" BrownNoiseLabel="@T.AmbientBrownNoise"
-                             RainLabel="@T.AmbientRain" OceanLabel="@T.AmbientOcean" ToneLabel="@T.AmbientTone"
-                             VolumeLabel="@T.AmbientVolume" OnTogglePopover="ToggleAmbientPopover"
-                             OnSelectType="SelectAmbientType" OnVolumeChanged="SetAmbientVolume" />
-    </div>
+            <FocusAmbientControl IsOpen="_ambientPopoverOpen" SoundType="_ambientType" Volume="_ambientVolume"
+                                 AmbientSoundTitle="@T.AmbientSoundLabel" OffLabel="@T.AmbientOff"
+                                 WhiteNoiseLabel="@T.AmbientWhiteNoise" BrownNoiseLabel="@T.AmbientBrownNoise"
+                                 RainLabel="@T.AmbientRain" OceanLabel="@T.AmbientOcean" ToneLabel="@T.AmbientTone"
+                                 VolumeLabel="@T.AmbientVolume" OnTogglePopover="ToggleAmbientPopover"
+                                 OnSelectType="SelectAmbientType" OnVolumeChanged="SetAmbientVolume" />
+        </div>
+    }
 
     <!-- Motivation -->
     <div class="focus-motivation @(_showMotivation ? "visible" : "")">
@@ -74,17 +84,38 @@
         </div>
     }
 
-    @if (_activeSession == null)
+    @* _activeSession defaults to null before phase 1 loads, same as when it's genuinely null -
+       without the !_modeLoading guard this would misleadingly claim "no session active" before
+       sessions have even been fetched. *@
+    @if (!_modeLoading && _activeSession == null)
     {
         <FocusSessionStatus UpcomingSession="_upcomingSession" NoSessionTitle="@T.NoSessionActive" PlanSessionPrompt="@T.PlanSessionPrompt"
                              OpenCalendarText="@T.OpenCalendar" UpNextInFormat="@T.UpNextIn" MotivationText="@_motivationText" />
     }
 
-    <FocusModeSwitcher Modes="_allModes" CurrentModeId="_currentMode?.Id" OnSelectMode="m => SelectMode(m)" />
+    @if (_modeLoading)
+    {
+        <div class="sl-skeleton sl-skeleton-sm" aria-hidden="true"></div>
+    }
+    else
+    {
+        <FocusModeSwitcher Modes="_allModes" CurrentModeId="_currentMode?.Id" OnSelectMode="m => SelectMode(m)" />
+    }
 </div>
 }
 
 @code {
+    // Progressive render: the gradient shell/background paints as soon as text loads, before
+    // sessions/settings/mode selection resolve - see _modeLoading below.
+    protected override bool RenderShellBeforeData => true;
+
+    // Sessions + remote timer + settings + mode selection all land in ONE phase (see
+    // OnTextLoadedAsync) - the timer must never render with a provisional/wrong mode, so there's
+    // no partial state worth showing in between. Gates the timer card, its controls, the mode
+    // switcher, and the "no active session" status card (which would otherwise misreport based
+    // on _activeSession's null default before it's actually known).
+    private bool _modeLoading = true;
+
     private StudySession? _activeSession;
     private StudySession? _upcomingSession;
     private TimerMode? _currentMode;
@@ -204,6 +235,11 @@
 
         _motivationText = GetRandomMotivation();
         _ = ShowMotivationAfterDelay();
+
+        // Everything above must land together - the timer must never render with a
+        // provisional/wrong mode, so mode selection/event wiring is one single phase.
+        _modeLoading = false;
+        await RenderPhaseAsync();
     }
 
     /// <summary>Localized replacement for the old hardcoded-English DefaultData.ClaudeMotivations

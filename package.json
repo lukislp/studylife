@@ -1,0 +1,11 @@
+{
+  "name": "studylife-release-tooling",
+  "private": true,
+  "description": "Pinned semantic-release toolchain for the CI release chain (see .github/workflows/ci-cd.yml get-version / semantic-release). Not an application package.",
+  "devDependencies": {
+    "@semantic-release/changelog": "7.0.0",
+    "@semantic-release/git": "11.0.1",
+    "@semantic-release/github": "12.0.9",
+    "semantic-release": "25.0.9"
+  }
+}
