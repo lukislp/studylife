@@ -1,3 +1,11 @@
+## [3.7.2](https://github.com/lukislp/studylife/compare/v3.7.1...v3.7.2) (2026-09-04)
+
+
+### Bug Fixes
+
+* announce the pod IP to the Redis cluster so restarts never leave a stale address ([e6be483](https://github.com/lukislp/studylife/commit/e6be48310b58218cb3c66754b1b1bb73900da3fa))
+* keep the deferred page stylesheets before responsive.css in the cascade ([9d72193](https://github.com/lukislp/studylife/commit/9d7219374f2f3555f9c0e5725f0cecc601d51e00))
+
 ## [3.7.1](https://github.com/lukislp/studylife/compare/v3.7.0...v3.7.1) (2026-09-03)
 
 
