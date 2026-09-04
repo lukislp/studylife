@@ -73,8 +73,14 @@ public class TimerStateController : ControllerBase
         entity.IsBreak = dto.IsBreak;
         entity.CurrentRound = dto.CurrentRound;
         entity.TimerModeId = dto.TimerModeId;
-        entity.PhaseEndsAt = dto.PhaseEndsAt;
-        entity.UpdatedAt = DateTime.Now;
+        // Rebase the deadline onto the server clock when the writer told us its own clock:
+        // the other devices compute "remaining" against ServerNow (see Get), so a writer whose
+        // clock runs a few seconds ahead used to make their banner start above the full length.
+        var now = DateTime.Now;
+        entity.PhaseEndsAt = dto.PhaseEndsAt is { } endsAt && dto.ClientNow is { } clientNow
+            ? now + (endsAt - clientNow)
+            : dto.PhaseEndsAt;
+        entity.UpdatedAt = now;
         if (dto.ClientSequence is { } newSeq) entity.LastClientSequence = newSeq;
         await _db.SaveChangesAsync();
 

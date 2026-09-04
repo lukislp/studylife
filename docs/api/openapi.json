@@ -11413,6 +11413,13 @@
             ],
             "format": "date-time"
           },
+          "clientNow": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
           "updatedAt": {
             "type": "string",
             "format": "date-time"
