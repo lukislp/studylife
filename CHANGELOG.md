@@ -1,3 +1,10 @@
+## [3.11.1](https://github.com/lukislp/studylife/compare/v3.11.0...v3.11.1) (2026-09-04)
+
+
+### Bug Fixes
+
+* let the setup cards wait for the overview bundle instead of fetching on their own ([ca7ec87](https://github.com/lukislp/studylife/commit/ca7ec87db359cf719651bf2880489b85501f8dfe))
+
 # [3.11.0](https://github.com/lukislp/studylife/compare/v3.10.0...v3.11.0) (2026-09-04)
 
 
