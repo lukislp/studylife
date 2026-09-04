@@ -33,6 +33,16 @@ public partial class Stats
 
     private bool _heatmapScrolled;
 
+    // Progressive render (2026-09 audit): default true so the first OnTextLoadedAsync run shows a
+    // skeleton for the sections each flag covers instead of their empty/zero field defaults.
+    // _statsLoading covers the large majority of the page (settings+courses+goals+sessions+the
+    // 12-month history all of those cards share); _notesLoading/_extendedLoading gate the few
+    // cards whose own fetch is deliberately deferred behind slower or less essential data (notes,
+    // native-health cardio fitness, the 10-year semester comparison, cross-programme comparison).
+    private bool _statsLoading = true;
+    private bool _notesLoading = true;
+    private bool _extendedLoading = true;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         // Not gated on firstRender: OnTextLoadedAsync's data load means the component
@@ -84,6 +94,8 @@ public partial class Stats
     private Task<List<StudySessionDto>?>? _historyAllTimeTask;
     private Task<IReadOnlyList<StudyLife.Client.Services.CardioFitnessPoint>?>? _cardioFitnessTask;
 
+    protected override bool RenderShellBeforeData => true;
+
     protected override Task OnInitializingAsync()
     {
         _settingsTask = State.GetSettingsAsync();
@@ -104,6 +116,14 @@ public partial class Stats
     {
         _langWatcher = new I18nLanguageWatcher(I18nText);
         await _langWatcher.InitAsync();
+        // ── Phase 1: settings + courses + goals + sessions + the 12-month history - the data
+        // basis for the course list/totals and the large majority of charts on this page (2026-09
+        // progressive-render audit). Grouping these awaits together instead of interleaving them
+        // with the notes/cardio-fitness/semester-comparison/programme-comparison fetches further
+        // down lets the bulk of the page render as soon as this batch resolves, instead of
+        // waiting on the slower/less essential fetches too - the tasks themselves already started
+        // in OnInitializingAsync regardless of await order, so this only changes WHEN each result
+        // is consumed/rendered, never what is fetched.
         var settings = await _settingsTask!;
         var goalsUnfiltered = await _goalsUnfilteredTask! ?? new();
         var allCourses = await _coursesTask!;
@@ -117,11 +137,6 @@ public partial class Stats
         var activeCourseIds = allCourses.Select(c => c.Id).ToHashSet();
         var goals = goalsUnfiltered.Where(g => activeCourseIds.Contains(g.CourseId)).ToList();
         var sessions = (await _sessionsTask!).Where(s => activeCourseIds.Contains(s.CourseId)).ToList();
-        // For the notes/study-time correlation card - its own fetch because otherwise no
-        // notes data would be needed on this page (see Stats.Comparisons.razor.cs).
-        var notes = (await _notesTask! ?? new())
-            .Where(n => !n.CourseId.HasValue || activeCourseIds.Contains(n.CourseId.Value))
-            .ToList();
         // Shared long-term history (12 months) for the heatmap, donut, weekday/time-of-day, and
         // monthly-trend charts as well as the per-course trend arrows below. Deliberately separate
         // from `sessions` above (AppStateService, ±7/90-day window) - see /api/sessions/history.
@@ -182,7 +197,6 @@ public partial class Stats
         BuildHoursGradeScatter(goals, allCourses, raw);
         BuildHoursEctsScatter(allCourses, raw, settings);
         BuildGradeDistribution(goals);
-        BuildCardioFitnessTrend(await _cardioFitnessTask!);
 
         // Programme-aware: quotas of the ACTIVE programme (built-in: static, otherwise via fetch).
         var groupQuotas = await _groupQuotasTask!;
@@ -204,8 +218,26 @@ public partial class Stats
         BuildInactivityTrend(history);
         BuildSessionLengthHistogram(history);
         BuildCourseComparison(history, allCourses);
-        BuildNotesCorrelation(history, notes);
         BuildCourseBalance(history, allCourses, settings);
+
+        _statsLoading = false;
+        await RenderPhaseAsync();
+
+        // ── Phase 2: notes-dependent correlation card. Its own fetch because otherwise no notes
+        // data would be needed on this page (see Stats.Comparisons.razor.cs) - deferred behind the
+        // main phase above so a slow notes fetch never holds back the rest of the page.
+        var notes = (await _notesTask! ?? new())
+            .Where(n => !n.CourseId.HasValue || activeCourseIds.Contains(n.CourseId.Value))
+            .ToList();
+        BuildNotesCorrelation(history, notes);
+
+        _notesLoading = false;
+        await RenderPhaseAsync();
+
+        // ── Phase 3: extended/slower fetches - native-app-only cardio fitness (can be genuinely
+        // slow on-device), the 10-year semester comparison, and the cross-programme comparison
+        // (its own N+1 fetch across every programme).
+        BuildCardioFitnessTrend(await _cardioFitnessTask!);
 
         // Separate all-time fetch ONLY for the semester comparison: its average-hours figure for
         // earlier semesters needs sessions beyond the 371-day window above - the same
@@ -216,6 +248,9 @@ public partial class Stats
         BuildSemesterComparison(historyAllTime, goals, allCourses, settings);
 
         await BuildProgramComparisonAsync(historyAll, goalsUnfiltered, settings);
+
+        _extendedLoading = false;
+        await RenderPhaseAsync();
     }
 
     /// <summary>

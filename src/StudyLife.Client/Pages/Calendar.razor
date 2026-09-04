@@ -39,8 +39,16 @@
                         Goals="_goals"
                         OnToggleCourseFilter="ToggleCourseFilter" />
 
-    <!-- Outer: horizontal scroll only -->
+    <!-- Outer: horizontal scroll only. Keeps its id/element identity across the
+         skeleton<->grid swap below, so the JS interop attached to it (initCalendarSwipe,
+         scrollElementToCurrentTime - see Calendar.razor.cs) never has to re-attach. -->
     <div class="cal-outer" id="cal-outer">
+        @if (_gridLoading)
+        {
+            <div class="sl-skeleton sl-skeleton-xl" aria-hidden="true"></div>
+        }
+        else
+        {
         <!-- Inner: fixed minimum width, header + body rigidly together.
              In day view (.cal-day-mode) the minimum width is dropped:
              one column fills the full viewport width, no horizontal scroll. -->
@@ -82,6 +90,7 @@
                 </div>
             </div>
         </div>
+        }
     </div>
 </div>
 

@@ -674,6 +674,19 @@ check, i18n, language, theme; `Index`: settings+courses) and fill in the rest in
 wrong to right), which is what should show up as a lower
 `studylife_client_boot_dashboard_ready_duration_seconds`.
 
+**Progressive render on every page (2026-09):** the same shape now applies to Calendar, Planner,
+Stats, Report, WeekPlan, Wrapped, Notes, Setup and Focus. `Shared/LocalizedComponentBase.cs`
+gained an opt-in `RenderShellBeforeData` (a page that overrides it to `true` is rendered once as
+soon as its text table is loaded, before `OnTextLoadedAsync` awaits any data) and a
+`RenderPhaseAsync()` helper; each converted page groups its awaits into 2-4 dependency-ordered
+phases, clears a per-section loading flag and flushes a render after each one. While a flag is
+set the section shows a `.sl-skeleton` placeholder (`wwwroot/css/shared.css` - shared, not the
+deferred per-page sheet, so it is styled from the first paint). The rule for a converted page:
+every piece of markup that reads data-driven fields sits behind a flag, static shell (header,
+toolbar, tabs, print actions) does not - otherwise the early render would flash "no sessions"/"0h"
+empty states. Fetch starts are unchanged (they still begin in `OnInitializingAsync`); only the
+point at which each result is awaited and painted moved.
+
 What is collected (client-side, `Services/TelemetryService.cs`): boot timeline (HTML/boot-script/
 wasm-download/runtime-ready/first-render/dashboard-ready durations, cold vs. warm, download
 bytes, service-worker cache hit — `performance.mark` calls in `wwwroot/js/boot-loading.js`,

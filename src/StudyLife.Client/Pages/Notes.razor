@@ -76,57 +76,77 @@ else
                 <div class="ss-label">@T.AllNotes</div>
                 <div class="notes-filter-row">
                     <input class="input" type="text" placeholder="@T.SearchPlaceholder" @bind="_searchQuery" @bind:event="oninput" @bind:after="OnSearchQueryChanged" />
-                    <select class="select" @bind="_filterCourseId">
-                        <option value="0">@T.AllCoursesOption</option>
-                        @foreach (var c in _courses)
-                        {
-                            <option value="@c.Id">@c.Icon @c.Name</option>
-                        }
-                    </select>
+                    @if (_coursesLoading)
+                    {
+                        <div class="sl-skeleton sl-skeleton-sm" aria-hidden="true"></div>
+                    }
+                    else
+                    {
+                        <select class="select" @bind="_filterCourseId">
+                            <option value="0">@T.AllCoursesOption</option>
+                            @foreach (var c in _courses)
+                            {
+                                <option value="@c.Id">@c.Icon @c.Name</option>
+                            }
+                        </select>
+                    }
                 </div>
-                @if (_notes.Count == 0 && _selectedNote == null)
+                @if (_notesLoading)
                 {
-                    <div style="color:var(--text3);font-size:0.875rem;padding:0.5rem 0">
-                        @T.NoNotesYet
-                    </div>
+                    <div class="notes-list-scroll sl-skeleton sl-skeleton-lg" aria-hidden="true"></div>
                 }
-                else if (FilteredNotes.Count == 0)
+                else
                 {
-                    <div style="color:var(--text3);font-size:0.875rem;padding:0.5rem 0">
-                        @T.NoMatchingNotes
-                    </div>
-                }
-                <div class="notes-list-scroll">
-                    <Virtualize Items="FilteredNotes" Context="note" ItemSize="84">
-                        @{
-                            var n = note;
-                            var isActive = _selectedNote?.Id == n.Id;
-                        }
-                        <div class="note-row @(isActive ? "note-row--active" : "")" @onclick="() => SelectNote(n)">
-                            <div class="note-row__title">@GetHighlightedTitle(n)</div>
-                            <div class="note-row__meta">
-                                @if (n.CourseId.HasValue)
-                                {
-                                    var course = _courses.FirstOrDefault(c => c.Id == n.CourseId);
-                                    if (course != null)
-                                    {
-                                        <span class="topic-pill" style="--c:@course.Color;background:color-mix(in srgb,var(--c) 12%,transparent);color:var(--c)">@course.Icon @course.Code</span>
-                                    }
-                                }
-                                <span style="color:var(--text3);font-size:0.75rem">@FormatDate(n.UpdatedAt)</span>
-                                @if (n.SessionId.HasValue)
-                                {
-                                    <span class="note-linked-badge" title="@T.LinkedToSessionHint">🔗</span>
-                                }
-                            </div>
-                            <div class="note-row__preview">@GetHighlightedPreview(n)</div>
+                    @if (_notes.Count == 0 && _selectedNote == null)
+                    {
+                        <div style="color:var(--text3);font-size:0.875rem;padding:0.5rem 0">
+                            @T.NoNotesYet
                         </div>
-                    </Virtualize>
-                </div>
+                    }
+                    else if (FilteredNotes.Count == 0)
+                    {
+                        <div style="color:var(--text3);font-size:0.875rem;padding:0.5rem 0">
+                            @T.NoMatchingNotes
+                        </div>
+                    }
+                    <div class="notes-list-scroll">
+                        <Virtualize Items="FilteredNotes" Context="note" ItemSize="84">
+                            @{
+                                var n = note;
+                                var isActive = _selectedNote?.Id == n.Id;
+                            }
+                            <div class="note-row @(isActive ? "note-row--active" : "")" @onclick="() => SelectNote(n)">
+                                <div class="note-row__title">@GetHighlightedTitle(n)</div>
+                                <div class="note-row__meta">
+                                    @if (n.CourseId.HasValue)
+                                    {
+                                        var course = _courses.FirstOrDefault(c => c.Id == n.CourseId);
+                                        if (course != null)
+                                        {
+                                            <span class="topic-pill" style="--c:@course.Color;background:color-mix(in srgb,var(--c) 12%,transparent);color:var(--c)">@course.Icon @course.Code</span>
+                                        }
+                                    }
+                                    <span style="color:var(--text3);font-size:0.75rem">@FormatDate(n.UpdatedAt)</span>
+                                    @if (n.SessionId.HasValue)
+                                    {
+                                        <span class="note-linked-badge" title="@T.LinkedToSessionHint">🔗</span>
+                                    }
+                                </div>
+                                <div class="note-row__preview">@GetHighlightedPreview(n)</div>
+                            </div>
+                        </Virtualize>
+                    </div>
+                }
             </div>
 
-            <!-- Editor -->
-            @if (_selectedNote != null)
+            <!-- Editor: gated on _notesLoading too (not just _selectedNote != null) - otherwise
+                 the "select a note" empty state would flash before the notes list has even
+                 loaded, misleadingly implying there's nothing to select. -->
+            @if (_notesLoading)
+            {
+                <div class="setup-section notes-editor-section sl-skeleton sl-skeleton-xl" aria-hidden="true"></div>
+            }
+            else if (_selectedNote != null)
             {
                 <div class="setup-section notes-editor-section">
                     <div class="ss-label" style="display:flex;justify-content:space-between;align-items:center">
@@ -343,9 +363,19 @@ else
 }
 
 @code {
+    // Progressive render: page shell (header/toolbar/search) paints as soon as text loads,
+    // before settings/courses/notes have arrived - see the loading flags below.
+    protected override bool RenderShellBeforeData => true;
+
     private List<NoteDto> _notes = new();
     private List<CourseDto> _courses = new();
     private NoteDto? _selectedNote;
+
+    // Phase 1 (settings + courses): gates the course filter dropdown, whose options come from
+    // _courses. Phase 2 (_loadNotesTask): gates the notes list/editor columns, so the "no notes
+    // yet"/"select a note" empty states can't flash before the real list has loaded.
+    private bool _coursesLoading = true;
+    private bool _notesLoading = true;
 
     private string _editTitle = "";
     private string _editContent = "";
@@ -454,13 +484,21 @@ else
 
     protected override async Task OnTextLoadedAsync()
     {
+        // ── Phase 1: settings + courses - cheap enough to be the first thing the filter
+        // dropdown shows.
         var settings = await _settingsTask!;
         var allCourses = await _coursesTask!;
         _allProgramCourseIds = allCourses.Select(c => c.Id).ToHashSet();
         _courses = allCourses
             .Where(c => settings.SelectedCourseIds.Contains(c.Id) || settings.CompletedCourseIds.Contains(c.Id))
             .ToList();
+        _coursesLoading = false;
+        await RenderPhaseAsync();
+
+        // ── Phase 2: the notes list itself (already started in OnInitializingAsync).
         await _loadNotesTask!;
+        _notesLoading = false;
+        await RenderPhaseAsync();
 
         // PWA app-icon shortcut ("New note") links here with ?new=1 to jump straight into a fresh note.
         var uri = Nav.ToAbsoluteUri(Nav.Uri);

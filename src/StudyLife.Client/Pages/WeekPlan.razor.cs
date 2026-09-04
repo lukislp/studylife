@@ -16,6 +16,11 @@ public partial class WeekPlan
 {
     private bool _loaded;
 
+    // Progressive render (2026-09 audit): renders the header/actions immediately, the document
+    // body stays a skeleton (see WeekPlan.razor) until _loaded flips - the print doc is one
+    // coherent unit, so unlike the dashboard/stats pages this stays a single phase.
+    protected override bool RenderShellBeforeData => true;
+
     private DateTime _generatedAt;
     private DateTime _weekStart;
     private DateTime _weekEnd;

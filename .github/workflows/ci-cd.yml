@@ -307,14 +307,32 @@ jobs:
         with:
           fetch-depth: 0
           ref: main
-      - id: semrel
-        uses: cycjimmy/semantic-release-action@b12c8f6015dc215fe37bc154d4ad456dd3833c90 # v6.0.0
+      # semantic-release via a pinned package.json + lockfile instead of the marketplace action:
+      # the action installed semantic-release and every extra plugin from the npm registry on each
+      # run (no cache, ~1-6 min depending on registry mood - 5m56s observed on 2026-09-04). npm ci
+      # against the committed lockfile with setup-node's npm cache restores the same tree in
+      # seconds and makes the exact versions reviewable in git (Dependabot bumps them via PR).
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          dry_run: true
-          extra_plugins: |
-            @semantic-release/changelog@7.0.0
-            @semantic-release/github@12.0.9
-            @semantic-release/git@11.0.1
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      # Same outputs the action used to provide (new_release_version / new_release_published),
+      # derived from semantic-release's own dry-run log line. A dry run that FAILS (e.g. the
+      # verifyConditions token check) still fails this step via pipefail - only "no relevant
+      # changes" maps to published=false.
+      - id: semrel
+        run: |
+          set -o pipefail
+          npx semantic-release --dry-run 2>&1 | tee semrel-dry-run.log
+          NEXT="$(grep -oE 'The next release version is [0-9]+\.[0-9]+\.[0-9]+' semrel-dry-run.log | tail -1 | awk '{print $NF}')"
+          if [ -n "$NEXT" ]; then
+            echo "new_release_published=true" >> "$GITHUB_OUTPUT"
+            echo "new_release_version=$NEXT" >> "$GITHUB_OUTPUT"
+          else
+            echo "new_release_published=false" >> "$GITHUB_OUTPUT"
+            echo "new_release_version=" >> "$GITHUB_OUTPUT"
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: No release needed for this push
@@ -565,13 +583,18 @@ jobs:
           name: coverage-badge
           path: coverage-artifact
       - run: mkdir -p .github/badges && mv coverage-artifact/coverage-badge.json .github/badges/coverage.json
-      - id: semrel
-        uses: cycjimmy/semantic-release-action@b12c8f6015dc215fe37bc154d4ad456dd3833c90 # v6.0.0
+      # semantic-release via a pinned package.json + lockfile instead of the marketplace action:
+      # the action installed semantic-release and every extra plugin from the npm registry on each
+      # run (no cache, ~1-6 min depending on registry mood - 5m56s observed on 2026-09-04). npm ci
+      # against the committed lockfile with setup-node's npm cache restores the same tree in
+      # seconds and makes the exact versions reviewable in git (Dependabot bumps them via PR).
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          extra_plugins: |
-            @semantic-release/changelog@7.0.0
-            @semantic-release/github@12.0.9
-            @semantic-release/git@11.0.1
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - id: semrel
+        run: npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -591,11 +614,6 @@ jobs:
           fi
           git checkout -B main origin/main
       - if: steps.semrel.outcome == 'failure'
-        uses: cycjimmy/semantic-release-action@b12c8f6015dc215fe37bc154d4ad456dd3833c90 # v6.0.0
-        with:
-          extra_plugins: |
-            @semantic-release/changelog@7.0.0
-            @semantic-release/github@12.0.9
-            @semantic-release/git@11.0.1
+        run: npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

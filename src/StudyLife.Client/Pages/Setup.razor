@@ -20,44 +20,67 @@
     </div>
 
     <div class="setup-sections">
+        @if (_settingsLoading)
+        {
+            <!-- Core settings not loaded yet - every card below reads _settings/_allCourses/
+                 _isOwner/_rawBackupSupported, so a single placeholder stands in for all of them
+                 rather than flashing each one with its zero-value defaults. -->
+            <div class="sl-skeleton-row">
+                <div class="setup-section sl-skeleton sl-skeleton-sm" aria-hidden="true"></div>
+                <div class="setup-section sl-skeleton sl-skeleton-xl" aria-hidden="true"></div>
+                <div class="setup-section sl-skeleton sl-skeleton-lg" aria-hidden="true"></div>
+                <div class="setup-section sl-skeleton sl-skeleton-lg" aria-hidden="true"></div>
+            </div>
+        }
+        else
+        {
         <!-- Programme: switcher between the built-in programme and user-created ones,
              plus the entry point for creating a new programme (AddStudyProgramModal). -->
         <div class="setup-section">
             <div class="ss-label">@T.ProgrammeLabel</div>
-            <div class="programme-row">
-                <select class="select programme-select" value="@(_settings.ActiveStudyProgramId?.ToString() ?? "")"
-                        @onchange="OnProgrammeChanged">
-                    @foreach (var program in _programs)
-                    {
-                        @* Completed programmes deliberately remain selectable (to look back at
-                           their history in Dashboard/Stats) - they're only marked with a checkmark suffix. *@
-                        <option value="@(program.Id?.ToString() ?? "")">@program.Name@(program.IsCompleted ? $" {T.ProgramCompletedSuffix}" : "")</option>
-                    }
-                </select>
-                <button type="button" class="btn-secondary btn-add-programme" @onclick="() => _showAddProgramModal = true">
-                    + @T.AddProgramButton
-                </button>
-            </div>
-            @* Manual completion flag: only for user-created programmes (the built-in one has
-               no DB row). NEVER set automatically - purely a user click. *@
-            @if (ActiveProgram is { Id: not null } activeProgram)
+            @if (_secondaryLoading)
             {
-                <div class="programme-completed-row">
-                    @if (activeProgram.IsCompleted)
-                    {
-                        <span class="programme-completed-badge">@T.ProgramCompletedSuffix</span>
-                    }
-                    <button type="button" class="btn-secondary btn-programme-completed" @onclick="ToggleProgramCompleted">
-                        @(activeProgram.IsCompleted ? T.UnmarkProgramCompletedButton : T.MarkProgramCompletedButton)
-                    </button>
-                    @if (activeProgram.IsCompleted)
-                    {
-                        <span class="programme-completed-hint">@T.ProgramCompletedHint</span>
-                    }
-                    <button type="button" class="btn-danger btn-delete-programme" title="@T.DeleteProgramButton" @onclick="() => _confirmingDeleteProgram = true">
-                        🗑 @T.DeleteProgramButton
+                <!-- _programs (phase 2) hasn't loaded yet - the switcher needs it to render
+                     any option at all, including the built-in-programme fallback. -->
+                <div class="sl-skeleton sl-skeleton-sm" aria-hidden="true"></div>
+            }
+            else
+            {
+                <div class="programme-row">
+                    <select class="select programme-select" value="@(_settings.ActiveStudyProgramId?.ToString() ?? "")"
+                            @onchange="OnProgrammeChanged">
+                        @foreach (var program in _programs)
+                        {
+                            @* Completed programmes deliberately remain selectable (to look back at
+                               their history in Dashboard/Stats) - they're only marked with a checkmark suffix. *@
+                            <option value="@(program.Id?.ToString() ?? "")">@program.Name@(program.IsCompleted ? $" {T.ProgramCompletedSuffix}" : "")</option>
+                        }
+                    </select>
+                    <button type="button" class="btn-secondary btn-add-programme" @onclick="() => _showAddProgramModal = true">
+                        + @T.AddProgramButton
                     </button>
                 </div>
+                @* Manual completion flag: only for user-created programmes (the built-in one has
+                   no DB row). NEVER set automatically - purely a user click. *@
+                @if (ActiveProgram is { Id: not null } activeProgram)
+                {
+                    <div class="programme-completed-row">
+                        @if (activeProgram.IsCompleted)
+                        {
+                            <span class="programme-completed-badge">@T.ProgramCompletedSuffix</span>
+                        }
+                        <button type="button" class="btn-secondary btn-programme-completed" @onclick="ToggleProgramCompleted">
+                            @(activeProgram.IsCompleted ? T.UnmarkProgramCompletedButton : T.MarkProgramCompletedButton)
+                        </button>
+                        @if (activeProgram.IsCompleted)
+                        {
+                            <span class="programme-completed-hint">@T.ProgramCompletedHint</span>
+                        }
+                        <button type="button" class="btn-danger btn-delete-programme" title="@T.DeleteProgramButton" @onclick="() => _confirmingDeleteProgram = true">
+                            🗑 @T.DeleteProgramButton
+                        </button>
+                    </div>
+                }
             }
         </div>
 
@@ -228,31 +251,41 @@
             </button>
         </div>
 
-        <!-- Notifications -->
-        <SetupNotificationsCard Label="@T.NotificationsLabel" NotifStatus="@_notifStatus"
-                                ActiveMessage="@T.NotifActiveMessage" BlockedMessage="@T.NotifBlockedMessage"
-                                IosMessage="@((MarkupString)T.NotifIosMessage)" UnsupportedMessage="@T.NotifUnsupportedMessage"
-                                DefaultMessage="@T.NotifDefaultMessage"
-                                AllowNotificationsButtonText="@T.AllowNotificationsButton"
-                                SendTestNotificationButtonText="@T.SendTestNotificationButton"
-                                SentText="@T.Sent" TestSent="_testSent"
-                                ResubscribeButtonText="@T.NotifResubscribeButton" ResubscribeDoneText="@T.Sent"
-                                Resubscribing="_resubscribing" ResubscribeDone="_resubscribeDone"
-                                OnEnableNotifications="EnableNotifications" OnSendTest="SendTestNotification"
-                                OnResubscribe="ResubscribeNotifications" />
+        @if (_secondaryLoading)
+        {
+            <!-- _notifStatus/_icsUrl (phase 2) not loaded yet. -->
+            <div class="setup-section sl-skeleton sl-skeleton-sm" aria-hidden="true"></div>
+            <div class="setup-section sl-skeleton sl-skeleton-sm" aria-hidden="true"></div>
+        }
+        else
+        {
+            <!-- Notifications -->
+            <SetupNotificationsCard Label="@T.NotificationsLabel" NotifStatus="@_notifStatus"
+                                    ActiveMessage="@T.NotifActiveMessage" BlockedMessage="@T.NotifBlockedMessage"
+                                    IosMessage="@((MarkupString)T.NotifIosMessage)" UnsupportedMessage="@T.NotifUnsupportedMessage"
+                                    DefaultMessage="@T.NotifDefaultMessage"
+                                    AllowNotificationsButtonText="@T.AllowNotificationsButton"
+                                    SendTestNotificationButtonText="@T.SendTestNotificationButton"
+                                    SentText="@T.Sent" TestSent="_testSent"
+                                    ResubscribeButtonText="@T.NotifResubscribeButton" ResubscribeDoneText="@T.Sent"
+                                    Resubscribing="_resubscribing" ResubscribeDone="_resubscribeDone"
+                                    OnEnableNotifications="EnableNotifications" OnSendTest="SendTestNotification"
+                                    OnResubscribe="ResubscribeNotifications" />
 
-        <!-- Calendar subscription -->
-        <SetupCalendarSubscriptionCard Label="@T.CalendarSubscriptionHeading" Desc="@T.CalendarSubscriptionDesc"
-                                       IcsUrl="@_icsUrl" CopyText="@T.Copy" CopiedText="@T.Copied"
-                                       IcsCopied="_icsCopied" OnCopyClick="CopyIcsUrl"
-                                       RegenerateButtonText="@T.CalendarRegenerateButton"
-                                       RegenerateConfirmTitle="@T.CalendarRegenerateConfirmTitle"
-                                       RegenerateConfirmWarning="@T.CalendarRegenerateConfirmWarning"
-                                       RegenerateConfirmCancel="@T.CalendarRegenerateConfirmCancel"
-                                       RegenerateConfirmYes="@T.CalendarRegenerateConfirmYes"
-                                       RegenerateSuccessText="@T.CalendarRegenerateSuccess"
-                                       Regenerating="_icsRegenerating" RegenerateSuccess="_icsRegenerateSuccess"
-                                       OnRegenerateConfirmed="RegenerateCalendarToken" />
+            <!-- Calendar subscription -->
+            <SetupCalendarSubscriptionCard Label="@T.CalendarSubscriptionHeading" Desc="@T.CalendarSubscriptionDesc"
+                                           IcsUrl="@_icsUrl" CopyText="@T.Copy" CopiedText="@T.Copied"
+                                           IcsCopied="_icsCopied" OnCopyClick="CopyIcsUrl"
+                                           RegenerateButtonText="@T.CalendarRegenerateButton"
+                                           RegenerateConfirmTitle="@T.CalendarRegenerateConfirmTitle"
+                                           RegenerateConfirmWarning="@T.CalendarRegenerateConfirmWarning"
+                                           RegenerateConfirmCancel="@T.CalendarRegenerateConfirmCancel"
+                                           RegenerateConfirmYes="@T.CalendarRegenerateConfirmYes"
+                                           RegenerateSuccessText="@T.CalendarRegenerateSuccess"
+                                           Regenerating="_icsRegenerating" RegenerateSuccess="_icsRegenerateSuccess"
+                                           OnRegenerateConfirmed="RegenerateCalendarToken" />
+        }
+        }
 
         <!-- Read-only progress link (parents/mentor/academic advisor): self-contained
              component modeled after SetupRestoreCard (own SetupText instance + own
@@ -390,6 +423,10 @@
 }
 
 @code {
+    // Progressive render: the header/page shell paints as soon as text loads, before any of
+    // the settings-driven cards below have their data - see the loading flags further down.
+    protected override bool RenderShellBeforeData => true;
+
     private UserSettings _settings = new();
     private List<CourseDto> _allCourses = new();
     private Dictionary<int, CourseGoalDto> _goals = new();
@@ -471,6 +508,14 @@
     // default - the right way around for a raw-database-access feature.
     private bool _rawBackupSupported;
 
+    // Progressive render (phase 1): _isOwnerTask/capabilities/settings/courses - gates every
+    // settings-bound card (theme, courses, timer modes, notification toggles, backup cards,
+    // etc.). Phase 2 (_secondaryLoading): programme switcher, notification status, calendar
+    // token, version, goals - none of these block the core settings UI above, they just fill
+    // in a moment later (programme selector, notification card, calendar subscription card).
+    private bool _settingsLoading = true;
+    private bool _secondaryLoading = true;
+
     // All fetches below are independent of each other, and of the text-table fetch that
     // LocalizedComponentBase starts in parallel - kicked off here (OnInitializingAsync, runs
     // alongside that fetch) instead of await-ing one after another, so the wall-clock cost
@@ -528,6 +573,15 @@
         _settings = await _settingsTask!;
         _customModes = CustomTimerModes.Parse(_settings.CustomTimerModes);
         _allCourses = await State.GetCoursesAsync();
+
+        // ── Phase 1 done: everything the core settings cards (theme, courses, timer modes,
+        // notification toggles, backup cards, ...) read is ready.
+        _settingsLoading = false;
+        await RenderPhaseAsync();
+
+        // ── Phase 2: secondary extras - none of these gate the cards above, they just fill in
+        // their own (smaller) cards a moment later (programme selector, notification card,
+        // calendar subscription card).
         // Same fetch+fallback shape as LoadProgramsAsync (used unchanged by the other call
         // sites further below) - duplicated here rather than reused, since LoadProgramsAsync's
         // own fetch can't be started this early without touching its signature.
@@ -568,6 +622,9 @@
         DetectClientVersion();
         var goals = await _goalsTask! ?? new();
         _goals = goals.ToDictionary(g => g.CourseId);
+
+        _secondaryLoading = false;
+        await RenderPhaseAsync();
     }
 
     private async Task LoadProgramsAsync()
