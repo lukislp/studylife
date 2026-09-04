@@ -721,6 +721,24 @@ to itself as a refresh.
 
 **Stats, Wrapped and Report summaries (2026-09):** the same pattern as the dashboard for the three evaluation pages. `StatsSummaryBuilder` (phases Core/Notes/Extended), `WrappedSummaryBuilder` (Recap/Achievements) and `ReportSummaryBuilder` in `StudyLife.Shared` hold the pages' computations verbatim (golden tests in `StudyLife.Shared.Tests` pin the pre-extraction values); `GET api/stats/summary`, `api/wrapped/summary` and `api/report/summary` (all `?now=<client local DateTime>`, session-only, `Controllers/StatsController.cs`, `WrappedController.cs`, `ReportController.cs`) assemble the inputs exactly like the raw endpoints would return them - the cross-programme comparison's per-programme catalogs and quotas are loaded server-side in one go instead of the client's N+1 fan-out - and run the builders; endpoint parity tests fetch the raw endpoints through the test client, build locally and assert JSON equality. Cache keys `stats:summary:{user}:{minute}:{historyVersion}:{settingsVersion}:{notes token}`, `wrapped:summary:...` and `report:summary:...` (no notes), 60 s TTL, content-hash ETags. The pages start settings/courses and the summary request in `OnInitializingAsync` and only start the raw fetches when the summary fails (`AppStateService.TryGetSummaryAsync`), so the fallback keeps today's offline behaviour with identical numbers. The native cardio-fitness card on Stats stays client-only.
 
+**Number semantics (2026-09, owner decision):** one rule across the dashboard and the evaluation
+pages - **hours mean STUDIED hours**. A session counts only once `StudyMetrics.IsStudied` holds
+(timer-completed, or its end time has passed); a session merely scheduled for later today never
+contributes to an hours figure. That covers the dashboard's week stats card, today ring, weekly
+trend and week-over-week delta, and on Stats the rhythm charts, both heatmaps, the donut (its
+drilldown included), the monthly stacks, the month comparison and the course comparison/balance.
+The **two quota tiles are the deliberate exception**: "Diese Woche - Lernpensum" and "Dieser
+Monat" (`WeekQuota`/`MonthQuota`) answer "how much is scheduled/done against the goal?", so every
+session of the window counts, planned ones included. Three further conventions follow from the
+same decision: the **week-over-week delta is like-for-like** - the previous week is counted only
+up to the same weekday that has elapsed in the current one (shared `PartialWeekHours`, the
+approach the anomaly hint already used), so a week in progress never loses simply because it is
+not over; the **Stats course rows come from the full history** (`HeavyHistory`, 3650 days) rather
+than the near-term session window, so a course last studied semesters ago keeps its row, its
+trend arrow and its sparkline; and every **"Xh Ym" label rounds to whole minutes** through the one
+shared `StudyMetrics.FormatHoursMinutes` (client label call sites included) instead of truncating
+each site's own way.
+
 **Progressive render on every page (2026-09):** the same shape now applies to Calendar, Planner,
 Stats, Report, WeekPlan, Wrapped, Notes, Setup and Focus. `Shared/LocalizedComponentBase.cs`
 gained an opt-in `RenderShellBeforeData` (a page that overrides it to `true` is rendered once as

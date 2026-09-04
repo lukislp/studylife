@@ -204,20 +204,26 @@ public class StatsSummaryBuilderTests
     {
         var rows = Core().CourseRows;
 
-        // Only courses with sessions in the near-term window appear at all; course 5 has none.
-        Assert.Equal(new[] { 2, 4, 1, 3 }, rows.Select(r => r.Course.Id));
-        Assert.Equal(new[] { 4.5, 2.0, 1.0, 1.0 }, rows.Select(r => r.Hours));
-        Assert.Equal(new[] { 3, 1, 1, 1 }, rows.Select(r => r.SessionCount));
-        Assert.Equal(new[] { false, false, true, true }, rows.Select(r => r.IsCompleted));
+        // Rows now come from the FULL (studied) history instead of the ±7/90-day session window,
+        // so every studied session of the fixture counts: course 2 = 34.5h/16, course 3 = 23h/10,
+        // course 1 = 17h/9, course 4 = 14.5h/8 (the three not-yet-studied sessions of 04./06.09.
+        // are excluded). Course 5 still has no sessions at all and stays absent.
+        // Before: only the near-term window -> 2 = 4.5h/3, 4 = 2h/1, 1 = 1h/1, 3 = 1h/1.
+        Assert.Equal(new[] { 2, 3, 1, 4 }, rows.Select(r => r.Course.Id));
+        Assert.Equal(new[] { 34.5, 23.0, 17.0, 14.5 }, rows.Select(r => r.Hours));
+        Assert.Equal(new[] { 16, 10, 9, 8 }, rows.Select(r => r.SessionCount));
+        Assert.Equal(new[] { false, true, true, false }, rows.Select(r => r.IsCompleted));
         // Completed courses never show a remaining deadline, even with a target date on the goal.
-        Assert.Equal(new int?[] { 16, 102, null, null }, rows.Select(r => r.DaysRemaining));
-        Assert.Equal(new decimal?[] { 2.3m, null, 1.7m, 2.0m }, rows.Select(r => r.Grade));
+        Assert.Equal(new int?[] { 16, null, null, 102 }, rows.Select(r => r.DaysRemaining));
+        Assert.Equal(new decimal?[] { 2.3m, 2.0m, 1.7m, null }, rows.Select(r => r.Grade));
+        // Bars scale to the new maximum (34.5h): 23/34.5, 17/34.5, 14.5/34.5.
         Assert.Equal(100.0, rows[0].BarPercent, 6);
-        Assert.Equal(44.444444, rows[1].BarPercent, 5);
-        Assert.Equal(22.222222, rows[2].BarPercent, 5);
+        Assert.Equal(66.666667, rows[1].BarPercent, 5);
+        Assert.Equal(49.275362, rows[2].BarPercent, 5);
+        Assert.Equal(42.028986, rows[3].BarPercent, 5);
         // Ring: completed = 100, otherwise the topic checklist share (1 of 2 topics each).
-        Assert.Equal(new[] { 50.0, 50.0, 100.0, 100.0 }, rows.Select(r => r.RingPercent));
-        Assert.Equal(new[] { 0, 0, 5, 10 }, rows.Select(r => r.EctsEarned));
+        Assert.Equal(new[] { 50.0, 100.0, 100.0, 50.0 }, rows.Select(r => r.RingPercent));
+        Assert.Equal(new[] { 0, 10, 5, 0 }, rows.Select(r => r.EctsEarned));
     }
 
     [Fact]
@@ -225,10 +231,12 @@ public class StatsSummaryBuilderTests
     {
         var rows = Core().CourseRows;
 
+        // Same per-course trend values as before, only re-ordered with the rows (2, 3, 1, 4):
+        // the 30-day windows themselves are unchanged.
         Assert.Equal(225.0, rows[0].TrendPercent!.Value, 6);
-        Assert.Equal(128.571429, rows[1].TrendPercent!.Value, 5);
+        Assert.Equal(400.0, rows[1].TrendPercent!.Value, 6);
         Assert.Equal(250.0, rows[2].TrendPercent!.Value, 6);
-        Assert.Equal(400.0, rows[3].TrendPercent!.Value, 6);
+        Assert.Equal(128.571429, rows[3].TrendPercent!.Value, 5);
 
         // Twelve weekly buckets, normalized to the course's own strongest week.
         Assert.Equal(new[] { 40.0, 20, 0, 0, 0, 0, 60, 60, 100, 100, 100, 90 }, rows[0].Spark!);
@@ -239,8 +247,10 @@ public class StatsSummaryBuilderTests
     {
         var core = Core();
 
-        Assert.Equal("8h 30m", core.TotalHoursLabel);
-        Assert.Equal(6, core.TotalSessions);
+        // Totals follow the course rows: 34.5 + 23 + 17 + 14.5 = 89h over 16+10+9+8 = 43 sessions
+        // (was "8h 30m" / 6, the near-term window's share of the same history).
+        Assert.Equal("89h 0m", core.TotalHoursLabel);
+        Assert.Equal(43, core.TotalSessions);
         // ECTS-weighted over the active programme's graded goals only (the other programme's 3.0
         // must not pull this down).
         Assert.Equal("2,00", core.AverageGradeLabel);
@@ -266,9 +276,11 @@ public class StatsSummaryBuilderTests
     {
         var comparison = Core().MonthComparison;
 
-        // September so far (11.5h) against the whole of August (43h).
+        // studied-only: September so far is 6.5h, not 11.5h (the 1h running session, the 2h at
+        // 18:00 and Sunday's 2h have not been studied), against the whole of August (43h)
+        // -> 36h 30m behind instead of 31h 30m.
         Assert.False(comparison.Up);
-        Assert.Equal("31h 30m", comparison.DeltaLabel);
+        Assert.Equal("36h 30m", comparison.DeltaLabel);
     }
 
     // ── Grades ────────────────────────────────────────────────────────────────
@@ -312,10 +324,14 @@ public class StatsSummaryBuilderTests
     {
         var scatter = Core().HoursGradeScatter;
 
-        Assert.Equal("5h", scatter.MaxHoursLabel);
+        // Hours come from the same per-course aggregate as the course rows, so they now span the
+        // full history: 17 / 34.5 / 23 instead of 1 / 4.5 / 1. Scale = ceil(34.5) = 35h.
+        Assert.Equal("35h", scatter.MaxHoursLabel);
         Assert.Equal(new[] { "Artificial Intelligence", "Python", "Statistik" }, scatter.Points.Select(p => p.Name));
-        Assert.Equal(new[] { 1.0, 4.5, 1.0 }, scatter.Points.Select(p => p.Hours));
-        Assert.Equal(new[] { 23.0, 86.0, 23.0 }, scatter.Points.Select(p => p.XPercent));
+        Assert.Equal(new[] { 17.0, 34.5, 23.0 }, scatter.Points.Select(p => p.Hours));
+        // 5 + h/35 * 90.
+        Assert.Equal(new[] { 48.714286, 93.714286, 64.142857 }, scatter.Points.Select(p => Math.Round(p.XPercent, 6)));
+        // The grade axis is untouched.
         Assert.Equal(new[] { 79.25, 65.75, 72.5 }, scatter.Points.Select(p => p.YPercent));
     }
 
@@ -324,11 +340,13 @@ public class StatsSummaryBuilderTests
     {
         var scatter = Core().HoursEctsScatter;
 
-        Assert.Equal("5h", scatter.MaxHoursLabel);
+        // Same full-history hours as the hours-vs-grade scatter (17 / 34.5 / 23 / 14.5), so the
+        // x-axis scale is ceil(34.5) = 35h here too; the ECTS axis is untouched.
+        Assert.Equal("35h", scatter.MaxHoursLabel);
         Assert.Equal("10", scatter.MaxEctsLabel);
         Assert.Equal(new[] { "Artificial Intelligence", "Python", "Statistik", "Datenbanken" }, scatter.Points.Select(p => p.Name));
         Assert.Equal(new[] { 5, 0, 10, 0 }, scatter.Points.Select(p => p.EctsEarned));
-        Assert.Equal(new[] { 23.0, 86.0, 23.0, 41.0 }, scatter.Points.Select(p => p.XPercent));
+        Assert.Equal(new[] { 48.714286, 93.714286, 64.142857, 42.285714 }, scatter.Points.Select(p => Math.Round(p.XPercent, 6)));
         Assert.Equal(new[] { 50.0, 5.0, 95.0, 5.0 }, scatter.Points.Select(p => p.YPercent));
     }
 
@@ -359,13 +377,16 @@ public class StatsSummaryBuilderTests
     {
         var today = Core().Heatmap.Weeks.SelectMany(w => w.Days).Single(d => d.Date == new DateTime(2026, 9, 4));
 
-        Assert.Equal(4.5, today.Hours, 6);
-        Assert.Equal(4, today.Level); // >= 4h
-        Assert.Equal(3, today.SessionCount);
+        // studied-only: of today's three sessions only the 1.5h one (09:00, completed) has been
+        // studied - the 14:00 session still runs and the 18:00 one hasn't started. 4.5h/level 4/3
+        // sessions before; 1.5h now, which lands in the "<= 2h" band (level 2).
+        Assert.Equal(1.5, today.Hours, 6);
+        Assert.Equal(2, today.Level);
+        Assert.Equal(1, today.SessionCount);
         // Hours descending; colors resolved here, the display names stay on the client.
-        Assert.Equal(new[] { 1, 2, 3 }, today.Courses.Select(c => c.CourseId));
-        Assert.Equal(new[] { 2.0, 1.5, 1.0 }, today.Courses.Select(c => c.Hours));
-        Assert.Equal(new[] { "#6C5CE7", "#00B894", "#0984E3" }, today.Courses.Select(c => c.Color));
+        Assert.Equal(new[] { 2 }, today.Courses.Select(c => c.CourseId));
+        Assert.Equal(new[] { 1.5 }, today.Courses.Select(c => c.Hours));
+        Assert.Equal(new[] { "#00B894" }, today.Courses.Select(c => c.Color));
     }
 
     [Fact]
@@ -373,12 +394,15 @@ public class StatsSummaryBuilderTests
     {
         var donut = Core().Donut;
 
-        Assert.Equal(85.0, donut.TotalHours, 6);
-        Assert.Equal(new[] { 2, 3, 1, 4 }, donut.Slices.Select(s => s.CourseId));
-        Assert.Equal(new[] { 34.5, 20.0, 16.0, 14.5 }, donut.Slices.Select(s => s.Hours));
-        Assert.Equal(new[] { 16, 10, 9, 8 }, donut.Slices.Select(s => s.SessionCount));
-        Assert.Equal(40.588235, donut.Slices[0].Percent, 6);
-        Assert.Equal("conic-gradient(#00B894 0% 40.588%, #0984E3 40.588% 64.118%, #6C5CE7 64.118% 82.941%, #E17055 82.941% 100%)",
+        // studied-only removes the three sessions of 04./06.09.: course 2 loses 2h (34.5 -> 32.5),
+        // course 3 loses 1h (20 -> 19), course 1 loses 2h (16 -> 14); course 4 is untouched at
+        // 14.5 and therefore overtakes course 1. Total 85 -> 80.
+        Assert.Equal(80.0, donut.TotalHours, 6);
+        Assert.Equal(new[] { 2, 3, 4, 1 }, donut.Slices.Select(s => s.CourseId));
+        Assert.Equal(new[] { 32.5, 19.0, 14.5, 14.0 }, donut.Slices.Select(s => s.Hours));
+        Assert.Equal(new[] { 15, 9, 8, 8 }, donut.Slices.Select(s => s.SessionCount));
+        Assert.Equal(40.625, donut.Slices[0].Percent, 6); // 32.5 / 80
+        Assert.Equal("conic-gradient(#00B894 0% 40.625%, #0984E3 40.625% 64.375%, #E17055 64.375% 82.5%, #6C5CE7 82.5% 100%)",
             donut.Gradient);
     }
 
@@ -390,13 +414,16 @@ public class StatsSummaryBuilderTests
         Assert.Equal(12, python.Months.Count);
         Assert.Equal(new DateTime(2025, 10, 1), python.Months[0].MonthStart);
         Assert.Equal(new DateTime(2026, 9, 1), python.Months[11].MonthStart);
-        Assert.Equal(new[] { 0.0, 0, 1.5, 0, 0, 2.5, 0, 0, 3, 3, 20, 4.5 }, python.Months.Select(m => m.Hours));
+        // studied-only: September loses the 2h session of Sunday 06.09. -> 4.5 becomes 2.5.
+        Assert.Equal(new[] { 0.0, 0, 1.5, 0, 0, 2.5, 0, 0, 3, 3, 20, 2.5 }, python.Months.Select(m => m.Hours));
         // Scaled against this course's own strongest month (August, 20h).
-        Assert.Equal(new[] { 0.0, 0, 7.5, 0, 0, 12.5, 0, 0, 15, 15, 100, 22.5 }, python.Months.Select(m => m.Percent));
+        Assert.Equal(new[] { 0.0, 0, 7.5, 0, 0, 12.5, 0, 0, 15, 15, 100, 12.5 }, python.Months.Select(m => m.Percent));
 
+        // The newest entry is no longer Sunday's planned session, so the whole window shifts by
+        // one: it starts at 04.09. and reaches back to 12.08. instead of 17.08.
         Assert.Equal(8, python.RecentSessions.Count);
-        Assert.Equal(new DateTime(2026, 9, 6, 10, 0, 0), python.RecentSessions[0].Start);
-        Assert.Equal(new DateTime(2026, 8, 17, 9, 0, 0), python.RecentSessions[7].Start);
+        Assert.Equal(new DateTime(2026, 9, 4, 9, 0, 0), python.RecentSessions[0].Start);
+        Assert.Equal(new DateTime(2026, 8, 12, 9, 0, 0), python.RecentSessions[7].Start);
     }
 
     [Fact]
@@ -405,14 +432,18 @@ public class StatsSummaryBuilderTests
         var rhythm = Core().Rhythm;
 
         // 0 = Monday .. 6 = Sunday; raw hours, the localized names stay on the client.
-        Assert.Equal(new[] { 11.0, 39.0, 13.5, 9.0, 10.5, 0.0, 2.0 }, rhythm.WeekdayHours);
+        // studied-only: Friday loses today's 1h + 2h (10.5 -> 7.5) and Sunday its planned 2h
+        // (2 -> 0). Monday..Thursday are unchanged, so the maximum stays Tuesday's 39h.
+        Assert.Equal(new[] { 11.0, 39.0, 13.5, 9.0, 7.5, 0.0, 0.0 }, rhythm.WeekdayHours);
         Assert.Equal(39.0, rhythm.WeekdayMax, 6);
 
         Assert.Equal(new[] { "00-06", "06-09", "09-12", "12-15", "15-18", "18-21", "21-24" },
             rhythm.TimeOfDay.Select(b => b.Label));
-        Assert.Equal(new[] { 0.0, 2.0, 59.0, 8.0, 6.5, 8.5, 1.0 }, rhythm.TimeOfDay.Select(b => b.Hours));
+        // Same three sessions by start hour: 10:00 -> 09-12 (59 -> 57), 14:00 -> 12-15 (8 -> 7),
+        // 18:00 -> 18-21 (8.5 -> 6.5).
+        Assert.Equal(new[] { 0.0, 2.0, 57.0, 7.0, 6.5, 6.5, 1.0 }, rhythm.TimeOfDay.Select(b => b.Hours));
         Assert.Equal(100.0, rhythm.TimeOfDay[2].Percent, 6);
-        Assert.Equal(3.389831, rhythm.TimeOfDay[1].Percent, 5);
+        Assert.Equal(3.508772, rhythm.TimeOfDay[1].Percent, 5); // 2 / 57
     }
 
     [Fact]
@@ -449,7 +480,8 @@ public class StatsSummaryBuilderTests
         Assert.Equal(monthly.OrderedIds, monthly.TopIds);
         Assert.Equal(43.0, monthly.MaxMonthTotal, 6);
 
-        Assert.Equal(new[] { 1.0, 2.0, 8.0, 8.5, 43.0, 11.5 },
+        // studied-only: only September moves, losing the 1h + 2h + 2h that are not studied yet.
+        Assert.Equal(new[] { 1.0, 2.0, 8.0, 8.5, 43.0, 6.5 },
             monthly.PerMonthCourseHours.Select(d => d.Values.Sum()));
         var august = monthly.PerMonthCourseHours[4];
         Assert.Equal(20.0, august[2], 6);

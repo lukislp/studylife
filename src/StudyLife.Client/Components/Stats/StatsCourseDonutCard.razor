@@ -1,3 +1,4 @@
+@using StudyLife.Shared
 <div class="setup-section">
     <div class="ss-label">@Label</div>
     @if (Slices.Count == 0)
@@ -77,7 +78,7 @@
 @code {
     public record MonthHours(string Label, double Hours, double Percent)
     {
-        public string HoursLabel => $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
+        public string HoursLabel => StudyMetrics.FormatHoursMinutes(Hours);
     }
 
     public record SessionEntry(DateTime Start, DateTime End, string? Topic)
@@ -95,7 +96,7 @@
     public record DonutSlice(string Name, string Color, double Hours, double Percent,
         int SessionCount, List<MonthHours> Months, List<SessionEntry> RecentSessions)
     {
-        public string HoursLabel => $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
+        public string HoursLabel => StudyMetrics.FormatHoursMinutes(Hours);
     }
 
     [Parameter] public string Label { get; set; } = "";

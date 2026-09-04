@@ -139,7 +139,6 @@ public static class WrappedSummaryBuilder
     }
 
     /// <summary>"3h 20m" - always shows the minute part, even when it is 0 (unlike
-    /// DashboardSummaryBuilder's FormatHoursLabel, which omits a zero minute part). Kept
-    /// byte-identical to the page's original private helper.</summary>
-    private static string FormatHours(double hours) => $"{(int)hours}h {(int)((hours - (int)hours) * 60)}m";
+    /// DashboardSummaryBuilder's FormatHoursLabel, which omits a zero minute part).</summary>
+    private static string FormatHours(double hours) => StudyMetrics.FormatHoursMinutes(hours);
 }

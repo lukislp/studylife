@@ -114,7 +114,7 @@ public partial class WeekPlan
 
         _totalSessions = weekSessions.Count;
         var totalHours = weekSessions.Sum(s => (s.EndTime - s.StartTime).TotalHours);
-        _plannedHoursLabel = $"{(int)totalHours}h {(int)((totalHours - (int)totalHours) * 60)}m";
+        _plannedHoursLabel = StudyMetrics.FormatHoursMinutes(totalHours);
 
         _weeklyGoalMin = settings.WeeklyGoalMinHours;
         _weeklyGoalMax = settings.WeeklyGoalMaxHours;

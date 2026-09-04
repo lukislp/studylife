@@ -1,3 +1,4 @@
+@using StudyLife.Shared
 <div class="setup-section">
     <div class="ss-label">@Label</div>
     @* Same scatter look as hours-vs-grade (StatsHoursGradeScatterCard), just with ECTS credits
@@ -27,7 +28,7 @@
 @code {
     public record ScatterPoint(string Name, string Icon, string Color, double Hours, int EctsEarned, double XPercent, double YPercent)
     {
-        public string HoursLabel => $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
+        public string HoursLabel => StudyMetrics.FormatHoursMinutes(Hours);
         // Formatted with invariant culture so CSS percentage values never get a decimal comma (cf. _donutGradient).
         public string XPercentLabel => XPercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
         public string YPercentLabel => YPercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);

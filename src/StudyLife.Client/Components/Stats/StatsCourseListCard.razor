@@ -91,7 +91,7 @@
         // Formatted invariantly so the conic-gradient never gets a decimal comma (cf. _donutGradient).
         public string RingPercentLabel => RingPercent.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
 
-        public string HoursLabel => $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
+        public string HoursLabel => StudyMetrics.FormatHoursMinutes(Hours);
         public string GradeLabel => Grade.HasValue
             ? StudyMetrics.FormatGrade(Grade.Value, "0.0")
             : "";

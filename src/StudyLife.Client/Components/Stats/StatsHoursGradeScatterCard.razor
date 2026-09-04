@@ -27,7 +27,7 @@
 @code {
     public record ScatterPoint(string Name, string Icon, string Color, double Hours, decimal Grade, double XPercent, double YPercent)
     {
-        public string HoursLabel => $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
+        public string HoursLabel => StudyMetrics.FormatHoursMinutes(Hours);
         public string GradeLabel => StudyMetrics.FormatGrade(Grade, "0.0");
         // Formatted with invariant culture so CSS percentage values never get a decimal comma (cf. _donutGradient).
         public string XPercentLabel => XPercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);

@@ -223,7 +223,7 @@ public partial class Stats
 
             var total = dict.Values.Sum();
             // "MMM" is culture-dependent, so it stays on the client, see ApplyHeatmap.
-            return new StatsMonthlyBreakdownCard.StackedMonth(m.ToString("MMM"), segments, $"{(int)total}h {(int)((total - (int)total) * 60)}m");
+            return new StatsMonthlyBreakdownCard.StackedMonth(m.ToString("MMM"), segments, StudyMetrics.FormatHoursMinutes(total));
         }).ToList();
     }
 }

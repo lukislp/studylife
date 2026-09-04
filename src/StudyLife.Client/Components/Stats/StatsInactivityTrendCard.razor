@@ -1,3 +1,4 @@
+@using StudyLife.Shared
 <div class="setup-section">
     <div class="ss-label">@Label</div>
     <div class="rhythm-subtitle">@Subtitle</div>
@@ -17,7 +18,7 @@
 @code {
     public record WeekBar(string Label, double Hours, double Percent)
     {
-        public string HoursLabel => $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
+        public string HoursLabel => StudyMetrics.FormatHoursMinutes(Hours);
     }
 
     [Parameter] public string Label { get; set; } = "";

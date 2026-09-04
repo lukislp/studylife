@@ -1,3 +1,4 @@
+@using StudyLife.Shared
 <div class="setup-section">
     <div class="ss-label">@Label</div>
     @if (Weeks.Count == 0 || Legend.Count == 0)
@@ -39,7 +40,7 @@
 @code {
     public record CourseBar(string Name, string Color, double Hours, double HeightPercent)
     {
-        public string HoursLabel => $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
+        public string HoursLabel => StudyMetrics.FormatHoursMinutes(Hours);
         // Invariant + clamped, same reasoning as _donutGradient/ScatterPoint elsewhere in this
         // codebase: CSS percentages must never carry a locale decimal comma.
         public string HeightPercentLabel => Math.Clamp(HeightPercent, 0, 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
