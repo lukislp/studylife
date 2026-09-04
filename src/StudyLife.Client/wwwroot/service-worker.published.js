@@ -32,10 +32,32 @@ function shouldPrecache(asset) {
     return true;
 }
 
+// Precache with retries instead of one cache.addAll: during a rolling deployment old and new
+// pods answer side by side for a few minutes, and an asset listed in the NEW manifest gets a
+// 404 (empty body -> integrity failure) from an OLD pod. addAll would fail the whole install on
+// the first such asset and the update would silently never arrive; a retry with backoff lets
+// each asset be re-routed until it reaches a new pod (js/boot-start.js does the same for the
+// page's own framework downloads).
+const PRECACHE_RETRY_DELAYS_MS = [1000, 2000, 4000, 8000, 15000, 30000, 30000, 30000];
+
+async function fetchForPrecache(asset) {
+    const request = new Request(asset.url, { integrity: asset.hash, cache: 'no-cache' });
+    for (let attempt = 0; ; attempt++) {
+        try {
+            const response = await fetch(request.clone());
+            if (response.ok) return { request, response };
+            if (attempt >= PRECACHE_RETRY_DELAYS_MS.length) throw new Error('precache ' + asset.url + ' -> HTTP ' + response.status);
+        } catch (err) {
+            if (attempt >= PRECACHE_RETRY_DELAYS_MS.length) throw err;
+        }
+        await new Promise(resolve => setTimeout(resolve, PRECACHE_RETRY_DELAYS_MS[attempt]));
+    }
+}
+
 self.addEventListener('install', event => event.waitUntil(
     caches.open(CACHE_NAME)
-        .then(cache => cache.addAll(self.assetsManifest.assets.filter(shouldPrecache).map(
-            asset => new Request(asset.url, { integrity: asset.hash, cache: 'no-cache' })
+        .then(cache => Promise.all(self.assetsManifest.assets.filter(shouldPrecache).map(
+            asset => fetchForPrecache(asset).then(({ request, response }) => cache.put(request, response))
         )))
         .then(() => self.skipWaiting())
 ));
