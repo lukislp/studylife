@@ -342,6 +342,13 @@ public class TimerStateDto
     public int TimerModeId { get; set; }
     /// <summary>Absolute point in time at which the current focus/break phase ends. Null if not active.</summary>
     public DateTime? PhaseEndsAt { get; set; }
+    /// <summary>Only sent in the PUT: the writing device's wall clock at send time. The server
+    /// rebases PhaseEndsAt from this clock onto its own (PhaseEndsAt - ClientNow = remaining
+    /// time, stored as ServerNow + remaining), so a device whose clock is a few seconds off no
+    /// longer makes the other devices' "timer running elsewhere" banner start at 10:04 for a
+    /// 10-minute timer. Optional: pushers that do not send it (Home Assistant) keep the old
+    /// store-as-is behaviour.</summary>
+    public DateTime? ClientNow { get; set; }
     public DateTime UpdatedAt { get; set; }
     /// <summary>Only set in the GET response: server time at the moment of the request. Consumers use it
     /// to compute the remaining time against the server clock instead of their local one - clock drift
