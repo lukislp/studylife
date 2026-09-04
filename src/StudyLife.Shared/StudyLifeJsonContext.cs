@@ -45,6 +45,9 @@ namespace StudyLife.Shared;
 [JsonSerializable(typeof(StatsSummaryDto))]
 [JsonSerializable(typeof(WrappedSummaryDto))]
 [JsonSerializable(typeof(ReportSummaryDto))]
+// Setup page bundle (GET api/setup/overview): same "one root, nested DTOs reached through it"
+// treatment as DashboardSummaryDto above.
+[JsonSerializable(typeof(SetupOverviewDto))]
 public partial class StudyLifeJsonContext : JsonSerializerContext
 {
 }

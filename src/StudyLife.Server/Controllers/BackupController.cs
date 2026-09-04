@@ -776,8 +776,14 @@ public class BackupController : ControllerBase
         // AlwaysChallengeAuthorizationMiddlewareResultHandler), which is exactly the response
         // this endpoint must NOT give for "logged in, but not the owner".
         if (!await IsOwnerAsync()) return Forbid();
-        return Ok(new RestoreStatusResponseDto { Pending = _restoreService!.IsRestorePending, StagedAt = _restoreService.StagedAtUtc });
+        return Ok(BuildRestoreStatus(_restoreService!));
     }
+
+    // internal instead of private: reused by SetupController (bundle endpoint) - the
+    // IsRawBackupAvailable/owner/demo gating above stays at each call site, same split as
+    // AuthController.LoadInvitesAsync.
+    internal static RestoreStatusResponseDto BuildRestoreStatus(DatabaseRestoreService restoreService) =>
+        new() { Pending = restoreService.IsRestorePending, StagedAt = restoreService.StagedAtUtc };
 
     /// <summary>Discards a staged restore before it was applied. Live DB untouched.</summary>
     [HttpPost("restore/cancel")]

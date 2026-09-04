@@ -61,12 +61,17 @@ public partial class AuthController
     public async Task<ActionResult<List<InviteListItemDto>>> ListInvites()
     {
         if (!await IsOwnerAsync()) return Forbid();
+        return await LoadInvitesAsync(_db);
+    }
 
-        return await _db.AuthInvites.AsNoTracking()
+    // internal instead of private: reused by SetupController (bundle endpoint) - the owner check
+    // above stays here (and is duplicated by the bundle) rather than moving into this helper,
+    // same "query vs. access control are separate concerns" split as everywhere else in this file.
+    internal static async Task<List<InviteListItemDto>> LoadInvitesAsync(StudyLifeDb db) =>
+        await db.AuthInvites.AsNoTracking()
             .OrderByDescending(i => i.CreatedAt)
             .Select(i => new InviteListItemDto { Id = i.Id, CreatedAt = i.CreatedAt, ExpiresAt = i.ExpiresAt, UsedAt = i.UsedAt })
             .ToListAsync();
-    }
 
     /// <summary>Permanently deletes an invite (owner-only) - works on unused, used, and expired
     /// rows alike (simple cleanup/revoke, no separate "revoke" vs. "delete" distinction).</summary>

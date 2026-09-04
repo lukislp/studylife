@@ -69,6 +69,9 @@
 @code {
     private I18nText.SetupText T = new();
 
+    [CascadingParameter]
+    public SetupOverviewDto? Overview { get; set; }
+
     private bool _hasKey;
     private DateTime? _createdAt;
     private bool _busy;
@@ -79,6 +82,12 @@
     protected override async Task OnInitializedAsync()
     {
         T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
+        if (Overview?.AiApiKey is { } bundled)
+        {
+            _hasKey = bundled.HasKey;
+            _createdAt = bundled.CreatedAt;
+            return;
+        }
         try
         {
             var status = await Http.GetFromJsonAsync<AiApiKeyStatusDto>("api/settings/ai-api-key");

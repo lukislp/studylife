@@ -242,8 +242,13 @@ public class SettingsController : ControllerBase
         var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
-        return new HaApiKeyStatusDto { HasKey = user.ApiKeyHash != null, CreatedAt = user.ApiKeyCreatedAt };
+        return ToHaApiKeyStatusDto(user);
     }
+
+    // internal instead of private: reused by SetupController (bundle endpoint) so both call
+    // sites map the same AuthUserEntity fields the same way - see the seven siblings below.
+    internal static HaApiKeyStatusDto ToHaApiKeyStatusDto(AuthUserEntity user) =>
+        new() { HasKey = user.ApiKeyHash != null, CreatedAt = user.ApiKeyCreatedAt };
 
     /// <summary>
     /// Generates a new long-lived per-user API key (immediately replaces any existing one -
@@ -300,8 +305,11 @@ public class SettingsController : ControllerBase
         var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
-        return new AiApiKeyStatusDto { HasKey = user.AiApiKeyHash != null, CreatedAt = user.AiApiKeyCreatedAt };
+        return ToAiApiKeyStatusDto(user);
     }
+
+    internal static AiApiKeyStatusDto ToAiApiKeyStatusDto(AuthUserEntity user) =>
+        new() { HasKey = user.AiApiKeyHash != null, CreatedAt = user.AiApiKeyCreatedAt };
 
     /// <summary>Generates a new long-lived per-user API key for studylife-ai (immediately
     /// replaces any existing one in this slot only - ApiKeyHash/Home Assistant is untouched).
@@ -404,8 +412,11 @@ public class SettingsController : ControllerBase
         var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
-        return new McpApiKeyStatusDto { HasKey = user.McpApiKeyHash != null, CreatedAt = user.McpApiKeyCreatedAt };
+        return ToMcpApiKeyStatusDto(user);
     }
+
+    internal static McpApiKeyStatusDto ToMcpApiKeyStatusDto(AuthUserEntity user) =>
+        new() { HasKey = user.McpApiKeyHash != null, CreatedAt = user.McpApiKeyCreatedAt };
 
     /// <summary>Generates a new long-lived per-user API key for studylife-mcp (immediately
     /// replaces any existing one in this slot only - ApiKeyHash/AiApiKeyHash are untouched).
@@ -465,8 +476,11 @@ public class SettingsController : ControllerBase
         var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
-        return new CaptureApiKeyStatusDto { HasKey = user.CaptureApiKeyHash != null, CreatedAt = user.CaptureApiKeyCreatedAt };
+        return ToCaptureApiKeyStatusDto(user);
     }
+
+    internal static CaptureApiKeyStatusDto ToCaptureApiKeyStatusDto(AuthUserEntity user) =>
+        new() { HasKey = user.CaptureApiKeyHash != null, CreatedAt = user.CaptureApiKeyCreatedAt };
 
     /// <summary>Generates a new long-lived per-user API key for studylife-capture (immediately
     /// replaces any existing one in this slot only - the other three slots are untouched).
@@ -526,8 +540,11 @@ public class SettingsController : ControllerBase
         var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
-        return new FocusGuardApiKeyStatusDto { HasKey = user.FocusGuardApiKeyHash != null, CreatedAt = user.FocusGuardApiKeyCreatedAt };
+        return ToFocusGuardApiKeyStatusDto(user);
     }
+
+    internal static FocusGuardApiKeyStatusDto ToFocusGuardApiKeyStatusDto(AuthUserEntity user) =>
+        new() { HasKey = user.FocusGuardApiKeyHash != null, CreatedAt = user.FocusGuardApiKeyCreatedAt };
 
     /// <summary>Generates a new long-lived per-user API key for studylife-focusguard (immediately
     /// replaces any existing one in this slot only). Not the extension's actual path (it uses the
@@ -585,8 +602,11 @@ public class SettingsController : ControllerBase
         var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
-        return new FocusTunesApiKeyStatusDto { HasKey = user.FocusTunesApiKeyHash != null, CreatedAt = user.FocusTunesApiKeyCreatedAt };
+        return ToFocusTunesApiKeyStatusDto(user);
     }
+
+    internal static FocusTunesApiKeyStatusDto ToFocusTunesApiKeyStatusDto(AuthUserEntity user) =>
+        new() { HasKey = user.FocusTunesApiKeyHash != null, CreatedAt = user.FocusTunesApiKeyCreatedAt };
 
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("focustunes-api-key/generate")]
@@ -637,8 +657,11 @@ public class SettingsController : ControllerBase
         var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
-        return new TrayApiKeyStatusDto { HasKey = user.TrayApiKeyHash != null, CreatedAt = user.TrayApiKeyCreatedAt };
+        return ToTrayApiKeyStatusDto(user);
     }
+
+    internal static TrayApiKeyStatusDto ToTrayApiKeyStatusDto(AuthUserEntity user) =>
+        new() { HasKey = user.TrayApiKeyHash != null, CreatedAt = user.TrayApiKeyCreatedAt };
 
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("tray-api-key/generate")]
@@ -690,12 +713,17 @@ public class SettingsController : ControllerBase
     public async Task<ActionResult<List<WebhookApiKeyDto>>> GetWebhooksApiKeys()
     {
         var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        return await _db.WebhookApiKeys.AsNoTracking()
+        return await LoadWebhookApiKeysAsync(_db, userId);
+    }
+
+    // internal instead of private: reused by SetupController (bundle endpoint), same rationale
+    // as StudyProgramsController.LoadSummariesAsync.
+    internal static async Task<List<WebhookApiKeyDto>> LoadWebhookApiKeysAsync(StudyLifeDb db, int userId) =>
+        await db.WebhookApiKeys.AsNoTracking()
             .Where(k => k.AuthUserId == userId)
             .OrderBy(k => k.CreatedAt)
             .Select(k => new WebhookApiKeyDto { Id = k.Id, Name = k.Name, CreatedAt = k.CreatedAt })
             .ToListAsync();
-    }
 
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("webhooks-api-keys")]
@@ -746,8 +774,11 @@ public class SettingsController : ControllerBase
         var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
-        return new DeveloperApiKeyStatusDto { HasKey = user.DeveloperApiKeyHash != null, CreatedAt = user.DeveloperApiKeyCreatedAt };
+        return ToDeveloperApiKeyStatusDto(user);
     }
+
+    internal static DeveloperApiKeyStatusDto ToDeveloperApiKeyStatusDto(AuthUserEntity user) =>
+        new() { HasKey = user.DeveloperApiKeyHash != null, CreatedAt = user.DeveloperApiKeyCreatedAt };
 
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("developer-api-key/generate")]
