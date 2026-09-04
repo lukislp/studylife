@@ -43,8 +43,32 @@ public static class CacheHelper
         Func<Task<T>> factory,
         TimeSpan? clientMaxAge = null)
     {
-        var etag = $"\"{key}\"";
+        // The ETag is derived from the CONTENT, never from the cache key. The key embeds a
+        // per-user version counter that lives in Redis; when that counter is reset (Redis rebuilt
+        // from scratch, 2026-09-04) it walks through values browsers had already seen, so a
+        // key-derived ETag matched a stale If-None-Match and the client kept its old body from
+        // the 304 - stale settings with a stale Version, every PUT answered 409, and the user's
+        // toggles silently reverted on the next poll. A content hash cannot collide that way:
+        // the counter still decides which cache entry is reachable, the hash decides whether the
+        // client's copy is that entry.
+        var cached = await cache.GetAsync(key);
+        T? result;
+        byte[] bytes;
+        if (cached is not null)
+        {
+            StudyLifeMetrics.CacheRequests.Add(1, StudyLifeMetrics.Result("hit"));
+            bytes = cached;
+            result = JsonSerializer.Deserialize<T>(cached);
+        }
+        else
+        {
+            StudyLifeMetrics.CacheRequests.Add(1, StudyLifeMetrics.Result("miss"));
+            result = await factory();
+            bytes = JsonSerializer.SerializeToUtf8Bytes(result);
+            await cache.SetAsync(key, bytes, new DistributedCacheEntryOptions().SetAbsoluteExpiration(ttl));
+        }
 
+        var etag = ComputeEtag(bytes);
         if (IfNoneMatchHits(controller.Request, etag))
         {
             StudyLifeMetrics.CacheRequests.Add(1, StudyLifeMetrics.Result("not_modified"));
@@ -52,23 +76,17 @@ public static class CacheHelper
             return controller.StatusCode(StatusCodes.Status304NotModified);
         }
 
-        var cached = await cache.GetAsync(key);
-        T? result;
-        if (cached is not null)
-        {
-            StudyLifeMetrics.CacheRequests.Add(1, StudyLifeMetrics.Result("hit"));
-            result = JsonSerializer.Deserialize<T>(cached);
-        }
-        else
-        {
-            StudyLifeMetrics.CacheRequests.Add(1, StudyLifeMetrics.Result("miss"));
-            result = await factory();
-            var bytes = JsonSerializer.SerializeToUtf8Bytes(result);
-            await cache.SetAsync(key, bytes, new DistributedCacheEntryOptions().SetAbsoluteExpiration(ttl));
-        }
-
         SetHeaders(controller.Response, clientMaxAge, etag);
         return result!;
+    }
+
+    /// <summary>Strong ETag over the cached JSON bytes: first 16 bytes of SHA-256, hex. Identical
+    /// across pods because every pod serializes the same DTO the same way, so a 304 from any
+    /// replica is valid for a body served by any other.</summary>
+    internal static string ComputeEtag(byte[] bytes)
+    {
+        var hash = System.Security.Cryptography.SHA256.HashData(bytes);
+        return $"\"{Convert.ToHexStringLower(hash.AsSpan(0, 16))}\"";
     }
 
     private static bool IfNoneMatchHits(HttpRequest request, string etag)

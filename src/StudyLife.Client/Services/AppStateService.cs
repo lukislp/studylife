@@ -1030,7 +1030,7 @@ public class AppStateService : IAsyncDisposable
         {
             var response = await _http.PutAsJsonAsync("api/settings", ToDto(settings), StudyLifeJson.Options);
             if (response.StatusCode == HttpStatusCode.Conflict)
-                await HandleSaveConflictAsync(settings);
+                await HandleSaveConflictAsync(settings, response);
             else
                 await ApplySaveResponseAsync(response);
         }
@@ -1054,14 +1054,28 @@ public class AppStateService : IAsyncDisposable
     /// this call: looping further here risks fighting a genuinely fast-moving concurrent writer
     /// forever, and the next 30s poll will reconcile the final state either way.
     /// </summary>
-    private async Task HandleSaveConflictAsync(UserSettings settings)
+    private async Task HandleSaveConflictAsync(UserSettings settings, HttpResponseMessage conflict)
     {
-        var fresh = await FetchSettingsFromServerAsync(); // refreshes _settingsCache/_settingsHash as a side effect
-        settings.Version = fresh.Version;
+        // The 409 body IS the server's current settings (SettingsController returns
+        // Conflict(ToDto(entity))) - take the Version from there instead of a fresh GET. A GET can
+        // be answered from the browser's HTTP cache via ETag/304, and a stale cached body carries a
+        // stale Version, which made the retry 409 again and the save vanish silently (2026-09-04:
+        // every settings toggle reverted on the next poll after a Redis rebuild reset the ETag
+        // counter). The GET stays as the fallback when the 409 has no readable body.
+        UserSettingsDto? current = null;
+        try { current = await conflict.Content.ReadFromJsonAsync<UserSettingsDto>(StudyLifeJson.Options); }
+        catch { /* older server or empty body - fall back to a fetch */ }
+        if (current?.Version is { } serverVersion)
+            settings.Version = serverVersion;
+        else
+            settings.Version = (await FetchSettingsFromServerAsync()).Version; // refreshes _settingsCache/_settingsHash as a side effect
         try
         {
             var retryResponse = await _http.PutAsJsonAsync("api/settings", ToDto(settings), StudyLifeJson.Options);
-            await ApplySaveResponseAsync(retryResponse); // no-ops on a repeat 409 or other failure
+            if (retryResponse.IsSuccessStatusCode)
+                await ApplySaveResponseAsync(retryResponse);
+            else
+                await EnqueueSaveSettingsAsync(ToDto(settings)); // replay strips Version -> last writer wins instead of a silent loss
         }
         catch { await EnqueueSaveSettingsAsync(ToDto(settings)); /* went offline mid-retry */ }
     }
