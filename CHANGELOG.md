@@ -1,3 +1,10 @@
+# [3.8.0](https://github.com/lukislp/studylife/compare/v3.7.2...v3.8.0) (2026-09-04)
+
+
+### Features
+
+* **client:** render every page progressively and pin the semantic-release toolchain ([2c040c5](https://github.com/lukislp/studylife/commit/2c040c519ddb6fad78dc4f5214de1513fd0e376a))
+
 ## [3.7.2](https://github.com/lukislp/studylife/compare/v3.7.1...v3.7.2) (2026-09-04)
 
 
