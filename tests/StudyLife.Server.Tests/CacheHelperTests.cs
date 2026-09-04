@@ -31,6 +31,11 @@ public class GetOrSetAsyncTests
 
     private static IDistributedCache NewCache() => new FakeDistributedCache();
 
+    /// <summary>The ETag GetOrSetAsync sends for a value: a hash of its serialized JSON bytes -
+    /// the same bytes it stores in the cache (see CacheHelper.ComputeEtag).</summary>
+    private static string EtagOf<T>(T value) =>
+        CacheHelper.ComputeEtag(System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(value));
+
     private class FakeDistributedCache : IDistributedCache
     {
         private readonly ConcurrentDictionary<string, byte[]> _store = new();
@@ -113,12 +118,13 @@ public class GetOrSetAsyncTests
     }
 
     [Fact]
-    public async Task MatchingIfNoneMatch_ShortCircuitsTo304_EvenWhenValueWasNeverCached()
+    public async Task MatchingIfNoneMatch_Returns304_OnceTheContentIsKnown()
     {
-        // The ETag is derived purely from the cache key string, not from the cached value -
-        // so a client that already guesses/remembers the right key gets a 304 without the
-        // factory ever running, even on a cold cache.
-        var controller = NewController(ifNoneMatch: "\"key3\"");
+        // The ETag is derived from the cached CONTENT, not from the key (see CacheHelper.cs for
+        // the Redis-counter incident behind that rule) - so on a cold cache the factory has to
+        // run once to know the content, and only then can a matching If-None-Match be answered
+        // with a bodyless 304.
+        var controller = NewController(ifNoneMatch: EtagOf("value"));
         var cache = NewCache();
         var callCount = 0;
 
@@ -128,25 +134,37 @@ public class GetOrSetAsyncTests
             return Task.FromResult("value");
         });
 
-        Assert.Equal(0, callCount);
+        Assert.Equal(1, callCount);
         var statusResult = Assert.IsType<StatusCodeResult>(result.Result);
         Assert.Equal(StatusCodes.Status304NotModified, statusResult.StatusCode);
     }
 
     [Fact]
-    public async Task IfNoneMatch_WithMultipleCommaSeparatedValues_MatchesAnyOfThem()
+    public async Task MatchingIfNoneMatch_OnAWarmCache_Returns304_WithoutTheFactory()
     {
-        var controller = NewController(ifNoneMatch: "\"other\", \"key4\"");
         var cache = NewCache();
-        var callCount = 0;
+        await cache.GetOrSetAsync(NewController(), "key3b", TimeSpan.FromMinutes(1), () => Task.FromResult("value"));
 
-        var result = await cache.GetOrSetAsync(controller, "key4", TimeSpan.FromMinutes(1), () =>
+        var controller = NewController(ifNoneMatch: EtagOf("value"));
+        var callCount = 0;
+        var result = await cache.GetOrSetAsync(controller, "key3b", TimeSpan.FromMinutes(1), () =>
         {
             callCount++;
             return Task.FromResult("value");
         });
 
         Assert.Equal(0, callCount);
+        Assert.IsType<StatusCodeResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task IfNoneMatch_WithMultipleCommaSeparatedValues_MatchesAnyOfThem()
+    {
+        var controller = NewController(ifNoneMatch: $"\"other\", {EtagOf("value")}");
+        var cache = NewCache();
+
+        var result = await cache.GetOrSetAsync(controller, "key4", TimeSpan.FromMinutes(1), () => Task.FromResult("value"));
+
         Assert.IsType<StatusCodeResult>(result.Result);
     }
 
@@ -168,7 +186,7 @@ public class GetOrSetAsyncTests
     }
 
     [Fact]
-    public async Task DefaultClientMaxAge_SetsNoCacheHeader_AndEtagFromKey()
+    public async Task DefaultClientMaxAge_SetsNoCacheHeader_AndContentEtag()
     {
         var controller = NewController();
         var cache = NewCache();
@@ -176,7 +194,7 @@ public class GetOrSetAsyncTests
         await cache.GetOrSetAsync(controller, "key6", TimeSpan.FromMinutes(1), () => Task.FromResult("v"));
 
         Assert.Equal("private, no-cache", controller.Response.Headers["Cache-Control"].ToString());
-        Assert.Equal("\"key6\"", controller.Response.Headers["ETag"].ToString());
+        Assert.Equal(EtagOf("v"), controller.Response.Headers["ETag"].ToString());
     }
 
     [Fact]
@@ -194,12 +212,12 @@ public class GetOrSetAsyncTests
     [Fact]
     public async Task Response304_StillSetsCacheControlAndETagHeaders()
     {
-        var controller = NewController(ifNoneMatch: "\"key8\"");
+        var controller = NewController(ifNoneMatch: EtagOf("v"));
         var cache = NewCache();
 
         await cache.GetOrSetAsync(controller, "key8", TimeSpan.FromMinutes(1), () => Task.FromResult("v"));
 
-        Assert.Equal("\"key8\"", controller.Response.Headers["ETag"].ToString());
+        Assert.Equal(EtagOf("v"), controller.Response.Headers["ETag"].ToString());
         Assert.Equal("private, no-cache", controller.Response.Headers["Cache-Control"].ToString());
     }
 
