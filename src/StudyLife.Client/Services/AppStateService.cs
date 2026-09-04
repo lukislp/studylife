@@ -398,7 +398,7 @@ public class AppStateService : IAsyncDisposable
             var attempt = System.Diagnostics.Stopwatch.StartNew();
             try
             {
-                using var request = new HttpRequestMessage(HttpMethod.Get, "api/events");
+                using var request = new HttpRequestMessage(HttpMethod.Get, "api/events?v=2");
                 request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("text/event-stream"));
                 request.SetBrowserResponseStreamingEnabled(true);
                 request.SetBrowserRequestCache(BrowserRequestCache.NoStore);
@@ -407,6 +407,7 @@ public class AppStateService : IAsyncDisposable
                 response.EnsureSuccessStatusCode();
                 failuresWithoutConnection = 0;
                 backoffMs = 2000;
+                _streamConnected = true;
                 OnSseLifecycle("connected", attempt.Elapsed.TotalMilliseconds);
 
                 using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
@@ -416,8 +417,10 @@ public class AppStateService : IAsyncDisposable
                 {
                     if (line.Length == 0)
                     {
-                        // Blank line terminates an event; heartbeat comments (": ping") carry no data.
-                        if (data != null) { var kind = data; data = null; _ = OnServerChange(kind); }
+                        // Blank line terminates a frame. v=2 frames ("state" on connect and every
+                        // heartbeat, "change" after a write) all carry the version counters, so
+                        // one handler covers them; comment lines (": ...") have no data.
+                        if (data != null) { var payload = data; data = null; _ = OnServerStateAsync(payload); }
                         continue;
                     }
                     if (line.StartsWith("data: ", StringComparison.Ordinal)) data = line[6..];
@@ -425,16 +428,19 @@ public class AppStateService : IAsyncDisposable
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
+                _streamConnected = false;
                 return;
             }
             catch
             {
                 if (++failuresWithoutConnection >= 6)
                 {
+                    _streamConnected = false;
                     OnSseLifecycle("fallback_poll", attempt.Elapsed.TotalMilliseconds);
                     return;
                 }
             }
+            _streamConnected = false;
             if (cancellationToken.IsCancellationRequested) return;
             OnSseLifecycle("reconnect", backoffMs);
             try { await Task.Delay(backoffMs, cancellationToken); } catch (OperationCanceledException) { return; }
@@ -450,7 +456,51 @@ public class AppStateService : IAsyncDisposable
         if (Interlocked.Exchange(ref _pushPollPending, 1) == 1) return;
         try
         {
-            await PollAsync();
+            await RefreshAsync(refreshSessions: true, refreshSettings: true);
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _pushPollPending, 0);
+        }
+    }
+
+    /// <summary>Shape of a v=2 frame from GET api/events (see EventsController.StateJsonAsync).</summary>
+    private sealed record ChangeStateFrame(string? Kind, int HistoryVersion, int SettingsVersion);
+
+    // The last version counters this client reconciled against. Null until the first frame:
+    // the pages load fresh data on their own at startup, so the first frame only records where
+    // we stand; from then on every frame (heartbeat, change, or the connect frame after a
+    // reconnect) is compared and only what actually changed is refetched.
+    private int? _knownHistoryVersion;
+    private int? _knownSettingsVersion;
+    private volatile bool _streamConnected;
+
+    /// <summary>True while the change stream has an open connection. TelemetryService reads it once
+    /// when it subscribes: on a fast network the stream connects before that service exists, so
+    /// the "connected" lifecycle event would otherwise be lost (observed on iOS, 2026-09).</summary>
+    public bool ChangeStreamConnected => _streamConnected;
+
+    /// <summary>Handles one v=2 frame: refetch sessions and/or settings only when the server's
+    /// counter moved past what we last saw. Falls back to the plain refetch for a frame that is
+    /// not JSON (a v=1 server, e.g. during a rolling deployment).</summary>
+    private async Task OnServerStateAsync(string payload)
+    {
+        ChangeStateFrame? frame = null;
+        try { frame = JsonSerializer.Deserialize<ChangeStateFrame>(payload, StudyLifeJson.Options); }
+        catch { /* not a v=2 frame */ }
+        if (frame is null) { await OnServerChange(payload); return; }
+
+        var first = _knownHistoryVersion is null && _knownSettingsVersion is null;
+        var sessionsMoved = _knownHistoryVersion != frame.HistoryVersion;
+        var settingsMoved = _knownSettingsVersion != frame.SettingsVersion;
+        _knownHistoryVersion = frame.HistoryVersion;
+        _knownSettingsVersion = frame.SettingsVersion;
+        if (first || (!sessionsMoved && !settingsMoved)) return;
+
+        if (Interlocked.Exchange(ref _pushPollPending, 1) == 1) return;
+        try
+        {
+            await RefreshAsync(refreshSessions: sessionsMoved, refreshSettings: settingsMoved);
         }
         finally
         {
@@ -469,6 +519,14 @@ public class AppStateService : IAsyncDisposable
 
     private int _pushPollPending;
 
+    // While the change stream is connected the server tells us about every write within a
+    // second and confirms "still current" with each heartbeat, so the timer only serves as a
+    // safety net against a stream that silently stopped delivering; without a stream it is the
+    // only sync mechanism and keeps its 30 s cadence. 5200 conditional GETs a day (2 per tick)
+    // measured on 2026-09-04 was the reason for this.
+    private static readonly TimeSpan SafetyNetInterval = TimeSpan.FromMinutes(10);
+    private DateTime _lastTimerRefreshUtc = DateTime.MinValue;
+
     private async Task PollAsync()
     {
         try
@@ -479,41 +537,53 @@ public class AppStateService : IAsyncDisposable
 
         await ReplayQueueAsync();
 
+        if (_streamConnected && DateTime.UtcNow - _lastTimerRefreshUtc < SafetyNetInterval) return;
+        _lastTimerRefreshUtc = DateTime.UtcNow;
+        await RefreshAsync(refreshSessions: true, refreshSettings: true);
+    }
+
+    /// <summary>Refetches sessions and/or settings, updates the caches when the content hash
+    /// changed and raises the change events - the body of the former PollAsync, now shared by
+    /// the timer, the change stream and the version reconciliation.</summary>
+    private async Task RefreshAsync(bool refreshSessions, bool refreshSettings)
+    {
         var sessionsChanged = false;
         var settingsChanged = false;
-        try
-        {
-            var dtos = await _http.GetFromJsonAsync<List<StudySessionDto>>("api/sessions");
-            var sessions = dtos?.Select(FromDto).ToList() ?? new List<StudySession>();
-            var hash = ComputeHash(dtos ?? new List<StudySessionDto>());
-            if (hash != _sessionsHash)
+        if (refreshSessions)
+            try
             {
-                _sessionsHash = hash;
-                _sessionsCache = sessions;
-                sessionsChanged = true;
-                if (dtos != null) await StoreReadCacheAsync(ReadCacheKeySessions, dtos);
-            }
-        }
-        catch { /* ignore poll errors */ }
-
-        try
-        {
-            var dto = await _http.GetFromJsonAsync<UserSettingsDto>("api/settings", StudyLifeJson.Options);
-            if (dto != null)
-            {
-                var incomingHash = ComputeSettingsHash(dto);
-                if (incomingHash != _settingsHash)
+                var dtos = await _http.GetFromJsonAsync<List<StudySessionDto>>("api/sessions");
+                var sessions = dtos?.Select(FromDto).ToList() ?? new List<StudySession>();
+                var hash = ComputeHash(dtos ?? new List<StudySessionDto>());
+                if (hash != _sessionsHash)
                 {
-                    var incoming = FromDto(dto);
-                    _settingsHash = incomingHash;
-                    _settingsCache = incoming;
-                    settingsChanged = true;
-                    await ApplyAccentColorAsync(incoming.AccentColor);
-                    await StoreReadCacheAsync(ReadCacheKeySettings, dto);
+                    _sessionsHash = hash;
+                    _sessionsCache = sessions;
+                    sessionsChanged = true;
+                    if (dtos != null) await StoreReadCacheAsync(ReadCacheKeySessions, dtos);
                 }
             }
-        }
-        catch { /* ignore poll errors */ }
+            catch { /* ignore poll errors */ }
+
+        if (refreshSettings)
+            try
+            {
+                var dto = await _http.GetFromJsonAsync<UserSettingsDto>("api/settings", StudyLifeJson.Options);
+                if (dto != null)
+                {
+                    var incomingHash = ComputeSettingsHash(dto);
+                    if (incomingHash != _settingsHash)
+                    {
+                        var incoming = FromDto(dto);
+                        _settingsHash = incomingHash;
+                        _settingsCache = incoming;
+                        settingsChanged = true;
+                        await ApplyAccentColorAsync(incoming.AccentColor);
+                        await StoreReadCacheAsync(ReadCacheKeySettings, dto);
+                    }
+                }
+            }
+            catch { /* ignore poll errors */ }
 
         if (sessionsChanged) { InvalidateHistoryMemo(); OnSessionsChanged?.Invoke(); }
         if (settingsChanged) OnSettingsChanged?.Invoke();

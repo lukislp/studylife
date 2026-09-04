@@ -147,6 +147,57 @@ public class EventsControllerTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task StreamV2_CarriesVersions_AndAChangeFrameShowsTheBumpedHistoryVersion()
+    {
+        var client = _factory.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/events?v=2");
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cts.Token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var reader = new StreamReader(await response.Content.ReadAsStreamAsync(cts.Token));
+        Assert.Equal("event: state", await reader.ReadLineAsync(cts.Token));
+        var connect = ParseFrame(await reader.ReadLineAsync(cts.Token));
+        Assert.Null(connect.Kind);
+
+        var now = DateTime.Now;
+        var write = await client.PostAsJsonAsync("/api/sessions", new StudySessionDto
+        {
+            CourseId = 31,
+            CourseName = "x",
+            CourseColor = "#000000",
+            StartTime = now.AddDays(6),
+            EndTime = now.AddDays(6).AddHours(1),
+            IsCompleted = false,
+            TimerModeId = 1,
+        }, cts.Token);
+        Assert.Equal(HttpStatusCode.OK, write.StatusCode);
+
+        string? line;
+        VersionFrame? change = null;
+        while ((line = await reader.ReadLineAsync(cts.Token)) != null)
+        {
+            if (line != "event: change") continue;
+            change = ParseFrame(await reader.ReadLineAsync(cts.Token));
+            break;
+        }
+        Assert.NotNull(change);
+        Assert.Equal("sessions", change!.Kind);
+        Assert.Equal(connect.HistoryVersion + 1, change.HistoryVersion);
+        Assert.Equal(connect.SettingsVersion, change.SettingsVersion);
+    }
+
+    private sealed record VersionFrame(string? Kind, int HistoryVersion, int SettingsVersion);
+
+    private static VersionFrame ParseFrame(string? dataLine)
+    {
+        Assert.NotNull(dataLine);
+        Assert.StartsWith("data: ", dataLine);
+        return System.Text.Json.JsonSerializer.Deserialize<VersionFrame>(dataLine!["data: ".Length..],
+            new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web))!;
+    }
+
+    [Fact]
     public async Task Stream_RequiresASession()
     {
         using var anon = ApiKeyTestHelpers.CreateClientWithKey(_factory, null);
