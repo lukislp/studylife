@@ -1,3 +1,10 @@
+# [3.14.0](https://github.com/lukislp/studylife/compare/v3.13.0...v3.14.0) (2026-09-04)
+
+
+### Features
+
+* metrics API reports studied hours, quotas keep planned sessions ([0d34082](https://github.com/lukislp/studylife/commit/0d340829b729d82f8ee87e1e43502a2a1718c8b0))
+
 # [3.13.0](https://github.com/lukislp/studylife/compare/v3.12.3...v3.13.0) (2026-09-04)
 
 
