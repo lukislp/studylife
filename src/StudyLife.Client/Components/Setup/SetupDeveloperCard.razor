@@ -64,6 +64,11 @@
 
     [CascadingParameter]
     public SetupOverviewDto? Overview { get; set; }
+    /// <summary>The in-flight bundle request, cascaded by Setup.razor next to the value: this
+    /// card initialises with the page shell, before the page has awaited the bundle, so it waits
+    /// for the task itself instead of falling back to a request the bundle is about to answer.</summary>
+    [CascadingParameter(Name = "OverviewTask")]
+    public Task<SetupOverviewDto?>? OverviewTask { get; set; }
 
     private bool _hasKey;
     private bool _busy;
@@ -73,6 +78,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        if (OverviewTask is not null) Overview = await OverviewTask;
         T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
         if (Overview?.DeveloperApiKey is { } bundled)
         {
