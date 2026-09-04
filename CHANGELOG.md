@@ -1,3 +1,11 @@
+## [3.12.3](https://github.com/lukislp/studylife/compare/v3.12.2...v3.12.3) (2026-09-04)
+
+
+### Bug Fixes
+
+* add clientNow to the timer state contract snapshot ([0342045](https://github.com/lukislp/studylife/commit/0342045a7c975cf9c471f8639882ccd310b01289))
+* store the remote timer deadline in server time ([78bb9c1](https://github.com/lukislp/studylife/commit/78bb9c1e5113666e2de526b1017f0bc90bce382c))
+
 ## [3.12.2](https://github.com/lukislp/studylife/compare/v3.12.1...v3.12.2) (2026-09-04)
 
 
