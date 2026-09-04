@@ -109,7 +109,7 @@ public partial class Stats
     {
         if (!_semesterComparisonHasData) return;
 
-        static string HoursLabel(double h) => $"{(int)h}h {(int)((h - (int)h) * 60)}m";
+        static string HoursLabel(double h) => StudyMetrics.FormatHoursMinutes(h);
         static string GradeLabel(double? g) => g.HasValue
             ? StudyMetrics.FormatGrade((decimal)g.Value)
             : "–";

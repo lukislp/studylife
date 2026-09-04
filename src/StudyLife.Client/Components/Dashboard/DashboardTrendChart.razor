@@ -1,3 +1,4 @@
+@using StudyLife.Shared
 <div class="dash-card card-trend">
     <div class="card-label">@Label</div>
     <div class="trend-chart">
@@ -16,7 +17,7 @@
 @code {
     public record WeekTrend(string Label, double Hours, double Percent, bool IsCurrent)
     {
-        public string HoursLabel => $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
+        public string HoursLabel => StudyMetrics.FormatHoursMinutes(Hours);
     }
 
     [Parameter] public string Label { get; set; } = "";

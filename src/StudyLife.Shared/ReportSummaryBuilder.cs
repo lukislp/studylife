@@ -36,10 +36,13 @@ public static class ReportSummaryBuilder
             .Select(r =>
             {
                 var goal = goals.FirstOrDefault(g => g.CourseId == r.Course.Id);
-                int? daysRemaining = goal?.TargetDate.HasValue == true
+                var isCompleted = settings.CompletedCourseIds.Contains(r.Course.Id);
+                // A completed course has no remaining deadline - same guard as the stats course
+                // rows, which a finished-after-its-target-date course needs so the record doesn't
+                // print "overdue by 66 days" next to a "completed" badge.
+                int? daysRemaining = !isCompleted && goal?.TargetDate.HasValue == true
                     ? (goal!.TargetDate!.Value.Date - today).Days
                     : null;
-                var isCompleted = settings.CompletedCourseIds.Contains(r.Course.Id);
                 return new ReportCourseRowDto
                 {
                     Course = r.Course,
@@ -55,7 +58,7 @@ public static class ReportSummaryBuilder
 
         var totalSessions = courseRows.Sum(r => r.SessionCount);
         var totalHours = courseRows.Sum(r => r.Hours);
-        var totalHoursLabel = $"{(int)totalHours}h {(int)((totalHours - (int)totalHours) * 60)}m";
+        var totalHoursLabel = StudyMetrics.FormatHoursMinutes(totalHours);
 
         var averageGrade = StudyMetrics.CalcWeightedAverageGrade(goals
             .Where(g => g.Grade.HasValue)

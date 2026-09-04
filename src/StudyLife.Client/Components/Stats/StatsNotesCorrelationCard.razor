@@ -1,3 +1,4 @@
+@using StudyLife.Shared
 <div class="setup-section">
     <div class="ss-label">@Label</div>
     @if (Weeks.Count == 0)
@@ -40,7 +41,7 @@
 @code {
     public record WeekPair(string Label, double NotesCount, double NotesPercent, double Hours, double HoursPercent)
     {
-        public string HoursLabelText => $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
+        public string HoursLabelText => StudyMetrics.FormatHoursMinutes(Hours);
         public string NotesPercentLabel => Math.Clamp(NotesPercent, 0, 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
         public string HoursPercentLabel => Math.Clamp(HoursPercent, 0, 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
     }
