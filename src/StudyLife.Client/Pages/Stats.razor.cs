@@ -89,17 +89,33 @@ public partial class Stats
     protected override Task OnInitializingAsync()
     {
         _settingsTask = State.GetSettingsAsync();
-        _goalsUnfilteredTask = State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals");
         _coursesTask = State.GetCoursesAsync();
+        _cardioFitnessTask = Health.IsAvailable
+            ? Health.GetCardioFitnessPointsAsync(365)
+            : Task.FromResult<IReadOnlyList<StudyLife.Client.Services.CardioFitnessPoint>?>(null);
+        // One wall-clock read for the whole page: sent to the server and used by the local
+        // fallback alike, so both paths compute every time-dependent number for the same instant.
+        _now = DateTime.Now;
+        // Server path: one response with the complete builder output replaces the seven raw
+        // fetches (sessions, two history windows, goals, quotas, notes, programmes + their N+1
+        // catalogs). The raw fetches only start in the fallback, see StartRawFetches.
+        _summaryTask = State.TryGetSummaryAsync<StatsSummaryDto>("api/stats/summary", _now);
+        return Task.CompletedTask;
+    }
+
+    private DateTime _now;
+    private Task<StatsSummaryDto?>? _summaryTask;
+
+    /// <summary>Fallback only (offline or a server without api/stats/summary): the raw fetches the
+    /// local builder needs, started together so the fallback still overlaps its round trips.</summary>
+    private void StartRawFetches()
+    {
+        _goalsUnfilteredTask = State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals");
         _sessionsTask = State.GetSessionsAsync();
         _notesTask = State.GetJsonCachedAsync<List<NoteDto>>("api/notes");
         _historyAllTask = State.GetHistoryAsync(StatsSummaryBuilder.HistoryDays);
         _groupQuotasTask = State.GetActiveGroupQuotasAsync();
         _historyAllTimeTask = State.GetHistoryAsync(StatsSummaryBuilder.AllTimeHistoryDays);
-        _cardioFitnessTask = Health.IsAvailable
-            ? Health.GetCardioFitnessPointsAsync(365)
-            : Task.FromResult<IReadOnlyList<StudyLife.Client.Services.CardioFitnessPoint>?>(null);
-        return Task.CompletedTask;
     }
 
     protected override async Task OnTextLoadedAsync()
@@ -121,7 +137,7 @@ public partial class Stats
     {
         // One wall-clock read for the whole build: nothing in the builder reads DateTime.Now/Today
         // itself, so every card below sees the exact same instant.
-        var now = DateTime.Now;
+        var now = _now;
 
         // ── Phase 1: settings + courses + goals + sessions + the 12-month history - the data
         // basis for the course list/totals and the large majority of charts on this page (2026-09
@@ -134,6 +150,27 @@ public partial class Stats
         var settings = await _settingsTask!;
         var allCourses = await _coursesTask!;
         _allCourses = allCourses;
+
+        var summary = await _summaryTask!;
+        if (summary != null)
+        {
+            // Same three phases and flags as the fallback below, only the data arrives in one piece.
+            ApplyCore(summary.Core);
+            _statsLoading = false;
+            await RenderPhaseAsync();
+
+            ApplyNotes(summary.Notes);
+            _notesLoading = false;
+            await RenderPhaseAsync();
+
+            BuildCardioFitnessTrend(await _cardioFitnessTask!);
+            ApplyExtended(summary.Extended);
+            _extendedLoading = false;
+            await RenderPhaseAsync();
+            return;
+        }
+
+        StartRawFetches();
 
         // The builder's input is filled in phase by phase, in the same order the page awaits its
         // fetches - each phase only reads the fields its own group needs (see the phase methods).

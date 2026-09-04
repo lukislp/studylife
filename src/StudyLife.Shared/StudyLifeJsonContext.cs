@@ -42,6 +42,9 @@ namespace StudyLife.Shared;
 // Dashboard summary (GET api/dashboard/summary): the one response that replaced the raw dashboard
 // fetches above on the client's hottest path - its nested DTOs are reached through this root.
 [JsonSerializable(typeof(DashboardSummaryDto))]
+[JsonSerializable(typeof(StatsSummaryDto))]
+[JsonSerializable(typeof(WrappedSummaryDto))]
+[JsonSerializable(typeof(ReportSummaryDto))]
 public partial class StudyLifeJsonContext : JsonSerializerContext
 {
 }

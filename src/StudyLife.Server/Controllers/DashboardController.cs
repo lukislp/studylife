@@ -38,6 +38,7 @@ public class DashboardController : ControllerBase
     private readonly IProgrammeScopeResolver _scope;
     private readonly IOwnershipService _ownership;
     private readonly IConfiguration _config;
+    private readonly SummaryInputLoader _loader;
     private readonly bool _rawBackupSupported;
 
     /// <summary>Same upper bound as MetricsController's summary cache - the version-keyed key
@@ -53,7 +54,7 @@ public class DashboardController : ControllerBase
 
     public DashboardController(StudyLifeDb db, IDistributedCache cache, SessionHistoryCacheVersion historyVersion,
         SettingsCacheVersion settingsVersion, ICurrentUserAccessor currentUser, IProgrammeScopeResolver scope,
-        IOwnershipService ownership, IConfiguration config,
+        IOwnershipService ownership, IConfiguration config, SummaryInputLoader loader,
         DatabaseBackupService? backupService = null, DatabaseRestoreService? restoreService = null)
     {
         _db = db;
@@ -64,6 +65,7 @@ public class DashboardController : ControllerBase
         _scope = scope;
         _ownership = ownership;
         _config = config;
+        _loader = loader;
         // Same derivation as SystemController.GetCapabilities/BackupController.IsRawBackupAvailable:
         // both services are only registered in SQLite mode (Program.cs), and never on a demo
         // instance (DemoModeGuard.IsEnabled, not a bare DEMO_MODE check, to agree with Program.cs
@@ -89,20 +91,11 @@ public class DashboardController : ControllerBase
         // (unlike Sessions/Settings), so count + the newest UpdatedAt stand in for one without a
         // dedicated Redis counter for a single field. Read on every call (like the two version
         // counters below), not just on a cache miss, since it is itself part of the cache key.
-        var notesToken = await LoadNotesTokenAsync();
+        var notesToken = await _loader.LoadNotesTokenAsync();
 
         var cacheKey = $"dashboard:summary:{userId}:{clientNow:yyyyMMddHHmm}"
             + $":{await _historyVersion.GetAsync(userId)}:{await _settingsVersion.GetAsync(userId)}:{notesToken}";
         return await _cache.GetOrSetAsync(this, cacheKey, CacheTtl, () => ComputeAsync(clientNow, scope));
-    }
-
-    private async Task<string> LoadNotesTokenAsync()
-    {
-        var stats = await _db.Notes.AsNoTracking()
-            .GroupBy(_ => 1)
-            .Select(g => new { Count = g.Count(), MaxUpdatedAt = (DateTime?)g.Max(n => n.UpdatedAt) })
-            .FirstOrDefaultAsync();
-        return stats == null ? "0" : $"{stats.Count}:{stats.MaxUpdatedAt:O}";
     }
 
     private async Task<DashboardSummaryDto> ComputeAsync(DateTime now, ProgrammeScope scope)
@@ -114,8 +107,7 @@ public class DashboardController : ControllerBase
         // date window relative to the current moment - one fetch here instead of three separate
         // round trips (GET api/sessions / api/sessions/history?days=400 / ?days=3650), materialized
         // then mapped in-memory, same shape as MetricsController's own session read.
-        var sessionEntities = await _db.Sessions.AsNoTracking().ToListAsync();
-        var allSessions = sessionEntities.Select(SessionsController.ToDto).ToList();
+        var allSessions = await _loader.LoadAllSessionsAsync();
 
         // The window boundary every history query compares against must be DateTime.Now, not
         // UtcNow - see SessionsController.GetHistory's own "audit finding Z1" comment (StartTime/
@@ -124,15 +116,11 @@ public class DashboardController : ControllerBase
         var serverNow = DateTime.Now;
 
         // GET /api/sessions/history?days=400&onlyCompleted=false: no onlyCompleted filter at all.
-        var historyFrom = serverNow.AddDays(-DashboardSummaryBuilder.HistoryDays);
-        var history = allSessions.Where(s => s.StartTime >= historyFrom).ToList();
+        var history = SummaryInputLoader.SliceHistory(allSessions, serverNow, DashboardSummaryBuilder.HistoryDays, onlyCompleted: false);
 
         // GET /api/sessions/history?days=3650 (onlyCompleted defaults to true): "studied" means
         // timer-completed OR the scheduled end has already passed, same as GetHistory itself.
-        var heavyFrom = serverNow.AddDays(-DashboardSummaryBuilder.AchievementHistoryDays);
-        var heavyHistory = allSessions
-            .Where(s => s.StartTime >= heavyFrom && (s.IsCompleted || s.EndTime <= serverNow))
-            .ToList();
+        var heavyHistory = SummaryInputLoader.SliceHistory(allSessions, serverNow, DashboardSummaryBuilder.AchievementHistoryDays);
 
         var goalEntities = await _db.CourseGoals.AsNoTracking().ToListAsync();
         var goals = goalEntities.Select(CourseGoalsController.ToDto).ToList();
