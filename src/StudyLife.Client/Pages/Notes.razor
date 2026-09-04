@@ -482,10 +482,18 @@ else
         if (kind is not null && kind != "notes") return;
         _ = InvokeAsync(async () =>
         {
-            var selectedId = _selectedNote?.Id;
+            var previous = _selectedNote;
             await LoadNotes();
-            if (selectedId is { } id && _notes.FirstOrDefault(n => n.Id == id) is { } stillThere && _selectedNote?.Id == id)
-                _selectedNote = stillThere;
+            if (previous is { Id: > 0 } && _notes.FirstOrDefault(n => n.Id == previous.Id) is { } fresh && _selectedNote?.Id == previous.Id)
+            {
+                // Editor untouched since the last load/save: show the other device's version.
+                // Unsaved edits win instead - the entity is swapped so the next save targets the
+                // current server row, but the text the user is typing is never replaced.
+                var clean = _editTitle == previous.Title && _editContent == previous.Content
+                    && _editCourseId == (previous.CourseId ?? 0) && _editIsMarkdown == previous.IsMarkdown;
+                if (clean) SelectNote(fresh);
+                else _selectedNote = fresh;
+            }
             StateHasChanged();
         });
     }
