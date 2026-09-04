@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Components.WebAssembly.Http;
 using Microsoft.JSInterop;
 using StudyLife.Client.Models;
 using StudyLife.Shared;
@@ -230,7 +231,7 @@ public class AppStateService : IAsyncDisposable
     private async Task PurgeOnLogoutAsync()
     {
         InvalidateHistoryMemo();
-        try { await _jsRuntime.InvokeVoidAsync("stopChangeStream"); } catch { /* no stream to stop */ }
+        StopChangeStream();
         await PurgeCachesAndQueueAsync();
         try { await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", UserIdMarkerKey); }
         catch { /* best effort */ }
@@ -350,35 +351,211 @@ public class AppStateService : IAsyncDisposable
             TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
         // Push half of the cross-client sync (see EventsController): the server tells this
         // client WHEN to refetch, the 30s poll above stays as the fallback (and costs almost
-        // nothing now that unchanged responses are 304s). Fire-and-forget: a host that cannot
-        // stream simply never triggers OnServerChange.
-        if (!string.IsNullOrEmpty(_sessionTokenStore.Token))
-            _ = StartChangeStreamAsync();
+        // nothing now that unchanged responses are 304s). Started as soon as a token exists -
+        // now (web: Program.cs initialised the store before anything else) or later (native app:
+        // AppRoot initialises the store after this service was constructed, logins on either
+        // host). A constructor-only check silently left the app without a stream.
+        _sessionTokenStore.OnTokenAvailable += StartChangeStream;
+        StartChangeStream();
     }
 
-    private DotNetObjectReference<AppStateService>? _changeStreamRef;
+    private CancellationTokenSource? _changeStreamCts;
 
-    private async Task StartChangeStreamAsync()
+    /// <summary>
+    /// Server-sent change events (GET api/events), read in C# through the same HttpClient as
+    /// every other call. This used to be a JS fetch in interop.js; it moved here because (1) the
+    /// native app never started it - the token was not loaded yet when this service was
+    /// constructed - and (2) a JS fetch from the app's WebView origin (app://...) to the server
+    /// would be cross-origin and the server has no CORS, whereas the .NET HttpClient in the
+    /// app is a native handler and SessionHandler attaches the token on both hosts. On WASM the
+    /// request opts into response streaming so events arrive as they are written.
+    /// Semantics kept from the JS version: 401/403 end the stream for good (no session), six
+    /// consecutive failures without a connection fall back to the 30 s poll, otherwise reconnect
+    /// with exponential backoff (2 s .. 60 s), lifecycle events feed the client telemetry.
+    /// </summary>
+    private void StartChangeStream()
     {
-        try
-        {
-            _changeStreamRef ??= DotNetObjectReference.Create(this);
-            var url = new Uri(_http.BaseAddress!, "api/events").ToString();
-            await _jsRuntime.InvokeVoidAsync("startChangeStream", url, _sessionTokenStore.Token, _changeStreamRef);
-        }
-        catch { /* JS interop unavailable (tests, native shell without the helper) - poll only */ }
+        if (string.IsNullOrEmpty(_sessionTokenStore.Token) || _changeStreamCts != null) return;
+        var cts = new CancellationTokenSource();
+        _changeStreamCts = cts;
+        _ = RunChangeStreamAsync(cts.Token);
     }
 
-    /// <summary>Called from js/interop.js for every server-sent change event. Runs the same
+    private void StopChangeStream()
+    {
+        var cts = _changeStreamCts;
+        _changeStreamCts = null;
+        try { cts?.Cancel(); } catch { /* already disposed */ }
+        cts?.Dispose();
+    }
+
+    private async Task RunChangeStreamAsync(CancellationToken cancellationToken)
+    {
+        var backoffMs = 2000;
+        var failuresWithoutConnection = 0;
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            var attempt = System.Diagnostics.Stopwatch.StartNew();
+            try
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Get, "api/events?v=2");
+                request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("text/event-stream"));
+                request.SetBrowserResponseStreamingEnabled(true);
+                request.SetBrowserRequestCache(BrowserRequestCache.NoStore);
+                using var response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+                if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden) return;
+                response.EnsureSuccessStatusCode();
+                failuresWithoutConnection = 0;
+                backoffMs = 2000;
+                _streamConnected = true;
+                OnSseLifecycle("connected", attempt.Elapsed.TotalMilliseconds);
+                // Back online: push our queued offline writes before reconciling with the
+                // server's counters in the connect frame, so our own changes are not "missed".
+                _ = ReplayQueueAsync();
+
+                using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+                using var reader = new StreamReader(stream);
+                string? data = null;
+                // Heartbeat watchdog: the server writes a frame at least every 25 s. A half-open
+                // connection (network switch, sleeping phone) never errors on read, it just goes
+                // silent - so a read that sees nothing for 75 s is treated as a dead stream and
+                // the loop reconnects instead of waiting forever.
+                using var idle = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                while (true)
+                {
+                    idle.CancelAfter(HeartbeatTimeout);
+                    var line = await reader.ReadLineAsync(idle.Token);
+                    if (line is null) break;
+                    if (line.Length == 0)
+                    {
+                        // Blank line terminates a frame. v=2 frames ("state" on connect and every
+                        // heartbeat, "change" after a write) all carry the version counters, so
+                        // one handler covers them; comment lines (": ...") have no data.
+                        if (data != null) { var payload = data; data = null; _ = OnServerStateAsync(payload); }
+                        continue;
+                    }
+                    if (line.StartsWith("data: ", StringComparison.Ordinal)) data = line[6..];
+                }
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                _streamConnected = false;
+                return;
+            }
+            catch
+            {
+                // Six failures without a single connection: report once that the timer poll is
+                // carrying the sync (telemetry), but keep trying at the 60 s cap - a host that is
+                // offline for an hour must come back to push updates on its own.
+                if (++failuresWithoutConnection == 6)
+                    OnSseLifecycle("fallback_poll", attempt.Elapsed.TotalMilliseconds);
+            }
+            _streamConnected = false;
+            if (cancellationToken.IsCancellationRequested) return;
+            OnSseLifecycle("reconnect", backoffMs);
+            try { await Task.Delay(backoffMs, cancellationToken); } catch (OperationCanceledException) { return; }
+            backoffMs = Math.Min(backoffMs * 2, 60000);
+        }
+    }
+
+    /// <summary>Called by RunChangeStreamAsync for every server-sent change event. Runs the same
     /// PollAsync the timer uses, so the refetch, hash comparison and change events are one code
     /// path; concurrent events collapse into at most one follow-up poll.</summary>
-    [JSInvokable]
-    public async Task OnServerChange(string kind)
+    public Task OnServerChange(string kind) => RefreshCoalescedAsync(sessions: true, settings: true);
+
+    /// <summary>Shape of a v=2 frame from GET api/events (see EventsController.StateJsonAsync).
+    /// Seq is the per-user "anything changed" counter (ChangeBroadcastFilter), the two versions
+    /// are the sessions/settings cache counters.</summary>
+    private sealed record ChangeStateFrame(string? Kind, int Seq, int HistoryVersion, int SettingsVersion);
+
+    /// <summary>
+    /// Raised for every change the server reports that is not sessions or settings (those have
+    /// their own events): the argument is the route kind ("notes", "coursegoals",
+    /// "sessiontemplates", ...) or null when the change sequence moved while we were not
+    /// listening and the kind is unknown - pages then refetch what they show. Also raised for
+    /// kinds this client has never heard of, so a new server feature is live-updated without
+    /// a client change.
+    /// </summary>
+    public event Action<string?>? OnServerChanged;
+    private int? _knownSeq;
+
+    // The last version counters this client reconciled against. Null until the first frame:
+    // the pages load fresh data on their own at startup, so the first frame only records where
+    // we stand; from then on every frame (heartbeat, change, or the connect frame after a
+    // reconnect) is compared and only what actually changed is refetched.
+    private int? _knownHistoryVersion;
+    private int? _knownSettingsVersion;
+    private volatile bool _streamConnected;
+    private static readonly TimeSpan HeartbeatTimeout = TimeSpan.FromSeconds(75); // 3x the server's 25 s heartbeat
+
+    /// <summary>True while the change stream has an open connection. TelemetryService reads it once
+    /// when it subscribes: on a fast network the stream connects before that service exists, so
+    /// the "connected" lifecycle event would otherwise be lost (observed on iOS, 2026-09).</summary>
+    public bool ChangeStreamConnected => _streamConnected;
+
+    /// <summary>Handles one v=2 frame: refetch sessions and/or settings only when the server's
+    /// counter moved past what we last saw. Falls back to the plain refetch for a frame that is
+    /// not JSON (a v=1 server, e.g. during a rolling deployment).</summary>
+    private async Task OnServerStateAsync(string payload)
     {
+        ChangeStateFrame? frame = null;
+        try { frame = JsonSerializer.Deserialize<ChangeStateFrame>(payload, StudyLifeJson.Options); }
+        catch { /* not a v=2 frame */ }
+        if (frame is null) { await OnServerChange(payload); return; }
+
+        var first = _knownSeq is null;
+        var sessionsMoved = _knownHistoryVersion != frame.HistoryVersion;
+        var settingsMoved = _knownSettingsVersion != frame.SettingsVersion;
+        var seqMoved = _knownSeq != frame.Seq;
+        _knownHistoryVersion = frame.HistoryVersion;
+        _knownSettingsVersion = frame.SettingsVersion;
+        _knownSeq = frame.Seq;
+        if (first || !seqMoved) return;
+
+        // A change frame names what changed; a connect/heartbeat frame whose sequence moved
+        // without a kind means we missed events (reconnect, lost frame): refresh the two caches
+        // whose counters moved and tell the pages "something else changed" so they refetch.
+        var kind = frame.Kind;
+        if (sessionsMoved || settingsMoved)
+            await RefreshCoalescedAsync(sessionsMoved, settingsMoved);
+
+        // A "sessions"/"settings" frame whose counter moved is fully handled by the refresh above
+        // (OnSessionsChanged/OnSettingsChanged fire from there). The same kinds WITHOUT a moved
+        // counter mean a write under that route that the cache counters do not cover - an API
+        // key generated under api/settings, for instance - so the pages showing such data (the
+        // setup cards) still need to hear about it.
+        var coveredByCounter = (kind == "sessions" && sessionsMoved) || (kind == "settings" && settingsMoved);
+        if (kind is not null && !coveredByCounter)
+        {
+            if (IsOwnRecentWrite(kind)) return; // our own write, the page already applied it
+            OnServerChanged?.Invoke(kind);
+            NotifyStateChanged();
+        }
+        else if (kind is null && !sessionsMoved && !settingsMoved)
+        {
+            OnServerChanged?.Invoke(null);
+            NotifyStateChanged();
+        }
+    }
+
+    // Coalescing instead of dropping: a frame that arrives while a refresh is running marks the
+    // refresh dirty and it runs once more, so two writes a few hundred milliseconds apart never
+    // lose the second one (the previous Interlocked guard simply discarded it).
+    private bool _refreshDirtySessions, _refreshDirtySettings;
+
+    private async Task RefreshCoalescedAsync(bool sessions, bool settings)
+    {
+        _refreshDirtySessions |= sessions;
+        _refreshDirtySettings |= settings;
         if (Interlocked.Exchange(ref _pushPollPending, 1) == 1) return;
         try
         {
-            await PollAsync();
+            while (_refreshDirtySessions || _refreshDirtySettings)
+            {
+                var s = _refreshDirtySessions; var t = _refreshDirtySettings;
+                _refreshDirtySessions = _refreshDirtySettings = false;
+                await RefreshAsync(refreshSessions: s, refreshSettings: t);
+            }
         }
         finally
         {
@@ -386,18 +563,36 @@ public class AppStateService : IAsyncDisposable
         }
     }
 
+    // Own writes come back as change frames too (the server cannot tell which client wrote).
+    // For sessions/settings the refresh is cheap and idempotent (304 or the same content), but
+    // for the other kinds a page would refetch a list it just updated itself and could clobber an
+    // editor mid-typing - so pages report their own writes and frames of that kind within the
+    // next few seconds are treated as already applied.
+    private readonly Dictionary<string, DateTime> _ownWritesUtc = new(StringComparer.Ordinal);
+    private static readonly TimeSpan OwnWriteWindow = TimeSpan.FromSeconds(5);
+
+    /// <summary>Call right after this client wrote data of the given route kind ("notes", ...).</summary>
+    public void NoteOwnWrite(string kind) => _ownWritesUtc[kind] = DateTime.UtcNow;
+
+    private bool IsOwnRecentWrite(string kind) =>
+        _ownWritesUtc.TryGetValue(kind, out var at) && DateTime.UtcNow - at < OwnWriteWindow;
+
     /// <summary>Telemetry phase 2 (docs/ARCHITECTURE.md "Telemetry"): raised from the same
-    /// dotnetRef js/interop.js's startChangeStream already holds for OnServerChange above -
+    /// change-stream reader in RunChangeStreamAsync (formerly a JS fetch in interop.js) -
     /// TelemetryService subscribes to this instead of AppStateService taking a dependency on it
     /// (which would risk a DI cycle, since TelemetryService itself reads settings/consent from
     /// AppStateService). Args: event kind (connected/reconnect/fallback_poll), duration ms.</summary>
     public event Action<string, double>? OnSseLifecycleEventRaised;
 
-    [JSInvokable]
     public void OnSseLifecycle(string kind, double durationMs) => OnSseLifecycleEventRaised?.Invoke(kind, durationMs);
 
     private int _pushPollPending;
 
+    // The 30 s timer no longer polls while the change stream is connected: the server reports
+    // every write within a second and every 25 s heartbeat carries the change sequence, which is
+    // the consistency check a poll used to provide (5200 conditional GETs a day, measured
+    // 2026-09-04). The tick still replays the offline write queue, and without a stream (host
+    // that cannot stream, or while reconnecting) it is the only sync mechanism and refreshes.
     private async Task PollAsync()
     {
         try
@@ -408,41 +603,52 @@ public class AppStateService : IAsyncDisposable
 
         await ReplayQueueAsync();
 
+        if (_streamConnected) return;
+        await RefreshCoalescedAsync(sessions: true, settings: true);
+    }
+
+    /// <summary>Refetches sessions and/or settings, updates the caches when the content hash
+    /// changed and raises the change events - the body of the former PollAsync, now shared by
+    /// the timer, the change stream and the version reconciliation.</summary>
+    private async Task RefreshAsync(bool refreshSessions, bool refreshSettings)
+    {
         var sessionsChanged = false;
         var settingsChanged = false;
-        try
-        {
-            var dtos = await _http.GetFromJsonAsync<List<StudySessionDto>>("api/sessions");
-            var sessions = dtos?.Select(FromDto).ToList() ?? new List<StudySession>();
-            var hash = ComputeHash(dtos ?? new List<StudySessionDto>());
-            if (hash != _sessionsHash)
+        if (refreshSessions)
+            try
             {
-                _sessionsHash = hash;
-                _sessionsCache = sessions;
-                sessionsChanged = true;
-                if (dtos != null) await StoreReadCacheAsync(ReadCacheKeySessions, dtos);
-            }
-        }
-        catch { /* ignore poll errors */ }
-
-        try
-        {
-            var dto = await _http.GetFromJsonAsync<UserSettingsDto>("api/settings", StudyLifeJson.Options);
-            if (dto != null)
-            {
-                var incomingHash = ComputeSettingsHash(dto);
-                if (incomingHash != _settingsHash)
+                var dtos = await _http.GetFromJsonAsync<List<StudySessionDto>>("api/sessions");
+                var sessions = dtos?.Select(FromDto).ToList() ?? new List<StudySession>();
+                var hash = ComputeHash(dtos ?? new List<StudySessionDto>());
+                if (hash != _sessionsHash)
                 {
-                    var incoming = FromDto(dto);
-                    _settingsHash = incomingHash;
-                    _settingsCache = incoming;
-                    settingsChanged = true;
-                    await ApplyAccentColorAsync(incoming.AccentColor);
-                    await StoreReadCacheAsync(ReadCacheKeySettings, dto);
+                    _sessionsHash = hash;
+                    _sessionsCache = sessions;
+                    sessionsChanged = true;
+                    if (dtos != null) await StoreReadCacheAsync(ReadCacheKeySessions, dtos);
                 }
             }
-        }
-        catch { /* ignore poll errors */ }
+            catch { /* ignore poll errors */ }
+
+        if (refreshSettings)
+            try
+            {
+                var dto = await _http.GetFromJsonAsync<UserSettingsDto>("api/settings", StudyLifeJson.Options);
+                if (dto != null)
+                {
+                    var incomingHash = ComputeSettingsHash(dto);
+                    if (incomingHash != _settingsHash)
+                    {
+                        var incoming = FromDto(dto);
+                        _settingsHash = incomingHash;
+                        _settingsCache = incoming;
+                        settingsChanged = true;
+                        await ApplyAccentColorAsync(incoming.AccentColor);
+                        await StoreReadCacheAsync(ReadCacheKeySettings, dto);
+                    }
+                }
+            }
+            catch { /* ignore poll errors */ }
 
         if (sessionsChanged) { InvalidateHistoryMemo(); OnSessionsChanged?.Invoke(); }
         if (settingsChanged) OnSettingsChanged?.Invoke();

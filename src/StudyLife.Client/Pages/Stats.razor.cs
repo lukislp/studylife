@@ -100,7 +100,54 @@ public partial class Stats
         // fetches (sessions, two history windows, goals, quotas, notes, programmes + their N+1
         // catalogs). The raw fetches only start in the fallback, see StartRawFetches.
         _summaryTask = State.TryGetSummaryAsync<StatsSummaryDto>("api/stats/summary", _now);
+
+        // Live updates (change stream): sessions/settings have their own events, notes/course
+        // goals/study programmes fall under the generic "something else changed" kind.
+        State.OnSessionsChanged += OnLiveDataChanged;
+        State.OnSettingsChanged += OnLiveDataChanged;
+        State.OnServerChanged += OnServerChanged;
         return Task.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        State.OnSessionsChanged -= OnLiveDataChanged;
+        State.OnSettingsChanged -= OnLiveDataChanged;
+        State.OnServerChanged -= OnServerChanged;
+    }
+
+    private void OnLiveDataChanged() => InvokeAsync(RefreshAsync);
+
+    private void OnServerChanged(string? kind)
+    {
+        if (kind is not (null or "notes" or "coursegoals" or "studyprograms")) return;
+        _ = InvokeAsync(RefreshAsync);
+    }
+
+    // Coalesced, non-overlapping live refresh: a change-stream event re-runs LoadDataAsync with
+    // fresh data, but (unlike the initial load) never resets _statsLoading/_notesLoading/
+    // _extendedLoading back to true - the numbers already on screen stay visible until each
+    // phase's fresh result replaces them, so a background sync never flashes the skeletons back
+    // in. An event that arrives while a refresh is already running just schedules one more pass
+    // afterwards instead of overlapping it; a failed refresh is swallowed so the page keeps
+    // showing its last good state and the next event simply tries again.
+    private bool _refreshRunning;
+    private bool _refreshPending;
+
+    private async Task RefreshAsync()
+    {
+        if (_refreshRunning) { _refreshPending = true; return; }
+        _refreshRunning = true;
+        try
+        {
+            do
+            {
+                _refreshPending = false;
+                try { await LoadDataAsync(isRefresh: true); }
+                catch { /* background refresh failed - keep showing the last good state, next event retries */ }
+            } while (_refreshPending);
+        }
+        finally { _refreshRunning = false; }
     }
 
     private DateTime _now;
@@ -133,11 +180,24 @@ public partial class Stats
     /// for everything) precisely so the page's three progressive-render boundaries survive: a
     /// single call would have to wait for the ~10-year history before showing anything at all.
     /// </summary>
-    private async Task LoadDataAsync()
+    private async Task LoadDataAsync(bool isRefresh = false)
     {
         // One wall-clock read for the whole build: nothing in the builder reads DateTime.Now/Today
-        // itself, so every card below sees the exact same instant.
-        var now = _now;
+        // itself, so every card below sees the exact same instant. A live refresh takes a fresh
+        // instant instead of reusing the one from the initial page load.
+        var now = isRefresh ? DateTime.Now : _now;
+        _now = now;
+
+        // A live refresh can't reuse OnInitializingAsync's tasks (those already resolved to the
+        // page's initial data) - it starts its own fresh ones, exactly like the initial load did.
+        var settingsTask = isRefresh ? State.GetSettingsAsync() : _settingsTask!;
+        var coursesTask = isRefresh ? State.GetCoursesAsync() : _coursesTask!;
+        var cardioFitnessTask = isRefresh
+            ? (Health.IsAvailable ? Health.GetCardioFitnessPointsAsync(365) : Task.FromResult<IReadOnlyList<StudyLife.Client.Services.CardioFitnessPoint>?>(null))
+            : _cardioFitnessTask!;
+        var summaryTask = isRefresh
+            ? State.TryGetSummaryAsync<StatsSummaryDto>("api/stats/summary", now)
+            : _summaryTask!;
 
         // ── Phase 1: settings + courses + goals + sessions + the 12-month history - the data
         // basis for the course list/totals and the large majority of charts on this page (2026-09
@@ -145,13 +205,13 @@ public partial class Stats
         // with the notes/cardio-fitness/semester-comparison/programme-comparison fetches further
         // down lets the bulk of the page render as soon as this batch resolves, instead of
         // waiting on the slower/less essential fetches too - the tasks themselves already started
-        // in OnInitializingAsync regardless of await order, so this only changes WHEN each result
-        // is consumed/rendered, never what is fetched.
-        var settings = await _settingsTask!;
-        var allCourses = await _coursesTask!;
+        // above (or in OnInitializingAsync) regardless of await order, so this only changes WHEN
+        // each result is consumed/rendered, never what is fetched.
+        var settings = await settingsTask;
+        var allCourses = await coursesTask;
         _allCourses = allCourses;
 
-        var summary = await _summaryTask!;
+        var summary = await summaryTask;
         if (summary != null)
         {
             // Same three phases and flags as the fallback below, only the data arrives in one piece.
@@ -163,7 +223,7 @@ public partial class Stats
             _notesLoading = false;
             await RenderPhaseAsync();
 
-            BuildCardioFitnessTrend(await _cardioFitnessTask!);
+            BuildCardioFitnessTrend(await cardioFitnessTask);
             ApplyExtended(summary.Extended);
             _extendedLoading = false;
             await RenderPhaseAsync();
@@ -211,7 +271,7 @@ public partial class Stats
         // slow on-device), the 10-year semester comparison, and the cross-programme comparison
         // (its own N+1 fetch across every programme). The cardio-fitness card is deliberately NOT
         // part of the shared builder: native health data never leaves the device.
-        BuildCardioFitnessTrend(await _cardioFitnessTask!);
+        BuildCardioFitnessTrend(await cardioFitnessTask);
 
         // Separate all-time fetch ONLY for the semester comparison: its average-hours figure for
         // earlier semesters needs sessions beyond the 12-month window above - the same

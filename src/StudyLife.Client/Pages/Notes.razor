@@ -474,11 +474,28 @@ else
     private Task<List<CourseDto>>? _coursesTask;
     private Task? _loadNotesTask;
 
+    // Another device (or an add-on) changed notes: reload the list but keep the note that is
+    // open in the editor as the selection, so live updates never take the cursor away. Our own
+    // saves are filtered on the service side (State.NoteOwnWrite) and do not come through here.
+    private void OnServerChanged(string? kind)
+    {
+        if (kind is not null && kind != "notes") return;
+        _ = InvokeAsync(async () =>
+        {
+            var selectedId = _selectedNote?.Id;
+            await LoadNotes();
+            if (selectedId is { } id && _notes.FirstOrDefault(n => n.Id == id) is { } stillThere && _selectedNote?.Id == id)
+                _selectedNote = stillThere;
+            StateHasChanged();
+        });
+    }
+
     protected override Task OnInitializingAsync()
     {
         _settingsTask = State.GetSettingsAsync();
         _coursesTask = State.GetCoursesAsync();
         _loadNotesTask = LoadNotes();
+        State.OnServerChanged += OnServerChanged;
         return Task.CompletedTask;
     }
 
@@ -926,6 +943,7 @@ else
         {
             try
             {
+                State.NoteOwnWrite("notes");
                 var created = await Http.PostAsJsonAsync("api/notes", _selectedNote);
                 if (created.IsSuccessStatusCode)
                 {
@@ -948,6 +966,7 @@ else
         }
         else
         {
+            State.NoteOwnWrite("notes");
             try { await Http.PutAsJsonAsync($"api/notes/{_selectedNote.Id}", _selectedNote); }
             catch { await State.EnqueueNoteSaveAsync(_selectedNote); }
             var existing = _notes.FirstOrDefault(n => n.Id == _selectedNote.Id);
@@ -997,6 +1016,7 @@ else
         }
         else
         {
+            State.NoteOwnWrite("notes");
             try { await Http.DeleteAsync($"api/notes/{_selectedNote.Id}"); }
             catch { await State.EnqueueNoteDeleteAsync(_selectedNote.Id); }
         }
@@ -1104,6 +1124,7 @@ else
 
     public void Dispose()
     {
+        State.OnServerChanged -= OnServerChanged;
         _debounce?.Dispose();
         _searchDebounce?.Dispose();
     }
