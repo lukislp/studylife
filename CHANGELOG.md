@@ -1,3 +1,10 @@
+# [3.13.0](https://github.com/lukislp/studylife/compare/v3.12.3...v3.13.0) (2026-09-04)
+
+
+### Features
+
+* one definition of studied hours across dashboard and evaluation ([deabeed](https://github.com/lukislp/studylife/commit/deabeed13fd1c65383858364ffcfdfe293ba6f08))
+
 ## [3.12.3](https://github.com/lukislp/studylife/compare/v3.12.2...v3.12.3) (2026-09-04)
 
 
