@@ -1,3 +1,11 @@
+## [3.8.1](https://github.com/lukislp/studylife/compare/v3.8.0...v3.8.1) (2026-09-04)
+
+
+### Bug Fixes
+
+* align cache helper tests with content-derived ETags ([4c5dc4b](https://github.com/lukislp/studylife/commit/4c5dc4b296bf1e6c60d56bbc675e6dd749980f03))
+* derive cache ETags from content and recover settings saves after a 409 ([6b24046](https://github.com/lukislp/studylife/commit/6b2404658854685cddbb79f7d7b15d48ce1f344f))
+
 # [3.8.0](https://github.com/lukislp/studylife/compare/v3.7.2...v3.8.0) (2026-09-04)
 
 
