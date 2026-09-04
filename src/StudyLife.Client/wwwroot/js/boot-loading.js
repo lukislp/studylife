@@ -27,11 +27,17 @@ fetch('api/auth/demo').then(function (r) { return r.json(); }).then(function (d)
 (function () {
     var sheets = ['dashboard', 'stats', 'calendar', 'focus', 'setup', 'notes', 'planner', 'progressshare'];
     var head = document.head;
+    // The page sheets must sit BEFORE responsive.css/print.css in the cascade, exactly where the
+    // former <link> list had them: responsive.css overrides page rules of equal specificity
+    // (e.g. .dash-grid { grid-template-columns: 1fr } for phones). Appending them at the end of
+    // <head> put them AFTER responsive.css and the desktop two-column dashboard grid won on
+    // phones in the web build (the native app links every sheet statically and was unaffected).
+    var anchor = head.querySelector('link[rel="stylesheet"][href$="responsive.css"]');
     sheets.forEach(function (name) {
         var link = document.createElement('link');
         link.rel = 'stylesheet';
         link.href = 'css/' + name + '.css';
-        head.appendChild(link);
+        if (anchor) head.insertBefore(link, anchor); else head.appendChild(link);
     });
 })();
 
