@@ -47,15 +47,26 @@ public partial class Report
     private Task<List<StudyProgramSummaryDto>?>? _programsTask;
     private Task<IReadOnlyDictionary<string, int>>? _groupQuotasTask;
 
+    private DateTime _now;
+    private Task<ReportSummaryDto?>? _summaryTask;
+
     protected override Task OnInitializingAsync()
     {
         _settingsTask = State.GetSettingsAsync();
         _coursesTask = State.GetCoursesAsync();
+        // One wall-clock read shared by the server request and the local fallback. The raw
+        // fetches (goals, 10-year history, programmes, quotas) only start in the fallback.
+        _now = DateTime.Now;
+        _summaryTask = State.TryGetSummaryAsync<ReportSummaryDto>("api/report/summary", _now);
+        return Task.CompletedTask;
+    }
+
+    private void StartRawFetches()
+    {
         _goalsUnfilteredTask = State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals");
         _historyTask = State.GetHistoryAsync(ReportSummaryBuilder.HistoryDays);
         _programsTask = State.GetJsonCachedAsync<List<StudyProgramSummaryDto>>("api/studyprograms");
         _groupQuotasTask = State.GetActiveGroupQuotasAsync();
-        return Task.CompletedTask;
     }
 
     protected override async Task OnTextLoadedAsync()
@@ -68,22 +79,26 @@ public partial class Report
         var settings = await _settingsTask!;
         var allCourses = await _coursesTask!;
 
+        var summary = await _summaryTask!;
+        if (summary == null)
+        {
+            // Fallback (offline or a server without api/report/summary): raw fetches + local builder.
+            StartRawFetches();
+            summary = ReportSummaryBuilder.Build(new ReportSummaryInput
+            {
+                Settings = AppStateService.ToDto(settings),
+                AllCourses = allCourses,
+                Goals = await _goalsUnfilteredTask! ?? new(),
+                History = await _historyTask! ?? new(),
+                StudyPrograms = await _programsTask! ?? new(),
+                GroupQuotas = await _groupQuotasTask!,
+                Now = _now,
+            });
+        }
+
         // Every number below comes from ReportSummaryBuilder (StudyLife.Shared), which the server
         // can run against the same inputs - this method only fetches, hands the raw inputs over,
         // and copies the result into the fields the markup binds to.
-        var input = new ReportSummaryInput
-        {
-            Settings = AppStateService.ToDto(settings),
-            AllCourses = allCourses,
-            Goals = await _goalsUnfilteredTask! ?? new(),
-            History = await _historyTask! ?? new(),
-            StudyPrograms = await _programsTask! ?? new(),
-            GroupQuotas = await _groupQuotasTask!,
-            Now = DateTime.Now,
-        };
-
-        var summary = ReportSummaryBuilder.Build(input);
-
         _programmeName = summary.ProgrammeName;
         // StatsCourseListCard.CourseStatRow lives in the Client project, so the shared builder
         // hands back plain fields (ReportCourseRowDto) instead - mapped into the record here,

@@ -67,12 +67,17 @@ public partial class Wrapped
 
     protected override bool RenderShellBeforeData => true;
 
+    private DateTime _now;
+    private Task<WrappedSummaryDto?>? _summaryTask;
+
     protected override Task OnInitializingAsync()
     {
         _settingsTask = State.GetSettingsAsync();
         _coursesTask = State.GetCoursesAsync();
-        _periodHistoryTask = State.GetHistoryAsync(WrappedSummaryBuilder.PeriodHistoryDays);
-        _allTimeHistoryTask = State.GetHistoryAsync(WrappedSummaryBuilder.AllTimeHistoryDays);
+        // One wall-clock read shared by the server request and the local fallback, so both compute
+        // the recap for the same instant. The raw history fetches only start in the fallback.
+        _now = DateTime.Now;
+        _summaryTask = State.TryGetSummaryAsync<WrappedSummaryDto>("api/wrapped/summary", _now);
         // Doesn't depend on any fetch - computed here (instead of after the awaits below) so the
         // period line in the header is already correct on the very first shell render.
         _periodEnd = DateTime.Today;
@@ -88,6 +93,24 @@ public partial class Wrapped
         var settings = await _settingsTask!;
         var allCourses = await _coursesTask!;
 
+        var summary = await _summaryTask!;
+        if (summary != null)
+        {
+            ApplyRecap(summary.Recap);
+            _recapLoading = false;
+            await RenderPhaseAsync();
+
+            _achievementsUnlocked = summary.Achievements.Unlocked;
+            _achievementsTotal = summary.Achievements.Total;
+            _achievementsLoading = false;
+            await RenderPhaseAsync();
+            return;
+        }
+
+        // Fallback (offline or a server without api/wrapped/summary): raw fetches + local builder.
+        _periodHistoryTask = State.GetHistoryAsync(WrappedSummaryBuilder.PeriodHistoryDays);
+        _allTimeHistoryTask = State.GetHistoryAsync(WrappedSummaryBuilder.AllTimeHistoryDays);
+
         // Every number below comes from WrappedSummaryBuilder (StudyLife.Shared), which the
         // server can run against the same inputs - this method only fetches, hands the raw
         // inputs over, and copies the result into the fields the markup binds to. The builder is
@@ -99,7 +122,7 @@ public partial class Wrapped
             Settings = AppStateService.ToDto(settings),
             AllCourses = allCourses,
             PeriodHistory = await _periodHistoryTask! ?? new(),
-            Now = DateTime.Now,
+            Now = _now,
         };
 
         // ── Phase 1: recap period (365 days) - total hours, sessions, streak, top course,
