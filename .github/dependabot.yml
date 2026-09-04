@@ -1,4 +1,5 @@
-# Weekly dependency PRs for the three ecosystems this repo builds from (2026-09 audit M10).
+# Weekly dependency PRs for the four ecosystems this repo builds from (2026-09 audit M10; npm
+# added 2026-09 for the pinned semantic-release toolchain in package.json).
 # Actions are SHA-pinned in ci-cd.yml; Dependabot keeps the pins moving instead of them rotting.
 version: 2
 updates:
@@ -30,3 +31,12 @@ updates:
       interval: weekly
     commit-message:
       prefix: "fix(docker)"
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      semantic-release:
+        patterns: ["semantic-release", "@semantic-release/*"]
+    commit-message:
+      prefix: "fix(ci)"

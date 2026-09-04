@@ -22,7 +22,11 @@
         <div class="planner-section">
             <p class="planner-intro">@T.ExamPlannerIntro</p>
 
-            @if (_courses.Count == 0)
+            @if (_examLoading)
+            {
+                <div class="sl-skeleton sl-skeleton-lg" aria-hidden="true"></div>
+            }
+            else if (_courses.Count == 0)
             {
                 <div class="empty-state">@T.NoActiveCourses</div>
             }
@@ -107,6 +111,12 @@
         <div class="planner-section">
             <p class="planner-intro">@T.WeekPlanIntro</p>
 
+            @if (_weekLoading)
+            {
+                <div class="sl-skeleton sl-skeleton-lg" aria-hidden="true"></div>
+            }
+            else
+            {
             <div class="planner-form dash-card">
                 <div class="quota-legend">@string.Format(T.CurrentWeekHours, _weekAlreadyHours.ToString("0.0"), WeekMin, WeekMax)</div>
                 <div class="field">
@@ -128,6 +138,7 @@
                     <button class="btn-primary" @onclick="GenerateWeekPlan">✦ @T.GenerateWeekPlanButton</button>
                 }
             </div>
+            }
 
             @if (_weekCourseHints.Count > 0)
             {
@@ -192,6 +203,14 @@
     private List<StudySession> _sessions = new();
     private List<StudySessionDto> _history = new();
     private I18nLanguageWatcher _langWatcher = null!;
+
+    // Progressive render (2026-09): gates the exam-planner form (settings+courses+goals, so
+    // OnExamCourseChanged's exam-date/topic defaults are computed from real goals instead of an
+    // empty list that would then silently change) and the week-plan quota form (sessions, so
+    // _weekAlreadyHours/_weekRemainingHours aren't shown as 0/full-target before they're real).
+    protected override bool RenderShellBeforeData => true;
+    private bool _examLoading = true;
+    private bool _weekLoading = true;
 
     // Exam planner
     private int _examCourseId;
@@ -293,21 +312,34 @@
         await _langWatcher.InitAsync();
         State.OnChange += OnStateChanged;
 
+        // ── Phase 1: settings + courses + goals - everything OnExamCourseChanged needs to pick
+        // the right exam-date/topic defaults the first time, instead of computing them from an
+        // empty goals list and then silently changing once goals arrive.
         _settings = await _settingsTask!;
         var allCourses = await _coursesTask!;
         _courses = allCourses
             .Where(c => _settings.SelectedCourseIds.Contains(c.Id) && !_settings.CompletedCourseIds.Contains(c.Id))
             .ToList();
-        _sessions = await _sessionsTask!;
         _goals = await _goalsTask! ?? new();
-        _history = await _historyTask! ?? new();
 
         if (_courses.Count > 0)
         {
             _examCourseId = _courses[0].Id;
             OnExamCourseChanged();
         }
+
+        _examLoading = false;
+        await RenderPhaseAsync();
+
+        // ── Phase 2: sessions + history. Grouped together (not split further) so GenerateWeekPlan
+        // - reachable as soon as this phase's flag clears - never runs its neglect/exam-bonus
+        // weighting against a stale/empty _history.
+        _sessions = await _sessionsTask!;
+        _history = await _historyTask! ?? new();
         RecalcWeekHours();
+
+        _weekLoading = false;
+        await RenderPhaseAsync();
     }
 
     private void OnStateChanged() => InvokeAsync(async () =>

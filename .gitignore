@@ -43,3 +43,6 @@ Thumbs.db
 
 # Local environment
 .env
+
+# npm tooling for semantic-release (package.json) - lockfile is committed, modules are not
+node_modules/

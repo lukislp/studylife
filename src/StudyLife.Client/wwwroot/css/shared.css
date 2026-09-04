@@ -261,3 +261,36 @@ input::-webkit-date-and-time-value {
 .acm-pending-title { font-weight: 500; color: var(--text); font-size: 0.875rem; margin: 0; }
 .acm-pending-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
 
+/* Progressive-render skeletons (2026-09, all pages): a placeholder block shown in place of a
+   section whose data is still loading, so the page shell paints immediately and nothing ever
+   shows a zero/empty value that flips to real data a moment later. Lives in shared.css because
+   per-page sheets are deferred (boot-loading.js) and the skeleton must be styled from the very
+   first paint. Same look as .dash-card.is-loading in dashboard.css. */
+.sl-skeleton {
+    position: relative;
+    overflow: hidden;
+    min-height: 6.5rem;
+    border-radius: 12px;
+    background: var(--bg2);
+}
+.sl-skeleton-sm { min-height: 3rem; }
+.sl-skeleton-lg { min-height: 14rem; }
+.sl-skeleton-xl { min-height: 24rem; }
+.sl-skeleton-row { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.sl-skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, var(--bg3), transparent);
+    animation: sl-skeleton-sweep 1.6s ease-in-out infinite;
+}
+
+@keyframes sl-skeleton-sweep {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sl-skeleton::after { animation: none; opacity: 0.6; }
+}

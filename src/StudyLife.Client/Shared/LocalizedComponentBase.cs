@@ -58,8 +58,27 @@ public abstract class LocalizedComponentBase<TTable> : ComponentBase
         await OnInitializingAsync();
         T = await textTask;
         IsTextLoaded = true;
+        // Progressive rendering (2026-09): a page that opts in gets its shell (header, toolbar,
+        // skeleton placeholders) painted right here, before OnTextLoadedAsync starts awaiting its
+        // data. Without this render Blazor only paints once OnInitializedAsync completes, i.e.
+        // after the SLOWEST fetch - the "black screen for a second, then everything at once"
+        // effect measured on the phone. Pages that opt in must gate every data-driven section on
+        // their own loading flags (see Index.razor's _sessionsLoading & co.), otherwise the shell
+        // would flash empty states ("no sessions", "0h") that flip to real values a moment later.
+        if (RenderShellBeforeData) StateHasChanged();
         await OnTextLoadedAsync();
     }
+
+    /// <summary>Opt-in for progressive rendering: when true, the component renders once as soon
+    /// as <see cref="T"/> is loaded and BEFORE <see cref="OnTextLoadedAsync"/> runs, so its shell
+    /// and skeleton placeholders are visible while data is still being fetched. Pair it with
+    /// per-section loading flags and <see cref="RenderPhaseAsync"/> after each data phase.</summary>
+    protected virtual bool RenderShellBeforeData => false;
+
+    /// <summary>Flush one progressive-render phase: call after a group of awaits has populated the
+    /// fields a section needs and its loading flag was cleared, so that section paints without
+    /// waiting for the phases that follow. Safe from any thread (InvokeAsync).</summary>
+    protected Task RenderPhaseAsync() => InvokeAsync(StateHasChanged);
 
     /// <summary>Runs before the text table has loaded, alongside the text-table fetch itself - see
     /// class remarks. Do not read <see cref="T"/> here.</summary>
