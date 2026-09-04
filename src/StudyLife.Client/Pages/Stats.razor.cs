@@ -1,4 +1,3 @@
-using System.Net.Http.Json;
 using Microsoft.JSInterop;
 using StudyLife.Client.Components.Stats;
 using StudyLife.Client.Models;
@@ -9,13 +8,6 @@ namespace StudyLife.Client.Pages;
 
 public partial class Stats
 {
-    /// <summary>Alias for StudyMetrics.CourseHoursResult, kept so the rest of this file (and
-    /// Stats.Grades.razor.cs's BuildHoursGradeScatter/BuildHoursEctsScatter, which also consume
-    /// this shape) doesn't have to spell out the fully qualified Shared type everywhere - the
-    /// actual (Course, Hours, SessionCount) computation now lives in StudyMetrics.CalcCourseHours
-    /// (metrics API, see MetricsController), not here.</summary>
-    internal readonly record struct CourseHoursRow(CourseDto Course, double Hours, int Count);
-
     private List<StatsCourseListCard.CourseStatRow> _courseRows = new();
     private string _totalHoursLabel = "0h";
     private int _totalSessions;
@@ -24,16 +16,14 @@ public partial class Stats
     private int _ectsTotal;
     private double _ectsPercent;
     private I18nLanguageWatcher _langWatcher = null!;
-    // Active-programme course list from OnTextLoadedAsync, kept around so the OnAfterRenderAsync
+    // Active-programme course list from LoadDataAsync, kept around so the OnAfterRenderAsync
     // language-switch relocalization below can re-resolve course names (incl. T.CourseFallback for
-    // since-deleted courses) without re-fetching or re-running the expensive Build* pipeline.
+    // since-deleted courses) without re-fetching or re-running the expensive builder pipeline.
     private List<CourseDto> _allCourses = new();
-
-    private const int HistoryDays = 371;
 
     private bool _heatmapScrolled;
 
-    // Progressive render (2026-09 audit): default true so the first OnTextLoadedAsync run shows a
+    // Progressive render (2026-09 audit): default true so the first LoadDataAsync run shows a
     // skeleton for the sections each flag covers instead of their empty/zero field defaults.
     // _statsLoading covers the large majority of the page (settings+courses+goals+sessions+the
     // 12-month history all of those cards share); _notesLoading/_extendedLoading gate the few
@@ -45,7 +35,7 @@ public partial class Stats
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // Not gated on firstRender: OnTextLoadedAsync's data load means the component
+        // Not gated on firstRender: LoadDataAsync's data load means the component
         // renders once before _heatmapWeeks is populated (established Blazor lifecycle
         // gotcha in this codebase) - wait until the heatmap actually has data to scroll.
         if (!_heatmapScrolled && _heatmapWeeks.Count > 0)
@@ -58,11 +48,11 @@ public partial class Stats
 
         // Toolbelt.Blazor.I18nText auto-updates T's own fields and re-renders this component when
         // the active language changes, but text baked from T into stored chart data at
-        // OnTextLoadedAsync time doesn't recompute on its own - same root cause/fix shape as
+        // LoadDataAsync time doesn't recompute on its own - same root cause/fix shape as
         // Planner.razor/Index.razor.cs. Gated on !firstRender (unlike the heatmap-scroll block
         // above, this has nothing to do with waiting for data to arrive). _langWatcher can still be
         // null on an early render pass - same established gotcha as the heatmap-scroll comment
-        // above, just for OnTextLoadedAsync's own not-yet-finished state this time.
+        // above, just for LoadDataAsync's own not-yet-finished state this time.
         if (!firstRender && _langWatcher != null && await _langWatcher.CheckChangedAsync())
         {
             RefreshWeekdayHours();
@@ -103,9 +93,9 @@ public partial class Stats
         _coursesTask = State.GetCoursesAsync();
         _sessionsTask = State.GetSessionsAsync();
         _notesTask = State.GetJsonCachedAsync<List<NoteDto>>("api/notes");
-        _historyAllTask = State.GetHistoryAsync(HistoryDays);
+        _historyAllTask = State.GetHistoryAsync(StatsSummaryBuilder.HistoryDays);
         _groupQuotasTask = State.GetActiveGroupQuotasAsync();
-        _historyAllTimeTask = State.GetHistoryAsync(3650);
+        _historyAllTimeTask = State.GetHistoryAsync(StatsSummaryBuilder.AllTimeHistoryDays);
         _cardioFitnessTask = Health.IsAvailable
             ? Health.GetCardioFitnessPointsAsync(365)
             : Task.FromResult<IReadOnlyList<StudyLife.Client.Services.CardioFitnessPoint>?>(null);
@@ -116,6 +106,23 @@ public partial class Stats
     {
         _langWatcher = new I18nLanguageWatcher(I18nText);
         await _langWatcher.InitAsync();
+        await LoadDataAsync();
+    }
+
+    /// <summary>
+    /// Fetches, hands the raw inputs to <see cref="StatsSummaryBuilder"/> and copies each phase's
+    /// result into the fields the markup binds to. Every number on this page comes from that
+    /// shared builder (StudyLife.Shared), which the server can run against the same inputs - this
+    /// method only fetches and localizes. The builder is called once per phase (rather than once
+    /// for everything) precisely so the page's three progressive-render boundaries survive: a
+    /// single call would have to wait for the ~10-year history before showing anything at all.
+    /// </summary>
+    private async Task LoadDataAsync()
+    {
+        // One wall-clock read for the whole build: nothing in the builder reads DateTime.Now/Today
+        // itself, so every card below sees the exact same instant.
+        var now = DateTime.Now;
+
         // ── Phase 1: settings + courses + goals + sessions + the 12-month history - the data
         // basis for the course list/totals and the large majority of charts on this page (2026-09
         // progressive-render audit). Grouping these awaits together instead of interleaving them
@@ -125,100 +132,30 @@ public partial class Stats
         // in OnInitializingAsync regardless of await order, so this only changes WHEN each result
         // is consumed/rendered, never what is fetched.
         var settings = await _settingsTask!;
-        var goalsUnfiltered = await _goalsUnfilteredTask! ?? new();
         var allCourses = await _coursesTask!;
         _allCourses = allCourses;
-        // Active-programme scope: allCourses is already limited to the active programme
-        // (AppStateService.GetCoursesAsync). `sessions` (near-term, course rows above), `history`
-        // (long-term, all charts below), `goals` (grades/deadlines) and course-bound `notes` get
-        // filtered ONCE here by the active programme's course ids - so switching programmes
-        // really only shows its data everywhere on the page, not other
-        // programmes'. General (course-less) notes always stay visible.
-        var activeCourseIds = allCourses.Select(c => c.Id).ToHashSet();
-        var goals = goalsUnfiltered.Where(g => activeCourseIds.Contains(g.CourseId)).ToList();
-        var sessions = (await _sessionsTask!).Where(s => activeCourseIds.Contains(s.CourseId)).ToList();
+
+        // The builder's input is filled in phase by phase, in the same order the page awaits its
+        // fetches - each phase only reads the fields its own group needs (see the phase methods).
+        // Every list stays UNSCOPED here: the builder applies the active-programme filter itself,
+        // so the cross-programme comparison still sees every programme's data while every other
+        // card is scoped, exactly as before.
+        var input = new StatsSummaryInput
+        {
+            Settings = AppStateService.ToDto(settings),
+            AllCourses = allCourses,
+            Now = now,
+        };
+        input.Goals = await _goalsUnfilteredTask! ?? new();
+        input.Sessions = (await _sessionsTask!).Select(AppStateService.ToDto).ToList();
         // Shared long-term history (12 months) for the heatmap, donut, weekday/time-of-day, and
-        // monthly-trend charts as well as the per-course trend arrows below. Deliberately separate
-        // from `sessions` above (AppStateService, ±7/90-day window) - see /api/sessions/history.
-        // historyAll stays unfiltered for the programme comparison (Stats.Programs.razor.cs),
-        // the only card that looks beyond the active programme.
-        var historyAll = await _historyAllTask! ?? new();
-        var history = historyAll
-            .Where(s => activeCourseIds.Contains(s.CourseId))
-            .ToList();
-
-        // Selected + completed + courses that actually have sessions - StudyMetrics.CalcCourseHours
-        // computes this relevant-id set internally from the three raw inputs below.
-        var raw = StudyMetrics.CalcCourseHours(
-                allCourses, settings.SelectedCourseIds, settings.CompletedCourseIds,
-                sessions.Select(s => new StudySessionDto { CourseId = s.CourseId, StartTime = s.StartTime, EndTime = s.EndTime, IsCompleted = s.IsCompleted }),
-                DateTime.Now)
-            .Select(r => new CourseHoursRow(r.Course, r.Hours, r.SessionCount))
-            .ToList();
-
-        var maxHours = raw.Count == 0 ? 1 : Math.Max(1, raw.Max(r => r.Hours));
-        var trends = BuildCourseTrends(history);
-        var sparks = BuildCourseSparks(history);
-
-        _courseRows = raw
-            .OrderByDescending(r => r.Hours)
-            .Select(r =>
-            {
-                var goal = goals.FirstOrDefault(g => g.CourseId == r.Course.Id);
-                var isCompleted = settings.CompletedCourseIds.Contains(r.Course.Id);
-                // A completed course has no remaining deadline - without this guard a course
-                // finished after its target date showed "goal overdue by N days" right next to its
-                // "completed" badge.
-                int? daysRemaining = !isCompleted && goal?.TargetDate.HasValue == true
-                    ? (goal!.TargetDate!.Value.Date - DateTime.Today).Days
-                    : null;
-                return new StatsCourseListCard.CourseStatRow(
-                    r.Course, r.Hours, r.Count, isCompleted, daysRemaining,
-                    goal?.CompletionNote, goal?.Grade, Math.Min(100, r.Hours / maxHours * 100),
-                    trends.GetValueOrDefault(r.Course.Id),
-                    sparks.GetValueOrDefault(r.Course.Id),
-                    CalcEctsRingPercent(r.Course, isCompleted, goal),
-                    isCompleted ? r.Course.Ects : 0);
-            })
-            .ToList();
-
-        _totalSessions = _courseRows.Sum(r => r.SessionCount);
-        var totalHours = _courseRows.Sum(r => r.Hours);
-        _totalHoursLabel = $"{(int)totalHours}h {(int)((totalHours - (int)totalHours) * 60)}m";
-
-        var averageGrade = StudyMetrics.CalcWeightedAverageGrade(goals
-            .Where(g => g.Grade.HasValue)
-            .Select(g => new StudyMetrics.GradedCourse(g.Grade!.Value, allCourses.FirstOrDefault(c => c.Id == g.CourseId)?.Ects ?? 5)));
-        if (averageGrade.HasValue)
-            _averageGradeLabel = StudyMetrics.FormatGrade(averageGrade.Value);
-
-        BuildGradeHistory(goals, allCourses);
-        BuildGradeTimeline(goals, allCourses);
-        BuildHoursGradeScatter(goals, allCourses, raw);
-        BuildHoursEctsScatter(allCourses, raw, settings);
-        BuildGradeDistribution(goals);
-
+        // monthly-trend charts as well as the per-course trend arrows. Deliberately separate from
+        // the session list above (AppStateService, ±7/90-day window) - see /api/sessions/history.
+        input.History = await _historyAllTask! ?? new();
         // Programme-aware: quotas of the ACTIVE programme (built-in: static, otherwise via fetch).
-        var groupQuotas = await _groupQuotasTask!;
-        _ectsTotal = CourseCatalog.CalcTotalEcts(allCourses, groupQuotas);
-        _ectsEarned = CourseCatalog.CalcEctsEarned(allCourses, settings.CompletedCourseIds, groupQuotas);
-        _ectsPercent = _ectsTotal > 0 ? Math.Min(100.0, _ectsEarned / (double)_ectsTotal * 100) : 0;
+        input.GroupQuotas = await _groupQuotasTask!;
 
-        BuildForecast(settings, allCourses, history);
-        BuildHeatmap(history, allCourses);
-        BuildDonut(history, allCourses);
-        BuildWeekdayAndTimeOfDay(history);
-        BuildTimeHeatmap(history, allCourses);
-        BuildMonthlyStacks(history, allCourses);
-        BuildMonthComparison(history);
-        BuildEctsTimeline(goals, allCourses);
-        BuildEctsPlan(goals, allCourses, settings);
-        BuildProductivityScore(history);
-        BuildGoalHistory(history, settings);
-        BuildInactivityTrend(history);
-        BuildSessionLengthHistogram(history);
-        BuildCourseComparison(history, allCourses);
-        BuildCourseBalance(history, allCourses, settings);
+        ApplyCore(StatsSummaryBuilder.BuildCore(input));
 
         _statsLoading = false;
         await RenderPhaseAsync();
@@ -226,70 +163,61 @@ public partial class Stats
         // ── Phase 2: notes-dependent correlation card. Its own fetch because otherwise no notes
         // data would be needed on this page (see Stats.Comparisons.razor.cs) - deferred behind the
         // main phase above so a slow notes fetch never holds back the rest of the page.
-        var notes = (await _notesTask! ?? new())
-            .Where(n => !n.CourseId.HasValue || activeCourseIds.Contains(n.CourseId.Value))
-            .ToList();
-        BuildNotesCorrelation(history, notes);
+        input.Notes = await _notesTask! ?? new();
+
+        ApplyNotes(StatsSummaryBuilder.BuildNotes(input));
 
         _notesLoading = false;
         await RenderPhaseAsync();
 
         // ── Phase 3: extended/slower fetches - native-app-only cardio fitness (can be genuinely
         // slow on-device), the 10-year semester comparison, and the cross-programme comparison
-        // (its own N+1 fetch across every programme).
+        // (its own N+1 fetch across every programme). The cardio-fitness card is deliberately NOT
+        // part of the shared builder: native health data never leaves the device.
         BuildCardioFitnessTrend(await _cardioFitnessTask!);
 
         // Separate all-time fetch ONLY for the semester comparison: its average-hours figure for
-        // earlier semesters needs sessions beyond the 371-day window above - the same
-        // 10-year convention as Index.Achievements' AchievementHistoryDays.
-        var historyAllTime = (await _historyAllTimeTask! ?? new())
-            .Where(s => activeCourseIds.Contains(s.CourseId))
-            .ToList();
-        BuildSemesterComparison(historyAllTime, goals, allCourses, settings);
+        // earlier semesters needs sessions beyond the 12-month window above - the same
+        // 10-year convention as the dashboard's AchievementHistoryDays.
+        input.HeavyHistory = await _historyAllTimeTask! ?? new();
+        (input.StudyPrograms, input.ProgramCatalogs) = await LoadProgramCatalogsAsync();
 
-        await BuildProgramComparisonAsync(historyAll, goalsUnfiltered, settings);
+        ApplyExtended(StatsSummaryBuilder.BuildExtended(input));
 
         _extendedLoading = false;
         await RenderPhaseAsync();
     }
 
-    /// <summary>
-    /// Weekly hours for the last 12 weeks per course (same Monday grid as LastNWeekStarts),
-    /// normalized to the course's own maximum - the data basis for the mini sparklines in the
-    /// course list. Courses without sessions in the window are absent from the dictionary (no empty sparkline).
-    /// </summary>
-    private static Dictionary<int, List<double>> BuildCourseSparks(List<StudySessionDto> history)
+    /// <summary>Phase 1 result -> the fields the markup binds to. Only the localized strings are
+    /// assembled here (in the partials below); every number/label already comes from the
+    /// builder.</summary>
+    private void ApplyCore(StatsCoreSummaryDto core)
     {
-        const int weekCount = 12;
-        var weekStarts = LastNWeekStarts(weekCount);
-        var windowStart = weekStarts[0];
-        var sparks = new Dictionary<int, List<double>>();
-        foreach (var group in history
-            .Where(s => StudyMetrics.IsStudied(s, DateTime.Now) && s.StartTime.Date >= windowStart)
-            .GroupBy(s => s.CourseId))
-        {
-            var weekly = weekStarts
-                .Select(ws => group
-                    .Where(s => s.StartTime.Date >= ws && s.StartTime.Date < ws.AddDays(7))
-                    .Sum(s => (s.EndTime - s.StartTime).TotalHours))
-                .ToList();
-            var max = weekly.Max();
-            if (max <= 0) continue;
-            sparks[group.Key] = weekly.Select(h => h / max * 100).ToList();
-        }
-        return sparks;
+        _courseRows = core.CourseRows
+            .Select(r => new StatsCourseListCard.CourseStatRow(
+                r.Course, r.Hours, r.SessionCount, r.IsCompleted, r.DaysRemaining,
+                r.CompletionNote, r.Grade, r.BarPercent, r.TrendPercent, r.Spark,
+                r.RingPercent, r.EctsEarned))
+            .ToList();
+
+        _totalSessions = core.TotalSessions;
+        _totalHoursLabel = core.TotalHoursLabel;
+        _averageGradeLabel = core.AverageGradeLabel;
+
+        _ectsEarned = core.EctsEarned;
+        _ectsTotal = core.EctsTotal;
+        _ectsPercent = core.EctsPercent;
+
+        ApplyGrades(core);
+        ApplyCharts(core);
+        ApplyTrends(core);
+        ApplyComparisons(core);
     }
 
-    // Course ECTS are all-or-nothing - for ongoing courses, the topic progress
-    // (setup checklist, same CompletedTopics semantics as the dashboard) fills the ring as an
-    // interim state, so it isn't just binary empty/full.
-    private static double CalcEctsRingPercent(CourseDto course, bool isCompleted, CourseGoalDto? goal)
+    /// <summary>Phase 3 result -> fields.</summary>
+    private void ApplyExtended(StatsExtendedSummaryDto extended)
     {
-        if (isCompleted) return 100;
-        if (course.Topics.Count == 0) return 0;
-        var completedTopics = string.IsNullOrWhiteSpace(goal?.CompletedTopics)
-            ? new HashSet<string>()
-            : goal.CompletedTopics.Split(',', StringSplitOptions.RemoveEmptyEntries).ToHashSet();
-        return course.Topics.Count(t => completedTopics.Contains(t)) / (double)course.Topics.Count * 100;
+        ApplySemesterComparison(extended.SemesterComparison);
+        ApplyProgramComparison(extended.ProgramComparison);
     }
 }
