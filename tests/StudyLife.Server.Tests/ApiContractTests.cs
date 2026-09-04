@@ -496,7 +496,7 @@ public class DtoContractSnapshotTests : IClassFixture<CustomWebApplicationFactor
         var expected = new HashSet<string>
         {
             "sessionId", "isRunning", "isBreak", "currentRound", "timerModeId", "phaseEndsAt", "updatedAt",
-            "serverNow", "clientSequence",
+            "serverNow", "clientSequence", "clientNow",
         };
 
         var state = new TimerStateDto
