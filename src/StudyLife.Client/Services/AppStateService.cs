@@ -409,6 +409,9 @@ public class AppStateService : IAsyncDisposable
                 backoffMs = 2000;
                 _streamConnected = true;
                 OnSseLifecycle("connected", attempt.Elapsed.TotalMilliseconds);
+                // Back online: push our queued offline writes before reconciling with the
+                // server's counters in the connect frame, so our own changes are not "missed".
+                _ = ReplayQueueAsync();
 
                 using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
                 using var reader = new StreamReader(stream);
@@ -433,12 +436,11 @@ public class AppStateService : IAsyncDisposable
             }
             catch
             {
-                if (++failuresWithoutConnection >= 6)
-                {
-                    _streamConnected = false;
+                // Six failures without a single connection: report once that the timer poll is
+                // carrying the sync (telemetry), but keep trying at the 60 s cap - a host that is
+                // offline for an hour must come back to push updates on its own.
+                if (++failuresWithoutConnection == 6)
                     OnSseLifecycle("fallback_poll", attempt.Elapsed.TotalMilliseconds);
-                    return;
-                }
             }
             _streamConnected = false;
             if (cancellationToken.IsCancellationRequested) return;
@@ -451,21 +453,23 @@ public class AppStateService : IAsyncDisposable
     /// <summary>Called by RunChangeStreamAsync for every server-sent change event. Runs the same
     /// PollAsync the timer uses, so the refetch, hash comparison and change events are one code
     /// path; concurrent events collapse into at most one follow-up poll.</summary>
-    public async Task OnServerChange(string kind)
-    {
-        if (Interlocked.Exchange(ref _pushPollPending, 1) == 1) return;
-        try
-        {
-            await RefreshAsync(refreshSessions: true, refreshSettings: true);
-        }
-        finally
-        {
-            Interlocked.Exchange(ref _pushPollPending, 0);
-        }
-    }
+    public Task OnServerChange(string kind) => RefreshCoalescedAsync(sessions: true, settings: true);
 
-    /// <summary>Shape of a v=2 frame from GET api/events (see EventsController.StateJsonAsync).</summary>
-    private sealed record ChangeStateFrame(string? Kind, int HistoryVersion, int SettingsVersion);
+    /// <summary>Shape of a v=2 frame from GET api/events (see EventsController.StateJsonAsync).
+    /// Seq is the per-user "anything changed" counter (ChangeBroadcastFilter), the two versions
+    /// are the sessions/settings cache counters.</summary>
+    private sealed record ChangeStateFrame(string? Kind, int Seq, int HistoryVersion, int SettingsVersion);
+
+    /// <summary>
+    /// Raised for every change the server reports that is not sessions or settings (those have
+    /// their own events): the argument is the route kind ("notes", "coursegoals",
+    /// "sessiontemplates", ...) or null when the change sequence moved while we were not
+    /// listening and the kind is unknown - pages then refetch what they show. Also raised for
+    /// kinds this client has never heard of, so a new server feature is live-updated without
+    /// a client change.
+    /// </summary>
+    public event Action<string?>? OnServerChanged;
+    private int? _knownSeq;
 
     // The last version counters this client reconciled against. Null until the first frame:
     // the pages load fresh data on their own at startup, so the first frame only records where
@@ -490,23 +494,69 @@ public class AppStateService : IAsyncDisposable
         catch { /* not a v=2 frame */ }
         if (frame is null) { await OnServerChange(payload); return; }
 
-        var first = _knownHistoryVersion is null && _knownSettingsVersion is null;
+        var first = _knownSeq is null;
         var sessionsMoved = _knownHistoryVersion != frame.HistoryVersion;
         var settingsMoved = _knownSettingsVersion != frame.SettingsVersion;
+        var seqMoved = _knownSeq != frame.Seq;
         _knownHistoryVersion = frame.HistoryVersion;
         _knownSettingsVersion = frame.SettingsVersion;
-        if (first || (!sessionsMoved && !settingsMoved)) return;
+        _knownSeq = frame.Seq;
+        if (first || !seqMoved) return;
 
+        // A change frame names what changed; a connect/heartbeat frame whose sequence moved
+        // without a kind means we missed events (reconnect, lost frame): refresh the two caches
+        // whose counters moved and tell the pages "something else changed" so they refetch.
+        var kind = frame.Kind;
+        var other = kind is not null && kind != "sessions" && kind != "settings";
+        if (sessionsMoved || settingsMoved)
+            await RefreshCoalescedAsync(sessionsMoved, settingsMoved);
+        if (other || (kind is null && !sessionsMoved && !settingsMoved))
+        {
+            if (kind == "sessions" || kind == "settings") kind = null;
+            if (kind is not null && IsOwnRecentWrite(kind)) return; // our own write, caches already hold it
+            OnServerChanged?.Invoke(kind);
+            NotifyStateChanged();
+        }
+    }
+
+    // Coalescing instead of dropping: a frame that arrives while a refresh is running marks the
+    // refresh dirty and it runs once more, so two writes a few hundred milliseconds apart never
+    // lose the second one (the previous Interlocked guard simply discarded it).
+    private bool _refreshDirtySessions, _refreshDirtySettings;
+
+    private async Task RefreshCoalescedAsync(bool sessions, bool settings)
+    {
+        _refreshDirtySessions |= sessions;
+        _refreshDirtySettings |= settings;
         if (Interlocked.Exchange(ref _pushPollPending, 1) == 1) return;
         try
         {
-            await RefreshAsync(refreshSessions: sessionsMoved, refreshSettings: settingsMoved);
+            while (_refreshDirtySessions || _refreshDirtySettings)
+            {
+                var s = _refreshDirtySessions; var t = _refreshDirtySettings;
+                _refreshDirtySessions = _refreshDirtySettings = false;
+                await RefreshAsync(refreshSessions: s, refreshSettings: t);
+            }
         }
         finally
         {
             Interlocked.Exchange(ref _pushPollPending, 0);
         }
     }
+
+    // Own writes come back as change frames too (the server cannot tell which client wrote).
+    // For sessions/settings the refresh is cheap and idempotent (304 or the same content), but
+    // for the other kinds a page would refetch a list it just updated itself and could clobber an
+    // editor mid-typing - so pages report their own writes and frames of that kind within the
+    // next few seconds are treated as already applied.
+    private readonly Dictionary<string, DateTime> _ownWritesUtc = new(StringComparer.Ordinal);
+    private static readonly TimeSpan OwnWriteWindow = TimeSpan.FromSeconds(5);
+
+    /// <summary>Call right after this client wrote data of the given route kind ("notes", ...).</summary>
+    public void NoteOwnWrite(string kind) => _ownWritesUtc[kind] = DateTime.UtcNow;
+
+    private bool IsOwnRecentWrite(string kind) =>
+        _ownWritesUtc.TryGetValue(kind, out var at) && DateTime.UtcNow - at < OwnWriteWindow;
 
     /// <summary>Telemetry phase 2 (docs/ARCHITECTURE.md "Telemetry"): raised from the same
     /// change-stream reader in RunChangeStreamAsync (formerly a JS fetch in interop.js) -
@@ -519,14 +569,11 @@ public class AppStateService : IAsyncDisposable
 
     private int _pushPollPending;
 
-    // While the change stream is connected the server tells us about every write within a
-    // second and confirms "still current" with each heartbeat, so the timer only serves as a
-    // safety net against a stream that silently stopped delivering; without a stream it is the
-    // only sync mechanism and keeps its 30 s cadence. 5200 conditional GETs a day (2 per tick)
-    // measured on 2026-09-04 was the reason for this.
-    private static readonly TimeSpan SafetyNetInterval = TimeSpan.FromMinutes(10);
-    private DateTime _lastTimerRefreshUtc = DateTime.MinValue;
-
+    // The 30 s timer no longer polls while the change stream is connected: the server reports
+    // every write within a second and every 25 s heartbeat carries the change sequence, which is
+    // the consistency check a poll used to provide (5200 conditional GETs a day, measured
+    // 2026-09-04). The tick still replays the offline write queue, and without a stream (host
+    // that cannot stream, or while reconnecting) it is the only sync mechanism and refreshes.
     private async Task PollAsync()
     {
         try
@@ -537,9 +584,8 @@ public class AppStateService : IAsyncDisposable
 
         await ReplayQueueAsync();
 
-        if (_streamConnected && DateTime.UtcNow - _lastTimerRefreshUtc < SafetyNetInterval) return;
-        _lastTimerRefreshUtc = DateTime.UtcNow;
-        await RefreshAsync(refreshSessions: true, refreshSettings: true);
+        if (_streamConnected) return;
+        await RefreshCoalescedAsync(sessions: true, settings: true);
     }
 
     /// <summary>Refetches sessions and/or settings, updates the caches when the content hash

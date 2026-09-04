@@ -187,7 +187,7 @@ public class EventsControllerTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal(connect.SettingsVersion, change.SettingsVersion);
     }
 
-    private sealed record VersionFrame(string? Kind, int HistoryVersion, int SettingsVersion);
+    private sealed record VersionFrame(string? Kind, int Seq, int HistoryVersion, int SettingsVersion);
 
     private static VersionFrame ParseFrame(string? dataLine)
     {
@@ -195,6 +195,46 @@ public class EventsControllerTests : IClassFixture<CustomWebApplicationFactory>
         Assert.StartsWith("data: ", dataLine);
         return System.Text.Json.JsonSerializer.Deserialize<VersionFrame>(dataLine!["data: ".Length..],
             new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web))!;
+    }
+
+    [Fact]
+    public async Task StreamV2_BroadcastsEveryWriteKind_NotOnlySessionsAndSettings()
+    {
+        // The generic ChangeBroadcastFilter: a note write must reach the stream as kind "notes"
+        // and move the per-user change sequence, without NotesController knowing about events.
+        var client = _factory.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/events?v=2");
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cts.Token);
+        using var reader = new StreamReader(await response.Content.ReadAsStreamAsync(cts.Token));
+        Assert.Equal("event: state", await reader.ReadLineAsync(cts.Token));
+        var connect = ParseFrame(await reader.ReadLineAsync(cts.Token));
+
+        var write = await client.PostAsJsonAsync("/api/notes", new NoteDto { Title = "sse", Content = "broadcast" }, cts.Token);
+        Assert.True(write.IsSuccessStatusCode, $"note write failed: {write.StatusCode}");
+
+        string? line;
+        VersionFrame? change = null;
+        while ((line = await reader.ReadLineAsync(cts.Token)) != null)
+        {
+            if (line != "event: change") continue;
+            change = ParseFrame(await reader.ReadLineAsync(cts.Token));
+            break;
+        }
+        Assert.NotNull(change);
+        Assert.Equal("notes", change!.Kind);
+        Assert.Equal(connect.Seq + 1, change.Seq);
+        Assert.Equal(connect.HistoryVersion, change.HistoryVersion);
+        Assert.Equal(connect.SettingsVersion, change.SettingsVersion);
+    }
+
+    [Fact]
+    public void KindFromPath_TakesTheFirstSegmentAfterApi()
+    {
+        Assert.Equal("notes", ChangeBroadcastFilter.KindFromPath("/api/notes/5"));
+        Assert.Equal("coursegoals", ChangeBroadcastFilter.KindFromPath("/api/coursegoals"));
+        Assert.Equal("settings", ChangeBroadcastFilter.KindFromPath("/api/settings/ha-api-key/generate"));
+        Assert.Null(ChangeBroadcastFilter.KindFromPath("/healthz"));
     }
 
     [Fact]

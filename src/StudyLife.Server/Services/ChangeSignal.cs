@@ -9,6 +9,11 @@ public static class ChangeKinds
 {
     public const string Sessions = "sessions";
     public const string Settings = "settings";
+    // Every other kind is derived by ChangeBroadcastFilter from the route of a successful write
+    // (the first segment after /api: "notes", "coursegoals", "studyprograms", "sessiontemplates",
+    // "courseresources", "timerstate", "backup", "system", "webhooks", ...). The client treats
+    // any kind it does not know as "refetch what you show", so new controllers are covered
+    // without touching the client.
 }
 
 /// <summary>

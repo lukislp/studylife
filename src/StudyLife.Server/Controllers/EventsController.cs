@@ -29,12 +29,14 @@ public class EventsController : ControllerBase
     private readonly IChangeSignal _signal;
     private readonly SessionHistoryCacheVersion _historyVersion;
     private readonly SettingsCacheVersion _settingsVersion;
+    private readonly ChangeSequence _sequence;
 
-    public EventsController(IChangeSignal signal, SessionHistoryCacheVersion historyVersion, SettingsCacheVersion settingsVersion)
+    public EventsController(IChangeSignal signal, SessionHistoryCacheVersion historyVersion, SettingsCacheVersion settingsVersion, ChangeSequence sequence)
     {
         _signal = signal;
         _historyVersion = historyVersion;
         _settingsVersion = settingsVersion;
+        _sequence = sequence;
     }
 
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
@@ -107,8 +109,9 @@ public class EventsController : ControllerBase
     {
         var history = await _historyVersion.GetAsync(userId);
         var settings = await _settingsVersion.GetAsync(userId);
+        var seq = await _sequence.GetAsync(userId);
         var kindJson = kind is null ? "null" : System.Text.Json.JsonSerializer.Serialize(kind);
-        return $"{{\"kind\":{kindJson},\"historyVersion\":{history},\"settingsVersion\":{settings}}}";
+        return $"{{\"kind\":{kindJson},\"seq\":{seq},\"historyVersion\":{history},\"settingsVersion\":{settings}}}";
     }
 
     private async Task WriteAsync(string text, CancellationToken cancellationToken)

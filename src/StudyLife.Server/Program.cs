@@ -68,7 +68,9 @@ if (metricsPort is not null || !string.IsNullOrEmpty(otlpEndpoint))
     }
 }
 
-builder.Services.AddControllersWithViews();
+// ChangeBroadcastFilter: every successful /api write publishes a change event to the user's
+// other clients (GET api/events), see the filter's doc comment.
+builder.Services.AddControllersWithViews(options => options.Filters.Add<ChangeBroadcastFilter>());
 builder.Services.AddRazorPages();
 
 // Audit finding D2: formal API contract. Serves the live document at /openapi/v1.json
@@ -214,6 +216,10 @@ if (isRedisCache)
             new RedisVersionCounter(sp.GetRequiredService<StackExchange.Redis.IConnectionMultiplexer>(), "version:settings"),
             sp.GetRequiredService<IChangeSignal>(), ChangeKinds.Settings),
         sp.GetRequiredService<IChangeSignal>()));
+    // Per-user change sequence for the v=2 change stream (ChangeBroadcastFilter increments it on
+    // every write; every pod reads it from Redis, so no local copy to invalidate).
+    builder.Services.AddSingleton(sp => new ChangeSequence(
+        new RedisVersionCounter(sp.GetRequiredService<StackExchange.Redis.IConnectionMultiplexer>(), "version:changes")));
 
     // DataProtection key ring persisted to Redis, ONLY in the Redis branch - same reasoning as
     // every other "needs a shared coordination point across replicas" feature above. Without this,
@@ -256,6 +262,7 @@ else
     builder.Services.AddSingleton<IChangeSignal>(new InMemoryChangeSignal());
     builder.Services.AddSingleton(sp => new SessionHistoryCacheVersion(new InMemoryVersionCounter(), sp.GetRequiredService<IChangeSignal>()));
     builder.Services.AddSingleton(sp => new SettingsCacheVersion(new InMemoryVersionCounter(), sp.GetRequiredService<IChangeSignal>()));
+    builder.Services.AddSingleton(new ChangeSequence(new InMemoryVersionCounter()));
 }
 
 builder.Services.AddResponseCompression(options =>
