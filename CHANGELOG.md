@@ -1,3 +1,10 @@
+## [3.12.2](https://github.com/lukislp/studylife/compare/v3.12.1...v3.12.2) (2026-09-04)
+
+
+### Bug Fixes
+
+* stop the page from panning sideways on iOS when a select is wider than the screen ([9d5acc0](https://github.com/lukislp/studylife/commit/9d5acc08107d3917949f5756fbfdee6758fe7d6f))
+
 ## [3.12.1](https://github.com/lukislp/studylife/compare/v3.12.0...v3.12.1) (2026-09-04)
 
 
