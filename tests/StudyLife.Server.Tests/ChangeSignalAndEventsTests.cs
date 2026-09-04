@@ -238,6 +238,47 @@ public class EventsControllerTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public void SecondSegment_ReturnsTheSubpathAfterTheKind()
+    {
+        Assert.Equal("client-keys", ChangeBroadcastFilter.SecondSegment("/api/auth/client-keys/3"));
+    }
+
+    /// <summary>
+    /// /api/auth is excluded as a whole (logins, passkeys, sessions are not user data the Setup
+    /// page shows) EXCEPT its two setup-page subpaths, client-keys and invites (see
+    /// ChangeBroadcastFilter.AuthBroadcastSubpaths) - a write there must still reach the stream as
+    /// kind "auth" so another of this user's devices can live-refresh the Setup page's
+    /// invites/client-keys cards. Invites is used here (over client-keys) since the seeded test
+    /// user is already the instance owner and no extra DB seeding is needed - see
+    /// SetupOverviewEndpointTests for the same assumption.
+    /// </summary>
+    [Fact]
+    public async Task StreamV2_AnAuthSubpathWrite_ProducesAnAuthKindChange()
+    {
+        var client = _factory.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/events?v=2");
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cts.Token);
+        using var reader = new StreamReader(await response.Content.ReadAsStreamAsync(cts.Token));
+        Assert.Equal("event: state", await reader.ReadLineAsync(cts.Token));
+        _ = ParseFrame(await reader.ReadLineAsync(cts.Token));
+
+        var write = await client.PostAsync("/api/auth/invites", null);
+        Assert.True(write.IsSuccessStatusCode, $"invite create failed: {write.StatusCode}");
+
+        string? line;
+        VersionFrame? change = null;
+        while ((line = await reader.ReadLineAsync(cts.Token)) != null)
+        {
+            if (line != "event: change") continue;
+            change = ParseFrame(await reader.ReadLineAsync(cts.Token));
+            break;
+        }
+        Assert.NotNull(change);
+        Assert.Equal("auth", change!.Kind);
+    }
+
+    [Fact]
     public async Task Stream_RequiresASession()
     {
         using var anon = ApiKeyTestHelpers.CreateClientWithKey(_factory, null);

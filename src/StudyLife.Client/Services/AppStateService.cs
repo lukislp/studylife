@@ -516,14 +516,24 @@ public class AppStateService : IAsyncDisposable
         // without a kind means we missed events (reconnect, lost frame): refresh the two caches
         // whose counters moved and tell the pages "something else changed" so they refetch.
         var kind = frame.Kind;
-        var other = kind is not null && kind != "sessions" && kind != "settings";
         if (sessionsMoved || settingsMoved)
             await RefreshCoalescedAsync(sessionsMoved, settingsMoved);
-        if (other || (kind is null && !sessionsMoved && !settingsMoved))
+
+        // A "sessions"/"settings" frame whose counter moved is fully handled by the refresh above
+        // (OnSessionsChanged/OnSettingsChanged fire from there). The same kinds WITHOUT a moved
+        // counter mean a write under that route that the cache counters do not cover - an API
+        // key generated under api/settings, for instance - so the pages showing such data (the
+        // setup cards) still need to hear about it.
+        var coveredByCounter = (kind == "sessions" && sessionsMoved) || (kind == "settings" && settingsMoved);
+        if (kind is not null && !coveredByCounter)
         {
-            if (kind == "sessions" || kind == "settings") kind = null;
-            if (kind is not null && IsOwnRecentWrite(kind)) return; // our own write, caches already hold it
+            if (IsOwnRecentWrite(kind)) return; // our own write, the page already applied it
             OnServerChanged?.Invoke(kind);
+            NotifyStateChanged();
+        }
+        else if (kind is null && !sessionsMoved && !settingsMoved)
+        {
+            OnServerChanged?.Invoke(null);
             NotifyStateChanged();
         }
     }
