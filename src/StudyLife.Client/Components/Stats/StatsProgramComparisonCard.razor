@@ -1,3 +1,4 @@
+@using StudyLife.Shared
 <div class="setup-section">
     <div class="ss-label">@Label</div>
     @foreach (var r in Rows)
@@ -35,7 +36,7 @@
     public record ProgramRow(string Name, bool IsActive, bool IsCompleted, double Hours, int SessionCount,
         int EctsEarned, int EctsTotal, string? GradeLabel, double BarPercent)
     {
-        public string HoursLabel => $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
+        public string HoursLabel => StudyMetrics.FormatHoursMinutes(Hours);
     }
 
     [Parameter] public string Label { get; set; } = "";

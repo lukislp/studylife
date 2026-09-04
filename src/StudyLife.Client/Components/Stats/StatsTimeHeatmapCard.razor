@@ -1,3 +1,4 @@
+@using StudyLife.Shared
 <div class="setup-section">
     <div class="ss-label">@Label</div>
     @if (!HasData)
@@ -75,7 +76,7 @@
 @code {
     public record TimeHeatCell(string WeekdayLabel, int Hour, double Hours, int Level, int SessionCount, List<StatsHeatmapCard.CourseHours> Courses)
     {
-        public string HoursLabel(string noSessionText) => Hours <= 0 ? noSessionText : $"{(int)Hours}h {(int)((Hours - (int)Hours) * 60)}m";
+        public string HoursLabel(string noSessionText) => Hours <= 0 ? noSessionText : StudyMetrics.FormatHoursMinutes(Hours);
     }
 
     // Column headers get crowded at 24 individual labels (mirrors the sparse-labeling trick

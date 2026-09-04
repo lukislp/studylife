@@ -188,17 +188,22 @@ public static class DashboardSummaryBuilder
 
         var weekStart = StudyMetrics.WeekStartOf(today);
         var weekEnd = weekStart.AddDays(7);
+        // Two different questions about the same week: `weekSessions` is everything SCHEDULED in
+        // it (the quota tile below - "how much is on the plan?"), `weekStudied` only what has
+        // actually been studied (the week stats card, the trend and the delta - "how much did I
+        // do?"). See docs/ARCHITECTURE.md "Number semantics".
         var weekSessions = history.Where(s => s.StartTime.Date >= weekStart && s.StartTime.Date < weekEnd).ToList();
-        result.WeekSessions = weekSessions.Count;
-        var totalMinutes = weekSessions.Sum(s => (s.EndTime - s.StartTime).TotalMinutes);
-        result.WeekHoursLabel = $"{Math.Floor(totalMinutes / 60)}h{(totalMinutes % 60 > 0 ? $" {(int)(totalMinutes % 60)}m" : "")}";
+        var weekStudied = weekSessions.Where(s => StudyMetrics.IsStudied(s, now)).ToList();
+        var weekStudiedHours = weekStudied.Sum(s => (s.EndTime - s.StartTime).TotalHours);
+        result.WeekSessions = weekStudied.Count;
+        result.WeekHoursLabel = StudyMetrics.FormatHoursMinutes(weekStudiedHours, omitZeroMinutes: true);
         result.Streak = StudyMetrics.CalcStreak(completedHistory.Select(s => s.StartTime), today);
         result.LongestStreak = StudyMetrics.CalcLongestStreak(completedHistory.Select(s => s.StartTime));
 
         // Focus score: today's plan adherence, studied (same "studied" definition as
         // completedHistory) vs. planned sessions today. Meaningless with zero planned sessions.
         var focusPlanned = result.TodaySessions.Count;
-        var focusStudied = result.TodaySessions.Count(s => s.IsCompleted || s.EndTime <= now);
+        var focusStudied = result.TodaySessions.Count(s => StudyMetrics.IsStudied(s, now));
         result.FocusScore = new DashboardFocusScoreDto
         {
             Planned = focusPlanned,
@@ -244,13 +249,14 @@ public static class DashboardSummaryBuilder
             };
         }
 
-        // Weekly quota (configurable target, default 25-30 h/week)
+        // Weekly quota (configurable target, default 25-30 h/week). Deliberately the PLANNED
+        // week - unlike every other hours figure on this page, this tile answers "how much is
+        // scheduled/done this week against the goal?", so a session already in the calendar for
+        // tonight counts toward it.
         var weekMin = settings.WeeklyGoalMinHours;
         var weekMax = settings.WeeklyGoalMaxHours;
-        var weekHoursVal = totalMinutes / 60.0;
+        var weekHoursVal = weekSessions.Sum(s => (s.EndTime - s.StartTime).TotalHours);
         var weekQuota = StudyMetrics.CalcQuota(weekHoursVal, weekMin, weekMax);
-        var wH = (int)Math.Floor(weekHoursVal);
-        var wM = (int)((weekHoursVal - wH) * 60);
         result.WeekQuota = new DashboardQuotaTileDto
         {
             TargetMin = weekMin,
@@ -258,20 +264,18 @@ public static class DashboardSummaryBuilder
             Percent = weekQuota.Percent,
             MinPercent = weekQuota.MinPercent,
             Warning = weekQuota.Warning,
-            HoursLabel = $"{wH}h{(wM > 0 ? $" {wM}m" : "")}",
-            MissingLabel = weekQuota.Warning ? FormatMissingHours(weekQuota.MissingHours) : "",
+            HoursLabel = StudyMetrics.FormatHoursMinutes(weekHoursVal, omitZeroMinutes: true),
+            MissingLabel = weekQuota.Warning ? StudyMetrics.FormatHoursMinutes(weekQuota.MissingHours, omitZeroMinutes: true) : "",
         };
 
         // Monthly quota: absolute monthly goal, independently configurable from the weekly goal.
         // Deliberately NOT prorated - the full goal applies to the label, the bar and the warning
         // alike, so early-month progress simply shows as a small fill against the whole month.
         var monthStart = new DateTime(today.Year, today.Month, 1);
+        // Planned month, for the same reason as the weekly quota above.
         var monthSessions = history.Where(s => s.StartTime.Date >= monthStart).ToList();
-        var monthMinutes = monthSessions.Sum(s => (s.EndTime - s.StartTime).TotalMinutes);
-        var monthHoursVal = monthMinutes / 60.0;
+        var monthHoursVal = monthSessions.Sum(s => (s.EndTime - s.StartTime).TotalHours);
         var monthQuota = StudyMetrics.CalcQuota(monthHoursVal, settings.MonthlyGoalMinHours, settings.MonthlyGoalMaxHours);
-        var hFull = (int)Math.Floor(monthHoursVal);
-        var mRest = (int)((monthHoursVal - hFull) * 60);
         result.MonthQuota = new DashboardQuotaTileDto
         {
             TargetMin = settings.MonthlyGoalMinHours,
@@ -279,11 +283,12 @@ public static class DashboardSummaryBuilder
             Percent = monthQuota.Percent,
             MinPercent = monthQuota.MinPercent,
             Warning = monthQuota.Warning,
-            HoursLabel = $"{hFull}h{(mRest > 0 ? $" {mRest}m" : "")}",
-            MissingLabel = monthQuota.Warning ? FormatMissingHours(monthQuota.MissingHours) : "",
+            HoursLabel = StudyMetrics.FormatHoursMinutes(monthHoursVal, omitZeroMinutes: true),
+            MissingLabel = monthQuota.Warning ? StudyMetrics.FormatHoursMinutes(monthQuota.MissingHours, omitZeroMinutes: true) : "",
         };
 
-        // Weekly trend (last 8 weeks, same "all sessions" semantics as the week_hours tile above)
+        // Weekly trend (last 8 weeks) - studied hours, same semantics as the week stats card, so
+        // the current bar never counts a session that is only scheduled for later this week.
         var trendHours = new double[TrendWeeks];
         var trendStarts = new DateTime[TrendWeeks];
         for (var i = TrendWeeks - 1; i >= 0; i--)
@@ -291,9 +296,9 @@ public static class DashboardSummaryBuilder
             var wStart = weekStart.AddDays(-7 * i);
             var idx = TrendWeeks - 1 - i;
             trendStarts[idx] = wStart;
-            trendHours[idx] = history
+            trendHours[idx] = completedHistory
                 .Where(s => s.StartTime.Date >= wStart && s.StartTime.Date < wStart.AddDays(7))
-                .Sum(s => (s.EndTime - s.StartTime).TotalMinutes) / 60.0;
+                .Sum(s => (s.EndTime - s.StartTime).TotalHours);
         }
         var maxTrendHours = Math.Max(1, trendHours.Max());
         result.WeeklyTrend = Enumerable.Range(0, TrendWeeks)
@@ -306,14 +311,15 @@ public static class DashboardSummaryBuilder
             })
             .ToList();
 
-        // Week-over-week delta (current week vs. the one right before it, same trend data)
-        var lastWeekHoursVal = trendHours[^2];
-        var deltaHours = weekHoursVal - lastWeekHoursVal;
+        // Week-over-week delta, strictly like-for-like: the previous week counts only the same
+        // stretch of weekdays that has elapsed in the current one (shared PartialWeekHours, the
+        // approach BuildAnomalyHint already used). Against a FULL previous week, a week in
+        // progress lost every Monday morning purely because it had not happened yet.
+        var daysElapsed = DaysElapsedInWeek(weekStart, today);
+        var lastWeekHoursVal = PartialWeekHours(completedHistory, weekStart.AddDays(-7), daysElapsed);
+        var deltaHours = weekStudiedHours - lastWeekHoursVal;
         result.WeekDeltaUp = deltaHours >= 0;
-        var absDelta = Math.Abs(deltaHours);
-        var dH = (int)Math.Floor(absDelta);
-        var dM = (int)((absDelta - dH) * 60);
-        result.WeekDeltaLabel = $"{dH}h{(dM > 0 ? $" {dM}m" : "")}";
+        result.WeekDeltaLabel = StudyMetrics.FormatHoursMinutes(Math.Abs(deltaHours), omitZeroMinutes: true);
 
         // Recently completed sessions (quick "what did I last study" recall)
         result.RecentSessions = completedHistory
@@ -321,19 +327,19 @@ public static class DashboardSummaryBuilder
             .Take(5)
             .ToList();
 
-        // Today's ring - same "all sessions, not IsCompleted-filtered" semantics as the
-        // week/trend tiles above. Daily target derived from the weekly quota (÷ 7).
-        var todayMinutes = result.TodaySessions.Sum(s => (s.EndTime - s.StartTime).TotalMinutes);
-        var todayHoursVal = todayMinutes / 60.0;
+        // Today's ring - studied hours only, like the week stats card: a ring that already filled
+        // itself from tonight's planned session claimed the day was done before it started.
+        // Daily target derived from the weekly quota (÷ 7).
+        var todayHoursVal = result.TodaySessions
+            .Where(s => StudyMetrics.IsStudied(s, now))
+            .Sum(s => (s.EndTime - s.StartTime).TotalHours);
         var dailyTargetHours = (weekMin + weekMax) / 2.0 / 7.0;
         var todayRingPercentRaw = todayHoursVal / dailyTargetHours * 100;
-        var tH = (int)Math.Floor(todayHoursVal);
-        var tM = (int)((todayHoursVal - tH) * 60);
         result.TodayRing = new DashboardTodayRingDto
         {
             RingPercent = Math.Min(100, todayRingPercentRaw),
             Exceeded = todayRingPercentRaw >= 100,
-            HoursLabel = $"{tH}h{(tM > 0 ? $" {tM}m" : "")}",
+            HoursLabel = StudyMetrics.FormatHoursMinutes(todayHoursVal, omitZeroMinutes: true),
             DailyTargetLabel = $"{dailyTargetHours.ToString("0.#", CultureInfo.InvariantCulture)}h",
         };
 
@@ -357,22 +363,24 @@ public static class DashboardSummaryBuilder
         return result;
     }
 
-    /// <summary>Shortfall formatting of the quota cards: "2h 30m" / "2h".</summary>
-    private static string FormatMissingHours(double missingHours)
-    {
-        var h = (int)Math.Floor(missingHours);
-        var m = (int)((missingHours - h) * 60);
-        return m > 0 ? $"{h}h {m}m" : $"{h}h";
-    }
+    /// <summary>Weekdays of the current week that have already happened: 1 (Monday) .. 7 (Sunday).</summary>
+    private static int DaysElapsedInWeek(DateTime weekStart, DateTime today) => (today - weekStart).Days + 1;
+
+    /// <summary>
+    /// Studied hours over the first <paramref name="daysElapsed"/> days of the week starting at
+    /// <paramref name="weekStart"/> - the like-for-like building block behind both the
+    /// week-over-week delta and the anomaly baseline: a week in progress may only ever be
+    /// compared against the same stretch of an earlier week.
+    /// </summary>
+    private static double PartialWeekHours(List<StudySessionDto> studiedHistory, DateTime weekStart, int daysElapsed) =>
+        studiedHistory
+            .Where(s => s.StartTime.Date >= weekStart && s.StartTime.Date < weekStart.AddDays(daysElapsed))
+            .Sum(s => (s.EndTime - s.StartTime).TotalHours);
 
     /// <summary>"3h" / "3h 20m" - the label shape shared by the month comparison and the
-    /// best-record card.</summary>
-    private static string FormatHoursLabel(double hours)
-    {
-        var h = (int)Math.Floor(hours);
-        var m = (int)((hours - h) * 60);
-        return $"{h}h{(m > 0 ? $" {m}m" : "")}";
-    }
+    /// best-record card, minutes omitted when zero.</summary>
+    private static string FormatHoursLabel(double hours) =>
+        StudyMetrics.FormatHoursMinutes(hours, omitZeroMinutes: true);
 
     private static DashboardMiniDonutDto BuildMiniDonut(
         List<StudySessionDto> completedHistory, List<CourseDto> allCourses, DateTime today)
@@ -561,29 +569,25 @@ public static class DashboardSummaryBuilder
         var anomaly = new DashboardAnomalyHintDto();
 
         var weekStart = StudyMetrics.WeekStartOf(today);
-        var daysElapsed = (today - weekStart).Days + 1; // 1 (Monday) .. 7 (Sunday)
+        var daysElapsed = DaysElapsedInWeek(weekStart, today);
         if (daysElapsed < AnomalyMinDaysElapsed) return anomaly;
 
         if (completedHistory.Count == 0) return anomaly;
         var earliestWeekStart = StudyMetrics.WeekStartOf(completedHistory.Min(s => s.StartTime.Date));
-
-        double PartialWeekHours(DateTime wStart) => completedHistory
-            .Where(s => s.StartTime.Date >= wStart && s.StartTime.Date < wStart.AddDays(daysElapsed))
-            .Sum(s => (s.EndTime - s.StartTime).TotalHours);
 
         var baselineHours = new List<double>();
         for (var i = 1; i <= AnomalyBaselineWeeks; i++)
         {
             var wStart = weekStart.AddDays(-7 * i);
             if (wStart < earliestWeekStart) break; // older weeks lie before the start of recording
-            baselineHours.Add(PartialWeekHours(wStart));
+            baselineHours.Add(PartialWeekHours(completedHistory, wStart, daysElapsed));
         }
         if (baselineHours.Count < AnomalyMinBaselineWeeks) return anomaly;
 
         var baselineAvg = baselineHours.Average();
         if (baselineAvg < AnomalyMinBaselineHours) return anomaly;
 
-        var currentHours = PartialWeekHours(weekStart);
+        var currentHours = PartialWeekHours(completedHistory, weekStart, daysElapsed);
         var ratio = currentHours / baselineAvg;
         if (ratio >= AnomalyThresholdRatio) return anomaly;
 
