@@ -1,3 +1,11 @@
+# [3.9.0](https://github.com/lukislp/studylife/compare/v3.8.1...v3.9.0) (2026-09-04)
+
+
+### Features
+
+* extract the dashboard computations into a shared summary builder ([20bc78c](https://github.com/lukislp/studylife/commit/20bc78cc59ee9bf6a6988842d41538db9754ddb5))
+* serve the dashboard summary from the server ([94e9fbb](https://github.com/lukislp/studylife/commit/94e9fbb31e0d0ba811789390b71cc81278bcd991))
+
 ## [3.8.1](https://github.com/lukislp/studylife/compare/v3.8.0...v3.8.1) (2026-09-04)
 
 
