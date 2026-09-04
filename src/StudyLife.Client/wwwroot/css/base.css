@@ -585,6 +585,14 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
     height: 100vh;
     height: 100dvh;
     overflow-y: auto;
+    /* overflow-y alone makes overflow-x compute to auto as well, so any child wider than the
+       viewport turned the whole page horizontally pannable - visible only in WKWebView (iOS
+       app), which sizes <select>s to their longest option and lets the user drag the page
+       sideways where Chrome merely clips (2026-09, planner course select / note course select
+       with a long course name). Pages that scroll horizontally on purpose (calendar grid) do
+       so inside their own container, never through this one. */
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
 }
 
 /* Calendar page: cap the entire shell at 100vh, no page scroll */
