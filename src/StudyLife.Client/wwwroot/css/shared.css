@@ -294,3 +294,14 @@ input::-webkit-date-and-time-value {
 @media (prefers-reduced-motion: reduce) {
     .sl-skeleton::after { animation: none; opacity: 0.6; }
 }
+
+/* Form controls must never be wider than their column. A <select> takes the width of its
+   longest <option> - a long course name ("Objektorientierte Programmierung im 1. Semester")
+   made the notes editor and the planner's course row wider than a phone screen on iOS. */
+.select, .input {
+    max-width: 100%;
+    min-width: 0;
+}
+.field, .field-row, .field-row > * {
+    min-width: 0;
+}
