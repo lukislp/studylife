@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using Microsoft.JSInterop;
 using StudyLife.Client.Components.Stats;
 using StudyLife.Client.Models;
+using StudyLife.Client.Services;
 using StudyLife.Shared;
 
 namespace StudyLife.Client.Pages;
@@ -15,13 +16,6 @@ namespace StudyLife.Client.Pages;
 /// </summary>
 public partial class Report
 {
-    /// <summary>Alias for StudyMetrics.CourseHoursResult (SessionCount renamed to Count) - kept
-    /// local so the rest of this file doesn't need the fully qualified Shared type. The actual
-    /// computation (previously an identical, independently hand-written copy of Stats.razor.cs's
-    /// same loop) now lives in StudyMetrics.CalcCourseHours (metrics API, see MetricsController) -
-    /// one implementation for both pages.</summary>
-    private readonly record struct CourseHoursRow(CourseDto Course, double Hours, int Count);
-
     private bool _loaded;
 
     // Progressive render (2026-09 audit): renders the header/actions immediately, the document
@@ -42,12 +36,6 @@ public partial class Report
     private int _ectsTotal;
     private double _ectsPercent;
 
-    // Full history instead of the ±7/90-day window from AppStateService.GetSessionsAsync (which
-    // is enough for dashboard/stats tiles, see Stats.razor.cs) - a study record must show the
-    // ENTIRE study time to date. Same endpoint as Stats.razor (api/sessions/history),
-    // just with a much larger days window (~10 years, practically "everything").
-    private const int HistoryDays = 3650;
-
     // All fetches below are independent of each other, and of the text-table fetch that
     // LocalizedComponentBase starts in parallel - kicked off here (OnInitializingAsync, runs
     // alongside that fetch) instead of await-ing one after another (same pattern as
@@ -59,82 +47,75 @@ public partial class Report
     private Task<List<StudyProgramSummaryDto>?>? _programsTask;
     private Task<IReadOnlyDictionary<string, int>>? _groupQuotasTask;
 
+    private DateTime _now;
+    private Task<ReportSummaryDto?>? _summaryTask;
+
     protected override Task OnInitializingAsync()
     {
         _settingsTask = State.GetSettingsAsync();
         _coursesTask = State.GetCoursesAsync();
+        // One wall-clock read shared by the server request and the local fallback. The raw
+        // fetches (goals, 10-year history, programmes, quotas) only start in the fallback.
+        _now = DateTime.Now;
+        _summaryTask = State.TryGetSummaryAsync<ReportSummaryDto>("api/report/summary", _now);
+        return Task.CompletedTask;
+    }
+
+    private void StartRawFetches()
+    {
         _goalsUnfilteredTask = State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals");
-        _historyTask = State.GetHistoryAsync(HistoryDays);
+        _historyTask = State.GetHistoryAsync(ReportSummaryBuilder.HistoryDays);
         _programsTask = State.GetJsonCachedAsync<List<StudyProgramSummaryDto>>("api/studyprograms");
         _groupQuotasTask = State.GetActiveGroupQuotasAsync();
-        return Task.CompletedTask;
     }
 
     protected override async Task OnTextLoadedAsync()
     {
+        // The "generated on" timestamp is a page-level concern (when this document was printed),
+        // not part of the report's DATA - read once, up front, independently of the builder's own
+        // wall-clock input below (see ReportSummaryInput.Now's doc comment).
         _generatedAt = DateTime.Now;
 
         var settings = await _settingsTask!;
         var allCourses = await _coursesTask!;
-        var activeCourseIds = allCourses.Select(c => c.Id).ToHashSet();
 
-        var goalsUnfiltered = await _goalsUnfilteredTask! ?? new();
-        var goals = goalsUnfiltered.Where(g => activeCourseIds.Contains(g.CourseId)).ToList();
-
-        var history = (await _historyTask! ?? new())
-            .Where(s => activeCourseIds.Contains(s.CourseId))
-            .ToList();
-
-        var programs = await _programsTask! ?? new();
-        _programmeName = programs.FirstOrDefault(p => p.Id == settings.ActiveStudyProgramId)?.Name
-            ?? CourseCatalog.BuiltInProgramName;
-
-        // Same StudyMetrics.CalcCourseHours call as Stats.razor.cs (selected + completed +
-        // courses that actually have sessions) - `history` is already StudySessionDto here
-        // (unlike Stats.razor.cs's client-model `sessions`), so no mapping is needed.
-        var raw = StudyMetrics.CalcCourseHours(
-                allCourses, settings.SelectedCourseIds, settings.CompletedCourseIds, history, DateTime.Now)
-            .Select(r => new CourseHoursRow(r.Course, r.Hours, r.SessionCount))
-            .ToList();
-
-        // Sorted by semester instead of by hours (as on the stats page) - for a
-        // record, the chronological order of the study progression is the more natural reading.
-        _courseRows = raw
-            .OrderBy(r => r.Course.Semester).ThenByDescending(r => r.Hours)
-            .Select(r =>
-            {
-                var goal = goals.FirstOrDefault(g => g.CourseId == r.Course.Id);
-                int? daysRemaining = goal?.TargetDate.HasValue == true
-                    ? (goal!.TargetDate!.Value.Date - DateTime.Today).Days
-                    : null;
-                var isCompleted = settings.CompletedCourseIds.Contains(r.Course.Id);
-                return new StatsCourseListCard.CourseStatRow(
-                    r.Course, r.Hours, r.Count, isCompleted, daysRemaining,
-                    goal?.CompletionNote, goal?.Grade, 0);
-            })
-            .ToList();
-
-        _totalSessions = _courseRows.Sum(r => r.SessionCount);
-        var totalHours = _courseRows.Sum(r => r.Hours);
-        _totalHoursLabel = $"{(int)totalHours}h {(int)((totalHours - (int)totalHours) * 60)}m";
-
-        var averageGrade = StudyMetrics.CalcWeightedAverageGrade(goals
-            .Where(g => g.Grade.HasValue)
-            .Select(g => new StudyMetrics.GradedCourse(g.Grade!.Value, allCourses.FirstOrDefault(c => c.Id == g.CourseId)?.Ects ?? 5)));
-        _averageGradeLabel = averageGrade.HasValue
-            ? StudyMetrics.FormatGrade(averageGrade.Value)
-            : null;
-
-        var groupQuotas = await _groupQuotasTask!;
-        _ectsTotal = CourseCatalog.CalcTotalEcts(allCourses, groupQuotas);
-        _ectsEarned = CourseCatalog.CalcEctsEarned(allCourses, settings.CompletedCourseIds, groupQuotas);
-        _ectsPercent = _ectsTotal > 0 ? Math.Min(100.0, _ectsEarned / (double)_ectsTotal * 100) : 0;
-
-        if (history.Count > 0)
+        var summary = await _summaryTask!;
+        if (summary == null)
         {
-            _periodStart = history.Min(s => s.StartTime.Date);
-            _periodEnd = history.Max(s => s.StartTime.Date);
+            // Fallback (offline or a server without api/report/summary): raw fetches + local builder.
+            StartRawFetches();
+            summary = ReportSummaryBuilder.Build(new ReportSummaryInput
+            {
+                Settings = AppStateService.ToDto(settings),
+                AllCourses = allCourses,
+                Goals = await _goalsUnfilteredTask! ?? new(),
+                History = await _historyTask! ?? new(),
+                StudyPrograms = await _programsTask! ?? new(),
+                GroupQuotas = await _groupQuotasTask!,
+                Now = _now,
+            });
         }
+
+        // Every number below comes from ReportSummaryBuilder (StudyLife.Shared), which the server
+        // can run against the same inputs - this method only fetches, hands the raw inputs over,
+        // and copies the result into the fields the markup binds to.
+        _programmeName = summary.ProgrammeName;
+        // StatsCourseListCard.CourseStatRow lives in the Client project, so the shared builder
+        // hands back plain fields (ReportCourseRowDto) instead - mapped into the record here,
+        // exactly as the original hand-written call did (BarPercent=0, the rest at their
+        // stats-page-only defaults).
+        _courseRows = summary.CourseRows
+            .Select(r => new StatsCourseListCard.CourseStatRow(
+                r.Course, r.Hours, r.SessionCount, r.IsCompleted, r.DaysRemaining, r.CompletionNote, r.Grade, 0))
+            .ToList();
+        _totalSessions = summary.TotalSessions;
+        _totalHoursLabel = summary.TotalHoursLabel;
+        _averageGradeLabel = summary.AverageGradeLabel;
+        _ectsEarned = summary.EctsEarned;
+        _ectsTotal = summary.EctsTotal;
+        _ectsPercent = summary.EctsPercent;
+        _periodStart = summary.PeriodStart;
+        _periodEnd = summary.PeriodEnd;
 
         _loaded = true;
     }

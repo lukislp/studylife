@@ -2989,6 +2989,45 @@
         }
       }
     },
+    "/api/report/summary": {
+      "get": {
+        "tags": [
+          "Report"
+        ],
+        "parameters": [
+          {
+            "name": "now",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportSummaryDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportSummaryDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportSummaryDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/sessions": {
       "get": {
         "tags": [
@@ -4240,6 +4279,45 @@
         }
       }
     },
+    "/api/stats/summary": {
+      "get": {
+        "tags": [
+          "Stats"
+        ],
+        "parameters": [
+          {
+            "name": "now",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatsSummaryDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatsSummaryDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatsSummaryDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/studyprograms": {
       "get": {
         "tags": [
@@ -4799,6 +4877,45 @@
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/wrapped/summary": {
+      "get": {
+        "tags": [
+          "Wrapped"
+        ],
+        "parameters": [
+          {
+            "name": "now",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/WrappedSummaryDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WrappedSummaryDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WrappedSummaryDto"
+                }
+              }
+            }
           }
         }
       }
@@ -8639,6 +8756,141 @@
           }
         }
       },
+      "ReportCourseRowDto": {
+        "required": [
+          "course",
+          "hours",
+          "sessionCount",
+          "isCompleted"
+        ],
+        "type": "object",
+        "properties": {
+          "course": {
+            "$ref": "#/components/schemas/CourseDto"
+          },
+          "hours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "sessionCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "isCompleted": {
+            "type": "boolean"
+          },
+          "daysRemaining": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "completionNote": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "grade": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "ReportSummaryDto": {
+        "required": [
+          "courseRows",
+          "totalSessions",
+          "totalHoursLabel",
+          "ectsEarned",
+          "ectsTotal",
+          "ectsPercent",
+          "programmeName"
+        ],
+        "type": "object",
+        "properties": {
+          "courseRows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportCourseRowDto"
+            }
+          },
+          "totalSessions": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalHoursLabel": {
+            "type": "string"
+          },
+          "averageGradeLabel": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "ectsEarned": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "ectsTotal": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "ectsPercent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "programmeName": {
+            "type": "string"
+          },
+          "periodStart": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "periodEnd": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "RestoreCancelResponseDto": {
         "required": [
           "status"
@@ -8753,6 +9005,1568 @@
         "properties": {
           "isCompleted": {
             "type": "boolean"
+          }
+        }
+      },
+      "StatsBarPointDto": {
+        "required": [
+          "label",
+          "hours",
+          "percent"
+        ],
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "hours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "percent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "StatsCoreSummaryDto": {
+        "required": [
+          "courseRows",
+          "totalSessions",
+          "totalHoursLabel",
+          "averageGradeLabel",
+          "ectsEarned",
+          "ectsTotal",
+          "ectsPercent",
+          "forecast",
+          "monthComparison",
+          "gradeDistribution",
+          "gradeHistory",
+          "gradeTimeline",
+          "hoursGradeScatter",
+          "hoursEctsScatter",
+          "heatmap",
+          "donut",
+          "rhythm",
+          "timeHeatmap",
+          "monthlyBreakdown",
+          "ectsTimeline",
+          "ectsPlan",
+          "productivityWeeks",
+          "goalHistoryWeeks",
+          "inactivityWeeks",
+          "sessionLengthBuckets",
+          "courseComparison",
+          "courseBalance"
+        ],
+        "type": "object",
+        "properties": {
+          "courseRows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsCourseRowDto"
+            }
+          },
+          "totalSessions": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalHoursLabel": {
+            "type": "string"
+          },
+          "averageGradeLabel": {
+            "type": "string"
+          },
+          "ectsEarned": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "ectsTotal": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "ectsPercent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "forecast": {
+            "$ref": "#/components/schemas/StatsForecastDto"
+          },
+          "monthComparison": {
+            "$ref": "#/components/schemas/StatsMonthComparisonDto"
+          },
+          "gradeDistribution": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsGradeBucketDto"
+            }
+          },
+          "gradeHistory": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsSemesterGradeDto"
+            }
+          },
+          "gradeTimeline": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsGradeTimelinePointDto"
+            }
+          },
+          "hoursGradeScatter": {
+            "$ref": "#/components/schemas/StatsHoursGradeScatterDto"
+          },
+          "hoursEctsScatter": {
+            "$ref": "#/components/schemas/StatsHoursEctsScatterDto"
+          },
+          "heatmap": {
+            "$ref": "#/components/schemas/StatsHeatmapDto"
+          },
+          "donut": {
+            "$ref": "#/components/schemas/StatsDonutDto"
+          },
+          "rhythm": {
+            "$ref": "#/components/schemas/StatsRhythmDto"
+          },
+          "timeHeatmap": {
+            "$ref": "#/components/schemas/StatsTimeHeatmapDto"
+          },
+          "monthlyBreakdown": {
+            "$ref": "#/components/schemas/StatsMonthlyBreakdownDto"
+          },
+          "ectsTimeline": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsEctsTimelinePointDto"
+            }
+          },
+          "ectsPlan": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsEctsPlanPointDto"
+            }
+          },
+          "productivityWeeks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsProductivityWeekDto"
+            }
+          },
+          "goalHistoryWeeks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsGoalHistoryWeekDto"
+            }
+          },
+          "inactivityWeeks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsInactivityWeekDto"
+            }
+          },
+          "sessionLengthBuckets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsLengthBucketDto"
+            }
+          },
+          "courseComparison": {
+            "$ref": "#/components/schemas/StatsCourseComparisonDto"
+          },
+          "courseBalance": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsCourseBalanceRowDto"
+            }
+          }
+        }
+      },
+      "StatsCourseBalanceRowDto": {
+        "required": [
+          "name",
+          "icon",
+          "color",
+          "targetPercent",
+          "actualPercent"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "targetPercent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "actualPercent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "StatsCourseComparisonDto": {
+        "required": [
+          "topCourseIds",
+          "weekStarts",
+          "perWeekPerCourse",
+          "maxHours"
+        ],
+        "type": "object",
+        "properties": {
+          "topCourseIds": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          "weekStarts": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "perWeekPerCourse": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": {
+                "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+                "type": [
+                  "number",
+                  "string"
+                ],
+                "format": "double"
+              }
+            }
+          },
+          "maxHours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "StatsCourseHoursDto": {
+        "required": [
+          "courseId",
+          "color",
+          "hours"
+        ],
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "color": {
+            "type": "string"
+          },
+          "hours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "StatsCourseRowDto": {
+        "required": [
+          "course",
+          "hours",
+          "sessionCount",
+          "isCompleted",
+          "barPercent",
+          "ringPercent",
+          "ectsEarned"
+        ],
+        "type": "object",
+        "properties": {
+          "course": {
+            "$ref": "#/components/schemas/CourseDto"
+          },
+          "hours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "sessionCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "isCompleted": {
+            "type": "boolean"
+          },
+          "daysRemaining": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "completionNote": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "grade": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "barPercent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "trendPercent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "spark": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "double"
+            }
+          },
+          "ringPercent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "ectsEarned": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "StatsDonutDto": {
+        "required": [
+          "slices",
+          "gradient",
+          "totalHours"
+        ],
+        "type": "object",
+        "properties": {
+          "slices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsDonutSliceDto"
+            }
+          },
+          "gradient": {
+            "type": "string"
+          },
+          "totalHours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "StatsDonutMonthDto": {
+        "required": [
+          "monthStart",
+          "hours",
+          "percent"
+        ],
+        "type": "object",
+        "properties": {
+          "monthStart": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "hours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "percent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "StatsDonutSessionDto": {
+        "required": [
+          "start",
+          "end"
+        ],
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "topic": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "StatsDonutSliceDto": {
+        "required": [
+          "courseId",
+          "color",
+          "hours",
+          "percent",
+          "sessionCount",
+          "months",
+          "recentSessions"
+        ],
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "color": {
+            "type": "string"
+          },
+          "hours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "percent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "sessionCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "months": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsDonutMonthDto"
+            }
+          },
+          "recentSessions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsDonutSessionDto"
+            }
+          }
+        }
+      },
+      "StatsEctsPlanPointDto": {
+        "required": [
+          "label",
+          "targetEcts",
+          "targetPercent"
+        ],
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "actualEcts": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "actualPercent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "targetEcts": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "targetPercent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "StatsEctsTimelinePointDto": {
+        "required": [
+          "date",
+          "cumulativeEcts",
+          "percent"
+        ],
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "cumulativeEcts": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "percent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "StatsExtendedSummaryDto": {
+        "required": [
+          "semesterComparison",
+          "programComparison"
+        ],
+        "type": "object",
+        "properties": {
+          "semesterComparison": {
+            "$ref": "#/components/schemas/StatsSemesterComparisonDto"
+          },
+          "programComparison": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsProgramRowDto"
+            }
+          }
+        }
+      },
+      "StatsForecastDto": {
+        "required": [
+          "available",
+          "alreadyDone",
+          "dateLabel"
+        ],
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "alreadyDone": {
+            "type": "boolean"
+          },
+          "dateLabel": {
+            "type": "string"
+          }
+        }
+      },
+      "StatsGoalHistoryWeekDto": {
+        "required": [
+          "weekStart",
+          "met",
+          "hours"
+        ],
+        "type": "object",
+        "properties": {
+          "weekStart": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "met": {
+            "type": "boolean"
+          },
+          "hours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "StatsGradeBucketDto": {
+        "required": [
+          "label",
+          "count",
+          "percent"
+        ],
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "count": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "percent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "StatsGradeTimelinePointDto": {
+        "required": [
+          "date",
+          "courseName",
+          "color",
+          "grade",
+          "barPercent"
+        ],
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "courseName": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "grade": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "barPercent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "StatsHeatDayDto": {
+        "required": [
+          "date",
+          "hours",
+          "level",
+          "sessionCount",
+          "courses"
+        ],
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "hours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "level": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "sessionCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "courses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsCourseHoursDto"
+            }
+          }
+        }
+      },
+      "StatsHeatmapDto": {
+        "required": [
+          "weeks"
+        ],
+        "type": "object",
+        "properties": {
+          "weeks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsHeatmapWeekDto"
+            }
+          }
+        }
+      },
+      "StatsHeatmapWeekDto": {
+        "required": [
+          "weekStart",
+          "showMonthLabel",
+          "days"
+        ],
+        "type": "object",
+        "properties": {
+          "weekStart": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "showMonthLabel": {
+            "type": "boolean"
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsHeatDayDto"
+            }
+          }
+        }
+      },
+      "StatsHoursEctsPointDto": {
+        "required": [
+          "name",
+          "icon",
+          "color",
+          "hours",
+          "ectsEarned",
+          "xPercent",
+          "yPercent"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "hours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "ectsEarned": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "xPercent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "yPercent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "StatsHoursEctsScatterDto": {
+        "required": [
+          "points",
+          "maxHoursLabel",
+          "maxEctsLabel"
+        ],
+        "type": "object",
+        "properties": {
+          "points": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsHoursEctsPointDto"
+            }
+          },
+          "maxHoursLabel": {
+            "type": "string"
+          },
+          "maxEctsLabel": {
+            "type": "string"
+          }
+        }
+      },
+      "StatsHoursGradePointDto": {
+        "required": [
+          "name",
+          "icon",
+          "color",
+          "hours",
+          "grade",
+          "xPercent",
+          "yPercent"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "hours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "grade": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "xPercent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "yPercent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "StatsHoursGradeScatterDto": {
+        "required": [
+          "points",
+          "maxHoursLabel"
+        ],
+        "type": "object",
+        "properties": {
+          "points": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsHoursGradePointDto"
+            }
+          },
+          "maxHoursLabel": {
+            "type": "string"
+          }
+        }
+      },
+      "StatsInactivityWeekDto": {
+        "required": [
+          "label",
+          "hours",
+          "percent"
+        ],
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "hours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "percent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "StatsLengthBucketDto": {
+        "required": [
+          "label",
+          "count",
+          "percent"
+        ],
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "count": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "percent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "StatsMonthComparisonDto": {
+        "required": [
+          "up",
+          "deltaLabel"
+        ],
+        "type": "object",
+        "properties": {
+          "up": {
+            "type": "boolean"
+          },
+          "deltaLabel": {
+            "type": "string"
+          }
+        }
+      },
+      "StatsMonthlyBreakdownDto": {
+        "required": [
+          "monthStarts",
+          "perMonthCourseHours",
+          "orderedIds",
+          "topIds",
+          "maxMonthTotal"
+        ],
+        "type": "object",
+        "properties": {
+          "monthStarts": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "perMonthCourseHours": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": {
+                "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+                "type": [
+                  "number",
+                  "string"
+                ],
+                "format": "double"
+              }
+            }
+          },
+          "orderedIds": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          "topIds": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          "maxMonthTotal": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "StatsNotesCorrelationWeekDto": {
+        "required": [
+          "label",
+          "notesCount",
+          "notesPercent",
+          "hours",
+          "hoursPercent"
+        ],
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "notesCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "notesPercent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "hours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "hoursPercent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "StatsNotesSummaryDto": {
+        "required": [
+          "correlationWeeks"
+        ],
+        "type": "object",
+        "properties": {
+          "correlationWeeks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsNotesCorrelationWeekDto"
+            }
+          }
+        }
+      },
+      "StatsProductivityWeekDto": {
+        "required": [
+          "label"
+        ],
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "percent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "StatsProgramRowDto": {
+        "required": [
+          "name",
+          "isActive",
+          "isCompleted",
+          "hours",
+          "sessionCount",
+          "ectsEarned",
+          "ectsTotal",
+          "barPercent"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "isCompleted": {
+            "type": "boolean"
+          },
+          "hours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "sessionCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "ectsEarned": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "ectsTotal": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "gradeLabel": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "barPercent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "StatsRhythmDto": {
+        "required": [
+          "weekdayHours",
+          "weekdayMax",
+          "timeOfDay"
+        ],
+        "type": "object",
+        "properties": {
+          "weekdayHours": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "double"
+            }
+          },
+          "weekdayMax": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "timeOfDay": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsBarPointDto"
+            }
+          }
+        }
+      },
+      "StatsSemesterComparisonDto": {
+        "required": [
+          "hasData",
+          "currentSemester",
+          "currentHours",
+          "currentEcts",
+          "previousHours",
+          "previousEcts",
+          "maxHoursScale",
+          "maxEctsScale"
+        ],
+        "type": "object",
+        "properties": {
+          "hasData": {
+            "type": "boolean"
+          },
+          "currentSemester": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "currentHours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "currentGrade": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "currentEcts": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "previousHours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "previousGrade": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "previousEcts": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "maxHoursScale": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "maxEctsScale": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "StatsSemesterGradeDto": {
+        "required": [
+          "semester",
+          "avgGrade",
+          "courseCount",
+          "barPercent"
+        ],
+        "type": "object",
+        "properties": {
+          "semester": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "avgGrade": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "courseCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "barPercent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "StatsSummaryDto": {
+        "required": [
+          "core",
+          "notes",
+          "extended"
+        ],
+        "type": "object",
+        "properties": {
+          "core": {
+            "$ref": "#/components/schemas/StatsCoreSummaryDto"
+          },
+          "notes": {
+            "$ref": "#/components/schemas/StatsNotesSummaryDto"
+          },
+          "extended": {
+            "$ref": "#/components/schemas/StatsExtendedSummaryDto"
+          }
+        }
+      },
+      "StatsTimeHeatmapCellDto": {
+        "required": [
+          "weekday",
+          "hour",
+          "courses"
+        ],
+        "type": "object",
+        "properties": {
+          "weekday": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "hour": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "courses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsCourseHoursDto"
+            }
+          }
+        }
+      },
+      "StatsTimeHeatmapDto": {
+        "required": [
+          "hoursByCell",
+          "sessionCountByCell",
+          "cellCourses",
+          "maxCell"
+        ],
+        "type": "object",
+        "properties": {
+          "hoursByCell": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+                "type": [
+                  "number",
+                  "string"
+                ],
+                "format": "double"
+              }
+            }
+          },
+          "sessionCountByCell": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "pattern": "^-?(?:0|[1-9]\\d*)$",
+                "type": [
+                  "integer",
+                  "string"
+                ],
+                "format": "int32"
+              }
+            }
+          },
+          "cellCourses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsTimeHeatmapCellDto"
+            }
+          },
+          "maxCell": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
           }
         }
       },
@@ -9817,6 +11631,184 @@
             "type": "string"
           }
         }
+      },
+      "WrappedAchievementsDto": {
+        "required": [
+          "unlocked",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "unlocked": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "total": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "WrappedBusiestWeekdayDto": {
+        "required": [
+          "index",
+          "hours"
+        ],
+        "type": "object",
+        "properties": {
+          "index": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "hours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "WrappedRecapDto": {
+        "required": [
+          "totalHours",
+          "totalHoursLabel",
+          "totalSessions",
+          "longestStreak",
+          "earlyBirdHours",
+          "nightOwlHours"
+        ],
+        "type": "object",
+        "properties": {
+          "totalHours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "totalHoursLabel": {
+            "type": "string"
+          },
+          "totalSessions": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "longestStreak": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "topCourse": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/WrappedTopCourseDto"
+              }
+            ]
+          },
+          "busiestWeekday": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/WrappedBusiestWeekdayDto"
+              }
+            ]
+          },
+          "earlyBirdHours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "nightOwlHours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "WrappedSummaryDto": {
+        "required": [
+          "recap",
+          "achievements"
+        ],
+        "type": "object",
+        "properties": {
+          "recap": {
+            "$ref": "#/components/schemas/WrappedRecapDto"
+          },
+          "achievements": {
+            "$ref": "#/components/schemas/WrappedAchievementsDto"
+          }
+        }
+      },
+      "WrappedTopCourseDto": {
+        "required": [
+          "courseId",
+          "name",
+          "icon",
+          "color",
+          "hours"
+        ],
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "hours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
       }
     },
     "securitySchemes": {
@@ -9887,6 +11879,9 @@
       "name": "Push"
     },
     {
+      "name": "Report"
+    },
+    {
       "name": "Sessions"
     },
     {
@@ -9894,6 +11889,9 @@
     },
     {
       "name": "Settings"
+    },
+    {
+      "name": "Stats"
     },
     {
       "name": "StudyPrograms"
@@ -9912,6 +11910,9 @@
     },
     {
       "name": "WebhooksProxy"
+    },
+    {
+      "name": "Wrapped"
     }
   ]
 }

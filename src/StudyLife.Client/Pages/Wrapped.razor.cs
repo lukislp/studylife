@@ -61,22 +61,27 @@ public partial class Wrapped
     // _recapLoading gates the fixed hours/sessions/streak slides (the optional top-course/
     // busiest-weekday/chronotype slides already stay safely hidden via their own null/zero
     // checks, so they need no extra gating); _achievementsLoading gates the achievements slide,
-    // whose own fetch chain (BuildAchievementCountAsync) is deliberately a separate, later phase.
+    // whose own fetch chain (BuildAchievements) is deliberately a separate, later phase.
     private bool _recapLoading = true;
     private bool _achievementsLoading = true;
 
     protected override bool RenderShellBeforeData => true;
 
+    private DateTime _now;
+    private Task<WrappedSummaryDto?>? _summaryTask;
+
     protected override Task OnInitializingAsync()
     {
         _settingsTask = State.GetSettingsAsync();
         _coursesTask = State.GetCoursesAsync();
-        _periodHistoryTask = State.GetHistoryAsync(365);
-        _allTimeHistoryTask = State.GetHistoryAsync(3650);
+        // One wall-clock read shared by the server request and the local fallback, so both compute
+        // the recap for the same instant. The raw history fetches only start in the fallback.
+        _now = DateTime.Now;
+        _summaryTask = State.TryGetSummaryAsync<WrappedSummaryDto>("api/wrapped/summary", _now);
         // Doesn't depend on any fetch - computed here (instead of after the awaits below) so the
         // period line in the header is already correct on the very first shell render.
         _periodEnd = DateTime.Today;
-        _periodStart = _periodEnd.AddDays(-365);
+        _periodStart = _periodEnd.AddDays(-WrappedSummaryBuilder.PeriodHistoryDays);
         return Task.CompletedTask;
     }
 
@@ -85,65 +90,96 @@ public partial class Wrapped
         _langWatcher = new I18nLanguageWatcher(I18nText);
         await _langWatcher.InitAsync();
 
-        // ── Phase 1: recap period (365 days) - total hours, sessions, streak, top course,
-        // weekday, and chronotype highlight.
         var settings = await _settingsTask!;
         var allCourses = await _coursesTask!;
-        var activeCourseIds = allCourses.Select(c => c.Id).ToHashSet();
 
-        var periodHistory = (await _periodHistoryTask! ?? new())
-            .Where(s => activeCourseIds.Contains(s.CourseId))
-            .ToList();
-
-        _totalHours = periodHistory.Sum(s => (s.EndTime - s.StartTime).TotalHours);
-        _totalHoursLabel = FormatHours(_totalHours);
-        _totalSessions = periodHistory.Count;
-        _longestStreak = StudyMetrics.CalcLongestStreak(periodHistory.Select(s => s.StartTime));
-
-        var byCourse = periodHistory
-            .GroupBy(s => s.CourseId)
-            .Select(g => (CourseId: g.Key, Hours: g.Sum(s => (s.EndTime - s.StartTime).TotalHours)))
-            .OrderByDescending(x => x.Hours)
-            .FirstOrDefault();
-        if (byCourse.Hours > 0)
+        var summary = await _summaryTask!;
+        if (summary != null)
         {
-            var course = allCourses.FirstOrDefault(c => c.Id == byCourse.CourseId);
-            var sample = periodHistory.First(s => s.CourseId == byCourse.CourseId);
-            _topCourse = new TopCourseInfo(
-                course?.Name ?? sample.CourseName,
-                course?.Icon ?? "📚",
-                course?.Color ?? sample.CourseColor,
-                byCourse.Hours);
+            ApplyRecap(summary.Recap);
+            _recapLoading = false;
+            await RenderPhaseAsync();
+
+            _achievementsUnlocked = summary.Achievements.Unlocked;
+            _achievementsTotal = summary.Achievements.Total;
+            _achievementsLoading = false;
+            await RenderPhaseAsync();
+            return;
         }
 
-        var hoursByWeekday = new double[7];
-        foreach (var s in periodHistory)
-            hoursByWeekday[((int)s.StartTime.DayOfWeek + 6) % 7] += (s.EndTime - s.StartTime).TotalHours;
-        var bestWeekdayIdx = 0;
-        for (var i = 1; i < 7; i++)
-            if (hoursByWeekday[i] > hoursByWeekday[bestWeekdayIdx]) bestWeekdayIdx = i;
-        if (hoursByWeekday[bestWeekdayIdx] > 0)
-        {
-            _busiestWeekdayIdx = bestWeekdayIdx;
-            _busiestWeekday = new WeekdayInfo(WeekdayName(bestWeekdayIdx), hoursByWeekday[bestWeekdayIdx]);
-        }
+        // Fallback (offline or a server without api/wrapped/summary): raw fetches + local builder.
+        _periodHistoryTask = State.GetHistoryAsync(WrappedSummaryBuilder.PeriodHistoryDays);
+        _allTimeHistoryTask = State.GetHistoryAsync(WrappedSummaryBuilder.AllTimeHistoryDays);
 
-        _earlyBirdHours = periodHistory.Where(s => s.StartTime.Hour < 7).Sum(s => (s.EndTime - s.StartTime).TotalHours);
-        _nightOwlHours = periodHistory.Where(s => s.StartTime.Hour >= 22).Sum(s => (s.EndTime - s.StartTime).TotalHours);
+        // Every number below comes from WrappedSummaryBuilder (StudyLife.Shared), which the
+        // server can run against the same inputs - this method only fetches, hands the raw
+        // inputs over, and copies the result into the fields the markup binds to. The builder is
+        // called once per phase (rather than once for everything) precisely so the phase boundary
+        // survives: the achievements fetch below is a separate, much longer-range one that must
+        // never hold back the recap slides.
+        var input = new WrappedSummaryInput
+        {
+            Settings = AppStateService.ToDto(settings),
+            AllCourses = allCourses,
+            PeriodHistory = await _periodHistoryTask! ?? new(),
+            Now = _now,
+        };
+
+        // ── Phase 1: recap period (365 days) - total hours, sessions, streak, top course,
+        // weekday, and chronotype highlight.
+        ApplyRecap(WrappedSummaryBuilder.BuildRecap(input));
 
         _recapLoading = false;
         await RenderPhaseAsync();
 
         // ── Phase 2: achievement count - its own, much longer-range fetch (~10 years, same span
         // as Index.Achievements.razor.cs' AchievementHistoryDays) plus notes/programmes, kept
-        // separate so it never holds back the recap slides above.
-        var allTimeHistory = (await _allTimeHistoryTask! ?? new())
-            .Where(s => activeCourseIds.Contains(s.CourseId))
-            .ToList();
-        await BuildAchievementCountAsync(settings, activeCourseIds, allCourses, allTimeHistory);
+        // separate so it never holds back the recap slides above. Independent of each other and
+        // of the pure-CPU computation in BuildAchievements - started now, awaited below, same as
+        // the original BuildAchievementCountAsync.
+        var groupQuotasTask = State.GetActiveGroupQuotasAsync();
+        var notesTask = State.GetJsonCachedAsync<List<NoteDto>>("api/notes");
+        var studyProgramsTask = State.GetJsonCachedAsync<List<StudyProgramSummaryDto>>("api/studyprograms");
+
+        input.AllTimeHistory = await _allTimeHistoryTask! ?? new();
+        input.GroupQuotas = await groupQuotasTask;
+        input.Notes = await notesTask ?? new();
+        input.StudyPrograms = await studyProgramsTask ?? new();
+
+        var achievements = WrappedSummaryBuilder.BuildAchievements(input);
+        _achievementsUnlocked = achievements.Unlocked;
+        _achievementsTotal = achievements.Total;
 
         _achievementsLoading = false;
         await RenderPhaseAsync();
+    }
+
+    /// <summary>Phase 1 result -> fields. Only the localized weekday name is assembled here, from
+    /// the raw index the builder returns; every number/label already comes formatted from it.</summary>
+    private void ApplyRecap(WrappedRecapDto r)
+    {
+        _totalHours = r.TotalHours;
+        _totalHoursLabel = r.TotalHoursLabel;
+        _totalSessions = r.TotalSessions;
+        _longestStreak = r.LongestStreak;
+
+        _topCourse = r.TopCourse == null
+            ? null
+            : new TopCourseInfo(r.TopCourse.Name, r.TopCourse.Icon, r.TopCourse.Color, r.TopCourse.Hours);
+
+        if (r.BusiestWeekday == null)
+        {
+            _busiestWeekday = null;
+            _busiestWeekdayIdx = -1;
+        }
+        else
+        {
+            _busiestWeekdayIdx = r.BusiestWeekday.Index;
+            _busiestWeekday = new WeekdayInfo(WeekdayName(r.BusiestWeekday.Index), r.BusiestWeekday.Hours);
+        }
+
+        _earlyBirdHours = r.EarlyBirdHours;
+        _nightOwlHours = r.NightOwlHours;
     }
 
     private string WeekdayName(int idx)
@@ -170,56 +206,6 @@ public partial class Wrapped
             _busiestWeekday = _busiestWeekday with { Label = WeekdayName(_busiestWeekdayIdx) };
             await InvokeAsync(StateHasChanged);
         }
-    }
-
-    // Mirrors the inputs that Index.Achievements.razor.cs' BuildAchievements uses for the same 13
-    // categories - see StudyMetrics.CountUnlockedAchievements for the actual
-    // thresholds. Deliberately all-time (allTimeHistory), not limited to the recap
-    // period: achievements are programme-wide milestones, not a period comparison - a
-    // "before/after" split couldn't be cleanly derived for categories without a date
-    // reference (e.g. programmes completed; IsCompleted is a plain flag without a timestamp).
-    private async Task BuildAchievementCountAsync(
-        UserSettings settings, HashSet<int> activeCourseIds, List<CourseDto> allCourses, List<StudySessionDto> allTimeHistory)
-    {
-        // Independent of each other and of the pure-CPU computation below - start both now,
-        // await at first use.
-        var groupQuotasTask = State.GetActiveGroupQuotasAsync();
-        var notesTask = State.GetJsonCachedAsync<List<NoteDto>>("api/notes");
-        var studyProgramsTask = State.GetJsonCachedAsync<List<StudyProgramSummaryDto>>("api/studyprograms");
-
-        var totalHours = allTimeHistory.Sum(s => (s.EndTime - s.StartTime).TotalHours);
-        var totalSessions = allTimeHistory.Count;
-        var longestStreak = StudyMetrics.CalcLongestStreak(allTimeHistory.Select(s => s.StartTime));
-        var coursesCompleted = settings.CompletedCourseIds.Count(id => activeCourseIds.Contains(id));
-
-        var groupQuotas = await groupQuotasTask;
-        var ectsTotal = CourseCatalog.CalcTotalEcts(allCourses, groupQuotas);
-        var ectsEarned = CourseCatalog.CalcEctsEarned(allCourses, settings.CompletedCourseIds, groupQuotas);
-        var allCoursesDone = ectsTotal > 0 && ectsEarned >= ectsTotal;
-
-        var earlyBirdCount = allTimeHistory.Count(s => s.StartTime.Hour < 7);
-        var nightOwlCount = allTimeHistory.Count(s => s.StartTime.Hour >= 22);
-        var weekendCount = allTimeHistory.Count(s => s.StartTime.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday);
-        var longestSessionHours = allTimeHistory.Count > 0 ? allTimeHistory.Max(s => (s.EndTime - s.StartTime).TotalHours) : 0;
-
-        var weeklyGroups = allTimeHistory.GroupBy(s => StudyMetrics.WeekStartOf(s.StartTime)).ToList();
-        var perfectWeeks = settings.WeeklyGoalMinHours > 0
-            ? weeklyGroups.Count(g => g.Sum(s => (s.EndTime - s.StartTime).TotalHours) >= settings.WeeklyGoalMinHours)
-            : 0;
-        var maxCourseDiversity = weeklyGroups.Count > 0
-            ? weeklyGroups.Max(g => g.Select(s => s.CourseId).Distinct().Count())
-            : 0;
-
-        var notes = await notesTask ?? new();
-        var notesCount = notes.Count(n => !n.CourseId.HasValue || activeCourseIds.Contains(n.CourseId.Value));
-
-        var studyPrograms = await studyProgramsTask ?? new();
-        var programsCompleted = studyPrograms.Count(p => p.IsCompleted);
-
-        (_achievementsUnlocked, _achievementsTotal) = StudyMetrics.CountUnlockedAchievements(
-            totalHours, longestStreak, totalSessions, coursesCompleted, allCoursesDone,
-            earlyBirdCount, nightOwlCount, weekendCount, longestSessionHours,
-            perfectWeeks, notesCount, maxCourseDiversity, programsCompleted);
     }
 
     private static string FormatHours(double hours) => $"{(int)hours}h {(int)((hours - (int)hours) * 60)}m";

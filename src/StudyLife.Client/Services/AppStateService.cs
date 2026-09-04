@@ -1022,6 +1022,28 @@ public class AppStateService : IAsyncDisposable
     /// sending an already-stale Version and spuriously 409 against its own previous write). On
     /// 409 (audit S4/S5: another device/tab saved in between), see HandleSaveConflictAsync.
     /// </summary>
+    /// <summary>
+    /// GET one of the server-side page summaries (api/stats|wrapped|report/summary) for the given
+    /// client instant. The server runs the same Shared builder the page would run itself, so the
+    /// result equals the page's own computation; `now` travels along because sessions are stored
+    /// as local wall-clock times and every "today"/week-start decision must be made in the user's
+    /// clock. Returns null on any failure (offline, older server, transient error) so the caller
+    /// falls back to the raw fetches and the local builder - deliberately no read cache here, the
+    /// fallback computes from the cached raw data with a fresh "now", which is the better offline
+    /// answer than a summary frozen at an earlier instant.
+    /// </summary>
+    public async Task<T?> TryGetSummaryAsync<T>(string route, DateTime now) where T : class
+    {
+        try
+        {
+            return await _http.GetFromJsonAsync<T>($"{route}?now={now:yyyy-MM-ddTHH:mm:ss}", StudyLifeJson.Options);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public async Task SaveSettingsAsync(UserSettings settings)
     {
         _settingsCache = settings;
