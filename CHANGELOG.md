@@ -1,3 +1,10 @@
+## [3.11.2](https://github.com/lukislp/studylife/compare/v3.11.1...v3.11.2) (2026-09-04)
+
+
+### Bug Fixes
+
+* retry framework asset downloads during a rolling deployment ([a1c578f](https://github.com/lukislp/studylife/commit/a1c578fcf0fc97c00aeb2553f39e90557d40ec3c))
+
 ## [3.11.1](https://github.com/lukislp/studylife/compare/v3.11.0...v3.11.1) (2026-09-04)
 
 
