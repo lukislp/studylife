@@ -1,3 +1,10 @@
+# [3.11.0](https://github.com/lukislp/studylife/compare/v3.10.0...v3.11.0) (2026-09-04)
+
+
+### Features
+
+* bundle the setup page's status reads into one overview request ([6eef8d4](https://github.com/lukislp/studylife/commit/6eef8d4ad80f3ee5c37820c8658600aef2d1390e))
+
 # [3.10.0](https://github.com/lukislp/studylife/compare/v3.9.0...v3.10.0) (2026-09-04)
 
 
