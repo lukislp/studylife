@@ -202,6 +202,50 @@ public class MetricsControllerTests
     }
 
     [Fact]
+    public async Task WeekAndMonthHours_StudiedOnly_QuotaTilesStayPlanned()
+    {
+        // "week_start_monday_and_studied_semantics" scenario, endpoint-level: a completed
+        // session and one still scheduled for later today, both in the current week/month.
+        // Hours.Week/Month must count only the completed one (StudyMetrics.IsStudied), while
+        // WeekQuota/MonthQuota's own Hours field keeps counting both - see
+        // docs/ARCHITECTURE.md "Number semantics".
+        using var factory = new CustomWebApplicationFactory();
+        var client = factory.CreateClient();
+
+        var studied = await client.PostAsJsonAsync("/api/sessions", new StudySessionDto
+        {
+            CourseId = 1,
+            CourseName = "Artificial Intelligence",
+            CourseColor = "#111111",
+            StartTime = new DateTime(2026, 1, 5, 9, 0, 0),
+            EndTime = new DateTime(2026, 1, 5, 11, 0, 0),
+            IsCompleted = true,
+        });
+        Assert.Equal(HttpStatusCode.OK, studied.StatusCode);
+
+        var plannedLater = await client.PostAsJsonAsync("/api/sessions", new StudySessionDto
+        {
+            CourseId = 1,
+            CourseName = "Artificial Intelligence",
+            CourseColor = "#111111",
+            StartTime = new DateTime(2026, 1, 8, 20, 0, 0),
+            EndTime = new DateTime(2026, 1, 8, 21, 0, 0),
+            IsCompleted = false,
+        });
+        Assert.Equal(HttpStatusCode.OK, plannedLater.StatusCode);
+
+        var response = await client.GetAsync("/api/metrics/summary?now=2026-01-08T18:00:00");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var dto = await response.Content.ReadFromJsonAsync<MetricsSummaryDto>();
+        Assert.NotNull(dto);
+
+        Assert.Equal(2.0, dto!.Hours.Week, precision: 6); // only the 09-11 studied session
+        Assert.Equal(3.0, dto.WeekQuota.Hours, precision: 6); // both sessions scheduled this week
+        Assert.Equal(2.0, dto.Hours.Month, precision: 6);
+        Assert.Equal(3.0, dto.MonthQuota.Hours, precision: 6);
+    }
+
+    [Fact]
     public async Task NonExistentProgram_Returns404()
     {
         using var factory = new CustomWebApplicationFactory();
