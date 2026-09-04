@@ -56,12 +56,27 @@ public partial class Wrapped
     private Task<List<StudySessionDto>?>? _periodHistoryTask;
     private Task<List<StudySessionDto>?>? _allTimeHistoryTask;
 
+    // Progressive render (2026-09 audit): default true so the first OnTextLoadedAsync run shows a
+    // skeleton for the slides each flag covers instead of their zero/empty field defaults.
+    // _recapLoading gates the fixed hours/sessions/streak slides (the optional top-course/
+    // busiest-weekday/chronotype slides already stay safely hidden via their own null/zero
+    // checks, so they need no extra gating); _achievementsLoading gates the achievements slide,
+    // whose own fetch chain (BuildAchievementCountAsync) is deliberately a separate, later phase.
+    private bool _recapLoading = true;
+    private bool _achievementsLoading = true;
+
+    protected override bool RenderShellBeforeData => true;
+
     protected override Task OnInitializingAsync()
     {
         _settingsTask = State.GetSettingsAsync();
         _coursesTask = State.GetCoursesAsync();
         _periodHistoryTask = State.GetHistoryAsync(365);
         _allTimeHistoryTask = State.GetHistoryAsync(3650);
+        // Doesn't depend on any fetch - computed here (instead of after the awaits below) so the
+        // period line in the header is already correct on the very first shell render.
+        _periodEnd = DateTime.Today;
+        _periodStart = _periodEnd.AddDays(-365);
         return Task.CompletedTask;
     }
 
@@ -70,23 +85,13 @@ public partial class Wrapped
         _langWatcher = new I18nLanguageWatcher(I18nText);
         await _langWatcher.InitAsync();
 
+        // ── Phase 1: recap period (365 days) - total hours, sessions, streak, top course,
+        // weekday, and chronotype highlight.
         var settings = await _settingsTask!;
         var allCourses = await _coursesTask!;
         var activeCourseIds = allCourses.Select(c => c.Id).ToHashSet();
 
-        _periodEnd = DateTime.Today;
-        _periodStart = _periodEnd.AddDays(-365);
-
-        // Recap period (365 days, default of /api/sessions/history) - for total hours,
-        // sessions, streak, top course, weekday, and chronotype highlight.
         var periodHistory = (await _periodHistoryTask! ?? new())
-            .Where(s => activeCourseIds.Contains(s.CourseId))
-            .ToList();
-
-        // All-time history for the achievement count - the same ~10-year span as
-        // Index.Achievements.razor.cs' AchievementHistoryDays, since achievements are
-        // deliberately programme-wide milestones, not tied to the recap period.
-        var allTimeHistory = (await _allTimeHistoryTask! ?? new())
             .Where(s => activeCourseIds.Contains(s.CourseId))
             .ToList();
 
@@ -126,7 +131,19 @@ public partial class Wrapped
         _earlyBirdHours = periodHistory.Where(s => s.StartTime.Hour < 7).Sum(s => (s.EndTime - s.StartTime).TotalHours);
         _nightOwlHours = periodHistory.Where(s => s.StartTime.Hour >= 22).Sum(s => (s.EndTime - s.StartTime).TotalHours);
 
+        _recapLoading = false;
+        await RenderPhaseAsync();
+
+        // ── Phase 2: achievement count - its own, much longer-range fetch (~10 years, same span
+        // as Index.Achievements.razor.cs' AchievementHistoryDays) plus notes/programmes, kept
+        // separate so it never holds back the recap slides above.
+        var allTimeHistory = (await _allTimeHistoryTask! ?? new())
+            .Where(s => activeCourseIds.Contains(s.CourseId))
+            .ToList();
         await BuildAchievementCountAsync(settings, activeCourseIds, allCourses, allTimeHistory);
+
+        _achievementsLoading = false;
+        await RenderPhaseAsync();
     }
 
     private string WeekdayName(int idx)
