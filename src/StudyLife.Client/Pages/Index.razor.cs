@@ -272,6 +272,53 @@ public partial class Index
         // anything at all.
         var settingsTask = State.GetSettingsAsync();
         var coursesTask = State.GetCoursesAsync();
+        var hrvTask = Health.IsAvailable ? Health.GetRecentHrvAsync(30) : Task.FromResult<IReadOnlyList<double>?>(null);
+        var sleepNightsTask = Health.IsAvailable ? Health.GetRecentSleepNightsAsync(30) : Task.FromResult<IReadOnlyList<SleepNight>?>(null);
+        // One wall-clock read for the whole build: the server runs DashboardSummaryBuilder with
+        // exactly this instant, so its numbers equal what the fallback below would compute here.
+        var now = DateTime.Now;
+        // Server path (2026-09): GET api/dashboard/summary returns the complete builder output in
+        // one small response instead of the six raw fetches (sessions, two history windows,
+        // goals, programmes, notes - up to ~1.5 MB and dozens of LINQ passes in WASM for an older
+        // account). Started alongside settings/courses so phase 1 still paints as early as before.
+        var summaryTask = TryFetchSummaryAsync(now);
+
+        // ── Phase 1: cheapest prerequisites - settings + courses. Everything below depends on at
+        // least one of these two, so this is the earliest the page can show anything real (the
+        // course list itself, plus the active-programme scope needed by every later computation).
+        var settings = await settingsTask;
+        var allCourses = await coursesTask;
+        var settingsDto = AppStateService.ToDto(settings);
+        _courses = DashboardSummaryBuilder.BuildCourseList(settingsDto, allCourses);
+        await InvokeAsync(StateHasChanged);
+
+        var summary = await summaryTask;
+        if (summary != null)
+        {
+            // Same phase boundaries as the fallback below, so the tiles appear in the same order
+            // and the loading flags keep their meaning - only the data now comes in one piece.
+            ApplySessionsSummary(summary.Sessions);
+            _sessionsLoading = false;
+            await InvokeAsync(StateHasChanged);
+
+            ApplyGoalsSummary(summary.Goals);
+            _goalsLoading = false;
+            await InvokeAsync(StateHasChanged);
+
+            BuildReadinessScore(await hrvTask);
+            BuildSleepConsistency(await sleepNightsTask);
+            _healthLoading = false;
+            await InvokeAsync(StateHasChanged);
+
+            ApplyProgressSummary(summary.Progress);
+            _achievementsLoading = false;
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        // ── Fallback: raw fetches + the same builder locally. Reached offline (AppStateService
+        // serves its read caches) or against a server without api/dashboard/summary. The fetches
+        // start here rather than at the top so the server path never issues them.
         var sessionsTask = State.GetSessionsAsync();
         var historyTask = State.GetHistoryAsync(DashboardSummaryBuilder.HistoryDays, onlyCompleted: false);
         var isDemoTask = State.GetIsDemoAsync();
@@ -283,21 +330,10 @@ public partial class Index
         var goalsTask = State.GetJsonCachedAsync<List<CourseGoalDto>>("api/coursegoals");
         var groupQuotasTask = State.GetActiveGroupQuotasAsync();
         var studyProgramsTask = State.GetJsonCachedAsync<List<StudyProgramSummaryDto>>("api/studyprograms");
-        var hrvTask = Health.IsAvailable ? Health.GetRecentHrvAsync(30) : Task.FromResult<IReadOnlyList<double>?>(null);
-        var sleepNightsTask = Health.IsAvailable ? Health.GetRecentSleepNightsAsync(30) : Task.FromResult<IReadOnlyList<SleepNight>?>(null);
         var dueForHeavyRefresh = _lastHeavyFetchAt == DateTime.MinValue || DateTime.UtcNow - _lastHeavyFetchAt >= HeavyFetchThrottle;
         var heavyHistoryTask = refreshHeavyHistory && dueForHeavyRefresh
             ? State.GetHistoryAsync(DashboardSummaryBuilder.AchievementHistoryDays)
             : null;
-
-        // ── Phase 1: cheapest prerequisites - settings + courses. Everything below depends on at
-        // least one of these two, so this is the earliest the page can show anything real (the
-        // course list itself, plus the active-programme scope needed by every later computation).
-        var settings = await settingsTask;
-        var allCourses = await coursesTask;
-        var settingsDto = AppStateService.ToDto(settings);
-        _courses = DashboardSummaryBuilder.BuildCourseList(settingsDto, allCourses);
-        await InvokeAsync(StateHasChanged);
 
         // The builder's input is filled in phase by phase, in the same order the page awaits its
         // fetches - each phase only reads the fields its own group needs (see the phase methods).
@@ -311,9 +347,7 @@ public partial class Index
         // ── Phase 2: sessions/history-driven tiles (today/next session, week stats, quotas,
         // trend, today ring, recent sessions, donut, neglected course, insights, latest note).
         input.Sessions = (await sessionsTask).Select(AppStateService.ToDto).ToList();
-        // One wall-clock read for the whole build: every time-dependent number below is derived
-        // from it, so nothing can disagree about "now" mid-computation.
-        input.Now = DateTime.Now;
+        input.Now = now;
         input.History = await historyTask ?? new();
         input.IsDemo = await isDemoTask;
         // Fail-open to `true` (still show the backup hint) if the capabilities fetch itself
@@ -375,6 +409,26 @@ public partial class Index
 
         _achievementsLoading = false;
         await InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>
+    /// GET api/dashboard/summary for the given client instant. Returns null on any failure
+    /// (offline, older server, transient error) so the caller falls back to the raw fetches and
+    /// the local builder; deliberately no read cache of its own, because the fallback already
+    /// computes from AppStateService's cached raw data with a fresh "now", which is the more
+    /// accurate offline answer than a summary frozen at an earlier instant.
+    /// </summary>
+    private async Task<DashboardSummaryDto?> TryFetchSummaryAsync(DateTime now)
+    {
+        try
+        {
+            return await Http.GetFromJsonAsync<DashboardSummaryDto>(
+                $"api/dashboard/summary?now={now:yyyy-MM-ddTHH:mm:ss}", StudyLifeJson.Options);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     /// <summary>Phase 2 result -> the fields the markup binds to. Only the localized strings are

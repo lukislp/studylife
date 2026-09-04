@@ -2109,6 +2109,45 @@
         }
       }
     },
+    "/api/dashboard/summary": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "parameters": [
+          {
+            "name": "now",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardSummaryDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardSummaryDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardSummaryDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/developer/clients": {
       "get": {
         "tags": [
@@ -5918,6 +5957,965 @@
           }
         }
       },
+      "DashboardAchievementsDto": {
+        "required": [
+          "unlocked",
+          "total",
+          "tiers"
+        ],
+        "type": "object",
+        "properties": {
+          "unlocked": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "total": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "tiers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardAchievementTierDto"
+            }
+          }
+        }
+      },
+      "DashboardAchievementTierDto": {
+        "required": [
+          "category",
+          "threshold",
+          "unlocked",
+          "current"
+        ],
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string"
+          },
+          "threshold": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "unlocked": {
+            "type": "boolean"
+          },
+          "current": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "DashboardAnomalyHintDto": {
+        "required": [
+          "show",
+          "percentVsBaseline"
+        ],
+        "type": "object",
+        "properties": {
+          "show": {
+            "type": "boolean"
+          },
+          "percentVsBaseline": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "DashboardBackupHintDto": {
+        "required": [
+          "show",
+          "neverDownloaded",
+          "daysSinceLastBackup"
+        ],
+        "type": "object",
+        "properties": {
+          "show": {
+            "type": "boolean"
+          },
+          "neverDownloaded": {
+            "type": "boolean"
+          },
+          "daysSinceLastBackup": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "DashboardBestRecordsDto": {
+        "required": [
+          "bestDayHoursLabel",
+          "bestDayDateLabel",
+          "bestDayIsNew",
+          "bestWeekHoursLabel",
+          "bestWeekRangeLabel",
+          "bestWeekIsNew"
+        ],
+        "type": "object",
+        "properties": {
+          "bestDayHoursLabel": {
+            "type": "string"
+          },
+          "bestDayDateLabel": {
+            "type": "string"
+          },
+          "bestDayIsNew": {
+            "type": "boolean"
+          },
+          "bestWeekHoursLabel": {
+            "type": "string"
+          },
+          "bestWeekRangeLabel": {
+            "type": "string"
+          },
+          "bestWeekIsNew": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DashboardDayDotDto": {
+        "required": [
+          "label",
+          "studied",
+          "isToday"
+        ],
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "studied": {
+            "type": "boolean"
+          },
+          "isToday": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DashboardDonutSliceDto": {
+        "required": [
+          "courseId",
+          "color",
+          "hours",
+          "percent",
+          "isOther"
+        ],
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "courseName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "color": {
+            "type": "string"
+          },
+          "hours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "percent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "isOther": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DashboardFocusScoreDto": {
+        "required": [
+          "visible",
+          "percent",
+          "studied",
+          "planned"
+        ],
+        "type": "object",
+        "properties": {
+          "visible": {
+            "type": "boolean"
+          },
+          "percent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "studied": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "planned": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "DashboardForecastDto": {
+        "required": [
+          "available",
+          "alreadyDone",
+          "dateLabel"
+        ],
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "alreadyDone": {
+            "type": "boolean"
+          },
+          "dateLabel": {
+            "type": "string"
+          }
+        }
+      },
+      "DashboardGoalsSummaryDto": {
+        "required": [
+          "courseTags",
+          "courseDeadlineDays",
+          "upcomingGoals",
+          "ectsEarned",
+          "ectsTotal",
+          "ectsPercent",
+          "averageGradeLabel",
+          "topicsCompleted",
+          "topicsTotal",
+          "topicsPercent",
+          "programsCompleted"
+        ],
+        "type": "object",
+        "properties": {
+          "courseTags": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "courseDeadlineDays": {
+            "type": "object",
+            "additionalProperties": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          "upcomingGoals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardUpcomingGoalDto"
+            }
+          },
+          "ectsEarned": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "ectsTotal": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "ectsPercent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "averageGradeLabel": {
+            "type": "string"
+          },
+          "topicsCompleted": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "topicsTotal": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "topicsPercent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "programsCompleted": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "DashboardGraduationGoalDto": {
+        "required": [
+          "visible",
+          "expired",
+          "onTrack",
+          "requiredValue",
+          "paceValue",
+          "targetDateValue"
+        ],
+        "type": "object",
+        "properties": {
+          "visible": {
+            "type": "boolean"
+          },
+          "expired": {
+            "type": "boolean"
+          },
+          "onTrack": {
+            "type": "boolean"
+          },
+          "requiredValue": {
+            "type": "string"
+          },
+          "paceValue": {
+            "type": "string"
+          },
+          "targetDateValue": {
+            "type": "string"
+          }
+        }
+      },
+      "DashboardInactivityDto": {
+        "required": [
+          "show",
+          "daysSinceLastSession"
+        ],
+        "type": "object",
+        "properties": {
+          "show": {
+            "type": "boolean"
+          },
+          "daysSinceLastSession": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "DashboardLatestNoteDto": {
+        "required": [
+          "excerpt",
+          "notesCount"
+        ],
+        "type": "object",
+        "properties": {
+          "note": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/NoteDto"
+              }
+            ]
+          },
+          "excerpt": {
+            "type": "string"
+          },
+          "courseName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "notesCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "DashboardMiniDonutDto": {
+        "required": [
+          "slices",
+          "gradient",
+          "totalHours"
+        ],
+        "type": "object",
+        "properties": {
+          "slices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardDonutSliceDto"
+            }
+          },
+          "gradient": {
+            "type": "string"
+          },
+          "totalHours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "DashboardMonthComparisonDto": {
+        "required": [
+          "currentLabel",
+          "vsLastMonthLabel",
+          "vsLastMonthUp",
+          "hasYearData",
+          "vsLastYearLabel",
+          "vsLastYearUp"
+        ],
+        "type": "object",
+        "properties": {
+          "currentLabel": {
+            "type": "string"
+          },
+          "vsLastMonthLabel": {
+            "type": "string"
+          },
+          "vsLastMonthUp": {
+            "type": "boolean"
+          },
+          "hasYearData": {
+            "type": "boolean"
+          },
+          "vsLastYearLabel": {
+            "type": "string"
+          },
+          "vsLastYearUp": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DashboardNeglectedCourseDto": {
+        "required": [
+          "courseId",
+          "name",
+          "icon",
+          "color"
+        ],
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "daysSinceLastStudied": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "DashboardProductivityHintDto": {
+        "required": [
+          "visible",
+          "bestBucketIndex",
+          "planned",
+          "showSuggestText",
+          "showPlanLink"
+        ],
+        "type": "object",
+        "properties": {
+          "visible": {
+            "type": "boolean"
+          },
+          "bestBucketIndex": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "planned": {
+            "type": "boolean"
+          },
+          "plannedStartTimeLabel": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "showSuggestText": {
+            "type": "boolean"
+          },
+          "showPlanLink": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DashboardProgressSummaryDto": {
+        "required": [
+          "forecast",
+          "graduationGoal",
+          "monthComparison",
+          "bestRecords",
+          "achievements"
+        ],
+        "type": "object",
+        "properties": {
+          "forecast": {
+            "$ref": "#/components/schemas/DashboardForecastDto"
+          },
+          "graduationGoal": {
+            "$ref": "#/components/schemas/DashboardGraduationGoalDto"
+          },
+          "monthComparison": {
+            "$ref": "#/components/schemas/DashboardMonthComparisonDto"
+          },
+          "bestRecords": {
+            "$ref": "#/components/schemas/DashboardBestRecordsDto"
+          },
+          "achievements": {
+            "$ref": "#/components/schemas/DashboardAchievementsDto"
+          }
+        }
+      },
+      "DashboardQuotaTileDto": {
+        "required": [
+          "hoursLabel",
+          "targetMin",
+          "targetMax",
+          "percent",
+          "minPercent",
+          "warning",
+          "missingLabel"
+        ],
+        "type": "object",
+        "properties": {
+          "hoursLabel": {
+            "type": "string"
+          },
+          "targetMin": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "targetMax": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "percent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "minPercent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "warning": {
+            "type": "boolean"
+          },
+          "missingLabel": {
+            "type": "string"
+          }
+        }
+      },
+      "DashboardSessionsSummaryDto": {
+        "required": [
+          "todaySessions",
+          "weekSessions",
+          "weekHoursLabel",
+          "streak",
+          "longestStreak",
+          "focusScore",
+          "inactivity",
+          "backupHint",
+          "weekQuota",
+          "monthQuota",
+          "weeklyTrend",
+          "weekDeltaUp",
+          "recentSessions",
+          "todayRing",
+          "streakStrip",
+          "miniDonut",
+          "productivityHint",
+          "weekdayInsight",
+          "anomalyHint",
+          "latestNote"
+        ],
+        "type": "object",
+        "properties": {
+          "todaySessions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StudySessionDto"
+            }
+          },
+          "activeSession": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/StudySessionDto"
+              }
+            ]
+          },
+          "upcomingSession": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/StudySessionDto"
+              }
+            ]
+          },
+          "weekSessions": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "weekHoursLabel": {
+            "type": "string"
+          },
+          "streak": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "longestStreak": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "focusScore": {
+            "$ref": "#/components/schemas/DashboardFocusScoreDto"
+          },
+          "inactivity": {
+            "$ref": "#/components/schemas/DashboardInactivityDto"
+          },
+          "backupHint": {
+            "$ref": "#/components/schemas/DashboardBackupHintDto"
+          },
+          "weekQuota": {
+            "$ref": "#/components/schemas/DashboardQuotaTileDto"
+          },
+          "monthQuota": {
+            "$ref": "#/components/schemas/DashboardQuotaTileDto"
+          },
+          "weeklyTrend": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardTrendWeekDto"
+            }
+          },
+          "weekDeltaLabel": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "weekDeltaUp": {
+            "type": "boolean"
+          },
+          "recentSessions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StudySessionDto"
+            }
+          },
+          "todayRing": {
+            "$ref": "#/components/schemas/DashboardTodayRingDto"
+          },
+          "streakStrip": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardDayDotDto"
+            }
+          },
+          "miniDonut": {
+            "$ref": "#/components/schemas/DashboardMiniDonutDto"
+          },
+          "neglectedCourse": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DashboardNeglectedCourseDto"
+              }
+            ]
+          },
+          "productivityHint": {
+            "$ref": "#/components/schemas/DashboardProductivityHintDto"
+          },
+          "weekdayInsight": {
+            "$ref": "#/components/schemas/DashboardWeekdayInsightDto"
+          },
+          "anomalyHint": {
+            "$ref": "#/components/schemas/DashboardAnomalyHintDto"
+          },
+          "latestNote": {
+            "$ref": "#/components/schemas/DashboardLatestNoteDto"
+          }
+        }
+      },
+      "DashboardSummaryDto": {
+        "required": [
+          "courses",
+          "sessions",
+          "goals",
+          "progress"
+        ],
+        "type": "object",
+        "properties": {
+          "courses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CourseDto"
+            }
+          },
+          "sessions": {
+            "$ref": "#/components/schemas/DashboardSessionsSummaryDto"
+          },
+          "goals": {
+            "$ref": "#/components/schemas/DashboardGoalsSummaryDto"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/DashboardProgressSummaryDto"
+          }
+        }
+      },
+      "DashboardTodayRingDto": {
+        "required": [
+          "ringPercent",
+          "hoursLabel",
+          "dailyTargetLabel",
+          "exceeded"
+        ],
+        "type": "object",
+        "properties": {
+          "ringPercent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "hoursLabel": {
+            "type": "string"
+          },
+          "dailyTargetLabel": {
+            "type": "string"
+          },
+          "exceeded": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DashboardTrendWeekDto": {
+        "required": [
+          "label",
+          "hours",
+          "percent",
+          "isCurrent"
+        ],
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "hours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "percent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "isCurrent": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DashboardUpcomingGoalDto": {
+        "required": [
+          "courseId",
+          "courseName",
+          "daysLeft"
+        ],
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "courseName": {
+            "type": "string"
+          },
+          "targetDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "daysLeft": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "DashboardWeekdayInsightDto": {
+        "required": [
+          "available",
+          "bestIndex"
+        ],
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "bestIndex": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "DemoInfoDto": {
         "required": [
           "demo"
@@ -8857,6 +9855,9 @@
     },
     {
       "name": "Courses"
+    },
+    {
+      "name": "Dashboard"
     },
     {
       "name": "Developer"
