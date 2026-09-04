@@ -202,4 +202,40 @@ public class GetOrSetAsyncTests
         Assert.Equal("\"key8\"", controller.Response.Headers["ETag"].ToString());
         Assert.Equal("private, no-cache", controller.Response.Headers["Cache-Control"].ToString());
     }
+
+    [Fact]
+    public async Task Etag_DependsOnContentNotOnKey()
+    {
+        // Regression for the Redis-counter reset: two different keys with the same body must
+        // produce the same ETag, and the same key with a different body must not.
+        var cache = NewCache();
+        var c1 = NewController();
+        await cache.GetOrSetAsync(c1, "settings:1:7", TimeSpan.FromMinutes(1), () => Task.FromResult("same"));
+        var c2 = NewController();
+        await cache.GetOrSetAsync(c2, "settings:1:8", TimeSpan.FromMinutes(1), () => Task.FromResult("same"));
+        var c3 = NewController();
+        await cache.GetOrSetAsync(c3, "settings:1:9", TimeSpan.FromMinutes(1), () => Task.FromResult("changed"));
+
+        var etag1 = c1.Response.Headers["ETag"].ToString();
+        Assert.Equal(etag1, c2.Response.Headers["ETag"].ToString());
+        Assert.NotEqual(etag1, c3.Response.Headers["ETag"].ToString());
+        Assert.NotEqual("\"settings:1:7\"", etag1);
+    }
+
+    [Fact]
+    public async Task StaleIfNoneMatch_ForAKeyWhoseBodyChanged_GetsAFreshBodyNot304()
+    {
+        // The exact failure mode: the counter wrapped around to an already-seen value while the
+        // client still sends the ETag it received for the OLD body under that key.
+        var cache = NewCache();
+        var first = NewController();
+        await cache.GetOrSetAsync(first, "settings:1:3", TimeSpan.FromMinutes(1), () => Task.FromResult("old"));
+        var oldEtag = first.Response.Headers["ETag"].ToString();
+
+        var rebuiltCache = NewCache(); // same key, new content
+        var second = NewController(oldEtag);
+        var result = await rebuiltCache.GetOrSetAsync(second, "settings:1:3", TimeSpan.FromMinutes(1), () => Task.FromResult("new"));
+        Assert.Equal("new", result.Value);
+        Assert.NotEqual(StatusCodes.Status304NotModified, second.Response.StatusCode);
+    }
 }
