@@ -1463,7 +1463,9 @@ public class MetricsStreakDto
 }
 
 /// <summary>Total/TotalSessions are all-time studied hours/session count (same aggregation as
-/// AchievementCatalog.BuildInputs' TotalHours/TotalSessions).</summary>
+/// AchievementCatalog.BuildInputs' TotalHours/TotalSessions). Week/Month are STUDIED-only too
+/// (StudyMetrics.IsStudied) - a session merely scheduled for later in the window doesn't count
+/// here, unlike WeekQuota/MonthQuota below. See docs/ARCHITECTURE.md "Number semantics".</summary>
 public class MetricsHoursDto
 {
     public double Week { get; set; }
@@ -1472,7 +1474,10 @@ public class MetricsHoursDto
     public int TotalSessions { get; set; }
 }
 
-/// <summary>Shape shared by WeekQuota and MonthQuota (StudyMetrics.CalcQuota).</summary>
+/// <summary>Shape shared by WeekQuota and MonthQuota (StudyMetrics.CalcQuota). Hours here is the
+/// PLANNED window total, not studied-only - these two tiles deliberately count every session
+/// scheduled in the window against the goal, same exception as the dashboard's quota tiles (see
+/// docs/ARCHITECTURE.md "Number semantics").</summary>
 public class MetricsQuotaDto
 {
     public double Hours { get; set; }
