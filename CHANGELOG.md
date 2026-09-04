@@ -1,3 +1,19 @@
+# [3.12.0](https://github.com/lukislp/studylife/compare/v3.11.2...v3.12.0) (2026-09-04)
+
+
+### Bug Fixes
+
+* describe the C# change-stream reader in the architecture notes ([3d4d7bb](https://github.com/lukislp/studylife/commit/3d4d7bb4ed26d74d3b153d1b0abac384119193a4))
+* read the server change stream in C# so the native app gets push updates ([1dc9e89](https://github.com/lukislp/studylife/commit/1dc9e896a631f5a9c63657d7dbf8bd58f4227339))
+* reconnect the change stream when heartbeats stop arriving ([0ed6345](https://github.com/lukislp/studylife/commit/0ed63454e563c3a7322af92d4c9233f2cddb7399))
+
+
+### Features
+
+* broadcast every write over the change stream and stop polling while connected ([4101624](https://github.com/lukislp/studylife/commit/4101624cfbf14698257b0f5e4bb3795e092e3f58))
+* live-refresh the setup and evaluation pages from the change stream ([a013b13](https://github.com/lukislp/studylife/commit/a013b1330b2222469c6bbe1a3d1565c2bea7a9d2))
+* reconcile by version over the change stream instead of polling every 30 s ([fe9342d](https://github.com/lukislp/studylife/commit/fe9342dac0b73b95159d77597f8814a21a5d90ad))
+
 ## [3.11.2](https://github.com/lukislp/studylife/compare/v3.11.1...v3.11.2) (2026-09-04)
 
 
