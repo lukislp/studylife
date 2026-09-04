@@ -33,13 +33,20 @@ public class StudyProgramsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<StudyProgramSummaryDto>>> GetAll()
+    public async Task<ActionResult<List<StudyProgramSummaryDto>>> GetAll() => await LoadSummariesAsync(_db);
+
+    /// <summary>
+    /// Core of GetAll above - also reused by DashboardController (same "GET /api/studyprograms"
+    /// data the client's LoadDataAsync fetches), so the synthetic built-in entry stays defined in
+    /// exactly one place instead of being copy-pasted at the second call site.
+    /// </summary>
+    internal static async Task<List<StudyProgramSummaryDto>> LoadSummariesAsync(StudyLifeDb db)
     {
         var result = new List<StudyProgramSummaryDto>
         {
             new() { Id = null, Name = CourseCatalog.BuiltInProgramName, IsBuiltIn = true },
         };
-        var custom = await _db.StudyPrograms.AsNoTracking()
+        var custom = await db.StudyPrograms.AsNoTracking()
             .OrderBy(p => p.CreatedAt)
             .Select(p => new StudyProgramSummaryDto { Id = p.Id, Name = p.Name, IsBuiltIn = false, IsCompleted = p.IsCompleted })
             .ToListAsync();

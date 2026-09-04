@@ -421,6 +421,8 @@ builder.Services.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>();
 // CourseId validation (audit finding M2) - scoped like StudyLifeDb itself since it queries
 // custom courses directly; see CourseResolver's doc comment for what it resolves against.
 builder.Services.AddScoped<ICourseResolver, CourseResolver>();
+// Programme scoping shared by every server-side aggregate (metrics for HA/MCP, dashboard summary).
+builder.Services.AddScoped<IProgrammeScopeResolver, ProgrammeScopeResolver>();
 // Shared owner check (audit A15/A2 fix) - see OwnershipService for the AuthUserEntity.IsOwner
 // rationale; scoped like StudyLifeDb itself since it queries it directly.
 builder.Services.AddScoped<IOwnershipService, OwnershipService>();
