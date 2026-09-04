@@ -72,6 +72,9 @@
 @code {
     private I18nText.SetupText T = new();
 
+    [CascadingParameter]
+    public SetupOverviewDto? Overview { get; set; }
+
     private List<WebhookApiKeyDto> _keys = new();
     private string _newKeyName = "";
     // Plaintext only visible right after a generation within this page load - the server
@@ -84,6 +87,11 @@
     protected override async Task OnInitializedAsync()
     {
         T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
+        if (Overview?.WebhookApiKeys is { } bundled)
+        {
+            _keys = bundled;
+            return;
+        }
         try
         {
             _keys = await Http.GetFromJsonAsync<List<WebhookApiKeyDto>>("api/settings/webhooks-api-keys") ?? new();

@@ -677,6 +677,39 @@ wrong to right), which is what should show up as a lower
 
 **Server-side dashboard summary (2026-09):** the dashboard no longer fetches raw data and computes in WASM. `GET api/dashboard/summary?now=<client local DateTime>` (`Controllers/DashboardController.cs`, session-only) assembles the same inputs the client used to fetch (`api/settings`, `api/courses`, unbounded `api/sessions`, the 400-day and 3650-day history windows, `api/coursegoals`, group quotas, `api/studyprograms`, `api/notes`, owner/demo/raw-backup flags) and runs `StudyLife.Shared/DashboardSummaryBuilder.Build` - the exact code `Pages/Index.razor.cs` runs in its offline fallback, so both paths produce identical numbers by construction; `tests/StudyLife.Server.Tests/DashboardSummaryEndpointTests.cs` proves it by fetching the nine endpoints through the test client, building locally and asserting JSON equality with the endpoint, and `tests/StudyLife.Shared.Tests/DashboardSummaryBuilderTests.cs` pins the pre-extraction golden values. The client passes its own `DateTime.Now` because sessions are stored as local wall-clock times and every "today"/week-start decision has to be made in the user's clock, not the server's (the server clamps it to 36 h around its own clock). Cached through `CacheHelper` under `dashboard:summary:{user}:{now to the minute}:{historyVersion}:{settingsVersion}:{notes count+max updated}`, 60 s TTL, content-hash ETag. Programme scoping comes from `IProgrammeScopeResolver`, shared with `MetricsController` so the metrics API for Home Assistant/MCP and the dashboard filter through one course-id set. Native health tiles (HRV, sleep) stay client-only and are not part of the summary.
 
+**Server-side setup overview (2026-09):** unlike the summaries above, this bundle has no shared
+computation - the Setup page and its ~20 cards simply fired ~14 independent read-only GETs on
+every open (settings, capabilities, version, calendar token, study programs, course goals, eight
+per-integration key statuses, webhook API keys, client keys, invites, restore status). `GET
+api/setup/overview` (`Controllers/SetupController.cs`, session-only) assembles all of them in one
+round trip by calling straight into the same internal helper each individual endpoint already
+calls (`SettingsController`'s `ToXxxApiKeyStatusDto`/`LoadWebhookApiKeysAsync`,
+`AuthController.LoadClientKeysAsync`/`LoadInvitesAsync`, `BackupController.BuildRestoreStatus`,
+`SystemController.BuildCapabilities`, `StudyProgramsController.LoadSummariesAsync`,
+`CourseGoalsController.ToDto`) - so the bundle can't silently drift from what those endpoints
+return, and the individual routes/DTOs are unchanged for add-ons and older clients. One
+`AuthUsers` read covers all eight key statuses, the calendar token and (via `IOwnershipService`)
+the owner flag, instead of eight separate SELECTs. `GET api/webhooks` (`WebhooksProxyController`)
+is deliberately excluded - it proxies to the external studylife-webhooks microservice, so
+bundling it would add a network hop rather than remove one. Every section reproduces its
+endpoint's response 1:1 for the caller, including access control: a section the real endpoint
+would deny (401/403/404/503 - not the owner, demo restrictions, no such user) is null instead of
+data the caller couldn't already get, and the corresponding card/page fetch falls back to its own
+request exactly as before. The one write-avoidance case is the calendar token: the real endpoint
+lazily *generates* one on first fetch (a GET with a side effect), which the bundle must never do,
+so it only ever reports an already-existing token. Deliberately uncached and GET-only, unaffected
+by `DemoModeGuard` (a demo instance's write-block middleware still rejects every non-GET under
+`/api`, and blocks `/api/backup` entirely for any method, exactly as before). `tests/
+StudyLife.Server.Tests/SetupOverviewEndpointTests.cs` proves parity by fetching every individual
+endpoint through the same session and asserting JSON equality with the bundle's sections, checks
+that owner-only sections are null for a non-owner session while the real endpoints 403, that the
+bundle never creates a calendar token, and that a demo instance's bundle matches its individual
+endpoints while writes stay blocked. `Pages/Setup.razor` fetches the bundle alongside settings in
+`OnInitializingAsync` and passes it down to the cards via a `<CascadingValue>`; each card (and the
+page's own capabilities/version/calendar-token/study-programs/course-goals fetches) uses its
+section when present and only falls back to its own GET otherwise - the progressive-render phases
+(`_settingsLoading`/`_secondaryLoading`) and their `RenderPhaseAsync()` points are unchanged.
+
 **Stats, Wrapped and Report summaries (2026-09):** the same pattern as the dashboard for the three evaluation pages. `StatsSummaryBuilder` (phases Core/Notes/Extended), `WrappedSummaryBuilder` (Recap/Achievements) and `ReportSummaryBuilder` in `StudyLife.Shared` hold the pages' computations verbatim (golden tests in `StudyLife.Shared.Tests` pin the pre-extraction values); `GET api/stats/summary`, `api/wrapped/summary` and `api/report/summary` (all `?now=<client local DateTime>`, session-only, `Controllers/StatsController.cs`, `WrappedController.cs`, `ReportController.cs`) assemble the inputs exactly like the raw endpoints would return them - the cross-programme comparison's per-programme catalogs and quotas are loaded server-side in one go instead of the client's N+1 fan-out - and run the builders; endpoint parity tests fetch the raw endpoints through the test client, build locally and assert JSON equality. Cache keys `stats:summary:{user}:{minute}:{historyVersion}:{settingsVersion}:{notes token}`, `wrapped:summary:...` and `report:summary:...` (no notes), 60 s TTL, content-hash ETags. The pages start settings/courses and the summary request in `OnInitializingAsync` and only start the raw fetches when the summary fails (`AppStateService.TryGetSummaryAsync`), so the fallback keeps today's offline behaviour with identical numbers. The native cardio-fitness card on Stats stays client-only.
 
 **Progressive render on every page (2026-09):** the same shape now applies to Calendar, Planner,
