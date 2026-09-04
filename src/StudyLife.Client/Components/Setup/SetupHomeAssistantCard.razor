@@ -1,6 +1,8 @@
 @using StudyLife.Shared
+@using StudyLife.Client.Services
 @inject HttpClient Http
 @inject IJSRuntime JS
+@inject AppStateService State
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
 @* Long-lived per-user API key for Home Assistant (phase 3): replaces the former global,
@@ -117,14 +119,18 @@
     private bool _confirmingRegenerate;
     private bool _confirmingRevoke;
 
+    // The Overview instance last applied to this card's fields - lets OnParametersSet tell a
+    // genuinely new bundle (another device/add-on changed something) apart from an unrelated
+    // re-render of the parent that hands down the same cascaded instance again.
+    private SetupOverviewDto? _appliedOverview;
+
     protected override async Task OnInitializedAsync()
     {
         if (OverviewTask is not null) Overview = await OverviewTask;
         T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
         if (Overview?.HaApiKey is { } bundled)
         {
-            _hasKey = bundled.HasKey;
-            _createdAt = bundled.CreatedAt;
+            ApplyOverview(bundled);
             return;
         }
         try
@@ -136,11 +142,34 @@
         catch { /* offline: card shows the "no key" default */ }
     }
 
+    /// <summary>
+    /// Live refresh (Setup.razor's server-change subscription re-fetches the whole overview
+    /// bundle and hands down a new instance): re-applies this card's section the same way the
+    /// initial load does - but only while nothing is in flight here (generate/revoke, or the
+    /// confirmation modals), so a background refresh can never overwrite an action the user is
+    /// mid-way through, and never touches _generatedKey - the freshly generated plaintext key
+    /// stays visible regardless of what a later bundle says.
+    /// </summary>
+    protected override void OnParametersSet()
+    {
+        if (Overview is null || ReferenceEquals(Overview, _appliedOverview)) return;
+        _appliedOverview = Overview;
+        if (_busy || _confirmingRegenerate || _confirmingRevoke) return;
+        if (Overview.HaApiKey is { } bundled) ApplyOverview(bundled);
+    }
+
+    private void ApplyOverview(HaApiKeyStatusDto bundled)
+    {
+        _hasKey = bundled.HasKey;
+        _createdAt = bundled.CreatedAt;
+    }
+
     private async Task Generate()
     {
         _busy = true;
         try
         {
+            State.NoteOwnWrite("settings");
             var response = await Http.PostAsync("api/settings/ha-api-key/generate", null);
             if (response.IsSuccessStatusCode)
             {
@@ -168,6 +197,7 @@
         _busy = true;
         try
         {
+            State.NoteOwnWrite("settings");
             var response = await Http.PostAsync("api/settings/ha-api-key/revoke", null);
             if (response.IsSuccessStatusCode)
             {

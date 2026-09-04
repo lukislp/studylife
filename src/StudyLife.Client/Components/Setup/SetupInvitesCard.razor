@@ -1,7 +1,9 @@
 @using StudyLife.Shared
+@using StudyLife.Client.Services
 @inject HttpClient Http
 @inject IJSRuntime JS
 @inject NavigationManager Nav
+@inject AppStateService State
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
 @* Registration invites (owner-only, audit finding A10): generates a "/register?invite=<token>"
@@ -85,6 +87,11 @@
     private string? _generatedLink;
     private bool _copied;
 
+    // The Overview instance last applied to this card's fields - lets OnParametersSet tell a
+    // genuinely new bundle (another device/add-on changed something) apart from an unrelated
+    // re-render of the parent that hands down the same cascaded instance again.
+    private SetupOverviewDto? _appliedOverview;
+
     protected override async Task OnInitializedAsync()
     {
         if (OverviewTask is not null) Overview = await OverviewTask;
@@ -93,11 +100,27 @@
         // A later reload (after Generate/RevokeAsync) always goes through LoadAsync's own fetch.
         if (Overview?.Invites is { } bundled)
         {
-            _invites.Clear();
-            _invites.AddRange(bundled);
+            ApplyOverview(bundled);
             return;
         }
         await LoadAsync();
+    }
+
+    /// <summary>Live refresh: re-applies the invite list from a freshly re-fetched bundle, but
+    /// only while nothing is in flight here (generate/revoke) - a background refresh must never
+    /// hide a just-generated invite link (_generatedLink is never touched by this).</summary>
+    protected override void OnParametersSet()
+    {
+        if (Overview is null || ReferenceEquals(Overview, _appliedOverview)) return;
+        _appliedOverview = Overview;
+        if (_busy) return;
+        if (Overview.Invites is { } bundled) ApplyOverview(bundled);
+    }
+
+    private void ApplyOverview(List<InviteListItemDto> bundled)
+    {
+        _invites.Clear();
+        _invites.AddRange(bundled);
     }
 
     private async Task LoadAsync()
@@ -119,6 +142,7 @@
         _copied = false;
         try
         {
+            State.NoteOwnWrite("auth");
             var response = await Http.PostAsync("api/auth/invites", null);
             if (response.IsSuccessStatusCode)
             {
@@ -141,6 +165,7 @@
         _busy = true;
         try
         {
+            State.NoteOwnWrite("auth");
             var response = await Http.DeleteAsync($"api/auth/invites/{invite.Id}");
             if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound)
             {

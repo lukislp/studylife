@@ -1,7 +1,9 @@
 @using StudyLife.Shared
+@using StudyLife.Client.Services
 @inject HttpClient Http
 @inject NavigationManager Nav
 @inject IJSRuntime JS
+@inject AppStateService State
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
 @* Read-only progress link for sharing with parents/mentors/study advisors, without login -
@@ -84,14 +86,18 @@
 
     private string ShareUrl => string.IsNullOrEmpty(_token) ? "" : $"{Nav.BaseUri}shared/{_token}";
 
+    // The Overview instance last applied to this card's fields - lets OnParametersSet tell a
+    // genuinely new bundle (another device/add-on changed something) apart from an unrelated
+    // re-render of the parent that hands down the same cascaded instance again.
+    private SetupOverviewDto? _appliedOverview;
+
     protected override async Task OnInitializedAsync()
     {
         if (OverviewTask is not null) Overview = await OverviewTask;
         T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
         if (Overview?.Settings is { } bundled)
         {
-            _enabled = bundled.ProgressShareEnabled;
-            _token = bundled.ProgressShareToken;
+            ApplyOverview(bundled);
             return;
         }
         try
@@ -103,11 +109,29 @@
         catch { /* offline: card shows the disabled default */ }
     }
 
+    /// <summary>Live refresh: re-applies enabled/token from a freshly re-fetched bundle, but only
+    /// while nothing is in flight here - a background refresh must never overwrite an
+    /// enable/disable/regenerate the user just triggered.</summary>
+    protected override void OnParametersSet()
+    {
+        if (Overview is null || ReferenceEquals(Overview, _appliedOverview)) return;
+        _appliedOverview = Overview;
+        if (_busy || _confirming || _regenerating) return;
+        if (Overview.Settings is { } bundled) ApplyOverview(bundled);
+    }
+
+    private void ApplyOverview(UserSettingsDto bundled)
+    {
+        _enabled = bundled.ProgressShareEnabled;
+        _token = bundled.ProgressShareToken;
+    }
+
     private async Task Enable()
     {
         _busy = true;
         try
         {
+            State.NoteOwnWrite("settings");
             var response = await Http.PostAsync("api/settings/progress-share/enable", null);
             if (response.IsSuccessStatusCode)
             {
@@ -124,6 +148,7 @@
         _busy = true;
         try
         {
+            State.NoteOwnWrite("settings");
             var response = await Http.PostAsync("api/settings/progress-share/disable", null);
             if (response.IsSuccessStatusCode) _enabled = false;
         }
@@ -150,6 +175,7 @@
         StateHasChanged();
         try
         {
+            State.NoteOwnWrite("settings");
             var response = await Http.PostAsync("api/settings/progress-share/regenerate", null);
             if (response.IsSuccessStatusCode)
             {

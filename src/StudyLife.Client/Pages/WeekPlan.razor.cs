@@ -43,22 +43,70 @@ public partial class WeekPlan
         _settingsTask = State.GetSettingsAsync();
         _coursesTask = State.GetCoursesAsync();
         _sessionsTask = State.GetSessionsAsync();
+
+        // Live updates (change stream): this page only ever reads sessions/settings, so those two
+        // events are the whole story - no OnServerChanged subscription needed here.
+        State.OnSessionsChanged += OnLiveDataChanged;
+        State.OnSettingsChanged += OnLiveDataChanged;
         return Task.CompletedTask;
     }
 
-    protected override async Task OnTextLoadedAsync()
+    public void Dispose()
     {
+        State.OnSessionsChanged -= OnLiveDataChanged;
+        State.OnSettingsChanged -= OnLiveDataChanged;
+    }
+
+    private void OnLiveDataChanged() => InvokeAsync(RefreshAsync);
+
+    // Coalesced, non-overlapping live refresh - same shape as Stats.razor.cs: re-runs the load
+    // with fresh data but never resets _loaded back to false, so the printed document stays on
+    // screen until the fresh numbers replace it. An event arriving mid-refresh just schedules one
+    // more pass afterwards instead of overlapping it; a failed refresh is swallowed so the next
+    // event simply tries again.
+    private bool _refreshRunning;
+    private bool _refreshPending;
+
+    private async Task RefreshAsync()
+    {
+        if (_refreshRunning) { _refreshPending = true; return; }
+        _refreshRunning = true;
+        try
+        {
+            do
+            {
+                _refreshPending = false;
+                try { await LoadDataAsync(isRefresh: true); }
+                catch { /* background refresh failed - keep showing the last good state, next event retries */ }
+            } while (_refreshPending);
+        }
+        finally { _refreshRunning = false; }
+    }
+
+    protected override async Task OnTextLoadedAsync() => await LoadDataAsync();
+
+    private async Task LoadDataAsync(bool isRefresh = false)
+    {
+        // "Generated on"/the current week are page-level, wall-clock concerns - refreshed on
+        // every live update too, so the printed stamp and week window always match the moment
+        // the data was actually rebuilt.
         _generatedAt = DateTime.Now;
         // Monday start, same convention as Calendar.razor.cs (MondayOf) - here via the shared
         // StudyMetrics helper instead of its own copy of the offset calculation.
         _weekStart = StudyMetrics.WeekStartOf(DateTime.Today);
         _weekEnd = _weekStart.AddDays(6);
 
-        var settings = await _settingsTask!;
-        var allCourses = await _coursesTask!;
+        // A live refresh can't reuse OnInitializingAsync's tasks (those already resolved to the
+        // page's initial data) - it starts its own, exactly like the initial load did.
+        var settingsTask = isRefresh ? State.GetSettingsAsync() : _settingsTask!;
+        var coursesTask = isRefresh ? State.GetCoursesAsync() : _coursesTask!;
+        var sessionsTask = isRefresh ? State.GetSessionsAsync() : _sessionsTask!;
+
+        var settings = await settingsTask;
+        var allCourses = await coursesTask;
         _courseLookup = allCourses.ToDictionary(c => c.Id);
 
-        var sessions = await _sessionsTask!;
+        var sessions = await sessionsTask;
         var weekSessions = sessions
             .Where(s => s.StartTime.Date >= _weekStart && s.StartTime.Date <= _weekEnd)
             .OrderBy(s => s.StartTime)
@@ -79,6 +127,7 @@ public partial class WeekPlan
             .ToList();
 
         _loaded = true;
+        await RenderPhaseAsync();
     }
 
     private async Task Print()

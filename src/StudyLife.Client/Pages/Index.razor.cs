@@ -184,6 +184,7 @@ public partial class Index
     {
         State.OnSessionsChanged += OnSessionsChanged;
         State.OnSettingsChanged += OnSettingsChanged;
+        State.OnServerChanged += OnServerChanged;
         _isOwnerTask = State.GetIsOwnerAsync();
         // LoadDataAsync can only run once T has loaded (it formats labels), but its three
         // biggest fetches are memoized in AppStateService - kicking them off here lets them
@@ -536,6 +537,14 @@ public partial class Index
         StateHasChanged();
     });
 
+    // Notes, course goals, programmes and anything else the summary depends on: another device
+    // changed it, reload the summary (sessions/settings have their own events above).
+    private void OnServerChanged(string? kind) => InvokeAsync(async () =>
+    {
+        await LoadDataAsync(refreshHeavyHistory: false);
+        StateHasChanged();
+    });
+
     private void OnSettingsChanged() => InvokeAsync(async () =>
     {
         await LoadDataAsync(refreshHeavyHistory: false);
@@ -546,5 +555,6 @@ public partial class Index
     {
         State.OnSessionsChanged -= OnSessionsChanged;
         State.OnSettingsChanged -= OnSettingsChanged;
+        State.OnServerChanged -= OnServerChanged;
     }
 }

@@ -27,14 +27,31 @@ public class EventsController : ControllerBase
     private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(25);
 
     private readonly IChangeSignal _signal;
+    private readonly SessionHistoryCacheVersion _historyVersion;
+    private readonly SettingsCacheVersion _settingsVersion;
+    private readonly ChangeSequence _sequence;
 
-    public EventsController(IChangeSignal signal) => _signal = signal;
+    public EventsController(IChangeSignal signal, SessionHistoryCacheVersion historyVersion, SettingsCacheVersion settingsVersion, ChangeSequence sequence)
+    {
+        _signal = signal;
+        _historyVersion = historyVersion;
+        _settingsVersion = settingsVersion;
+        _sequence = sequence;
+    }
 
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpGet]
-    public async Task Stream(CancellationToken cancellationToken)
+    public async Task Stream(CancellationToken cancellationToken, [FromQuery] int v = 1)
     {
         var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
+        // v=2 (2026-09): every frame carries the user's two cache-version counters (the same ones
+        // that key the server-side caches and are bumped on every session/settings write). With
+        // them the client no longer has to poll to know whether it is current: the connect frame
+        // and each 25 s heartbeat say so for free, and a reconnect after a dropped connection
+        // reconciles in one comparison instead of two blind GETs. v=1 keeps the old shape
+        // (": connected", ": ping" comments, "event: change" with the bare kind) for clients that
+        // were deployed before this - for them heartbeats stay comments they ignore.
+        var versioned = v >= 2;
 
         Response.StatusCode = StatusCodes.Status200OK;
         Response.Headers.ContentType = "text/event-stream; charset=utf-8";
@@ -49,16 +66,28 @@ public class EventsController : ControllerBase
         StudyLifeMetrics.SseStreamsOpen.Add(1);
         try
         {
-            await WriteAsync(": connected\n\n", cancellationToken);
+            if (versioned)
+                await WriteAsync($"event: state\ndata: {await StateJsonAsync(userId, null)}\n\n", cancellationToken);
+            else
+                await WriteAsync(": connected\n\n", cancellationToken);
             while (!cancellationToken.IsCancellationRequested)
             {
                 var next = events.Reader.ReadAsync(cancellationToken).AsTask();
                 var heartbeat = Task.Delay(HeartbeatInterval, cancellationToken);
                 var finished = await Task.WhenAny(next, heartbeat);
                 if (finished == next)
-                    await WriteAsync($"event: change\ndata: {await next}\n\n", cancellationToken);
+                {
+                    var kind = await next;
+                    await WriteAsync(versioned
+                        ? $"event: change\ndata: {await StateJsonAsync(userId, kind)}\n\n"
+                        : $"event: change\ndata: {kind}\n\n", cancellationToken);
+                }
                 else
-                    await WriteAsync(": ping\n\n", cancellationToken);
+                {
+                    await WriteAsync(versioned
+                        ? $"event: state\ndata: {await StateJsonAsync(userId, null)}\n\n"
+                        : ": ping\n\n", cancellationToken);
+                }
             }
         }
         catch (OperationCanceledException)
@@ -69,6 +98,20 @@ public class EventsController : ControllerBase
         {
             StudyLifeMetrics.SseStreamsOpen.Add(-1);
         }
+    }
+
+    /// <summary>v=2 frame payload: the two per-user cache versions the client compares against
+    /// what it last saw, plus the kind that triggered a change frame (null on connect/heartbeat).
+    /// Read at send time, i.e. after the write's Bump, so a change frame already carries the new
+    /// value. Serialized by hand: three fields, no need for a DTO the client would also have to
+    /// carry - the shape is documented on ChangeStateFrame in the client.</summary>
+    private async Task<string> StateJsonAsync(int userId, string? kind)
+    {
+        var history = await _historyVersion.GetAsync(userId);
+        var settings = await _settingsVersion.GetAsync(userId);
+        var seq = await _sequence.GetAsync(userId);
+        var kindJson = kind is null ? "null" : System.Text.Json.JsonSerializer.Serialize(kind);
+        return $"{{\"kind\":{kindJson},\"seq\":{seq},\"historyVersion\":{history},\"settingsVersion\":{settings}}}";
     }
 
     private async Task WriteAsync(string text, CancellationToken cancellationToken)

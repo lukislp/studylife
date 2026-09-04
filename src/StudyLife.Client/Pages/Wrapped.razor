@@ -4,6 +4,7 @@
 @inherits LocalizedComponentBase<I18nText.WrappedText>
 @inject AppStateService State
 @inject HttpClient Http
+@implements IDisposable
 
 @if (IsTextLoaded)
 {

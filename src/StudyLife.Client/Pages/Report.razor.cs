@@ -58,7 +58,52 @@ public partial class Report
         // fetches (goals, 10-year history, programmes, quotas) only start in the fallback.
         _now = DateTime.Now;
         _summaryTask = State.TryGetSummaryAsync<ReportSummaryDto>("api/report/summary", _now);
+
+        // Live updates (change stream): sessions/settings have their own events, course goals/
+        // study programmes fall under the generic "something else changed" kind.
+        State.OnSessionsChanged += OnLiveDataChanged;
+        State.OnSettingsChanged += OnLiveDataChanged;
+        State.OnServerChanged += OnServerChanged;
         return Task.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        State.OnSessionsChanged -= OnLiveDataChanged;
+        State.OnSettingsChanged -= OnLiveDataChanged;
+        State.OnServerChanged -= OnServerChanged;
+    }
+
+    private void OnLiveDataChanged() => InvokeAsync(RefreshAsync);
+
+    private void OnServerChanged(string? kind)
+    {
+        if (kind is not (null or "coursegoals" or "studyprograms")) return;
+        _ = InvokeAsync(RefreshAsync);
+    }
+
+    // Coalesced, non-overlapping live refresh - same shape as Stats.razor.cs: re-runs the load
+    // with fresh data but never resets _loaded back to false, so the printed document stays on
+    // screen until the fresh numbers replace it. An event arriving mid-refresh just schedules one
+    // more pass afterwards instead of overlapping it; a failed refresh is swallowed so the next
+    // event simply tries again.
+    private bool _refreshRunning;
+    private bool _refreshPending;
+
+    private async Task RefreshAsync()
+    {
+        if (_refreshRunning) { _refreshPending = true; return; }
+        _refreshRunning = true;
+        try
+        {
+            do
+            {
+                _refreshPending = false;
+                try { await LoadDataAsync(isRefresh: true); }
+                catch { /* background refresh failed - keep showing the last good state, next event retries */ }
+            } while (_refreshPending);
+        }
+        finally { _refreshRunning = false; }
     }
 
     private void StartRawFetches()
@@ -69,17 +114,31 @@ public partial class Report
         _groupQuotasTask = State.GetActiveGroupQuotasAsync();
     }
 
-    protected override async Task OnTextLoadedAsync()
+    protected override async Task OnTextLoadedAsync() => await LoadDataAsync();
+
+    private async Task LoadDataAsync(bool isRefresh = false)
     {
         // The "generated on" timestamp is a page-level concern (when this document was printed),
-        // not part of the report's DATA - read once, up front, independently of the builder's own
+        // not part of the report's DATA - refreshed on every live update too, so the printed
+        // stamp always matches the data actually shown, independently of the builder's own
         // wall-clock input below (see ReportSummaryInput.Now's doc comment).
         _generatedAt = DateTime.Now;
 
-        var settings = await _settingsTask!;
-        var allCourses = await _coursesTask!;
+        // A live refresh takes a fresh instant and can't reuse OnInitializingAsync's tasks
+        // (those already resolved to the page's initial data) - it starts its own, exactly like
+        // the initial load did.
+        var now = isRefresh ? DateTime.Now : _now;
+        _now = now;
+        var settingsTask = isRefresh ? State.GetSettingsAsync() : _settingsTask!;
+        var coursesTask = isRefresh ? State.GetCoursesAsync() : _coursesTask!;
+        var summaryTask = isRefresh
+            ? State.TryGetSummaryAsync<ReportSummaryDto>("api/report/summary", now)
+            : _summaryTask!;
 
-        var summary = await _summaryTask!;
+        var settings = await settingsTask;
+        var allCourses = await coursesTask;
+
+        var summary = await summaryTask;
         if (summary == null)
         {
             // Fallback (offline or a server without api/report/summary): raw fetches + local builder.
@@ -92,7 +151,7 @@ public partial class Report
                 History = await _historyTask! ?? new(),
                 StudyPrograms = await _programsTask! ?? new(),
                 GroupQuotas = await _groupQuotasTask!,
-                Now = _now,
+                Now = now,
             });
         }
 
@@ -118,6 +177,7 @@ public partial class Report
         _periodEnd = summary.PeriodEnd;
 
         _loaded = true;
+        await RenderPhaseAsync();
     }
 
     private async Task Print()

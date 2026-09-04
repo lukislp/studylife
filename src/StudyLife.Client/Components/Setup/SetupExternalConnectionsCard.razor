@@ -1,6 +1,7 @@
 @using StudyLife.Shared
 @using StudyLife.Client.Services
 @inject HttpClient Http
+@inject AppStateService State
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
 @* Consolidated status/disconnect card for the five integrations that no longer provision a key
@@ -114,16 +115,19 @@
     private List<ClientApiKeyListItemDto> _clientKeys = new();
     private bool _clientKeyBusy;
 
+    // The Overview instance last applied to this card's fields - lets OnParametersSet tell a
+    // genuinely new bundle (another device/add-on changed something) apart from an unrelated
+    // re-render of the parent that hands down the same cascaded instance again.
+    private SetupOverviewDto? _appliedOverview;
+
     protected override async Task OnInitializedAsync()
     {
         if (OverviewTask is not null) Overview = await OverviewTask;
         T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
 
-        if (Overview?.ClientKeys is { } bundledClientKeys)
-        {
-            _clientKeys = bundledClientKeys;
-        }
-        else
+        if (Overview is not null) ApplyOverview(Overview);
+
+        if (Overview?.ClientKeys is null)
         {
             try
             {
@@ -132,11 +136,7 @@
             catch { /* offline: no add-on rows */ }
         }
 
-        if (Overview?.McpApiKey is { } bundledMcp)
-        {
-            _mcpConnected = bundledMcp.HasKey;
-        }
-        else
+        if (Overview?.McpApiKey is null)
         {
             try
             {
@@ -146,11 +146,7 @@
             catch { /* offline: card shows the "not connected" default */ }
         }
 
-        if (Overview?.CaptureApiKey is { } bundledCapture)
-        {
-            _captureConnected = bundledCapture.HasKey;
-        }
-        else
+        if (Overview?.CaptureApiKey is null)
         {
             try
             {
@@ -160,11 +156,7 @@
             catch { /* offline: card shows the "not connected" default */ }
         }
 
-        if (Overview?.FocusGuardApiKey is { } bundledFocusGuard)
-        {
-            _focusGuardConnected = bundledFocusGuard.HasKey;
-        }
-        else
+        if (Overview?.FocusGuardApiKey is null)
         {
             try
             {
@@ -174,11 +166,7 @@
             catch { /* offline: card shows the "not connected" default */ }
         }
 
-        if (Overview?.FocusTunesApiKey is { } bundledFocusTunes)
-        {
-            _focusTunesConnected = bundledFocusTunes.HasKey;
-        }
-        else
+        if (Overview?.FocusTunesApiKey is null)
         {
             try
             {
@@ -188,11 +176,7 @@
             catch { /* offline: card shows the "not connected" default */ }
         }
 
-        if (Overview?.TrayApiKey is { } bundledTray)
-        {
-            _trayConnected = bundledTray.HasKey;
-        }
-        else
+        if (Overview?.TrayApiKey is null)
         {
             try
             {
@@ -203,11 +187,35 @@
         }
     }
 
+    /// <summary>
+    /// Live refresh: re-applies each of this card's six independent sections from a freshly
+    /// re-fetched bundle. Each section is gated by its OWN busy flag rather than one flag for
+    /// the whole card, so e.g. a disconnect in progress for MCP never blocks the Capture section
+    /// from picking up a change another device made in the meantime, and vice versa.
+    /// </summary>
+    protected override void OnParametersSet()
+    {
+        if (Overview is null || ReferenceEquals(Overview, _appliedOverview)) return;
+        _appliedOverview = Overview;
+        ApplyOverview(Overview);
+    }
+
+    private void ApplyOverview(SetupOverviewDto o)
+    {
+        if (!_clientKeyBusy && o.ClientKeys is { } bundledClientKeys) _clientKeys = bundledClientKeys;
+        if (!_mcpBusy && o.McpApiKey is { } bundledMcp) _mcpConnected = bundledMcp.HasKey;
+        if (!_captureBusy && o.CaptureApiKey is { } bundledCapture) _captureConnected = bundledCapture.HasKey;
+        if (!_focusGuardBusy && o.FocusGuardApiKey is { } bundledFocusGuard) _focusGuardConnected = bundledFocusGuard.HasKey;
+        if (!_focusTunesBusy && o.FocusTunesApiKey is { } bundledFocusTunes) _focusTunesConnected = bundledFocusTunes.HasKey;
+        if (!_trayBusy && o.TrayApiKey is { } bundledTray) _trayConnected = bundledTray.HasKey;
+    }
+
     private async Task DisconnectMcp()
     {
         _mcpBusy = true;
         try
         {
+            State.NoteOwnWrite("settings");
             var response = await Http.PostAsync("api/settings/mcp-api-key/revoke", null);
             if (response.IsSuccessStatusCode) _mcpConnected = false;
         }
@@ -219,6 +227,7 @@
         _captureBusy = true;
         try
         {
+            State.NoteOwnWrite("settings");
             var response = await Http.PostAsync("api/settings/capture-api-key/revoke", null);
             if (response.IsSuccessStatusCode) _captureConnected = false;
         }
@@ -230,6 +239,7 @@
         _focusGuardBusy = true;
         try
         {
+            State.NoteOwnWrite("settings");
             var response = await Http.PostAsync("api/settings/focusguard-api-key/revoke", null);
             if (response.IsSuccessStatusCode) _focusGuardConnected = false;
         }
@@ -241,6 +251,7 @@
         _focusTunesBusy = true;
         try
         {
+            State.NoteOwnWrite("settings");
             var response = await Http.PostAsync("api/settings/focustunes-api-key/revoke", null);
             if (response.IsSuccessStatusCode) _focusTunesConnected = false;
         }
@@ -252,6 +263,7 @@
         _clientKeyBusy = true;
         try
         {
+            State.NoteOwnWrite("auth");
             var response = await Http.DeleteAsync($"api/auth/client-keys/{key.Id}");
             if (response.IsSuccessStatusCode) _clientKeys.Remove(key);
         }
@@ -263,6 +275,7 @@
         _trayBusy = true;
         try
         {
+            State.NoteOwnWrite("settings");
             var response = await Http.PostAsync("api/settings/tray-api-key/revoke", null);
             if (response.IsSuccessStatusCode) _trayConnected = false;
         }
