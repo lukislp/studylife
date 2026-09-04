@@ -1,3 +1,10 @@
+## [3.12.1](https://github.com/lukislp/studylife/compare/v3.12.0...v3.12.1) (2026-09-04)
+
+
+### Bug Fixes
+
+* refresh the open note's editor when another device changed it ([1ecec41](https://github.com/lukislp/studylife/commit/1ecec419bd0ea1995e96bb9b9e103b01ac383e58))
+
 # [3.12.0](https://github.com/lukislp/studylife/compare/v3.11.2...v3.12.0) (2026-09-04)
 
 
