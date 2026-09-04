@@ -24,6 +24,11 @@
        client keys, invites, restore status) checks this cascaded bundle first and only falls
        back to its own GET when the section is null (bundle unavailable, or - invites/restore -
        denied for this user) - see api/setup/overview (SetupController) and SetupOverviewDto. *@
+    @* The task is cascaded too: the self-contained cards render with the page shell, i.e. BEFORE
+       this page's own load has awaited the bundle, so a value-only cascade was still null when
+       their OnInitializedAsync ran and they fell back to their individual requests (observed live
+       after 3.11.0: ha/ai/developer/webhooks keys were still fetched next to the bundle). *@
+    <CascadingValue Value="_overviewTask" Name="OverviewTask">
     <CascadingValue Value="_overview">
         @if (_settingsLoading)
         {
@@ -378,6 +383,7 @@
                 <SetupRestoreCard />
             }
         }
+    </CascadingValue>
     </CascadingValue>
     </div>
 
