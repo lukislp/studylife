@@ -7,9 +7,10 @@ namespace StudyLife.Server.Services;
 public partial class BackgroundTaskService
 {
     /// <summary>
-    /// Step D (Live Activity push): runs on EVERY tick unconditionally (like
-    /// RunPushNotificationsAsync), not behind an hourly gate - phase transitions need to
-    /// arrive promptly, otherwise the lock-screen card shows "stale" longer than necessary
+    /// Step D (Live Activity push): runs on EVERY tick unconditionally, not gated like
+    /// RunPushNotificationsAsync/RunCaptureEnrichmentAsync (see their own 30s gates) - phase
+    /// transitions need to arrive promptly, otherwise the lock-screen card shows "stale" longer
+    /// than necessary
     /// (staleDate grace period in LiveActivityBridge.swift, see there). The "power switch" gate
     /// is ApnsSender.Enabled - without Apns config (free tier or config missing) this is a
     /// silent no-op, TimerState/LiveActivityPushToken remain untouched.

@@ -27,12 +27,13 @@ public partial class BackgroundTaskService
     private static readonly TimeSpan MinRetryBackoff = TimeSpan.FromSeconds(60);
 
     /// <summary>
-    /// Runs on EVERY tick unconditionally (like RunPushNotificationsAsync/RunLiveActivityPushAsync),
-    /// not behind an hourly gate - a capture should get enriched promptly, not up to an hour
-    /// late. The "power switch" gate is AiProxyClient.Enabled (mirrors ApnsSender/RunLiveActivityPushAsync's
+    /// Gated to run at most every CaptureEnrichmentCheckInterval (30s), not every 5s tick like
+    /// RunLiveActivityPushAsync and not behind an hourly gate either - a capture should get
+    /// enriched promptly, not up to an hour late, but doesn't need Live Activity's sub-minute
+    /// precision. The "power switch" gate is AiProxyClient.Enabled (mirrors ApnsSender/RunLiveActivityPushAsync's
     /// own gate) - without StudyLifeAi:BaseUrl/SharedSecret configured, this is a silent no-op,
     /// notes stay unenriched (SourceUrl set, EnrichedAt null) until the integration is
-    /// configured, at which point the next tick picks them up retroactively.
+    /// configured, at which point the next gated run picks them up retroactively.
     ///
     /// EnrichedAt is set once a note has either succeeded or exhausted MaxEnrichmentAttempts -
     /// a note that failed but still has attempts left is left EnrichedAt == null (still
