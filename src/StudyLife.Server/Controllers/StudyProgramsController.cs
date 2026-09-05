@@ -42,10 +42,11 @@ public class StudyProgramsController : ControllerBase
     /// </summary>
     internal static async Task<List<StudyProgramSummaryDto>> LoadSummariesAsync(StudyLifeDb db)
     {
-        var result = new List<StudyProgramSummaryDto>
-        {
-            new() { Id = null, Name = CourseCatalog.BuiltInProgramName, IsBuiltIn = true },
-        };
+        var dismissed = await db.Settings.AsNoTracking()
+            .Select(s => s.BuiltInProgramDismissed).FirstOrDefaultAsync();
+        var result = new List<StudyProgramSummaryDto>();
+        if (!dismissed)
+            result.Add(new() { Id = null, Name = CourseCatalog.BuiltInProgramName, IsBuiltIn = true });
         var custom = await db.StudyPrograms.AsNoTracking()
             .OrderBy(p => p.CreatedAt)
             .Select(p => new StudyProgramSummaryDto { Id = p.Id, Name = p.Name, IsBuiltIn = false, IsCompleted = p.IsCompleted })
@@ -78,7 +79,10 @@ public class StudyProgramsController : ControllerBase
     /// <summary>
     /// Deletes a custom study program along with its elective groups and courses. The
     /// built-in study program has no DB row and therefore cannot be deleted (the route only
-    /// matches int ids anyway, "no program" is never reached through here).
+    /// matches int ids anyway, "no program" is never reached through here). Refuses (400) to
+    /// delete a user's LAST remaining custom program once they've dismissed the built-in one
+    /// (SettingsController.DismissBuiltInProgram) - with no built-in fallback left either,
+    /// that would leave ActiveStudyProgramId pointing at nothing.
     ///
     /// Deliberately NOT deleted along with it: CourseGoalEntity (grades/deadlines) and
     /// StudySessionEntity (study sessions) - both reference courses only via a bare int
@@ -103,6 +107,14 @@ public class StudyProgramsController : ControllerBase
         var programId = program.Id;
         var programName = program.Name;
 
+        // With the built-in program dismissed (SettingsController.DismissBuiltInProgram), this
+        // user has no other fallback - refuse to delete their last remaining program so
+        // ActiveStudyProgramId is never left pointing at nothing.
+        var settings = await _db.Settings.FirstOrDefaultAsync();
+        if (settings?.BuiltInProgramDismissed == true
+            && !await _db.StudyPrograms.AnyAsync(p => p.Id != id))
+            return BadRequest("Cannot delete your only study program while the default template is hidden.");
+
         await using var transaction = await _db.Database.BeginTransactionAsync();
 
         // Courses first, then groups, then the program itself - no navigation properties/
@@ -122,7 +134,6 @@ public class StudyProgramsController : ControllerBase
         // If the deleted program was active, the selection falls back to the built-in study
         // program (ActiveStudyProgramId == null) - otherwise the client would point to a
         // program that no longer exists.
-        var settings = await _db.Settings.FirstOrDefaultAsync();
         if (settings != null && settings.ActiveStudyProgramId == id)
         {
             settings.ActiveStudyProgramId = null;

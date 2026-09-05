@@ -9,6 +9,7 @@
   "NewNoteHeader": "Naujas užrašas",
   "Edit": "Redaguoti",
   "Saved": "✓ Išsaugota",
+  "SaveFailed": "Neišsaugota",
   "Delete": "Ištrinti",
   "ConfirmDeleteNoteQuestion": "Ar tikrai norite ištrinti šį įrašą?",
   "ConfirmDeleteYes": "Taip, ištrinti",

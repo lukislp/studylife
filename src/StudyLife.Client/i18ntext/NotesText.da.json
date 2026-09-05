@@ -9,6 +9,7 @@
   "NewNoteHeader": "Ny note",
   "Edit": "Rediger",
   "Saved": "✓ Gemt",
+  "SaveFailed": "Ikke gemt",
   "Delete": "Slet",
   "ConfirmDeleteNoteQuestion": "Vil du virkelig slette denne note?",
   "ConfirmDeleteYes": "Ja, slet",

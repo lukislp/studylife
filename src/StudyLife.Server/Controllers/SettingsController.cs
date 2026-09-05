@@ -224,6 +224,33 @@ public class SettingsController : ControllerBase
         return ToDto(entity);
     }
 
+    /// <summary>
+    /// Hides the built-in study program ("Applied Artificial Intelligence" - the developer's
+    /// own real degree, hardcoded as a shared fallback so a new user never sees zero
+    /// selectable programs, see StudyProgramsController.LoadSummariesAsync) from this user's
+    /// switcher for good. Requires at least one real (custom) study program to already exist -
+    /// otherwise this account would be left with nothing to fall back to at all - mirrored by
+    /// StudyProgramsController.Delete refusing to remove a user's last remaining custom
+    /// program once this flag is set. If the built-in program was the active one, switches to
+    /// the user's oldest custom program so ActiveStudyProgramId is never left null once the
+    /// fallback it means is gone.
+    /// </summary>
+    [HttpPost("builtin-program/dismiss")]
+    public async Task<ActionResult<UserSettingsDto>> DismissBuiltInProgram()
+    {
+        var oldestOwnProgramId = await _db.StudyPrograms.AsNoTracking()
+            .OrderBy(p => p.CreatedAt).Select(p => (int?)p.Id).FirstOrDefaultAsync();
+        if (oldestOwnProgramId == null)
+            return BadRequest("Create your own study program before hiding the default one.");
+
+        var entity = await _db.Settings.GetOrCreateAsync(_db);
+        entity.BuiltInProgramDismissed = true;
+        entity.ActiveStudyProgramId ??= oldestOwnProgramId;
+        await _db.SaveChangesAsync();
+        await _settingsCacheVersion.BumpAsync(_currentUser.AuthUserId);
+        return ToDto(entity);
+    }
+
     // ── Per-user API key for Home Assistant (phase 3) ──────────────────────
     // Same endpoint pattern as progress-share/enable|disable|regenerate above (dedicated
     // POST write paths instead of the generic settings PUT), but with two peculiarities:
@@ -863,6 +890,7 @@ public class SettingsController : ControllerBase
         TelemetryConsent = e.TelemetryConsent,
         LastBackupDownloadAt = e.LastBackupDownloadAt,
         ActiveStudyProgramId = e.ActiveStudyProgramId,
+        BuiltInProgramDismissed = e.BuiltInProgramDismissed,
         ProgressShareEnabled = e.ProgressShareEnabled,
         ProgressShareToken = e.ProgressShareToken,
     };

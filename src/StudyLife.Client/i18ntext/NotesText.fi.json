@@ -9,6 +9,7 @@
   "NewNoteHeader": "Uusi muistiinpano",
   "Edit": "Muokkaa",
   "Saved": "✓ Tallennettu",
+  "SaveFailed": "Ei tallennettu",
   "Delete": "Poista",
   "ConfirmDeleteNoteQuestion": "Haluatko varmasti poistaa tämän muistiinpanon?",
   "ConfirmDeleteYes": "Kyllä, poista",

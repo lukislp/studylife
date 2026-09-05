@@ -58,6 +58,7 @@ public class DemoModeWriteBlockTests : IClassFixture<AuthControllerDemoModeTests
     [InlineData("PUT", "/api/developer/clients/some-client")]
     [InlineData("DELETE", "/api/developer/clients/some-client")]
     [InlineData("POST", "/api/settings/developer-api-key/generate")]
+    [InlineData("POST", "/api/settings/builtin-program/dismiss")]
     [InlineData("DELETE", "/api/notes/1")]
     public async Task MutatingEndpoints_AreBlockedOnDemoInstance(string method, string path)
     {

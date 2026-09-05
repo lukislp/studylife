@@ -9,6 +9,7 @@
   "NewNoteHeader": "Jauna piezīme",
   "Edit": "Rediģēt",
   "Saved": "✓ Saglabāts",
+  "SaveFailed": "Nav saglabāts",
   "Delete": "Dzēst",
   "ConfirmDeleteNoteQuestion": "Vai tiešām dzēst šo piezīmi?",
   "ConfirmDeleteYes": "Jā, dzēst",

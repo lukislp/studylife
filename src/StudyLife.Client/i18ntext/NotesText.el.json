@@ -9,6 +9,7 @@
   "NewNoteHeader": "Νέα σημείωση",
   "Edit": "Επεξεργασία",
   "Saved": "✓ Αποθηκεύτηκε",
+  "SaveFailed": "Δεν αποθηκεύτηκε",
   "Delete": "Διαγραφή",
   "ConfirmDeleteNoteQuestion": "Θέλετε πραγματικά να διαγράψετε αυτή τη σημείωση;",
   "ConfirmDeleteYes": "Ναι, διαγραφή",

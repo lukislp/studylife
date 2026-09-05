@@ -852,6 +852,9 @@ namespace StudyLife.Server.Migrations
                     b.Property<bool>("BestStudyTimeRemindersEnabled")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("BuiltInProgramDismissed")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("ComebackNudgeEnabled")
                         .HasColumnType("INTEGER");
 

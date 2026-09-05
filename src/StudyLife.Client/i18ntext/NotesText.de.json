@@ -9,6 +9,7 @@
   "NewNoteHeader": "Neue Notiz",
   "Edit": "Bearbeiten",
   "Saved": "✓ Gespeichert",
+  "SaveFailed": "Nicht gespeichert",
   "Delete": "Löschen",
   "ConfirmDeleteNoteQuestion": "Diese Notiz wirklich löschen?",
   "ConfirmDeleteYes": "Ja, löschen",

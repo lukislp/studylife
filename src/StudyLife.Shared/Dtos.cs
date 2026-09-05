@@ -103,6 +103,9 @@ public class UserSettingsDto
     /// existing users see no behavior change.
     /// </summary>
     public int? ActiveStudyProgramId { get; set; }
+    /// <summary>Built-in study program hidden for this user? Read-only here - set only via
+    /// POST /api/settings/builtin-program/dismiss.</summary>
+    public bool BuiltInProgramDismissed { get; set; }
     /// <summary>
     /// Read-only progress link active? Kept separate from the token itself (see ProgressShareToken),
     /// so that disabling it doesn't discard the once-generated token - re-enabling
