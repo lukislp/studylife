@@ -55,6 +55,7 @@ public class UserSettings
     public bool PerCourseInactivityRemindersEnabled { get; set; } // Nudge for a single neglected course, default false (opt-in, new category)
     public DateTime? LastBackupDownloadAt { get; set; } // Timestamp of the last manual backup download, null = never
     public int? ActiveStudyProgramId { get; set; } // Id of the active custom study program, null = built-in study program
+    public bool BuiltInProgramDismissed { get; set; } // Built-in study program hidden for this user? NOT set via SaveSettingsAsync, see Setup.razor's ConfirmDismissBuiltInProgram
     public bool ProgressShareEnabled { get; set; } // Read-only progress link active? NOT set via SaveSettingsAsync, see SetupProgressShareCard
     public string? ProgressShareToken { get; set; } // Token for /shared/{token}, null = never activated
     public bool StreakRiskRemindersEnabled { get; set; } // Warns about a streak break threatening today, default false (opt-in, new category)

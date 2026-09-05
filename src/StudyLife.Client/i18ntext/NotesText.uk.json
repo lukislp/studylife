@@ -9,6 +9,7 @@
   "NewNoteHeader": "Нова нотатка",
   "Edit": "Редагувати",
   "Saved": "✓ Збережено",
+  "SaveFailed": "Не збережено",
   "Delete": "Видалити",
   "ConfirmDeleteNoteQuestion": "Дійсно видалити цю нотатку?",
   "ConfirmDeleteYes": "Так, видалити",

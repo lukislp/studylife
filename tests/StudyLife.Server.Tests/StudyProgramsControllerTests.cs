@@ -442,3 +442,73 @@ public class StudyProgramsControllerTests : IClassFixture<CustomWebApplicationFa
         Assert.Equal(active.Id, settingsAfterDelete!.ActiveStudyProgramId);
     }
 }
+
+/// <summary>
+/// Own factory instance (fresh DB): exercises hiding the built-in study program
+/// (SettingsController.DismissBuiltInProgram) end to end, including its guard (needs a real
+/// program to already exist) and the mirrored guard on StudyProgramsController.Delete once
+/// dismissed (refuses to remove the user's last program) - both need a controlled program
+/// count that the shared-DB StudyProgramsControllerTests above can't guarantee, and dismissal
+/// is a persistent per-user flag that would otherwise leak into later tests in that class.
+/// </summary>
+public class DismissBuiltInProgramTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly HttpClient _client;
+
+    public DismissBuiltInProgramTests(CustomWebApplicationFactory factory)
+        => _client = factory.CreateClient();
+
+    private static CreateStudyProgramRequestDto MinimalValidRequest() => new()
+    {
+        Name = $"Programm {Guid.NewGuid():N}",
+        Courses = new List<CreateStudyProgramCourseDto>
+        {
+            new() { Semester = 1, Name = "Grundlagenkurs", Ects = 5 },
+        },
+    };
+
+    [Fact]
+    public async Task DismissBuiltInProgram_FullFlow()
+    {
+        // Cannot hide it before any real program exists - would leave the account with
+        // nothing to fall back to at all.
+        var tooEarly = await _client.PostAsync("/api/settings/builtin-program/dismiss", null);
+        Assert.Equal(HttpStatusCode.BadRequest, tooEarly.StatusCode);
+
+        // A fresh program without activating it - ActiveStudyProgramId stays null (built-in
+        // still active), which dismissing must reassign automatically.
+        var created = await (await _client.PostAsJsonAsync("/api/studyprograms", MinimalValidRequest()))
+            .Content.ReadFromJsonAsync<StudyProgramSummaryDto>();
+        Assert.NotNull(created);
+
+        var settingsBefore = await (await _client.GetAsync("/api/settings")).Content.ReadFromJsonAsync<UserSettingsDto>();
+        Assert.Null(settingsBefore!.ActiveStudyProgramId);
+        Assert.False(settingsBefore.BuiltInProgramDismissed);
+
+        var dismissResponse = await _client.PostAsync("/api/settings/builtin-program/dismiss", null);
+        Assert.Equal(HttpStatusCode.OK, dismissResponse.StatusCode);
+        var dismissed = await dismissResponse.Content.ReadFromJsonAsync<UserSettingsDto>();
+        Assert.True(dismissed!.BuiltInProgramDismissed);
+        Assert.Equal(created!.Id, dismissed.ActiveStudyProgramId);
+
+        // The synthetic built-in entry no longer appears in the switcher.
+        var list = await (await _client.GetAsync("/api/studyprograms"))
+            .Content.ReadFromJsonAsync<List<StudyProgramSummaryDto>>();
+        Assert.DoesNotContain(list!, p => p.Id == null);
+        Assert.Contains(list!, p => p.Id == created.Id);
+
+        // With the built-in fallback hidden, this is now the only program - deleting it must
+        // be refused instead of leaving ActiveStudyProgramId pointing at nothing.
+        var deleteOnlyResponse = await _client.DeleteAsync($"/api/studyprograms/{created.Id}");
+        Assert.Equal(HttpStatusCode.BadRequest, deleteOnlyResponse.StatusCode);
+        var settingsAfterRefusedDelete = await (await _client.GetAsync("/api/settings")).Content.ReadFromJsonAsync<UserSettingsDto>();
+        Assert.Equal(created.Id, settingsAfterRefusedDelete!.ActiveStudyProgramId);
+
+        // A second program exists now - deleting the (still inactive) first one is fine again.
+        var second = await (await _client.PostAsJsonAsync("/api/studyprograms", MinimalValidRequest()))
+            .Content.ReadFromJsonAsync<StudyProgramSummaryDto>();
+        Assert.NotNull(second);
+        var deleteWithSiblingResponse = await _client.DeleteAsync($"/api/studyprograms/{second!.Id}");
+        Assert.Equal(HttpStatusCode.NoContent, deleteWithSiblingResponse.StatusCode);
+    }
+}

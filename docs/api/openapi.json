@@ -3622,6 +3622,35 @@
         }
       }
     },
+    "/api/settings/builtin-program/dismiss": {
+      "post": {
+        "tags": [
+          "Settings"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSettingsDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSettingsDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSettingsDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/settings/ha-api-key": {
       "get": {
         "tags": [
@@ -11591,6 +11620,7 @@
           "weeklyReportEnabled",
           "dailyMotivationEnabled",
           "perCourseInactivityRemindersEnabled",
+          "builtInProgramDismissed",
           "progressShareEnabled",
           "streakRiskRemindersEnabled",
           "weeklyGoalNudgeEnabled",
@@ -11773,6 +11803,9 @@
               "string"
             ],
             "format": "int32"
+          },
+          "builtInProgramDismissed": {
+            "type": "boolean"
           },
           "progressShareEnabled": {
             "type": "boolean"

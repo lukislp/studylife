@@ -9,6 +9,7 @@
   "NewNoteHeader": "Нова бележка",
   "Edit": "Редактиране",
   "Saved": "✓ Запазено",
+  "SaveFailed": "Не е запазено",
   "Delete": "Изтриване",
   "ConfirmDeleteNoteQuestion": "Наистина ли да изтрия тази бележка?",
   "ConfirmDeleteYes": "Да, изтрий",

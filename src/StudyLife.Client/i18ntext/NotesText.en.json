@@ -9,6 +9,7 @@
   "NewNoteHeader": "New note",
   "Edit": "Edit",
   "Saved": "✓ Saved",
+  "SaveFailed": "Not saved",
   "Delete": "Delete",
   "ConfirmDeleteNoteQuestion": "Really delete this note?",
   "ConfirmDeleteYes": "Yes, delete",

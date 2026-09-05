@@ -9,6 +9,7 @@
   "NewNoteHeader": "Új jegyzet",
   "Edit": "Szerkesztés",
   "Saved": "✓ Mentve",
+  "SaveFailed": "Nincs mentve",
   "Delete": "Törlés",
   "ConfirmDeleteNoteQuestion": "Biztosan törlöd ezt a jegyzetet?",
   "ConfirmDeleteYes": "Igen, törlés",

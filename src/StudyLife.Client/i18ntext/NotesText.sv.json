@@ -9,6 +9,7 @@
   "NewNoteHeader": "Ny anteckning",
   "Edit": "Redigera",
   "Saved": "✓ Sparad",
+  "SaveFailed": "Ej sparad",
   "Delete": "Ta bort",
   "ConfirmDeleteNoteQuestion": "Vill du verkligen ta bort den här anteckningen?",
   "ConfirmDeleteYes": "Ja, ta bort",

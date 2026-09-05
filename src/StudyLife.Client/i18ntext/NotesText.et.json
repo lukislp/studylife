@@ -9,6 +9,7 @@
   "NewNoteHeader": "Uus märge",
   "Edit": "Muuda",
   "Saved": "✓ Salvestatud",
+  "SaveFailed": "Salvestamata",
   "Delete": "Kustuta",
   "ConfirmDeleteNoteQuestion": "Kas soovid selle märkme kindlasti kustutada?",
   "ConfirmDeleteYes": "Jah, kustuta",
