@@ -1,3 +1,10 @@
+## [3.15.1](https://github.com/lukislp/studylife/compare/v3.15.0...v3.15.1) (2026-09-05)
+
+
+### Bug Fixes
+
+* **worker:** batch push-notification and capture-enrichment checks to 30s ([37ea4ec](https://github.com/lukislp/studylife/commit/37ea4ec98017bcc51b15baa7dda920cebf1e8f18))
+
 # [3.15.0](https://github.com/lukislp/studylife/compare/v3.14.0...v3.15.0) (2026-09-05)
 
 
