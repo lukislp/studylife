@@ -13,6 +13,14 @@ public partial class BackgroundTaskService : BackgroundService
     // their own hourly gates - only the "is X due" comparisons now run more often, not the
     // checks themselves.
     private static readonly TimeSpan TickInterval = TimeSpan.FromSeconds(5);
+    // Push notifications and capture enrichment used to run on every tick unconditionally -
+    // harmless at the old 30s TickInterval, but became a needless 6x DB-query multiplier once
+    // the tick was shortened to 5s for Live Activity (which is the only one of the three that
+    // actually needs that granularity). Gated like the hourly reminders below, just with a much
+    // shorter interval - "not up to an hour late" for captures, "session reminders stay minute-
+    // accurate" for pushes, both comfortably satisfied by 30s.
+    private static readonly TimeSpan PushNotificationCheckInterval = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan CaptureEnrichmentCheckInterval = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan CourseGoalReminderInterval = TimeSpan.FromHours(1);
     private static readonly TimeSpan InactivityReminderInterval = TimeSpan.FromHours(1);
     private static readonly TimeSpan PerCourseInactivityReminderInterval = TimeSpan.FromHours(1);
@@ -33,6 +41,8 @@ public partial class BackgroundTaskService : BackgroundService
     private readonly DatabaseBackupService? _backupService;
     private WebPushClient? _pushClient;
 
+    private DateTime _nextPushNotificationRun = DateTime.MinValue;
+    private DateTime _nextCaptureEnrichmentRun = DateTime.MinValue;
     private DateTime _nextCourseGoalReminderRun = DateTime.MinValue;
     private DateTime _nextInactivityReminderRun = DateTime.MinValue;
     private DateTime _nextPerCourseInactivityReminderRun = DateTime.MinValue;
@@ -147,6 +157,8 @@ public partial class BackgroundTaskService : BackgroundService
         {
             var tickStarted = Stopwatch.GetTimestamp();
             var now = DateTime.UtcNow;
+            var runPushNotifications = now >= _nextPushNotificationRun;
+            var runCaptureEnrichment = now >= _nextCaptureEnrichmentRun;
             var runCourseGoalReminder = now >= _nextCourseGoalReminderRun;
             var runInactivityReminder = now >= _nextInactivityReminderRun;
             var runPerCourseInactivityReminder = now >= _nextPerCourseInactivityReminderRun;
@@ -210,13 +222,20 @@ public partial class BackgroundTaskService : BackgroundService
                     return subscriptions;
                 }
 
-                try
+                if (runPushNotifications)
                 {
-                    await RunPushNotificationsAsync(db, GetSubscriptionsAsync);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error in PushBackgroundService");
+                    try
+                    {
+                        await RunPushNotificationsAsync(db, GetSubscriptionsAsync);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error in PushBackgroundService");
+                    }
+                    finally
+                    {
+                        _nextPushNotificationRun = now + PushNotificationCheckInterval;
+                    }
                 }
 
                 try
@@ -228,13 +247,20 @@ public partial class BackgroundTaskService : BackgroundService
                     _logger.LogError(ex, "Error in LiveActivityPushService");
                 }
 
-                try
+                if (runCaptureEnrichment)
                 {
-                    await RunCaptureEnrichmentAsync(db);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error in CaptureEnrichmentService");
+                    try
+                    {
+                        await RunCaptureEnrichmentAsync(db);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error in CaptureEnrichmentService");
+                    }
+                    finally
+                    {
+                        _nextCaptureEnrichmentRun = now + CaptureEnrichmentCheckInterval;
+                    }
                 }
 
                 if (runCourseGoalReminder)

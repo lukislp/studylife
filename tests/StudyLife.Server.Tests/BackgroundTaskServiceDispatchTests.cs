@@ -132,8 +132,9 @@ internal sealed class CreatedEndpoint : IDisposable
 /// <summary>
 /// Covers the ExecuteAsync dispatch loop itself (scope creation, subscriptions memoization,
 /// the gate booleans and their finally blocks). All _next*Run fields start at DateTime.MinValue,
-/// so the very first tick invariably runs all nine Run*Async methods - that makes a single
-/// awaited tick meaningful, without having to wait out the real 30s interval. Own factory/DB,
+/// so the very first tick invariably runs all eleven gated Run*Async methods (the nine hourly
+/// reminders plus the 30s-gated push notifications and capture enrichment) - that makes a single
+/// awaited tick meaningful, without having to wait out the real intervals. Own factory/DB,
 /// because a real VACUUM and backup dump operation runs here.
 /// </summary>
 public class BackgroundTaskServiceExecuteAsyncTests : IClassFixture<CustomWebApplicationFactory>
