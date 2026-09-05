@@ -1,3 +1,10 @@
+# [3.15.0](https://github.com/lukislp/studylife/compare/v3.14.0...v3.15.0) (2026-09-05)
+
+
+### Features
+
+* let users hide the built-in study program, fix a silent Notes save failure ([edbeb23](https://github.com/lukislp/studylife/commit/edbeb237843f1efe6581ef92f97a78879e599df4))
+
 # [3.14.0](https://github.com/lukislp/studylife/compare/v3.13.0...v3.14.0) (2026-09-04)
 
 
