@@ -92,6 +92,16 @@
                         </button>
                     </div>
                 }
+                else if (ActiveProgram is { Id: null } && _programs.Any(p => p.Id != null))
+                {
+                    @* The built-in programme itself: only offer to hide it once a real
+                       programme exists to fall back to (server enforces the same rule). *@
+                    <div class="programme-completed-row">
+                        <button type="button" class="btn-danger btn-delete-programme" title="@T.DismissBuiltInProgramButton" @onclick="() => _confirmingDismissBuiltIn = true">
+                            🗑 @T.DismissBuiltInProgramButton
+                        </button>
+                    </div>
+                }
             }
         </div>
 
@@ -109,6 +119,29 @@
                     <div class="modal-footer">
                         <button type="button" class="btn-secondary" @onclick="CancelDeleteProgram">@T.ConfirmDeleteProgramCancel</button>
                         <button type="button" class="btn-danger" @onclick="ConfirmDeleteProgram">@T.ConfirmDeleteProgramYes</button>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (_confirmingDismissBuiltIn)
+        {
+            <div class="modal-overlay" @onclick="CancelDismissBuiltInProgram">
+                <div class="modal" @onclick:stopPropagation="true">
+                    <div class="modal-header">
+                        <h3>@T.DismissBuiltInProgramButton</h3>
+                        <button class="modal-close" @onclick="CancelDismissBuiltInProgram">✕</button>
+                    </div>
+                    <div class="modal-body">
+                        <p>@T.ConfirmDismissBuiltInProgramQuestion</p>
+                        @if (_dismissBuiltInFailed)
+                        {
+                            <p style="color:var(--danger,#e74c3c)">⚠️ @T.DismissBuiltInProgramError</p>
+                        }
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" @onclick="CancelDismissBuiltInProgram">@T.ConfirmDeleteProgramCancel</button>
+                        <button type="button" class="btn-danger" @onclick="ConfirmDismissBuiltInProgram">@T.ConfirmDeleteProgramYes</button>
                     </div>
                 </div>
             </div>
@@ -476,6 +509,11 @@
     // Two-step confirmation before deleting a programme - same pattern as
     // Notes.razor._confirmingDelete, no native confirm() dialog.
     private bool _confirmingDeleteProgram;
+    // Same two-step pattern for hiding the built-in programme for good (POST
+    // api/settings/builtin-program/dismiss) - only offered once a real programme exists, see
+    // the @if guard around DismissBuiltInProgramButton below.
+    private bool _confirmingDismissBuiltIn;
+    private bool _dismissBuiltInFailed;
 
     /// <summary>The currently active (= selected in the switcher) programme; null while the list is loading.</summary>
     private StudyProgramSummaryDto? ActiveProgram =>
@@ -860,6 +898,38 @@
         // other components (e.g. Dashboard) don't keep referencing a just-deleted programme.
         _settings.ActiveStudyProgramId = null;
         await State.SaveSettingsAsync(_settings);
+        await LoadProgramsAsync();
+        _allCourses = await State.GetCoursesAsync();
+    }
+
+    private void CancelDismissBuiltInProgram()
+    {
+        _confirmingDismissBuiltIn = false;
+        _dismissBuiltInFailed = false;
+    }
+
+    // Hides the built-in programme for this user (POST api/settings/builtin-program/dismiss).
+    // The server refuses (400) unless a real programme already exists, and switches
+    // ActiveStudyProgramId to one automatically if the built-in one was active - both are
+    // applied here from its response rather than guessed locally.
+    private async Task ConfirmDismissBuiltInProgram()
+    {
+        _dismissBuiltInFailed = false;
+        State.NoteOwnWrite("settings");
+        var response = await Http.PostAsync("api/settings/builtin-program/dismiss", null);
+        if (!response.IsSuccessStatusCode)
+        {
+            _dismissBuiltInFailed = true;
+            return;
+        }
+
+        _confirmingDismissBuiltIn = false;
+        var updated = await response.Content.ReadFromJsonAsync<UserSettingsDto>();
+        if (updated != null)
+        {
+            _settings.BuiltInProgramDismissed = updated.BuiltInProgramDismissed;
+            _settings.ActiveStudyProgramId = updated.ActiveStudyProgramId;
+        }
         await LoadProgramsAsync();
         _allCourses = await State.GetCoursesAsync();
     }

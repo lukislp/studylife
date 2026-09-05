@@ -162,6 +162,10 @@ else
                             {
                                 <span style="color:var(--accent);font-size:0.75rem">@T.Saved</span>
                             }
+                            @if (_saveFailed)
+                            {
+                                <span style="color:var(--danger,#e74c3c);font-size:0.75rem">⚠️ @T.SaveFailed</span>
+                            }
                             @if (_confirmingDelete)
                             {
                                 <div class="note-confirm-delete">
@@ -393,6 +397,7 @@ else
     private bool _dictationFailed;
     private bool _dictationSilent;
     private bool _saving;
+    private bool _saveFailed;
     private bool _confirmingDelete;
     private System.Threading.Timer? _debounce;
     private System.Threading.Timer? _searchDebounce;
@@ -943,6 +948,13 @@ else
         _selectedNote.CourseId = _editCourseId == 0 ? null : _editCourseId;
         _selectedNote.IsMarkdown = _editIsMarkdown;
 
+        // Tracks what actually happened, instead of the badge unconditionally claiming
+        // "saved" below regardless of the response - true only on a genuine 2xx; false on a
+        // definitive rejection (e.g. a demo instance's 403 "read-only"), which must show an
+        // error, not a false success; null when the request never reached the server at all
+        // (offline exception) and was queued for the next sync instead - not a failure.
+        bool? succeeded = null;
+
         // Offline (network exception): enqueue the note into AppStateService's write queue
         // (replayed on the next poll) instead of silently losing it.
         // New notes get a NEGATIVE temp id, so further offline edits/deletes of
@@ -953,6 +965,7 @@ else
             {
                 State.NoteOwnWrite("notes");
                 var created = await Http.PostAsJsonAsync("api/notes", _selectedNote);
+                succeeded = created.IsSuccessStatusCode;
                 if (created.IsSuccessStatusCode)
                 {
                     var dto = await created.Content.ReadFromJsonAsync<NoteDto>();
@@ -975,22 +988,35 @@ else
         else
         {
             State.NoteOwnWrite("notes");
-            try { await Http.PutAsJsonAsync($"api/notes/{_selectedNote.Id}", _selectedNote); }
-            catch { await State.EnqueueNoteSaveAsync(_selectedNote); }
-            var existing = _notes.FirstOrDefault(n => n.Id == _selectedNote.Id);
-            if (existing != null)
+            try
             {
-                existing.Title = _selectedNote.Title;
-                existing.Content = _selectedNote.Content;
-                existing.CourseId = _selectedNote.CourseId;
-                existing.UpdatedAt = DateTime.Now;
+                var response = await Http.PutAsJsonAsync($"api/notes/{_selectedNote.Id}", _selectedNote);
+                succeeded = response.IsSuccessStatusCode;
+            }
+            catch { await State.EnqueueNoteSaveAsync(_selectedNote); }
+
+            // Only reflect the edit in the list when it actually persisted (or is at least
+            // queued to) - on a definitive rejection the list must keep showing what the
+            // server actually has, not what the editor optimistically typed.
+            if (succeeded != false)
+            {
+                var existing = _notes.FirstOrDefault(n => n.Id == _selectedNote.Id);
+                if (existing != null)
+                {
+                    existing.Title = _selectedNote.Title;
+                    existing.Content = _selectedNote.Content;
+                    existing.CourseId = _selectedNote.CourseId;
+                    existing.UpdatedAt = DateTime.Now;
+                }
             }
         }
 
-        _saving = true;
+        _saving = succeeded == true;
+        _saveFailed = succeeded == false;
         await InvokeAsync(StateHasChanged);
         await Task.Delay(2000);
         _saving = false;
+        _saveFailed = false;
         await InvokeAsync(StateHasChanged);
     }
 

@@ -135,6 +135,7 @@ the native app and the browser/PWA client are always pixel-identical.
 - Distraction blocking and automatic Spotify playlist switching while a session runs (via the [studylife-focus](https://github.com/lukislp/studylife-focus) browser extension's independently-toggleable Guard and Tune features): allowlist or blocklist specific sites with automatic tab redirect on session start and restore on session end, and/or switch to a focus/break Spotify playlist
 
 ### Dashboard
+- Live updates: sessions, notes, settings, and every other change appear across your devices within a second, pushed by the server (Server-Sent Events) — no fixed polling interval to wait out
 - Daily overview with active/next session
 - Weekly statistics (sessions, hours, streak)
 - Weekly quota (goal: 25-30 h) with progress bar and warning if falling short
@@ -212,9 +213,11 @@ the native app and the browser/PWA client are always pixel-identical.
 - Topic checklist per course: check off individual topics, progress display (N/M)
 - Set a course tag (free text, e.g. "exam soon") per course
 - Choose a preferred motivation profile
+- Switch between the built-in study program (a real degree program shipped as example content) and your own custom ones (create, mark complete, delete); once you have a program of your own, the built-in one can be hidden from the switcher for good
 - Calendar subscription URL for copying
 - Reminder thresholds (session lead time, course goal lead time, inactivity threshold) individually adjustable
 - Study windows: hours (from/to) and weekdays adjustable, in which the exam planner and weekly plan assistant are allowed to suggest sessions
+- Opt-in anonymous usage & error reports (performance and crash data only, never notes/sessions/health data) - off by default, asked once, changeable anytime
 - Manage passkeys (rename, add more, remove)
 - Generate recovery codes for emergency access (shown once, invalidates previous codes)
 - Generate/revoke API key for the Home Assistant integration

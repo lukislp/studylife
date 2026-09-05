@@ -9,6 +9,7 @@
   "NewNoteHeader": "Nov zapisek",
   "Edit": "Uredi",
   "Saved": "✓ Shranjeno",
+  "SaveFailed": "Ni shranjeno",
   "Delete": "Izbriši",
   "ConfirmDeleteNoteQuestion": "Ali res želite izbrisati to opombo?",
   "ConfirmDeleteYes": "Da, izbriši",

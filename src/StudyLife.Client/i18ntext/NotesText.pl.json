@@ -9,6 +9,7 @@
   "NewNoteHeader": "Nowa notatka",
   "Edit": "Edytuj",
   "Saved": "✓ Zapisano",
+  "SaveFailed": "Nie zapisano",
   "Delete": "Usuń",
   "ConfirmDeleteNoteQuestion": "Czy na pewno usunąć tę notatkę?",
   "ConfirmDeleteYes": "Tak, usuń",

@@ -9,6 +9,7 @@
   "NewNoteHeader": "Nuova nota",
   "Edit": "Modifica",
   "Saved": "✓ Salvato",
+  "SaveFailed": "Non salvato",
   "Delete": "Elimina",
   "ConfirmDeleteNoteQuestion": "Eliminare davvero questa nota?",
   "ConfirmDeleteYes": "Sì, elimina",

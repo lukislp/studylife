@@ -793,3 +793,26 @@ before the tab is gone). Boot events collected before the consent question is an
 in memory and flushed once accepted, or discarded on decline — never sent while consent is still
 `null`.
 
+## Built-in study program dismissal (`Controllers/StudyProgramsController.cs`, `Controllers/SettingsController.cs`, migration `AddBuiltInProgramDismissed`)
+
+The built-in study program ("Applied Artificial Intelligence", `CourseCatalog.BuiltInProgramName`)
+is the developer's own real degree, hardcoded as a shared fallback so a brand-new user never
+sees zero selectable programs (`Id == null`, no DB row, see `StudyProgramsController.
+LoadSummariesAsync`). For everyone else it's irrelevant example content they can't otherwise get
+rid of. `UserSettingsEntity.BuiltInProgramDismissed` (default `false`) lets a user hide it for
+good, but only through `SettingsController.DismissBuiltInProgram`
+(`POST api/settings/builtin-program/dismiss`) — not the generic settings `PUT`, same
+dedicated-write-path pattern as `ProgressShareEnabled` — which refuses (400) unless the user
+already has at least one real (custom) `StudyProgramEntity`, and reassigns `ActiveStudyProgramId`
+to the oldest one if the built-in program was still active. `StudyProgramsController.Delete`
+mirrors the guard on the other side: once dismissed, deleting a user's last remaining custom
+program is refused (400) instead of leaving `ActiveStudyProgramId` pointing at nothing. Together
+these two guards mean every one of the ~10 call sites that read `ActiveStudyProgramId == null` as
+"resolve to the built-in catalog" (Dashboard/Stats/Report/Wrapped/Metrics/Progress controllers,
+`CourseResolver`, the three `BackgroundTaskService` nudge/report partials, `AppStateService.
+GetCoursesAsync`) needed no changes at all — once dismissed, that id is simply never null again.
+There is no way to bring it back once dismissed (deliberately not built - not asked for); the
+Setup UI (`Pages/Setup.razor`) only offers the hide action while the built-in program is the
+active selection and a real program already exists, mirroring the server guard for immediate
+feedback rather than relying on the 400 alone.
+

@@ -657,6 +657,18 @@ public class UserSettingsEntity
     /// </summary>
     public int? ActiveStudyProgramId { get; set; }
     /// <summary>
+    /// Hides the built-in study program (CourseCatalog.AppliedAICourses - the developer's own
+    /// real degree, hardcoded as a shared fallback so nobody starts with zero selectable
+    /// programs) from this user's switcher for good. Set exclusively via
+    /// SettingsController.DismissBuiltInProgram, NOT via SettingsController.Save - same
+    /// dedicated-write-path rationale as ProgressShareEnabled below. That endpoint only allows
+    /// setting this once the user already has at least one real (custom) StudyProgramEntity,
+    /// and StudyProgramsController.Delete refuses to remove a user's last remaining custom
+    /// program once this flag is true - together they guarantee ActiveStudyProgramId is never
+    /// left with nothing to fall back to. Default false, so existing users see no change.
+    /// </summary>
+    public bool BuiltInProgramDismissed { get; set; }
+    /// <summary>
     /// Read-only progress link active? Set exclusively via SettingsController.Enable/
     /// Disable/RegenerateProgressShareToken, NOT via SettingsController.Save - same
     /// rationale as LastBackupDownloadAt (dedicated write path instead of PUT).

@@ -405,6 +405,7 @@ public class DtoContractSnapshotTests : IClassFixture<CustomWebApplicationFactor
             "sessionRemindersEnabled", "courseGoalRemindersEnabled", "inactivityRemindersEnabled",
             "achievementNotificationsEnabled", "weeklyReportEnabled", "dailyMotivationEnabled",
             "perCourseInactivityRemindersEnabled", "lastBackupDownloadAt", "activeStudyProgramId",
+            "builtInProgramDismissed",
             "progressShareEnabled", "progressShareToken", "streakRiskRemindersEnabled",
             "weeklyGoalNudgeEnabled", "courseAlmostDoneRemindersEnabled", "bestStudyTimeRemindersEnabled",
             "comebackNudgeEnabled", "newRecordNotificationsEnabled", "monthlyReportEnabled",
