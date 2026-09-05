@@ -9,6 +9,7 @@
   "NewNoteHeader": "Nieuwe notitie",
   "Edit": "Bewerken",
   "Saved": "✓ Opgeslagen",
+  "SaveFailed": "Niet opgeslagen",
   "Delete": "Verwijderen",
   "ConfirmDeleteNoteQuestion": "Deze notitie echt verwijderen?",
   "ConfirmDeleteYes": "Ja, verwijderen",

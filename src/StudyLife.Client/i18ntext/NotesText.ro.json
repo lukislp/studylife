@@ -9,6 +9,7 @@
   "NewNoteHeader": "Notiță nouă",
   "Edit": "Editează",
   "Saved": "✓ Salvat",
+  "SaveFailed": "Nesalvat",
   "Delete": "Șterge",
   "ConfirmDeleteNoteQuestion": "Sigur ștergeți această notiță?",
   "ConfirmDeleteYes": "Da, șterge",

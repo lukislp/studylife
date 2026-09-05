@@ -9,6 +9,7 @@
   "NewNoteHeader": "Nova bilješka",
   "Edit": "Uredi",
   "Saved": "✓ Spremljeno",
+  "SaveFailed": "Nije spremljeno",
   "Delete": "Izbriši",
   "ConfirmDeleteNoteQuestion": "Stvarno želite izbrisati ovu bilješku?",
   "ConfirmDeleteYes": "Da, izbriši",

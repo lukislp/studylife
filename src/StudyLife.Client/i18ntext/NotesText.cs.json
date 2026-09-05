@@ -9,6 +9,7 @@
   "NewNoteHeader": "Nová poznámka",
   "Edit": "Upravit",
   "Saved": "✓ Uloženo",
+  "SaveFailed": "Neuloženo",
   "Delete": "Smazat",
   "ConfirmDeleteNoteQuestion": "Opravdu smazat tuto poznámku?",
   "ConfirmDeleteYes": "Ano, smazat",

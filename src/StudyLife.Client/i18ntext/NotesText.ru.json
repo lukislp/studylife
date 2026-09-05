@@ -9,6 +9,7 @@
   "NewNoteHeader": "Новая заметка",
   "Edit": "Изменить",
   "Saved": "✓ Сохранено",
+  "SaveFailed": "Не сохранено",
   "Delete": "Удалить",
   "ConfirmDeleteNoteQuestion": "Действительно удалить эту заметку?",
   "ConfirmDeleteYes": "Да, удалить",
