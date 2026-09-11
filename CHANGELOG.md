@@ -1,3 +1,10 @@
+## [3.15.4](https://github.com/lukislp/studylife/compare/v3.15.3...v3.15.4) (2026-09-11)
+
+
+### Bug Fixes
+
+* **deps:** Bump Microsoft.AspNetCore.Components.WebAssembly and 13 others ([da81bb8](https://github.com/lukislp/studylife/commit/da81bb86db0777808cd36739750c6b7118a15a93))
+
 ## [3.15.3](https://github.com/lukislp/studylife/compare/v3.15.2...v3.15.3) (2026-09-11)
 
 
