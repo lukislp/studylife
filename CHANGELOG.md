@@ -1,3 +1,15 @@
+# [3.16.0](https://github.com/lukislp/studylife/compare/v3.15.5...v3.16.0) (2026-09-11)
+
+
+### Bug Fixes
+
+* **ci:** stop get-version aborting on the empty version grep ([e6d6748](https://github.com/lukislp/studylife/commit/e6d674848ea6a53edbf61f9f851a8b77e638760c)), closes [#171](https://github.com/lukislp/studylife/issues/171) [#172](https://github.com/lukislp/studylife/issues/172)
+
+
+### Features
+
+* **ci:** sign container images with Sigstore, attach SBOM and provenance ([bb0d76d](https://github.com/lukislp/studylife/commit/bb0d76da3d99dbe255c6ece3327f3758939c08a8))
+
 ## [3.15.5](https://github.com/lukislp/studylife/compare/v3.15.4...v3.15.5) (2026-09-11)
 
 
