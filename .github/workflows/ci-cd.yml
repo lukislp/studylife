@@ -346,11 +346,16 @@ jobs:
       # Same outputs the action used to provide (new_release_version / new_release_published),
       # derived from semantic-release's own dry-run log line. A dry run that FAILS (e.g. the
       # verifyConditions token check) still fails this step via pipefail - only "no relevant
-      # changes" maps to published=false.
+      # changes" maps to published=false. That case exits non-zero from `npx semantic-release
+      # --dry-run` too (observed 2026-09-11 on a ci:-only push: "There are no relevant changes,
+      # so no new version is released." followed by exit code 1), so it is recognised by its log
+      # line and treated as the expected no-release outcome instead of a red job.
       - id: semrel
         run: |
           set -o pipefail
-          npx semantic-release --dry-run 2>&1 | tee semrel-dry-run.log
+          if ! npx semantic-release --dry-run 2>&1 | tee semrel-dry-run.log; then
+            grep -q 'no new version is released' semrel-dry-run.log || exit 1
+          fi
           NEXT="$(grep -oE 'The next release version is [0-9]+\.[0-9]+\.[0-9]+' semrel-dry-run.log | tail -1 | awk '{print $NF}')"
           if [ -n "$NEXT" ]; then
             echo "new_release_published=true" >> "$GITHUB_OUTPUT"
