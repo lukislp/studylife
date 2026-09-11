@@ -41,6 +41,9 @@ NAME_PATTERN = re.compile(r"ddd|MMM")
 # and of date query parameters - a localized order would be a bug there, not a fix, so these
 # are exempt even though they contain "MM-dd".
 ISO_PATTERN = re.compile(r"^yyyy-MM-dd")
+# A bare clock time. 12h-vs-24h is a language decision too (English expects AM/PM), so these
+# belong in LocalDate.Time rather than hardwired into a component.
+TIME_PATTERN = re.compile(r"^(HH?|hh?):mm(:ss)?( tt)?$")
 # A hardwired day/month display order such as "dd.MM.yyyy", "dd.MM." or "MM/dd/yyyy".
 NUMERIC_DATE_PATTERN = re.compile(r"dd\s*[./-]\s*MM|MM\s*[./-]\s*dd")
 
@@ -50,6 +53,8 @@ def is_offending(fmt: str) -> bool:
         return True
     if ISO_PATTERN.match(fmt):
         return False
+    if TIME_PATTERN.match(fmt):
+        return True
     return bool(NAME_PATTERN.search(fmt) or NUMERIC_DATE_PATTERN.search(fmt))
 
 
