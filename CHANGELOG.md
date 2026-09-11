@@ -1,3 +1,12 @@
+## [3.15.2](https://github.com/lukislp/studylife/compare/v3.15.1...v3.15.2) (2026-09-11)
+
+
+### Bug Fixes
+
+* **ci:** gate the release DAG on the contract checks, prepare deploy-key push for main protection ([dc3083e](https://github.com/lukislp/studylife/commit/dc3083e2ba94baed428cb9c4c3ab988c097c302e))
+* **security:** reject private and internal webhook targets before proxying ([eb65584](https://github.com/lukislp/studylife/commit/eb655847a16aebada3f31ca0744e5b1537303e3f))
+* **server:** authenticate before rate limiting, answer unhandled exceptions as problem+json ([fe5fcae](https://github.com/lukislp/studylife/commit/fe5fcae1c62fe2b92bd180cf052bd4679e44a329))
+
 ## [3.15.1](https://github.com/lukislp/studylife/compare/v3.15.0...v3.15.1) (2026-09-05)
 
 
