@@ -32,7 +32,27 @@ public partial class AuthController
     /// checks it against the endpoint actually hit, so an mcp-connect assertion can never be
     /// redeemed at capture-assertion-exchange or vice versa, even though both audiences share this
     /// exact same cache entry shape/key namespace.</summary>
-    private sealed record PendingConsentAssertion(int UserId, string Audience, string ApiKey);
+    /// <param name="CodeChallenge">PKCE challenge the dynamic-client flow (AuthController.10)
+    /// started with, null for the five hardcoded audiences and for dynamic clients that did not
+    /// send one - see RedeemConsentAssertionAsync for how it gates redemption.</param>
+    private sealed record PendingConsentAssertion(int UserId, string Audience, string ApiKey, string? CodeChallenge = null);
+
+    /// <summary>RFC 7636 §4.1 unreserved-character shape shared by code_verifier and the base64url
+    /// S256 challenge (43 = base64url of 32 bytes, 128 = the spec's upper bound).</summary>
+    private static readonly System.Text.RegularExpressions.Regex PkceShape =
+        new("^[A-Za-z0-9\\-._~]{43,128}$", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    internal static bool IsValidPkceChallenge(string? challenge) => challenge is not null && PkceShape.IsMatch(challenge);
+
+    /// <summary>base64url(SHA-256(verifier)) == challenge, compared in constant time.</summary>
+    internal static bool PkceMatches(string challenge, string? verifier)
+    {
+        if (verifier is null || !PkceShape.IsMatch(verifier)) return false;
+        var computed = Microsoft.AspNetCore.WebUtilities.WebEncoders.Base64UrlEncode(
+            System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.ASCII.GetBytes(verifier)));
+        return System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
+            System.Text.Encoding.ASCII.GetBytes(computed), System.Text.Encoding.ASCII.GetBytes(challenge));
+    }
 
     /// <summary>
     /// SYNTACTIC redirect URI gate: an absolute https URL, or the RFC 8252 §8.3 native-app
@@ -103,7 +123,7 @@ public partial class AuthController
     /// assertion was well-formed, expired, or simply wrong-audience - null (-> 401) uniformly for
     /// all three, same non-distinguishing pattern as Exchange/LoginComplete.
     /// </summary>
-    private async Task<(int UserId, string ApiKey)?> RedeemConsentAssertionAsync(string audience, string assertion)
+    private async Task<(int UserId, string ApiKey)?> RedeemConsentAssertionAsync(string audience, string assertion, string? codeVerifier = null)
     {
         if (string.IsNullOrEmpty(assertion)) return null;
 
@@ -111,6 +131,11 @@ public partial class AuthController
         var pending = await CacheGetAsync<PendingConsentAssertion>(key);
         if (pending is null) return null;
         if (pending.Audience != audience) return null; // wrong-audience: NOT consumed, see summary above
+        // PKCE: a flow that started with a challenge is only redeemable with its verifier. A
+        // mismatch is not consumed either - the party that merely observed the assertion in the
+        // redirect must be unable to both redeem it AND burn it for the legitimate client
+        // (2026-09-11 audit, finding 6); guessing a 256-bit verifier within 120s is not a risk.
+        if (pending.CodeChallenge is not null && !PkceMatches(pending.CodeChallenge, codeVerifier)) return null;
 
         await _cache.RemoveAsync(key); // single-use: consumed on first successful (matching) exchange only
         return (pending.UserId, pending.ApiKey);

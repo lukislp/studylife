@@ -66,7 +66,7 @@ public class GenericOAuthConnectFlowTests : IClassFixture<CustomWebApplicationFa
         var sessionClient = _factory.CreateClient(); // seeded test user, AuthUserId 1
 
         var connectResponse = await sessionClient.PostAsJsonAsync("/api/auth/connect",
-            new GenericConnectRequestDto { ClientId = "happy-path-client", RedirectUri = RedirectUri, State = "opaque-state-123" });
+            new GenericConnectRequestDto { ClientId = "happy-path-client", RedirectUri = RedirectUri, State = "opaque-state-123", Scopes = new List<string> { "WebhooksProxy.List", "WebhooksProxy.Create" } });
         Assert.Equal(HttpStatusCode.OK, connectResponse.StatusCode);
         var connectResult = await connectResponse.Content.ReadFromJsonAsync<GenericConnectResponseDto>();
         Assert.StartsWith(RedirectUri, connectResult!.RedirectTo);
@@ -102,7 +102,7 @@ public class GenericOAuthConnectFlowTests : IClassFixture<CustomWebApplicationFa
         var sessionClient = _factory.CreateClient();
 
         var connectResponse = await sessionClient.PostAsJsonAsync("/api/auth/connect",
-            new GenericConnectRequestDto { ClientId = "narrow-client", RedirectUri = RedirectUri, State = "s" });
+            new GenericConnectRequestDto { ClientId = "narrow-client", RedirectUri = RedirectUri, State = "s", Scopes = new List<string> { "WebhooksProxy.List" } });
         var (assertion, _) = ParseRedirectTo((await connectResponse.Content.ReadFromJsonAsync<GenericConnectResponseDto>())!.RedirectTo);
         using var anon = ApiKeyTestHelpers.CreateClientWithKey(_factory, null);
         var exchangeResult = await (await anon.PostAsJsonAsync("/api/auth/assertion-exchange",
@@ -125,7 +125,7 @@ public class GenericOAuthConnectFlowTests : IClassFixture<CustomWebApplicationFa
 
         // A DIFFERENT, otherwise-valid https URL - not the one this client registered.
         var response = await sessionClient.PostAsJsonAsync("/api/auth/connect",
-            new GenericConnectRequestDto { ClientId = "strict-redirect-client", RedirectUri = "https://not-registered.example.com/callback", State = "s" });
+            new GenericConnectRequestDto { ClientId = "strict-redirect-client", RedirectUri = "https://not-registered.example.com/callback", State = "s", Scopes = new List<string> { "WebhooksProxy.List" } });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
@@ -151,7 +151,7 @@ public class GenericOAuthConnectFlowTests : IClassFixture<CustomWebApplicationFa
         var sessionClient = _factory.CreateClient();
 
         var connectResponse = await sessionClient.PostAsJsonAsync("/api/auth/connect",
-            new GenericConnectRequestDto { ClientId = "audience-a", RedirectUri = RedirectUri, State = "s" });
+            new GenericConnectRequestDto { ClientId = "audience-a", RedirectUri = RedirectUri, State = "s", Scopes = new List<string> { "WebhooksProxy.List" } });
         var (assertion, _) = ParseRedirectTo((await connectResponse.Content.ReadFromJsonAsync<GenericConnectResponseDto>())!.RedirectTo);
 
         using var anon = ApiKeyTestHelpers.CreateClientWithKey(_factory, null);
@@ -175,7 +175,7 @@ public class GenericOAuthConnectFlowTests : IClassFixture<CustomWebApplicationFa
         await SeedClientAsync("single-use-client", RedirectUri, "WebhooksProxy.List");
         var sessionClient = _factory.CreateClient();
         var connectResponse = await sessionClient.PostAsJsonAsync("/api/auth/connect",
-            new GenericConnectRequestDto { ClientId = "single-use-client", RedirectUri = RedirectUri, State = "s" });
+            new GenericConnectRequestDto { ClientId = "single-use-client", RedirectUri = RedirectUri, State = "s", Scopes = new List<string> { "WebhooksProxy.List" } });
         var (assertion, _) = ParseRedirectTo((await connectResponse.Content.ReadFromJsonAsync<GenericConnectResponseDto>())!.RedirectTo);
 
         using var anon = ApiKeyTestHelpers.CreateClientWithKey(_factory, null);
@@ -200,7 +200,7 @@ public class GenericOAuthConnectFlowTests : IClassFixture<CustomWebApplicationFa
         var sessionClient = _factory.CreateClient();
 
         var connectResponse = await sessionClient.PostAsJsonAsync("/api/auth/connect",
-            new GenericConnectRequestDto { ClientId = "scope-snapshot-client", RedirectUri = RedirectUri, State = "s" });
+            new GenericConnectRequestDto { ClientId = "scope-snapshot-client", RedirectUri = RedirectUri, State = "s", Scopes = new List<string> { "WebhooksProxy.List" } });
         var (assertion, _) = ParseRedirectTo((await connectResponse.Content.ReadFromJsonAsync<GenericConnectResponseDto>())!.RedirectTo);
         using var anon = ApiKeyTestHelpers.CreateClientWithKey(_factory, null);
         var exchangeResult = await (await anon.PostAsJsonAsync("/api/auth/assertion-exchange",
@@ -252,7 +252,7 @@ public class GenericOAuthConnectFlowTests : IClassFixture<CustomWebApplicationFa
         var sessionClient = _factory.CreateClient();
 
         var connectResponse = await sessionClient.PostAsJsonAsync("/api/auth/connect",
-            new GenericConnectRequestDto { ClientId = "data-only-client", RedirectUri = RedirectUri, State = "s" });
+            new GenericConnectRequestDto { ClientId = "data-only-client", RedirectUri = RedirectUri, State = "s", Scopes = new List<string> { "WebhooksProxy.List", "Notes.GetAll" } });
         var (assertion, _) = ParseRedirectTo((await connectResponse.Content.ReadFromJsonAsync<GenericConnectResponseDto>())!.RedirectTo);
         using var anon = ApiKeyTestHelpers.CreateClientWithKey(_factory, null);
         var exchangeResult = await (await anon.PostAsJsonAsync("/api/auth/assertion-exchange",

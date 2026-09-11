@@ -1009,6 +1009,23 @@ public class GenericConnectRequestDto
     public string RedirectUri { get; set; } = "";
     [MaxLength(1000)]
     public string State { get; set; } = "";
+    /// <summary>PKCE (RFC 7636): base64url(SHA-256(code_verifier)) the client generated before
+    /// sending the user to the consent page, passed through the page's code_challenge query
+    /// parameter. The matching code_verifier is then required at assertion-exchange, so an
+    /// assertion observed in the redirect (browser history, Referer, a callback host's access
+    /// log) cannot be redeemed by anyone but the client that started the flow. Required once
+    /// Consent:RequirePkce is on; until then optional, but enforced whenever it is sent.</summary>
+    [MaxLength(128)]
+    public string? CodeChallenge { get; set; }
+    /// <summary>Only "S256" is accepted - the "plain" method defeats the purpose.</summary>
+    [MaxLength(10)]
+    public string? CodeChallengeMethod { get; set; }
+    /// <summary>The exact scope list the consent screen showed the user. AuthController.Connect
+    /// refuses (409) if the client's current registration differs, so a developer widening
+    /// their requested scopes between the page load and the click can never get a grant the
+    /// user did not see.</summary>
+    [MaxLength(50)]
+    public List<string>? Scopes { get; set; }
 }
 
 /// <summary>Response of POST /api/auth/connect.</summary>
@@ -1024,6 +1041,10 @@ public class GenericAssertionExchangeRequestDto
 {
     public string ClientId { get; set; } = "";
     public string Assertion { get; set; } = "";
+    /// <summary>PKCE code_verifier (43-128 unreserved characters) for the code_challenge the
+    /// flow started with. Mandatory whenever the connect step carried a challenge.</summary>
+    [MaxLength(128)]
+    public string? CodeVerifier { get; set; }
 }
 
 /// <summary>Response of POST /api/auth/assertion-exchange.</summary>
