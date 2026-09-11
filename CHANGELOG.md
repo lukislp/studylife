@@ -1,3 +1,11 @@
+## [3.16.1](https://github.com/lukislp/studylife/compare/v3.16.0...v3.16.1) (2026-09-11)
+
+
+### Bug Fixes
+
+* **security:** bound telemetry tag values and stop caching explicit metrics `now` ([07f7607](https://github.com/lukislp/studylife/commit/07f7607eebcca4a9c698708d0146f3c4a502f101))
+* **security:** PKCE, scope echo and key supersede for the dynamic OAuth client flow ([2e5c78b](https://github.com/lukislp/studylife/commit/2e5c78b9d061e9cca536e52065d23d5d82a996e3))
+
 # [3.16.0](https://github.com/lukislp/studylife/compare/v3.15.5...v3.16.0) (2026-09-11)
 
 
