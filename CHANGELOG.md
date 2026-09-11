@@ -1,3 +1,10 @@
+## [3.16.3](https://github.com/lukislp/studylife/compare/v3.16.2...v3.16.3) (2026-09-11)
+
+
+### Bug Fixes
+
+* **ci:** exclude generated code from coverage, read-only token for Dependabot auto-merge ([#178](https://github.com/lukislp/studylife/issues/178)) ([2c5301d](https://github.com/lukislp/studylife/commit/2c5301da0717d048be3a1483e662edd26707b412))
+
 ## [3.16.2](https://github.com/lukislp/studylife/compare/v3.16.1...v3.16.2) (2026-09-11)
 
 
