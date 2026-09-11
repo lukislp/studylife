@@ -68,8 +68,8 @@ public class TelemetryController : ControllerBase
             return NoContent();
 
         var platform = SanitizeEnum(batch.Platform, KnownPlatforms, "unknown");
-        var appVersion = string.IsNullOrWhiteSpace(batch.AppVersion) ? "unknown" : batch.AppVersion;
-        var language = string.IsNullOrWhiteSpace(batch.Language) ? "unknown" : batch.Language;
+        var appVersion = SanitizeShape(batch.AppVersion, AppVersionShape, "unknown");
+        var language = SanitizeShape(batch.Language, LanguageShape, "unknown");
         var platformTag = ClientTelemetryMetrics.Platform(platform);
 
         foreach (var ev in batch.Events)
@@ -148,7 +148,7 @@ public class TelemetryController : ControllerBase
     private void RecordApi(TelemetryEventDto ev, KeyValuePair<string, object?> platformTag)
     {
         var routeTag = ClientTelemetryMetrics.Route(_routeCatalog.Normalize(ev.Route));
-        var methodTag = ClientTelemetryMetrics.Method(string.IsNullOrWhiteSpace(ev.Method) ? "unknown" : ev.Method.ToUpperInvariant());
+        var methodTag = ClientTelemetryMetrics.Method(SanitizeEnum(ev.Method?.ToUpperInvariant(), KnownMethods, "unknown"));
         var notModifiedTag = ClientTelemetryMetrics.NotModified(ev.NotModified ?? false);
 
         if (ev.DurationMs is double durationMs && durationMs >= 0)
@@ -171,14 +171,14 @@ public class TelemetryController : ControllerBase
     private static void RecordNavigation(TelemetryEventDto ev, KeyValuePair<string, object?> platformTag)
     {
         if (ev.RenderMs is not double renderMs || renderMs < 0) return;
-        var pageTag = ClientTelemetryMetrics.Page(string.IsNullOrWhiteSpace(ev.Page) ? "unknown" : ev.Page);
+        var pageTag = ClientTelemetryMetrics.Page(SanitizePage(ev.Page));
         ClientTelemetryMetrics.NavigationRenderDuration.Record(renderMs / 1000.0, pageTag, platformTag);
     }
 
     private void RecordError(TelemetryEventDto ev, string platform, KeyValuePair<string, object?> platformTag, string appVersion, string sessionId)
     {
         var kind = SanitizeEnum(ev.Kind, ErrorKinds, "unknown");
-        var errorType = string.IsNullOrWhiteSpace(ev.ErrorType) ? "unknown" : ev.ErrorType;
+        var errorType = SanitizeShape(ev.ErrorType, ErrorTypeShape, "other");
         var fatal = ev.Fatal ?? false;
 
         ClientTelemetryMetrics.Errors.Add(1,
@@ -189,10 +189,14 @@ public class TelemetryController : ControllerBase
             ClientTelemetryMetrics.AppVersion(appVersion));
 
         // Structured "ClientError" log event (contract: kept 14 days in Loki) - deliberately
-        // never the auth user id, only the client-generated, non-identifying sessionId.
+        // never the auth user id, only the client-generated, non-identifying sessionId. Every
+        // value here is either allow-listed above or run through ForLog: a client-supplied
+        // newline must not be able to forge a second log record (2026-09-11 audit, CodeQL
+        // cs/log-forging). The stack keeps its line breaks but every continuation line is
+        // indented, so an injected "ClientError ..." line can never sit at column 0.
         _logger.LogInformation(
-            "ClientError kind={Kind} type={Type} stackHash={StackHash} platform={Platform} appVersion={AppVersion} sessionId={SessionId} page={Page}\n{Stack}",
-            kind, errorType, ev.StackHash, platform, appVersion, sessionId, ev.Page, ev.Stack);
+            "ClientError kind={Kind} type={Type} stackHash={StackHash} platform={Platform} appVersion={AppVersion} sessionId={SessionId} page={Page}\n    {Stack}",
+            kind, errorType, ForLog(ev.StackHash), platform, appVersion, ForLog(sessionId), SanitizePage(ev.Page), ForLogMultiline(ev.Stack));
     }
 
     private static void RecordAppLaunch(TelemetryEventDto ev, KeyValuePair<string, object?> platformTag)
@@ -246,4 +250,42 @@ public class TelemetryController : ControllerBase
 
     private static string SanitizeEnum(string? value, HashSet<string> allowed, string fallback) =>
         value is { Length: > 0 } && allowed.Contains(value) ? value : fallback;
+
+    // Bounded shapes for the tag values that have no closed enum (2026-09-11 audit, finding 7):
+    // a client that sends 50 unique values per batch, 30 batches a minute, would otherwise grow
+    // the in-process meter state and the Prometheus series set without limit. ClientTelemetryMetrics'
+    // "nothing here is a free-form user string" contract holds again with these in place.
+    private static readonly HashSet<string> KnownMethods =
+        new(StringComparer.Ordinal) { "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS" };
+    private static readonly System.Text.RegularExpressions.Regex AppVersionShape =
+        new(@"^[0-9]{1,5}(\.[0-9]{1,5}){0,3}([-+][A-Za-z0-9.]{1,20})?$", System.Text.RegularExpressions.RegexOptions.Compiled);
+    private static readonly System.Text.RegularExpressions.Regex LanguageShape =
+        new(@"^[a-z]{2,3}(-[A-Za-z]{2,4})?$", System.Text.RegularExpressions.RegexOptions.Compiled);
+    /// <summary>Exception type names: dotted identifiers, e.g. System.InvalidOperationException.</summary>
+    private static readonly System.Text.RegularExpressions.Regex ErrorTypeShape =
+        new(@"^[A-Za-z0-9_.]{1,80}$", System.Text.RegularExpressions.RegexOptions.Compiled);
+    private static readonly System.Text.RegularExpressions.Regex PageSegmentShape =
+        new(@"^[a-z0-9\-]{0,40}$", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    private static string SanitizeShape(string? value, System.Text.RegularExpressions.Regex shape, string fallback) =>
+        value is { Length: > 0 } && shape.IsMatch(value) ? value : fallback;
+
+    /// <summary>A page is reported by its first path segment only ("/notes/123?x=1" -> "/notes"):
+    /// that is the route the Blazor page belongs to, and it keeps ids, query strings and
+    /// anything a client invents out of the tag.</summary>
+    private static string SanitizePage(string? page)
+    {
+        if (string.IsNullOrWhiteSpace(page) || page[0] != '/') return "unknown";
+        var end = page.IndexOfAny(new[] { '?', '#' });
+        var path = end >= 0 ? page[..end] : page;
+        var second = path.IndexOf('/', 1);
+        var segment = (second >= 0 ? path[1..second] : path[1..]).ToLowerInvariant();
+        return PageSegmentShape.IsMatch(segment) ? "/" + segment : "other";
+    }
+
+    private static string ForLog(string? value) =>
+        value is null ? "" : value.Replace("\r", " ").Replace("\n", " ");
+
+    private static string ForLogMultiline(string? value) =>
+        value is null ? "" : value.Replace("\r", "").Replace("\n", "\n    ");
 }

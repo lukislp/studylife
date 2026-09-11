@@ -62,11 +62,16 @@ public class MetricsController : ControllerBase
         var activeProgramId = (await _db.Settings.AsNoTracking().Select(s => (int?)s.ActiveStudyProgramId).FirstOrDefaultAsync());
         if (await ResolveProgrammeAsync(program, activeProgramId) == null) return NotFound();
 
+        // An explicit `now` (the contract's test/fixture override - no real client sends it, see
+        // studylife-hacs' api.py) is computed directly and never cached: keyed by its 100 ns ticks
+        // it let any caller mint an unbounded number of distinct 60 s cache entries (2026-09-11
+        // audit, finding 7). The wall-clock path below stays keyed per minute.
+        if (now is { } explicitNow) return await ComputeSummaryAsync(program, explicitNow);
+
         var userId = _currentUser.AuthUserId;
-        var nowKey = now is { } explicitNow ? explicitNow.Ticks.ToString() : DateTime.Now.ToString("yyyyMMddHHmm");
-        var cacheKey = $"metrics:summary:{userId}:{program?.ToString() ?? "active"}:{nowKey}"
+        var cacheKey = $"metrics:summary:{userId}:{program?.ToString() ?? "active"}:{DateTime.Now:yyyyMMddHHmm}"
             + $":{await _historyVersion.GetAsync(userId)}:{await _settingsVersion.GetAsync(userId)}";
-        return await _cache.GetOrSetAsync(this, cacheKey, CacheTtl, async () => (await ComputeSummaryAsync(program, now)).Value!);
+        return await _cache.GetOrSetAsync(this, cacheKey, CacheTtl, async () => (await ComputeSummaryAsync(program, null)).Value!);
     }
 
     private async Task<ActionResult<MetricsSummaryDto>> ComputeSummaryAsync(int? program, DateTime? now)

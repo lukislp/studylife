@@ -16,7 +16,10 @@ public class MetricsCachingTests : IClassFixture<CustomWebApplicationFactory>
 
     public MetricsCachingTests(CustomWebApplicationFactory factory) => _client = factory.CreateClient();
 
-    private const string Url = "/api/metrics/summary?now=2026-03-10T12:00:00";
+    // Deliberately WITHOUT the `now` override: since the 2026-09-11 audit an explicit `now` is
+    // computed uncached (it was an unbounded cache-key minting vector), so the revalidation
+    // semantics pinned here only exist on the wall-clock path real clients use.
+    private const string Url = "/api/metrics/summary";
 
     [Fact]
     public async Task Summary_IsRevalidatable_AndReflectsAGoalWriteImmediately()
