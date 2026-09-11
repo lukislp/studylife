@@ -368,7 +368,7 @@ Runs as GitHub Actions (`.github/workflows/ci-cd.yml`) on every push to `main` a
 | publish | `publish-server` | `dotnet publish` (linux-x64 + linux-arm64) + ZIP artifact. Push to `main` only, and only if `get-version` found a releasable version |
 | docker | `docker-server` | Multi-arch (amd64/arm64) Docker image, built and pushed to the public `ghcr.io/lukislp/studylife-server` registry |
 | docker | `trivy-server` | Container vulnerability scan (Trivy) of the freshly published image, informational only (does not block the pipeline) |
-| release | `semantic-release` | Real semantic-release run: publishes the GitHub release + changelog, commits the coverage badge |
+| release | `semantic-release` | Real semantic-release run: publishes the GitHub release + changelog, commits the coverage badge, then signs `server.zip` (keyless Sigstore bundle + GitHub build provenance uploaded next to it) |
 
 `get-version` through `semantic-release` form a serialized release chain (`concurrency: studylife-release-chain`) and only run on pushes to `main`, never on pull requests.
 
