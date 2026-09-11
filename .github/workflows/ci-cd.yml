@@ -92,6 +92,8 @@ jobs:
         with:
           python-version: "3.x"
       - run: python3 tools/check-i18n.py
+      # Guards the InvariantGlobalization date-format trap (see the script header).
+      - run: python3 tools/check-date-formats.py
 
   test-lint:
     runs-on: ubuntu-latest
