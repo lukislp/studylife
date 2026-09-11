@@ -65,6 +65,8 @@
     private bool _notRegistered;
     private string _redirectUri = "";
     private string _state = "";
+    private string? _codeChallenge;
+    private string? _codeChallengeMethod;
     private OAuthClientInfoDto? _clientInfo;
 
     protected override async Task OnTextLoadedAsync()
@@ -73,6 +75,16 @@
         var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
         _redirectUri = query["redirect_uri"] ?? "";
         _state = query["state"] ?? "";
+        // PKCE, passed through untouched to AuthController.Connect (which validates the shape
+        // and later demands the matching verifier at assertion-exchange). Optional until every
+        // dynamic client sends it; a half-sent pair is a malformed request, not a missing one.
+        _codeChallenge = query["code_challenge"];
+        _codeChallengeMethod = query["code_challenge_method"];
+        if ((_codeChallenge is null) != (_codeChallengeMethod is null))
+        {
+            _invalidRequest = true;
+            return;
+        }
 
         // Only a client-side "don't even show the consent screen" shortcut - the authoritative
         // check is server-side in AuthController.Connect (exact-match against the client's own
@@ -86,6 +98,8 @@
         if (string.IsNullOrEmpty(TokenStore.Token))
         {
             var self = $"/connect/client/{Uri.EscapeDataString(ClientId)}?redirect_uri={Uri.EscapeDataString(_redirectUri)}&state={Uri.EscapeDataString(_state)}";
+            if (_codeChallenge is not null)
+                self += $"&code_challenge={Uri.EscapeDataString(_codeChallenge)}&code_challenge_method={Uri.EscapeDataString(_codeChallengeMethod!)}";
             Nav.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(self)}", forceLoad: true);
             return;
         }
@@ -129,7 +143,17 @@
         try
         {
             var response = await Http.PostAsJsonAsync("api/auth/connect",
-                new GenericConnectRequestDto { ClientId = ClientId, RedirectUri = _redirectUri, State = _state });
+                new GenericConnectRequestDto
+                {
+                    ClientId = ClientId,
+                    RedirectUri = _redirectUri,
+                    State = _state,
+                    CodeChallenge = _codeChallenge,
+                    CodeChallengeMethod = _codeChallengeMethod,
+                    // Exactly the list rendered above - the server refuses (409) if the
+                    // registration changed in between, see GenericConnectRequestDto.Scopes.
+                    Scopes = _clientInfo?.RequestedScopes ?? new List<string>(),
+                });
             if (!response.IsSuccessStatusCode) { _error = T.ConnectFailed; return; }
             var result = await response.Content.ReadFromJsonAsync<GenericConnectResponseDto>();
             if (result?.RedirectTo is not { Length: > 0 }) { _error = T.ConnectFailed; return; }

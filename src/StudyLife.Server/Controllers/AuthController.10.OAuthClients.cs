@@ -53,8 +53,39 @@ public partial class AuthController
         if (!allowedUris.Contains(request.RedirectUri, StringComparer.Ordinal))
             return BadRequest("redirectUri must exactly match one of this client's registered redirect URIs.");
 
+        // PKCE (2026-09-11 audit, finding 6): the assertion travels in a redirect URL, so without
+        // a verifier anyone who sees that URL can redeem it at the anonymous exchange endpoint.
+        // Consent:RequirePkce flips this from "enforced when offered" to "mandatory" - off until
+        // the two existing dynamic clients (studylife-cli, studylife-alexa) send a challenge.
+        string? codeChallenge = null;
+        if (!string.IsNullOrEmpty(request.CodeChallenge) || !string.IsNullOrEmpty(request.CodeChallengeMethod))
+        {
+            if (!string.Equals(request.CodeChallengeMethod, "S256", StringComparison.Ordinal) || !IsValidPkceChallenge(request.CodeChallenge))
+                return BadRequest("codeChallenge must be a base64url S256 challenge (43-128 characters) with codeChallengeMethod=S256.");
+            codeChallenge = request.CodeChallenge;
+        }
+        else if (_config.GetValue<bool>("Consent:RequirePkce"))
+        {
+            return BadRequest("PKCE is required: send codeChallenge and codeChallengeMethod=S256.");
+        }
+
+        // The grant is exactly what the user SAW: the consent page echoes the scope list it
+        // rendered, and a registration that changed in between (developer widening scopes after
+        // the page loaded) is refused instead of silently granting the new set.
+        var currentScopes = ApiKeyScopes.Parse(client.RequestedScopes)
+            .Select(e => $"{e.Controller}.{e.Action}").ToHashSet(StringComparer.Ordinal);
+        if (request.Scopes is null || !currentScopes.SetEquals(request.Scopes))
+            return Conflict("This client's requested scopes changed since the consent screen was loaded - reload it and review them again.");
+
         var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
         var key = AuthSessionService.GenerateToken();
+        // Re-consenting supersedes: one live key per (user, client), the previous one stops
+        // working the moment this one is issued - a repeated Connect click must not leave a
+        // trail of independently valid keys behind (ClientApiKeys has no query filter, hence
+        // the explicit AuthUserId predicate).
+        var superseded = await _db.ClientApiKeys
+            .Where(k => k.AuthUserId == userId && k.ClientId == client.ClientId).ToListAsync();
+        _db.ClientApiKeys.RemoveRange(superseded);
         var entity = new ClientApiKeyEntity
         {
             AuthUserId = userId,
@@ -70,7 +101,7 @@ public partial class AuthController
 
         var audience = $"client:{client.ClientId}";
         var assertion = GenerateHandoffCode();
-        await CacheSetAsync(ConsentAssertionCacheKey(assertion), new PendingConsentAssertion(userId, audience, key), McpAssertionLifetime);
+        await CacheSetAsync(ConsentAssertionCacheKey(assertion), new PendingConsentAssertion(userId, audience, key, codeChallenge), McpAssertionLifetime);
 
         var separator = request.RedirectUri.Contains('?') ? "&" : "?";
         var redirectTo = $"{request.RedirectUri}{separator}assertion={Uri.EscapeDataString(assertion)}&state={Uri.EscapeDataString(request.State)}";
@@ -87,7 +118,7 @@ public partial class AuthController
     [HttpPost("assertion-exchange")]
     public async Task<ActionResult<GenericAssertionExchangeResponseDto>> AssertionExchange([FromBody] GenericAssertionExchangeRequestDto request)
     {
-        var result = await RedeemConsentAssertionAsync($"client:{request.ClientId}", request.Assertion);
+        var result = await RedeemConsentAssertionAsync($"client:{request.ClientId}", request.Assertion, request.CodeVerifier);
         if (result is null) return Unauthorized();
         return new GenericAssertionExchangeResponseDto { UserId = result.Value.UserId, ApiKey = result.Value.ApiKey };
     }

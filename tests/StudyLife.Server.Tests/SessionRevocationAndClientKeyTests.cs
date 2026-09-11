@@ -150,7 +150,7 @@ public class ClientKeyManagementTests : IClassFixture<CustomWebApplicationFactor
     private async Task<string> ConnectAsync(HttpClient session, string clientId)
     {
         var connect = await session.PostAsJsonAsync("/api/auth/connect",
-            new GenericConnectRequestDto { ClientId = clientId, RedirectUri = RedirectUri, State = "s" });
+            new GenericConnectRequestDto { ClientId = clientId, RedirectUri = RedirectUri, State = "s", Scopes = new List<string> { "Courses.GetAll" } });
         Assert.Equal(HttpStatusCode.OK, connect.StatusCode);
         var redirectTo = (await connect.Content.ReadFromJsonAsync<GenericConnectResponseDto>())!.RedirectTo;
         var assertion = System.Web.HttpUtility.ParseQueryString(new Uri(redirectTo).Query)["assertion"]!;
