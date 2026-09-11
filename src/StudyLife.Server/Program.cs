@@ -70,8 +70,14 @@ if (metricsPort is not null || !string.IsNullOrEmpty(otlpEndpoint))
 
 // ChangeBroadcastFilter: every successful /api write publishes a change event to the user's
 // other clients (GET api/events), see the filter's doc comment.
-builder.Services.AddControllersWithViews(options => options.Filters.Add<ChangeBroadcastFilter>());
-builder.Services.AddRazorPages();
+// Plain AddControllers, not the hosted-Blazor template's AddControllersWithViews + AddRazorPages:
+// this server has no views and no Razor Pages (the template's Error.cshtml never existed here),
+// so those only registered dead services (2026-09-11 audit).
+builder.Services.AddControllers(options => options.Filters.Add<ChangeBroadcastFilter>());
+// RFC 7807 bodies for unhandled exceptions via app.UseExceptionHandler() below - API clients
+// (the WASM client, the native app, the add-on repos) get application/problem+json with the
+// status code instead of whatever the SPA fallback would have served for the re-executed path.
+builder.Services.AddProblemDetails();
 
 // Audit finding D2: formal API contract. Serves the live document at /openapi/v1.json
 // (app.MapOpenApi() below) - controllers return typed ActionResult<T>, so DTO component schemas
@@ -685,7 +691,12 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseExceptionHandler("/Error");
+    // Parameterless: with AddProblemDetails registered above, unhandled exceptions become a 500
+    // application/problem+json response. The former UseExceptionHandler("/Error") re-executed
+    // the request against a Razor page that never existed in this project, so it fell through
+    // to MapFallbackToFile and API callers received the SPA's index.html with a 500 status
+    // (2026-09-11 audit).
+    app.UseExceptionHandler();
     app.UseHsts();
 }
 
@@ -839,9 +850,19 @@ app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 app.UseRouting();
 
+// Authentication runs BEFORE the rate limiter (2026-09-11 audit): the Expensive and Telemetry
+// policies at AddRateLimiter above partition on the NameIdentifier claim, and the claim only
+// exists once StudyLifeAuthenticationHandler has run - with UseAuthentication further down
+// (where it sat next to UseAuthorization) every "per-user" partition silently degraded to the
+// client-IP fallback, so unrelated accounts behind one NAT shared a bucket. UseAuthentication
+// never short-circuits a request (a bad credential just leaves the principal empty; rejecting
+// is UseAuthorization's job, still further down), so the limiter keeps throttling brute-force
+// attempts against the API key itself - the only difference is that the hash lookup for a bad
+// key now happens before the per-IP bucket is checked rather than after.
+app.UseAuthentication();
+
 // After the static-file middlewares (assets shouldn't have to go through the limiter at all),
-// before the API gate below: this way the limiter also throttles brute-force attempts against the
-// API key itself. Partition/limit rationale is at AddRateLimiter above.
+// before the API gate below. Partition/limit rationale is at AddRateLimiter above.
 app.UseRateLimiter();
 
 // Public demo instances (DEMO_MODE=true, confirmed - see DemoModeGuard): reject every mutating
@@ -901,9 +922,9 @@ if (DemoModeGuard.IsEnabled(app.Configuration))
 // is expressed per-action via [Authorize(Policy = ...)]/[AllowAnonymous] instead of the
 // path-string checks that used to live here - see StudyLifeAuthorizationPolicies for the full
 // policy design (ApiAccess/SessionOnly/PublicUnlessInvalidSession) and the exemption mapping.
-// MUST run in this exact order (UseAuthentication before UseAuthorization) and AFTER the demo
-// write-block above / BEFORE the endpoints mapped below, exactly where the former gate sat.
-app.UseAuthentication();
+// UseAuthentication itself sits right after UseRouting (see there for why it has to precede the
+// rate limiter); UseAuthorization MUST stay here - AFTER the demo write-block above / BEFORE the
+// endpoints mapped below, exactly where the former gate sat.
 app.UseAuthorization();
 
 // Apple App Site Association: enables the native in-app passkey dialog (AppleSigningInfo
@@ -933,7 +954,6 @@ app.MapGet("/.well-known/apple-app-site-association", (HttpResponse response) =>
 // authorization metadata of its own, so without this the endpoint would 401.
 app.MapOpenApi().AllowAnonymous();
 
-app.MapRazorPages();
 // The default "needs a credential unless [AllowAnonymous]/a more specific policy" requirement
 // for every controller action comes from AuthorizationOptions.FallbackPolicy (ApiAccess),
 // configured in StudyLifeAuthorizationPolicies - not from an endpoint convention chained here,
