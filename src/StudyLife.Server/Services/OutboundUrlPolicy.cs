@@ -27,6 +27,24 @@ public static class OutboundUrlPolicy
         return IsPublicHost(uri);
     }
 
+    /// <summary>
+    /// Same class of URL as the push endpoint above, one hop further away: a webhook target
+    /// registered through WebhooksProxyController is stored by studylife-webhooks and POSTed to
+    /// from there on every matching event, and studylife-webhooks runs INSIDE the cluster network
+    /// with no validation of its own (2026-09-11 audit). Unlike push services, a user's own
+    /// receiver is legitimately allowed to be plain http (a home server behind a public
+    /// hostname), so only the scheme rule is relaxed - the private/loopback/link-local/cluster-DNS
+    /// host rules are identical.
+    /// </summary>
+    public static bool IsAcceptableWebhookTarget(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url) || url.Length > MaxLength) return false;
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return false;
+        if (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp) return false;
+        if (!string.IsNullOrEmpty(uri.UserInfo)) return false;
+        return IsPublicHost(uri);
+    }
+
     private static bool IsPublicHost(Uri uri)
     {
         var host = uri.Host;

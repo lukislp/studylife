@@ -258,7 +258,10 @@ jobs:
   build:
     # GitLab's stage model implicitly waits for the entire preceding "test" stage to succeed
     # before the "build" stage starts; needs: makes that explicit under GitHub's DAG model.
-    needs: [test-unit, test-i18n, test-lint, test-security, test-k8s-manifests, test-compose-scale]
+    # test-openapi-contract and test-ef-migrations were missing here (2026-09-11 audit): both
+    # are described as gates but weren't in the release DAG, so a stale docs/api/openapi.json or
+    # a missing Postgres twin migration still built, released and shipped to the cluster.
+    needs: [test-unit, test-i18n, test-lint, test-security, test-openapi-contract, test-ef-migrations, test-k8s-manifests, test-compose-scale]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
@@ -317,6 +320,29 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --no-audit --no-fund
+      # Ruleset bypass for the release commit (2026-09-11 audit, finding 2): main is protected by
+      # a ruleset (pull request + green test stage) that the GitHub Actions app cannot be a
+      # bypass actor for on a personal repository, so @semantic-release/git pushes over SSH as a
+      # write-enabled DEPLOY KEY instead, which can. No-op while the secret is unset - the push
+      # then goes through the GITHUB_TOKEN https remote exactly as before. Both release jobs need
+      # this: @semantic-release/git's verifyConditions runs `git push --dry-run` even in
+      # get-version's dry-run mode. Setup: see enable-main-protection.sh next to the repo.
+      - name: Push as the semantic-release deploy key (if configured)
+        env:
+          DEPLOY_KEY: ${{ secrets.SEMANTIC_RELEASE_DEPLOY_KEY }}
+        run: |
+          if [ -z "$DEPLOY_KEY" ]; then
+            echo "SEMANTIC_RELEASE_DEPLOY_KEY is not set - semantic-release pushes with GITHUB_TOKEN"
+            exit 0
+          fi
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/semantic_release
+          chmod 600 ~/.ssh/semantic_release
+          # github.com's published ed25519 host key, pinned instead of ssh-keyscan'd at runtime:
+          # https://docs.github.com/en/authentication/keychain/githubs-ssh-key-fingerprints
+          echo "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl" >> ~/.ssh/known_hosts
+          git remote set-url origin git@github.com:lukislp/studylife.git
+          echo "GIT_SSH_COMMAND=ssh -i ~/.ssh/semantic_release -o IdentitiesOnly=yes" >> "$GITHUB_ENV"
       # Same outputs the action used to provide (new_release_version / new_release_published),
       # derived from semantic-release's own dry-run log line. A dry run that FAILS (e.g. the
       # verifyConditions token check) still fails this step via pipefail - only "no relevant
@@ -593,6 +619,29 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --no-audit --no-fund
+      # Ruleset bypass for the release commit (2026-09-11 audit, finding 2): main is protected by
+      # a ruleset (pull request + green test stage) that the GitHub Actions app cannot be a
+      # bypass actor for on a personal repository, so @semantic-release/git pushes over SSH as a
+      # write-enabled DEPLOY KEY instead, which can. No-op while the secret is unset - the push
+      # then goes through the GITHUB_TOKEN https remote exactly as before. Both release jobs need
+      # this: @semantic-release/git's verifyConditions runs `git push --dry-run` even in
+      # get-version's dry-run mode. Setup: see enable-main-protection.sh next to the repo.
+      - name: Push as the semantic-release deploy key (if configured)
+        env:
+          DEPLOY_KEY: ${{ secrets.SEMANTIC_RELEASE_DEPLOY_KEY }}
+        run: |
+          if [ -z "$DEPLOY_KEY" ]; then
+            echo "SEMANTIC_RELEASE_DEPLOY_KEY is not set - semantic-release pushes with GITHUB_TOKEN"
+            exit 0
+          fi
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/semantic_release
+          chmod 600 ~/.ssh/semantic_release
+          # github.com's published ed25519 host key, pinned instead of ssh-keyscan'd at runtime:
+          # https://docs.github.com/en/authentication/keychain/githubs-ssh-key-fingerprints
+          echo "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl" >> ~/.ssh/known_hosts
+          git remote set-url origin git@github.com:lukislp/studylife.git
+          echo "GIT_SSH_COMMAND=ssh -i ~/.ssh/semantic_release -o IdentitiesOnly=yes" >> "$GITHUB_ENV"
       - id: semrel
         run: npx semantic-release
         env:
