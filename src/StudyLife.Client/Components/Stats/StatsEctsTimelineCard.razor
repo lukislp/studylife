@@ -25,7 +25,7 @@
 @code {
     public record TimelinePoint(DateTime Date, int CumulativeEcts, double Percent)
     {
-        public string DateLabel => Date.ToString("dd.MM.yy");
+        public string DateLabel => LocalDate.ShortYear(Date);
     }
 
     [Parameter] public string Label { get; set; } = "";

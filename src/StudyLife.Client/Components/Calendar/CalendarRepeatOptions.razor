@@ -58,10 +58,5 @@
     private static readonly DayOfWeek[] WeekdayOrder =
         { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday };
 
-    private static string WeekdayShortLabel(DayOfWeek d)
-    {
-        var mondayRef = new DateTime(2024, 1, 1);
-        var offset = ((int)d - (int)DayOfWeek.Monday + 7) % 7;
-        return mondayRef.AddDays(offset).ToString("ddd");
-    }
+    private static string WeekdayShortLabel(DayOfWeek d) => LocalDate.Weekday(d, true);
 }

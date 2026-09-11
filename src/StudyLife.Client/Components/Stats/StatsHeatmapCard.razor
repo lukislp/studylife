@@ -34,7 +34,7 @@
                         else
                         {
                             <button type="button" class="heatmap-day level-@EffectiveLevel(day) @(_selectedDay == day ? "selected" : "")"
-                                    title="@day.Date.ToString("dd.MM.yyyy"): @HoursLabelFor(EffectiveHours(day))"
+                                    title="@LocalDate.Short(day.Date): @HoursLabelFor(EffectiveHours(day))"
                                     @onclick="() => ToggleDay(day)"></button>
                         }
                     }
@@ -60,7 +60,7 @@
              scrolled away from, and would be invisible despite correct data. -->
         <div class="heatmap-detail">
             <div class="heatmap-detail-head">
-                <span class="heatmap-detail-date">@_selectedDay.Date.ToString("dddd, dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture)</span>
+                <span class="heatmap-detail-date">@($"{LocalDate.Weekday(_selectedDay.Date, false)}, {LocalDate.Short(_selectedDay.Date)}")</span>
                 <button type="button" class="heatmap-detail-close" @onclick="() => _selectedDay = null">✕</button>
             </div>
             @if (_selectedDay.Courses.Count == 0)

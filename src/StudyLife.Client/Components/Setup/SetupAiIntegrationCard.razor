@@ -25,7 +25,7 @@
     @if (_hasKey)
     {
         <p class="ss-desc" style="font-weight:600">
-            ✅ @T.Enabled — @string.Format(T.AiKeyActiveSince ?? "", _createdAt?.ToLocalTime().ToString("g") ?? "")
+            ✅ @T.Enabled — @string.Format(T.AiKeyActiveSince ?? "", _createdAt is { } created ? LocalDate.DateAndTime(created.ToLocalTime()) : "")
         </p>
         <div class="toggle-row" style="gap:0.75rem;flex-wrap:wrap">
             <button type="button" class="btn-secondary" @onclick="Reconnect" disabled="@_busy">

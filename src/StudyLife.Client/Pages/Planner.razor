@@ -85,7 +85,7 @@
                             {
                                 var prop = p;
                                 <div class="planner-proposal-row" style="--c:@prop.CourseColor">
-                                    <div class="ppr-date">@prop.Start.ToString("ddd, dd.MM.")</div>
+                                    <div class="ppr-date">@($"{LocalDate.Weekday(prop.Start, true)}, {LocalDate.DayMonth(prop.Start)}")</div>
                                     <div class="ppr-time">@prop.Start.ToString("HH:mm")–@prop.End.ToString("HH:mm")</div>
                                     <div class="ppr-topic">@prop.Topic</div>
                                     <button class="ppr-remove" title="@T.RemoveProposalTitle" @onclick="() => _examProposals.Remove(prop)">✕</button>
@@ -163,7 +163,7 @@
                         {
                             var prop = p;
                             <div class="planner-proposal-row" style="--c:@prop.CourseColor">
-                                <div class="ppr-date">@prop.Start.ToString("ddd, dd.MM.")</div>
+                                <div class="ppr-date">@($"{LocalDate.Weekday(prop.Start, true)}, {LocalDate.DayMonth(prop.Start)}")</div>
                                 <div class="ppr-time">@prop.Start.ToString("HH:mm")–@prop.End.ToString("HH:mm")</div>
                                 <div class="ppr-course">@prop.CourseName</div>
                                 <div class="ppr-topic">@prop.Topic</div>

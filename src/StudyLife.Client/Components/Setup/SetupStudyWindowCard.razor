@@ -51,10 +51,5 @@
     [Parameter] public HashSet<int> SelectedDays { get; set; } = new();
     [Parameter] public EventCallback<int> OnDayToggle { get; set; }
 
-    private static string StudyDayShortLabel(int dayOfWeek)
-    {
-        var mondayRef = new DateTime(2024, 1, 1);
-        var offset = (dayOfWeek - 1 + 7) % 7;
-        return mondayRef.AddDays(offset).ToString("ddd");
-    }
+    private static string StudyDayShortLabel(int dayOfWeek) => LocalDate.Weekday((DayOfWeek)dayOfWeek, true);
 }

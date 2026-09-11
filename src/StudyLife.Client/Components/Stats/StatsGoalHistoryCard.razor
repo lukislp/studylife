@@ -16,7 +16,7 @@
 @code {
     public record WeekMarker(DateTime WeekStart, bool Met, double Hours)
     {
-        public string Label => WeekStart.ToString("dd.MM.");
+        public string Label => LocalDate.DayMonth(WeekStart);
         public string HoursLabel => StudyMetrics.FormatHoursMinutes(Hours);
         public string Tooltip => $"{Label}: {HoursLabel}";
     }

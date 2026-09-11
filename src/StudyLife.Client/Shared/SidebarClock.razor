@@ -5,7 +5,7 @@
    which re-rendered the whole layout including @Body - every dashboard/stats card diffed
    again every ten seconds for a clock nobody was looking at (2026-09 audit L7). *@
 <div class="time-display">@_now.ToString("HH:mm")</div>
-<div class="date-display">@_now.ToString("ddd, MMM d")</div>
+<div class="date-display">@($"{LocalDate.Weekday(_now, true)}, {LocalDate.DayMonth(_now)}")</div>
 
 @code {
     private DateTime _now = DateTime.Now;

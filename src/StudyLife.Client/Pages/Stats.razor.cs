@@ -59,7 +59,9 @@ public partial class Stats
             RefreshTimeHeatmapRows();
             RefreshMonthlyBreakdown();
             RefreshHeatmapCourseNames();
+            RefreshHeatmapMonthLabels();
             RefreshDonutCourseNames();
+            RefreshDonutMonthLabels();
             RefreshSemesterComparisonLabels();
             RefreshGradePointLabels();
             RefreshCourseComparisonLabels();

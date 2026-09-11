@@ -189,7 +189,7 @@
                 .Take(MaxPerGroup)
                 .Select(s => new SearchResult("sessions", "◫",
                     string.IsNullOrWhiteSpace(s.Topic) ? s.CourseName : $"{s.CourseName} — {s.Topic}",
-                    s.StartTime.ToString("dd.MM. HH:mm"), "/calendar")));
+                    $"{LocalDate.DayMonth(s.StartTime)} {LocalDate.Time(s.StartTime)}", "/calendar")));
         }
         catch { /* offline/error: leave the group empty */ }
 

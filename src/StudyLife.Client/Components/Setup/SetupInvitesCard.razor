@@ -43,7 +43,7 @@
                 <div class="pdm-row">
                     <div class="pdm-row-main">
                         <div class="pdm-row-label">
-                            <span>@string.Format(T.InvitesCreatedFormat ?? "", invite.CreatedAt.ToLocalTime().ToString("g"))</span>
+                            <span>@string.Format(T.InvitesCreatedFormat ?? "", LocalDate.DateAndTime(invite.CreatedAt.ToLocalTime()))</span>
                             @if (invite.UsedAt != null)
                             {
                                 <span class="pdm-pending-badge">@T.InvitesUsedLabel</span>
@@ -53,7 +53,7 @@
                                 <span class="pdm-pending-badge">@T.InvitesExpiredLabel</span>
                             }
                         </div>
-                        <div class="pdm-row-meta">@string.Format(T.InvitesExpiresFormat ?? "", invite.ExpiresAt.ToLocalTime().ToString("g"))</div>
+                        <div class="pdm-row-meta">@string.Format(T.InvitesExpiresFormat ?? "", LocalDate.DateAndTime(invite.ExpiresAt.ToLocalTime()))</div>
                     </div>
                     <div style="display:flex; gap:0.4rem; flex-shrink:0;">
                         <button type="button" class="btn-danger" @onclick="() => RevokeAsync(invite)" disabled="@_busy">@T.InvitesRevoke</button>

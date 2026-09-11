@@ -14,7 +14,7 @@
     <div class="wrapped-page-header">
         <a class="wrapped-back-link" href="/auswertung">← @T.BackLink</a>
         <h1>@T.HeaderTitle</h1>
-        <p class="wrapped-period">@string.Format(T.PeriodFormat, _periodStart.ToString("dd.MM.yyyy"), _periodEnd.ToString("dd.MM.yyyy"))</p>
+        <p class="wrapped-period">@string.Format(T.PeriodFormat, LocalDate.Short(_periodStart), LocalDate.Short(_periodEnd))</p>
     </div>
 
     <div class="wrapped-slides">

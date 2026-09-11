@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using StudyLife.Client.Models;
+using StudyLife.Client.Services;
 using StudyLife.Shared;
 
 namespace StudyLife.Client.Pages;
@@ -62,6 +63,7 @@ public partial class Calendar
     protected override async Task OnTextLoadedAsync()
     {
         State.OnChange += OnStateChanged;
+        LocalDate.NamesChanged += OnDateNamesChanged;
 
         // ── Phase 1: settings + courses + sessions - the minimum the grid itself needs
         // (course colors/filter pills, session placement, BuildWeek's week/day label).
@@ -189,9 +191,19 @@ public partial class Calendar
         }
     }
 
+    // _weekLabel is built once per navigation, so a language switch (which is when the localized
+    // weekday names arrive) leaves it stuck in the old language - same class of staleness as the
+    // I18nLanguageWatcher cases, just for names that come from LocalDate instead of from T.
+    private void OnDateNamesChanged() => InvokeAsync(() =>
+    {
+        UpdateLabel();
+        StateHasChanged();
+    });
+
     public void Dispose()
     {
         State.OnChange -= OnStateChanged;
+        LocalDate.NamesChanged -= OnDateNamesChanged;
         // Fire-and-forget: removes the touch listeners if the element still exists
         // (after navigating away from the calendar it's usually already removed from the DOM,
         // in which case the call is a no-op and the listeners die with the element).
@@ -207,8 +219,8 @@ public partial class Calendar
     }
 
     private void UpdateLabel() => _weekLabel = _viewMode == "day"
-        ? _currentDay.ToString("ddd, MMM d, yyyy")
-        : $"{_weekStart:MMM d} – {_weekStart.AddDays(6):MMM d, yyyy}";
+        ? $"{LocalDate.Weekday(_currentDay, true)}, {LocalDate.Short(_currentDay)}"
+        : $"{LocalDate.DayMonth(_weekStart)} – {LocalDate.Short(_weekStart.AddDays(6))}";
 
     // In day view, only _currentDay is rendered; week view shows _days.
     private IReadOnlyList<DateTime> VisibleDays => _viewMode == "day"

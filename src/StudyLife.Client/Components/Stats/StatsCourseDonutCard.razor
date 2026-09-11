@@ -57,7 +57,7 @@
                     @foreach (var e in _selected.RecentSessions)
                     {
                         <div class="donut-detail-session-row">
-                            <span class="donut-detail-session-date">@e.Start.ToString("dd.MM.yyyy HH:mm")</span>
+                            <span class="donut-detail-session-date">@LocalDate.DateAndTime(e.Start)</span>
                             <span class="donut-detail-session-duration">@e.DurationLabel</span>
                             @if (!string.IsNullOrWhiteSpace(e.Topic))
                             {

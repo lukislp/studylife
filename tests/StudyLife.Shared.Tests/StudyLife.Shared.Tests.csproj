@@ -23,4 +23,12 @@
     <ProjectReference Include="..\..\src\StudyLife.Shared\StudyLife.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- LocalDate is deliberately free of Blazor/JS-interop types (the interop lives in
+         LocalDateNames) so its pure formatting logic can be tested here: the client has no test
+         project of its own, and referencing a Blazor WASM project from one would drag in the
+         whole WASM SDK. -->
+    <Compile Include="..\..\src\StudyLife.Client\Services\LocalDate.cs" Link="LocalDate.cs" />
+  </ItemGroup>
+
 </Project>

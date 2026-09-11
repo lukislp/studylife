@@ -7,7 +7,7 @@
         <div class="note-preview">
             <div class="note-preview-title">@(string.IsNullOrWhiteSpace(Note.Title) ? UntitledText : Note.Title)</div>
             <div class="note-preview-excerpt">@Excerpt</div>
-            <div class="note-preview-meta">@(CourseName != null ? $"{CourseName} · " : "")@Note.UpdatedAt.ToString("dd.MM.yyyy HH:mm")</div>
+            <div class="note-preview-meta">@(CourseName != null ? $"{CourseName} · " : "")@LocalDate.DateAndTime(Note.UpdatedAt)</div>
         </div>
         <a href="/notes" class="btn-focus">@GoToNotesText</a>
     }

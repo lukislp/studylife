@@ -7,7 +7,7 @@
             <div class="exam-row @UrgencyClass(g)">
                 <div class="exam-name">@g.CourseName</div>
                 <div class="exam-date">
-                    @g.TargetDate!.Value.ToString("dd.MM.yyyy")
+                    @LocalDate.Short(g.TargetDate!.Value)
                     <span class="exam-days">
                         @(g.DaysRemaining >= 0 ? string.Format(InDaysFormat, g.DaysRemaining) : string.Format(OverdueByDaysFormat, -g.DaysRemaining))
                     </span>

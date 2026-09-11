@@ -38,6 +38,7 @@ builder.Services.AddScoped<NotificationService>();
 // this without a cycle.
 builder.Services.AddScoped<TelemetryService>();
 builder.Services.AddScoped<IClientPlatform, BrowserClientPlatform>();
+builder.Services.AddScoped<LocalDateNames>();
 
 // Marketplace catalog: reads studylife-marketplace's public listings/ directory directly from
 // GitHub's REST API - a separate typed HttpClient (NOT the session-token one above), since this
@@ -89,7 +90,10 @@ try
     // controls (especially the calendar time picker, <input type="datetime-local">) in
     // English format (AM/PM) instead of 24h, regardless of the selected UI language.
     var currentLanguage = await i18nText.GetCurrentLanguageAsync();
-    LocalDate.Language = currentLanguage;
+    // Localized weekday/month names, awaited BEFORE the first render: no component has rendered
+    // yet at this point, so every date is formatted in the right language from the very first
+    // frame and nothing has to be re-rendered afterwards (see LocalDateNames).
+    await host.Services.GetRequiredService<LocalDateNames>().EnsureLoadedAsync(currentLanguage);
     await js.InvokeVoidAsync("setDocumentLanguage", currentLanguage);
 }
 catch { /* localStorage not available (e.g. private mode) - app keeps running with browser auto-detection */ }

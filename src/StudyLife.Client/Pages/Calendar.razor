@@ -240,7 +240,7 @@
                                 <input type="checkbox" @bind="c.Selected" />
                                 <div class="import-review-info">
                                     <div class="import-review-title">@(string.IsNullOrWhiteSpace(c.Event.Title) ? T.ImportUntitledEvent : c.Event.Title)</div>
-                                    <div class="import-review-time">@c.Event.StartTime.ToString("ddd, dd.MM.yyyy HH:mm") – @c.Event.EndTime.ToString("HH:mm")</div>
+                                    <div class="import-review-time">@($"{LocalDate.Weekday(c.Event.StartTime, true)}, {LocalDate.DateAndTime(c.Event.StartTime)}") – @LocalDate.Time(c.Event.EndTime)</div>
                                     @if (c.Event.HasUnexpandedRecurrence)
                                     {
                                         <div class="import-review-warning">⚠️ @T.ImportRecurrenceWarning</div>
