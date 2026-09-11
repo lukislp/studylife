@@ -1,3 +1,10 @@
+## [3.15.5](https://github.com/lukislp/studylife/compare/v3.15.4...v3.15.5) (2026-09-11)
+
+
+### Bug Fixes
+
+* **ci:** keep get-version green when no release is due ([ffa85b0](https://github.com/lukislp/studylife/commit/ffa85b02603e9ae77f2e80dd261f2787750df468))
+
 ## [3.15.4](https://github.com/lukislp/studylife/compare/v3.15.3...v3.15.4) (2026-09-11)
 
 
