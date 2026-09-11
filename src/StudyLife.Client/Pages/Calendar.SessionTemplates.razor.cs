@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using StudyLife.Client.Services;
 using StudyLife.Shared;
 
 namespace StudyLife.Client.Pages;
@@ -136,11 +137,7 @@ public partial class Calendar
         }
     }
 
-    /// <summary>Display helper for the template list: short form of the weekday in the current
-    /// browser culture, the same convention as CalendarRepeatOptions.WeekdayShortLabel.</summary>
-    private static string WeekdayShortLabel(int dayOfWeek)
-    {
-        var sundayRef = new DateTime(2024, 1, 7); // a Sunday
-        return sundayRef.AddDays(dayOfWeek).ToString("ddd");
-    }
+    /// <summary>Display helper for the template list: short weekday name in the UI language,
+    /// the same convention as CalendarRepeatOptions.WeekdayShortLabel. dayOfWeek is 0 = Sunday.</summary>
+    private static string WeekdayShortLabel(int dayOfWeek) => LocalDate.Weekday((DayOfWeek)dayOfWeek, true);
 }

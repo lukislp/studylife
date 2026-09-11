@@ -31,7 +31,7 @@
 @code {
     public record GradePoint(DateTime Date, string CourseName, string Color, decimal Grade, double BarPercent)
     {
-        public string DateLabel => Date.ToString("dd.MM.yy");
+        public string DateLabel => LocalDate.ShortYear(Date);
         public string GradeLabel => StudyMetrics.FormatGrade(Grade, "0.0");
         // Formatted invariantly so CSS percent values never get a decimal comma (cf. _donutGradient).
         public string BarPercentLabel => BarPercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);

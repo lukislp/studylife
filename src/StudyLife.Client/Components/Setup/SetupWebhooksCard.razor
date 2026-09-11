@@ -21,7 +21,7 @@
         <div class="field-row" style="flex-wrap:wrap">
             <div style="flex:1;min-width:0">
                 <strong>@key.Name</strong>
-                <div class="ss-desc" style="margin:0">@string.Format(T.WebhooksKeyActiveSince ?? "", key.CreatedAt.ToLocalTime().ToString("g"))</div>
+                <div class="ss-desc" style="margin:0">@string.Format(T.WebhooksKeyActiveSince ?? "", LocalDate.DateAndTime(key.CreatedAt.ToLocalTime()))</div>
             </div>
             <button type="button" class="btn-danger" style="flex-shrink:0" @onclick="() => _confirmingRevokeId = key.Id" disabled="@_busy">
                 @T.WebhooksKeyRevokeButton

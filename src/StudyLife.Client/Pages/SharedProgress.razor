@@ -86,7 +86,7 @@
                 </div>
             }
 
-            <p class="progress-share-footer">@string.Format(T.GeneratedAtFormat, _data.GeneratedAt.ToLocalTime().ToString("g")) · @T.PoweredByLabel</p>
+            <p class="progress-share-footer">@string.Format(T.GeneratedAtFormat, LocalDate.DateAndTime(_data.GeneratedAt.ToLocalTime())) · @T.PoweredByLabel</p>
         </div>
     }
 </div>

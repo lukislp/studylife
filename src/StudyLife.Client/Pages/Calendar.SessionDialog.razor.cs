@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components.Web;
 using StudyLife.Client.Models;
+using StudyLife.Client.Services;
 using StudyLife.Shared;
 
 namespace StudyLife.Client.Pages;
@@ -95,7 +96,7 @@ public partial class Calendar
             if (conflict != null)
             {
                 _formWarning = string.Format(T.SessionOverlapWarning ?? "",
-                    $"{conflict.CourseName} ({conflict.StartTime:HH:mm}–{conflict.EndTime:HH:mm})");
+                    $"{conflict.CourseName} ({LocalDate.Time(conflict.StartTime)}–{LocalDate.Time(conflict.EndTime)})");
                 _warningAcknowledged = true;
                 return;
             }

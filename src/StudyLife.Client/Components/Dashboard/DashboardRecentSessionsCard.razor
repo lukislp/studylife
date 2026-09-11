@@ -15,7 +15,7 @@
                         <div class="sr-topic">@s.Topic</div>
                     }
                 </div>
-                <div class="sr-status">@s.StartTime.ToString("dd.MM.")</div>
+                <div class="sr-status">@LocalDate.DayMonth(s.StartTime)</div>
             </div>
         }
     }

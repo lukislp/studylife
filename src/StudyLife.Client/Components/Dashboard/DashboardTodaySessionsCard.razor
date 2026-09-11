@@ -10,7 +10,7 @@
                 <div class="sr-dot"></div>
                 <div class="sr-info">
                     <div class="sr-time">
-                        @s.StartTime.ToString("HH:mm") – @s.EndTime.ToString("HH:mm")
+                        @LocalDate.Time(s.StartTime) – @LocalDate.Time(s.EndTime)
                         @if (s.RecurrenceGroupId != null)
                         {
                             <span class="sr-recurring" title="@RecurringHint">🔁</span>

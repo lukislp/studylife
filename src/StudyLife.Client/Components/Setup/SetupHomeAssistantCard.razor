@@ -32,7 +32,7 @@
 
     @if (_hasKey)
     {
-        <p class="ss-desc">@string.Format(T.HaKeyActiveSince ?? "", _createdAt?.ToLocalTime().ToString("g") ?? "")</p>
+        <p class="ss-desc">@string.Format(T.HaKeyActiveSince ?? "", _createdAt is { } created ? LocalDate.DateAndTime(created.ToLocalTime()) : "")</p>
         <div class="toggle-row" style="gap:0.75rem;flex-wrap:wrap">
             <button type="button" class="btn-secondary" @onclick="() => _confirmingRegenerate = true" disabled="@_busy">
                 @T.HaKeyRegenerateButton

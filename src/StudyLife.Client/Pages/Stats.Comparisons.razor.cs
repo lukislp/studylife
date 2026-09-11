@@ -1,4 +1,5 @@
 using StudyLife.Client.Components.Stats;
+using StudyLife.Client.Services;
 using StudyLife.Shared;
 
 namespace StudyLife.Client.Pages;
@@ -78,7 +79,7 @@ public partial class Stats
                 .Select(id => new StatsCourseComparisonChartCard.CourseBar(
                     CourseNameOrFallback(id), ColorFor(id), _courseComparisonPerWeekPerCourse[i][id], Math.Min(100, _courseComparisonPerWeekPerCourse[i][id] / _courseComparisonMaxHours * 100)))
                 .ToList();
-            return new StatsCourseComparisonChartCard.WeekGroup(ws.ToString("dd.MM."), bars);
+            return new StatsCourseComparisonChartCard.WeekGroup(LocalDate.DayMonth(ws), bars);
         }).ToList();
     }
 

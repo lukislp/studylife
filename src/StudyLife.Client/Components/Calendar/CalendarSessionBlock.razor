@@ -8,7 +8,7 @@
     {
         <div class="cs-topic">@Session.Topic</div>
     }
-    <div class="cs-time">@Session.StartTime.ToString("HH:mm")</div>
+    <div class="cs-time">@LocalDate.Time(Session.StartTime)</div>
 </div>
 
 @code {

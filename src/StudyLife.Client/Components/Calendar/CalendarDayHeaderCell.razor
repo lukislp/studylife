@@ -1,5 +1,5 @@
 <div class="cal-day-header-cell @(IsToday ? "today" : "") @(IsPast ? "past" : "")">
-    <div class="day-name">@Date.ToString("ddd")</div>
+    <div class="day-name">@LocalDate.Weekday(Date, true)</div>
     <div class="day-num @(IsToday ? "today-dot" : "")">@Date.Day</div>
 </div>
 

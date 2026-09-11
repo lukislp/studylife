@@ -1,4 +1,5 @@
 using StudyLife.Client.Components.Stats;
+using StudyLife.Client.Services;
 using StudyLife.Shared;
 
 namespace StudyLife.Client.Pages;
@@ -11,8 +12,13 @@ public partial class Stats
     // RefreshHeatmapCourseNames rebuild T.CourseFallback names for since-deleted courses on a
     // language switch without re-scanning the builder result.
     private Dictionary<DateTime, List<int>> _heatmapCourseIdsByDate = new();
+    // Week start of every week that opens a new month (null for the rest), parallel to
+    // _heatmapMonthLabels - the month NAME is localized, so it has to be re-derivable.
+    private List<DateTime?> _heatmapMonthLabelStarts = new();
     private List<StatsCourseDonutCard.DonutSlice> _donutSlices = new();
     private List<int> _donutCourseIds = new(); // parallel to _donutSlices, for the same reason as above
+    // Month starts behind each slice's Months labels, same order - same reason as above.
+    private List<List<DateTime>> _donutMonthStarts = new();
     private string _donutGradient = "";
     private double _donutTotalHours;
     private List<StatsRhythmCard.BarPoint> _weekdayHours = new();
@@ -67,12 +73,17 @@ public partial class Stats
         _heatmapCourseIdsByDate = heatmap.Weeks
             .SelectMany(w => w.Days)
             .ToDictionary(d => d.Date, d => d.Courses.Select(c => c.CourseId).ToList());
-        // "MMM" is culture-dependent, so it stays on the client - the builder only marks which
-        // weeks start a new month.
-        _heatmapMonthLabels = heatmap.Weeks
-            .Select(w => w.ShowMonthLabel ? w.WeekStart.ToString("MMM") : "")
+        // The month name is language-dependent, so it stays on the client - the builder only
+        // marks which weeks start a new month.
+        _heatmapMonthLabelStarts = heatmap.Weeks
+            .Select(w => w.ShowMonthLabel ? (DateTime?)w.WeekStart : null)
             .ToList();
+        RefreshHeatmapMonthLabels();
     }
+
+    private void RefreshHeatmapMonthLabels() => _heatmapMonthLabels = _heatmapMonthLabelStarts
+        .Select(start => start is { } d ? LocalDate.MonthName(d, true) : "")
+        .ToList();
 
     /// <summary>Re-resolves the Name of every course entry in _heatmapWeeks' HeatDay.Courses lists
     /// from _heatmapCourseIdsByDate + the current T/_allCourses - only T.CourseFallback names for
@@ -98,13 +109,33 @@ public partial class Stats
         _donutTotalHours = donut.TotalHours;
         _donutGradient = donut.Gradient;
         _donutCourseIds = donut.Slices.Select(s => s.CourseId).ToList();
+        _donutMonthStarts = donut.Slices.Select(s => s.Months.Select(m => m.MonthStart).ToList()).ToList();
         _donutSlices = donut.Slices
             .Select(s => new StatsCourseDonutCard.DonutSlice(
                 CourseNameOrFallback(s.CourseId), s.Color, s.Hours, s.Percent, s.SessionCount,
-                // "MMM" again - the builder carries the raw month start, see ApplyHeatmap.
-                s.Months.Select(m => new StatsCourseDonutCard.MonthHours(m.MonthStart.ToString("MMM"), m.Hours, m.Percent)).ToList(),
+                // Localized month name again - the builder carries the raw month start, see ApplyHeatmap.
+                s.Months.Select(m => new StatsCourseDonutCard.MonthHours(LocalDate.MonthName(m.MonthStart, true), m.Hours, m.Percent)).ToList(),
                 s.RecentSessions.Select(r => new StatsCourseDonutCard.SessionEntry(r.Start, r.End, r.Topic)).ToList()))
             .ToList();
+    }
+
+    /// <summary>Re-renders the per-slice month labels of _donutSlices from _donutMonthStarts in
+    /// the current language.</summary>
+    private void RefreshDonutMonthLabels()
+    {
+        if (_donutSlices.Count != _donutMonthStarts.Count) return;
+        for (var i = 0; i < _donutSlices.Count; i++)
+        {
+            var starts = _donutMonthStarts[i];
+            var slice = _donutSlices[i];
+            if (slice.Months.Count != starts.Count) continue;
+            _donutSlices[i] = slice with
+            {
+                Months = slice.Months
+                    .Select((m, j) => m with { Label = LocalDate.MonthName(starts[j], true) })
+                    .ToList()
+            };
+        }
     }
 
     /// <summary>Re-resolves the Name of every slice in _donutSlices from _donutCourseIds + the
@@ -222,8 +253,8 @@ public partial class Stats
                 segments.Add(new StatsMonthlyBreakdownCard.StackSegment(T.Other, otherColor, otherHours, otherHours / _monthlyMaxMonthTotal * 100));
 
             var total = dict.Values.Sum();
-            // "MMM" is culture-dependent, so it stays on the client, see ApplyHeatmap.
-            return new StatsMonthlyBreakdownCard.StackedMonth(m.ToString("MMM"), segments, StudyMetrics.FormatHoursMinutes(total));
+            // The month name is language-dependent, so it stays on the client, see ApplyHeatmap.
+            return new StatsMonthlyBreakdownCard.StackedMonth(LocalDate.MonthName(m, true), segments, StudyMetrics.FormatHoursMinutes(total));
         }).ToList();
     }
 }

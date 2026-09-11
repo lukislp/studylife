@@ -1,5 +1,6 @@
 using Microsoft.JSInterop;
 using StudyLife.Client.Models;
+using StudyLife.Client.Services;
 using StudyLife.Shared;
 
 namespace StudyLife.Client.Pages;
@@ -48,6 +49,9 @@ public partial class WeekPlan
         // events are the whole story - no OnServerChanged subscription needed here.
         State.OnSessionsChanged += OnLiveDataChanged;
         State.OnSettingsChanged += OnLiveDataChanged;
+        // _dayGroups bakes the weekday names in, so the same refresh has to run when a language
+        // switch brings in localized ones (the data behind it is cached, so this is cheap).
+        LocalDate.NamesChanged += OnLiveDataChanged;
         return Task.CompletedTask;
     }
 
@@ -55,6 +59,7 @@ public partial class WeekPlan
     {
         State.OnSessionsChanged -= OnLiveDataChanged;
         State.OnSettingsChanged -= OnLiveDataChanged;
+        LocalDate.NamesChanged -= OnLiveDataChanged;
     }
 
     private void OnLiveDataChanged() => InvokeAsync(RefreshAsync);
@@ -122,7 +127,7 @@ public partial class WeekPlan
         _dayGroups = Enumerable.Range(0, 7)
             .Select(i => _weekStart.AddDays(i))
             .Select(day => new DayGroup(
-                day.ToString("dddd, dd.MM."),
+                $"{LocalDate.Weekday(day, false)}, {LocalDate.DayMonth(day)}",
                 weekSessions.Where(s => s.StartTime.Date == day).OrderBy(s => s.StartTime).ToList()))
             .ToList();
 

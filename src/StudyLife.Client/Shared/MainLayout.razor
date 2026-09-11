@@ -12,6 +12,7 @@
 @inject INativeAppAuth NativeAuth
 @inject TelemetryService Telemetry
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
+@inject LocalDateNames DateNames
 @implements IDisposable
 
 @if (_authenticated)
@@ -300,6 +301,11 @@
             T = await i18nTask;
             _lang = await currentLanguageTask;
             LocalDate.Language = _lang;
+            LocalDate.NamesChanged += OnDateNamesChanged;
+            // Normally a no-op: Program.cs already loaded the names before the first render.
+            // Only if that path was skipped (localStorage unavailable) does this actually fetch,
+            // and then deliberately NOT awaited - the shell must not wait on JS interop here.
+            _ = DateNames.EnsureLoadedAsync(_lang);
 
             var settings = await settingsTask;
             // Best-effort: never let a missing/failing JS helper (e.g. stale cached index.html
@@ -618,8 +624,10 @@
     private async Task SetLanguageAsync(string lang)
     {
         _lang = lang;
-        LocalDate.Language = lang;
         _langPopupOpen = false;
+        // Before SetCurrentLanguageAsync: that call re-renders every component holding a text
+        // table, so the new weekday/month names are already in place when it does.
+        await DateNames.EnsureLoadedAsync(lang);
         await I18nText.SetCurrentLanguageAsync(lang);
         // Keep <html lang> in sync - on Chromium browsers this controls the format of native
         // form controls (especially the calendar time picker, AM/PM vs. 24h), see Program.cs.
@@ -667,6 +675,10 @@
         _hasActive = active != null;
     }
 
+    // The names arrive asynchronously; re-rendering the layout also re-renders @Body, so pages
+    // that already formatted a date with the invariant fallback pick up the localized one.
+    private void OnDateNamesChanged() => _ = InvokeAsync(StateHasChanged);
+
     public void Dispose()
     {
         _clockTimer?.Dispose();
@@ -676,6 +688,7 @@
         }
         _searchHotkeyRef?.Dispose();
         Nav.LocationChanged -= OnLocationChanged;
+        LocalDate.NamesChanged -= OnDateNamesChanged;
         State.OnSessionsChanged -= OnSessionsChanged;
         State.OnPendingWritesChanged -= OnPendingWritesChanged;
         TokenStore.OnSessionInvalidated -= OnSessionInvalidated;

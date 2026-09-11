@@ -38,11 +38,11 @@
                 {
                     <div class="report-meta">@_programmeName</div>
                 }
-                <div class="report-meta">@string.Format(T.GeneratedOnFormat, _generatedAt.ToString("dd.MM.yyyy HH:mm"))</div>
+                <div class="report-meta">@string.Format(T.GeneratedOnFormat, LocalDate.DateAndTime(_generatedAt))</div>
                 <div class="report-meta">
                     @if (_periodStart.HasValue && _periodEnd.HasValue)
                     {
-                        @string.Format(T.PeriodFormat, _periodStart.Value.ToString("dd.MM.yyyy"), _periodEnd.Value.ToString("dd.MM.yyyy"))
+                        @string.Format(T.PeriodFormat, LocalDate.Short(_periodStart.Value), LocalDate.Short(_periodEnd.Value))
                     }
                     else
                     {

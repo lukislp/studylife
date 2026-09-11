@@ -27,7 +27,7 @@
     <div class="notes-print-doc">
         <div class="notes-print-head">
             <h1>@T.PageHeading</h1>
-            <div class="notes-print-meta">@string.Format(T.PrintGeneratedOnFormat ?? "", DateTime.Now.ToString("dd.MM.yyyy HH:mm"))</div>
+            <div class="notes-print-meta">@string.Format(T.PrintGeneratedOnFormat ?? "", LocalDate.DateAndTime(DateTime.Now))</div>
         </div>
         @if (PrintGroups.Count == 0)
         {
@@ -41,7 +41,7 @@
                 {
                     <div class="notes-print-card">
                         <div class="notes-print-card-title">@(string.IsNullOrWhiteSpace(n.Title) ? (T.Untitled ?? "") : n.Title)</div>
-                        <div class="notes-print-card-meta">@n.UpdatedAt.ToString("dd.MM.yyyy HH:mm")</div>
+                        <div class="notes-print-card-meta">@LocalDate.DateAndTime(n.UpdatedAt)</div>
                         @if (n.IsMarkdown)
                         {
                             <div class="notes-print-card-content notes-print-card-content--markdown">@RenderMarkdown(n.Content)</div>
@@ -1067,7 +1067,7 @@ else
         if (diff.TotalHours < 1) return string.Format(T.MinAgo ?? "", (int)diff.TotalMinutes);
         if (diff.TotalDays < 1) return string.Format(T.HourAgo ?? "", (int)diff.TotalHours);
         if (diff.TotalDays < 7) return string.Format(T.DayAgo ?? "", (int)diff.TotalDays);
-        return dt.ToString("dd.MM.yyyy");
+        return LocalDate.Short(dt);
     }
 
     // Note title with an optional highlight of search matches (only with an active search).
