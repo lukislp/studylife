@@ -356,7 +356,10 @@ jobs:
           if ! npx semantic-release --dry-run 2>&1 | tee semrel-dry-run.log; then
             grep -q 'no new version is released' semrel-dry-run.log || exit 1
           fi
-          NEXT="$(grep -oE 'The next release version is [0-9]+\.[0-9]+\.[0-9]+' semrel-dry-run.log | tail -1 | awk '{print $NF}')"
+          # `|| true`: the run step's shell is `bash -e` and pipefail is on, so an empty grep in
+          # the no-release case would otherwise abort the step right here (the second half of
+          # the 2026-09-11 red-job cause, the first half being the exit code handled above).
+          NEXT="$(grep -oE 'The next release version is [0-9]+\.[0-9]+\.[0-9]+' semrel-dry-run.log | tail -1 | awk '{print $NF}' || true)"
           if [ -n "$NEXT" ]; then
             echo "new_release_published=true" >> "$GITHUB_OUTPUT"
             echo "new_release_version=$NEXT" >> "$GITHUB_OUTPUT"
