@@ -1,3 +1,11 @@
+## [3.16.2](https://github.com/lukislp/studylife/compare/v3.16.1...v3.16.2) (2026-09-11)
+
+
+### Bug Fixes
+
+* **client:** 12h clock for English, 24h everywhere else ([4c18d73](https://github.com/lukislp/studylife/commit/4c18d732510009254b958c76865135cfaa7446c6))
+* **client:** localized weekday and month names in all 26 languages ([d0b1539](https://github.com/lukislp/studylife/commit/d0b15397ba2688d60a10ff43e275aca095723fbf))
+
 ## [3.16.1](https://github.com/lukislp/studylife/compare/v3.16.0...v3.16.1) (2026-09-11)
 
 
