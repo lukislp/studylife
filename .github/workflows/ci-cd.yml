@@ -41,9 +41,9 @@ jobs:
       # expensive step of this job. One explicit solution restore up front so the three
       # test invocations below don't each pay their own implicit restore.
       - run: dotnet restore StudyLife.sln
-      - run: dotnet test tests/StudyLife.Shared.Tests/StudyLife.Shared.Tests.csproj --no-restore --configuration ${{ env.CONFIGURATION }} --logger "junit;LogFilePath=TestResults/shared-tests-junit.xml" --collect:"XPlat Code Coverage"
-      - run: dotnet test tests/StudyLife.Server.Tests/StudyLife.Server.Tests.csproj --no-restore --configuration ${{ env.CONFIGURATION }} --logger "junit;LogFilePath=TestResults/server-tests-junit.xml" --collect:"XPlat Code Coverage"
-      - run: dotnet test tests/StudyLife.Tts.Tests/StudyLife.Tts.Tests.csproj --no-restore --configuration ${{ env.CONFIGURATION }} --logger "junit;LogFilePath=TestResults/tts-tests-junit.xml" --collect:"XPlat Code Coverage"
+      - run: dotnet test tests/StudyLife.Shared.Tests/StudyLife.Shared.Tests.csproj --no-restore --configuration ${{ env.CONFIGURATION }} --logger "junit;LogFilePath=TestResults/shared-tests-junit.xml" --collect:"XPlat Code Coverage" --settings coverlet.runsettings
+      - run: dotnet test tests/StudyLife.Server.Tests/StudyLife.Server.Tests.csproj --no-restore --configuration ${{ env.CONFIGURATION }} --logger "junit;LogFilePath=TestResults/server-tests-junit.xml" --collect:"XPlat Code Coverage" --settings coverlet.runsettings
+      - run: dotnet test tests/StudyLife.Tts.Tests/StudyLife.Tts.Tests.csproj --no-restore --configuration ${{ env.CONFIGURATION }} --logger "junit;LogFilePath=TestResults/tts-tests-junit.xml" --collect:"XPlat Code Coverage" --settings coverlet.runsettings
       - if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -63,7 +63,9 @@ jobs:
       # EF Core migrations (StudyLife.Server.Migrations.*) are excluded as generated code:
       # the Designer model snapshots alone are ~21k coverable lines of machine-written
       # boilerplate that dwarf the ~4.3k lines of hand-written code and would pin the
-      # number to ~80% forever regardless of how well the real code is tested.
+      # number to ~80% forever regardless of how well the real code is tested. Other
+      # generated code ([GeneratedCode]: the System.Text.Json source-gen context, ~15k
+      # lines) is already dropped at collection time by coverlet.runsettings.
       # The repo already pins reportgenerator in .config/dotnet-tools.json - restoring the
       # manifest hits the NuGet cache above instead of re-downloading a global tool per run.
       - run: dotnet tool restore
