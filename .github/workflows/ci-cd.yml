@@ -25,11 +25,11 @@ jobs:
   test-unit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: actions/setup-dotnet@v6.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-      - uses: actions/cache@v6.1.0
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'StudyLife.sln') }}
@@ -45,7 +45,7 @@ jobs:
       - run: dotnet test tests/StudyLife.Server.Tests/StudyLife.Server.Tests.csproj --no-restore --configuration ${{ env.CONFIGURATION }} --logger "junit;LogFilePath=TestResults/server-tests-junit.xml" --collect:"XPlat Code Coverage"
       - run: dotnet test tests/StudyLife.Tts.Tests/StudyLife.Tts.Tests.csproj --no-restore --configuration ${{ env.CONFIGURATION }} --logger "junit;LogFilePath=TestResults/tts-tests-junit.xml" --collect:"XPlat Code Coverage"
       - if: always()
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: test-results
           path: |
@@ -75,7 +75,7 @@ jobs:
           -assemblyfilters:"-StudyLife.Client"
           -classfilters:"-StudyLife.Server.Migrations.*"
       - run: python3 scripts/generate_coverage_badge.py coverage-summary/Summary.json coverage-badge.json
-      - uses: actions/upload-artifact@v7.0.1
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: coverage-badge
           path: coverage-badge.json
@@ -84,11 +84,11 @@ jobs:
   test-i18n:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: actions/setup-dotnet@v6.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-      - uses: actions/setup-python@v7.0.0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.x"
       - run: python3 tools/check-i18n.py
@@ -96,11 +96,11 @@ jobs:
   test-lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: actions/setup-dotnet@v6.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-      - uses: actions/cache@v6.1.0
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'StudyLife.sln') }}
@@ -114,11 +114,11 @@ jobs:
   test-security:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: actions/setup-dotnet@v6.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-      - uses: actions/cache@v6.1.0
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'StudyLife.sln') }}
@@ -154,7 +154,7 @@ jobs:
               print('No known vulnerable NuGet packages found.')
           "
       - if: always()
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: nuget-vulnerabilities
           path: nuget-vulnerabilities.json
@@ -169,11 +169,11 @@ jobs:
   test-openapi-contract:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: actions/setup-dotnet@v6.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-      - uses: actions/cache@v6.1.0
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'StudyLife.sln') }}
@@ -201,11 +201,11 @@ jobs:
   test-ef-migrations:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: actions/setup-dotnet@v6.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-      - uses: actions/cache@v6.1.0
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'StudyLife.sln') }}
@@ -232,7 +232,7 @@ jobs:
     # kustomize`, no separate `kustomize` CLI install needed).
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: docker run --rm -v "${{ github.workspace }}:/repo" -w /repo ghcr.io/yannh/kubeconform:latest-alpine -summary -ignore-missing-schemas k8s/
       # Audit finding O4: also validate what actually gets applied via Flux's Kustomization
       # (k8s/flux/deploy/), not just the raw files above - historically these differed (a patch
@@ -250,7 +250,7 @@ jobs:
   test-compose-scale:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # Pure syntax/interpolation check (no startup) - catches broken YAML or wrong
       # variable references before someone tests "docker compose up" by hand.
       - run: docker compose -f docker-compose.scale.yml config > /dev/null
@@ -264,11 +264,11 @@ jobs:
     needs: [test-unit, test-i18n, test-lint, test-security, test-openapi-contract, test-ef-migrations, test-k8s-manifests, test-compose-scale]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: actions/setup-dotnet@v6.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-      - uses: actions/cache@v6.1.0
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'StudyLife.sln') }}
@@ -306,7 +306,7 @@ jobs:
       # nothing - the entire release chain skips even though a releasable fix was just merged
       # (happened live: PR #64's fix produced no release). Analyzing the branch tip makes the
       # verdict immune to that race; the tip only ever differs by those [skip ci] yaml commits.
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           ref: main
@@ -379,13 +379,13 @@ jobs:
       # ref: main to match get-version's analysis target (see its checkout comment) - the
       # binaries stamped with NEXT_VERSION must be built from the same tree that version was
       # computed for, not from an event SHA that may be a [skip ci] Flux bump behind it.
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
-      - uses: actions/setup-dotnet@v6.0.0
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-      - uses: actions/cache@v6.1.0
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'StudyLife.sln') }}
@@ -398,7 +398,7 @@ jobs:
       - run: dotnet publish src/StudyLife.Server/StudyLife.Server.csproj --configuration ${{ env.CONFIGURATION }} --runtime linux-x64 --no-self-contained -p:Version=${{ env.NEXT_VERSION }} --output publish/amd64
       - run: dotnet publish src/StudyLife.Server/StudyLife.Server.csproj --configuration ${{ env.CONFIGURATION }} --runtime linux-arm64 --no-self-contained -p:Version=${{ env.NEXT_VERSION }} --output publish/arm64
       - run: cd publish/amd64 && zip -r ../server.zip . && cd ../..
-      - uses: actions/upload-artifact@v7.0.1
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: publish-output
           path: |
@@ -439,8 +439,8 @@ jobs:
     env:
       NEXT_VERSION: ${{ needs.get-version.outputs.next_version }}
     steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: actions/download-artifact@v8.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: publish-output
           path: publish
@@ -467,7 +467,7 @@ jobs:
           mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
           touch "/tmp/digests/${digest#sha256:}"
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: digests-${{ matrix.arch }}
           path: /tmp/digests/*
@@ -490,7 +490,7 @@ jobs:
     env:
       NEXT_VERSION: ${{ needs.get-version.outputs.next_version }}
     steps:
-      - uses: actions/download-artifact@v8.0.1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           path: /tmp/digests
           pattern: digests-*
@@ -548,7 +548,7 @@ jobs:
     env:
       NEXT_VERSION: ${{ needs.get-version.outputs.next_version }}
     steps:
-      - uses: actions/download-artifact@v8.0.1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: digests-amd64
           path: /tmp/digests
@@ -596,15 +596,15 @@ jobs:
       # must be cut from the branch tip get-version analyzed, or the "behind the remote" guard
       # trips on the event SHA whenever a Flux [skip ci] bump raced in. The retry below still
       # covers pushes landing DURING this job.
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           ref: main
-      - uses: actions/download-artifact@v8.0.1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: publish-output
           path: publish
-      - uses: actions/download-artifact@v8.0.1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: coverage-badge
           path: coverage-artifact
