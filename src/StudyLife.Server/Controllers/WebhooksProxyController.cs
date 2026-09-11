@@ -42,8 +42,18 @@ public class WebhooksProxyController : ControllerBase
         ProxyAsync(() => _client.ListWebhooksAsync(_currentUser.AuthUserId, ct));
 
     [HttpPost]
-    public Task Create([FromBody] CreateWebhookRequestDto dto, CancellationToken ct) =>
-        ProxyAsync(() => _client.CreateWebhookAsync(_currentUser.AuthUserId, dto.TargetUrl, dto.Events, ct));
+    public async Task<IActionResult> Create([FromBody] CreateWebhookRequestDto dto, CancellationToken ct)
+    {
+        // The target is a URL studylife-webhooks later POSTs to unattended from inside the
+        // cluster network - same blind-proxy hazard as PushController.Subscribe's endpoint, see
+        // OutboundUrlPolicy. Checked BEFORE the Enabled gate in ProxyAsync so an unconfigured
+        // install answers a bad URL with 400 rather than a misleading 503.
+        if (!OutboundUrlPolicy.IsAcceptableWebhookTarget(dto.TargetUrl))
+            return BadRequest(new { error = "TargetUrl must be a public http(s) URL." });
+
+        await ProxyAsync(() => _client.CreateWebhookAsync(_currentUser.AuthUserId, dto.TargetUrl, dto.Events, ct));
+        return new EmptyResult();
+    }
 
     [HttpDelete("{id}")]
     public Task Delete(string id, CancellationToken ct) =>
