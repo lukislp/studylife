@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Coverage collection settings for dotnet test with the XPlat Code Coverage collector (coverlet).
+     Source-generated code (the System.Text.Json context in StudyLife.Shared, the OpenAPI
+     document generator output) is machine-written and carries [GeneratedCode]; it is
+     excluded here so the badge measures hand-written code only. -->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <ExcludeByAttribute>GeneratedCodeAttribute</ExcludeByAttribute>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>
