@@ -1,3 +1,10 @@
+## [3.15.3](https://github.com/lukislp/studylife/compare/v3.15.2...v3.15.3) (2026-09-11)
+
+
+### Bug Fixes
+
+* **deps:** Bump dotnet-ef from 10.0.11 to 10.0.12 ([c150e5f](https://github.com/lukislp/studylife/commit/c150e5fab892c669334b718f104de32daca57f3c))
+
 ## [3.15.2](https://github.com/lukislp/studylife/compare/v3.15.1...v3.15.2) (2026-09-11)
 
 
