@@ -9,7 +9,7 @@
             <div class="nc-icon">◉</div>
             <div class="nc-info">
                 <div class="nc-name">@ActiveSession.CourseName</div>
-                <div class="nc-time">@string.Format(UntilTimeFormat, ActiveSession.EndTime.ToString("HH:mm"))</div>
+                <div class="nc-time">@string.Format(UntilTimeFormat, LocalDate.Time(ActiveSession.EndTime))</div>
                 @if (!string.IsNullOrEmpty(ActiveSession.Topic)) { <div class="nc-topic">@ActiveSession.Topic</div> }
             </div>
         </div>
@@ -21,7 +21,7 @@
             <div class="nc-icon">◷</div>
             <div class="nc-info">
                 <div class="nc-name">@UpcomingSession.CourseName</div>
-                <div class="nc-time">@string.Format(StartsAtFormat, UpcomingSession.StartTime.ToString("HH:mm"), TimeUntil(UpcomingSession.StartTime))</div>
+                <div class="nc-time">@string.Format(StartsAtFormat, LocalDate.Time(UpcomingSession.StartTime), TimeUntil(UpcomingSession.StartTime))</div>
                 @if (!string.IsNullOrEmpty(UpcomingSession.Topic)) { <div class="nc-topic">@UpcomingSession.Topic</div> }
             </div>
         </div>

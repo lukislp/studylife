@@ -13,7 +13,7 @@ else
     <div class="focus-upcoming">
         <div class="fu-label">@string.Format(UpNextInFormat, TimeUntil(UpcomingSession.StartTime))</div>
         <div class="fu-name">@UpcomingSession.CourseName</div>
-        <div class="fu-time">@UpcomingSession.StartTime.ToString("HH:mm") – @UpcomingSession.EndTime.ToString("HH:mm")</div>
+        <div class="fu-time">@LocalDate.Time(UpcomingSession.StartTime) – @LocalDate.Time(UpcomingSession.EndTime)</div>
         <p class="focus-motivation-text">@MotivationText</p>
     </div>
 }

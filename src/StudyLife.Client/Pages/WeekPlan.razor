@@ -69,7 +69,7 @@
                                 @foreach (var s in group.Sessions)
                                 {
                                     <tr>
-                                        <td>@s.StartTime.ToString("HH:mm")–@s.EndTime.ToString("HH:mm")</td>
+                                        <td>@LocalDate.Time(s.StartTime)–@LocalDate.Time(s.EndTime)</td>
                                         <td>@IconFor(s.CourseId) @s.CourseName</td>
                                         <td>@(string.IsNullOrWhiteSpace(s.Topic) ? "–" : s.Topic)</td>
                                     </tr>
