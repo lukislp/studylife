@@ -40,7 +40,7 @@ jobs:
       # which the Client doesn't use), and installing workloads was the single most
       # expensive step of this job. One explicit solution restore up front so the three
       # test invocations below don't each pay their own implicit restore.
-      - run: dotnet restore StudyLife.sln
+      - run: dotnet restore StudyLife.sln --locked-mode
       - run: dotnet test tests/StudyLife.Shared.Tests/StudyLife.Shared.Tests.csproj --no-restore --configuration ${{ env.CONFIGURATION }} --logger "junit;LogFilePath=TestResults/shared-tests-junit.xml" --collect:"XPlat Code Coverage" --settings coverlet.runsettings
       - run: dotnet test tests/StudyLife.Server.Tests/StudyLife.Server.Tests.csproj --no-restore --configuration ${{ env.CONFIGURATION }} --logger "junit;LogFilePath=TestResults/server-tests-junit.xml" --collect:"XPlat Code Coverage" --settings coverlet.runsettings
       - run: dotnet test tests/StudyLife.Tts.Tests/StudyLife.Tts.Tests.csproj --no-restore --configuration ${{ env.CONFIGURATION }} --logger "junit;LogFilePath=TestResults/tts-tests-junit.xml" --collect:"XPlat Code Coverage" --settings coverlet.runsettings
@@ -129,7 +129,7 @@ jobs:
           restore-keys: |
             nuget-${{ runner.os }}-
       - run: dotnet workload restore StudyLife.sln
-      - run: dotnet restore StudyLife.sln
+      - run: dotnet restore StudyLife.sln --locked-mode
       - run: |
           dotnet list StudyLife.sln package --vulnerable --include-transitive --format json > nuget-vulnerabilities.json
           cat nuget-vulnerabilities.json
@@ -183,7 +183,7 @@ jobs:
           key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'StudyLife.sln') }}
           restore-keys: |
             nuget-${{ runner.os }}-
-      - run: dotnet restore src/StudyLife.Server/StudyLife.Server.csproj
+      - run: dotnet restore src/StudyLife.Server/StudyLife.Server.csproj --locked-mode
       - run: dotnet build src/StudyLife.Server/StudyLife.Server.csproj --configuration ${{ env.CONFIGURATION }} --no-restore
       - name: Fail if docs/api/openapi.json is stale
         run: |
@@ -215,7 +215,7 @@ jobs:
           key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'StudyLife.sln') }}
           restore-keys: |
             nuget-${{ runner.os }}-
-      - run: dotnet restore src/StudyLife.Server/StudyLife.Server.csproj
+      - run: dotnet restore src/StudyLife.Server/StudyLife.Server.csproj --locked-mode
       # dotnet-ef is a local tool (.config/dotnet-tools.json), same pattern as reportgenerator in
       # test-unit above - restoring the manifest hits the NuGet cache instead of a fresh global install.
       - run: dotnet tool restore
@@ -279,7 +279,7 @@ jobs:
           restore-keys: |
             nuget-${{ runner.os }}-
       - run: dotnet workload restore StudyLife.sln
-      - run: dotnet restore StudyLife.sln
+      - run: dotnet restore StudyLife.sln --locked-mode
       - run: dotnet build StudyLife.sln --configuration ${{ env.CONFIGURATION }} --no-restore
 
   # ---------------------------------------------------------------------
