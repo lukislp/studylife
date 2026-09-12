@@ -1,3 +1,10 @@
+## [3.16.8](https://github.com/lukislp/studylife/compare/v3.16.7...v3.16.8) (2026-09-12)
+
+
+### Bug Fixes
+
+* **pwa:** make the "new version" reload reliable ([#194](https://github.com/lukislp/studylife/issues/194)) ([b627ea8](https://github.com/lukislp/studylife/commit/b627ea8c9a752631655d94fc2323dd7fc30856ec))
+
 ## [3.16.7](https://github.com/lukislp/studylife/compare/v3.16.6...v3.16.7) (2026-09-12)
 
 
