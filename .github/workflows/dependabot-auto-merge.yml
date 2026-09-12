@@ -47,8 +47,19 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.AUTOMERGE_TOKEN }}
           REPO: ${{ github.repository }}
+        # Only PRs that have auto-merge enabled are brought up to date - those are the ones that
+        # would otherwise stall; a PR left for a manual merge (major bump) is updated by whoever
+        # merges it. GitHub computes the merge state lazily after a push, so UNKNOWN is polled
+        # for a while before the PR is treated as up to date.
         run: |
-          gh pr list --repo "$REPO" --author app/dependabot --state open --json number,mergeStateStatus             --jq '.[] | select(.mergeStateStatus == "BEHIND") | .number' | while read -r n; do
-            echo "updating #$n onto main"
-            gh api -X PUT "repos/$REPO/pulls/$n/update-branch" >/dev/null || echo "::warning::could not update #$n"
+          for n in $(gh pr list --repo "$REPO" --author app/dependabot --state open --json number,autoMergeRequest                      --jq '.[] | select(.autoMergeRequest != null) | .number'); do
+            for attempt in 1 2 3 4 5 6; do
+              state="$(gh pr view "$n" --repo "$REPO" --json mergeStateStatus --jq .mergeStateStatus)"
+              [ "$state" != "UNKNOWN" ] && break
+              sleep 10
+            done
+            echo "#$n: $state"
+            if [ "$state" = "BEHIND" ]; then
+              gh api -X PUT "repos/$REPO/pulls/$n/update-branch" >/dev/null && echo "  updated onto main" || echo "::warning::could not update #$n"
+            fi
           done
