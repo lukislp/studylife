@@ -1,3 +1,10 @@
+## [3.16.6](https://github.com/lukislp/studylife/compare/v3.16.5...v3.16.6) (2026-09-12)
+
+
+### Bug Fixes
+
+* **ci:** bump the deployment image tag from the pipeline instead of Flux ([#186](https://github.com/lukislp/studylife/issues/186)) ([85ac774](https://github.com/lukislp/studylife/commit/85ac7746f3bd792d486033534a968fb86dce9a8d))
+
 ## [3.16.5](https://github.com/lukislp/studylife/compare/v3.16.4...v3.16.5) (2026-09-12)
 
 
