@@ -279,7 +279,10 @@ public static class ApiKeyScopes
         foreach (var raw in scopes.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
             var parts = raw.Split('.', 2);
-            if (parts.Length == 2) result.Add(new Endpoint(parts[0], parts[1]));
+            // "." or "Auth." would otherwise become an Endpoint with an empty half - a scope that
+            // can never match anything and only clutters the granted set (found by the property
+            // test in tests/StudyLife.Server.Tests/PropertyBased).
+            if (parts.Length == 2 && parts[0].Length > 0 && parts[1].Length > 0) result.Add(new Endpoint(parts[0], parts[1]));
         }
         return result;
     }
