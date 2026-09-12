@@ -80,6 +80,13 @@ self.addEventListener('fetch', event => {
     );
 });
 
+// The page's update flow (Shared/MainLayout.razor.js) asks a worker that finished installing
+// but is still waiting to take over right away, so the reload it is about to do lands on
+// the new precache instead of the old one.
+self.addEventListener('message', event => {
+    if (event.data === 'SKIP_WAITING') self.skipWaiting();
+});
+
 self.addEventListener('push', event => {
     let data = {};
     try { data = event.data ? event.data.json() : {}; } catch { data = { title: 'StudyLife', body: event.data ? event.data.text() : '' }; }

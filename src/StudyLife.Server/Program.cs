@@ -847,7 +847,25 @@ app.Use(async (context, next) =>
 });
 
 app.UseBlazorFrameworkFiles();
-app.UseStaticFiles();
+// Everything else under wwwroot keeps a stable URL across deploys (index.html, service-worker.js
+// and the per-build asset list it imports, js/*.js, the collocated *.razor.js modules, css, the
+// i18n tables). Without an explicit policy a browser applies heuristic freshness - a tenth of the
+// time since Last-Modified - and happily kept a days-old index.html/service-worker-assets.js for
+// hours after a deploy: the service worker saw no change, "reload for update" came back under the
+// old worker and only Ctrl+F5 helped. no-cache keeps the entries but forces an ETag revalidation
+// (a cheap 304) on every use; the few fingerprinted files outside _framework stay immutable.
+var revalidateStaticFiles = new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        var headers = ctx.Context.Response.Headers;
+        if (!string.IsNullOrEmpty(headers.CacheControl)) return;
+        headers.CacheControl = fingerprintedAssetName.IsMatch(ctx.Context.Request.Path.Value ?? "")
+            ? "public, max-age=31536000, immutable"
+            : "no-cache";
+    },
+};
+app.UseStaticFiles(revalidateStaticFiles);
 app.UseRouting();
 
 // Authentication runs BEFORE the rate limiter (2026-09-11 audit): the Expensive and Telemetry
@@ -979,7 +997,7 @@ app.MapFallback("api/{**rest}", (HttpResponse response) =>
 // .AllowAnonymous(): the SPA shell itself (index.html) must stay reachable by anyone, including
 // a browser with no session yet - it's what LOADS the login screen in the first place. Without
 // this it would fall under FallbackPolicy (ApiAccess) like every other bare endpoint above.
-app.MapFallbackToFile("index.html").AllowAnonymous();
+app.MapFallbackToFile("index.html", revalidateStaticFiles).AllowAnonymous();
 
 app.Run();
 

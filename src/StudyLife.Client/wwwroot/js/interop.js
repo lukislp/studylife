@@ -370,7 +370,10 @@ async function unsubscribePush() {
 
 // Service worker for PWA
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js');
+    // updateViaCache 'none': the imported service-worker-assets.js (the per-build asset list)
+    // is fetched from the network on every update check instead of the HTTP cache, so a
+    // deploy is noticed as soon as the page asks (Shared/MainLayout.razor.js, prepareUpdate).
+    navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' });
 }
 
 function initGlobalSearchHotkey(dotnetRef) {
