@@ -343,6 +343,10 @@ Beyond the four built-in integrations above, StudyLife has a generic, data-drive
 
 [StudyLife for Home Assistant](https://github.com/lukislp/studylife-hacs) is a separate HACS custom integration that maps dashboard and evaluation data (active/next session, weekly/monthly statistics, streak including the longest ever achieved series, quotas, grade average, ECTS progress, ECTS forecast, month comparison, achievements, topic progress, course tags, course catalog, live timer phase, weekly review as an event) as sensors, binary sensors (including inactivity warning), and calendars (sessions plus course goals) in Home Assistant, plus a dropdown of active courses (`select.studylife_active_course`) and services for creating/editing/deleting sessions and course goals. The pairing runs via a per-user API key generated once on the Setup page (see [Security](#security)). Installation and details are in that repo's README.
 
+## Contributing
+
+Pull requests are welcome - [CONTRIBUTING.md](CONTRIBUTING.md) describes the process (issue first for bigger changes, Conventional Commits, tests for new functionality, the required checks) and how to run everything locally.
+
 ## Security
 
 Login runs exclusively via passkey (WebAuthn) - there is no password and no unauthenticated API access anymore. The very first registration on a fresh installation additionally requires the setup code output once to the server logs (see Deployment above); every subsequent registration (e.g. for family members) creates its own account, completely separate from other users - by default it requires an invite link created by the instance owner on the Setup page (`Registration__Mode`: `open`/`invite`/`closed`, default `invite`). A session token extends on a sliding basis with active use (90 days), but forces a fresh login after 180 days at the latest. An additional device can either be registered directly or paired via a time-limited linking code from an already logged-in device - in both cases an already logged-in device must first approve the new device via device management before it can be used.
