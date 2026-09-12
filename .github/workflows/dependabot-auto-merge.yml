@@ -47,18 +47,25 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.AUTOMERGE_TOKEN }}
           REPO: ${{ github.repository }}
-        # Only PRs that have auto-merge enabled are brought up to date - those are the ones that
-        # would otherwise stall; a PR left for a manual merge (major bump) is updated by whoever
-        # merges it. GitHub computes the merge state lazily after a push, so UNKNOWN is polled
-        # for a while before the PR is treated as up to date.
+        # The default branch requires PRs to be up to date before they merge, so every push
+        # here leaves the other open PRs "behind". This brings them back onto the tip: every
+        # non-draft PR that has auto-merge enabled or was opened by a person (a Dependabot PR
+        # left for a manual decision, i.e. a major bump, is not rebuilt on every push - whoever
+        # merges it updates it). GitHub computes the merge state lazily after a push, so UNKNOWN
+        # is polled for a while; DIRTY (conflicts) cannot be updated automatically.
         run: |
-          for n in $(gh pr list --repo "$REPO" --author app/dependabot --state open --json number,autoMergeRequest                      --jq '.[] | select(.autoMergeRequest != null) | .number'); do
+          for n in $(gh pr list --repo "$REPO" --state open --json number --jq '.[].number'); do
+            info="$(gh pr view "$n" --repo "$REPO" --json isDraft,author,autoMergeRequest --jq '"\(.isDraft) \(.author.login) \(.autoMergeRequest != null)"')"
+            set -- $info
+            draft=$1; author=$2; auto=$3
+            [ "$draft" = "true" ] && continue
+            if [ "$auto" != "true" ] && [ "$author" = "app/dependabot" ]; then continue; fi
             for attempt in 1 2 3 4 5 6; do
               state="$(gh pr view "$n" --repo "$REPO" --json mergeStateStatus --jq .mergeStateStatus)"
               [ "$state" != "UNKNOWN" ] && break
               sleep 10
             done
-            echo "#$n: $state"
+            echo "#$n ($author, auto-merge=$auto): $state"
             if [ "$state" = "BEHIND" ]; then
               gh api -X PUT "repos/$REPO/pulls/$n/update-branch" >/dev/null && echo "  updated onto main" || echo "::warning::could not update #$n"
             fi
