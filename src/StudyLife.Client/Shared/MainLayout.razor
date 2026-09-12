@@ -29,9 +29,11 @@
 
     @if (_updateAvailable)
     {
-        <!-- If the browser is still running an older WASM bundle than the server (service worker
-             cache), the toast offers a reload - the service worker has already preloaded the new
-             version in the background by this point (skipWaiting+claim). -->
+        <!-- If the browser is still running an older WASM bundle than the server, the toast offers a
+             reload. It only appears after MainLayout.razor.js's prepareUpdate let the service worker
+             fetch the new version (or gave up waiting), so the click is normally instant; when the
+             worker never saw the update, the click falls back to a hard reset instead of reloading
+             into the old bundle. -->
         <div class="update-toast" role="status" aria-live="polite">
             @if (_updateReloading)
             {
@@ -462,18 +464,42 @@
             var dto = await Http.GetFromJsonAsync<VersionResponseDto>(
                 $"api/system/version?nocache={DateTime.UtcNow.Ticks}");
             var serverVersion = dto?.Version?.Split('+')[0];
-            _updateAvailable = !string.IsNullOrEmpty(serverVersion) && serverVersion != clientVersion;
+            if (string.IsNullOrEmpty(serverVersion) || serverVersion == clientVersion) return;
+            // Detached: the precache wait below can take a while on a slow link, and the startup
+            // sequence awaiting this method still has to wire session invalidation etc.
+            _ = PrepareUpdateAndShowToastAsync();
         }
         catch { /* offline/error: no update hint, app keeps running normally */ }
+    }
+
+    /// <summary>
+    /// Lets the service worker fetch and precache the new bundle BEFORE the toast appears
+    /// (prepareUpdate resolves once the new worker controls the page, or after its wait). The old
+    /// flow showed the toast first and only started the update on click, so the click sat behind
+    /// a full precache download - or, when the browser's HTTP cache hid the update from the
+    /// worker entirely, reloaded into the same old bundle again.
+    /// </summary>
+    private async Task PrepareUpdateAndShowToastAsync()
+    {
+        try
+        {
+            _updateModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./Shared/MainLayout.razor.js");
+            await _updateModule.InvokeAsync<string>("prepareUpdate", 90000);
+        }
+        catch { /* module missing (stale index.html): the click falls back to a plain reload */ }
+        _updateAvailable = true;
+        await InvokeAsync(StateHasChanged);
     }
 
     private bool _updateReloading;
     private IJSObjectReference? _updateModule;
 
     /// <summary>
-    /// One-click update: waits (spinner visible) until the NEW service worker has loaded its
-    /// assets and taken control, then reloads exactly once - the previous immediate reload still
-    /// ran under the old worker and therefore needed two clicks.
+    /// One-click update. CheckForClientUpdateAsync already let the new service worker install and
+    /// take control before the toast appeared, so this normally reloads once, instantly. If the
+    /// worker is still installing it waits a bounded time; if the browser never saw the update
+    /// it does what Ctrl+F5 does by hand (unregister, drop caches, reload) - the old flow reloaded
+    /// under the old worker in that case and just showed the same toast again.
     /// </summary>
     private async Task ReloadForUpdateAsync()
     {
@@ -482,7 +508,10 @@
         try
         {
             _updateModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./Shared/MainLayout.razor.js");
-            await _updateModule.InvokeVoidAsync("reloadForUpdate", 120000);
+            // Instant when prepareUpdate already switched the page to the new worker; otherwise
+            // waits briefly for a running install and then falls back to the hard reset
+            // (unregister + drop caches + reload) instead of reloading into the old bundle.
+            await _updateModule.InvokeVoidAsync("reloadForUpdate", 20000);
         }
         catch
         {
