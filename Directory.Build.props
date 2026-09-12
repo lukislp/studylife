@@ -27,4 +27,12 @@
          restore agree on the server's runtime graph and its lock stays valid for both. -->
     <RuntimeIdentifiers>linux-x64;linux-arm64</RuntimeIdentifiers>
   </PropertyGroup>
+  <!--
+    Warnings are errors, repo-wide: the build is warning-free today (2026-09-12 CI audit) and
+    this keeps it that way - a new warning fails the PR instead of accumulating. Same setting
+    as the other .NET repos; analyzer levels stay at the SDK defaults.
+  -->
+  <PropertyGroup>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
 </Project>
