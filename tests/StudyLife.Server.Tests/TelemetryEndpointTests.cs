@@ -25,6 +25,11 @@ public class TelemetryEndpointNoConsentTests : IClassFixture<CustomWebApplicatio
     [Fact]
     public async Task Post_WithoutConsent_ReturnsNoContentAndRecordsNothing()
     {
+        // The StudyLife.Client meter is static (process-wide), so a listener also sees the
+        // measurements of the consenting test classes running in parallel (seen as [1, 1, 1]
+        // in CI). Only measurements tagged with this batch's unique app version can come from
+        // this request - a recorded boot always carries that tag on the boots counter.
+        var appVersion = "0.0.0-noconsent" + Guid.NewGuid().ToString("N")[..11];
         var observed = new List<long>();
         using var listener = new MeterListener
         {
@@ -33,14 +38,23 @@ public class TelemetryEndpointNoConsentTests : IClassFixture<CustomWebApplicatio
                 if (instrument.Meter.Name == ClientTelemetryMetrics.MeterName) l.EnableMeasurementEvents(instrument);
             },
         };
-        listener.SetMeasurementEventCallback<long>((_, value, _, _) => { lock (observed) observed.Add(value); });
+        listener.SetMeasurementEventCallback<long>((_, value, tags, _) =>
+        {
+            foreach (var tag in tags)
+            {
+                if (tag.Key == "app_version" && Equals(tag.Value, appVersion))
+                {
+                    lock (observed) observed.Add(value);
+                }
+            }
+        });
         listener.Start();
 
         var batch = new TelemetryBatchDto
         {
             SessionId = "abcdefghijklmnop1234",
             Platform = "web",
-            AppVersion = "1.0.0",
+            AppVersion = appVersion,
             Language = "en",
             Connection = "wifi",
             Events = new List<TelemetryEventDto> { new() { Type = "boot", Cold = true, HtmlMs = 10 } },
