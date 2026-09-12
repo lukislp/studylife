@@ -1794,20 +1794,16 @@ resource limits were reduced by hand to the ~2-3× request ratio usual here (Flu
 
 `k8s/flux/`:
 - `00-install.yaml` - the four controllers + their CRDs.
-- `01-git-source.yaml` (`GitRepository`) - points at this repo, needs write access.
-- `02-image-repository.yaml` (`ImageRepository`) - scans `ghcr.io/lukislp/studylife-server` for
-  tags every 5 minutes. Public GHCR package - no `secretRef` needed for this one.
-- `03-image-policy.yaml` (`ImagePolicy`) - selects the latest SemVer tag (semantic-release pushes
-  pure SemVer tags with no "v" prefix, e.g., `1.5.8` - other tags like `latest`/`buildcache` are
-  not valid SemVer and are automatically ignored).
-- `04-image-update-automation.yaml` (`ImageUpdateAutomation`) - commits the new tag directly to
-  `main` (no intermediate PR step - matches the previous Watchtower behavior). The
-  commit-message template MUST use `.Changed.Objects`, not `.Updated.Images` - the latter was
-  removed in Flux 2.9.x (occurred live on the Pi cluster: "template uses removed '.Updated'
-  field").
+- `01-git-source.yaml` (`GitRepository`) - points at this repo, read access only (public repo,
+  no token). Until 2026-09-12 Flux's image-automation-controller pushed the new image tag into
+  `main` itself with a personal access token; that automation (`ImageRepository`/`ImagePolicy`/
+  `ImageUpdateAutomation`) is gone. The released tag is now written into `04-web.yaml` /
+  `05-worker.yaml` by the `deploy-bump` job of `.github/workflows/ci-cd.yml`, right after the
+  multi-arch image exists and passed the Trivy gate, pushing over the same deploy key
+  semantic-release uses - so nothing in the cluster holds a write credential for the repo.
 - `05-kustomization.yaml` (`Kustomization`, `kustomize.toolkit.fluxcd.io`) - closes the last gap:
-  `04-image-update-automation.yaml` commits the new tag to the Git repo, but never applies it to
-  the cluster. Points at `k8s/flux/deploy/` (NOT the rest of `k8s/`, which still contains
+  the `deploy-bump` CI job commits the new tag to the Git repo, but nothing applies it to
+  the cluster by itself. Points at `k8s/flux/deploy/` (NOT the rest of `k8s/`, which still contains
   placeholders); `prune: true` is safe here since the scope is limited exactly to the resources
   referenced there via `kustomization.yaml`.
 - `deploy/kustomization.yaml` - references `../../04-web.yaml`/`../../05-worker.yaml` via a
