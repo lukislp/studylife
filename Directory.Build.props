@@ -7,10 +7,17 @@
     Pinned-Dependencies). Dependabot updates the lock files together with the csproj versions.
     Locally, a plain `dotnet restore` refreshes the locks after a package change.
   -->
-  <PropertyGroup>
+  <PropertyGroup Condition="'$(MSBuildProjectName)' != 'StudyLife.Client'">
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <RestoreLockedMode Condition="'$(CI)' == 'true'">true</RestoreLockedMode>
   </PropertyGroup>
+  <!--
+    The Blazor WebAssembly client is the one project without a lock file: the WebAssembly SDK
+    adds implicit package references (Microsoft.NET.Sdk.WebAssembly.Pack, ILLink.Tasks, the
+    Internal.Assets pack) whose versions follow the installed SDK patch, so a lock written by
+    one SDK fails locked-mode restore on the next patch. Its own package references are pinned
+    to exact versions in the csproj and it ships no server-side code.
+  -->
   <!--
     The server is published for linux-x64 and linux-arm64 (ci-cd.yml, publish-server). A
     `dotnet publish -r <rid>` restores the server AND the libraries it references with that
