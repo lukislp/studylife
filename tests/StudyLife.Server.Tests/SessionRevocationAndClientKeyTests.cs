@@ -114,7 +114,9 @@ public class RecoveryLoginRevocationTests : IClassFixture<CustomWebApplicationFa
 
         Assert.Equal(HttpStatusCode.Unauthorized, await SessionTestHelpers.ProbeAsync(stale));
         Assert.Equal(HttpStatusCode.Unauthorized, await SessionTestHelpers.ProbeAsync(seeded));
-        using var fresh = SessionTestHelpers.ClientWithSession(_factory, issued!.Token);
+        Assert.NotNull(issued);
+        Assert.False(string.IsNullOrEmpty(issued.Token));
+        using var fresh = SessionTestHelpers.ClientWithSession(_factory, issued.Token);
         Assert.Equal(HttpStatusCode.OK, await SessionTestHelpers.ProbeAsync(fresh));
     }
 }
