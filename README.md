@@ -370,7 +370,7 @@ Runs as GitHub Actions (`.github/workflows/ci-cd.yml`) on every push to `main` a
 | docker | `trivy-server` | Container vulnerability scan (Trivy) of the freshly published image, informational only (does not block the pipeline) |
 | release | `semantic-release` | Real semantic-release run: publishes the GitHub release + changelog, commits the coverage badge, then signs `server.zip` (keyless Sigstore bundle + GitHub build provenance uploaded next to it) |
 
-`get-version` through `semantic-release` form a serialized release chain (`concurrency: studylife-release-chain`) and only run on pushes to `main`, never on pull requests.
+`get-version` through `semantic-release` form a serialized release chain (`concurrency: studylife-release-chain`) and only run on pushes to `main`, never on pull requests. Pull requests merge through GitHub's merge queue: every queued PR is rebuilt on top of the current `main` (the `merge_group` trigger runs the test stage again) before it lands, so a merge can never be tested against a stale base.
 
 Versioning via Conventional Commits:
 - feat: minor version
