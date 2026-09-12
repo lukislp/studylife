@@ -27,6 +27,7 @@ jobs:
   # ---------------------------------------------------------------------
   test-unit:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -88,6 +89,7 @@ jobs:
 
   test-i18n:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -102,6 +104,7 @@ jobs:
 
   test-lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -120,6 +123,7 @@ jobs:
 
   test-security:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -175,6 +179,7 @@ jobs:
   # fails the PR, the same way test-lint fails an unformatted diff.
   test-openapi-contract:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -207,6 +212,7 @@ jobs:
   # migration/seeding side effects.
   test-ef-migrations:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -238,6 +244,7 @@ jobs:
     # instead, on the plain runner image, which already ships `kubectl` (used for `kubectl
     # kustomize`, no separate `kustomize` CLI install needed).
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: docker run --rm -v "${{ github.workspace }}:/repo" -w /repo ghcr.io/yannh/kubeconform:latest-alpine -summary -ignore-missing-schemas k8s/
@@ -256,6 +263,7 @@ jobs:
 
   test-compose-scale:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # Pure syntax/interpolation check (no startup) - catches broken YAML or wrong
@@ -270,6 +278,7 @@ jobs:
     # a missing Postgres twin migration still built, released and shipped to the cluster.
     needs: [test-unit, test-i18n, test-lint, test-security, test-openapi-contract, test-ef-migrations, test-k8s-manifests, test-compose-scale]
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -292,6 +301,7 @@ jobs:
     needs: [build]
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     concurrency:
       group: studylife-release-chain
       cancel-in-progress: false
@@ -385,6 +395,7 @@ jobs:
     needs: [build, get-version]
     if: github.event_name == 'push' && needs.get-version.outputs.published == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     concurrency:
       group: studylife-release-chain
       cancel-in-progress: false
@@ -448,6 +459,7 @@ jobs:
             platform: linux/arm64
             runner: ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
     permissions:
       contents: read
       packages: write
@@ -504,6 +516,7 @@ jobs:
     needs: [get-version, docker-server, trivy-server]
     if: github.event_name == 'push' && needs.get-version.outputs.published == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     concurrency:
       group: studylife-release-chain
       cancel-in-progress: false
@@ -581,6 +594,7 @@ jobs:
     needs: [get-version, docker-manifest-merge]
     if: github.event_name == 'push' && needs.get-version.outputs.published == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     concurrency:
       group: studylife-release-chain
       cancel-in-progress: false
@@ -642,6 +656,7 @@ jobs:
     needs: [get-version, docker-server]
     if: github.event_name == 'push' && needs.get-version.outputs.published == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     concurrency:
       group: studylife-release-chain
       cancel-in-progress: false
@@ -687,6 +702,7 @@ jobs:
     needs: [get-version, publish-server]
     if: github.event_name == 'push' && needs.get-version.outputs.published == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     concurrency:
       group: studylife-release-chain
       cancel-in-progress: false
