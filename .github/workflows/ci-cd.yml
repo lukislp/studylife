@@ -292,16 +292,8 @@ jobs:
         with:
           fetch-depth: 0
           ref: main
-      # semantic-release via a pinned package.json + lockfile instead of the marketplace action:
-      # the action installed semantic-release and every extra plugin from the npm registry on each
-      # run (no cache, ~1-6 min depending on registry mood - 5m56s observed on 2026-09-04). npm ci
-      # against the committed lockfile with setup-node's npm cache restores the same tree in
-      # seconds and makes the exact versions reviewable in git (Dependabot bumps them via PR).
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci --no-audit --no-fund
+      # semantic-release runs from lukislp/ci-workflows' pinned toolchain (lock file in the action,
+      # Dependabot bumps it there) instead of a registry install per run or a package.json here.
       # Ruleset bypass for the release commit (2026-09-11 audit, finding 2): main is protected by
       # a ruleset (pull request + green test stage) that the GitHub Actions app cannot be a
       # bypass actor for on a personal repository, so @semantic-release/git pushes over SSH as a
@@ -313,32 +305,14 @@ jobs:
         uses: lukislp/ci-workflows/.github/actions/deploy-key-push@f3d5b5b26069f5678e813b2bc7440cb441aa28d0 # v1.1.0
         with:
           deploy-key: ${{ secrets.SEMANTIC_RELEASE_DEPLOY_KEY }}
-      # Same outputs the action used to provide (new_release_version / new_release_published),
-      # derived from semantic-release's own dry-run log line. A dry run that FAILS (e.g. the
-      # verifyConditions token check) still fails this step via pipefail - only "no relevant
-      # changes" maps to published=false. That case exits non-zero from `npx semantic-release
-      # --dry-run` too (observed 2026-09-11 on a ci:-only push: "There are no relevant changes,
-      # so no new version is released." followed by exit code 1), so it is recognised by its log
-      # line and treated as the expected no-release outcome instead of a red job.
+      # The action derives new_release_version / new_release_published from semantic-release's
+      # own dry-run log line and treats "no relevant changes" (which exits non-zero, observed
+      # 2026-09-11 on a ci:-only push) as the expected no-release outcome, not a red job.
       - id: semrel
-        run: |
-          set -o pipefail
-          if ! npx semantic-release --dry-run 2>&1 | tee semrel-dry-run.log; then
-            grep -q 'no new version is released' semrel-dry-run.log || exit 1
-          fi
-          # `|| true`: the run step's shell is `bash -e` and pipefail is on, so an empty grep in
-          # the no-release case would otherwise abort the step right here (the second half of
-          # the 2026-09-11 red-job cause, the first half being the exit code handled above).
-          NEXT="$(grep -oE 'The next release version is [0-9]+\.[0-9]+\.[0-9]+' semrel-dry-run.log | tail -1 | awk '{print $NF}' || true)"
-          if [ -n "$NEXT" ]; then
-            echo "new_release_published=true" >> "$GITHUB_OUTPUT"
-            echo "new_release_version=$NEXT" >> "$GITHUB_OUTPUT"
-          else
-            echo "new_release_published=false" >> "$GITHUB_OUTPUT"
-            echo "new_release_version=" >> "$GITHUB_OUTPUT"
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: lukislp/ci-workflows/.github/actions/semantic-release@c1dd49d3d005e8912ab3420d5fdd7f3d9ee16adf # v1.2.2
+        with:
+          dry-run: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: No release needed for this push
         if: steps.semrel.outputs.new_release_published != 'true'
         run: |
@@ -675,16 +649,8 @@ jobs:
           name: coverage-badge
           path: coverage-artifact
       - run: mkdir -p .github/badges && mv coverage-artifact/coverage-badge.json .github/badges/coverage.json
-      # semantic-release via a pinned package.json + lockfile instead of the marketplace action:
-      # the action installed semantic-release and every extra plugin from the npm registry on each
-      # run (no cache, ~1-6 min depending on registry mood - 5m56s observed on 2026-09-04). npm ci
-      # against the committed lockfile with setup-node's npm cache restores the same tree in
-      # seconds and makes the exact versions reviewable in git (Dependabot bumps them via PR).
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci --no-audit --no-fund
+      # semantic-release runs from lukislp/ci-workflows' pinned toolchain (lock file in the action,
+      # Dependabot bumps it there) instead of a registry install per run or a package.json here.
       # Ruleset bypass for the release commit (2026-09-11 audit, finding 2): main is protected by
       # a ruleset (pull request + green test stage) that the GitHub Actions app cannot be a
       # bypass actor for on a personal repository, so @semantic-release/git pushes over SSH as a
@@ -697,9 +663,9 @@ jobs:
         with:
           deploy-key: ${{ secrets.SEMANTIC_RELEASE_DEPLOY_KEY }}
       - id: semrel
-        run: npx semantic-release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: lukislp/ci-workflows/.github/actions/semantic-release@c1dd49d3d005e8912ab3420d5fdd7f3d9ee16adf # v1.2.2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
       # Retry once for the narrow window where an out-of-band push to main landed between
       # this job's checkout and its own push (the concurrency group above already serializes
@@ -717,9 +683,9 @@ jobs:
           fi
           git checkout -B main origin/main
       - if: steps.semrel.outcome == 'failure'
-        run: npx semantic-release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: lukislp/ci-workflows/.github/actions/semantic-release@c1dd49d3d005e8912ab3420d5fdd7f3d9ee16adf # v1.2.2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       # Signed release asset (OpenSSF Scorecard "Signed-Releases"): the same keyless Sigstore
       # signing the container images get, applied to server.zip, plus GitHub build provenance.
       # Both bundles are uploaded next to the asset so a download can be verified offline:
