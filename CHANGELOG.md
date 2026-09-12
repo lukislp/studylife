@@ -1,3 +1,10 @@
+## [3.16.7](https://github.com/lukislp/studylife/compare/v3.16.6...v3.16.7) (2026-09-12)
+
+
+### Bug Fixes
+
+* **auth:** skip scope tokens with an empty controller or action ([#193](https://github.com/lukislp/studylife/issues/193)) ([dddfd26](https://github.com/lukislp/studylife/commit/dddfd269aeae5d769c4ff2679efcfb05be8b706a))
+
 ## [3.16.6](https://github.com/lukislp/studylife/compare/v3.16.5...v3.16.6) (2026-09-12)
 
 
