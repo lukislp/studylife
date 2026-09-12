@@ -1,3 +1,10 @@
+## [3.16.5](https://github.com/lukislp/studylife/compare/v3.16.4...v3.16.5) (2026-09-12)
+
+
+### Bug Fixes
+
+* **build:** keep the shared libraries runtime-neutral and unlocked ([#184](https://github.com/lukislp/studylife/issues/184)) ([b468c03](https://github.com/lukislp/studylife/commit/b468c0366210cd9e3238ba2db6d392947241bd1f))
+
 ## [3.16.4](https://github.com/lukislp/studylife/compare/v3.16.3...v3.16.4) (2026-09-11)
 
 
