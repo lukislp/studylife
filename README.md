@@ -363,7 +363,7 @@ Runs as GitHub Actions (`.github/workflows/ci-cd.yml`) on every push to `main` a
 | test | `test-security` | NuGet vulnerability scan (non-blocking, fails visibly on High/Critical) |
 | test | `test-k8s-manifests` | `kubeconform` schema validation of `k8s/` |
 | test | `test-compose-scale` | Syntax/interpolation check of `docker-compose.scale.yml` |
-| build | `build` | Restore and build all projects (needs all test jobs to pass) |
+| build | `build` | Restore (`--locked-mode` against the committed `packages.lock.json` files, like every restore in CI) and build all projects (needs all test jobs to pass) |
 | version | `get-version` | Semantic Release dry run against Conventional Commits; fails the run if no releasable version is determined. Push events only |
 | publish | `publish-server` | `dotnet publish` (linux-x64 + linux-arm64) + ZIP artifact. Push to `main` only, and only if `get-version` found a releasable version |
 | docker | `docker-server` | Multi-arch (amd64/arm64) Docker image, built and pushed to the public `ghcr.io/lukislp/studylife-server` registry |

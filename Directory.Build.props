@@ -1,0 +1,24 @@
+<Project>
+  <!--
+    NuGet lock files (packages.lock.json next to every project): restore resolves exactly the
+    recorded package graph, and in CI (GitHub Actions sets CI=true) the restore fails instead
+    of silently updating the lock when a csproj and its lock file disagree - so a moved or
+    re-published package version can never change what gets built (OpenSSF Scorecard
+    Pinned-Dependencies). Dependabot updates the lock files together with the csproj versions.
+    Locally, a plain `dotnet restore` refreshes the locks after a package change.
+  -->
+  <PropertyGroup>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode Condition="'$(CI)' == 'true'">true</RestoreLockedMode>
+  </PropertyGroup>
+  <!--
+    The server is published for linux-x64 and linux-arm64 (ci-cd.yml, publish-server). A
+    `dotnet publish -r <rid>` restores the server AND the libraries it references with that
+    runtime, so the same RID set is declared on all of them: a plain restore then records the
+    same runtime graph in the lock files that the publish restore expects (NU1004 otherwise).
+    The Blazor client keeps its own browser-wasm runtime, tests are never published.
+  -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'StudyLife.Server' or '$(MSBuildProjectName)' == 'StudyLife.Shared' or '$(MSBuildProjectName)' == 'StudyLife.Stt' or '$(MSBuildProjectName)' == 'StudyLife.Tts'">
+    <RuntimeIdentifiers>linux-x64;linux-arm64</RuntimeIdentifiers>
+  </PropertyGroup>
+</Project>
