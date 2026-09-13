@@ -1,3 +1,5 @@
+## [3.16.11](https://github.com/lukislp/studylife/compare/v3.16.10...v3.16.11) (2026-09-13)
+
 ## [3.16.10](https://github.com/lukislp/studylife/compare/v3.16.9...v3.16.10) (2026-09-13)
 
 
