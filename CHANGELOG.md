@@ -1,3 +1,11 @@
+## [3.16.12](https://github.com/lukislp/studylife/compare/v3.16.11...v3.16.12) (2026-09-13)
+
+
+### Bug Fixes
+
+* **k8s:** pin the redis image by digest ([#215](https://github.com/lukislp/studylife/issues/215)) ([be416fc](https://github.com/lukislp/studylife/commit/be416fc5bf06b625e79638d998863e03fbd86835))
+* **k8s:** raise CNPG backup retention to 30d and the data volume to 4Gi ([#216](https://github.com/lukislp/studylife/issues/216)) ([656f378](https://github.com/lukislp/studylife/commit/656f3789e46676b3dde2fcb1f727f0b5e2c86fca))
+
 ## [3.16.11](https://github.com/lukislp/studylife/compare/v3.16.10...v3.16.11) (2026-09-13)
 
 ## [3.16.10](https://github.com/lukislp/studylife/compare/v3.16.9...v3.16.10) (2026-09-13)
