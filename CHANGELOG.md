@@ -1,3 +1,11 @@
+## [3.16.19](https://github.com/lukislp/studylife/compare/v3.16.18...v3.16.19) (2026-09-13)
+
+
+### Bug Fixes
+
+* **k8s:** seal redis-auth so it survives a cluster rebuild ([#226](https://github.com/lukislp/studylife/issues/226)) ([b2441b8](https://github.com/lukislp/studylife/commit/b2441b898b35f33771d33d4869c497a36336449a))
+* **k8s:** seal studylife-apns so it survives a cluster rebuild ([#225](https://github.com/lukislp/studylife/issues/225)) ([7015c15](https://github.com/lukislp/studylife/commit/7015c15c24db7666a3dba519663397e25e00885f))
+
 ## [3.16.18](https://github.com/lukislp/studylife/compare/v3.16.17...v3.16.18) (2026-09-13)
 
 
