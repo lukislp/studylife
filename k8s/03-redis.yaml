@@ -153,7 +153,17 @@ spec:
               mountPath: /data
       containers:
         - name: redis
-          image: redis:7-alpine
+          # Pinned by digest instead of the floating "7-alpine" tag: with a floating tag every
+          # pull can silently swap the binary under these 6 pods, and supply-chain scanners
+          # (OpenSSF Scorecard "Pinned-Dependencies") cannot tell what actually ran. The digest
+          # is the multi-arch INDEX digest (not the arm64 platform digest), so the manifest stays
+          # portable across architectures. It is the exact image the cluster was already running
+          # when this pin was introduced - redis 7.4.9-alpine - so this is bit-for-bit the same
+          # binary, not an upgrade in disguise (7.4.11-alpine is the newer upstream build).
+          # Tag AND digest on purpose: the digest is what gets pulled, the tag is the human- and
+          # Renovate-readable version. Renovate's kubernetes manager (renovate.json) moves both
+          # together from here, so updates stay a reviewable pull request.
+          image: redis:7.4.9-alpine@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99
           # Redis AUTH (audit O6 round 2, enabled 2026-09 via the zero-downtime ACL path in
           # docs/SCALING.md "Redis AUTH"): requirepass locks the default user, masterauth lets
           # each replica keep authenticating to its master (replication runs over the regular
