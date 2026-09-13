@@ -35,7 +35,7 @@ public class BackgroundTaskServiceAchievementCrossesThresholdTests : IClassFixtu
         await BackgroundTaskTestSettings.PutAsync(_client, s => s.AchievementNotificationsEnabled = true);
         await _client.PostAsJsonAsync("/api/push/subscribe",
             new PushSubscribeRequest($"https://push.example.com/{Guid.NewGuid():N}", "p256dh-key-value", "auth-key-value"));
-        // Two sessions instead of a single 29h session (SessionsController.Validate() no longer
+        // Two sessions instead of a single 29h session (SessionService.Validate() no longer
         // allows such a long single session since the 24h plausibility limit) - together
         // still 29h, crossing the 25h threshold just the same.
         var start1 = DateTime.Now.AddHours(-40);

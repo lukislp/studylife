@@ -8,7 +8,7 @@ using StudyLife.Shared;
 
 namespace StudyLife.Server.Tests;
 
-// ── Feature 2: instant feedback on a new record (SessionsController.CheckNewRecordAsync) ───────
+// ── Feature 2: instant feedback on a new record (SessionService.CheckNewRecordAsync) ───────
 // Runs directly in the Create/Update request handler, not via the BackgroundTaskService polling
 // cycle. Record detection ("longest single session so far") compares GLOBALLY across ALL
 // sessions in the DB (not per course) - each scenario therefore needs its OWN, untouched
@@ -257,7 +257,7 @@ public class SessionsControllerNewRecordVeryFirstSessionTests : IClassFixture<Cu
         await SubscribeAsync();
 
         // Trivial "record" without any comparison basis - deliberately no push, see the
-        // CheckNewRecordAsync comment in SessionsController.cs. Own factory/DB, so this is
+        // CheckNewRecordAsync comment in SessionService.cs. Own factory/DB, so this is
         // guaranteed to really be the very first session in the database.
         var first = await CreateCompletedAsync(1, DateTime.Now.AddDays(-1), TimeSpan.FromHours(3));
 

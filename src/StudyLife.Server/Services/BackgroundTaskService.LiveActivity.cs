@@ -29,7 +29,7 @@ public partial class BackgroundTaskService
         if (state is not { IsRunning: true, PhaseEndsAt: { } phaseEndsAt }) return;
         if (state.LiveActivityPushToken is not { Length: > 0 } token) return;
 
-        // Local server time as everywhere else in the timer context (TimerStateController.Get/
+        // Local server time as everywhere else in the timer context (TimerStateService.GetAsync/
         // PushStateAsync in the client) - PhaseEndsAt was written in the same time base.
         var now = LocalNow;
         if (now < phaseEndsAt) return;

@@ -6,7 +6,7 @@ namespace StudyLife.Server.Services;
 /// <summary>
 /// Full-text search via SQLite FTS5 (external content table NotesFts, see migration
 /// AddNotesFts). Result is relevance-sorted (bm25 "rank"). Moved here 1:1 from
-/// NotesController.Search (scalability branch) - behavior unchanged.
+/// NoteService.SearchAsync (scalability branch) - behavior unchanged.
 /// </summary>
 public class SqliteFts5SearchStrategy : INoteSearchStrategy
 {

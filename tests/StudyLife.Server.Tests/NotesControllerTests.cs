@@ -513,7 +513,7 @@ public class NotesControllerTests : IClassFixture<CustomWebApplicationFactory>
 
 /// <summary>
 /// M1 regression: RelatedNoteIds used to be parsed with bare int.Parse in
-/// NotesController.ToDto - written by the EXTERNAL studylife-ai capture-enrichment path
+/// NoteService.ToDto - written by the EXTERNAL studylife-ai capture-enrichment path
 /// (BackgroundTaskService.CaptureEnrichment), so a single malformed suggestion from there made
 /// GET /api/notes throw 500 permanently for every note, not just the poisoned one (ToDto runs
 /// per-row inside the same LINQ projection). Own factory: poisons the row directly via the

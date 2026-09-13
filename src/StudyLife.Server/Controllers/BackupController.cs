@@ -215,15 +215,15 @@ public class BackupController : ControllerBase
     public async Task<IActionResult> Export()
     {
         var sessions = await _db.Sessions.AsNoTracking()
-            .Select(s => SessionsController.ToDto(s)).ToListAsync();
+            .Select(s => SessionService.ToDto(s)).ToListAsync();
         var notes = await _db.Notes.AsNoTracking()
             .OrderByDescending(n => n.UpdatedAt)
-            .Select(n => NotesController.ToDto(n)).ToListAsync();
+            .Select(n => NoteService.ToDto(n)).ToListAsync();
         var courseGoals = await _db.CourseGoals.AsNoTracking()
-            .Select(g => CourseGoalsController.ToDto(g)).ToListAsync();
+            .Select(g => CourseGoalService.ToDto(g)).ToListAsync();
         var courseResources = await _db.CourseResources.AsNoTracking()
             .OrderBy(r => r.CreatedAt)
-            .Select(r => CourseResourcesController.ToDto(r)).ToListAsync();
+            .Select(r => CourseResourceService.ToDto(r)).ToListAsync();
         var settingsEntity = await _db.Settings.AsNoTracking().FirstOrDefaultAsync();
         var settings = SettingsController.ToDto(settingsEntity ?? new UserSettingsEntity());
         var studyPrograms = await _db.StudyPrograms.AsNoTracking()
@@ -260,7 +260,7 @@ public class BackupController : ControllerBase
             }).ToListAsync();
         var sessionTemplates = await _db.SessionTemplates.AsNoTracking()
             .OrderBy(t => t.Name)
-            .Select(t => SessionTemplatesController.ToDto(t)).ToListAsync();
+            .Select(t => SessionTemplateService.ToDto(t)).ToListAsync();
 
         var export = new BackupExportDto
         {
@@ -625,7 +625,7 @@ public class BackupController : ControllerBase
                 newActiveStudyProgramId = mappedProgramId;
             else
                 // Falls back to the built-in program (null), same as when an active program is
-                // deleted elsewhere (StudyProgramsController.Delete).
+                // deleted elsewhere (StudyProgramService.DeleteAsync).
                 Drop("settingsActiveStudyProgramRef");
         }
         _db.Settings.Add(new UserSettingsEntity

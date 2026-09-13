@@ -322,7 +322,7 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
 
     /// <summary>Inserts a session directly via EF with a custom-range CourseId that has no
     /// matching CustomCourseEntity - simulates "the custom course this session pointed at was
-    /// later deleted", bypassing SessionsController.Create's own (now enforced) validation on
+    /// later deleted", bypassing SessionService.CreateAsync's own (now enforced) validation on
     /// purpose, exactly like a real deletion would leave the row behind.</summary>
     private async Task<StudySessionDto> CreateOrphanSessionDirectlyAsync(int orphanCourseId, string courseName)
     {
@@ -825,8 +825,8 @@ public class SessionsControllerHistoryWindowBoundaryTests : IClassFixture<Custom
 }
 
 /// <summary>
-/// Same fix, same rationale, applied to the ICS export's -7/+90 day window (SessionsController.
-/// GetIcs) - see SessionsControllerHistoryWindowBoundaryTests for the full explanation of the
+/// Same fix, same rationale, applied to the ICS export's -7/+90 day window (SessionService.
+/// BuildIcsAsync) - see SessionsControllerHistoryWindowBoundaryTests for the full explanation of the
 /// bug and why the assertions below hold in both a UTC and a non-UTC test environment.
 /// What this test pins: with the fixed -7 day past edge, a session that started 169 hours (7
 /// days + 1h) ago must be excluded from the feed, and one that started 167 hours (7 days - 1h)

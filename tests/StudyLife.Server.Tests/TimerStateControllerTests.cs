@@ -210,7 +210,7 @@ public class TimerStateControllerTests : IClassFixture<CustomWebApplicationFacto
         stale.ClientSequence = baselineSeq - 1000; // clearly older than the baseline just written
 
         var staleResponse = await _client.PutAsJsonAsync("/api/timerstate", stale);
-        Assert.Equal(HttpStatusCode.OK, staleResponse.StatusCode); // dropped silently, not 409 - see TimerStateController.Save
+        Assert.Equal(HttpStatusCode.OK, staleResponse.StatusCode); // dropped silently, not 409 - see TimerStateService.SaveAsync
         var staleResult = await staleResponse.Content.ReadFromJsonAsync<TimerStateDto>();
 
         // The response reflects the CURRENT (baseline) row, not the stale payload that was sent.

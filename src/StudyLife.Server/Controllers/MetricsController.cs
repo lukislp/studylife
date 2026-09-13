@@ -90,11 +90,11 @@ public class MetricsController : ControllerBase
         var scoped = (await _db.Sessions.AsNoTracking()
                 .Where(s => activeCourseIds.Contains(s.CourseId))
                 .ToListAsync())
-            .Select(SessionsController.ToDto).ToList();
+            .Select(SessionService.ToDto).ToList();
         var studiedHistory = scoped.Where(s => StudyMetrics.IsStudied(s, asOf)).ToList();
 
         var goals = await _db.CourseGoals.AsNoTracking()
-            .Select(g => CourseGoalsController.ToDto(g)).ToListAsync();
+            .Select(g => CourseGoalService.ToDto(g)).ToListAsync();
         goals = goals.Where(g => activeCourseIds.Contains(g.CourseId)).ToList();
 
         var today = asOf.Date;
@@ -229,7 +229,7 @@ public class MetricsController : ControllerBase
         var studiedHistory = (await _db.Sessions.AsNoTracking()
                 .Where(s => activeCourseIds.Contains(s.CourseId))
                 .ToListAsync())
-            .Select(SessionsController.ToDto)
+            .Select(SessionService.ToDto)
             .Where(s => StudyMetrics.IsStudied(s, now))
             .ToList();
 

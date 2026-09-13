@@ -21,7 +21,7 @@ public class CourseGoalsControllerTests : IClassFixture<CustomWebApplicationFact
     public CourseGoalsControllerTests(CustomWebApplicationFactory factory) => _client = factory.CreateClient();
 
     /// <summary>The name a valid write actually persists - the built-in catalog's own name for
-    /// courseId, since CourseGoalsController.Save now derives CourseName server-side instead of
+    /// courseId, since CourseGoalService.SaveAsync now derives CourseName server-side instead of
     /// trusting the client-supplied value.</summary>
     private static string ExpectedCourseName(int courseId) =>
         CourseCatalog.AppliedAICourses.First(c => c.Id == courseId).Name;

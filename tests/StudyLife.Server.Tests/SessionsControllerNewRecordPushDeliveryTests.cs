@@ -17,7 +17,7 @@ using StudyLife.Shared;
 
 namespace StudyLife.Server.Tests;
 
-// ── Delivery paths of SessionsController.SendNewRecordPushAsync ──────────────────────────────
+// ── Delivery paths of SessionService.SendNewRecordPushAsync ──────────────────────────────
 // The NewRecord*Tests classes cover WHEN a record push is triggered (dedup key in
 // SentReminders); these classes cover HOW it is delivered: real WebPush send (success and
 // 410-Gone cleanup) and the APNs branch with an enabled sender. Same rule as over there:

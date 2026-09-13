@@ -114,7 +114,7 @@ public class StudyLifeDb : DbContext
         // "One row per user" enforced at the DB level (bug fix): UserSettingsEntity/TimerStateEntity
         // were previously singleton-per-user by convention only - multiple independent
         // get-or-create call sites (SettingsController.Save, BackupController.
-        // TouchLastBackupDownloadAt, TimerStateController.Save/SetLiveActivityPushToken) could
+        // TouchLastBackupDownloadAt, TimerStateService.SaveAsync/SetLiveActivityPushTokenAsync) could
         // race on a user's very first write and each insert their own row, after which
         // FirstOrDefaultAsync picked one of the duplicates nondeterministically forever. The
         // migration adding these indexes (AddPerUserUniqueRows/-Postgres) deduplicates any
@@ -692,7 +692,7 @@ public class UserSettingsEntity
     /// SettingsController.DismissBuiltInProgram, NOT via SettingsController.Save - same
     /// dedicated-write-path rationale as ProgressShareEnabled below. That endpoint only allows
     /// setting this once the user already has at least one real (custom) StudyProgramEntity,
-    /// and StudyProgramsController.Delete refuses to remove a user's last remaining custom
+    /// and StudyProgramService.DeleteAsync refuses to remove a user's last remaining custom
     /// program once this flag is true - together they guarantee ActiveStudyProgramId is never
     /// left with nothing to fall back to. Default false, so existing users see no change.
     /// </summary>
@@ -735,7 +735,7 @@ public class UserSettingsEntity
     public bool ComebackNudgeEnabled { get; set; }
     /// <summary>
     /// Instant feedback on a new personal record (longest single session so far), triggered
-    /// directly in the request handler of SessionsController.Create/Update instead of via the
+    /// directly in the request handler of SessionService.CreateAsync/UpdateAsync instead of via the
     /// BackgroundTaskService polling cycle. Default false (opt-in, new category).
     /// </summary>
     public bool NewRecordNotificationsEnabled { get; set; }
@@ -1004,7 +1004,7 @@ public class TimerStateEntity
     public DateTime UpdatedAt { get; set; }
 
     /// <summary>Last accepted TimerStateDto.ClientSequence (audit S6), so a stale/out-of-order PUT
-    /// (see TimerStateController.Save) can be detected across separate requests, not just within
+    /// (see TimerStateService.SaveAsync) can be detected across separate requests, not just within
     /// one process's memory. Null = no sequence-carrying PUT has ever landed yet (fresh row, or
     /// every PUT so far came from a non-sequence-aware pusher like Home Assistant) - the very
     /// next sequence-carrying PUT is then always accepted (nothing to compare against).</summary>

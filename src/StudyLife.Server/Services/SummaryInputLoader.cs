@@ -25,11 +25,11 @@ public sealed class SummaryInputLoader
     public async Task<List<StudySessionDto>> LoadAllSessionsAsync()
     {
         var entities = await _db.Sessions.AsNoTracking().ToListAsync();
-        return entities.Select(SessionsController.ToDto).ToList();
+        return entities.Select(SessionService.ToDto).ToList();
     }
 
     /// <summary>
-    /// Same filter as SessionsController.GetHistory/its compiled query: sessions starting within
+    /// Same filter as SessionService.LoadHistoryAsync/its compiled query: sessions starting within
     /// the last <paramref name="days"/> days of <paramref name="now"/>, and - unless
     /// <paramref name="onlyCompleted"/> is false - only those that count as "studied" (timer-
     /// completed, or their scheduled end has already passed). GetHistory itself compares against

@@ -1,6 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using StudyLife.Server.Data;
 using StudyLife.Server.Services;
 using StudyLife.Shared;
 
@@ -15,90 +13,18 @@ namespace StudyLife.Server.Controllers;
 [Route("api/sessiontemplates")]
 public class SessionTemplatesController : ControllerBase
 {
-    private readonly StudyLifeDb _db;
-    private readonly ICourseResolver _courseResolver;
-    private readonly WebhooksProxyClient _webhooks;
-    private readonly ICurrentUserAccessor _currentUser;
+    private readonly ISessionTemplateService _templates;
 
-    public SessionTemplatesController(StudyLifeDb db, ICourseResolver courseResolver,
-        WebhooksProxyClient webhooks, ICurrentUserAccessor currentUser)
-    {
-        _db = db;
-        _courseResolver = courseResolver;
-        _webhooks = webhooks;
-        _currentUser = currentUser;
-    }
+    public SessionTemplatesController(ISessionTemplateService templates) => _templates = templates;
 
     [HttpGet]
-    public async Task<IEnumerable<SessionTemplateDto>> GetAll() =>
-        await _db.SessionTemplates.AsNoTracking().OrderBy(t => t.Name).Select(t => ToDto(t)).ToListAsync();
+    public async Task<IEnumerable<SessionTemplateDto>> GetAll() => await _templates.GetAllAsync();
 
     [HttpPost]
-    public async Task<ActionResult<SessionTemplateDto>> Create(SessionTemplateDto dto)
-    {
-        var error = Validate(dto);
-        if (error != null) return BadRequest(error);
-
-        // Audit finding M2: no PUT/update exists here (see the class doc comment), so every
-        // template creation is a fresh CourseId binding - CourseName/CourseColor are derived
-        // from the resolved course, client-supplied values are ignored.
-        var course = await _courseResolver.ResolveAsync(dto.CourseId);
-        if (course == null) return BadRequest(CourseValidationMessages.UnknownCourseId(dto.CourseId));
-
-        var entity = new SessionTemplateEntity
-        {
-            Name = dto.Name.Trim(),
-            CourseId = dto.CourseId,
-            CourseName = course.Name,
-            CourseColor = course.Color,
-            DurationMinutes = dto.DurationMinutes,
-            Topic = dto.Topic,
-            DefaultWeekday = dto.DefaultWeekday,
-            DefaultStartTime = dto.DefaultStartTime,
-            CreatedAt = DateTime.UtcNow,
-        };
-        _db.SessionTemplates.Add(entity);
-        await _db.SaveChangesAsync();
-        _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId, WebhookEventTypes.SessionTemplateCreated,
-            new { id = entity.Id, name = entity.Name, courseId = entity.CourseId }, CancellationToken.None);
-        return ToDto(entity);
-    }
+    public async Task<ActionResult<SessionTemplateDto>> Create(SessionTemplateDto dto) =>
+        (await _templates.CreateAsync(dto)).ToActionResult(this);
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
-    {
-        var entity = await _db.SessionTemplates.FindAsync(id);
-        if (entity == null) return NotFound();
-        _db.SessionTemplates.Remove(entity);
-        await _db.SaveChangesAsync();
-        _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId, WebhookEventTypes.SessionTemplateDeleted,
-            new { id = entity.Id, name = entity.Name }, CancellationToken.None);
-        return NoContent();
-    }
-
-    private static string? Validate(SessionTemplateDto dto)
-    {
-        if (string.IsNullOrWhiteSpace(dto.Name)) return "Name must not be empty.";
-        if (dto.CourseId <= 0) return "CourseId must be greater than 0.";
-        if (string.IsNullOrWhiteSpace(dto.CourseName)) return "CourseName must not be empty.";
-        if (dto.DurationMinutes <= 0) return "DurationMinutes must be greater than 0.";
-        if (dto.DefaultWeekday is < 0 or > 6) return "DefaultWeekday must be between 0 and 6.";
-        return null;
-    }
-
-    // internal instead of private: reused by BackupController (JSON export/import), same
-    // pattern as SessionsController.ToDto.
-    internal static SessionTemplateDto ToDto(SessionTemplateEntity e) => new()
-    {
-        Id = e.Id,
-        Name = e.Name,
-        CourseId = e.CourseId,
-        CourseName = e.CourseName,
-        CourseColor = e.CourseColor,
-        DurationMinutes = e.DurationMinutes,
-        Topic = e.Topic,
-        DefaultWeekday = e.DefaultWeekday,
-        DefaultStartTime = e.DefaultStartTime,
-        CreatedAt = e.CreatedAt,
-    };
+    public async Task<IActionResult> Delete(int id) =>
+        (await _templates.DeleteAsync(id)).ToNoContentResult(this);
 }
