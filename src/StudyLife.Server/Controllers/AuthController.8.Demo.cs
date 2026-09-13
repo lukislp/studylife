@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using StudyLife.Server.Data;
 using StudyLife.Server.Services;
 using StudyLife.Shared;
 
@@ -39,16 +37,9 @@ public partial class AuthController
     {
         if (!DemoModeEnabled) return NotFound();
 
-        var user = await _db.AuthUsers.AsNoTracking().OrderBy(u => u.Id).FirstOrDefaultAsync();
-        if (user is null)
+        var session = await _account.IssueDemoSessionAsync();
+        if (session is null)
             return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = "demo user not seeded" });
-
-        var now = DateTime.UtcNow;
-        // Same opportunistic cleanup as LoginComplete: a public demo issues a session per
-        // visitor, so expired rows would otherwise accumulate with nothing else pruning them.
-        await _db.AuthSessions.Where(s => s.ExpiresAt <= now || s.HardExpiresAt <= now).ExecuteDeleteAsync();
-        var token = AuthSessionService.IssueSession(_db, user.Id, now);
-        await _db.SaveChangesAsync();
-        return new PasskeyCompleteResponseDto { Token = token, DisplayName = user.DisplayName };
+        return session;
     }
 }

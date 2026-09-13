@@ -469,6 +469,9 @@ builder.Services.AddScoped<IPushService, PushService>();
 builder.Services.AddScoped<IBackupDataService, BackupDataService>();
 builder.Services.AddScoped<ICalendarTokenService, CalendarTokenService>();
 builder.Services.AddScoped<IDeveloperClientService, DeveloperClientService>();
+builder.Services.AddScoped<IAuthInviteService, AuthInviteService>();
+builder.Services.AddScoped<IAuthRecoveryService, AuthRecoveryService>();
+builder.Services.AddScoped<IAuthAccountService, AuthAccountService>();
 // Per-audience redirect_uri allow-list for the consent connect flow (2026-09 audit S1) - see
 // ConsentRedirectPolicy for the built-in shapes and the Consent:AllowedRedirectUris config.
 builder.Services.AddSingleton<ConsentRedirectPolicy>();

@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Auth;
-using StudyLife.Server.Data;
 using StudyLife.Server.Services;
 using StudyLife.Shared;
 
@@ -10,6 +8,9 @@ namespace StudyLife.Server.Controllers;
 public partial class AuthController
 {
     // ── Registration invites (owner-only, audit finding A10) ────────────────────
+    // The persistence lives in AuthInviteService; what stays here is the access control, which
+    // is exactly what must NOT move: the owner check has to answer 403 and it has to run before
+    // the service is ever asked anything.
 
     /// <summary>
     /// Owner-only, session-only, deliberately NOT [Authorize(Policy = SessionOnly)] - same
@@ -40,19 +41,7 @@ public partial class AuthController
         if (!await IsOwnerAsync()) return Forbid();
         var userId = HttpContext.SessionAuthUserId()!.Value;
 
-        var now = DateTime.UtcNow;
-        var token = AuthSessionService.GenerateToken();
-        var invite = new AuthInviteEntity
-        {
-            TokenHash = AuthSessionService.HashToken(token),
-            CreatedByUserId = userId,
-            CreatedAt = now,
-            ExpiresAt = now + RegistrationGateService.InviteLifetime,
-        };
-        _db.AuthInvites.Add(invite);
-        await _db.SaveChangesAsync();
-
-        return new CreateInviteResponseDto { Id = invite.Id, Token = token, CreatedAt = invite.CreatedAt, ExpiresAt = invite.ExpiresAt };
+        return await _invites.CreateAsync(userId);
     }
 
     /// <summary>Lists every invite (owner-only) - never the token itself, only enough for the
@@ -61,17 +50,8 @@ public partial class AuthController
     public async Task<ActionResult<List<InviteListItemDto>>> ListInvites()
     {
         if (!await IsOwnerAsync()) return Forbid();
-        return await LoadInvitesAsync(_db);
+        return await _invites.ListAsync();
     }
-
-    // internal instead of private: reused by SetupController (bundle endpoint) - the owner check
-    // above stays here (and is duplicated by the bundle) rather than moving into this helper,
-    // same "query vs. access control are separate concerns" split as everywhere else in this file.
-    internal static async Task<List<InviteListItemDto>> LoadInvitesAsync(StudyLifeDb db) =>
-        await db.AuthInvites.AsNoTracking()
-            .OrderByDescending(i => i.CreatedAt)
-            .Select(i => new InviteListItemDto { Id = i.Id, CreatedAt = i.CreatedAt, ExpiresAt = i.ExpiresAt, UsedAt = i.UsedAt })
-            .ToListAsync();
 
     /// <summary>Permanently deletes an invite (owner-only) - works on unused, used, and expired
     /// rows alike (simple cleanup/revoke, no separate "revoke" vs. "delete" distinction).</summary>
@@ -79,12 +59,6 @@ public partial class AuthController
     public async Task<IActionResult> DeleteInvite(int id)
     {
         if (!await IsOwnerAsync()) return Forbid();
-
-        var invite = await _db.AuthInvites.FirstOrDefaultAsync(i => i.Id == id);
-        if (invite is null) return NotFound();
-
-        _db.AuthInvites.Remove(invite);
-        await _db.SaveChangesAsync();
-        return NoContent();
+        return (await _invites.DeleteAsync(id)).ToNoContentResult(this);
     }
 }

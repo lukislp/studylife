@@ -1,9 +1,6 @@
-using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Auth;
-using StudyLife.Server.Data;
 using StudyLife.Server.Services;
 using StudyLife.Shared;
 
@@ -12,10 +9,8 @@ namespace StudyLife.Server.Controllers;
 public partial class AuthController
 {
     // ── Recovery codes (emergency access when a passkey is lost) ────────────────
-
-    private const int RecoveryCodeCount = 8;
-    // Without 0/O/1/I - codes are typed in from paper. 12 characters from a 32-char alphabet = 60 bits.
-    private const string RecoveryCodeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    // Generation/status/redemption live in AuthRecoveryService; what stays here is which policy
+    // each endpoint runs under and the uniform 401 the redemption answers with.
 
     /// <summary>
     /// Generates 8 fresh one-time codes and returns the plaintext EXACTLY ONCE (only hashes
@@ -28,25 +23,7 @@ public partial class AuthController
     public async Task<ActionResult<RecoveryCodesResponseDto>> GenerateRecoveryCodes()
     {
         var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-
-        await _db.RecoveryCodes.Where(c => c.AuthUserId == userId).ExecuteDeleteAsync();
-
-        var now = DateTime.UtcNow;
-        var codes = new List<string>();
-        for (var i = 0; i < RecoveryCodeCount; i++)
-        {
-            var raw = string.Concat(Enumerable.Range(0, 12)
-                .Select(_ => RecoveryCodeAlphabet[RandomNumberGenerator.GetInt32(RecoveryCodeAlphabet.Length)]));
-            codes.Add($"{raw[..4]}-{raw[4..8]}-{raw[8..]}");
-            _db.RecoveryCodes.Add(new RecoveryCodeEntity
-            {
-                AuthUserId = userId,
-                CodeHash = AuthSessionService.HashToken(raw),
-                CreatedAt = now,
-            });
-        }
-        await _db.SaveChangesAsync();
-        return new RecoveryCodesResponseDto { Codes = codes };
+        return await _recovery.GenerateAsync(userId);
     }
 
     /// <summary>Status for the setup card: how many codes are still unused, when they were created.</summary>
@@ -55,57 +32,22 @@ public partial class AuthController
     public async Task<ActionResult<RecoveryStatusDto>> GetRecoveryStatus()
     {
         var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var codes = await _db.RecoveryCodes.AsNoTracking()
-            .Where(c => c.AuthUserId == userId).ToListAsync();
-        return new RecoveryStatusDto
-        {
-            TotalCount = codes.Count,
-            UnusedCount = codes.Count(c => c.UsedAt == null),
-            CreatedAt = codes.Count > 0 ? codes.Max(c => c.CreatedAt) : null,
-        };
+        return await _recovery.GetStatusAsync(userId);
     }
 
     /// <summary>
     /// Emergency login with a one-time code (unauthenticated like login/begin - codes are
-    /// exactly the way back in without a passkey). The hash identifies the user directly
-    /// (unique index); uniformly 401 for both "unknown" and "already used". Brute force is
-    /// throttled via its own strict rate-limit partition in Program.cs.
+    /// exactly the way back in without a passkey). Uniformly 401 for every rejection:
+    /// AuthRecoveryService.RecoveryLoginAsync reports failure as a bare null precisely so
+    /// "unknown", "already used" and "lost the concurrent claim" cannot be told apart here
+    /// either. Brute force is throttled via its own strict rate-limit partition in Program.cs.
     /// </summary>
     [AllowAnonymous]
     [HttpPost("recovery/login")]
     public async Task<ActionResult<PasskeyCompleteResponseDto>> RecoveryLogin([FromBody] RecoveryLoginRequestDto request)
     {
-        var normalized = new string((request.Code ?? "")
-            .ToUpperInvariant().Where(char.IsLetterOrDigit).ToArray());
-        if (normalized.Length == 0) return Unauthorized();
-
-        var hash = AuthSessionService.HashToken(normalized);
-        var code = await _db.RecoveryCodes.FirstOrDefaultAsync(c => c.CodeHash == hash && c.UsedAt == null);
-        if (code is null) return Unauthorized();
-
-        var now = DateTime.UtcNow;
-        // Atomic single-use claim (2026-09 audit S13): the read above and this conditional UPDATE
-        // are two statements, so two concurrent redemptions of the same code both pass the read -
-        // only one of them wins the UPDATE, the other sees 0 rows and gets the same 401 as an
-        // already-used code. Same pattern as RegistrationGateService.TryConsumeInviteAsync.
-        var claimed = await _db.RecoveryCodes
-            .Where(c => c.Id == code.Id && c.UsedAt == null)
-            .ExecuteUpdateAsync(s => s.SetProperty(c => c.UsedAt, now));
-        if (claimed == 0) return Unauthorized();
-        var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == code.AuthUserId);
-        // A recovery login IS the "I lost the device that was signed in" case - every session
-        // that device (or anyone holding its token) still has must die with it. Done before the
-        // new session is issued so the fresh token is the only valid one afterwards (2026-09
-        // audit S7).
-        var priorSessions = _db.AuthSessions.Where(s => s.AuthUserId == code.AuthUserId);
-        var revokedHashes = await priorSessions.Select(s => s.TokenHash).ToListAsync();
-        await priorSessions.ExecuteDeleteAsync();
-        // Same reasoning as RevokeOtherSessionsAsync: the revoked tokens must also leave this
-        // pod's AuthSessionCache, not just the table.
-        var sessionCache = HttpContext.RequestServices.GetRequiredService<AuthSessionCache>();
-        foreach (var revokedHash in revokedHashes) sessionCache.Remove(revokedHash);
-        var token = AuthSessionService.IssueSession(_db, code.AuthUserId, now);
-        await _db.SaveChangesAsync();
-        return new PasskeyCompleteResponseDto { Token = token, DisplayName = user?.DisplayName ?? "" };
+        var result = await _recovery.RecoveryLoginAsync(request.Code);
+        if (result is null) return Unauthorized();
+        return result;
     }
 }
