@@ -15,7 +15,7 @@ namespace StudyLife.Server.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.11");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
 
             modelBuilder.Entity("StudyLife.Server.Data.AiKeyOutboxEntity", b =>
                 {
@@ -806,6 +806,10 @@ namespace StudyLife.Server.Migrations
 
                     b.Property<DateTime?>("PhaseEndsAt")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("RowVersion")
+                        .IsConcurrencyToken()
+                        .HasColumnType("INTEGER");
 
                     b.Property<int?>("SessionId")
                         .HasColumnType("INTEGER");
