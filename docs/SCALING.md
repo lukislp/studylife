@@ -1217,6 +1217,21 @@ NGINX Gateway Fabric does NOT create its own PDB for its data plane (contrary to
 assumed) - `studylife-gateway-nginx` would have been unprotected during a node drain until the
 PDB here was added.
 
+**A PDB on a 1-replica workload does not protect it, it blocks the drain** (found live, 2026-09
+cluster audit): `studylife-pg-pooler minAvailable: 1` against a Pooler with `instances: 1` sat
+permanently at `disruptionsAllowed: 0`, so `kubectl drain` of whichever node held the pooler
+never completed and needed the PDB deleted by hand first. Fixed on the workload side, not the
+PDB side - `k8s/11-pooler.yaml` is back to `instances: 2` (plus soft anti-affinity so the two
+land on different nodes), because the pooler is the app's only configured path to Postgres and
+genuinely wants the PDB. The same trap applies to any future singleton: either give it a second
+replica or give its PDB `maxUnavailable: 1` instead of `minAvailable: 1`.
+
+CNPG's automatic `studylife-pg-primary` PDB is a deliberate exception to this and is *supposed*
+to show `disruptionsAllowed: 0` - it exists to stop a drain from evicting the primary
+unannounced. The supported way to drain that node is `kubectl cnpg maintenance set` (or a
+`kubectl cnpg promote` switchover first), not removing the PDB; see homelab-infra
+`cluster/00h-pod-security-and-drain-readiness.md`.
+
 ## Connection Pooler (PgBouncer via CNPG Pooler)
 
 `k8s/11-pooler.yaml` (a CNPG `Pooler` resource, `type: rw`, `pgbouncer.poolMode: transaction`,

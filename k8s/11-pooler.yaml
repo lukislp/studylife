@@ -18,10 +18,16 @@ metadata:
 spec:
   cluster:
     name: studylife-pg
-  # 1 instead of 2 instances - lean profile for the real 2-node Pi cluster (docs/SCALING.md,
-  # "resource-saving profile"). A purely stateless proxy, rescheduled within seconds on node
-  # failure - the 2nd instance here was just a resource buffer, not a real HA gain.
-  instances: 1
+  # Back to 2 instances (was 1, "resource-saving profile" in docs/SCALING.md). The single
+  # instance turned out to have a cost the lean profile didn't account for: the
+  # studylife-pg-pooler PDB (k8s/10-pod-disruption-budgets.yaml, minAvailable: 1 of 1) reported
+  # disruptionsAllowed: 0 permanently, so "kubectl drain" of whichever node happened to hold the
+  # pooler blocked indefinitely and needed manual intervention (delete the PDB, drain, put it
+  # back). Dropping or loosening that PDB instead is not an option - this proxy is the app's ONLY
+  # configured path to Postgres (Database__ConnectionString), losing it fails every read/write.
+  # With 2 instances minAvailable: 1 becomes satisfiable: a drain evicts one and keeps serving on
+  # the other. Cost: one more 25m CPU / 32Mi RAM pod (resources block below).
+  instances: 2
   type: rw
   pgbouncer:
     poolMode: transaction
@@ -29,6 +35,18 @@ spec:
   # lean, pure proxy, values roughly analogous to Redis (k8s/03-redis.yaml), if anything lighter.
   template:
     spec:
+      # Soft (preferred) instead of hard (required) anti-affinity, same reasoning as
+      # k8s/04-web.yaml: spreads the 2 instances across nodes when several are available, but
+      # does not leave the 2nd one Pending forever on a single-node setup. Without this both
+      # could land on the same node, which would put the PDB back to blocking that node's drain.
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels: { cnpg.io/poolerName: studylife-pg-pooler }
+                topologyKey: kubernetes.io/hostname
       containers:
         - name: pgbouncer
           resources:

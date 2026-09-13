@@ -47,12 +47,17 @@ spec:
 # (k8s/01-config-and-secret.yaml) points here, not at the Postgres primary directly - this is
 # the app's ONLY configured path to the database. Losing it isn't a degraded-DB scenario, it's
 # every read/write in the app failing outright until the pod reschedules.
+#
+# "of 2" since the pooler went back to instances: 2 (k8s/11-pooler.yaml): at 1 instance this
+# exact PDB was permanently at disruptionsAllowed: 0, i.e. it didn't protect the pooler, it
+# blocked the drain of whichever node held it until someone deleted the PDB by hand. Same
+# minAvailable, but now actually satisfiable.
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: studylife-pg-pooler
   namespace: studylife-scale
 spec:
-  minAvailable: 1 # of 1
+  minAvailable: 1 # of 2
   selector:
     matchLabels: { cnpg.io/poolerName: studylife-pg-pooler }
