@@ -8,11 +8,13 @@
 # docs/SCALING.md (positive + negative test). On a real multi-node cluster with Calico/Cilium,
 # these same manifests actually take effect.
 #
-# Default-deny ingress as a baseline: no pod in the namespace may accept incoming traffic
-# unless explicitly allowed below. Egress deliberately stays open (no default-deny egress) -
-# otherwise EVERY external dependency (Cloudflare R2 for backups, possibly external APIs) would
-# have to be allowlisted individually, which would be more complexity than benefit for this
-# learning project.
+# Default-deny in BOTH directions as the baseline: no pod in the namespace may accept incoming
+# traffic, and none may open an outgoing connection, unless explicitly allowed below. Egress used
+# to stay open on the argument that allowlisting every external dependency would cost more than
+# it is worth - it turned out not to: the external dependencies collapse into a single rule
+# (outbound HTTPS, which is all Cloudflare R2, APNs and Web Push ever need), and the interesting
+# part is the in-cluster traffic, which is a short and stable list. The egress policies live in
+# the second half of this file, after the ingress ones.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -308,3 +310,214 @@ spec:
           podSelector: { matchLabels: { app: prometheus } }
       ports:
         - { protocol: TCP, port: 9464 }
+---
+# Egress default-deny for the whole namespace, the counterpart to default-deny-ingress at the
+# top of this file - the "future tightening" the allow-dns comment above anticipated. Same shape
+# as claude-queue's k8s/07-netpol.yaml, which is the reference implementation on this cluster:
+# a deny-all baseline plus one narrow policy per pod role. Each destination below is backed by
+# either the pod's own configuration (k8s/01-config-and-secret.yaml) or a connection observed on
+# the live pods.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-egress
+  namespace: studylife-scale
+spec:
+  podSelector: {}
+  policyTypes: ["Egress"]
+---
+# What the app pods (web AND worker - they run the same binary, only Worker__Enabled differs)
+# talk to. One policy for both, same selector style as allow-prometheus-to-metrics above; the
+# one thing only the worker needs, the API server, is a separate policy below so the web pods
+# do not get it.
+#
+#   - The pgbouncer pooler on 5432 - the connection string points at the studylife-pg-pooler
+#     Service (10.43.52.100), which is where the live web and worker pods' Postgres connections
+#     actually go. The CNPG instances themselves are allowed on 5432 too: a pooler outage or a
+#     connection string switched to studylife-pg-rw must not turn into a network-level failure
+#     on top of the one already happening.
+#   - redis-cluster. The app connects on 6380 (Cache__ConnectionString, ssl=true - the TLS client
+#     port from k8s/03-redis.yaml); 6379 and 16379 are allowed alongside because a Redis Cluster
+#     client follows MOVED/ASK redirects to whatever port a node announces, and the matching
+#     ingress rule (allow-app-and-self-to-redis) has always listed all three.
+#   - The OpenTelemetry collector in the monitoring namespace on 4317 - Telemetry__OtlpEndpoint
+#     is http://otel-collector.monitoring.svc.cluster.local:4317, and every web and worker pod
+#     holds an open connection to it right now. 4318 (OTLP/HTTP) is allowed as well so switching
+#     the exporter protocol does not silently stop traces at the network layer.
+#   - The three sibling services this app proxies to: studylife-ai on 8000 and 8001
+#     (StudyLifeAi__BaseUrl / __InternalBaseUrl, see AiProxyClient), studylife-developers on 8080
+#     (DeveloperProxyClient) and studylife-webhooks on 8000 (WebhooksProxyClient). Each of those
+#     namespaces already has the matching ingress allowance for exactly these ports.
+#   - Outbound HTTPS to anywhere. Three things need it and none of them can be pinned to an
+#     address: APNs (api.push.apple.com / api.sandbox.push.apple.com, HTTP/2 on 443, see
+#     ApnsSender), Web Push (the WebPush package posts to whatever endpoint each browser push
+#     service handed out - FCM, Mozilla, Apple), and Sign in with Apple key fetches. This is the
+#     same deliberately wide rule claude-queue's api-egress uses for the Anthropic API.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-app-egress
+  namespace: studylife-scale
+spec:
+  podSelector:
+    matchExpressions:
+      - { key: app, operator: In, values: [studylife-web, studylife-worker] }
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - podSelector: { matchLabels: { cnpg.io/poolerName: studylife-pg-pooler } }
+        - podSelector: { matchLabels: { cnpg.io/cluster: studylife-pg } }
+      ports:
+        - { protocol: TCP, port: 5432 }
+    - to:
+        - podSelector: { matchLabels: { app: redis-cluster } }
+      ports:
+        - { protocol: TCP, port: 6379 }
+        - { protocol: TCP, port: 6380 }
+        - { protocol: TCP, port: 16379 }
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+          podSelector: { matchLabels: { app: otel-collector } }
+      ports:
+        - { protocol: TCP, port: 4317 }
+        - { protocol: TCP, port: 4318 }
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: studylife-ai } }
+          podSelector: { matchLabels: { app: studylife-ai } }
+      ports:
+        - { protocol: TCP, port: 8000 }
+        - { protocol: TCP, port: 8001 }
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: studylife-developers } }
+          podSelector: { matchLabels: { app: studylife-developers } }
+      ports:
+        - { protocol: TCP, port: 8080 }
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: studylife-webhooks } }
+          podSelector: { matchLabels: { app: studylife-webhooks } }
+      ports:
+        - { protocol: TCP, port: 8000 }
+    - to:
+        - ipBlock: { cidr: 0.0.0.0/0 }
+      ports:
+        - { protocol: TCP, port: 443 }
+---
+# Only the worker: Worker__ReplicaCountSource=Kubernetes makes it ask the API server how many
+# replicas the Deployment has, which is how a worker pod decides which shard of the scheduled
+# work it owns (KubernetesWorkerReplicaCountProvider, BaseAddress https://kubernetes.default.svc).
+# Cutting this would not crash the worker but would silently fall back to Worker__ReplicaCount=1,
+# i.e. every replica claiming every shard.
+#
+# Two rules for the one destination: 10.43.0.1:443 is the kubernetes Service, and because the
+# DNAT to the real endpoint happens before the policy is evaluated, the node-side address
+# (192.168.20.200:6443 today, any node if the control plane ever grows) has to be allowed too.
+# Exactly the pair claude-queue's postgres policy needs for the CNPG instance manager.
+#
+# The web pods deliberately do NOT get this: k8s/04-web.yaml sets
+# automountServiceAccountToken: false, so they have no token to use it with.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-worker-to-apiserver
+  namespace: studylife-scale
+spec:
+  podSelector: { matchLabels: { app: studylife-worker } }
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - ipBlock: { cidr: 10.43.0.1/32 }
+      ports:
+        - { protocol: TCP, port: 443 }
+    - to:
+        - ipBlock: { cidr: 192.168.20.0/24 }
+      ports:
+        - { protocol: TCP, port: 6443 }
+---
+# The CNPG instances. Three destinations, and getting any of them wrong is expensive:
+#
+#   - Each other on 5432: streaming replication. A standby connects through the studylife-pg-rw
+#     Service (10.43.34.145), which DNATs to whichever pod is primary, so a podSelector on the
+#     cluster label is what actually matches - observed live on studylife-pg-6.
+#   - The API server: the instance manager reports instance status and watches the Cluster
+#     resource. Same Service/node-address pair as the worker rule above, and every pg pod holds
+#     an open 10.43.0.1:443 connection right now. Without it the operator loses the instance
+#     state it needs to run failover.
+#   - HTTPS to anywhere: WAL archiving and base backups go to Cloudflare R2
+#     (spec.backup.barmanObjectStore, s3://studylifebackup/ at an r2.cloudflarestorage.com
+#     endpoint). This one fails SILENTLY if it is cut - Postgres keeps serving, WALs just stop
+#     being archived and the backups quietly rot, so the ContinuousArchiving condition on the
+#     Cluster is the thing to check after any change here. R2 sits behind Cloudflare anycast
+#     addresses, so the port is the restriction rather than the address.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-postgres-egress
+  namespace: studylife-scale
+spec:
+  podSelector: { matchLabels: { cnpg.io/cluster: studylife-pg } }
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - podSelector: { matchLabels: { cnpg.io/cluster: studylife-pg } }
+      ports:
+        - { protocol: TCP, port: 5432 }
+    - to:
+        - ipBlock: { cidr: 10.43.0.1/32 }
+      ports:
+        - { protocol: TCP, port: 443 }
+    - to:
+        - ipBlock: { cidr: 192.168.20.0/24 }
+      ports:
+        - { protocol: TCP, port: 6443 }
+    - to:
+        - ipBlock: { cidr: 0.0.0.0/0 }
+      ports:
+        - { protocol: TCP, port: 443 }
+---
+# The pgbouncer pooler pods: the Postgres instances they pool for (via studylife-pg-rw, hence the
+# cluster-label selector), plus the API server - the CNPG pgbouncer image runs an instance
+# manager that watches the Pooler resource and reports its status, and both live pooler pods hold
+# an open 10.43.0.1:443 connection. Same Service/node-address pair as the two policies above.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-pooler-egress
+  namespace: studylife-scale
+spec:
+  podSelector: { matchLabels: { cnpg.io/poolerName: studylife-pg-pooler } }
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - podSelector: { matchLabels: { cnpg.io/cluster: studylife-pg } }
+      ports:
+        - { protocol: TCP, port: 5432 }
+    - to:
+        - ipBlock: { cidr: 10.43.0.1/32 }
+      ports:
+        - { protocol: TCP, port: 443 }
+    - to:
+        - ipBlock: { cidr: 192.168.20.0/24 }
+      ports:
+        - { protocol: TCP, port: 6443 }
+---
+# The Redis Cluster nodes only ever talk to each other: the cluster bus on 16379 (client port +
+# 10000, plaintext - tls-cluster is deliberately off, see k8s/03-redis.yaml) and the data ports
+# for node-to-node commands. Counted on the live redis-cluster-0: five outbound bus connections
+# (one per peer) plus a 6379 one. 6380 is allowed alongside for symmetry with the ingress rule.
+# Nothing else - the redis_exporter sidecar reaches its own Redis over loopback, which no
+# NetworkPolicy applies to, and the StatefulSet sets automountServiceAccountToken: false.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-redis-egress
+  namespace: studylife-scale
+spec:
+  podSelector: { matchLabels: { app: redis-cluster } }
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - podSelector: { matchLabels: { app: redis-cluster } }
+      ports:
+        - { protocol: TCP, port: 6379 }
+        - { protocol: TCP, port: 6380 }
+        - { protocol: TCP, port: 16379 }
