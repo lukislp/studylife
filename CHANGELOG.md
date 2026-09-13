@@ -1,3 +1,10 @@
+## [3.16.16](https://github.com/lukislp/studylife/compare/v3.16.15...v3.16.16) (2026-09-13)
+
+
+### Bug Fixes
+
+* **k8s:** read-only root filesystem for studylife-worker ([#222](https://github.com/lukislp/studylife/issues/222)) ([35077d1](https://github.com/lukislp/studylife/commit/35077d1e38d36111b0925e50861f63e6e2e76b41))
+
 ## [3.16.15](https://github.com/lukislp/studylife/compare/v3.16.14...v3.16.15) (2026-09-13)
 
 
