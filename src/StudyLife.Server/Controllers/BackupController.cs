@@ -290,6 +290,44 @@ public class BackupController : ControllerBase
     internal const long MaxImportJsonBytes = 64L * 1024 * 1024;
 
     /// <summary>
+    /// How many rows ImportJson stages before flushing them (see InsertInBatchesAsync). The
+    /// four id-mapped tables used to do one SaveChangesAsync - i.e. one round trip and, on
+    /// SQLite, one WAL commit - PER ROW, which for a multi-year account is tens of thousands of
+    /// them. Batching is possible because a single SaveChangesAsync populates the generated Id
+    /// of EVERY entity it inserts, not just of one (the notes pass below already relied on
+    /// that). 500 is a compromise, not a tuned number: large enough that the per-round-trip
+    /// cost stops dominating, small enough that neither the change tracker nor the provider's
+    /// parameter batching has to hold a whole 64 MB import's worth of rows at once.
+    /// </summary>
+    private const int ImportBatchSize = 500;
+
+    /// <summary>
+    /// Inserts <paramref name="rows"/> in <see cref="ImportBatchSize"/>-sized batches, calling
+    /// <paramref name="onInserted"/> for each row right after the batch containing it has been
+    /// saved - at which point the entity carries its new database id, which is what the
+    /// import's id maps are built from. Each saved batch is then detached: nothing later in the
+    /// import touches these entities again (only their ids, already copied out), so leaving
+    /// them tracked would just make every subsequent SaveChangesAsync of the same import walk
+    /// over more and more unchanged rows. Everything still runs inside ImportJson's single
+    /// transaction, so a failure anywhere rolls back every batch that came before it.
+    /// </summary>
+    private async Task InsertInBatchesAsync<TRow>(
+        IReadOnlyList<TRow> rows, Func<TRow, object> selectEntity, Action<TRow>? onInserted = null)
+    {
+        for (var start = 0; start < rows.Count; start += ImportBatchSize)
+        {
+            var end = Math.Min(start + ImportBatchSize, rows.Count);
+            for (var i = start; i < end; i++) _db.Add(selectEntity(rows[i]));
+            await _db.SaveChangesAsync();
+            for (var i = start; i < end; i++)
+            {
+                onInserted?.Invoke(rows[i]);
+                _db.Entry(selectEntity(rows[i])).State = EntityState.Detached;
+            }
+        }
+    }
+
+    /// <summary>
     /// Imports a JSON export (this instance's own, or another StudyLife instance's - v2 or
     /// legacy v1 shape, see BackupExportDto) as a FULL REPLACE of the calling user's own data:
     /// every row this user owns in every exported table is deleted, then the file's rows are
@@ -362,25 +400,26 @@ public class BackupController : ControllerBase
 
         // ── Study programs ───────────────────────────────────────────────────────────────────
         var programIdMap = new Dictionary<int, int>();
-        foreach (var dto in import.StudyPrograms)
-        {
-            var entity = new StudyProgramEntity { Name = dto.Name, CreatedAt = dto.CreatedAt, IsCompleted = dto.IsCompleted };
-            _db.StudyPrograms.Add(entity);
-            await _db.SaveChangesAsync();
-            programIdMap[dto.Id] = entity.Id;
-        }
+        var programRows = import.StudyPrograms
+            .Select(dto => (dto.Id, Entity: new StudyProgramEntity
+            {
+                Name = dto.Name,
+                CreatedAt = dto.CreatedAt,
+                IsCompleted = dto.IsCompleted,
+            }))
+            .ToList();
+        await InsertInBatchesAsync(programRows, r => r.Entity, r => programIdMap[r.Id] = r.Entity.Id);
         imported["studyPrograms"] = programIdMap.Count;
 
         // ── Elective groups ──────────────────────────────────────────────────────────────────
         var groupIdMap = new Dictionary<int, int>();
+        var groupRows = new List<(int OldId, CourseGroupEntity Entity)>();
         foreach (var dto in import.CourseGroups)
         {
             if (!programIdMap.TryGetValue(dto.StudyProgramId, out var newProgramId)) { Drop("courseGroups"); continue; }
-            var entity = new CourseGroupEntity { StudyProgramId = newProgramId, Name = dto.Name, EctsQuota = dto.EctsQuota };
-            _db.CourseGroups.Add(entity);
-            await _db.SaveChangesAsync();
-            groupIdMap[dto.Id] = entity.Id;
+            groupRows.Add((dto.Id, new CourseGroupEntity { StudyProgramId = newProgramId, Name = dto.Name, EctsQuota = dto.EctsQuota }));
         }
+        await InsertInBatchesAsync(groupRows, r => r.Entity, r => groupIdMap[r.OldId] = r.Entity.Id);
         imported["courseGroups"] = groupIdMap.Count;
 
         // ── Custom courses ───────────────────────────────────────────────────────────────────
@@ -390,6 +429,7 @@ public class BackupController : ControllerBase
         // through unchanged wherever referenced, exactly like every other part of the app that
         // resolves a CourseId (no catalog membership check anywhere else either).
         var courseIdMap = new Dictionary<int, int>();
+        var customCourseRows = new List<(int OldId, CustomCourseEntity Entity)>();
         foreach (var dto in import.CustomCourses)
         {
             if (!programIdMap.TryGetValue(dto.StudyProgramId, out var newProgramId)) { Drop("customCourses"); continue; }
@@ -411,10 +451,10 @@ public class BackupController : ControllerBase
                 CourseGroupId = newGroupId,
                 Topics = dto.Topics,
             };
-            _db.CustomCourses.Add(entity);
-            await _db.SaveChangesAsync();
-            courseIdMap[offset + dto.Id] = offset + entity.Id;
+            customCourseRows.Add((dto.Id, entity));
         }
+        await InsertInBatchesAsync(customCourseRows, r => r.Entity,
+            r => courseIdMap[offset + r.OldId] = offset + r.Entity.Id);
         imported["customCourses"] = courseIdMap.Count;
 
         // Remaps a single externally-shifted-or-built-in CourseId. Built-in ids (< offset) pass
@@ -424,12 +464,12 @@ public class BackupController : ControllerBase
             oldCourseId < offset ? oldCourseId : courseIdMap.TryGetValue(oldCourseId, out var v) ? v : null;
 
         // ── Session templates ────────────────────────────────────────────────────────────────
-        var templateCount = 0;
+        var templateRows = new List<SessionTemplateEntity>();
         foreach (var dto in import.SessionTemplates)
         {
             var newCourseId = RemapCourseId(dto.CourseId);
             if (newCourseId is null) { Drop("sessionTemplates"); continue; }
-            _db.SessionTemplates.Add(new SessionTemplateEntity
+            templateRows.Add(new SessionTemplateEntity
             {
                 Name = dto.Name,
                 CourseId = newCourseId.Value,
@@ -441,15 +481,15 @@ public class BackupController : ControllerBase
                 DefaultStartTime = dto.DefaultStartTime,
                 CreatedAt = dto.CreatedAt,
             });
-            templateCount++;
         }
-        await _db.SaveChangesAsync();
-        imported["sessionTemplates"] = templateCount;
+        await InsertInBatchesAsync(templateRows, e => e);
+        imported["sessionTemplates"] = templateRows.Count;
 
         // ── Sessions ─────────────────────────────────────────────────────────────────────────
         // sessionIdMap (old StudySessionDto.Id -> new StudySessionEntity.Id) is needed below for
         // Note.SessionId - sessions must exist before notes can reference them.
         var sessionIdMap = new Dictionary<int, int>();
+        var sessionRows = new List<(int OldId, StudySessionEntity Entity)>();
         foreach (var dto in import.Sessions)
         {
             var newCourseId = RemapCourseId(dto.CourseId);
@@ -467,15 +507,17 @@ public class BackupController : ControllerBase
                 TimerModeId = dto.TimerModeId,
                 RecurrenceGroupId = dto.RecurrenceGroupId,
             };
-            _db.Sessions.Add(entity);
-            await _db.SaveChangesAsync();
-            sessionIdMap[dto.Id] = entity.Id;
+            sessionRows.Add((dto.Id, entity));
         }
+        await InsertInBatchesAsync(sessionRows, r => r.Entity, r => sessionIdMap[r.OldId] = r.Entity.Id);
         imported["sessions"] = sessionIdMap.Count;
 
         // ── Notes ────────────────────────────────────────────────────────────────────────────
         // Two passes: RelatedNoteIds references OTHER notes in the same file, whose new ids are
-        // only known once EVERY note has been inserted at least once.
+        // only known once EVERY note has been inserted at least once. Deliberately the one pass
+        // that does NOT go through InsertInBatchesAsync: the second pass below UPDATEs these
+        // same rows, so they have to stay tracked until then - and they were already inserted
+        // in one batched SaveChangesAsync before this change, never row by row.
         var noteIdMap = new Dictionary<int, int>();
         var noteEntities = new List<(NoteDto Dto, NoteEntity Entity)>();
         foreach (var dto in import.Notes)
@@ -526,12 +568,12 @@ public class BackupController : ControllerBase
         imported["notes"] = noteEntities.Count;
 
         // ── Course goals ─────────────────────────────────────────────────────────────────────
-        var goalCount = 0;
+        var goalRows = new List<CourseGoalEntity>();
         foreach (var dto in import.CourseGoals)
         {
             var newCourseId = RemapCourseId(dto.CourseId);
             if (newCourseId is null) { Drop("courseGoals"); continue; }
-            _db.CourseGoals.Add(new CourseGoalEntity
+            goalRows.Add(new CourseGoalEntity
             {
                 CourseId = newCourseId.Value,
                 CourseName = dto.CourseName,
@@ -542,28 +584,26 @@ public class BackupController : ControllerBase
                 CompletedTopics = dto.CompletedTopics,
                 Tag = dto.Tag,
             });
-            goalCount++;
         }
-        await _db.SaveChangesAsync();
-        imported["courseGoals"] = goalCount;
+        await InsertInBatchesAsync(goalRows, e => e);
+        imported["courseGoals"] = goalRows.Count;
 
         // ── Course resources ─────────────────────────────────────────────────────────────────
-        var resourceCount = 0;
+        var resourceRows = new List<CourseResourceEntity>();
         foreach (var dto in import.CourseResources)
         {
             var newCourseId = RemapCourseId(dto.CourseId);
             if (newCourseId is null) { Drop("courseResources"); continue; }
-            _db.CourseResources.Add(new CourseResourceEntity
+            resourceRows.Add(new CourseResourceEntity
             {
                 CourseId = newCourseId.Value,
                 Title = dto.Title,
                 Url = dto.Url,
                 CreatedAt = dto.CreatedAt,
             });
-            resourceCount++;
         }
-        await _db.SaveChangesAsync();
-        imported["courseResources"] = resourceCount;
+        await InsertInBatchesAsync(resourceRows, e => e);
+        imported["courseResources"] = resourceRows.Count;
 
         // ── Settings (singleton row) ─────────────────────────────────────────────────────────
         var selectedCourseIds = new List<int>();
