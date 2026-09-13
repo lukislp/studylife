@@ -1,3 +1,11 @@
+## [3.16.14](https://github.com/lukislp/studylife/compare/v3.16.13...v3.16.14) (2026-09-13)
+
+
+### Bug Fixes
+
+* **k8s:** add explicit egress policies for the studylife-scale namespace ([#218](https://github.com/lukislp/studylife/issues/218)) ([caa616a](https://github.com/lukislp/studylife/commit/caa616a52c948abc87e330c467a0cafb8795efb0))
+* **k8s:** drop the catch-all egress rule from allow-dns ([#219](https://github.com/lukislp/studylife/issues/219)) ([457b13b](https://github.com/lukislp/studylife/commit/457b13b6bcb395a139802d260a6872b176f3798d))
+
 ## [3.16.13](https://github.com/lukislp/studylife/compare/v3.16.12...v3.16.13) (2026-09-13)
 
 
