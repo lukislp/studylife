@@ -1,3 +1,10 @@
+## [3.16.17](https://github.com/lukislp/studylife/compare/v3.16.16...v3.16.17) (2026-09-13)
+
+
+### Bug Fixes
+
+* **k8s:** give probes a 5s timeout so load spikes stop killing pods ([#223](https://github.com/lukislp/studylife/issues/223)) ([79f6570](https://github.com/lukislp/studylife/commit/79f65706a3ee35816d4945bb18f31a292e8f5415))
+
 ## [3.16.16](https://github.com/lukislp/studylife/compare/v3.16.15...v3.16.16) (2026-09-13)
 
 
