@@ -68,7 +68,7 @@ public partial class BackgroundTaskService
             if (outcome == ApnsSendOutcome.Failed) return;
             state.IsRunning = false;
             if (outcome == ApnsSendOutcome.ExpiredToken) state.LiveActivityPushToken = null;
-            await db.SaveChangesAsync();
+            await TrySaveTimerStateAsync(db, state);
             return;
         }
 
@@ -88,6 +88,36 @@ public partial class BackgroundTaskService
         state.CurrentRound = round;
         state.PhaseEndsAt = endsAt;
         if (updateOutcome == ApnsSendOutcome.ExpiredToken) state.LiveActivityPushToken = null;
-        await db.SaveChangesAsync();
+        await TrySaveTimerStateAsync(db, state);
+    }
+
+    /// <summary>
+    /// Persists this tick's phase transition, treating an optimistic-concurrency conflict as
+    /// "the client already moved on". The read at the top of RunLiveActivityPushAsync is
+    /// separated from this write by an outbound APNs call (seconds, on an unreliable network),
+    /// and web and worker are separate processes - so a user pressing pause/stop, or the app
+    /// registering a fresh live-activity token, can land in between. Re-applying our computed
+    /// phase on top of that would resurrect a timer the user just stopped, or blank a token that
+    /// is seconds old (see TimerStateEntity.RowVersion). Dropping this tick's write costs
+    /// nothing: the next tick is 5s away and recomputes the state machine from the row as it
+    /// then actually stands. Deliberately no retry loop here, unlike TimerStateController -
+    /// retrying would re-assert exactly the stale decision the conflict just rejected.
+    /// </summary>
+    private async Task TrySaveTimerStateAsync(StudyLifeDb db, TimerStateEntity state)
+    {
+        try
+        {
+            await db.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // Detach, don't just swallow: ExecuteAsync shares ONE DbContext across all sub-tasks
+            // of a tick, so a rejected UPDATE left pending here would be replayed (and throw
+            // again) inside whichever unrelated sub-task saves next.
+            db.Entry(state).State = EntityState.Detached;
+            _logger.LogDebug(
+                "Live Activity: timer state for user {AuthUserId} changed while the APNs push was in flight - skipping this tick's update",
+                _currentAuthUserId);
+        }
     }
 }
