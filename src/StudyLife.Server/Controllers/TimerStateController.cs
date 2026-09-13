@@ -34,11 +34,41 @@ public class TimerStateController : ControllerBase
     }
 
     /// <summary>
+    /// How many times a write here is re-applied on top of a concurrently changed row before
+    /// giving up - see SaveWithReloadAsync. Three is plenty for the only real contender
+    /// (BackgroundTaskService.RunLiveActivityPushAsync, which writes this row at most once per
+    /// 5s tick and backs off on its own conflict); a higher number would only ever matter
+    /// against a writer that is hammering the row faster than we can re-read it, which is not a
+    /// shape any caller of this endpoint has.
+    /// </summary>
+    private const int MaxConcurrencyRetries = 3;
+
+    /// <summary>
     /// Best effort, last-write-wins by default: no server-side plausibility check between the
     /// fields, and a stale PUT (below) is silently dropped rather than rejected.
+    ///
+    /// "Last-write-wins" is what the optimistic-concurrency retry below preserves rather than
+    /// replaces (see TimerStateEntity.RowVersion): a conflicting write from the worker means
+    /// this request read the row before the worker's update landed, so the row is re-read and
+    /// THIS PUT is applied on top of it - the client's own start/pause/stop is exactly the
+    /// intent that should win over a phase the worker computed from the older state. A 409
+    /// would be useless here for the same reason spelled out for the sequence check below:
+    /// TimerService fires this PUT unawaited, there is no interactive caller to retry.
     /// </summary>
     [HttpPut]
     public async Task<TimerStateDto> Save(TimerStateDto dto)
+    {
+        for (var attempt = 0; ; attempt++)
+        {
+            if (await TrySaveAsync(dto, attempt) is { } result) return result;
+        }
+    }
+
+    /// <summary>One attempt of <see cref="Save"/>; null means "the row changed underneath us,
+    /// call again". Split out so the whole read-modify-write (including the sequence check and
+    /// the wasRunning edge detection, both of which must be judged against the row as it
+    /// ACTUALLY stands) is what gets retried, not just the SaveChangesAsync call.</summary>
+    private async Task<TimerStateDto?> TrySaveAsync(TimerStateDto dto, int attempt)
     {
         var entity = await _db.TimerState.GetOrCreateAsync(_db);
         var wasRunning = entity.IsRunning;
@@ -82,7 +112,7 @@ public class TimerStateController : ControllerBase
             : dto.PhaseEndsAt;
         entity.UpdatedAt = now;
         if (dto.ClientSequence is { } newSeq) entity.LastClientSequence = newSeq;
-        await _db.SaveChangesAsync();
+        if (!await SaveWithReloadAsync(attempt)) return null;
 
         // Fire-and-forget with CancellationToken.None, deliberately NOT the request's own `ct`:
         // this call must outlive the request (a slow/unreachable studylife-webhooks must never
@@ -105,6 +135,34 @@ public class TimerStateController : ControllerBase
         return ToDto(entity);
     }
 
+    /// <summary>
+    /// Saves the pending change and reports whether the caller may keep its result: false means
+    /// another writer got the row first, the conflicting entries were reloaded, and the caller
+    /// should re-apply its change on top of the fresh row. The final attempt deliberately lets
+    /// DbUpdateConcurrencyException escape to the ProblemDetails handler (500) instead of
+    /// pretending the write succeeded - silently dropping a start/stop would leave the client
+    /// and the server disagreeing about whether the timer is running, which is exactly the bug
+    /// class this token exists to catch.
+    /// </summary>
+    private async Task<bool> SaveWithReloadAsync(int attempt)
+    {
+        try
+        {
+            await _db.SaveChangesAsync();
+            return true;
+        }
+        catch (DbUpdateConcurrencyException ex) when (attempt < MaxConcurrencyRetries)
+        {
+            // Re-reading via the DbSet would NOT refresh anything: EF's identity resolution
+            // keeps the already-tracked instance's values, so the stale row would be re-applied
+            // unchanged and conflict again. ReloadAsync is what actually replaces current AND
+            // original values with the database's (or detaches the entry if the row is gone -
+            // GetOrCreateAsync then simply inserts a new one on the next attempt).
+            foreach (var entry in ex.Entries) await entry.ReloadAsync();
+            return false;
+        }
+    }
+
     private static TimerStateDto ToDto(TimerStateEntity e) => new()
     {
         SessionId = e.SessionId,
@@ -124,9 +182,15 @@ public class TimerStateController : ControllerBase
     [HttpPut("liveactivity-token")]
     public async Task<IActionResult> SetLiveActivityPushToken(LiveActivityPushTokenDto dto)
     {
-        var entity = await _db.TimerState.GetOrCreateAsync(_db);
-        entity.LiveActivityPushToken = dto.Token;
-        await _db.SaveChangesAsync();
-        return Ok();
+        // Same retry-and-re-apply shape as Save above, and the most important place for it: the
+        // worker nulls this very field when it sees an expired token, so a registration racing
+        // that write is precisely the update that must not be lost - without it the app would
+        // sit with a live activity the server will never push to again.
+        for (var attempt = 0; ; attempt++)
+        {
+            var entity = await _db.TimerState.GetOrCreateAsync(_db);
+            entity.LiveActivityPushToken = dto.Token;
+            if (await SaveWithReloadAsync(attempt)) return Ok();
+        }
     }
 }
