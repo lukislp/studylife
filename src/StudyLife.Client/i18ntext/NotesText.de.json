@@ -53,5 +53,6 @@
   "DictateSilent": "Keine Sprache erkannt",
   "DictateBrowserVoice": "Spracherkennung über den Browser läuft…",
   "CaptureSourceLinkLabel": "Original ansehen",
-  "RelatedNotesLabel": "Verwandte Notizen"
+  "RelatedNotesLabel": "Verwandte Notizen",
+  "AriaCloseDialog": "Dialog schließen"
 }

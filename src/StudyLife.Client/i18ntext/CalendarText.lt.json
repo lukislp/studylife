@@ -54,5 +54,8 @@
   "TemplateNamePlaceholder": "Šablono pavadinimas",
   "TemplateNameRequiredError": "Įveskite šablono pavadinimą.",
   "TemplateSaveFailed": "Nepavyko išsaugoti šablono.",
-  "WeekPlanLinkButton": "Spausdinti savaitės planą"
+  "WeekPlanLinkButton": "Spausdinti savaitės planą",
+  "AriaCloseDialog": "Uždaryti dialogo langą",
+  "AriaPreviousWeek": "Ankstesnė savaitė",
+  "AriaNextWeek": "Kita savaitė"
 }

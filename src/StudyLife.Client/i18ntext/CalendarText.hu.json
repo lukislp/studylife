@@ -54,5 +54,8 @@
   "TemplateNamePlaceholder": "Sablon neve",
   "TemplateNameRequiredError": "Adj meg egy nevet a sablonnak.",
   "TemplateSaveFailed": "A sablont nem sikerült menteni.",
-  "WeekPlanLinkButton": "Heti terv nyomtatása"
+  "WeekPlanLinkButton": "Heti terv nyomtatása",
+  "AriaCloseDialog": "Párbeszédpanel bezárása",
+  "AriaPreviousWeek": "Előző hét",
+  "AriaNextWeek": "Következő hét"
 }

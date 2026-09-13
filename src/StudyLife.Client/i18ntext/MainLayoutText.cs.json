@@ -32,5 +32,9 @@
   "PendingSyncTooltip": "{0} změn čeká na synchronizaci",
   "UpdateAvailableText": "Je k dispozici nová verze",
   "UpdateReloadButton": "Znovu načíst",
-  "AgentChatLabel": "AI asistent"
+  "AgentChatLabel": "AI asistent",
+  "AriaCloseDialog": "Zavřít dialog",
+  "AriaDismissUpdate": "Skrýt oznámení o aktualizaci",
+  "AriaOpenMenu": "Otevřít nabídku",
+  "AriaCloseMenu": "Zavřít nabídku"
 }

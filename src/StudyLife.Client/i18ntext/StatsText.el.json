@@ -104,5 +104,6 @@
     "CourseSparkTooltip":  "Ώρες ανά εβδομάδα, τελευταίες 12 εβδομάδες",
     "CourseEctsRingFormat":  "{0} από {1} ECTS κερδισμένα",
     "WeekdayRanking":  "Κατάταξη ημερών της εβδομάδας",
-    "WeekdayRankingSubtitle":  "Ποια ημέρα της εβδομάδας φέρνει τις περισσότερες ώρες μελέτης"
+    "WeekdayRankingSubtitle":  "Ποια ημέρα της εβδομάδας φέρνει τις περισσότερες ώρες μελέτης",
+    "AriaCloseDetails":  "Κλείσιμο λεπτομερειών"
 }

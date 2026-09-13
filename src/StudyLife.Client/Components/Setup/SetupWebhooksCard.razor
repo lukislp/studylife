@@ -51,10 +51,10 @@
 @if (_confirmingRevokeId is { } revokeId)
 {
     <div class="modal-overlay" @onclick="() => _confirmingRevokeId = null">
-        <div class="modal" @onclick:stopPropagation="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="webhooks-key-revoke-title" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h3>@T.WebhooksKeyRevokeConfirmTitle</h3>
-                <button type="button" class="modal-close" @onclick="() => _confirmingRevokeId = null">✕</button>
+                <h3 id="webhooks-key-revoke-title">@T.WebhooksKeyRevokeConfirmTitle</h3>
+                <button type="button" class="modal-close" aria-label="@T.AriaCloseDialog" @onclick="() => _confirmingRevokeId = null">✕</button>
             </div>
             <div class="modal-body">
                 <p>⚠️ @T.WebhooksKeyRevokeConfirmWarning</p>

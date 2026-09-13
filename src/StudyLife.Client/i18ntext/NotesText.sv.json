@@ -53,5 +53,6 @@
   "DictateSilent": "Inget tal upptäckt",
   "DictateBrowserVoice": "Lyssnar via webbläsarens taligenkänning…",
   "CaptureSourceLinkLabel": "Visa original",
-  "RelatedNotesLabel": "Relaterade anteckningar"
+  "RelatedNotesLabel": "Relaterade anteckningar",
+  "AriaCloseDialog": "Stäng dialogruta"
 }

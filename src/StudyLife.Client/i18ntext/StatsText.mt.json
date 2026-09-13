@@ -104,5 +104,6 @@
     "CourseSparkTooltip":  "Sigħat fil-ġimgħa, l-aħħar 12-il ġimgħa",
     "CourseEctsRingFormat":  "{0} minn {1} ECTS miksuba",
     "WeekdayRanking":  "Klassifika tal-jiem tal-ġimgħa",
-    "WeekdayRankingSubtitle":  "Liema jum tal-ġimgħa jġib l-aktar sigħat ta' studju"
+    "WeekdayRankingSubtitle":  "Liema jum tal-ġimgħa jġib l-aktar sigħat ta' studju",
+    "AriaCloseDetails":  "Agħlaq id-dettalji"
 }

@@ -1,8 +1,8 @@
 <div class="modal-overlay" @onclick="() => OnSkip.InvokeAsync()">
-    <div class="modal" @onclick:stopPropagation="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="setup-completion-title" @onclick:stopPropagation="true">
         <div class="modal-header">
-            <h3>@string.Format(TitleFormat, CourseName)</h3>
-            <button class="modal-close" @onclick="() => OnSkip.InvokeAsync()">✕</button>
+            <h3 id="setup-completion-title">@string.Format(TitleFormat, CourseName)</h3>
+            <button class="modal-close" aria-label="@CloseLabel" @onclick="() => OnSkip.InvokeAsync()">✕</button>
         </div>
         <div class="modal-body">
             <div class="field">
@@ -28,6 +28,7 @@
 
 @code {
     [Parameter] public string CourseName { get; set; } = "";
+    [Parameter] public string CloseLabel { get; set; } = "";
     [Parameter] public string TitleFormat { get; set; } = "";
     [Parameter] public string GradeOptionalLabel { get; set; } = "";
     [Parameter] public string GradePlaceholder { get; set; } = "";

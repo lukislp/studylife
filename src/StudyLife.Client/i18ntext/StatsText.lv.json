@@ -104,5 +104,6 @@
     "CourseSparkTooltip":  "Stundas nedēļā, pēdējās 12 nedēļas",
     "CourseEctsRingFormat":  "{0} no {1} ECTS iegūti",
     "WeekdayRanking":  "Nedēļas dienu rangs",
-    "WeekdayRankingSubtitle":  "Kura nedēļas diena dod visvairāk mācību stundu"
+    "WeekdayRankingSubtitle":  "Kura nedēļas diena dod visvairāk mācību stundu",
+    "AriaCloseDetails":  "Aizvērt detalizētu informāciju"
 }

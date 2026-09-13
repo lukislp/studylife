@@ -61,5 +61,7 @@
   "TimerModeDesc_micro": "5 minutes de concentration, 1 minute de pause. Petits pas pour les jours sans énergie ou pour se relancer.",
   "TimerModeDesc_burst": "15 minutes de concentration, 3 minutes de pause. Plus de marge qu'un sprint, toujours rythmé.",
   "TimerModeDesc_deepdive": "120 minutes de concentration, 20 minutes de pause. Pour quand tu dois disparaître dans un problème.",
-  "TimerModeDesc_marathon": "180 minutes de concentration, 30 minutes de pause. Une longue poussée ininterrompue — terrain de révisions d'examen."
+  "TimerModeDesc_marathon": "180 minutes de concentration, 30 minutes de pause. Une longue poussée ininterrompue — terrain de révisions d'examen.",
+  "AriaStartTimer": "Démarrer la minuterie",
+  "AriaPauseTimer": "Mettre la minuterie en pause"
 }

@@ -104,5 +104,6 @@
     "CourseSparkTooltip":  "Часове на седмица, последните 12 седмици",
     "CourseEctsRingFormat":  "{0} от {1} ECTS получени",
     "WeekdayRanking":  "Класация на дните от седмицата",
-    "WeekdayRankingSubtitle":  "Кой ден от седмицата носи най-много часове учене"
+    "WeekdayRankingSubtitle":  "Кой ден от седмицата носи най-много часове учене",
+    "AriaCloseDetails":  "Затваряне на подробностите"
 }

@@ -1,7 +1,7 @@
 <div class="cal-header" @ontouchstart="OnHeaderTouchStart" @ontouchend="OnHeaderTouchEnd">
-    <button class="btn-nav" @onclick="OnPrevWeek">‹</button>
+    <button class="btn-nav" aria-label="@PrevWeekLabel" @onclick="OnPrevWeek">‹</button>
     <h2>@WeekLabel</h2>
-    <button class="btn-nav" @onclick="OnNextWeek">›</button>
+    <button class="btn-nav" aria-label="@NextWeekLabel" @onclick="OnNextWeek">›</button>
     <div class="cal-view-switch">
         <button class="cal-view-opt @(ViewMode == "week" ? "active" : "")" @onclick='() => OnViewModeChanged.InvokeAsync("week")'>@WeekViewText</button>
         <button class="cal-view-opt @(ViewMode == "day" ? "active" : "")" @onclick='() => OnViewModeChanged.InvokeAsync("day")'>@DayViewText</button>
@@ -15,6 +15,8 @@
     [Parameter] public string ViewMode { get; set; } = "week";
     [Parameter] public string WeekViewText { get; set; } = "";
     [Parameter] public string DayViewText { get; set; } = "";
+    [Parameter] public string PrevWeekLabel { get; set; } = "";
+    [Parameter] public string NextWeekLabel { get; set; } = "";
     [Parameter] public EventCallback<string> OnViewModeChanged { get; set; }
     [Parameter] public EventCallback OnPrevWeek { get; set; }
     [Parameter] public EventCallback OnNextWeek { get; set; }

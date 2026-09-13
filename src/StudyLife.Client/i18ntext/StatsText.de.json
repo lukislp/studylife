@@ -104,5 +104,6 @@
     "CourseSparkTooltip":  "Stunden pro Woche, letzte 12 Wochen",
     "CourseEctsRingFormat":  "{0} von {1} ECTS erreicht",
     "WeekdayRanking":  "Wochentag-Ranking",
-    "WeekdayRankingSubtitle":  "Welcher Wochentag bringt die meisten Lernstunden"
+    "WeekdayRankingSubtitle":  "Welcher Wochentag bringt die meisten Lernstunden",
+    "AriaCloseDetails":  "Details schließen"
 }

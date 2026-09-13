@@ -15,5 +15,6 @@
   "ErrorGeneric": "Something went wrong. Please try again.",
   "PendingActionTitle": "This action needs your confirmation",
   "Approve": "Approve",
-  "Reject": "Reject"
+  "Reject": "Reject",
+  "AriaCloseDialog": "Close dialog"
 }

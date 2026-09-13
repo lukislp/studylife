@@ -61,5 +61,7 @@
   "TimerModeDesc_micro": "5 minutos de foco, 1 minuto de pausa. Passos pequenos para dias de pouca energia ou para desbloquear.",
   "TimerModeDesc_burst": "15 minutos de foco, 3 minutos de pausa. Mais espaço que um sprint, mas ainda ágil.",
   "TimerModeDesc_deepdive": "120 minutos de foco, 20 minutos de pausa. Para quando precisas de desaparecer dentro de um problema.",
-  "TimerModeDesc_marathon": "180 minutos de foco, 30 minutos de pausa. Um longo esforço ininterrupto — território de preparação para exames."
+  "TimerModeDesc_marathon": "180 minutos de foco, 30 minutos de pausa. Um longo esforço ininterrupto — território de preparação para exames.",
+  "AriaStartTimer": "Iniciar temporizador",
+  "AriaPauseTimer": "Pausar temporizador"
 }

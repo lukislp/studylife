@@ -61,5 +61,7 @@
   "TimerModeDesc_micro": "5 perc fókusz, 1 perc szünet. Apró lépések alacsony energiaszintű napokra vagy a beindulásra.",
   "TimerModeDesc_burst": "15 perc fókusz, 3 perc szünet. Több tér, mint egy sprintben, de még mindig gyors tempó.",
   "TimerModeDesc_deepdive": "120 perc fókusz, 20 perc szünet. Amikor teljesen el kell tűnnöd egy probléma mélyén.",
-  "TimerModeDesc_marathon": "180 perc fókusz, 30 perc szünet. Egy hosszú, megszakítás nélküli lendület — vizsgafelkészülési terep."
+  "TimerModeDesc_marathon": "180 perc fókusz, 30 perc szünet. Egy hosszú, megszakítás nélküli lendület — vizsgafelkészülési terep.",
+  "AriaStartTimer": "Időzítő indítása",
+  "AriaPauseTimer": "Időzítő szüneteltetése"
 }

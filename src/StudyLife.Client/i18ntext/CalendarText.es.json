@@ -54,5 +54,8 @@
   "TemplateNamePlaceholder": "Nombre de la plantilla",
   "TemplateNameRequiredError": "Introduce un nombre para la plantilla.",
   "TemplateSaveFailed": "No se pudo guardar la plantilla.",
-  "WeekPlanLinkButton": "Imprimir plan semanal"
+  "WeekPlanLinkButton": "Imprimir plan semanal",
+  "AriaCloseDialog": "Cerrar diálogo",
+  "AriaPreviousWeek": "Semana anterior",
+  "AriaNextWeek": "Semana siguiente"
 }

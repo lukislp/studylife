@@ -61,5 +61,7 @@
   "TimerModeDesc_micro": "5 Minuten Fokus, 1 Minute Pause. Kleine Schritte für energiearme Tage oder um wieder in Schwung zu kommen.",
   "TimerModeDesc_burst": "15 Minuten Fokus, 3 Minuten Pause. Mehr Raum als ein Sprint, aber immer noch zügig.",
   "TimerModeDesc_deepdive": "120 Minuten Fokus, 20 Minuten Pause. Für wenn du komplett in einem Problem verschwinden musst.",
-  "TimerModeDesc_marathon": "180 Minuten Fokus, 30 Minuten Pause. Ein langer, ununterbrochener Push — Prüfungsvorbereitungs-Territorium."
+  "TimerModeDesc_marathon": "180 Minuten Fokus, 30 Minuten Pause. Ein langer, ununterbrochener Push — Prüfungsvorbereitungs-Territorium.",
+  "AriaStartTimer": "Timer starten",
+  "AriaPauseTimer": "Timer pausieren"
 }

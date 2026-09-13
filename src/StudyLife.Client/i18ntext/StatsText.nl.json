@@ -104,5 +104,6 @@
     "CourseSparkTooltip":  "Uren per week, laatste 12 weken",
     "CourseEctsRingFormat":  "{0} van {1} ECTS behaald",
     "WeekdayRanking":  "Rangorde van weekdagen",
-    "WeekdayRankingSubtitle":  "Welke weekdag levert de meeste studie-uren op"
+    "WeekdayRankingSubtitle":  "Welke weekdag levert de meeste studie-uren op",
+    "AriaCloseDetails":  "Details sluiten"
 }

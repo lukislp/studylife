@@ -104,5 +104,6 @@
     "CourseSparkTooltip":  "Ure na teden, zadnjih 12 tednov",
     "CourseEctsRingFormat":  "{0} od {1} ECTS pridobljeno",
     "WeekdayRanking":  "Lestvica dni v tednu",
-    "WeekdayRankingSubtitle":  "Kateri dan v tednu prinese največ ur učenja"
+    "WeekdayRankingSubtitle":  "Kateri dan v tednu prinese največ ur učenja",
+    "AriaCloseDetails":  "Zapri podrobnosti"
 }

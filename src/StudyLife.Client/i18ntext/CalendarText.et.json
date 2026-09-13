@@ -54,5 +54,8 @@
   "TemplateNamePlaceholder": "Malli nimi",
   "TemplateNameRequiredError": "Palun sisesta malli nimi.",
   "TemplateSaveFailed": "Malli ei õnnestunud salvestada.",
-  "WeekPlanLinkButton": "Prindi nädalaplaan"
+  "WeekPlanLinkButton": "Prindi nädalaplaan",
+  "AriaCloseDialog": "Sulge dialoog",
+  "AriaPreviousWeek": "Eelmine nädal",
+  "AriaNextWeek": "Järgmine nädal"
 }

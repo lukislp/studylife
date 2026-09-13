@@ -286,5 +286,9 @@
   "MarketplaceDemoNotice": "Lisäosien asentaminen on poistettu käytöstä tässä demoversiossa.",
   "ClientKeysHeading": "Yhdistetyt lisäosat",
   "TelemetryHeading": "Käyttö- ja virheraportit",
-  "TelemetryDesc": "Auttaa meitä löytämään bugeja ja hitaita kohtia lähettämällä anonyymejä suorituskyky- ja virhetietoja — ei koskaan muistiinpanojasi, istuntojasi tai terveystietojasi. Voit poistaa tämän käytöstä milloin tahansa."
+  "TelemetryDesc": "Auttaa meitä löytämään bugeja ja hitaita kohtia lähettämällä anonyymejä suorituskyky- ja virhetietoja — ei koskaan muistiinpanojasi, istuntojasi tai terveystietojasi. Voit poistaa tämän käytöstä milloin tahansa.",
+  "AriaCloseDialog": "Sulje valintaikkuna",
+  "AriaRemoveGroup": "Poista ryhmä",
+  "AriaRemoveCourse": "Poista kurssi",
+  "AriaDeleteTimerMode": "Poista ajastintila"
 }

@@ -286,5 +286,9 @@
   "MarketplaceDemoNotice": "Instaliranje dodataka onemogućeno je na ovoj demo instanci.",
   "ClientKeysHeading": "Povezani dodaci",
   "TelemetryHeading": "Izvještaji o korištenju i pogreškama",
-  "TelemetryDesc": "Pomaže nam pronaći greške i spora mjesta slanjem anonimnih podataka o performansama i pogreškama — nikad tvoje bilješke, sesije ili zdravstvene podatke. To možeš isključiti bilo kad."
+  "TelemetryDesc": "Pomaže nam pronaći greške i spora mjesta slanjem anonimnih podataka o performansama i pogreškama — nikad tvoje bilješke, sesije ili zdravstvene podatke. To možeš isključiti bilo kad.",
+  "AriaCloseDialog": "Zatvori dijalog",
+  "AriaRemoveGroup": "Ukloni grupu",
+  "AriaRemoveCourse": "Ukloni kolegij",
+  "AriaDeleteTimerMode": "Izbriši način mjerača vremena"
 }

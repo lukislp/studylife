@@ -104,5 +104,6 @@
     "CourseSparkTooltip":  "Hours per week, last 12 weeks",
     "CourseEctsRingFormat":  "{0} of {1} ECTS earned",
     "WeekdayRanking":  "Weekday ranking",
-    "WeekdayRankingSubtitle":  "Which weekday brings in the most study hours"
+    "WeekdayRankingSubtitle":  "Which weekday brings in the most study hours",
+    "AriaCloseDetails":  "Close details"
 }

@@ -53,5 +53,6 @@
   "DictateSilent": "Nije otkriven govor",
   "DictateBrowserVoice": "Slušanje putem prepoznavanja govora preglednika…",
   "CaptureSourceLinkLabel": "Pogledaj izvornik",
-  "RelatedNotesLabel": "Povezane bilješke"
+  "RelatedNotesLabel": "Povezane bilješke",
+  "AriaCloseDialog": "Zatvori dijalog"
 }

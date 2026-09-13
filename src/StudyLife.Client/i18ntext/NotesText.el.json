@@ -53,5 +53,6 @@
   "DictateSilent": "Δεν εντοπίστηκε ομιλία",
   "DictateBrowserVoice": "Ακρόαση μέσω αναγνώρισης φωνής του προγράμματος περιήγησης…",
   "CaptureSourceLinkLabel": "Προβολή πρωτοτύπου",
-  "RelatedNotesLabel": "Σχετικές σημειώσεις"
+  "RelatedNotesLabel": "Σχετικές σημειώσεις",
+  "AriaCloseDialog": "Κλείσιμο παραθύρου διαλόγου"
 }

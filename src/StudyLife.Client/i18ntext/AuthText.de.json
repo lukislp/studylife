@@ -77,5 +77,6 @@
   "RegisterInviteRequiredHint": "Für die Registrierung wird ein Einladungslink benötigt. Bitte verwende den Link, den du erhalten hast.",
   "RegisterInviteInvalid": "Dieser Einladungslink ist ungültig, abgelaufen oder wurde bereits verwendet.",
   "PasskeysRevokeOthers": "Auf allen anderen Geräten abmelden",
-  "PasskeysRevokeOthersDone": "Alle anderen Geräte wurden abgemeldet."
+  "PasskeysRevokeOthersDone": "Alle anderen Geräte wurden abgemeldet.",
+  "AriaCloseDialog": "Dialog schließen"
 }

@@ -61,5 +61,7 @@
   "TimerModeDesc_micro": "5 minutos de enfoque, 1 minuto de descanso. Pasos pequeños para días de poca energía o para desatascarte.",
   "TimerModeDesc_burst": "15 minutos de enfoque, 3 minutos de descanso. Más margen que un sprint, pero igual de ágil.",
   "TimerModeDesc_deepdive": "120 minutos de enfoque, 20 minutos de descanso. Para cuando necesitas desaparecer dentro de un problema.",
-  "TimerModeDesc_marathon": "180 minutos de enfoque, 30 minutos de descanso. Un empujón largo e ininterrumpido — territorio de preparación de exámenes."
+  "TimerModeDesc_marathon": "180 minutos de enfoque, 30 minutos de descanso. Un empujón largo e ininterrumpido — territorio de preparación de exámenes.",
+  "AriaStartTimer": "Iniciar temporizador",
+  "AriaPauseTimer": "Pausar temporizador"
 }

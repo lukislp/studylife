@@ -61,5 +61,7 @@
   "TimerModeDesc_micro": "5 minute concentrare, 1 minut pauză. Pași mici pentru zilele cu energie scăzută sau ca să te deblochezi.",
   "TimerModeDesc_burst": "15 minute concentrare, 3 minute pauză. Mai mult spațiu decât un sprint, tot într-un ritm alert.",
   "TimerModeDesc_deepdive": "120 de minute concentrare, 20 de minute pauză. Pentru când trebuie să dispari complet într-o problemă.",
-  "TimerModeDesc_marathon": "180 de minute concentrare, 30 de minute pauză. O singură, lungă și neîntreruptă tragere — teritoriu de pregătire pentru examen."
+  "TimerModeDesc_marathon": "180 de minute concentrare, 30 de minute pauză. O singură, lungă și neîntreruptă tragere — teritoriu de pregătire pentru examen.",
+  "AriaStartTimer": "Pornește cronometrul",
+  "AriaPauseTimer": "Pune cronometrul pe pauză"
 }

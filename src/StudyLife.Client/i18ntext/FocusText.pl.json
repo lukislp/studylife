@@ -61,5 +61,7 @@
   "TimerModeDesc_micro": "5 minut skupienia, 1 minuta przerwy. Małe kroki na dni bez energii albo żeby ruszyć z miejsca.",
   "TimerModeDesc_burst": "15 minut skupienia, 3 minuty przerwy. Więcej przestrzeni niż sprint, wciąż w szybkim tempie.",
   "TimerModeDesc_deepdive": "120 minut skupienia, 20 minut przerwy. Gdy musisz całkowicie zniknąć w problemie.",
-  "TimerModeDesc_marathon": "180 minut skupienia, 30 minut przerwy. Jedno długie, nieprzerwane pchnięcie — terytorium przygotowań do egzaminu."
+  "TimerModeDesc_marathon": "180 minut skupienia, 30 minut przerwy. Jedno długie, nieprzerwane pchnięcie — terytorium przygotowań do egzaminu.",
+  "AriaStartTimer": "Uruchom minutnik",
+  "AriaPauseTimer": "Wstrzymaj minutnik"
 }

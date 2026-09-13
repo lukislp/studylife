@@ -32,5 +32,9 @@
   "PendingSyncTooltip": "{0} bidliet qed jistennew is-sinkronizzazzjoni",
   "UpdateAvailableText": "Verżjoni ġdida disponibbli",
   "UpdateReloadButton": "Erġa' tella'",
-  "AgentChatLabel": "Assistent tal-IA"
+  "AgentChatLabel": "Assistent tal-IA",
+  "AriaCloseDialog": "Agħlaq id-djalogu",
+  "AriaDismissUpdate": "Warrab l-avviż tal-aġġornament",
+  "AriaOpenMenu": "Iftaħ il-menu",
+  "AriaCloseMenu": "Agħlaq il-menu"
 }

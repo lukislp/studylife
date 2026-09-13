@@ -61,5 +61,7 @@
   "TimerModeDesc_micro": "5 minuten focus, 1 minuut pauze. Kleine stapjes voor dagen met weinig energie of om weer los te komen.",
   "TimerModeDesc_burst": "15 minuten focus, 3 minuten pauze. Meer ruimte dan een sprint, nog steeds in hoog tempo.",
   "TimerModeDesc_deepdive": "120 minuten focus, 20 minuten pauze. Voor als je helemaal in een probleem moet verdwijnen.",
-  "TimerModeDesc_marathon": "180 minuten focus, 30 minuten pauze. Eén lange, ononderbroken push — examenvoorbereidingsterrein."
+  "TimerModeDesc_marathon": "180 minuten focus, 30 minuten pauze. Eén lange, ononderbroken push — examenvoorbereidingsterrein.",
+  "AriaStartTimer": "Timer starten",
+  "AriaPauseTimer": "Timer pauzeren"
 }

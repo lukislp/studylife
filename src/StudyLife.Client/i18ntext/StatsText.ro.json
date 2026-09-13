@@ -104,5 +104,6 @@
     "CourseSparkTooltip":  "Ore pe săptămână, ultimele 12 săptămâni",
     "CourseEctsRingFormat":  "{0} din {1} ECTS obținute",
     "WeekdayRanking":  "Clasamentul zilelor săptămânii",
-    "WeekdayRankingSubtitle":  "Care zi a săptămânii aduce cele mai multe ore de studiu"
+    "WeekdayRankingSubtitle":  "Care zi a săptămânii aduce cele mai multe ore de studiu",
+    "AriaCloseDetails":  "Închide detaliile"
 }

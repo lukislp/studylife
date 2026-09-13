@@ -53,5 +53,6 @@
   "DictateSilent": "Runa netika konstatēta",
   "DictateBrowserVoice": "Klausās, izmantojot pārlūkprogrammas runas atpazīšanu…",
   "CaptureSourceLinkLabel": "Skatīt oriģinālu",
-  "RelatedNotesLabel": "Saistītās piezīmes"
+  "RelatedNotesLabel": "Saistītās piezīmes",
+  "AriaCloseDialog": "Aizvērt dialoglodziņu"
 }

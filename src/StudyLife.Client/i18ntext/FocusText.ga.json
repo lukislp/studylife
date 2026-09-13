@@ -61,5 +61,7 @@
   "TimerModeDesc_micro": "5 nóiméad fócais, 1 nóiméad sosa. Céimeanna beaga do laethanta ísealfhuinnimh nó chun tú féin a bhogadh.",
   "TimerModeDesc_burst": "15 nóiméad fócais, 3 nóiméad sosa. Níos mó spáis ná sprint, luas gasta fós.",
   "TimerModeDesc_deepdive": "120 nóiméad fócais, 20 nóiméad sosa. Nuair a bheidh ort dul as radharc go hiomlán i bhfadhb.",
-  "TimerModeDesc_marathon": "180 nóiméad fócais, 30 nóiméad sosa. Brú fada gan bhriseadh amháin — críoch ullmhúcháin scrúdaithe."
+  "TimerModeDesc_marathon": "180 nóiméad fócais, 30 nóiméad sosa. Brú fada gan bhriseadh amháin — críoch ullmhúcháin scrúdaithe.",
+  "AriaStartTimer": "Tosaigh an t-amadóir",
+  "AriaPauseTimer": "Cuir an t-amadóir ar sos"
 }

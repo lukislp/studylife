@@ -54,5 +54,8 @@
   "TemplateNamePlaceholder": "Isem il-mudell",
   "TemplateNameRequiredError": "Jekk jogħġbok daħħal isem għall-mudell.",
   "TemplateSaveFailed": "Il-mudell ma setax jiġi ssejvjat.",
-  "WeekPlanLinkButton": "Ipprintja l-pjan tal-ġimgħa"
+  "WeekPlanLinkButton": "Ipprintja l-pjan tal-ġimgħa",
+  "AriaCloseDialog": "Agħlaq id-djalogu",
+  "AriaPreviousWeek": "Il-ġimgħa ta' qabel",
+  "AriaNextWeek": "Il-ġimgħa d-dieħla"
 }

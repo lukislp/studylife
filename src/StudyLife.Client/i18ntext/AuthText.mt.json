@@ -77,5 +77,6 @@
   "RegisterInviteRequiredHint": "Hija meħtieġa link ta' stedina biex tirreġistra. Uża l-link li ngħatajt.",
   "RegisterInviteInvalid": "Din il-link ta' stedina mhijiex valida, skadiet, jew diġà ntużat.",
   "PasskeysRevokeOthers": "Oħroġ minn kull apparat ieħor",
-  "PasskeysRevokeOthersDone": "Kull apparat ieħor inħareġ."
+  "PasskeysRevokeOthersDone": "Kull apparat ieħor inħareġ.",
+  "AriaCloseDialog": "Agħlaq id-djalogu"
 }

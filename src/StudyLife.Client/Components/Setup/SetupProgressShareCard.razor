@@ -45,10 +45,10 @@
 @if (_confirming)
 {
     <div class="modal-overlay" @onclick="() => _confirming = false">
-        <div class="modal" @onclick:stopPropagation="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="progress-share-regenerate-title" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h3>@T.ProgressShareRegenerateConfirmTitle</h3>
-                <button type="button" class="modal-close" @onclick="() => _confirming = false">✕</button>
+                <h3 id="progress-share-regenerate-title">@T.ProgressShareRegenerateConfirmTitle</h3>
+                <button type="button" class="modal-close" aria-label="@T.AriaCloseDialog" @onclick="() => _confirming = false">✕</button>
             </div>
             <div class="modal-body">
                 <p>⚠️ @T.ProgressShareRegenerateConfirmWarning</p>

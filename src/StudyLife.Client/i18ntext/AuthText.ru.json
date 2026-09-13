@@ -77,5 +77,6 @@
   "RegisterInviteRequiredHint": "Для регистрации нужна ссылка-приглашение. Используйте ссылку, которую вам прислали.",
   "RegisterInviteInvalid": "Эта ссылка-приглашение недействительна, истекла или уже использована.",
   "PasskeysRevokeOthers": "Выйти на всех остальных устройствах",
-  "PasskeysRevokeOthersDone": "Все остальные устройства отключены."
+  "PasskeysRevokeOthersDone": "Все остальные устройства отключены.",
+  "AriaCloseDialog": "Закрыть диалог"
 }

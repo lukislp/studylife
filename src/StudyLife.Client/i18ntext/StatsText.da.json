@@ -104,5 +104,6 @@
     "CourseSparkTooltip":  "Timer pr. uge, seneste 12 uger",
     "CourseEctsRingFormat":  "{0} af {1} ECTS optjent",
     "WeekdayRanking":  "Rangering af ugedage",
-    "WeekdayRankingSubtitle":  "Hvilken ugedag giver flest studietimer"
+    "WeekdayRankingSubtitle":  "Hvilken ugedag giver flest studietimer",
+    "AriaCloseDetails":  "Luk detaljer"
 }

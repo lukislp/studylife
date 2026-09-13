@@ -15,5 +15,6 @@
   "ErrorGeneric": "Kaut kas nogāja greizi. Lūdzu, mēģiniet vēlreiz.",
   "PendingActionTitle": "Šai darbībai nepieciešams jūsu apstiprinājums",
   "Approve": "Apstiprināt",
-  "Reject": "Noraidīt"
+  "Reject": "Noraidīt",
+  "AriaCloseDialog": "Aizvērt dialoglodziņu"
 }

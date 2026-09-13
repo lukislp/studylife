@@ -77,5 +77,6 @@
   "RegisterInviteRequiredHint": "An invite link is required to register. Please use the link you were given.",
   "RegisterInviteInvalid": "This invite link is invalid, expired, or has already been used.",
   "PasskeysRevokeOthers": "Sign out on all other devices",
-  "PasskeysRevokeOthersDone": "All other devices have been signed out."
+  "PasskeysRevokeOthersDone": "All other devices have been signed out.",
+  "AriaCloseDialog": "Close dialog"
 }

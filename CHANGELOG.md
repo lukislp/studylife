@@ -1,3 +1,10 @@
+## [3.16.10](https://github.com/lukislp/studylife/compare/v3.16.9...v3.16.10) (2026-09-13)
+
+
+### Bug Fixes
+
+* **client:** release AppStateService resources on dispose, dialog semantics for modals ([#208](https://github.com/lukislp/studylife/issues/208)) ([09e97d5](https://github.com/lukislp/studylife/commit/09e97d5f842b6ec81209d382de57ab4e83e49c92))
+
 ## [3.16.9](https://github.com/lukislp/studylife/compare/v3.16.8...v3.16.9) (2026-09-12)
 
 

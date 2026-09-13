@@ -77,5 +77,6 @@
   "RegisterInviteRequiredHint": "Registreerimiseks on vaja kutselinki. Kasuta linki, mille said.",
   "RegisterInviteInvalid": "See kutselink on kehtetu, aegunud või juba kasutatud.",
   "PasskeysRevokeOthers": "Logi välja kõigist teistest seadmetest",
-  "PasskeysRevokeOthersDone": "Kõik teised seadmed on välja logitud."
+  "PasskeysRevokeOthersDone": "Kõik teised seadmed on välja logitud.",
+  "AriaCloseDialog": "Sulge dialoog"
 }

@@ -18,6 +18,8 @@
                     ViewMode="@_viewMode"
                     WeekViewText="@T.WeekViewLabel"
                     DayViewText="@T.DayViewLabel"
+                    PrevWeekLabel="@T.AriaPreviousWeek"
+                    NextWeekLabel="@T.AriaNextWeek"
                     OnViewModeChanged="SetViewMode"
                     OnPrevWeek="Prev"
                     OnNextWeek="Next"
@@ -98,10 +100,10 @@
 @if (_showModal)
 {
     <div class="modal-overlay" @onclick="CloseModal">
-        <div class="modal" @onclick:stopPropagation="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="calendar-session-title" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h3>@(_editSession?.Id > 0 ? T.EditSession : T.NewSession)</h3>
-                <button class="modal-close" @onclick="CloseModal">✕</button>
+                <h3 id="calendar-session-title">@(_editSession?.Id > 0 ? T.EditSession : T.NewSession)</h3>
+                <button class="modal-close" aria-label="@T.AriaCloseDialog" @onclick="CloseModal">✕</button>
             </div>
             <div class="modal-body" @onclick="() => _confirmingDelete = false">
                 @if (!string.IsNullOrEmpty(_formError))
@@ -214,10 +216,10 @@
 @if (_showImportModal)
 {
     <div class="modal-overlay" @onclick="CloseImportModal">
-        <div class="modal modal-wide" @onclick:stopPropagation="true">
+        <div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="calendar-import-title" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h3>@T.ImportIcsTitle</h3>
-                <button class="modal-close" @onclick="CloseImportModal">✕</button>
+                <h3 id="calendar-import-title">@T.ImportIcsTitle</h3>
+                <button class="modal-close" aria-label="@T.AriaCloseDialog" @onclick="CloseImportModal">✕</button>
             </div>
             <div class="modal-body">
                 @if (_importStep == "upload")
@@ -289,10 +291,10 @@
 @if (_showTemplatesModal)
 {
     <div class="modal-overlay" @onclick="CloseTemplatesModal">
-        <div class="modal" @onclick:stopPropagation="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="calendar-templates-title" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h3>@T.TemplatesModalTitle</h3>
-                <button class="modal-close" @onclick="CloseTemplatesModal">✕</button>
+                <h3 id="calendar-templates-title">@T.TemplatesModalTitle</h3>
+                <button class="modal-close" aria-label="@T.AriaCloseDialog" @onclick="CloseTemplatesModal">✕</button>
             </div>
             <div class="modal-body">
                 <p class="ss-desc">@T.TemplatesModalDescription</p>

@@ -88,7 +88,7 @@
                                     <div class="ppr-date">@($"{LocalDate.Weekday(prop.Start, true)}, {LocalDate.DayMonth(prop.Start)}")</div>
                                     <div class="ppr-time">@LocalDate.Time(prop.Start)–@LocalDate.Time(prop.End)</div>
                                     <div class="ppr-topic">@prop.Topic</div>
-                                    <button class="ppr-remove" title="@T.RemoveProposalTitle" @onclick="() => _examProposals.Remove(prop)">✕</button>
+                                    <button class="ppr-remove" aria-label="@T.RemoveProposalTitle" title="@T.RemoveProposalTitle" @onclick="() => _examProposals.Remove(prop)">✕</button>
                                 </div>
                             }
                         </div>
@@ -167,7 +167,7 @@
                                 <div class="ppr-time">@LocalDate.Time(prop.Start)–@LocalDate.Time(prop.End)</div>
                                 <div class="ppr-course">@prop.CourseName</div>
                                 <div class="ppr-topic">@prop.Topic</div>
-                                <button class="ppr-remove" title="@T.RemoveProposalTitle" @onclick="() => _weekProposals.Remove(prop)">✕</button>
+                                <button class="ppr-remove" aria-label="@T.RemoveProposalTitle" title="@T.RemoveProposalTitle" @onclick="() => _weekProposals.Remove(prop)">✕</button>
                             </div>
                         }
                     </div>

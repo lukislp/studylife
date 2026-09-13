@@ -77,5 +77,6 @@
   "RegisterInviteRequiredHint": "Registracijai reikalinga pakvietimo nuoroda. Naudokite gautą nuorodą.",
   "RegisterInviteInvalid": "Ši pakvietimo nuoroda negalioja, baigėsi arba jau panaudota.",
   "PasskeysRevokeOthers": "Atsijungti visuose kituose įrenginiuose",
-  "PasskeysRevokeOthersDone": "Visi kiti įrenginiai atjungti."
+  "PasskeysRevokeOthersDone": "Visi kiti įrenginiai atjungti.",
+  "AriaCloseDialog": "Uždaryti dialogo langą"
 }

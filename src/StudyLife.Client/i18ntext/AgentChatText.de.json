@@ -15,5 +15,6 @@
   "ErrorGeneric": "Etwas ist schiefgelaufen. Bitte versuch es erneut.",
   "PendingActionTitle": "Diese Aktion braucht deine Bestätigung",
   "Approve": "Bestätigen",
-  "Reject": "Ablehnen"
+  "Reject": "Ablehnen",
+  "AriaCloseDialog": "Dialog schließen"
 }

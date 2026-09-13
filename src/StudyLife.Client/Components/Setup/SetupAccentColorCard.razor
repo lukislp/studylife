@@ -13,7 +13,7 @@
             var key = preset.Key;
             <button type="button"
                     class="accent-swatch @(AccentColor == key ? "selected" : "")"
-                    style="background:@preset.Hex" title="@preset.Name"
+                    style="background:@preset.Hex" title="@preset.Name" aria-label="@preset.Name"
                     @onclick="() => OnAccentSelected.InvokeAsync(key)">
                 @if (AccentColor == key)
                 {

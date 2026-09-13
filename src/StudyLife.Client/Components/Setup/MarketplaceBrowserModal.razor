@@ -18,10 +18,10 @@
    POST api/developer/clients and api/auth/connect with zero changes needed there. *@
 
 <div class="modal-overlay" @onclick="() => OnClose.InvokeAsync()">
-    <div class="modal" @onclick:stopPropagation="true" style="max-width:560px;max-height:85vh;display:flex;flex-direction:column">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="marketplace-browser-title" @onclick:stopPropagation="true" style="max-width:560px;max-height:85vh;display:flex;flex-direction:column">
         <div class="modal-header">
-            <h3>@T.MarketplaceHeading</h3>
-            <button type="button" class="modal-close" @onclick="() => OnClose.InvokeAsync()">✕</button>
+            <h3 id="marketplace-browser-title">@T.MarketplaceHeading</h3>
+            <button type="button" class="modal-close" aria-label="@T.AriaCloseDialog" @onclick="() => OnClose.InvokeAsync()">✕</button>
         </div>
         <div class="modal-body" style="overflow-y:auto;flex:1 1 auto;min-height:0">
             @if (_loading)

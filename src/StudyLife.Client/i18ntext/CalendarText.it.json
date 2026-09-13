@@ -54,5 +54,8 @@
   "TemplateNamePlaceholder": "Nome del modello",
   "TemplateNameRequiredError": "Inserisci un nome per il modello.",
   "TemplateSaveFailed": "Non è stato possibile salvare il modello.",
-  "WeekPlanLinkButton": "Stampa piano settimanale"
+  "WeekPlanLinkButton": "Stampa piano settimanale",
+  "AriaCloseDialog": "Chiudi finestra di dialogo",
+  "AriaPreviousWeek": "Settimana precedente",
+  "AriaNextWeek": "Settimana successiva"
 }

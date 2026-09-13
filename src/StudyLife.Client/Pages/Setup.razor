@@ -108,10 +108,10 @@
         @if (_confirmingDeleteProgram)
         {
             <div class="modal-overlay" @onclick="CancelDeleteProgram">
-                <div class="modal" @onclick:stopPropagation="true">
+                <div class="modal" role="dialog" aria-modal="true" aria-labelledby="setup-delete-program-title" @onclick:stopPropagation="true">
                     <div class="modal-header">
-                        <h3>@T.DeleteProgramButton</h3>
-                        <button class="modal-close" @onclick="CancelDeleteProgram">✕</button>
+                        <h3 id="setup-delete-program-title">@T.DeleteProgramButton</h3>
+                        <button class="modal-close" aria-label="@T.AriaCloseDialog" @onclick="CancelDeleteProgram">✕</button>
                     </div>
                     <div class="modal-body">
                         <p>@T.ConfirmDeleteProgramQuestion</p>
@@ -127,10 +127,10 @@
         @if (_confirmingDismissBuiltIn)
         {
             <div class="modal-overlay" @onclick="CancelDismissBuiltInProgram">
-                <div class="modal" @onclick:stopPropagation="true">
+                <div class="modal" role="dialog" aria-modal="true" aria-labelledby="setup-dismiss-builtin-title" @onclick:stopPropagation="true">
                     <div class="modal-header">
-                        <h3>@T.DismissBuiltInProgramButton</h3>
-                        <button class="modal-close" @onclick="CancelDismissBuiltInProgram">✕</button>
+                        <h3 id="setup-dismiss-builtin-title">@T.DismissBuiltInProgramButton</h3>
+                        <button class="modal-close" aria-label="@T.AriaCloseDialog" @onclick="CancelDismissBuiltInProgram">✕</button>
                     </div>
                     <div class="modal-body">
                         <p>@T.ConfirmDismissBuiltInProgramQuestion</p>
@@ -283,6 +283,8 @@
 
         <!-- Custom timer modes (shown next to the built-in modes on the Focus page) -->
         <SetupTimerModesCard Label="@T.TimerModesLabel" Desc="@T.TimerModesDesc"
+
+                             DeleteLabel="@T.AriaDeleteTimerMode"
                              NamePlaceholder="@T.TimerModeNamePlaceholder"
                              FocusLabel="@T.TimerModeFocusLabel" BreakLabel="@T.TimerModeBreakLabel"
                              RoundsLabel="@T.TimerModeRoundsLabel" AddButtonText="@T.TimerModeAddButton"
@@ -318,6 +320,8 @@
 
             <!-- Calendar subscription -->
             <SetupCalendarSubscriptionCard Label="@T.CalendarSubscriptionHeading" Desc="@T.CalendarSubscriptionDesc"
+
+                                           CloseLabel="@T.AriaCloseDialog"
                                            IcsUrl="@_icsUrl" CopyText="@T.Copy" CopiedText="@T.Copied"
                                            IcsCopied="_icsCopied" OnCopyClick="CopyIcsUrl"
                                            RegenerateButtonText="@T.CalendarRegenerateButton"
@@ -446,6 +450,7 @@
     @if (_showCompletionModal && _completionGoal != null)
     {
         <SetupCompletionModal CourseName="@_completionGoal.CourseName"
+                              CloseLabel="@T.AriaCloseDialog"
                               TitleFormat="@T.CourseCompletedTitle"
                               GradeOptionalLabel="@T.GradeOptionalLabel"
                               GradePlaceholder="@T.GradePlaceholder"

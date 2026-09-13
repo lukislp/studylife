@@ -77,5 +77,6 @@
   "RegisterInviteRequiredHint": "За регистрация е необходима покана. Използвайте връзката, която сте получили.",
   "RegisterInviteInvalid": "Тази покана е невалидна, изтекла или вече използвана.",
   "PasskeysRevokeOthers": "Изход от всички други устройства",
-  "PasskeysRevokeOthersDone": "Всички други устройства бяха изведени от системата."
+  "PasskeysRevokeOthersDone": "Всички други устройства бяха изведени от системата.",
+  "AriaCloseDialog": "Затваряне на диалога"
 }
