@@ -247,14 +247,27 @@ spec:
           # itself before Kestrel starts listening (Program.cs), so these delays already accounted
           # for that; no wait-for-migrations loop applies here (that's worker-only, see
           # k8s/05-worker.yaml).
+          #
+          # Both probes set timeoutSeconds explicitly instead of inheriting the Kubernetes
+          # default of 1s. That default is far too tight for a .NET app on this cluster's arm64
+          # nodes: the weakest one sits close to its memory limit, so an ordinary load spike
+          # pushes even the dependency-free /healthz/live past a single second, liveness fails
+          # failureThreshold times in a row and kubelet restarts a container that was merely
+          # busy - the single biggest source of unexplained restarts here. 5s of budget, plus 5
+          # consecutive liveness failures, tells a busy pod apart from a dead one without
+          # letting a genuinely hung process linger (5 x 10s = 50s after the 20s initial delay).
           readinessProbe:
             httpGet: {path: /healthz/ready, port: 8080}
             initialDelaySeconds: 10
             periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 3
           livenessProbe:
             httpGet: {path: /healthz/live, port: 8080}
             initialDelaySeconds: 20
             periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
           volumeMounts:
             - name: web-backend-tls
               mountPath: /etc/studylife-web-backend-tls
