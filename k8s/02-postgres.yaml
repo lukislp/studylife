@@ -17,6 +17,23 @@ spec:
   # assumed 8GB, considerably more buffer than the initial lean profile assumed. Full 3-way HA
   # re-enabled.
   instances: 3
+  # Pinned explicitly. Until 2026-09-13 this field was absent, so the cluster ran on whatever
+  # image the operator defaulted to WHEN IT WAS CREATED (16.4) - a value frozen into the live
+  # spec by CNPG's defaulting webhook and invisible in git, which meant the running Postgres
+  # minor was neither reviewable nor reproducible from this repo. 16.4 is from August 2024;
+  # 16.15 is the current 16.x and carries ~14 months of accumulated fixes, including several
+  # security ones. Staying on major 16 deliberately: a major upgrade is an offline
+  # pg_upgrade/logical-replication operation, a different exercise entirely.
+  #
+  # CNPG handles a minor-version image change as a rolling update - replicas first, the
+  # primary last. primaryUpdateMethod "switchover" instead of the default "restart": with 3
+  # instances there is always an already-upgraded replica to promote, so the write endpoint
+  # moves to a healthy node in seconds instead of the primary going down for the length of an
+  # image pull plus a Postgres start. "unsupervised" keeps the operator doing this on its own
+  # (the default) - "supervised" would stop and wait for a manual promotion.
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.15
+  primaryUpdateStrategy: unsupervised
+  primaryUpdateMethod: switchover
   storage:
     # Longhorn (cross-node-replicated, homelab-infra/cluster/11-longhorn-values.yaml) instead
     # of local-path - migrated 2026-08-25 one replica at a time (delete a non-primary
