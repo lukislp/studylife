@@ -463,6 +463,12 @@ builder.Services.AddScoped<ICourseResourceService, CourseResourceService>();
 builder.Services.AddScoped<IStudyProgramService, StudyProgramService>();
 builder.Services.AddScoped<IExamPlanService, ExamPlanService>();
 builder.Services.AddScoped<ITimerStateService, TimerStateService>();
+builder.Services.AddScoped<ISettingsService, SettingsService>();
+builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
+builder.Services.AddScoped<IPushService, PushService>();
+builder.Services.AddScoped<IBackupDataService, BackupDataService>();
+builder.Services.AddScoped<ICalendarTokenService, CalendarTokenService>();
+builder.Services.AddScoped<IDeveloperClientService, DeveloperClientService>();
 // Per-audience redirect_uri allow-list for the consent connect flow (2026-09 audit S1) - see
 // ConsentRedirectPolicy for the built-in shapes and the Consent:AllowedRedirectUris config.
 builder.Services.AddSingleton<ConsentRedirectPolicy>();

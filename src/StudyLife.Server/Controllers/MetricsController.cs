@@ -78,7 +78,7 @@ public class MetricsController : ControllerBase
     {
         var asOf = now ?? DateTime.Now;
         var settingsEntity = await _db.Settings.AsNoTracking().FirstOrDefaultAsync();
-        var settings = SettingsController.ToDto(settingsEntity ?? new UserSettingsEntity());
+        var settings = SettingsService.ToDto(settingsEntity ?? new UserSettingsEntity());
 
         var resolved = await ResolveProgrammeAsync(program, settingsEntity?.ActiveStudyProgramId);
         if (resolved == null) return NotFound();
@@ -218,7 +218,7 @@ public class MetricsController : ControllerBase
     private async Task<ActionResult<MetricsAchievementsDto>> ComputeAchievementsAsync(int? program)
     {
         var settingsEntity = await _db.Settings.AsNoTracking().FirstOrDefaultAsync();
-        var settings = SettingsController.ToDto(settingsEntity ?? new UserSettingsEntity());
+        var settings = SettingsService.ToDto(settingsEntity ?? new UserSettingsEntity());
 
         var resolved = await ResolveProgrammeAsync(program, settingsEntity?.ActiveStudyProgramId);
         if (resolved == null) return NotFound();

@@ -74,7 +74,7 @@ public class StatsController : ControllerBase
     private async Task<StatsSummaryDto> ComputeAsync(DateTime now, ProgrammeScope scope)
     {
         var settingsEntity = await _db.Settings.AsNoTracking().FirstOrDefaultAsync() ?? new UserSettingsEntity();
-        var settings = SettingsController.ToDto(settingsEntity);
+        var settings = SettingsService.ToDto(settingsEntity);
 
         var allSessions = await _loader.LoadAllSessionsAsync();
         // GET /api/sessions/history?days=371 and ?days=3650 - both studied-only (onlyCompleted

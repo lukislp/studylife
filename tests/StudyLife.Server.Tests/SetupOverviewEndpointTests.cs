@@ -160,7 +160,7 @@ public class SetupOverviewEndpointTests
 
     /// <summary>
     /// The bundle must never perform the calendar token's lazy-create write (a GET with a side
-    /// effect, see SystemController.GetCalendarToken/SetupController's class doc): a user who
+    /// effect, see CalendarTokenService.GetOrCreateAsync/SetupController's class doc): a user who
     /// never touched the calendar feature gets CalendarToken == null from the bundle, and the DB
     /// still has no token afterward.
     /// </summary>

@@ -6,8 +6,8 @@ namespace StudyLife.Server.Auth;
 /// <summary>
 /// One single-key API slot on <see cref="AuthUserEntity"/> - the pair of columns
 /// (&lt;Name&gt;ApiKeyHash + &lt;Name&gt;ApiKeyCreatedAt) behind one integration's
-/// status/generate/revoke trio in SettingsController, plus the two operations that are allowed
-/// to touch them.
+/// status/generate/revoke trio behind SettingsController, plus the two operations that are
+/// allowed to touch them.
 ///
 /// The trios used to be written out once per integration, and by the eighth of them
 /// (ha/ai/mcp/capture/focusguard/focustunes/tray/developer) the only thing that differed
@@ -23,7 +23,7 @@ namespace StudyLife.Server.Auth;
 /// migrations, the unique indexes and StudyLifeAuthenticationHandler's lookups are built on),
 /// and a typo in a descriptor is a compile error rather than a runtime surprise.
 /// </summary>
-internal sealed class ApiKeySlot(
+public sealed class ApiKeySlot(
     Func<AuthUserEntity, string?> getHash,
     Action<AuthUserEntity, string?> setHash,
     Func<AuthUserEntity, DateTime?> getCreatedAt,
@@ -65,7 +65,7 @@ internal sealed class ApiKeySlot(
 /// keys per user (WebhookApiKeyEntity, its own table with its own rows), not a single column
 /// pair, so it has nothing this descriptor could describe.
 /// </summary>
-internal static class ApiKeySlots
+public static class ApiKeySlots
 {
     /// <summary>Home Assistant (studylife-hacs).</summary>
     public static readonly ApiKeySlot Ha = new(
@@ -73,7 +73,7 @@ internal static class ApiKeySlots
         u => u.ApiKeyCreatedAt, (u, v) => u.ApiKeyCreatedAt = v);
 
     /// <summary>studylife-ai. The only slot whose endpoints do more than write these two
-    /// columns - see SettingsController.GenerateAiApiKey's outbox/registration handling.</summary>
+    /// columns - see ApiKeyService.GenerateAiKeyAsync's outbox/registration handling.</summary>
     public static readonly ApiKeySlot Ai = new(
         u => u.AiApiKeyHash, (u, v) => u.AiApiKeyHash = v,
         u => u.AiApiKeyCreatedAt, (u, v) => u.AiApiKeyCreatedAt = v);

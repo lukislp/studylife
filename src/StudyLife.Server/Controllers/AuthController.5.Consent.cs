@@ -55,27 +55,8 @@ public partial class AuthController
     }
 
     /// <summary>
-    /// SYNTACTIC redirect URI gate: an absolute https URL, or the RFC 8252 §8.3 native-app
-    /// loopback exception (EXACTLY http://127.0.0.1:&lt;port&gt;/... or http://localhost:&lt;port&gt;/...,
-    /// any port, any path). Nothing else non-https is ever accepted. This alone is NOT sufficient
-    /// for the five hardcoded audiences anymore: the assertion-exchange endpoints are anonymous
-    /// and the assertion is their only credential, so any https host that passed here could
-    /// redeem it (2026-09 audit S1). BuildConnectRedirectAsync therefore additionally requires
-    /// ConsentRedirectPolicy.IsAllowed - the per-audience allow-list. This method stays as the
-    /// shared first-stage check, and internal instead of private because DeveloperController
-    /// reuses it as-is when validating an OAuthClientEntity's AllowedRedirectUris at
-    /// registration time (those are then matched exactly by AuthController.10.OAuthClients.cs).
-    /// </summary>
-    internal static bool IsAllowedRedirectUri(string? redirectUri)
-    {
-        if (!Uri.TryCreate(redirectUri, UriKind.Absolute, out var uri)) return false;
-        if (uri.Scheme == Uri.UriSchemeHttps) return true;
-        return ConsentRedirectPolicy.IsLoopback(uri);
-    }
-
-    /// <summary>
     /// Shared core of every consent "connect" action (step 3 of the flow): validates redirect_uri
-    /// (IsAllowedRedirectUri), rotates the caller's key in the given slot via `rotateKey` (the
+    /// (ConsentRedirectPolicy.IsAllowedRedirectUri), rotates the caller's key in the given slot via `rotateKey` (the
     /// SAME helper SettingsController's own generate endpoint for that slot uses, e.g. RotateMcpKey/
     /// RotateCaptureKey - never duplicated hashing), and stakes out a single-use, audience-bound
     /// assertion the browser carries back to the consumer's own callback, so the plaintext key
@@ -91,7 +72,7 @@ public partial class AuthController
         // redirect can redeem it for the freshly rotated key - the redirect target must therefore
         // be a callback this audience is actually known to use (ConsentRedirectPolicy), not
         // merely "some https URL" (2026-09 audit S1).
-        if (!IsAllowedRedirectUri(redirectUri))
+        if (!ConsentRedirectPolicy.IsAllowedRedirectUri(redirectUri))
             return (null, BadRequest("redirectUri must be an absolute https URL, or an http://127.0.0.1|localhost loopback URL (RFC 8252)."));
         if (!_consentRedirects.IsAllowed(audience, redirectUri))
             return (null, BadRequest("redirectUri is not an allowed callback for this audience (see Consent:AllowedRedirectUris)."));
@@ -151,7 +132,7 @@ public partial class AuthController
     [HttpPost("mcp-connect")]
     public async Task<ActionResult<McpConnectResponseDto>> McpConnect([FromBody] McpConnectRequestDto request)
     {
-        var (redirectTo, error) = await BuildConnectRedirectAsync(AudienceMcp, request.RedirectUri, request.State, SettingsController.RotateMcpKey);
+        var (redirectTo, error) = await BuildConnectRedirectAsync(AudienceMcp, request.RedirectUri, request.State, ApiKeyService.RotateMcpKey);
         if (error is not null) return error;
         return new McpConnectResponseDto { RedirectTo = redirectTo! };
     }
@@ -177,7 +158,7 @@ public partial class AuthController
     /// <summary>
     /// Step 3 of the capture connect flow (identity contract v1 §2, generalized to the
     /// studylife-capture browser extension as a second audience): same session-required shape as
-    /// McpConnect, rotating the capture key slot instead (SettingsController.RotateCaptureKey).
+    /// McpConnect, rotating the capture key slot instead (ApiKeyService.RotateCaptureKey).
     /// The extension's own chrome.identity.launchWebAuthFlow supplies redirect_uri/state exactly
     /// like studylife-mcp's OAuth authorize redirect does for the mcp flow.
     /// </summary>
@@ -185,7 +166,7 @@ public partial class AuthController
     [HttpPost("capture-connect")]
     public async Task<ActionResult<CaptureConnectResponseDto>> CaptureConnect([FromBody] CaptureConnectRequestDto request)
     {
-        var (redirectTo, error) = await BuildConnectRedirectAsync(AudienceCapture, request.RedirectUri, request.State, SettingsController.RotateCaptureKey);
+        var (redirectTo, error) = await BuildConnectRedirectAsync(AudienceCapture, request.RedirectUri, request.State, ApiKeyService.RotateCaptureKey);
         if (error is not null) return error;
         return new CaptureConnectResponseDto { RedirectTo = redirectTo! };
     }
@@ -208,14 +189,14 @@ public partial class AuthController
     /// <summary>
     /// Step 3 of the focusguard connect flow (identity contract v1 §2, third audience alongside
     /// mcp/capture): same session-required shape as CaptureConnect, rotating the focusguard key
-    /// slot instead (SettingsController.RotateFocusGuardKey). The extension's own
+    /// slot instead (ApiKeyService.RotateFocusGuardKey). The extension's own
     /// chrome.identity.launchWebAuthFlow supplies redirect_uri/state exactly like the capture flow.
     /// </summary>
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("focusguard-connect")]
     public async Task<ActionResult<FocusGuardConnectResponseDto>> FocusGuardConnect([FromBody] FocusGuardConnectRequestDto request)
     {
-        var (redirectTo, error) = await BuildConnectRedirectAsync(AudienceFocusGuard, request.RedirectUri, request.State, SettingsController.RotateFocusGuardKey);
+        var (redirectTo, error) = await BuildConnectRedirectAsync(AudienceFocusGuard, request.RedirectUri, request.State, ApiKeyService.RotateFocusGuardKey);
         if (error is not null) return error;
         return new FocusGuardConnectResponseDto { RedirectTo = redirectTo! };
     }
@@ -239,13 +220,13 @@ public partial class AuthController
     /// <summary>
     /// Step 3 of the focustunes connect flow (identity contract v1 §2, fourth audience): same
     /// session-required shape as CaptureConnect, rotating the focustunes key slot instead
-    /// (SettingsController.RotateFocusTunesKey).
+    /// (ApiKeyService.RotateFocusTunesKey).
     /// </summary>
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("focustunes-connect")]
     public async Task<ActionResult<FocusTunesConnectResponseDto>> FocusTunesConnect([FromBody] FocusTunesConnectRequestDto request)
     {
-        var (redirectTo, error) = await BuildConnectRedirectAsync(AudienceFocusTunes, request.RedirectUri, request.State, SettingsController.RotateFocusTunesKey);
+        var (redirectTo, error) = await BuildConnectRedirectAsync(AudienceFocusTunes, request.RedirectUri, request.State, ApiKeyService.RotateFocusTunesKey);
         if (error is not null) return error;
         return new FocusTunesConnectResponseDto { RedirectTo = redirectTo! };
     }
@@ -268,8 +249,8 @@ public partial class AuthController
     /// <summary>
     /// Step 3 of the tray connect flow (identity contract v1 §2, fifth audience): same
     /// session-required shape as FocusTunesConnect, rotating the tray key slot instead
-    /// (SettingsController.RotateTrayKey). Unlike every browser-extension audience above, the
-    /// caller here is a native desktop app - BuildConnectRedirectAsync's IsAllowedRedirectUri
+    /// (ApiKeyService.RotateTrayKey). Unlike every browser-extension audience above, the
+    /// caller here is a native desktop app - BuildConnectRedirectAsync's ConsentRedirectPolicy.IsAllowedRedirectUri
     /// already accepts an RFC 8252 http://127.0.0.1|localhost loopback redirect_uri for exactly
     /// this reason (see studylife-mcp's CLI login flow for the other existing precedent).
     /// </summary>
@@ -277,7 +258,7 @@ public partial class AuthController
     [HttpPost("tray-connect")]
     public async Task<ActionResult<TrayConnectResponseDto>> TrayConnect([FromBody] TrayConnectRequestDto request)
     {
-        var (redirectTo, error) = await BuildConnectRedirectAsync(AudienceTray, request.RedirectUri, request.State, SettingsController.RotateTrayKey);
+        var (redirectTo, error) = await BuildConnectRedirectAsync(AudienceTray, request.RedirectUri, request.State, ApiKeyService.RotateTrayKey);
         if (error is not null) return error;
         return new TrayConnectResponseDto { RedirectTo = redirectTo! };
     }

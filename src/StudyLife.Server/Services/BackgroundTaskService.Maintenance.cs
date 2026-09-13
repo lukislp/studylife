@@ -46,7 +46,7 @@ public partial class BackgroundTaskService
         // Raw file backup is a SQLite-only feature (online backup API onto a single local
         // file) - not registered in Postgres mode (Program.cs), a deliberate scope cut
         // of the scalability branch (see docs/SCALING.md). JSON export remains available
-        // across providers independently of this (BackupController.Export).
+        // across providers independently of this (BackupDataService.BuildExportAsync).
         if (_backupService is null)
         {
             _logger.LogDebug("Postgres mode: raw database backup not available, skipped.");

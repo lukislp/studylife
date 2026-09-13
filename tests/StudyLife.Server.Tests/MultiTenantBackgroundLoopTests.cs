@@ -31,7 +31,7 @@ public class MultiTenantBackgroundLoopTests : IClassFixture<CustomWebApplication
     {
         // Invalid endpoint as in BackgroundTaskServiceExecuteAsyncTests: fails immediately
         // without network access, the reminder must still be recorded as sent.
-        // Inserted directly: PushController.Subscribe now rejects non-https endpoints
+        // Inserted directly: PushService.SubscribeAsync now rejects non-https endpoints
         // (OutboundUrlPolicy), so the deliberately broken endpoint has to bypass the API.
         await _factory.WithDbAsync(db =>
         {

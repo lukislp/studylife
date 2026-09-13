@@ -5,7 +5,7 @@ namespace StudyLife.Server.Tests;
 /// <summary>
 /// Inserts a web-push subscription for the default test user (AuthUserId 1) straight into the
 /// DB. The delivery tests point subscriptions at fake push servers listening on
-/// http://127.0.0.1:&lt;port&gt; - since PushController.Subscribe only accepts public https
+/// http://127.0.0.1:&lt;port&gt; - since PushService.SubscribeAsync only accepts public https
 /// endpoints (OutboundUrlPolicy, 2026-09 audit S4), those can no longer be registered through
 /// the API and have to bypass it here. Only the registration path changes; what the tests
 /// exercise (the worker/controller POSTing to the endpoint and reacting to its status) is

@@ -86,7 +86,7 @@ public class SetupController : ControllerBase
 
         return new SetupOverviewDto
         {
-            Settings = SettingsController.ToDto(settingsEntity),
+            Settings = SettingsService.ToDto(settingsEntity),
             Capabilities = SystemController.BuildCapabilities(_telemetryOptions.CurrentValue, rawBackupSupported),
             Version = new VersionResponseDto
             {
@@ -99,16 +99,16 @@ public class SetupController : ControllerBase
             StudyPrograms = await StudyProgramService.LoadSummariesAsync(_db),
             CourseGoals = await _db.CourseGoals.AsNoTracking().Select(g => CourseGoalService.ToDto(g)).ToListAsync(),
 
-            HaApiKey = SettingsController.ToHaApiKeyStatusDto(user),
-            AiApiKey = SettingsController.ToAiApiKeyStatusDto(user),
-            McpApiKey = SettingsController.ToMcpApiKeyStatusDto(user),
-            CaptureApiKey = SettingsController.ToCaptureApiKeyStatusDto(user),
-            FocusGuardApiKey = SettingsController.ToFocusGuardApiKeyStatusDto(user),
-            FocusTunesApiKey = SettingsController.ToFocusTunesApiKeyStatusDto(user),
-            TrayApiKey = SettingsController.ToTrayApiKeyStatusDto(user),
-            DeveloperApiKey = SettingsController.ToDeveloperApiKeyStatusDto(user),
+            HaApiKey = ApiKeyService.ToHaApiKeyStatusDto(user),
+            AiApiKey = ApiKeyService.ToAiApiKeyStatusDto(user),
+            McpApiKey = ApiKeyService.ToMcpApiKeyStatusDto(user),
+            CaptureApiKey = ApiKeyService.ToCaptureApiKeyStatusDto(user),
+            FocusGuardApiKey = ApiKeyService.ToFocusGuardApiKeyStatusDto(user),
+            FocusTunesApiKey = ApiKeyService.ToFocusTunesApiKeyStatusDto(user),
+            TrayApiKey = ApiKeyService.ToTrayApiKeyStatusDto(user),
+            DeveloperApiKey = ApiKeyService.ToDeveloperApiKeyStatusDto(user),
 
-            WebhookApiKeys = await SettingsController.LoadWebhookApiKeysAsync(_db, userId),
+            WebhookApiKeys = await ApiKeyService.LoadWebhookApiKeysAsync(_db, userId),
             // ListClientKeys has no owner restriction (any session user may see/revoke their own
             // issued add-on keys) - always populated, same as HaApiKey & co. above.
             ClientKeys = await AuthController.LoadClientKeysAsync(_db, userId),

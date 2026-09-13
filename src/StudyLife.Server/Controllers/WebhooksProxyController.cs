@@ -45,7 +45,7 @@ public class WebhooksProxyController : ControllerBase
     public async Task<IActionResult> Create([FromBody] CreateWebhookRequestDto dto, CancellationToken ct)
     {
         // The target is a URL studylife-webhooks later POSTs to unattended from inside the
-        // cluster network - same blind-proxy hazard as PushController.Subscribe's endpoint, see
+        // cluster network - same blind-proxy hazard as PushService.SubscribeAsync's endpoint, see
         // OutboundUrlPolicy. Checked BEFORE the Enabled gate in ProxyAsync so an unconfigured
         // install answers a bad URL with 400 rather than a misleading 503.
         if (!OutboundUrlPolicy.IsAcceptableWebhookTarget(dto.TargetUrl))

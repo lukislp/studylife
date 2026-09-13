@@ -88,7 +88,7 @@ public class StudyProgramService(
     /// built-in study program has no DB row and therefore cannot be deleted (the route only
     /// matches int ids anyway, "no program" is never reached through here). Refuses (400) to
     /// delete a user's LAST remaining custom program once they've dismissed the built-in one
-    /// (SettingsController.DismissBuiltInProgram) - with no built-in fallback left either,
+    /// (SettingsService.DismissBuiltInProgramAsync) - with no built-in fallback left either,
     /// that would leave ActiveStudyProgramId pointing at nothing.
     ///
     /// Deliberately NOT deleted along with it: CourseGoalEntity (grades/deadlines) and
@@ -113,7 +113,7 @@ public class StudyProgramService(
         var programId = program.Id;
         var programName = program.Name;
 
-        // With the built-in program dismissed (SettingsController.DismissBuiltInProgram), this
+        // With the built-in program dismissed (SettingsService.DismissBuiltInProgramAsync), this
         // user has no other fallback - refuse to delete their last remaining program so
         // ActiveStudyProgramId is never left pointing at nothing.
         var settings = await db.Settings.FirstOrDefaultAsync();
@@ -144,7 +144,7 @@ public class StudyProgramService(
         {
             settings.ActiveStudyProgramId = null;
             await db.SaveChangesAsync();
-            // SettingsController.Get() caches for 15s via SettingsCacheVersion - without this
+            // SettingsService/SettingsController.Get() caches for 15s via SettingsCacheVersion - without this
             // bump, a client polling shortly after the deletion would still see the old (now
             // invalid) ActiveStudyProgramId.
             await settingsCacheVersion.BumpAsync(currentUser.AuthUserId);

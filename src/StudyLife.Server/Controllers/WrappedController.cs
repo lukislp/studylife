@@ -72,7 +72,7 @@ public class WrappedController : ControllerBase
     private async Task<WrappedSummaryDto> ComputeAsync(DateTime now, ProgrammeScope scope)
     {
         var settingsEntity = await _db.Settings.AsNoTracking().FirstOrDefaultAsync() ?? new UserSettingsEntity();
-        var settings = SettingsController.ToDto(settingsEntity);
+        var settings = SettingsService.ToDto(settingsEntity);
 
         var allSessions = await _loader.LoadAllSessionsAsync();
         // GET /api/sessions/history?days=365 (recap window) and ?days=3650 (achievements) - both

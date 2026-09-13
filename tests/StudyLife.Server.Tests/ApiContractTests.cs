@@ -8,7 +8,7 @@ namespace StudyLife.Server.Tests;
 /// <summary>
 /// These tests do NOT check business logic (that's covered elsewhere), but the exact
 /// JSON WIRE FORM of the API: property names, casing, presence/absence of fields. The reason
-/// was a real, documented bug in BackupController.Export() (audit finding M4(a)): the outer
+/// was a real, documented bug in BackupDataService.BuildExportAsync() (audit finding M4(a)): the outer
 /// wrapper was serialized camelCase, but the nested DTOs in the arrays came out PascalCase,
 /// because that one code path manually called JsonSerializer.Serialize() with a hand-rolled
 /// JsonSerializerOptions (no naming policy) instead of reusing the app's shared MVC JsonOptions,
@@ -207,7 +207,7 @@ public class ApiContractCasingTests : IClassFixture<CustomWebApplicationFactory>
 
 /// <summary>
 /// Regression test for a FIXED bug (audit finding M4(a), formerly a deliberate tripwire pinning
-/// the broken behavior): BackupController.Export() used to build the outer wrapper as an
+/// the broken behavior): BackupDataService.BuildExportAsync() used to build the outer wrapper as an
 /// anonymous object with fields already named camelCase (exportedAt, sessions, notes,
 /// courseGoals, settings) and serialize it manually via JsonSerializer.Serialize(export, new
 /// JsonSerializerOptions { WriteIndented = true }) - WITHOUT a PropertyNamingPolicy. The outer

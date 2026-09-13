@@ -56,9 +56,30 @@ public sealed class ConsentRedirectPolicy
         return configured.Contains(redirectUri!, StringComparer.Ordinal);
     }
 
+    /// <summary>
+    /// SYNTACTIC redirect URI gate: an absolute https URL, or the RFC 8252 §8.3 native-app
+    /// loopback exception (EXACTLY http://127.0.0.1:&lt;port&gt;/... or http://localhost:&lt;port&gt;/...,
+    /// any port, any path). Nothing else non-https is ever accepted. This alone is NOT sufficient
+    /// for the five hardcoded audiences anymore: the assertion-exchange endpoints are anonymous
+    /// and the assertion is their only credential, so any https host that passed here could
+    /// redeem it (2026-09 audit S1). AuthController.BuildConnectRedirectAsync therefore
+    /// additionally requires <see cref="IsAllowed"/> - the per-audience allow-list. This stays
+    /// the shared first-stage check, used as-is by DeveloperClientService when validating an
+    /// OAuthClientEntity's AllowedRedirectUris at registration time (those are then matched
+    /// exactly by AuthController.10.OAuthClients.cs). Static, and living here rather than on the
+    /// controller, so the service that validates registrations doesn't have to reach into a
+    /// controller for a rule that is already half this class's.
+    /// </summary>
+    public static bool IsAllowedRedirectUri(string? redirectUri)
+    {
+        if (!Uri.TryCreate(redirectUri, UriKind.Absolute, out var uri)) return false;
+        if (uri.Scheme == Uri.UriSchemeHttps) return true;
+        return IsLoopback(uri);
+    }
+
     /// <summary>EXACTLY http://127.0.0.1:&lt;port&gt;/... or http://localhost:&lt;port&gt;/... - never any
-    /// other http host (see AuthController.IsAllowedRedirectUri, which keeps the same rule as
-    /// the syntactic gate shared with DeveloperController's registration validation).</summary>
+    /// other http host (see <see cref="IsAllowedRedirectUri"/>, the syntactic gate shared with
+    /// DeveloperClientService's registration validation).</summary>
     public static bool IsLoopback(Uri uri) =>
         uri.Scheme == Uri.UriSchemeHttp
         && (string.Equals(uri.Host, "127.0.0.1", StringComparison.Ordinal)

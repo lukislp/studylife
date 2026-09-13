@@ -1070,7 +1070,7 @@ public class SettingsControllerVersioningAbsentTests : IClassFixture<CustomWebAp
 
 /// <summary>
 /// M1 regression: SelectedCourseIds/CompletedCourseIds used to be parsed with bare
-/// int.Parse in SettingsController.ToDto - one malformed entry (e.g. planted by a bug
+/// int.Parse in SettingsService.ToDto - one malformed entry (e.g. planted by a bug
 /// elsewhere, or by the external studylife-ai capture-enrichment path for other comma-int-list
 /// columns) made every subsequent GET throw 500 permanently, since the poisoned row never
 /// self-heals. Own factory: seeds the settings row directly via the DbContext (bypassing the
