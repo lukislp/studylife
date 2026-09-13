@@ -63,6 +63,10 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: {drop: ["ALL"]}
+            # Same reasoning as k8s/04-web.yaml: state is in Postgres, the DataProtection key
+            # ring in Redis, nothing is written into the image layer. The emptyDirs below
+            # cover the paths that still have to be writable (see volumeMounts).
+            readOnlyRootFilesystem: true
           envFrom:
             - configMapRef: {name: studylife-config}
             - secretRef: {name: studylife-secrets}
@@ -194,8 +198,27 @@ spec:
             - name: dataprotection-tls
               mountPath: /etc/studylife-dataprotection-tls
               readOnly: true
+            # .NET creates its diagnostic IPC socket and debug pipes here on every start.
+            - name: tmp
+              mountPath: /tmp
+            # $HOME of the aspnet image's app user (1654) - kept in step with k8s/04-web.yaml
+            # (same image) so a runtime cache write can never hit the read-only root, even
+            # though Speech:Enabled=false above means no ONNX session is created here.
+            - name: home
+              mountPath: /home/app
+            # Program.cs unconditionally does Directory.CreateDirectory(<ContentRoot>/app_data)
+            # at startup - see the same mount in k8s/04-web.yaml. Nothing durable lives there
+            # under Postgres.
+            - name: app-data
+              mountPath: /app/app_data
       volumes:
         - name: apns-key
           secret: {secretName: studylife-apns}
         - name: dataprotection-tls
           secret: {secretName: studylife-dataprotection-tls}
+        - name: tmp
+          emptyDir: {sizeLimit: 256Mi}
+        - name: home
+          emptyDir: {sizeLimit: 64Mi}
+        - name: app-data
+          emptyDir: {sizeLimit: 128Mi}
