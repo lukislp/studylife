@@ -1,4 +1,6 @@
 using System.Net.Http.Json;
+using Microsoft.Extensions.Options;
+using StudyLife.Server.Configuration;
 
 namespace StudyLife.Server.Services;
 
@@ -22,12 +24,13 @@ public sealed class DeveloperProxyClient
     private readonly string? _baseUrl;
     private readonly string? _sharedSecret;
 
-    public DeveloperProxyClient(IConfiguration configuration, ILogger<DeveloperProxyClient> logger, HttpClient? httpClient = null)
+    public DeveloperProxyClient(IOptions<StudyLifeDevelopersOptions> options, ILogger<DeveloperProxyClient> logger, HttpClient? httpClient = null)
     {
         _logger = logger;
         _http = httpClient ?? new HttpClient();
-        _baseUrl = NullIfEmpty(configuration["StudyLifeDevelopers:BaseUrl"])?.TrimEnd('/');
-        _sharedSecret = NullIfEmpty(configuration["StudyLifeDevelopers:SharedSecret"]);
+        var developers = options.Value;
+        _baseUrl = NullIfEmpty(developers.BaseUrl)?.TrimEnd('/');
+        _sharedSecret = NullIfEmpty(developers.SharedSecret);
 
         if (Enabled)
             _logger.LogInformation("studylife-developers integration active (BaseUrl {BaseUrl})", _baseUrl);

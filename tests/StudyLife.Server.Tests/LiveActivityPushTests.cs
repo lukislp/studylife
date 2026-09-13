@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
+using StudyLife.Server.Configuration;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
 using StudyLife.Shared;
@@ -110,7 +111,7 @@ public class LiveActivityPushWorkerTests : IClassFixture<CustomWebApplicationFac
         };
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(config).Build();
         var handler = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
-        var sender = new ApnsSender(configuration, NullLogger<ApnsSender>.Instance, new HttpClient(handler));
+        var sender = new ApnsSender(TestOptions.For<ApnsOptions>(configuration), NullLogger<ApnsSender>.Instance, new HttpClient(handler));
         return (BackgroundTaskServiceTestFactory.Create(_factory, sender), handler);
     }
 
@@ -233,7 +234,7 @@ public class LiveActivityPushWorkerTests : IClassFixture<CustomWebApplicationFac
         };
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(config).Build();
         var handler = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.InternalServerError));
-        var sender = new ApnsSender(configuration, NullLogger<ApnsSender>.Instance, new HttpClient(handler));
+        var sender = new ApnsSender(TestOptions.For<ApnsOptions>(configuration), NullLogger<ApnsSender>.Instance, new HttpClient(handler));
         var service = BackgroundTaskServiceTestFactory.Create(_factory, sender);
         var originalPhaseEndsAt = await _factory.WithDbAsync(async db =>
             (await db.TimerState.AsNoTracking().FirstOrDefaultAsync())!.PhaseEndsAt);
@@ -324,7 +325,7 @@ public class LiveActivityPushWorkerTests : IClassFixture<CustomWebApplicationFac
         };
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(config).Build();
         var handler = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.Gone));
-        var sender = new ApnsSender(configuration, NullLogger<ApnsSender>.Instance, new HttpClient(handler));
+        var sender = new ApnsSender(TestOptions.For<ApnsOptions>(configuration), NullLogger<ApnsSender>.Instance, new HttpClient(handler));
         var service = BackgroundTaskServiceTestFactory.Create(_factory, sender);
 
         await _factory.WithDbAsync(db => service.RunLiveActivityPushAsync(db));

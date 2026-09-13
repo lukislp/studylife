@@ -2,6 +2,8 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Options;
+using StudyLife.Server.Configuration;
 
 namespace StudyLife.Server.Services;
 
@@ -61,18 +63,19 @@ public sealed class AiProxyClient
     private readonly string? _legacySharedSecret;
     private readonly string? _internalApiSecret;
 
-    public AiProxyClient(IConfiguration configuration, ILogger<AiProxyClient> logger, HttpClient? httpClient = null)
+    public AiProxyClient(IOptions<StudyLifeAiOptions> options, ILogger<AiProxyClient> logger, HttpClient? httpClient = null)
     {
         _logger = logger;
         _http = httpClient ?? new HttpClient();
-        _baseUrl = configuration["StudyLifeAi:BaseUrl"]?.TrimEnd('/');
+        var ai = options.Value;
+        _baseUrl = ai.BaseUrl?.TrimEnd('/');
         // Falls back to BaseUrl when unset (see class doc, "Phase A of the /internal port
         // cutover") - NullIfEmpty so an explicitly blank env value doesn't win over the fallback.
-        _internalBaseUrl = NullIfEmpty(configuration["StudyLifeAi:InternalBaseUrl"])?.TrimEnd('/') ?? _baseUrl;
+        _internalBaseUrl = NullIfEmpty(ai.InternalBaseUrl)?.TrimEnd('/') ?? _baseUrl;
 
-        var legacySharedSecret = NullIfEmpty(configuration["StudyLifeAi:SharedSecret"]);
-        var tokenSigningSecretConfig = NullIfEmpty(configuration["StudyLifeAi:TokenSigningSecret"]);
-        var internalApiSecretConfig = NullIfEmpty(configuration["StudyLifeAi:InternalApiSecret"]);
+        var legacySharedSecret = NullIfEmpty(ai.SharedSecret);
+        var tokenSigningSecretConfig = NullIfEmpty(ai.TokenSigningSecret);
+        var internalApiSecretConfig = NullIfEmpty(ai.InternalApiSecret);
         _legacySharedSecret = legacySharedSecret;
 
         var usingLegacyFallback = false;

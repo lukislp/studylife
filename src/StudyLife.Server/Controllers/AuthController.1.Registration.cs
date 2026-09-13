@@ -286,7 +286,7 @@ public partial class AuthController
         // race using the same token resolve cleanly: the loser's affected-rows is 0, so it rolls
         // back and returns a clean 403 instead of also creating a second user.
         if (pending.ForAuthUserId is null && anyPasskeyExists
-            && RegistrationGateService.GetMode(_config) == RegistrationMode.Invite
+            && _registrationGate.CurrentMode == RegistrationMode.Invite
             && pending.InviteToken is { Length: > 0 } inviteToken)
         {
             if (!await _registrationGate.TryConsumeInviteAsync(inviteToken, targetUser.Id, now))

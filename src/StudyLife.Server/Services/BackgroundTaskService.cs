@@ -41,26 +41,13 @@ public partial class BackgroundTaskService : BackgroundService
     private readonly DatabaseBackupService? _backupService;
     private WebPushClient? _pushClient;
 
-    private DateTime _nextPushNotificationRun = DateTime.MinValue;
-    private DateTime _nextCaptureEnrichmentRun = DateTime.MinValue;
-    private DateTime _nextCourseGoalReminderRun = DateTime.MinValue;
-    private DateTime _nextInactivityReminderRun = DateTime.MinValue;
-    private DateTime _nextPerCourseInactivityReminderRun = DateTime.MinValue;
-    private DateTime _nextStreakRiskReminderRun = DateTime.MinValue;
-    private DateTime _nextWeeklyGoalNudgeRun = DateTime.MinValue;
-    private DateTime _nextCourseAlmostDoneReminderRun = DateTime.MinValue;
-    private DateTime _nextBestStudyTimeReminderRun = DateTime.MinValue;
-    private DateTime _nextComebackNudgeRun = DateTime.MinValue;
-    private DateTime _nextAchievementCheckRun = DateTime.MinValue;
-    // Resets like the other next-due timestamps on every process restart - for a maintenance
-    // task that means "at most weekly, more often with frequent deploys", which is harmless and
-    // deliberately keeps the same restart trade-off as the other gates.
-    private DateTime _nextDatabaseMaintenanceRun = DateTime.MinValue;
-    // Same restart behavior as _nextDatabaseMaintenanceRun: "at most weekly", correspondingly
-    // more often with frequent deploys - harmless for a pure supplementary safety dump
-    // (the last 4 weeks are retained regardless, see DatabaseBackupService).
-    private DateTime _nextBackupDumpRun = DateTime.MinValue;
-    // No _nextRun gate for the weekly report: the SentReminder key is the gate (survives
+    // What a tick actually dispatches: one descriptor per subtask (name, interval, per-user vs
+    // once-per-tick, the delegate) instead of one "_next<Subtask>Run" field plus one
+    // if/try/catch/finally block each. Built once per instance; the next-due state lives in the
+    // descriptor (see WorkerSubtask in BackgroundTaskService.Tick.cs).
+    private readonly WorkerSubtask[] _subtasks;
+
+    // No interval gate for the weekly report: the SentReminder key is the gate (survives
     // restarts). This memo only prevents the DB from being queried for the key every 30s on
     // Sunday evening after sending, until midnight. Kept per AuthUserId since the multi-user
     // rework (dictionary instead of a single field), so user A's send doesn't gate user B.
@@ -141,6 +128,9 @@ public partial class BackgroundTaskService : BackgroundService
         _time = timeProvider ?? TimeProvider.System;
         _aiProxyClient = aiProxyClient;
         _demoReadOnly = configuration is not null && DemoModeGuard.IsEnabled(configuration);
+        // Last: the table's delegates are method groups over this instance, so every field they
+        // close over is already assigned.
+        _subtasks = BuildSubtasks();
     }
 
     private WebPushClient GetPushClient()
@@ -157,19 +147,9 @@ public partial class BackgroundTaskService : BackgroundService
         {
             var tickStarted = Stopwatch.GetTimestamp();
             var now = DateTime.UtcNow;
-            var runPushNotifications = now >= _nextPushNotificationRun;
-            var runCaptureEnrichment = now >= _nextCaptureEnrichmentRun;
-            var runCourseGoalReminder = now >= _nextCourseGoalReminderRun;
-            var runInactivityReminder = now >= _nextInactivityReminderRun;
-            var runPerCourseInactivityReminder = now >= _nextPerCourseInactivityReminderRun;
-            var runStreakRiskReminder = now >= _nextStreakRiskReminderRun;
-            var runWeeklyGoalNudge = now >= _nextWeeklyGoalNudgeRun;
-            var runCourseAlmostDoneReminder = now >= _nextCourseAlmostDoneReminderRun;
-            var runBestStudyTimeReminder = now >= _nextBestStudyTimeReminderRun;
-            var runComebackNudge = now >= _nextComebackNudgeRun;
-            var runAchievementCheck = now >= _nextAchievementCheckRun;
-            var runDatabaseMaintenance = now >= _nextDatabaseMaintenanceRun;
-            var runBackupDump = now >= _nextBackupDumpRun;
+            // One next-due decision per subtask, taken up front so every user of this tick sees
+            // the same answer - the same thing the former "run<Subtask>" bools did here.
+            foreach (var subtask in _subtasks) subtask.OpenTick(now);
 
             // Outer user loop (multi-user foundation, phase 1): all user-related checks run
             // once PER AuthUserEntity, with context set via AsyncLocal
@@ -177,312 +157,14 @@ public partial class BackgroundTaskService : BackgroundService
             // StudyLifeDb thereby make every existing query automatically user-specific,
             // the check logic itself remains unchanged. Today exactly one user exists,
             // but the structure supports phase 2/3 (multiple users).
-            List<int> authUserIds;
-            try
-            {
-                using var userListScope = _services.CreateScope();
-                var userListDb = userListScope.ServiceProvider.GetRequiredService<StudyLifeDb>();
-                authUserIds = await userListDb.AuthUsers.AsNoTracking().Select(u => u.Id).ToListAsync(stoppingToken);
-                // Partitioning across multiple worker replicas (see field comment above) -
-                // with exactly 1 replica (default, StaticWorkerShardClaim) this filter is a
-                // no-op (shard always 0, "id % 1 == 0" always true).
-                var shard = await _shardClaim.ClaimOrRenewAsync(stoppingToken);
-                authUserIds = shard is int ordinal
-                    ? authUserIds.Where(id => id % _shardClaim.LastReplicaCount == ordinal).ToList()
-                    : new List<int>(); // no shard free - this tick processes no one, next tick retries
-            }
-            catch (OperationCanceledException)
-            {
-                break;
-            }
-            catch (Exception ex)
-            {
-                // Don't let the whole background loop die - the next tick will try again.
-                _logger.LogError(ex, "Error loading the AuthUser list");
-                authUserIds = new List<int>();
-            }
+            var authUserIds = await LoadShardedAuthUserIdsAsync(stoppingToken);
+            if (authUserIds is null) break; // cancelled while loading the user list / claiming
 
             foreach (var authUserId in authUserIds)
-            {
-                using var userContext = CurrentUserAccessor.BeginBackgroundScope(authUserId);
-                _currentAuthUserId = authUserId;
-                using var scope = _services.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<StudyLifeDb>();
-
-                // Subscriptions are identical for all push sub-tasks of this tick -
-                // load once and share via the same DbContext instead of fetching repeatedly.
-                List<PushSubscriptionEntity>? subscriptions = null;
-                Task<List<PushSubscriptionEntity>> GetSubscriptionsAsync()
-                    => subscriptions != null
-                        ? Task.FromResult(subscriptions)
-                        : LoadSubscriptionsAsync();
-                async Task<List<PushSubscriptionEntity>> LoadSubscriptionsAsync()
-                {
-                    subscriptions = await db.PushSubscriptions.ToListAsync();
-                    return subscriptions;
-                }
-
-                if (runPushNotifications)
-                {
-                    try
-                    {
-                        await RunPushNotificationsAsync(db, GetSubscriptionsAsync);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error in PushBackgroundService");
-                    }
-                    finally
-                    {
-                        _nextPushNotificationRun = now + PushNotificationCheckInterval;
-                    }
-                }
-
-                try
-                {
-                    await RunLiveActivityPushAsync(db);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error in LiveActivityPushService");
-                }
-
-                if (runCaptureEnrichment)
-                {
-                    try
-                    {
-                        await RunCaptureEnrichmentAsync(db);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error in CaptureEnrichmentService");
-                    }
-                    finally
-                    {
-                        _nextCaptureEnrichmentRun = now + CaptureEnrichmentCheckInterval;
-                    }
-                }
-
-                if (runCourseGoalReminder)
-                {
-                    try
-                    {
-                        await RunCourseGoalReminderCheckAsync(db, GetSubscriptionsAsync);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error in CourseGoalReminderService");
-                    }
-                    finally
-                    {
-                        _nextCourseGoalReminderRun = now + CourseGoalReminderInterval;
-                    }
-                }
-
-                if (runInactivityReminder)
-                {
-                    try
-                    {
-                        await RunInactivityReminderCheckAsync(db, GetSubscriptionsAsync);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error in InactivityReminderService");
-                    }
-                    finally
-                    {
-                        _nextInactivityReminderRun = now + InactivityReminderInterval;
-                    }
-                }
-
-                if (runPerCourseInactivityReminder)
-                {
-                    try
-                    {
-                        await RunPerCourseInactivityCheckAsync(db, GetSubscriptionsAsync);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error in PerCourseInactivityReminderService");
-                    }
-                    finally
-                    {
-                        _nextPerCourseInactivityReminderRun = now + PerCourseInactivityReminderInterval;
-                    }
-                }
-
-                if (runStreakRiskReminder)
-                {
-                    try
-                    {
-                        await RunStreakRiskCheckAsync(db, GetSubscriptionsAsync);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error in StreakRiskReminderService");
-                    }
-                    finally
-                    {
-                        _nextStreakRiskReminderRun = now + StreakRiskReminderInterval;
-                    }
-                }
-
-                if (runWeeklyGoalNudge)
-                {
-                    try
-                    {
-                        await RunWeeklyGoalNudgeCheckAsync(db, GetSubscriptionsAsync);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error in WeeklyGoalNudgeService");
-                    }
-                    finally
-                    {
-                        _nextWeeklyGoalNudgeRun = now + WeeklyGoalNudgeInterval;
-                    }
-                }
-
-                if (runCourseAlmostDoneReminder)
-                {
-                    try
-                    {
-                        await RunCourseAlmostDoneCheckAsync(db, GetSubscriptionsAsync);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error in CourseAlmostDoneReminderService");
-                    }
-                    finally
-                    {
-                        _nextCourseAlmostDoneReminderRun = now + CourseAlmostDoneReminderInterval;
-                    }
-                }
-
-                if (runBestStudyTimeReminder)
-                {
-                    try
-                    {
-                        await RunBestStudyTimeCheckAsync(db, GetSubscriptionsAsync);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error in BestStudyTimeReminderService");
-                    }
-                    finally
-                    {
-                        _nextBestStudyTimeReminderRun = now + BestStudyTimeReminderInterval;
-                    }
-                }
-
-                if (runComebackNudge)
-                {
-                    try
-                    {
-                        await RunComebackNudgeCheckAsync(db, GetSubscriptionsAsync);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error in ComebackNudgeService");
-                    }
-                    finally
-                    {
-                        _nextComebackNudgeRun = now + ComebackNudgeInterval;
-                    }
-                }
-
-                if (runAchievementCheck)
-                {
-                    try
-                    {
-                        await RunAchievementCheckAsync(db, GetSubscriptionsAsync);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error in AchievementCheckService");
-                    }
-                    finally
-                    {
-                        _nextAchievementCheckRun = now + AchievementCheckInterval;
-                    }
-                }
-
-                try
-                {
-                    await RunWeeklyReportAsync(db, GetSubscriptionsAsync);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error in WeeklyReportService");
-                }
-
-                try
-                {
-                    await RunMonthlyReportAsync(db, GetSubscriptionsAsync);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error in MonthlyReportService");
-                }
-
-                try
-                {
-                    await RunDailyMotivationAsync(db, GetSubscriptionsAsync);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error in DailyMotivationService");
-                }
-
-            }
+                await RunPerUserSubtasksAsync(_subtasks, authUserId, now);
             _currentAuthUserId = 0;
 
-            // User-independent maintenance tasks deliberately run OUTSIDE the user loop:
-            // VACUUM, backup dump, and key rotation affect the entire DB/instance and should
-            // run exactly once per tick, regardless of how many users exist.
-
-            try
-            {
-                using var scope = _services.CreateScope();
-                await RunAiKeyOutboxAsync(scope.ServiceProvider.GetRequiredService<StudyLifeDb>());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error draining the AI key outbox");
-            }
-
-            if (runDatabaseMaintenance)
-            {
-                try
-                {
-                    using var scope = _services.CreateScope();
-                    await RunDatabaseMaintenanceAsync(scope.ServiceProvider.GetRequiredService<StudyLifeDb>());
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error during SQLite maintenance");
-                }
-                finally
-                {
-                    _nextDatabaseMaintenanceRun = now + DatabaseMaintenanceInterval;
-                }
-            }
-
-            if (runBackupDump)
-            {
-                try
-                {
-                    await RunBackupDumpAsync();
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error during the weekly database backup");
-                }
-                finally
-                {
-                    _nextBackupDumpRun = now + BackupDumpInterval;
-                }
-            }
+            await RunOncePerTickSubtasksAsync(_subtasks, now);
 
             StudyLifeMetrics.WorkerTickDuration.Record(Stopwatch.GetElapsedTime(tickStarted).TotalSeconds);
             await Task.Delay(TickInterval, stoppingToken);

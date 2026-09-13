@@ -2,6 +2,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
+using StudyLife.Server.Configuration;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
 
@@ -35,7 +36,7 @@ public class BackgroundTaskServiceClaimTests : IDisposable
         services: null!, // TryClaimReminderAsync doesn't use _services
         vapidKeysHolder: new VapidKeysHolder { Keys = new VapidKeys("mailto:test@test", "pub", "priv") },
         logger: NullLogger<BackgroundTaskService>.Instance,
-        apnsSender: new ApnsSender(new ConfigurationBuilder().Build(), NullLogger<ApnsSender>.Instance));
+        apnsSender: new ApnsSender(TestOptions.For<ApnsOptions>(), NullLogger<ApnsSender>.Instance));
 
     public void Dispose()
     {

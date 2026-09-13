@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using StudyLife.Server.Configuration;
 using StudyLife.Server.Controllers;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
@@ -39,7 +40,7 @@ internal static class ApnsStubSender
             ["Apns:BundleId"] = "app.studylife.mobile",
             ["Apns:Endpoint"] = "https://apns.test",
         }).Build();
-        return new ApnsSender(configuration, NullLogger<ApnsSender>.Instance,
+        return new ApnsSender(TestOptions.For<ApnsOptions>(configuration), NullLogger<ApnsSender>.Instance,
             new HttpClient(new FixedStatusHandler(status)));
     }
 

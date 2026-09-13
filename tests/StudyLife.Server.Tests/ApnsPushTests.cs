@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
+using StudyLife.Server.Configuration;
 using StudyLife.Server.Controllers;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
@@ -134,7 +135,7 @@ public class ApnsPushTests : IClassFixture<CustomWebApplicationFactory>
 
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(config).Build();
         var httpClient = handler != null ? new HttpClient(handler) : null;
-        return new ApnsSender(configuration, NullLogger<ApnsSender>.Instance, httpClient);
+        return new ApnsSender(TestOptions.For<ApnsOptions>(configuration), NullLogger<ApnsSender>.Instance, httpClient);
     }
 
     private static string WriteTempP8Key()

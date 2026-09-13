@@ -2,6 +2,7 @@ using System.Net;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
+using StudyLife.Server.Configuration;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
 
@@ -33,7 +34,7 @@ public class BackgroundTaskServiceCaptureEnrichmentTests : IClassFixture<CustomW
         {
             Content = new StringContent("{\"course_id\":null,\"course_confidence\":null,\"tags\":[],\"summary\":null}"),
         }));
-        var aiProxyClient = new AiProxyClient(configuration, NullLogger<AiProxyClient>.Instance, new HttpClient(handler));
+        var aiProxyClient = new AiProxyClient(TestOptions.For<StudyLifeAiOptions>(configuration), NullLogger<AiProxyClient>.Instance, new HttpClient(handler));
         return (BackgroundTaskServiceTestFactory.Create(_factory, aiProxyClient: aiProxyClient), handler);
     }
 

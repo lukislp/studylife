@@ -1,6 +1,7 @@
 using System.Net;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
+using StudyLife.Server.Configuration;
 using StudyLife.Server.Services;
 
 namespace StudyLife.Server.Tests;
@@ -24,7 +25,7 @@ public class WebhooksProxyClientTests
         };
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(config).Build();
         var httpClient = handler != null ? new HttpClient(handler) : null;
-        return new WebhooksProxyClient(configuration, NullLogger<WebhooksProxyClient>.Instance, httpClient);
+        return new WebhooksProxyClient(TestOptions.For<StudyLifeWebhooksOptions>(configuration), NullLogger<WebhooksProxyClient>.Instance, httpClient);
     }
 
     [Fact]

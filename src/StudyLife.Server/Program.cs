@@ -10,11 +10,22 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Auth;
+using StudyLife.Server.Configuration;
 using StudyLife.Server.Data;
 using StudyLife.Server.OpenApi;
 using StudyLife.Server.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Typed configuration: every section this app understands is bound once here instead of being
+// re-read key by key at each call site (see StudyLifeOptionsRegistration for the full rationale).
+// Consumers inject IOptions<T>/IOptionsMonitor<T>; the startup decisions below, which run before
+// the container exists, use the matching Bind<T>() of the same options class.
+builder.Services.AddStudyLifeOptions();
+var telemetryOptions = builder.Configuration.Bind<TelemetryOptions>(TelemetryOptions.SectionName);
+var cacheOptions = builder.Configuration.Bind<CacheOptions>(CacheOptions.SectionName);
+var databaseOptions = builder.Configuration.Bind<DatabaseOptions>(DatabaseOptions.SectionName);
+var workerOptions = builder.Configuration.Bind<WorkerOptions>(WorkerOptions.SectionName);
 
 // Telemetry (docs/ARCHITECTURE.md "Telemetry"): metrics are on only when Telemetry:MetricsPort
 // (env Telemetry__MetricsPort) names a port. That port gets its own Kestrel listener (below)
@@ -23,7 +34,7 @@ var builder = WebApplication.CreateBuilder(args);
 // policies.yaml). Off by default = the Pi/docker-compose and every test run behave exactly as
 // before. OpenTelemetry rather than a Prometheus-specific library so the same instruments can
 // later feed an OTLP collector or an own dashboard without touching a single call site.
-var metricsPort = builder.Configuration.GetValue<int?>("Telemetry:MetricsPort");
+var metricsPort = telemetryOptions.MetricsPort;
 // Traces (phase 4): Telemetry:OtlpEndpoint (env Telemetry__OtlpEndpoint, e.g.
 // http://otel-collector.monitoring.svc.cluster.local:4317) switches on OTLP trace export. Sampled
 // at the source (Telemetry:TraceSampleRatio, default 10 %) with a parent-based sampler so one
@@ -31,8 +42,8 @@ var metricsPort = builder.Configuration.GetValue<int?>("Telemetry:MetricsPort");
 // stream and health/metrics endpoints are never traced (an SSE span would live for hours). Loki
 // gets the same trace id through the console logger's activity scopes (appsettings.json
 // Logging:Console:IncludeScopes), which is what Grafana's log-to-trace link keys on.
-var otlpEndpoint = builder.Configuration["Telemetry:OtlpEndpoint"];
-var traceSampleRatio = builder.Configuration.GetValue<double?>("Telemetry:TraceSampleRatio") ?? 0.10;
+var otlpEndpoint = telemetryOptions.OtlpEndpoint;
+var traceSampleRatio = telemetryOptions.TraceSampleRatio ?? TelemetryOptions.DefaultSampleRatio;
 if (metricsPort is not null || !string.IsNullOrEmpty(otlpEndpoint))
 {
     var serverVersion = System.Reflection.Assembly.GetEntryAssembly()
@@ -128,9 +139,8 @@ builder.Services.AddHsts(options =>
 // OVERWRITE (not add to) the endpoints derived from ASPNETCORE_URLS - hence here
 // the existing HTTP:8080 listener is explicitly listed too, otherwise 8080 would
 // disappear without replacement when 8443 is set, and probes/Uptime Kuma (still plain HTTP) would break.
-var webBackendTlsCertPath = builder.Configuration["WebBackendTls:CertPath"];
-var webBackendTlsKeyPath = builder.Configuration["WebBackendTls:KeyPath"];
-var webBackendTls = !string.IsNullOrEmpty(webBackendTlsCertPath) && !string.IsNullOrEmpty(webBackendTlsKeyPath);
+var webBackendTlsOptions = builder.Configuration.Bind<WebBackendTlsOptions>(WebBackendTlsOptions.SectionName);
+var webBackendTls = webBackendTlsOptions.IsConfigured;
 // The metrics listener (Telemetry:MetricsPort, see the top of this file) needs the same explicit
 // endpoint list for the same reason: one Listen() call replaces ASPNETCORE_URLS entirely.
 if (webBackendTls || metricsPort is not null)
@@ -142,7 +152,7 @@ if (webBackendTls || metricsPort is not null)
         {
             options.ListenAnyIP(8443, listenOptions =>
             {
-                listenOptions.UseHttps(X509Certificate2.CreateFromPemFile(webBackendTlsCertPath!, webBackendTlsKeyPath!));
+                listenOptions.UseHttps(X509Certificate2.CreateFromPemFile(webBackendTlsOptions.CertPath!, webBackendTlsOptions.KeyPath!));
             });
         }
         if (metricsPort is not null)
@@ -161,11 +171,10 @@ if (webBackendTls || metricsPort is not null)
 // independent caches with this default - only Redis makes the cache, the version counters, AND the
 // challenge cache truly consistent across pods (the latter is the reason why
 // login/registration without Redis doesn't work reliably with multiple pods, see AuthController.cs).
-var cacheProvider = builder.Configuration["Cache:Provider"] ?? "Memory";
-var isRedisCache = string.Equals(cacheProvider, "Redis", StringComparison.OrdinalIgnoreCase);
+var isRedisCache = cacheOptions.IsRedis;
 if (isRedisCache)
 {
-    var redisConnectionString = builder.Configuration["Cache:ConnectionString"]
+    var redisConnectionString = cacheOptions.ConnectionString
         ?? throw new InvalidOperationException(
             "Cache:ConnectionString (bzw. ENV Cache__ConnectionString) muss gesetzt sein, wenn Cache:Provider=Redis.");
     var redisOptions = StackExchange.Redis.ConfigurationOptions.Parse(redisConnectionString);
@@ -175,7 +184,7 @@ if (isRedisCache)
     // (k8s/03-redis.yaml, 04-web.yaml, 05-worker.yaml) - the 2026-08-27 AUTH rollout had to be
     // reverted precisely because the app-side connection string never received the password
     // while Redis already required it (NOAUTH crash-loop). One secret, two consumers, no drift.
-    var redisPassword = builder.Configuration["Cache:Password"];
+    var redisPassword = cacheOptions.Password;
     if (!string.IsNullOrEmpty(redisPassword))
         redisOptions.Password = redisPassword;
     // Cache:User (env Cache__User) selects a dedicated Redis ACL user instead of "default". This
@@ -183,7 +192,7 @@ if (isRedisCache)
     // the app) while the default user is still open, and the default user is locked with
     // requirepass only afterwards - see docs/SCALING.md "Redis AUTH". Without it, an app that
     // sends AUTH to a Redis with no password configured fails to connect at all.
-    var redisUser = builder.Configuration["Cache:User"];
+    var redisUser = cacheOptions.User;
     if (!string.IsNullOrEmpty(redisUser))
         redisOptions.User = redisUser;
     if (redisOptions.Ssl)
@@ -247,10 +256,11 @@ if (isRedisCache)
     // moment the Redis persistence above went in. Required (not optional-with-fallback) in this
     // branch: silently falling back to unencrypted-in-Redis would be a worse and less visible
     // outcome than failing fast at startup, same reasoning as the Cache:ConnectionString check.
-    var dataProtectionCertPath = builder.Configuration["DataProtection:CertPath"]
+    var dataProtectionOptions = builder.Configuration.Bind<DataProtectionKeyRingOptions>(DataProtectionKeyRingOptions.SectionName);
+    var dataProtectionCertPath = dataProtectionOptions.CertPath
         ?? throw new InvalidOperationException(
             "DataProtection:CertPath (bzw. ENV DataProtection__CertPath) muss gesetzt sein, wenn Cache:Provider=Redis.");
-    var dataProtectionKeyPath = builder.Configuration["DataProtection:KeyPath"]
+    var dataProtectionKeyPath = dataProtectionOptions.KeyPath
         ?? throw new InvalidOperationException(
             "DataProtection:KeyPath (bzw. ENV DataProtection__KeyPath) muss gesetzt sein, wenn Cache:Provider=Redis.");
     builder.Services.AddDataProtection()
@@ -394,8 +404,7 @@ Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
 // are tagged to it; a separate StudyLifeDbSqlite subclass would make them invisible to EF Core.
 // Controllers/services inject only the base class StudyLifeDb either way and don't notice
 // which provider is active.
-var databaseProvider = builder.Configuration["Database:Provider"] ?? "Sqlite";
-var isPostgres = string.Equals(databaseProvider, "Postgres", StringComparison.OrdinalIgnoreCase);
+var isPostgres = databaseOptions.IsPostgres;
 
 if (!isPostgres)
 {
@@ -418,7 +427,7 @@ if (!isPostgres)
 // giving up pooling is measurably irrelevant (context construction costs microseconds).
 if (isPostgres)
 {
-    var postgresConnectionString = builder.Configuration["Database:ConnectionString"]
+    var postgresConnectionString = databaseOptions.ConnectionString
         ?? throw new InvalidOperationException(
             "Database:ConnectionString (bzw. ENV Database__ConnectionString) muss gesetzt sein, wenn Database:Provider=Postgres.");
     builder.Services.AddDbContext<StudyLifeDb, StudyLifeDbPostgres>(opt => opt.UseNpgsql(postgresConnectionString));
@@ -491,34 +500,36 @@ builder.Services.AddSingleton<VapidKeysHolder>();
 // future/accidental call path on the worker (confirmed today: no BackgroundTaskService*.cs file
 // references Tts/Stt/Piper/Whisper - only the two controllers do) rather than a fix for a
 // measured eager-startup memory cost.
-var speechEnabled = builder.Configuration.GetValue("Speech:Enabled", true);
+var speechEnabled = builder.Configuration.Bind<SpeechOptions>(SpeechOptions.SectionName).Enabled;
 if (speechEnabled)
 {
+    var ttsOptions = builder.Configuration.Bind<TtsOptions>(TtsOptions.SectionName);
     // "Read note aloud": voices are ONNX files baked into the image (see Dockerfile), not
     // checked into this repo - loading one is real work (ONNX Runtime session init), so the
     // registry caches loaded voices process-wide instead of per-request. Which languages are
     // actually shipped is a Dockerfile concern, not a code concern - TryGet just returns null
     // for anything not present on disk, which the controller turns into a 404.
     builder.Services.AddSingleton(new StudyLife.Tts.PiperVoiceRegistry(
-        builder.Configuration["Tts:VoicesDirectory"] ?? Path.Combine(builder.Environment.ContentRootPath, "tts-voices")));
+        ttsOptions.VoicesDirectory ?? Path.Combine(builder.Environment.ContentRootPath, "tts-voices")));
     builder.Services.AddSingleton<StudyLife.Tts.EspeakPhonemizer>();
     // Synthesized audio lives in its own bounded per-pod cache, NOT in IDistributedCache - see
     // TtsAudioCache for why sharing the LRU pool with login challenges was a problem.
     builder.Services.AddSingleton(new TtsAudioCache(
-        builder.Configuration.GetValue("Tts:CacheSizeMb", 32) * 1024L * 1024L));
+        ttsOptions.CacheSizeMb * 1024L * 1024L));
     // Voice dictation: one multilingual Whisper model (see Dockerfile), unlike PiperVoiceRegistry's
     // per-language voices - covers all of StudyLife's languages, so no per-language registry is
     // needed here. Loaded lazily on first use, same as PiperVoiceRegistry (see WhisperTranscriber's
     // class comment) - registering the wrapper here does not read the model into memory.
     builder.Services.AddSingleton(new StudyLife.Stt.WhisperTranscriber(
-        builder.Configuration["Stt:ModelPath"] ?? Path.Combine(builder.Environment.ContentRootPath, "stt-model", "ggml-base.bin")));
+        builder.Configuration.Bind<SttOptions>(SttOptions.SectionName).ModelPath
+        ?? Path.Combine(builder.Environment.ContentRootPath, "stt-model", "ggml-base.bin")));
 }
 // Worker:Enabled disables BackgroundTaskService (30s tick loop: push reminders, reports, maintenance)
 // when this process is a stateless web pod in scaled operation (docker-
 // compose.scale.yml/k8s/) - there the worker runs as its OWN deployment. Default true =
 // today's behavior (Pi/docker-compose.yml, everything in one process), unchanged.
-var workerEnabled = builder.Configuration.GetValue("Worker:Enabled", true);
-var workerReplicaCount = builder.Configuration.GetValue("Worker:ReplicaCount", 1);
+var workerEnabled = workerOptions.Enabled;
+var workerReplicaCount = workerOptions.ReplicaCount;
 // Multiple worker processes cannot coordinate without Redis which one handles which user partition
 // (IWorkerShardClaim below) - fail fast instead of silently producing wrong/duplicate
 // results, analogous to the Cache:ConnectionString/Database:ConnectionString mandatory checks above.
@@ -531,14 +542,13 @@ if (workerReplicaCount > 1 && !isRedisCache)
 // IWorkerReplicaCountProvider.cs). Also needs Redis coordination, for the same reason as
 // Worker:ReplicaCount > 1 above (the replica count CAN rise above 1 via HPA, even if it
 // currently isn't). Default "Static" = today's behavior, unchanged.
-var replicaCountSource = builder.Configuration["Worker:ReplicaCountSource"] ?? "Static";
-var useKubernetesReplicaCount = string.Equals(replicaCountSource, "Kubernetes", StringComparison.OrdinalIgnoreCase);
+var useKubernetesReplicaCount = workerOptions.UsesKubernetesReplicaCount;
 if (useKubernetesReplicaCount && !isRedisCache)
     throw new InvalidOperationException(
         "Worker:ReplicaCountSource=Kubernetes setzt Cache:Provider=Redis voraus (verteilte Shard-Koordination).");
 if (useKubernetesReplicaCount)
 {
-    var workerDeploymentName = builder.Configuration["Worker:DeploymentName"] ?? "studylife-worker";
+    var workerDeploymentName = workerOptions.DeploymentName;
     builder.Services.AddSingleton<IWorkerReplicaCountProvider>(sp => new KubernetesWorkerReplicaCountProvider(
         workerDeploymentName, workerReplicaCount, sp.GetRequiredService<ILogger<KubernetesWorkerReplicaCountProvider>>()));
 }
@@ -582,7 +592,7 @@ if (!EF.IsDesignTime)
     // docker-compose.scale.yml, the dev-cluster kind setup, and the k8s WEB Deployment itself)
     // keeps calling Migrate() exactly as before, unchanged. A non-migrating process instead waits
     // below until the migrating one has caught the schema up (WaitForPendingMigrationsAsync).
-    var shouldMigrate = builder.Configuration.GetValue("Database:Migrate", true);
+    var shouldMigrate = databaseOptions.Migrate;
 
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<StudyLifeDb>();
@@ -607,7 +617,7 @@ if (!EF.IsDesignTime)
     // runs below - see the comment on VapidKeysHolder for the ordering guarantee.
     var systemSecrets = scope.ServiceProvider.GetRequiredService<SystemSecretsService>();
     scope.ServiceProvider.GetRequiredService<VapidKeysHolder>().Keys =
-        await systemSecrets.EnsureVapidKeysAsync(builder.Configuration);
+        await systemSecrets.EnsureVapidKeysAsync();
 
     // Public demo instances: wipe and re-create the demo dataset on EVERY start - the data is
     // generated relative to "today", so restarting the container is also what keeps the demo
@@ -649,7 +659,8 @@ if (!EF.IsDesignTime)
 // rate limiter above) - see ForwardedHeadersConfig for the default RFC1918 trust, the
 // ForwardedHeaders:KnownNetworks/KnownProxies/ForwardLimit configuration that narrows it per
 // deployment, and the documented flat-pod-network limitation on Kubernetes.
-app.UseForwardedHeaders(ForwardedHeadersConfig.Build(builder.Configuration));
+app.UseForwardedHeaders(ForwardedHeadersConfig.Build(
+    builder.Configuration.Bind<TrustedProxyOptions>(TrustedProxyOptions.SectionName)));
 
 // Metrics scrape surface (see Telemetry:MetricsPort at the top): GET /metrics is answered only
 // on the dedicated listener, and that listener answers nothing else - a request for the app or
@@ -954,7 +965,7 @@ app.UseAuthorization();
 // .AllowAnonymous(): AuthorizationOptions.FallbackPolicy (ApiAccess) below applies to every
 // endpoint that states no requirement of its own, so this - having none - would otherwise
 // suddenly need a credential too.
-var appleTeamId = builder.Configuration["Apple:TeamId"];
+var appleTeamId = builder.Configuration.Bind<AppleOptions>(AppleOptions.SectionName).TeamId;
 app.MapGet("/.well-known/apple-app-site-association", (HttpResponse response) =>
 {
     if (string.IsNullOrEmpty(appleTeamId)) return Results.NotFound();

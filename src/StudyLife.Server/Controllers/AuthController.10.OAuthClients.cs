@@ -64,7 +64,7 @@ public partial class AuthController
                 return BadRequest("codeChallenge must be a base64url S256 challenge (43-128 characters) with codeChallengeMethod=S256.");
             codeChallenge = request.CodeChallenge;
         }
-        else if (_config.GetValue<bool>("Consent:RequirePkce"))
+        else if (_consentOptions.CurrentValue.RequirePkce)
         {
             return BadRequest("PKCE is required: send codeChallenge and codeChallengeMethod=S256.");
         }

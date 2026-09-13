@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging.Abstractions;
+using StudyLife.Server.Configuration;
 using StudyLife.Server.Controllers;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
@@ -174,7 +175,7 @@ public class SessionsControllerNewRecordApnsExpiredTests
                     ["Apns:BundleId"] = "app.studylife.mobile",
                     ["Apns:Endpoint"] = "https://apns.test",
                 }).Build();
-                services.AddSingleton(new ApnsSender(configuration, NullLogger<ApnsSender>.Instance,
+                services.AddSingleton(new ApnsSender(TestOptions.For<ApnsOptions>(configuration), NullLogger<ApnsSender>.Instance,
                     new HttpClient(new UnregisteredHandler())));
             });
         }

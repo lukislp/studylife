@@ -3,6 +3,8 @@ using Fido2NetLib;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Options;
+using StudyLife.Server.Configuration;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
 
@@ -41,15 +43,24 @@ public partial class AuthController : ControllerBase
 
     private readonly StudyLifeDb _db;
     private readonly IDistributedCache _cache;
+    // Still IConfiguration, deliberately: the only thing read through it here is DemoModeGuard,
+    // which inspects the two top-level DEMO_MODE/DEMO_MODE_CONFIRM_DATA_LOSS env vars rather than
+    // a configuration SECTION, and is the single typed façade over them for the whole app
+    // (Program.cs calls the same helper before the container exists).
     private readonly IConfiguration _config;
     private readonly SystemSecretsService _systemSecrets;
     private readonly IOwnershipService _ownership;
     private readonly IRegistrationGateService _registrationGate;
     private readonly ConsentRedirectPolicy _consentRedirects;
+    // Monitors, not IOptions: both sections used to be re-read from IConfiguration on every
+    // request, so a configuration reload has to keep taking effect the same way.
+    private readonly IOptionsMonitor<Fido2Options> _fido2Options;
+    private readonly IOptionsMonitor<ConsentOptions> _consentOptions;
 
     public AuthController(StudyLifeDb db, IDistributedCache cache, IConfiguration config,
         SystemSecretsService systemSecrets, IOwnershipService ownership, IRegistrationGateService registrationGate,
-        ConsentRedirectPolicy consentRedirects)
+        ConsentRedirectPolicy consentRedirects, IOptionsMonitor<Fido2Options> fido2Options,
+        IOptionsMonitor<ConsentOptions> consentOptions)
     {
         _db = db;
         _cache = cache;
@@ -58,6 +69,8 @@ public partial class AuthController : ControllerBase
         _ownership = ownership;
         _registrationGate = registrationGate;
         _consentRedirects = consentRedirects;
+        _fido2Options = fido2Options;
+        _consentOptions = consentOptions;
     }
 
     // WebAuthn challenge cache on IDistributedCache instead of IMemoryCache: with multiple
@@ -112,8 +125,9 @@ public partial class AuthController : ControllerBase
     /// </summary>
     private Fido2 CreateFido2()
     {
-        var configuredDomain = _config["Fido2:ServerDomain"];
-        var configuredOrigins = _config.GetSection("Fido2:Origins").Get<string[]>();
+        var fido2 = _fido2Options.CurrentValue;
+        var configuredDomain = fido2.ServerDomain;
+        var configuredOrigins = fido2.Origins;
         return new Fido2(new Fido2Configuration
         {
             ServerDomain = string.IsNullOrWhiteSpace(configuredDomain) ? Request.Host.Host : configuredDomain,

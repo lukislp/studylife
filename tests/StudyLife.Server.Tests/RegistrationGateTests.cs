@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
+using StudyLife.Server.Configuration;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
 using StudyLife.Shared;
@@ -10,19 +10,15 @@ using StudyLife.Shared;
 namespace StudyLife.Server.Tests;
 
 /// <summary>
-/// Pure unit tests for RegistrationGateService.GetMode - no host needed, just an IConfiguration
-/// built from an in-memory dictionary (same shape as DemoModeGuardTests). The integration-level
-/// scenarios (actual gating over the real HTTP pipeline) live in the RegistrationGate* classes
-/// below.
+/// Pure unit tests for RegistrationGateService.GetMode - no host needed, just the Registration
+/// section bound from an in-memory dictionary. The integration-level scenarios (actual gating
+/// over the real HTTP pipeline) live in the RegistrationGate* classes below.
 /// </summary>
 public class RegistrationModeConfigTests
 {
-    private static IConfiguration Config(string? mode) =>
-        new ConfigurationBuilder()
-            .AddInMemoryCollection(mode is null
-                ? []
-                : new[] { new KeyValuePair<string, string?>("Registration:Mode", mode) })
-            .Build();
+    private static RegistrationOptions Config(string? mode) =>
+        TestOptions.Configuration(mode is null ? [] : [("Registration:Mode", mode)])
+            .Bind<RegistrationOptions>(RegistrationOptions.SectionName);
 
     [Fact]
     public void Unset_DefaultsToInvite()

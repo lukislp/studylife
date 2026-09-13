@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging.Abstractions;
+using StudyLife.Server.Configuration;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
 using StudyLife.Shared;
@@ -48,7 +49,7 @@ public class AiKeyOutboxHttpTests : IClassFixture<CustomWebApplicationFactory>
                     ["StudyLifeAi:BaseUrl"] = "https://ai-outbox-test.invalid",
                     ["StudyLifeAi:SharedSecret"] = "shared-secret",
                 }).Build();
-                services.AddSingleton(new AiProxyClient(config, NullLogger<AiProxyClient>.Instance, new HttpClient(capturedHandler)));
+                services.AddSingleton(new AiProxyClient(TestOptions.For<StudyLifeAiOptions>(config), NullLogger<AiProxyClient>.Instance, new HttpClient(capturedHandler)));
             });
         });
         return overriddenFactory.CreateClient();
@@ -126,7 +127,7 @@ public class AiKeyOutboxDrainTests : IClassFixture<CustomWebApplicationFactory>
             ["StudyLifeAi:SharedSecret"] = "shared-secret",
         }).Build();
         var handler = new AiKeyOutboxTestStubHandler(responder ?? (_ => new HttpResponseMessage(HttpStatusCode.OK)));
-        var aiProxyClient = new AiProxyClient(config, NullLogger<AiProxyClient>.Instance, new HttpClient(handler));
+        var aiProxyClient = new AiProxyClient(TestOptions.For<StudyLifeAiOptions>(config), NullLogger<AiProxyClient>.Instance, new HttpClient(handler));
         return (BackgroundTaskServiceTestFactory.Create(_factory, aiProxyClient: aiProxyClient), handler);
     }
 

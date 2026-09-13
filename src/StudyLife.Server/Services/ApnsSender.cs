@@ -2,6 +2,8 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Microsoft.Extensions.Options;
+using StudyLife.Server.Configuration;
 
 namespace StudyLife.Server.Services;
 
@@ -42,16 +44,18 @@ public sealed class ApnsSender
     private string? _cachedJwt;
     private DateTime _cachedJwtCreatedAt;
 
-    public ApnsSender(IConfiguration configuration, ILogger<ApnsSender> logger, HttpClient? httpClient = null)
+    // Registered as a singleton, so the values are read exactly once here - IOptions, not
+    // IOptionsMonitor (nothing re-read the Apns:* keys at send time before either).
+    public ApnsSender(IOptions<ApnsOptions> options, ILogger<ApnsSender> logger, HttpClient? httpClient = null)
     {
         _logger = logger;
         _http = httpClient ?? new HttpClient();
-        _keyPath = configuration["Apns:KeyPath"];
-        _keyId = configuration["Apns:KeyId"];
-        _teamId = configuration["Apns:TeamId"];
-        _bundleId = configuration["Apns:BundleId"];
-        _endpoint = configuration["Apns:Endpoint"]
-            ?? (configuration.GetValue("Apns:UseSandbox", false) ? SandboxEndpoint : ProductionEndpoint);
+        var apns = options.Value;
+        _keyPath = apns.KeyPath;
+        _keyId = apns.KeyId;
+        _teamId = apns.TeamId;
+        _bundleId = apns.BundleId;
+        _endpoint = apns.Endpoint ?? (apns.UseSandbox ? SandboxEndpoint : ProductionEndpoint);
 
         if (Enabled)
             _logger.LogInformation("APNs channel active (BundleId {BundleId}, Endpoint {Endpoint})", _bundleId, _endpoint);

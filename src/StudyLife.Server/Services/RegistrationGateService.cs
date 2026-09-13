@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using StudyLife.Server.Configuration;
 using StudyLife.Server.Data;
 
 namespace StudyLife.Server.Services;
@@ -57,9 +59,15 @@ public interface IRegistrationGateService
     /// RegisterBegin actually required and validated a token (see its own comment).
     /// </summary>
     Task<bool> TryConsumeInviteAsync(string? inviteToken, int consumedByUserId, DateTime now);
+
+    /// <summary>The mode currently configured (Registration:Mode). Exposed on the interface so
+    /// call sites that only need the mode - AuthController's invite consumption - ask the gate
+    /// they already inject instead of reaching into configuration themselves.</summary>
+    RegistrationMode CurrentMode { get; }
 }
 
-public class RegistrationGateService(StudyLifeDb db, IConfiguration config) : IRegistrationGateService
+public class RegistrationGateService(StudyLifeDb db, IOptionsMonitor<RegistrationOptions> registrationOptions)
+    : IRegistrationGateService
 {
     /// <summary>Default invite lifetime (audit A10 design) - generous enough that "share a link in
     /// a family chat" doesn't race against a busy week, short enough that a leaked/forgotten link
@@ -72,8 +80,8 @@ public class RegistrationGateService(StudyLifeDb db, IConfiguration config) : IR
     /// than throwing or silently behaving like Open - a typo in the env var must not accidentally
     /// reopen an instance the operator meant to lock down.
     /// </summary>
-    public static RegistrationMode GetMode(IConfiguration config) =>
-        (config["Registration:Mode"] ?? "").Trim().ToLowerInvariant() switch
+    public static RegistrationMode GetMode(RegistrationOptions options) =>
+        (options.Mode ?? "").Trim().ToLowerInvariant() switch
         {
             "open" => RegistrationMode.Open,
             "closed" => RegistrationMode.Closed,
@@ -81,9 +89,13 @@ public class RegistrationGateService(StudyLifeDb db, IConfiguration config) : IR
             _ => RegistrationMode.Invite,
         };
 
+    // Scoped service that used to read the key per call - a monitor keeps that "always the
+    // current value" behaviour without rebinding the section on every request.
+    public RegistrationMode CurrentMode => GetMode(registrationOptions.CurrentValue);
+
     public async Task<RegistrationGateDecision> CheckBeginAsync(string? inviteToken)
     {
-        switch (GetMode(config))
+        switch (CurrentMode)
         {
             case RegistrationMode.Open:
                 return RegistrationGateDecision.Allowed;

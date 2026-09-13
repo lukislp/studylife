@@ -1,6 +1,7 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using StudyLife.Server.Configuration;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
 
@@ -42,9 +43,9 @@ public class SystemSecretsServiceTests : IDisposable
     public async Task EnsureVapidKeysAsync_FirstRun_GeneratesKeysWithNonLocalhostSubject()
     {
         using var db = NewContext();
-        var service = new SystemSecretsService(db);
+        var service = new SystemSecretsService(db, TestOptions.For<VapidOptions>());
 
-        var keys = await service.EnsureVapidKeysAsync(new ConfigurationBuilder().Build());
+        var keys = await service.EnsureVapidKeysAsync();
 
         Assert.DoesNotContain("localhost", keys.Subject);
         Assert.NotEmpty(keys.PublicKey);
@@ -67,15 +68,15 @@ public class SystemSecretsServiceTests : IDisposable
         }
 
         using var db = NewContext();
-        var service = new SystemSecretsService(db);
-        var keys = await service.EnsureVapidKeysAsync(new ConfigurationBuilder().Build());
+        var service = new SystemSecretsService(db, TestOptions.For<VapidOptions>());
+        var keys = await service.EnsureVapidKeysAsync();
 
         Assert.DoesNotContain("localhost", keys.Subject);
         Assert.Equal("pub123", keys.PublicKey);
         Assert.Equal("priv456", keys.PrivateKey);
 
         // Migration must persist - a second load shouldn't see the legacy subject again.
-        var reloaded = await service.EnsureVapidKeysAsync(new ConfigurationBuilder().Build());
+        var reloaded = await service.EnsureVapidKeysAsync();
         Assert.Equal(keys.Subject, reloaded.Subject);
         Assert.Equal("pub123", reloaded.PublicKey);
     }
@@ -84,17 +85,11 @@ public class SystemSecretsServiceTests : IDisposable
     public async Task EnsureVapidKeysAsync_ConfigOverrideSet_UsesConfiguredKeysUnchanged()
     {
         using var db = NewContext();
-        var config = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["Vapid:PublicKey"] = "configured-pub",
-                ["Vapid:PrivateKey"] = "configured-priv",
-                ["Vapid:Subject"] = "mailto:ops@example.com",
-            })
-            .Build();
-
-        var service = new SystemSecretsService(db);
-        var keys = await service.EnsureVapidKeysAsync(config);
+        var service = new SystemSecretsService(db, TestOptions.For<VapidOptions>(
+            ("Vapid:PublicKey", "configured-pub"),
+            ("Vapid:PrivateKey", "configured-priv"),
+            ("Vapid:Subject", "mailto:ops@example.com")));
+        var keys = await service.EnsureVapidKeysAsync();
 
         Assert.Equal("configured-pub", keys.PublicKey);
         Assert.Equal("configured-priv", keys.PrivateKey);
@@ -106,7 +101,7 @@ public class SystemSecretsServiceTests : IDisposable
     public async Task SetupSecret_EnsureThenValidate_RoundTripsCorrectly()
     {
         using var db = NewContext();
-        var service = new SystemSecretsService(db);
+        var service = new SystemSecretsService(db, TestOptions.For<VapidOptions>());
 
         var code = await service.EnsureSetupSecretAsync();
 
@@ -119,7 +114,7 @@ public class SystemSecretsServiceTests : IDisposable
     public async Task ClearSetupSecretAsync_RemovesCode_SubsequentValidateFails()
     {
         using var db = NewContext();
-        var service = new SystemSecretsService(db);
+        var service = new SystemSecretsService(db, TestOptions.For<VapidOptions>());
         var code = await service.EnsureSetupSecretAsync();
 
         await service.ClearSetupSecretAsync();
@@ -143,13 +138,12 @@ public class SystemSecretsServiceTests : IDisposable
     {
         using var dbA = NewContext();
         using var dbB = NewContext();
-        var serviceA = new SystemSecretsService(dbA);
-        var serviceB = new SystemSecretsService(dbB);
-        var config = new ConfigurationBuilder().Build();
+        var serviceA = new SystemSecretsService(dbA, TestOptions.For<VapidOptions>());
+        var serviceB = new SystemSecretsService(dbB, TestOptions.For<VapidOptions>());
 
         var results = await Task.WhenAll(
-            serviceA.EnsureVapidKeysAsync(config),
-            serviceB.EnsureVapidKeysAsync(config));
+            serviceA.EnsureVapidKeysAsync(),
+            serviceB.EnsureVapidKeysAsync());
 
         Assert.Equal(results[0].PublicKey, results[1].PublicKey);
         Assert.Equal(results[0].PrivateKey, results[1].PrivateKey);
@@ -162,8 +156,8 @@ public class SystemSecretsServiceTests : IDisposable
     {
         using var dbA = NewContext();
         using var dbB = NewContext();
-        var serviceA = new SystemSecretsService(dbA);
-        var serviceB = new SystemSecretsService(dbB);
+        var serviceA = new SystemSecretsService(dbA, TestOptions.For<VapidOptions>());
+        var serviceB = new SystemSecretsService(dbB, TestOptions.For<VapidOptions>());
 
         var results = await Task.WhenAll(
             serviceA.EnsureSetupSecretAsync(),
