@@ -1123,8 +1123,10 @@ point-in-time recovery instead of just "failover to a replica".
 
 Then fill in the `spec.backup` block in `k8s/02-postgres.yaml` with the real bucket name/account
 ID and apply `k8s/08-scheduled-backup.yaml` (a daily base backup at 03:00, in addition to
-continuous WAL archiving). `retentionPolicy: "7d"` keeps storage usage bounded - CNPG's own
-operator automatically deletes backups/WALs beyond this window, no additional CronJob needed.
+continuous WAL archiving). `retentionPolicy: "30d"` bounds storage usage - CNPG's own operator
+automatically deletes backups/WALs beyond this window, no additional CronJob needed. It was
+briefly 3d (2026-09-03 to 2026-09-13) to save R2 storage; at a ~9.5MB database that saved
+nothing measurable and cost the ability to rewind past the last three days, so it went to 30d.
 
 **Is now active on prod** (`spec.backup` in `k8s/02-postgres.yaml` no longer commented out,
 secret + bucket exist). Ran through it live and found two real pitfalls in the process:
