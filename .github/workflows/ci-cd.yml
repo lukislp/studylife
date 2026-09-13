@@ -41,13 +41,15 @@ jobs:
             nuget-${{ runner.os }}-
       # No `dotnet workload restore` here: every project in the test dependency graph is
       # plain net10.0 (Blazor WASM only needs the wasm-tools workload for AOT/relinking,
-      # which the Client doesn't use), and installing workloads was the single most
-      # expensive step of this job. One explicit solution restore up front so the three
+      # which the Client doesn't use - StudyLife.Client.Tests references the Client project
+      # and builds fine without it), and installing workloads was the single most
+      # expensive step of this job. One explicit solution restore up front so the four
       # test invocations below don't each pay their own implicit restore.
       - run: dotnet restore StudyLife.sln --locked-mode
       - run: dotnet test tests/StudyLife.Shared.Tests/StudyLife.Shared.Tests.csproj --no-restore --configuration ${{ env.CONFIGURATION }} --logger "junit;LogFilePath=TestResults/shared-tests-junit.xml" --collect:"XPlat Code Coverage" --settings coverlet.runsettings
       - run: dotnet test tests/StudyLife.Server.Tests/StudyLife.Server.Tests.csproj --no-restore --configuration ${{ env.CONFIGURATION }} --logger "junit;LogFilePath=TestResults/server-tests-junit.xml" --collect:"XPlat Code Coverage" --settings coverlet.runsettings
       - run: dotnet test tests/StudyLife.Tts.Tests/StudyLife.Tts.Tests.csproj --no-restore --configuration ${{ env.CONFIGURATION }} --logger "junit;LogFilePath=TestResults/tts-tests-junit.xml" --collect:"XPlat Code Coverage" --settings coverlet.runsettings
+      - run: dotnet test tests/StudyLife.Client.Tests/StudyLife.Client.Tests.csproj --no-restore --configuration ${{ env.CONFIGURATION }} --logger "junit;LogFilePath=TestResults/client-tests-junit.xml" --collect:"XPlat Code Coverage" --settings coverlet.runsettings
       - if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -56,12 +58,13 @@ jobs:
             tests/StudyLife.Shared.Tests/TestResults/shared-tests-junit.xml
             tests/StudyLife.Server.Tests/TestResults/server-tests-junit.xml
             tests/StudyLife.Tts.Tests/TestResults/tts-tests-junit.xml
+            tests/StudyLife.Client.Tests/TestResults/client-tests-junit.xml
           retention-days: 7
-      # Coverage badge (self-hosted, no external service): merges both projects' cobertura
-      # reports, scoped to StudyLife.Server/StudyLife.Shared - StudyLife.Client (Blazor UI
-      # markup, no unit-test practice here, verified manually per CLAUDE.md instead) is
-      # deliberately excluded, otherwise its 0% would drag an otherwise well-tested number
-      # down into misleading territory. Uploaded as an artifact and downloaded by the
+      # Coverage badge (self-hosted, no external service): merges the projects' cobertura
+      # reports, scoped to StudyLife.Server/StudyLife.Shared - StudyLife.Client stays
+      # excluded: StudyLife.Client.Tests covers its service lifetimes and dialog markup, but
+      # the bulk of that assembly is Blazor UI markup verified manually, so including it
+      # would drag an otherwise well-tested number down into misleading territory. Uploaded as an artifact and downloaded by the
       # semantic-release job below, which commits it to .github/badges/ on release - cheaper
       # than re-running the whole test+coverage pipeline there just for one small JSON file.
       # EF Core migrations (StudyLife.Server.Migrations.*) are excluded as generated code:
