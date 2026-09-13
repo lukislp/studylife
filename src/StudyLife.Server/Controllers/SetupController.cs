@@ -111,11 +111,11 @@ public class SetupController : ControllerBase
             WebhookApiKeys = await ApiKeyService.LoadWebhookApiKeysAsync(_db, userId),
             // ListClientKeys has no owner restriction (any session user may see/revoke their own
             // issued add-on keys) - always populated, same as HaApiKey & co. above.
-            ClientKeys = await AuthController.LoadClientKeysAsync(_db, userId),
+            ClientKeys = await AuthAccountService.LoadClientKeysAsync(_db, userId),
 
             // Owner-only (AuthController.ListInvites Forbid()s everyone else) - null instead of
             // ever exposing invite rows to a non-owner session.
-            Invites = isOwner ? await AuthController.LoadInvitesAsync(_db) : null,
+            Invites = isOwner ? await AuthInviteService.LoadInvitesAsync(_db) : null,
 
             // Owner-only AND raw-backup-only; rawBackupSupported above already folds in the demo
             // check (Program.cs's /api/backup write-block middleware blocks GET api/backup/

@@ -52,6 +52,12 @@ public partial class AuthController : ControllerBase
     private readonly IOwnershipService _ownership;
     private readonly IRegistrationGateService _registrationGate;
     private readonly ConsentRedirectPolicy _consentRedirects;
+    // The persistence extracted out of the invite/recovery/account partials (docs/ARCHITECTURE.md
+    // "Server layering"). The WebAuthn ceremonies deliberately keep their own writes - see the
+    // registration/login partials.
+    private readonly IAuthInviteService _invites;
+    private readonly IAuthRecoveryService _recovery;
+    private readonly IAuthAccountService _account;
     // Monitors, not IOptions: both sections used to be re-read from IConfiguration on every
     // request, so a configuration reload has to keep taking effect the same way.
     private readonly IOptionsMonitor<Fido2Options> _fido2Options;
@@ -59,7 +65,8 @@ public partial class AuthController : ControllerBase
 
     public AuthController(StudyLifeDb db, IDistributedCache cache, IConfiguration config,
         SystemSecretsService systemSecrets, IOwnershipService ownership, IRegistrationGateService registrationGate,
-        ConsentRedirectPolicy consentRedirects, IOptionsMonitor<Fido2Options> fido2Options,
+        ConsentRedirectPolicy consentRedirects, IAuthInviteService invites, IAuthRecoveryService recovery,
+        IAuthAccountService account, IOptionsMonitor<Fido2Options> fido2Options,
         IOptionsMonitor<ConsentOptions> consentOptions)
     {
         _db = db;
@@ -69,6 +76,9 @@ public partial class AuthController : ControllerBase
         _ownership = ownership;
         _registrationGate = registrationGate;
         _consentRedirects = consentRedirects;
+        _invites = invites;
+        _recovery = recovery;
+        _account = account;
         _fido2Options = fido2Options;
         _consentOptions = consentOptions;
     }
