@@ -454,10 +454,20 @@ spec:
   podSelector: { matchLabels: { cnpg.io/cluster: studylife-pg } }
   policyTypes: ["Egress"]
   egress:
+    # 5432: streaming replication (see above). 8000: the instance manager's failsafe check - the
+    # primary polls every peer's https://<pod-ip>:8000/failsafe to tell "I am isolated" apart
+    # from "the peer is gone", and logs an "Instance connectivity error" line every 10s when it
+    # cannot. Note that this probe does NOT work today and this rule alone will not fix it: the
+    # INGRESS side only lets cnpg-system reach port 8000 (allow-cnpg-operator-to-instances
+    # above), not the cluster's own peers, which is a separate pre-existing gap - the failing
+    # probe long predates these egress policies and CNPG treats it as non-fatal ("liveness probe
+    # succeeding because the API server is reachable"). The port is listed here so the egress
+    # side is not a second, hidden blocker whenever that ingress gap is closed.
     - to:
         - podSelector: { matchLabels: { cnpg.io/cluster: studylife-pg } }
       ports:
         - { protocol: TCP, port: 5432 }
+        - { protocol: TCP, port: 8000 }
     - to:
         - ipBlock: { cidr: 10.43.0.1/32 }
       ports:
