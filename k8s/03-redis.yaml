@@ -230,14 +230,24 @@ spec:
           # would mark every pod NotReady. "sh -c" is needed here, unlike the command/args field
           # above: exec probe commands are NOT subject to Kubernetes' "$(VAR)" substitution, only a
           # real shell expands "$VAR" - the probe process inherits this container's env.
+          # Both probes set timeoutSeconds explicitly instead of inheriting the Kubernetes
+          # default of 1s. An exec probe pays for a fork/exec of redis-cli on top of the round
+          # trip, and this cluster's weakest arm64 node sits close to its memory limit - under an
+          # ordinary load spike that alone blows a one-second budget ("command timed out ... after
+          # 1s" Unhealthy events were recorded on these very pods), liveness fails
+          # failureThreshold times in a row and kubelet restarts a Redis that was merely busy.
           readinessProbe:
             exec: { command: ["sh", "-c", "redis-cli -a \"$REDIS_PASSWORD\" --no-auth-warning ping"] }
             initialDelaySeconds: 3
             periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 3
           livenessProbe:
             exec: { command: ["sh", "-c", "redis-cli -a \"$REDIS_PASSWORD\" --no-auth-warning ping"] }
             initialDelaySeconds: 10
             periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
         # Sidecar instead of a separate deployment - one exporter per Redis pod, connects to its
         # own Redis process via localhost. "--check-keys=worker:shard:*" exports the existing
         # shard-claim keys (see RedisWorkerShardClaim.cs) directly as a Prometheus metric,
@@ -269,14 +279,21 @@ spec:
             allowPrivilegeEscalation: false
             capabilities: { drop: ["ALL"] }
             seccompProfile: { type: RuntimeDefault }
+          # Same reason as the redis container's probes above: the Kubernetes default
+          # timeoutSeconds of 1 turns a load spike on a slow arm64 node into a container
+          # restart, and this exporter's /health has been seen timing out that way.
           livenessProbe:
             httpGet: { path: /health, port: 9121 }
             initialDelaySeconds: 10
             periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
           readinessProbe:
             httpGet: { path: /health, port: 9121 }
             initialDelaySeconds: 3
             periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
       volumes:
         - name: config
           configMap: { name: redis-cluster-config }

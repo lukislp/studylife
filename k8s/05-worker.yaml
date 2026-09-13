@@ -172,25 +172,39 @@ spec:
           # checking until it succeeds once (or the pod is killed after its own failureThreshold),
           # so liveness/readiness below can keep their normal, tight timing for steady-state
           # operation once the wait is over.
+          #
+          # Every probe below sets timeoutSeconds explicitly instead of inheriting the Kubernetes
+          # default of 1s. That default is far too tight for a .NET app on this cluster's arm64
+          # nodes: the weakest one sits close to its memory limit, so an ordinary load spike
+          # pushes even the dependency-free /healthz/live past a single second, liveness fails
+          # failureThreshold times in a row and kubelet restarts a container that was merely
+          # busy - the single biggest source of unexplained restarts here. The startup probe is
+          # affected too: a timed-out startup check burns a failureThreshold slot exactly like a
+          # real failure, so the 400s budget below was never worth 400s under load.
           startupProbe:
             httpGet: {path: /healthz/live, port: 8080}
             initialDelaySeconds: 5
             periodSeconds: 10
-            # 40 * 10s = 400s of budget - comfortably above the 300s WaitForPendingMigrationsAsync
+            timeoutSeconds: 5
+            # 48 * 10s = 480s of budget - comfortably above the 300s WaitForPendingMigrationsAsync
             # deadline plus headroom for Kestrel/JIT startup and container scheduling jitter. If
             # the web role's migration is ever stuck/failed for the full 5 minutes, this pod is
-            # killed and restarted (fresh 400s budget) rather than left in permanent limbo -
+            # killed and restarted (fresh 480s budget) rather than left in permanent limbo -
             # matching the crash-and-retry behavior WaitForPendingMigrationsAsync's own thrown
             # InvalidOperationException already produces once Program.cs actually reaches it.
-            failureThreshold: 40
+            failureThreshold: 48
           readinessProbe:
             httpGet: {path: /healthz/live, port: 8080}
             initialDelaySeconds: 10
             periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 3
           livenessProbe:
             httpGet: {path: /healthz/live, port: 8080}
             initialDelaySeconds: 20
             periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
           volumeMounts:
             - name: apns-key
               mountPath: /secrets/apns
