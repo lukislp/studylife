@@ -1,3 +1,11 @@
+## [3.16.15](https://github.com/lukislp/studylife/compare/v3.16.14...v3.16.15) (2026-09-13)
+
+
+### Bug Fixes
+
+* **k8s:** allow the CNPG failsafe port in the instance egress policy ([#221](https://github.com/lukislp/studylife/issues/221)) ([8358bc6](https://github.com/lukislp/studylife/commit/8358bc612bb4d2422cf8c4901221bab1de2ce666))
+* **k8s:** read-only root filesystem for studylife-web ([#220](https://github.com/lukislp/studylife/issues/220)) ([c0434ec](https://github.com/lukislp/studylife/commit/c0434ec9e12e33de72dbd2305cf22a2aa61e1e0a))
+
 ## [3.16.14](https://github.com/lukislp/studylife/compare/v3.16.13...v3.16.14) (2026-09-13)
 
 
