@@ -142,7 +142,7 @@ public class MetricsControllerTests
         Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
 
         // The fixture's single 220h session (2026-02-19T00:00..2026-02-28T04:00) can't be created
-        // through the real endpoint as one row - SessionsController.Validate caps a single
+        // through the real endpoint as one row - SessionService.Validate caps a single
         // session at 24h. Split into 10x 22h sessions on the SAME start date instead (no overlap
         // check exists) - same total hours (220), same calendar day (still within February, still
         // within the last-completed week 2026-02-16..02-23), same forecast pace (recentWeeklyHours

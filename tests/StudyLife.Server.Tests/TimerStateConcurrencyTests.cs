@@ -105,10 +105,10 @@ public class TimerStateConcurrencyTests : IClassFixture<CustomWebApplicationFact
             await other.SaveChangesAsync();
         });
 
-        var controller = new TimerStateController(
+        var controller = new TimerStateController(new TimerStateService(
             db,
             scope.ServiceProvider.GetRequiredService<WebhooksProxyClient>(),
-            scope.ServiceProvider.GetRequiredService<ICurrentUserAccessor>());
+            scope.ServiceProvider.GetRequiredService<ICurrentUserAccessor>()));
 
         var result = await controller.Save(new TimerStateDto
         {
@@ -145,10 +145,10 @@ public class TimerStateConcurrencyTests : IClassFixture<CustomWebApplicationFact
             await other.SaveChangesAsync();
         });
 
-        var controller = new TimerStateController(
+        var controller = new TimerStateController(new TimerStateService(
             db,
             scope.ServiceProvider.GetRequiredService<WebhooksProxyClient>(),
-            scope.ServiceProvider.GetRequiredService<ICurrentUserAccessor>());
+            scope.ServiceProvider.GetRequiredService<ICurrentUserAccessor>()));
 
         var response = await controller.SetLiveActivityPushToken(new LiveActivityPushTokenDto { Token = "tok-fresh" });
 

@@ -110,7 +110,7 @@ public class BackupImportRoundtripTests : IClassFixture<CustomWebApplicationFact
         Assert.Equal(HttpStatusCode.OK, noteBResponse.StatusCode);
         var noteB = await noteBResponse.Content.ReadFromJsonAsync<NoteDto>();
 
-        // RelatedNoteIds has no public write path (NotesController.Create/Update deliberately
+        // RelatedNoteIds has no public write path (NoteService.CreateAsync/UpdateAsync deliberately
         // ignore it - server/AI-assigned only, see NoteDto.RelatedNoteIds doc comment) - set
         // directly, same as NotesControllerTests' own poisoned-data tests do.
         await _factory.WithDbAsync(async db =>

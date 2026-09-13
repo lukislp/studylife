@@ -5,7 +5,7 @@ namespace StudyLife.Server.Services;
 
 /// <summary>
 /// Minimal, hand-written .ics parser for importing external calendars (e.g. a
-/// university's official lecture-schedule export) - the counterpart to SessionsController.GetIcs
+/// university's official lecture-schedule export) - the counterpart to SessionService.BuildIcsAsync
 /// (that one writes, this one reads). Deliberately no NuGet package for this (see task scope):
 /// pure VEVENT/DTSTART/DTEND/SUMMARY/DESCRIPTION parsing.
 ///
@@ -194,7 +194,7 @@ public static class IcsImportParser
         return parsed; // floating
     }
 
-    /// <summary>Reverses SessionsController.IcsEscape (same order, backwards).</summary>
+    /// <summary>Reverses SessionService.IcsEscape (same order, backwards).</summary>
     private static string Unescape(string value) =>
         value.Replace("\\n", "\n").Replace("\\N", "\n").Replace("\\;", ";").Replace("\\,", ",").Replace("\\\\", "\\");
 }

@@ -24,7 +24,7 @@ namespace StudyLife.Server.Controllers;
 /// same internal helper the corresponding controller's own action calls (SettingsController's
 /// eight ToXxxApiKeyStatusDto/LoadWebhookApiKeysAsync, AuthController's LoadClientKeysAsync/
 /// LoadInvitesAsync, BackupController's BuildRestoreStatus, SystemController's
-/// BuildCapabilities, StudyProgramsController.LoadSummariesAsync, CourseGoalsController.ToDto) -
+/// BuildCapabilities, StudyProgramService.LoadSummariesAsync, CourseGoalService.ToDto) -
 /// so a change to one of those endpoints' shape can't silently drift from what this bundle
 /// reports. The AuthUsers row is read exactly ONCE and covers all eight key statuses plus the
 /// calendar token plus (indirectly, via IOwnershipService) the owner flag, instead of the eight
@@ -96,8 +96,8 @@ public class SetupController : ControllerBase
             // Deliberately just a read of the existing column - GET api/system/calendar-token
             // GENERATES one when missing, which this bundle must never do (see class summary).
             CalendarToken = user.CalendarToken,
-            StudyPrograms = await StudyProgramsController.LoadSummariesAsync(_db),
-            CourseGoals = await _db.CourseGoals.AsNoTracking().Select(g => CourseGoalsController.ToDto(g)).ToListAsync(),
+            StudyPrograms = await StudyProgramService.LoadSummariesAsync(_db),
+            CourseGoals = await _db.CourseGoals.AsNoTracking().Select(g => CourseGoalService.ToDto(g)).ToListAsync(),
 
             HaApiKey = SettingsController.ToHaApiKeyStatusDto(user),
             AiApiKey = SettingsController.ToAiApiKeyStatusDto(user),

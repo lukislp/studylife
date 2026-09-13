@@ -18,10 +18,10 @@ namespace StudyLife.Server.Services;
 /// CourseName/CourseColor, so a rename in the catalog silently diverged from what was
 /// already stamped on old rows, and a bare typo/garbage id was stored without complaint (see
 /// docs/ARCHITECTURE.md "Course id validation"). Used by every controller that creates a NEW
-/// binding between a row and a course (SessionsController.Create and .Update when the
-/// CourseId actually changes, CourseGoalsController.Save on first creation,
-/// SessionTemplatesController.Create, CourseResourcesController.Create, NotesController.Create
-/// and .Update when a non-null CourseId actually changes) - deliberately NOT used by
+/// binding between a row and a course (SessionService.CreateAsync and .UpdateAsync when the
+/// CourseId actually changes, CourseGoalService.SaveAsync on first creation,
+/// SessionTemplateService.CreateAsync, CourseResourceService.CreateAsync, NoteService.CreateAsync
+/// and .UpdateAsync when a non-null CourseId actually changes) - deliberately NOT used by
 /// BackupController's raw restore or JSON import (those intentionally carry historical ids and
 /// bypass validation by design, see BackupController's own doc comments) and NOT for a PUT
 /// that keeps a row's CourseId unchanged (frozen-at-creation semantics - editing/completing a
@@ -44,7 +44,7 @@ public interface ICourseResolver
     /// Deliberate contrast with <see cref="ResolveAsync"/>: scoped to only the caller's currently
     /// ACTIVE study program (falling back to the built-in catalog if none is active), and with
     /// Topics/Group populated - narrower scope, wider payload, both on purpose. Used by the
-    /// Planner (PlannerController.GenerateExamPlan), which only ever creates NEW work (sessions)
+    /// Planner (ExamPlanService.GenerateAsync), which only ever creates NEW work (sessions)
     /// for the program the user is actively studying right now; unlike ResolveAsync's write paths
     /// (session/goal/note edits, etc.) it never needs to keep referencing a course from a program
     /// the caller has since switched away from, and it needs Topics to pick which ones are still

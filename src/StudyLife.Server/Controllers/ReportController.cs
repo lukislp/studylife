@@ -79,9 +79,9 @@ public class ReportController : ControllerBase
         var history = SummaryInputLoader.SliceHistory(allSessions, now, ReportSummaryBuilder.HistoryDays);
 
         var goalEntities = await _db.CourseGoals.AsNoTracking().ToListAsync();
-        var goals = goalEntities.Select(CourseGoalsController.ToDto).ToList();
+        var goals = goalEntities.Select(CourseGoalService.ToDto).ToList();
 
-        var studyPrograms = await StudyProgramsController.LoadSummariesAsync(_db);
+        var studyPrograms = await StudyProgramService.LoadSummariesAsync(_db);
 
         var input = new ReportSummaryInput
         {

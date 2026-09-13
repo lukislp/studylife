@@ -451,6 +451,18 @@ builder.Services.AddScoped<SummaryInputLoader>();
 // Shared owner check (audit A15/A2 fix) - see OwnershipService for the AuthUserEntity.IsOwner
 // rationale; scoped like StudyLifeDb itself since it queries it directly.
 builder.Services.AddScoped<IOwnershipService, OwnershipService>();
+// Per-aggregate domain services (docs/ARCHITECTURE.md "Server layering"): the load/mutate/
+// persist/side-effect half of the write endpoints, so the controllers only validate the route,
+// authorize and map a ServiceResult onto a status code. All scoped like StudyLifeDb itself,
+// which every one of them queries directly.
+builder.Services.AddScoped<ISessionService, SessionService>();
+builder.Services.AddScoped<ISessionTemplateService, SessionTemplateService>();
+builder.Services.AddScoped<INoteService, NoteService>();
+builder.Services.AddScoped<ICourseGoalService, CourseGoalService>();
+builder.Services.AddScoped<ICourseResourceService, CourseResourceService>();
+builder.Services.AddScoped<IStudyProgramService, StudyProgramService>();
+builder.Services.AddScoped<IExamPlanService, ExamPlanService>();
+builder.Services.AddScoped<ITimerStateService, TimerStateService>();
 // Per-audience redirect_uri allow-list for the consent connect flow (2026-09 audit S1) - see
 // ConsentRedirectPolicy for the built-in shapes and the Consent:AllowedRedirectUris config.
 builder.Services.AddSingleton<ConsentRedirectPolicy>();

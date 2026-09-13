@@ -38,7 +38,7 @@ public class SettingsController : ControllerBase
         var cacheKey = $"settings:{_currentUser.AuthUserId}:{await _settingsCacheVersion.GetAsync(_currentUser.AuthUserId)}";
         // The key changes on every write (per-user version counter), so the TTL is only a memory
         // bound. 15s used to expire before the 30s client poll ever came back - see
-        // SessionsController.GetAll for the full reasoning behind ten minutes.
+        // SessionService.CacheTtl for the full reasoning behind ten minutes.
         var result = await _cache.GetOrSetAsync(this, cacheKey, TimeSpan.FromMinutes(10), async () =>
         {
             var entity = await _db.Settings.AsNoTracking().FirstOrDefaultAsync()
@@ -227,10 +227,10 @@ public class SettingsController : ControllerBase
     /// <summary>
     /// Hides the built-in study program ("Applied Artificial Intelligence" - the developer's
     /// own real degree, hardcoded as a shared fallback so a new user never sees zero
-    /// selectable programs, see StudyProgramsController.LoadSummariesAsync) from this user's
+    /// selectable programs, see StudyProgramService.LoadSummariesAsync) from this user's
     /// switcher for good. Requires at least one real (custom) study program to already exist -
     /// otherwise this account would be left with nothing to fall back to at all - mirrored by
-    /// StudyProgramsController.Delete refusing to remove a user's last remaining custom
+    /// StudyProgramService.DeleteAsync refusing to remove a user's last remaining custom
     /// program once this flag is set. If the built-in program was the active one, switches to
     /// the user's oldest custom program so ActiveStudyProgramId is never left null once the
     /// fallback it means is gone.
@@ -622,7 +622,7 @@ public class SettingsController : ControllerBase
     }
 
     // internal instead of private: reused by SetupController (bundle endpoint), same rationale
-    // as StudyProgramsController.LoadSummariesAsync.
+    // as StudyProgramService.LoadSummariesAsync.
     internal static async Task<List<WebhookApiKeyDto>> LoadWebhookApiKeysAsync(StudyLifeDb db, int userId) =>
         await db.WebhookApiKeys.AsNoTracking()
             .Where(k => k.AuthUserId == userId)

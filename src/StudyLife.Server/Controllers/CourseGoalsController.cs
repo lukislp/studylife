@@ -1,6 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using StudyLife.Server.Data;
 using StudyLife.Server.Services;
 using StudyLife.Shared;
 
@@ -10,101 +8,18 @@ namespace StudyLife.Server.Controllers;
 [Route("api/coursegoals")]
 public class CourseGoalsController : ControllerBase
 {
-    private readonly StudyLifeDb _db;
-    private readonly ICourseResolver _courseResolver;
-    private readonly WebhooksProxyClient _webhooks;
-    private readonly ICurrentUserAccessor _currentUser;
-    private readonly SettingsCacheVersion _settingsCacheVersion;
+    private readonly ICourseGoalService _goals;
 
-    public CourseGoalsController(StudyLifeDb db, ICourseResolver courseResolver,
-        WebhooksProxyClient webhooks, ICurrentUserAccessor currentUser, SettingsCacheVersion settingsCacheVersion)
-    {
-        _db = db;
-        _courseResolver = courseResolver;
-        _webhooks = webhooks;
-        _currentUser = currentUser;
-        _settingsCacheVersion = settingsCacheVersion;
-    }
+    public CourseGoalsController(ICourseGoalService goals) => _goals = goals;
 
     [HttpGet]
-    public async Task<IEnumerable<CourseGoalDto>> GetAll() =>
-        await _db.CourseGoals.AsNoTracking().Select(g => ToDto(g)).ToListAsync();
+    public async Task<IEnumerable<CourseGoalDto>> GetAll() => await _goals.GetAllAsync();
 
     [HttpPut("{courseId}")]
-    public async Task<ActionResult<CourseGoalDto>> Save(int courseId, CourseGoalDto dto)
-    {
-        if (string.IsNullOrWhiteSpace(dto.CourseName)) return BadRequest("CourseName must not be empty.");
-        if (dto.Grade is < 1.0m or > 5.0m) return BadRequest("Grade must be between 1.0 and 5.0.");
-
-        var entity = await _db.CourseGoals.FirstOrDefaultAsync(g => g.CourseId == courseId);
-        var isNew = entity == null;
-        var wasCompletedBefore = entity?.CompletedAt != null;
-        if (entity == null)
-        {
-            // Audit finding M2: a NEW goal binds a fresh CourseId, so it must resolve against
-            // the user's full course universe (see CourseResolver) - CourseName is then derived
-            // from the resolved course, not taken from the client. An UPDATE of an EXISTING
-            // goal, below, never re-validates or re-derives: the route parameter IS the goal's
-            // CourseId (there is no way to change it via this endpoint), so frozen-at-creation
-            // semantics apply automatically - editing a goal of a since-deleted custom course
-            // must keep working, and a later catalog rename must not rewrite it.
-            var course = await _courseResolver.ResolveAsync(courseId);
-            if (course == null) return BadRequest(CourseValidationMessages.UnknownCourseId(courseId));
-
-            entity = new CourseGoalEntity { CourseId = courseId, CourseName = course.Name };
-            _db.CourseGoals.Add(entity);
-        }
-        entity.TargetDate = dto.TargetDate;
-        entity.CompletionNote = dto.CompletionNote;
-        entity.CompletedAt = dto.CompletedAt;
-        entity.Grade = dto.Grade;
-        entity.CompletedTopics = dto.CompletedTopics;
-        entity.Tag = dto.Tag;
-        await _db.SaveChangesAsync();
-        // Goals feed the cached metrics endpoints (average grade, upcoming goals, topic progress)
-        // but have no counter of their own - bumping the settings version is what makes a goal
-        // change visible on the next /api/metrics call instead of after the cache TTL.
-        await _settingsCacheVersion.BumpAsync(_currentUser.AuthUserId);
-
-        var payload = new { courseId = entity.CourseId, courseName = entity.CourseName };
-        _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId,
-            isNew ? WebhookEventTypes.CourseGoalCreated : WebhookEventTypes.CourseGoalUpdated,
-            payload, CancellationToken.None);
-        if (entity.CompletedAt != null && !wasCompletedBefore)
-        {
-            _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId, WebhookEventTypes.CourseGoalCompleted,
-                payload, CancellationToken.None);
-        }
-        return ToDto(entity);
-    }
+    public async Task<ActionResult<CourseGoalDto>> Save(int courseId, CourseGoalDto dto) =>
+        (await _goals.SaveAsync(courseId, dto)).ToActionResult(this);
 
     [HttpDelete("{courseId}")]
-    public async Task<IActionResult> Delete(int courseId)
-    {
-        var entity = await _db.CourseGoals.FirstOrDefaultAsync(g => g.CourseId == courseId);
-        if (entity == null) return NotFound();
-        _db.CourseGoals.Remove(entity);
-        await _db.SaveChangesAsync();
-        // Goals feed the cached metrics endpoints (average grade, upcoming goals, topic progress)
-        // but have no counter of their own - bumping the settings version is what makes a goal
-        // change visible on the next /api/metrics call instead of after the cache TTL.
-        await _settingsCacheVersion.BumpAsync(_currentUser.AuthUserId);
-        _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId, WebhookEventTypes.CourseGoalDeleted,
-            new { courseId = entity.CourseId, courseName = entity.CourseName }, CancellationToken.None);
-        return NoContent();
-    }
-
-    // internal instead of private: reused by BackupController (JSON export) so the export
-    // projection doesn't have to duplicate the same mapping a second time.
-    internal static CourseGoalDto ToDto(CourseGoalEntity e) => new()
-    {
-        CourseId = e.CourseId,
-        CourseName = e.CourseName,
-        TargetDate = e.TargetDate,
-        CompletionNote = e.CompletionNote,
-        CompletedAt = e.CompletedAt,
-        Grade = e.Grade,
-        CompletedTopics = e.CompletedTopics,
-        Tag = e.Tag,
-    };
+    public async Task<IActionResult> Delete(int courseId) =>
+        (await _goals.DeleteAsync(courseId)).ToNoContentResult(this);
 }

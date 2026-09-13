@@ -493,7 +493,7 @@ public class DtoContractSnapshotTests : IClassFixture<CustomWebApplicationFactor
         // Mirrors StudyLife.Shared.Dtos.TimerStateDto (src/StudyLife.Shared/Dtos.cs).
         // serverNow is only set in the GET response (server clock anchor for the
         // remote timer banner on the focus page). clientSequence (audit S6): optional
-        // client-assigned send order for out-of-order rejection - see TimerStateController.Save.
+        // client-assigned send order for out-of-order rejection - see TimerStateService.SaveAsync.
         var expected = new HashSet<string>
         {
             "sessionId", "isRunning", "isBreak", "currentRound", "timerModeId", "phaseEndsAt", "updatedAt",

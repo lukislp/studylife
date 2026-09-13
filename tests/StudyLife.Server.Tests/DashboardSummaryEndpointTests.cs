@@ -176,7 +176,7 @@ public class DashboardSummaryEndpointTests
     /// <summary>
     /// ~25+ sessions spanning past/today/future, completed and not, deliberately reaching past
     /// both DashboardSummaryBuilder.HistoryDays (400) and AchievementHistoryDays (3650) - so the
-    /// endpoint's own window arithmetic (mirroring SessionsController.GetHistory) is actually
+    /// endpoint's own window arithmetic (mirroring SessionService.LoadHistoryAsync) is actually
     /// exercised, not just "everything recent". Plus a couple of course goals (grade + open
     /// target date) and two notes. courseIds must already be selected in settings by the caller.
     /// </summary>

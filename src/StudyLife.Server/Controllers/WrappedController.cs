@@ -81,9 +81,9 @@ public class WrappedController : ControllerBase
         var allTimeHistory = SummaryInputLoader.SliceHistory(allSessions, now, WrappedSummaryBuilder.AllTimeHistoryDays);
 
         var noteEntities = await _db.Notes.AsNoTracking().OrderByDescending(n => n.UpdatedAt).ToListAsync();
-        var notes = noteEntities.Select(NotesController.ToDto).ToList();
+        var notes = noteEntities.Select(NoteService.ToDto).ToList();
 
-        var studyPrograms = await StudyProgramsController.LoadSummariesAsync(_db);
+        var studyPrograms = await StudyProgramService.LoadSummariesAsync(_db);
 
         var input = new WrappedSummaryInput
         {

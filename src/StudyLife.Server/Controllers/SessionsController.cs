@@ -1,10 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
-using StudyLife.Server.Data;
 using StudyLife.Server.Services;
 using StudyLife.Shared;
-using WebPush;
 
 namespace StudyLife.Server.Controllers;
 
@@ -12,186 +9,43 @@ namespace StudyLife.Server.Controllers;
 [Route("api/sessions")]
 public class SessionsController : ControllerBase
 {
-    private readonly StudyLifeDb _db;
     private readonly IDistributedCache _cache;
-    private readonly SessionHistoryCacheVersion _historyCacheVersion;
-    private readonly VapidKeys _vapidKeys;
-    private readonly ICurrentUserAccessor _currentUser;
-    private readonly ICourseResolver _courseResolver;
+    private readonly ISessionService _sessions;
 
-    private static readonly Func<StudyLifeDb, IAsyncEnumerable<StudySessionDto>> _compiledGetAll =
-        EF.CompileAsyncQuery((StudyLifeDb db) =>
-            db.Sessions.AsNoTracking().Select(s => ToDto(s)));
-
-    private static readonly Func<StudyLifeDb, DateTime, bool, DateTime, IAsyncEnumerable<StudySessionDto>> _compiledGetHistory =
-        EF.CompileAsyncQuery((StudyLifeDb db, DateTime from, bool onlyCompleted, DateTime now) =>
-            db.Sessions.AsNoTracking().Where(s => s.StartTime >= from)
-                .Where(s => !onlyCompleted || s.IsCompleted || s.EndTime <= now)
-                .Select(s => ToDto(s)));
-
-    private readonly ApnsSender _apnsSender;
-    private readonly WebhooksProxyClient _webhooks;
-
-    public SessionsController(StudyLifeDb db, IDistributedCache cache, SessionHistoryCacheVersion historyCacheVersion, VapidKeysHolder vapidKeysHolder,
-        ICurrentUserAccessor currentUser, ApnsSender apnsSender, ICourseResolver courseResolver, WebhooksProxyClient webhooks)
+    public SessionsController(IDistributedCache cache, ISessionService sessions)
     {
-        _db = db;
         _cache = cache;
-        _historyCacheVersion = historyCacheVersion;
-        _vapidKeys = vapidKeysHolder.Keys!; // always set - see VapidKeysHolder comment
-        _currentUser = currentUser;
-        _apnsSender = apnsSender;
-        _courseResolver = courseResolver;
-        _webhooks = webhooks;
+        _sessions = sessions;
     }
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<StudySessionDto>>> GetAll()
     {
-        var cacheKey = $"sessions:all:{_currentUser.AuthUserId}:{await _historyCacheVersion.GetAsync(_currentUser.AuthUserId)}";
-        // The key already changes on every write (per-user version counter), so the TTL is only
-        // a memory bound, not a freshness mechanism. It used to be 15s - shorter than the 30s
-        // client poll, so the entry had always expired before the next poll and every poll paid
-        // the full query + serialization + cache write (2026-09 audit). Ten minutes lets polls
-        // and multiple open clients actually share the entry; stale versions age out by themselves.
-        return await _cache.GetOrSetAsync<IEnumerable<StudySessionDto>>(this, cacheKey, CacheTtl, async () =>
-        {
-            // No date bounds - the client fetches this once and does all week/day navigation
-            // itself (see AppStateService.cs), so a server-side window here just hides sessions
-            // outside it. Was -7/+90 days originally; changed to unbounded so the calendar
-            // shows the user's full session history, not just recent/near-future ones.
-            var result = new List<StudySessionDto>();
-            await foreach (var dto in _compiledGetAll(_db)) result.Add(dto);
-            return result;
-        });
+        // The cache key already changes on every write (per-user version counter), so the TTL is
+        // only a memory bound, not a freshness mechanism - see SessionService.CacheTtl. The
+        // ETag/Cache-Control wrapper stays here rather than in the service: it needs the request
+        // and response of THIS request (see CacheHelper), which is HTTP, not domain.
+        var cacheKey = await _sessions.AllCacheKeyAsync();
+        return await _cache.GetOrSetAsync<IEnumerable<StudySessionDto>>(this, cacheKey, SessionService.CacheTtl,
+            async () => await _sessions.LoadAllAsync());
     }
 
     [HttpPost]
-    public async Task<ActionResult<StudySessionDto>> Create(StudySessionDto dto)
-    {
-        var error = Validate(dto);
-        if (error != null) return BadRequest(error);
-
-        // Audit finding M2: CourseId must resolve against the user's full course universe
-        // (built-in catalog + all their custom courses, see CourseResolver), and
-        // CourseName/CourseColor are derived from it server-side - the client-supplied values
-        // in dto are ignored from here on (still required to be non-empty above for backward
-        // compatibility, but no longer trusted for their content).
-        var course = await _courseResolver.ResolveAsync(dto.CourseId);
-        if (course == null) return BadRequest(CourseValidationMessages.UnknownCourseId(dto.CourseId));
-
-        var entity = ToEntity(dto);
-        entity.Id = 0;
-        entity.CourseName = course.Name;
-        entity.CourseColor = course.Color;
-        _db.Sessions.Add(entity);
-        await _db.SaveChangesAsync();
-        await _historyCacheVersion.BumpAsync(_currentUser.AuthUserId);
-        await CheckNewRecordAsync(entity);
-        PublishSessionWebhookEvents(entity, isNewSession: true, wasCompletedBefore: false);
-        return ToDto(entity);
-    }
+    public async Task<ActionResult<StudySessionDto>> Create(StudySessionDto dto) =>
+        (await _sessions.CreateAsync(dto)).ToActionResult(this);
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, StudySessionDto dto)
-    {
-        var error = Validate(dto);
-        if (error != null) return BadRequest(error);
-
-        var entity = await _db.Sessions.FindAsync(id);
-        if (entity == null) return NotFound();
-
-        // Audit finding M2, exemption: a CourseId UNCHANGED from the stored row is never
-        // re-validated and its CourseName/CourseColor stay exactly as stamped at creation -
-        // editing/completing a session of a since-deleted custom course (e.g. via the focus
-        // timer) must keep working, and a later catalog rename must not silently rewrite
-        // already-frozen rows. Only an ACTUALLY CHANGED CourseId goes through resolution again,
-        // which re-derives (and re-freezes) CourseName/CourseColor from the newly bound course.
-        if (dto.CourseId != entity.CourseId)
-        {
-            var course = await _courseResolver.ResolveAsync(dto.CourseId);
-            if (course == null) return BadRequest(CourseValidationMessages.UnknownCourseId(dto.CourseId));
-            entity.CourseId = dto.CourseId;
-            entity.CourseName = course.Name;
-            entity.CourseColor = course.Color;
-        }
-
-        var oldStartTime = entity.StartTime;
-        var wasCompletedBefore = entity.IsCompleted;
-        Apply(dto, entity);
-
-        // If the session start shifts, this invalidates the already-sent session reminders
-        // (key "{id}:reminderN", see BackgroundTaskService.RunPushNotificationsAsync) -
-        // without this reset, e.g. the 30-minute reminder for the old time would count as
-        // "already sent" and never fire again relative to the new time. Other reminder types
-        // (course goal, inactivity) are bound to CourseId/date instead of session id and are
-        // therefore unaffected by a time shift.
-        if (entity.StartTime != oldStartTime)
-        {
-            var keyPrefix = $"{id}:reminder";
-            var staleReminders = await _db.SentReminders
-                .Where(r => r.Key.StartsWith(keyPrefix))
-                .ToListAsync();
-            if (staleReminders.Count > 0)
-                _db.SentReminders.RemoveRange(staleReminders);
-        }
-
-        await _db.SaveChangesAsync();
-        await _historyCacheVersion.BumpAsync(_currentUser.AuthUserId);
-        await CheckNewRecordAsync(entity);
-        PublishSessionWebhookEvents(entity, isNewSession: false, wasCompletedBefore);
-        return Ok(ToDto(entity));
-    }
+    public async Task<IActionResult> Update(int id, StudySessionDto dto) =>
+        (await _sessions.UpdateAsync(id, dto)).ToOkResult(this);
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
-    {
-        var entity = await _db.Sessions.FindAsync(id);
-        if (entity == null) return NotFound();
-        _db.Sessions.Remove(entity);
-        await _db.SaveChangesAsync();
-        await _historyCacheVersion.BumpAsync(_currentUser.AuthUserId);
-        _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId, WebhookEventTypes.SessionDeleted,
-            new { sessionId = entity.Id, courseName = entity.CourseName }, CancellationToken.None);
-        return NoContent();
-    }
-
-    /// <summary>Fire-and-forget with CancellationToken.None (see TimerStateController.Save's
-    /// identical reasoning - HttpContext.RequestAborted is not safe for work meant to outlive the
-    /// request). isNewSession is an explicit flag, not inferred from wasCompletedBefore: an
-    /// Update of a still-incomplete session also has wasCompletedBefore=false, and must NOT
-    /// re-fire session.created on every such edit - only Create ever passes isNewSession: true.
-    /// session.completed fires exactly on the false-&gt;true transition, whether that happens at
-    /// creation (a session logged as already complete) or later via Update - never re-fires on a
-    /// subsequent edit of an already-completed session.</summary>
-    private void PublishSessionWebhookEvents(StudySessionEntity entity, bool isNewSession, bool wasCompletedBefore)
-    {
-        var userId = _currentUser.AuthUserId;
-        var payload = new
-        {
-            sessionId = entity.Id,
-            courseId = entity.CourseId,
-            courseName = entity.CourseName,
-            durationMinutes = (entity.EndTime - entity.StartTime).TotalMinutes,
-        };
-        if (isNewSession)
-        {
-            _ = _webhooks.PublishEventAsync(userId, WebhookEventTypes.SessionCreated, payload, CancellationToken.None);
-        }
-        if (entity.IsCompleted && !wasCompletedBefore)
-        {
-            _ = _webhooks.PublishEventAsync(userId, WebhookEventTypes.SessionCompleted, payload, CancellationToken.None);
-        }
-    }
+    public async Task<IActionResult> Delete(int id) =>
+        (await _sessions.DeleteAsync(id)).ToNoContentResult(this);
 
     [HttpDelete("series/{groupId}")]
     public async Task<IActionResult> DeleteSeries(string groupId, [FromQuery] DateTime? fromDate)
     {
-        var query = _db.Sessions.Where(s => s.RecurrenceGroupId == groupId);
-        if (fromDate.HasValue) query = query.Where(s => s.StartTime.Date >= fromDate.Value.Date);
-        _db.Sessions.RemoveRange(await query.ToListAsync());
-        await _db.SaveChangesAsync();
-        await _historyCacheVersion.BumpAsync(_currentUser.AuthUserId);
+        await _sessions.DeleteSeriesAsync(groupId, fromDate);
         return NoContent();
     }
 
@@ -207,29 +61,12 @@ public class SessionsController : ControllerBase
     [HttpGet("history")]
     public async Task<ActionResult<IEnumerable<StudySessionDto>>> GetHistory([FromQuery] int days = 365, [FromQuery] bool onlyCompleted = true)
     {
-        // Clamp instead of trusting the caller: Math.Abs(int.MinValue) throws (a 500 for
-        // ?days=-2147483648), and an arbitrarily large window is a full-history scan per request.
-        // 3650 is the widest window any client asks for (Stats/Wrapped achievements history).
-        days = Math.Clamp(days == int.MinValue ? MaxHistoryDays : Math.Abs(days), 1, MaxHistoryDays);
-        var cacheKey = $"history:{_currentUser.AuthUserId}:{days}:{onlyCompleted}:{await _historyCacheVersion.GetAsync(_currentUser.AuthUserId)}";
-        return await _cache.GetOrSetAsync<IEnumerable<StudySessionDto>>(this, cacheKey, CacheTtl, async () =>
-        {
-            // Audit finding Z1: StartTime/EndTime columns are naive local (see docs/ARCHITECTURE.md
-            // "Single-Timezone Invariant"), so the window boundary compared against them must be
-            // DateTime.Now too - it used to be DateTime.UtcNow here while the completed-cutoff
-            // below already correctly used DateTime.Now, silently shifting the window's edge by
-            // the container's UTC offset (e.g. a session from exactly "days" ago at 01:00 local
-            // in UTC+2 could fall just outside a from-boundary computed in UTC).
-            var from = DateTime.Now.AddDays(-Math.Abs(days));
-            // "Completed" here means "counts as studied": either the Focus-Timer ran it to
-            // completion, or its scheduled end has simply passed - not every study session
-            // happens with the in-app timer running (e.g. reading offline), and those
-            // shouldn't be invisible to streak/hours/balance-check just because nobody
-            // clicked a button in the app.
-            var result = new List<StudySessionDto>();
-            await foreach (var dto in _compiledGetHistory(_db, from, onlyCompleted, DateTime.Now)) result.Add(dto);
-            return result;
-        });
+        // Clamped before the key is built, so the cache entry is keyed by the EFFECTIVE window
+        // rather than by whatever the query string said - see SessionService.ClampHistoryDays.
+        days = SessionService.ClampHistoryDays(days);
+        var cacheKey = await _sessions.HistoryCacheKeyAsync(days, onlyCompleted);
+        return await _cache.GetOrSetAsync<IEnumerable<StudySessionDto>>(this, cacheKey, SessionService.CacheTtl,
+            async () => await _sessions.LoadHistoryAsync(days, onlyCompleted));
     }
 
     /// <summary>
@@ -243,44 +80,7 @@ public class SessionsController : ControllerBase
     [HttpGet("ics")]
     public async Task<IActionResult> GetIcs()
     {
-        // Audit finding Z1: same fix as GetHistory above - StartTime is naive local, so the
-        // window boundaries compared against it must be DateTime.Now, not DateTime.UtcNow (which
-        // would silently shift the window edge by the container's UTC offset). The DTSTAMP value
-        // further below is a genuinely different case - RFC 5545 requires it in UTC - and is left
-        // untouched.
-        var from = DateTime.Now.AddDays(-7);
-        var to = DateTime.Now.AddDays(90);
-        var sessions = await _db.Sessions
-            .Where(s => s.StartTime >= from && s.StartTime <= to)
-            .OrderBy(s => s.StartTime)
-            .ToListAsync();
-
-        var sb = new System.Text.StringBuilder();
-        void Line(string value) => sb.Append(value).Append("\r\n");
-
-        Line("BEGIN:VCALENDAR");
-        Line("VERSION:2.0");
-        Line("PRODID:-//StudyLife//Sessions//DE");
-        Line("CALSCALE:GREGORIAN");
-        Line("X-WR-CALNAME:StudyLife");
-
-        var stamp = DateTime.UtcNow.ToString("yyyyMMddTHHmmssZ");
-        foreach (var s in sessions)
-        {
-            Line("BEGIN:VEVENT");
-            Line($"UID:studylife-session-{s.Id}@studylife");
-            Line($"DTSTAMP:{stamp}");
-            Line($"DTSTART:{s.StartTime:yyyyMMddTHHmmss}");
-            Line($"DTEND:{s.EndTime:yyyyMMddTHHmmss}");
-            Line($"SUMMARY:{IcsEscape(s.CourseName)}");
-            var description = string.IsNullOrWhiteSpace(s.Topic) ? s.Notes : s.Topic;
-            if (!string.IsNullOrWhiteSpace(description)) Line($"DESCRIPTION:{IcsEscape(description!)}");
-            Line($"STATUS:{(s.IsCompleted ? "CONFIRMED" : "TENTATIVE")}");
-            Line("END:VEVENT");
-        }
-
-        Line("END:VCALENDAR");
-        var bytes = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
+        var bytes = System.Text.Encoding.UTF8.GetBytes(await _sessions.BuildIcsAsync());
         return File(bytes, "text/calendar; charset=utf-8");
     }
 
@@ -291,7 +91,9 @@ public class SessionsController : ControllerBase
     /// in the client (see Calendar.ImportIcs.razor.cs). The actual creation then happens via
     /// the normal POST /api/sessions, once per appointment confirmed by the user - no dedicated
     /// bulk-insert endpoint, to avoid maintaining duplicate validation/cache-invalidation logic
-    /// here. See IcsImportParser for the scope (no RRULE expansion, best-effort TZID).
+    /// here. See IcsImportParser for the scope (no RRULE expansion, best-effort TZID). Stays in
+    /// the controller rather than moving to SessionService: it touches no persistence at all,
+    /// only the uploaded form file and a pure parser.
     /// </summary>
     [HttpPost("import-ics")]
     [RequestSizeLimit(10L * 1024 * 1024)]
@@ -307,192 +109,5 @@ public class SessionsController : ControllerBase
 
         var events = IcsImportParser.Parse(content);
         return Ok(new IcsImportResultDto { Events = events });
-    }
-
-    /// <summary>
-    /// Instant feedback on a new personal record: "longest single session so far" was chosen
-    /// over "most hours on a calendar day", because it gets by without date grouping, using a
-    /// single Max() comparison over completed sessions - simpler to compute and just as
-    /// immediately understandable for the user ("this one session was your longest"). Runs
-    /// directly in the request handler (Create/Update), NOT via the BackgroundTaskService
-    /// polling cycle, so the feedback arrives immediately after finishing/saving.
-    /// </summary>
-    // Serializes CheckNewRecordAsync process-wide: without this, two nearly simultaneous
-    // create/update requests (two browser tabs, a double click) could both read the same old
-    // record before the other session is committed, and both incorrectly trigger a "new
-    // record" push. For this app's single-instance deployment (one Kestrel process on the
-    // Pi) an in-process lock is sufficient; a DB transaction wouldn't be any more precise
-    // with SQLite anyway.
-    /// <summary>Memory bound for the version-keyed GET caches, not a freshness mechanism - see GetAll.</summary>
-    private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(10);
-    /// <summary>Widest history window any client asks for (Stats/Wrapped achievements) - see
-    /// the clamp in GetHistory.</summary>
-    private const int MaxHistoryDays = 3650;
-
-
-    private async Task CheckNewRecordAsync(StudySessionEntity entity)
-    {
-        var settings = await _db.Settings.FirstOrDefaultAsync();
-        if (settings is not { NewRecordNotificationsEnabled: true }) return;
-
-        // "Studied" = same semantics as StudyMetrics.IsStudied (timer finished OR scheduled
-        // end already in the past) - a merely planned, not-yet-started session cannot set a
-        // record.
-        var now = DateTime.Now;
-        if (!(entity.IsCompleted || entity.EndTime <= now)) return;
-
-        // Dedup per session id: prevents a repeat push if the same session is later
-        // edited/moved again (a record conceptually "happens" only once).
-        var key = $"newrecord:{entity.Id}";
-        if (await _db.SentReminders.AnyAsync(r => r.Key == key)) return;
-
-        var duration = entity.EndTime - entity.StartTime;
-
-        var others = await _db.Sessions
-            .Where(s => s.Id != entity.Id && (s.IsCompleted || s.EndTime <= now))
-            .Select(s => new { s.StartTime, s.EndTime })
-            .ToListAsync();
-        // Without a baseline (the very first studied session), a "record" is trivial and
-        // would just feel like unmotivated spam - only meaningful from the second studied
-        // session onward.
-        if (others.Count == 0) return;
-
-        var previousMaxHours = others.Max(s => (s.EndTime - s.StartTime).TotalHours);
-        if (duration.TotalHours <= previousMaxHours) return;
-
-        // Claim BEFORE sending: the unique index on SentReminders (AuthUserId, Key) is the
-        // arbiter between concurrent writes of the same session, so exactly one request sends
-        // the push. This replaces a process-wide SemaphoreSlim that serialized every session
-        // write on the pod and was held across the outbound push HTTP calls - one slow push
-        // provider stalled all POST/PUT /api/sessions (2026-09 audit P5). The DB constraint
-        // also works across pods, which the in-process lock never did.
-        var claim = new SentReminderEntity { Key = key, SentAt = now };
-        _db.SentReminders.Add(claim);
-        try
-        {
-            await _db.SaveChangesAsync();
-        }
-        catch (DbUpdateException)
-        {
-            _db.Entry(claim).State = EntityState.Detached; // a concurrent request won the claim
-            return;
-        }
-
-        await SendNewRecordPushAsync(duration);
-        _ = _webhooks.PublishEventAsync(_currentUser.AuthUserId, WebhookEventTypes.NewRecordSet,
-            new { sessionId = entity.Id, durationMinutes = duration.TotalMinutes, previousBestMinutes = previousMaxHours * 60 },
-            CancellationToken.None);
-        await _db.SaveChangesAsync(); // persists the removal of expired subscriptions collected by the push
-    }
-
-    // Small, locally kept push-sending path instead of reusing
-    // BackgroundTaskService.SendPushAsync/GetPushClient: those helpers are private instance
-    // methods of a different class built for the 30s polling cycle. For this single instant-
-    // feedback case, a lean, self-contained variant is enough.
-    private async Task SendNewRecordPushAsync(TimeSpan duration)
-    {
-        var subscriptions = await _db.PushSubscriptions.ToListAsync();
-        if (subscriptions.Count == 0) return;
-
-        var title = "Neuer Rekord! 🏆";
-        var body = $"Neuer Rekord: {duration.TotalHours:0.#} Stunden am Stück!";
-        var payload = System.Text.Json.JsonSerializer.Serialize(new { title, body });
-
-        var client = new WebPushClient();
-        client.SetVapidDetails(_vapidKeys.Subject, _vapidKeys.PublicKey, _vapidKeys.PrivateKey);
-
-        var expired = new List<PushSubscriptionEntity>();
-        await Task.WhenAll(subscriptions.Select(async sub =>
-        {
-            // APNs branch like in BackgroundTaskService.SendPushAsync: same payload,
-            // different envelope; silent no-op without a configured channel.
-            if (sub.Channel == PushSubscriptionEntity.ChannelApns)
-            {
-                if (!_apnsSender.Enabled || sub.ApnsToken is not { Length: > 0 }) return;
-                var outcome = await _apnsSender.SendPayloadAsync(sub.ApnsToken, payload);
-                if (outcome == ApnsSendOutcome.ExpiredToken)
-                    lock (expired) expired.Add(sub);
-                return;
-            }
-
-            try
-            {
-                var pushSub = new PushSubscription(sub.Endpoint, sub.P256dh, sub.Auth);
-                await client.SendNotificationAsync(pushSub, payload);
-            }
-            catch (WebPushException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Gone)
-            {
-                lock (expired) expired.Add(sub);
-            }
-            catch (Exception)
-            {
-                // Best effort, like BackgroundTaskService.SendPushAsync - a single failed
-                // delivery must not abort the instant feedback for other devices.
-            }
-        }));
-
-        if (expired.Count > 0)
-            _db.PushSubscriptions.RemoveRange(expired);
-    }
-
-    private static string IcsEscape(string value) =>
-        value.Replace("\r", "").Replace("\\", "\\\\").Replace(";", "\\;").Replace(",", "\\,").Replace("\n", "\\n");
-
-    private static string? Validate(StudySessionDto dto)
-    {
-        if (dto.CourseId <= 0) return "CourseId must be greater than 0.";
-        if (string.IsNullOrWhiteSpace(dto.CourseName)) return "CourseName must not be empty.";
-        if (dto.EndTime <= dto.StartTime) return "EndTime must be after StartTime.";
-        // Plausibility limit against faulty client timezone calculations or similar: a single
-        // session over 24h is unrealistic and would otherwise, e.g., permanently stick
-        // CheckNewRecordAsync with a "record" that can never be reached again.
-        if (dto.EndTime - dto.StartTime > TimeSpan.FromHours(24)) return "A session cannot last longer than 24 hours.";
-        return null;
-    }
-
-    // internal instead of private: reused by BackupController (JSON export), so the export
-    // projection doesn't have to duplicate the same mapping a second time.
-    internal static StudySessionDto ToDto(StudySessionEntity e) => new()
-    {
-        Id = e.Id,
-        CourseId = e.CourseId,
-        CourseName = e.CourseName,
-        CourseColor = e.CourseColor,
-        StartTime = e.StartTime,
-        EndTime = e.EndTime,
-        Topic = e.Topic,
-        Notes = e.Notes,
-        IsCompleted = e.IsCompleted,
-        TimerModeId = e.TimerModeId,
-        RecurrenceGroupId = e.RecurrenceGroupId,
-    };
-
-    private static StudySessionEntity ToEntity(StudySessionDto d) => new()
-    {
-        Id = d.Id,
-        CourseId = d.CourseId,
-        CourseName = d.CourseName,
-        CourseColor = d.CourseColor,
-        StartTime = d.StartTime,
-        EndTime = d.EndTime,
-        Topic = d.Topic,
-        Notes = d.Notes,
-        IsCompleted = d.IsCompleted,
-        TimerModeId = d.TimerModeId,
-        RecurrenceGroupId = d.RecurrenceGroupId,
-    };
-
-    // Deliberately does NOT touch CourseId/CourseName/CourseColor: Update() above already
-    // decided those explicitly (re-resolved on an actual CourseId change, left untouched -
-    // frozen - otherwise, see the audit finding M2 comment there).
-    private static void Apply(StudySessionDto d, StudySessionEntity e)
-    {
-        e.StartTime = d.StartTime;
-        e.EndTime = d.EndTime;
-        e.Topic = d.Topic;
-        e.Notes = d.Notes;
-        e.IsCompleted = d.IsCompleted;
-        e.TimerModeId = d.TimerModeId;
-        e.RecurrenceGroupId = d.RecurrenceGroupId;
     }
 }
