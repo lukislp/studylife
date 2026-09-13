@@ -1,0 +1,14 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: studylife-apns
+  namespace: studylife-scale
+spec:
+  encryptedData:
+    apns-key.p8: AgB4WRlod3droScCDuQx9r6KzmHX0r6S9VMJF2jIIdDvkMzlE+pJ+BjAkL+uqyDAtdF2l3tljb9HYMqqkedAS7eveMePGPKeft72ivx9o2FTw6Cf79+bFKUruBsR7eWP7VcdyNR0i1mrAsZXoJiic7xcsAAy+wcLAF+dNW5RPVzYUaKaMlizcuCG4sHkcnYh1J0IS/0HoRVD4GAwEOLv5gX5pbnjVjxIf3uYLJn98tHobFtXXDaTxtSVmA61Q/buddPUzAOkap0rfIFkaoHap6zELpKCsc3EBMpZV3rQ/CtKXDmrxWFrDrdpJYD+CDbuCJbxman819b5CV1PVetUeBPd6tFZx4bzFlmPrUUWXwdfbVOCETQDzts9s2IYOG9qHt8fUStKWe/uhZez0ii+hFKO3T8dlEV6zQzdStQFTfrX6RNSEgsCy3CSOVZqQt1xawcaRYxXh10Va38GLPzZ4uSUE6UKcp/z+tvmuNchHBwoLQTyODKC1VgF/AY6/1f2F2YYcPyoP9tF5hXWOJNCQYmVIxrfVDWWG4A/sGsL3XoX2Bo303F9jbORndcU2dxI6FfWE+Uwbfr3atUdl9P/tpzo61uU1IaSccsd4sEh+bSzueDwctPG4NQEPYrl0cf6bAmq1AyUPeAtI/S8bElnSzVAmHM76ygLdHDaX49GV0zugS9oSok1iE/FPQmanjGYNTsCerxe+Kif+P0XMGYdDyW4k/yTgffzvdOaA1CJf9DNSPEZwWwkxLPh8/OoEIwYZLKLbdPzJbXChsI2mkJFmqRye8nvvos8nWTKDoO2PrsVhmt+fzZjqzM6WYhA4gc75MVa70qZebkX1hXwe1mtPEKe83gBVa+7SD1koCB0nim857m7nZ5RqlGOLel+Sd1E3PBqAlvTh55MDH7CF8xk6syfm2WlhOyHvAAoTbQkyunoyK1dVoTiYtXcuL2X6pr9TaXzbJ9y9SiwdOkjkfIH0aAP3RwbTNOzlMtkCX6xy8lxgCxC2gZ44otUm77mHVNbPOwfamwxoGqj7ioV4w8GiZztrw==
+  template:
+    metadata:
+      name: studylife-apns
+      namespace: studylife-scale
+    type: Opaque
