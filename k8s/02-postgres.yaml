@@ -29,7 +29,14 @@ spec:
     # which would just undo a freshly migrated one - the per-ordinal PVC replacement is CNPG's
     # actual supported path for a live storage-class change on a multi-instance cluster.
     storageClass: longhorn
-    size: 1Gi
+    # 4Gi (raised from 1Gi 2026-09-13). The database itself is ~9.5MB - the volume was at 64%
+    # (609MiB of 974MiB) anyway, because pg_wal shares it and a 1Gi volume leaves almost no
+    # headroom for a WAL burst: if pg_wal fills the volume, Postgres shuts down and CNPG
+    # cannot fail over out of it (every instance has the same size). Longhorn's storage class
+    # has allowVolumeExpansion, and Longhorn >= 1.4 (running 1.7.2) expands attached volumes
+    # online, so CNPG resizes the PVCs in place - no failover, no re-clone. Shrinking is NOT
+    # possible afterwards; 4Gi is deliberately modest for the same reason.
+    size: 4Gi
   resources:
     requests: { cpu: 100m, memory: 256Mi }
     limits: { cpu: 500m, memory: 512Mi }
@@ -70,10 +77,14 @@ spec:
   # addition to the replica redundancy above, this also protects against data
   # corruption/accidental DELETE (replicas only protect against node failure, not against a
   # faulty write that gets replicated to all replicas immediately). The "r2-backup-credentials"
-  # secret + the "studylifebackup" bucket exist, hence active. retentionPolicy "3d" (lowered from
-  # 7d 2026-09-03 - a week of history wasn't needed, and R2 storage/cost scales with it) - CNPG's
-  # own operator automatically deletes backups/WALs beyond this window (confirmed against the
-  # installed CNPG 1.24 CRD schema, no additional CronJob needed).
+  # secret + the "studylifebackup" bucket exist, hence active. retentionPolicy "30d" (raised from
+  # 3d 2026-09-13). 3d had been chosen on the assumption that R2 storage/cost scales with the
+  # window - measured, it does not matter here: the database is ~9.5MB, so a month of daily
+  # gzip-compressed base backups plus their WAL segments stays far inside R2's free tier. 3d
+  # was the real risk instead - a corruption or bad migration noticed on a Monday could not be
+  # rewound past Friday, and point-in-time recovery is the entire reason this archive exists.
+  # CNPG's own operator automatically deletes backups/WALs beyond this window (confirmed
+  # against the installed CNPG 1.24 CRD schema, no additional CronJob needed).
   backup:
     barmanObjectStore:
       destinationPath: "s3://studylifebackup/"
@@ -83,4 +94,4 @@ spec:
         secretAccessKey: { name: r2-backup-credentials, key: ACCESS_SECRET_KEY }
       wal: { compression: gzip }
       data: { compression: gzip }
-    retentionPolicy: "3d"
+    retentionPolicy: "30d"
