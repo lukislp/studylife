@@ -1,3 +1,10 @@
+## [3.16.18](https://github.com/lukislp/studylife/compare/v3.16.17...v3.16.18) (2026-09-13)
+
+
+### Bug Fixes
+
+* **k8s:** pin studylife-pg to PostgreSQL 16.15 and switch over on updates ([#224](https://github.com/lukislp/studylife/issues/224)) ([c7f8df5](https://github.com/lukislp/studylife/commit/c7f8df5af92e8e5896d12c7cbcda8188c368ac7d))
+
 ## [3.16.17](https://github.com/lukislp/studylife/compare/v3.16.16...v3.16.17) (2026-09-13)
 
 
