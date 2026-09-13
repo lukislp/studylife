@@ -24,12 +24,12 @@ spec:
   podSelector: {}
   policyTypes: ["Ingress"]
 ---
-# Critical, otherwise all name resolution breaks for ALL pods (easy to overlook with
-# default-deny) - this is an egress policy, not a contradiction of "no default-deny egress"
-# above: it only ALLOWS explicitly, forbids nothing additionally, since without egress policies
-# on a pod everything stays allowed for egress anyway. Documented explicitly here nonetheless,
-# because DNS is the one thing that must never be forgotten in a future tightening
-# (default-deny egress).
+# Critical, otherwise all name resolution breaks for ALL pods - with default-deny-egress in
+# place, a pod that cannot reach CoreDNS cannot reach anything by name at all, and the failure
+# looks like "the database is down" rather than "DNS is blocked". This policy used to carry a
+# second, bare `{}` egress rule next to the DNS one, which allowed egress anywhere and made the
+# namespace's egress isolation purely decorative; it is gone now that every pod role has its own
+# explicit egress policy further down.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -44,9 +44,6 @@ spec:
       ports:
         - { protocol: UDP, port: 53 }
         - { protocol: TCP, port: 53 }
-    # Egress otherwise unrestricted (no deny), this policy just adds an explicit DNS allowance -
-    # becomes relevant if this is ever switched to default-deny egress later.
-    - {}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
