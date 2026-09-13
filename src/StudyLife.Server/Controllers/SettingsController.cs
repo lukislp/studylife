@@ -251,7 +251,7 @@ public class SettingsController : ControllerBase
         return ToDto(entity);
     }
 
-    // ── Per-user API key for Home Assistant (phase 3) ──────────────────────
+    // ── Single-key API slots (status / generate / revoke, once per integration) ────────────
     // Same endpoint pattern as progress-share/enable|disable|regenerate above (dedicated
     // POST write paths instead of the generic settings PUT), but with two peculiarities:
     // (1) The key lives on AuthUserEntity instead of UserSettingsEntity - it identifies the
@@ -259,18 +259,63 @@ public class SettingsController : ControllerBase
     // (2) All three endpoints require a REAL passkey session (SessionItemKey), not just
     //     any gate authentication: otherwise a leaked API key could reissue itself or
     //     revoke a user's key.
+    //
+    // Each integration below keeps its OWN route and its own request/response DTO types (the
+    // committed OpenAPI contract in docs/api/openapi.json, which three consumer repos generate
+    // clients from, names them one per slot), but the bodies are the three helpers here rather
+    // than eight near-identical copies - see ApiKeySlot for which column pair each slot owns
+    // and why the token/hash handling is centralized. The two slots that do more than write
+    // their columns (ai, developer: outbox + server-to-server registration) still use the same
+    // descriptor for the column write and add their extra step around it.
+
+    /// <summary>Body of every "&lt;slot&gt;-api-key" status endpoint: existence + timestamp of
+    /// the slot's key, never the plaintext (like a password, it is only visible once at
+    /// generation). Takes the mapper rather than the slot, because each slot's status DTO is
+    /// its own wire type and SetupController's bundle endpoint reuses those same mappers.</summary>
+    private async Task<ActionResult<TDto>> GetApiKeyStatusAsync<TDto>(Func<AuthUserEntity, TDto> toDto)
+    {
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
+        var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+        return new ActionResult<TDto>(toDto(user));
+    }
+
+    /// <summary>Body of every "&lt;slot&gt;-api-key/generate" endpoint: issues a fresh key into
+    /// that slot only (every other slot is untouched), immediately invalidating whatever was in
+    /// it, and hands back the plaintext the one and only time it exists.</summary>
+    private async Task<ActionResult<TDto>> GenerateApiKeyAsync<TDto>(ApiKeySlot slot, Func<string, DateTime, TDto> toDto)
+    {
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
+        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+
+        var key = slot.Rotate(user, DateTime.UtcNow);
+        await _db.SaveChangesAsync();
+        return new ActionResult<TDto>(toDto(key, slot.GetCreatedAt(user)!.Value));
+    }
+
+    /// <summary>Body of every "&lt;slot&gt;-api-key/revoke" endpoint: permanently clears that
+    /// slot (the integration gets 401 from its next request onward), all other slots
+    /// untouched.</summary>
+    private async Task<IActionResult> RevokeApiKeyAsync(ApiKeySlot slot)
+    {
+        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
+        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+
+        slot.Revoke(user);
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    // ── Per-user API key for Home Assistant (phase 3) ──────────────────────
 
     /// <summary>Status for the setup card: does a key exist, and since when? Deliberately NO
     /// plaintext access - the key, like a password, is only visible once at generation.</summary>
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpGet("ha-api-key")]
-    public async Task<ActionResult<HaApiKeyStatusDto>> GetHaApiKeyStatus()
-    {
-        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
-        if (user is null) return Unauthorized();
-        return ToHaApiKeyStatusDto(user);
-    }
+    public async Task<ActionResult<HaApiKeyStatusDto>> GetHaApiKeyStatus() =>
+        await GetApiKeyStatusAsync(ToHaApiKeyStatusDto);
 
     // internal instead of private: reused by SetupController (bundle endpoint) so both call
     // sites map the same AuthUserEntity fields the same way - see the seven siblings below.
@@ -287,53 +332,27 @@ public class SettingsController : ControllerBase
     /// </summary>
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("ha-api-key/generate")]
-    public async Task<ActionResult<HaApiKeyGenerateResponseDto>> GenerateHaApiKey()
-    {
-        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
-        if (user is null) return Unauthorized();
-
-        var key = AuthSessionService.GenerateToken();
-        user.ApiKeyHash = AuthSessionService.HashToken(key);
-        user.ApiKeyCreatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
-        return new HaApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = user.ApiKeyCreatedAt.Value };
-    }
+    public async Task<ActionResult<HaApiKeyGenerateResponseDto>> GenerateHaApiKey() =>
+        await GenerateApiKeyAsync(ApiKeySlots.Ha,
+            (key, createdAt) => new HaApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = createdAt });
 
     /// <summary>Permanently revokes the per-user API key (hash is deleted) - Home Assistant
     /// gets 401 from the next request onward and shows its reauth flow.</summary>
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("ha-api-key/revoke")]
-    public async Task<IActionResult> RevokeHaApiKey()
-    {
-        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
-        if (user is null) return Unauthorized();
-
-        user.ApiKeyHash = null;
-        user.ApiKeyCreatedAt = null;
-        await _db.SaveChangesAsync();
-        return NoContent();
-    }
+    public async Task<IActionResult> RevokeHaApiKey() => await RevokeApiKeyAsync(ApiKeySlots.Ha);
 
     // Same three-endpoint shape as the ha-api-key group above, for the separate studylife-ai
-    // key slot (AuthUserEntity.AiApiKeyHash) - deliberately duplicated rather than
-    // parameterized into one generic "integration key" mechanism: a real per-integration state
-    // machine (open/rotate/revoke on a shared code path) would be more indirection than the
-    // current need justifies. Still true with the third slot added below for studylife-mcp
-    // (McpApiKeyHash) - three near-identical endpoint trios, on purpose.
+    // key slot (AuthUserEntity.AiApiKeyHash). The only slot whose generate/revoke do more than
+    // write their own two columns, which is why these two keep a body of their own instead of
+    // delegating wholesale to GenerateApiKeyAsync/RevokeApiKeyAsync.
 
     /// <summary>Status for the setup card: does an AI-integration key exist, and since when?
     /// Same "never the plaintext" rule as GetHaApiKeyStatus.</summary>
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpGet("ai-api-key")]
-    public async Task<ActionResult<AiApiKeyStatusDto>> GetAiApiKeyStatus()
-    {
-        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
-        if (user is null) return Unauthorized();
-        return ToAiApiKeyStatusDto(user);
-    }
+    public async Task<ActionResult<AiApiKeyStatusDto>> GetAiApiKeyStatus() =>
+        await GetApiKeyStatusAsync(ToAiApiKeyStatusDto);
 
     internal static AiApiKeyStatusDto ToAiApiKeyStatusDto(AuthUserEntity user) =>
         new() { HasKey = user.AiApiKeyHash != null, CreatedAt = user.AiApiKeyCreatedAt };
@@ -357,9 +376,7 @@ public class SettingsController : ControllerBase
         var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
 
-        var key = AuthSessionService.GenerateToken();
-        user.AiApiKeyHash = AuthSessionService.HashToken(key);
-        user.AiApiKeyCreatedAt = DateTime.UtcNow;
+        var key = ApiKeySlots.Ai.Rotate(user, DateTime.UtcNow);
         var outboxRow = new AiKeyOutboxEntity
         {
             AuthUserId = userId,
@@ -383,7 +400,7 @@ public class SettingsController : ControllerBase
             outboxRow.LastAttemptAt = DateTime.UtcNow;
         }
         await _db.SaveChangesAsync();
-        return new AiApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = user.AiApiKeyCreatedAt.Value };
+        return new AiApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = user.AiApiKeyCreatedAt!.Value };
     }
 
     /// <summary>Permanently revokes the studylife-ai API key (hash is deleted) - studylife-ai
@@ -400,8 +417,7 @@ public class SettingsController : ControllerBase
         var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
 
-        user.AiApiKeyHash = null;
-        user.AiApiKeyCreatedAt = null;
+        ApiKeySlots.Ai.Revoke(user);
         var outboxRow = new AiKeyOutboxEntity
         {
             AuthUserId = userId,
@@ -434,13 +450,8 @@ public class SettingsController : ControllerBase
     /// Same "never the plaintext" rule as GetHaApiKeyStatus.</summary>
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpGet("mcp-api-key")]
-    public async Task<ActionResult<McpApiKeyStatusDto>> GetMcpApiKeyStatus()
-    {
-        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
-        if (user is null) return Unauthorized();
-        return ToMcpApiKeyStatusDto(user);
-    }
+    public async Task<ActionResult<McpApiKeyStatusDto>> GetMcpApiKeyStatus() =>
+        await GetApiKeyStatusAsync(ToMcpApiKeyStatusDto);
 
     internal static McpApiKeyStatusDto ToMcpApiKeyStatusDto(AuthUserEntity user) =>
         new() { HasKey = user.McpApiKeyHash != null, CreatedAt = user.McpApiKeyCreatedAt };
@@ -450,43 +461,21 @@ public class SettingsController : ControllerBase
     /// Same one-time-plaintext shape as GenerateHaApiKey.</summary>
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("mcp-api-key/generate")]
-    public async Task<ActionResult<McpApiKeyGenerateResponseDto>> GenerateMcpApiKey()
-    {
-        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
-        if (user is null) return Unauthorized();
+    public async Task<ActionResult<McpApiKeyGenerateResponseDto>> GenerateMcpApiKey() =>
+        await GenerateApiKeyAsync(ApiKeySlots.Mcp,
+            (key, createdAt) => new McpApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = createdAt });
 
-        var key = RotateMcpKey(user, DateTime.UtcNow);
-        await _db.SaveChangesAsync();
-        return new McpApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = user.McpApiKeyCreatedAt!.Value };
-    }
-
-    /// <summary>Core of GenerateMcpApiKey above - also reused by AuthController.McpConnect (the
-    /// MCP OAuth connect flow, identity contract v1 §2 step 3) so the two code paths that rotate
-    /// the same key slot can't drift apart. Caller must SaveChanges.</summary>
-    internal static string RotateMcpKey(AuthUserEntity user, DateTime now)
-    {
-        var key = AuthSessionService.GenerateToken();
-        user.McpApiKeyHash = AuthSessionService.HashToken(key);
-        user.McpApiKeyCreatedAt = now;
-        return key;
-    }
+    /// <summary>The mcp slot's rotation as a method group for AuthController.McpConnect (the MCP
+    /// OAuth connect flow, identity contract v1 §2 step 3) - so the connect flow and this
+    /// controller's own generate endpoint provably rotate the same slot the same way. Caller
+    /// must SaveChanges.</summary>
+    internal static string RotateMcpKey(AuthUserEntity user, DateTime now) => ApiKeySlots.Mcp.Rotate(user, now);
 
     /// <summary>Permanently revokes the studylife-mcp API key (hash is deleted) - studylife-mcp
     /// gets 401 from the next request onward. The other two slots are untouched.</summary>
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("mcp-api-key/revoke")]
-    public async Task<IActionResult> RevokeMcpApiKey()
-    {
-        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
-        if (user is null) return Unauthorized();
-
-        user.McpApiKeyHash = null;
-        user.McpApiKeyCreatedAt = null;
-        await _db.SaveChangesAsync();
-        return NoContent();
-    }
+    public async Task<IActionResult> RevokeMcpApiKey() => await RevokeApiKeyAsync(ApiKeySlots.Mcp);
 
     // Same three-endpoint shape again, for the separate studylife-capture browser-extension key
     // slot (AuthUserEntity.CaptureApiKeyHash). Like the mcp-api-key group (and unlike ai-api-key),
@@ -498,13 +487,8 @@ public class SettingsController : ControllerBase
     /// Same "never the plaintext" rule as GetHaApiKeyStatus.</summary>
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpGet("capture-api-key")]
-    public async Task<ActionResult<CaptureApiKeyStatusDto>> GetCaptureApiKeyStatus()
-    {
-        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
-        if (user is null) return Unauthorized();
-        return ToCaptureApiKeyStatusDto(user);
-    }
+    public async Task<ActionResult<CaptureApiKeyStatusDto>> GetCaptureApiKeyStatus() =>
+        await GetApiKeyStatusAsync(ToCaptureApiKeyStatusDto);
 
     internal static CaptureApiKeyStatusDto ToCaptureApiKeyStatusDto(AuthUserEntity user) =>
         new() { HasKey = user.CaptureApiKeyHash != null, CreatedAt = user.CaptureApiKeyCreatedAt };
@@ -514,44 +498,20 @@ public class SettingsController : ControllerBase
     /// Same one-time-plaintext shape as GenerateHaApiKey.</summary>
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("capture-api-key/generate")]
-    public async Task<ActionResult<CaptureApiKeyGenerateResponseDto>> GenerateCaptureApiKey()
-    {
-        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
-        if (user is null) return Unauthorized();
+    public async Task<ActionResult<CaptureApiKeyGenerateResponseDto>> GenerateCaptureApiKey() =>
+        await GenerateApiKeyAsync(ApiKeySlots.Capture,
+            (key, createdAt) => new CaptureApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = createdAt });
 
-        var key = RotateCaptureKey(user, DateTime.UtcNow);
-        await _db.SaveChangesAsync();
-        return new CaptureApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = user.CaptureApiKeyCreatedAt!.Value };
-    }
-
-    /// <summary>Core of GenerateCaptureApiKey above - also reused by AuthController.CaptureConnect
+    /// <summary>The capture slot's rotation as a method group for AuthController.CaptureConnect
     /// (the capture browser-consent connect flow, identity contract v1 §2 generalized to a second
-    /// audience) so the two code paths that rotate the same key slot can't drift apart. Same
-    /// pattern as RotateMcpKey. Caller must SaveChanges.</summary>
-    internal static string RotateCaptureKey(AuthUserEntity user, DateTime now)
-    {
-        var key = AuthSessionService.GenerateToken();
-        user.CaptureApiKeyHash = AuthSessionService.HashToken(key);
-        user.CaptureApiKeyCreatedAt = now;
-        return key;
-    }
+    /// audience). Same pattern as RotateMcpKey. Caller must SaveChanges.</summary>
+    internal static string RotateCaptureKey(AuthUserEntity user, DateTime now) => ApiKeySlots.Capture.Rotate(user, now);
 
     /// <summary>Permanently revokes the studylife-capture API key (hash is deleted) - the
     /// extension gets 401 from the next request onward. The other three slots are untouched.</summary>
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("capture-api-key/revoke")]
-    public async Task<IActionResult> RevokeCaptureApiKey()
-    {
-        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
-        if (user is null) return Unauthorized();
-
-        user.CaptureApiKeyHash = null;
-        user.CaptureApiKeyCreatedAt = null;
-        await _db.SaveChangesAsync();
-        return NoContent();
-    }
+    public async Task<IActionResult> RevokeCaptureApiKey() => await RevokeApiKeyAsync(ApiKeySlots.Capture);
 
     // Same two-endpoint shape again (status + revoke, no generate), for the separate
     // studylife-focusguard browser-extension key slot (AuthUserEntity.FocusGuardApiKeyHash).
@@ -562,13 +522,8 @@ public class SettingsController : ControllerBase
     /// "never the plaintext" rule as GetCaptureApiKeyStatus.</summary>
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpGet("focusguard-api-key")]
-    public async Task<ActionResult<FocusGuardApiKeyStatusDto>> GetFocusGuardApiKeyStatus()
-    {
-        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
-        if (user is null) return Unauthorized();
-        return ToFocusGuardApiKeyStatusDto(user);
-    }
+    public async Task<ActionResult<FocusGuardApiKeyStatusDto>> GetFocusGuardApiKeyStatus() =>
+        await GetApiKeyStatusAsync(ToFocusGuardApiKeyStatusDto);
 
     internal static FocusGuardApiKeyStatusDto ToFocusGuardApiKeyStatusDto(AuthUserEntity user) =>
         new() { HasKey = user.FocusGuardApiKeyHash != null, CreatedAt = user.FocusGuardApiKeyCreatedAt };
@@ -579,43 +534,21 @@ public class SettingsController : ControllerBase
     /// surface every other slot has (see GenerateCaptureApiKey).</summary>
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("focusguard-api-key/generate")]
-    public async Task<ActionResult<FocusGuardApiKeyGenerateResponseDto>> GenerateFocusGuardApiKey()
-    {
-        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
-        if (user is null) return Unauthorized();
+    public async Task<ActionResult<FocusGuardApiKeyGenerateResponseDto>> GenerateFocusGuardApiKey() =>
+        await GenerateApiKeyAsync(ApiKeySlots.FocusGuard,
+            (key, createdAt) => new FocusGuardApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = createdAt });
 
-        var key = RotateFocusGuardKey(user, DateTime.UtcNow);
-        await _db.SaveChangesAsync();
-        return new FocusGuardApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = user.FocusGuardApiKeyCreatedAt!.Value };
-    }
-
-    /// <summary>Core of AuthController.FocusGuardConnect (the focusguard browser-consent connect
-    /// flow, identity contract v1 §2 generalized to a third audience). Same pattern as
+    /// <summary>The focusguard slot's rotation as a method group for
+    /// AuthController.FocusGuardConnect (the focusguard browser-consent connect flow, identity
+    /// contract v1 §2 generalized to a third audience). Same pattern as
     /// RotateCaptureKey/RotateMcpKey. Caller must SaveChanges.</summary>
-    internal static string RotateFocusGuardKey(AuthUserEntity user, DateTime now)
-    {
-        var key = AuthSessionService.GenerateToken();
-        user.FocusGuardApiKeyHash = AuthSessionService.HashToken(key);
-        user.FocusGuardApiKeyCreatedAt = now;
-        return key;
-    }
+    internal static string RotateFocusGuardKey(AuthUserEntity user, DateTime now) => ApiKeySlots.FocusGuard.Rotate(user, now);
 
     /// <summary>Permanently revokes the studylife-focusguard API key (hash is deleted) - the
     /// extension gets 401 from the next poll onward. The other four slots are untouched.</summary>
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("focusguard-api-key/revoke")]
-    public async Task<IActionResult> RevokeFocusGuardApiKey()
-    {
-        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
-        if (user is null) return Unauthorized();
-
-        user.FocusGuardApiKeyHash = null;
-        user.FocusGuardApiKeyCreatedAt = null;
-        await _db.SaveChangesAsync();
-        return NoContent();
-    }
+    public async Task<IActionResult> RevokeFocusGuardApiKey() => await RevokeApiKeyAsync(ApiKeySlots.FocusGuard);
 
     // Same three-endpoint shape again, for the separate studylife-focustunes browser-extension
     // key slot (AuthUserEntity.FocusTunesApiKeyHash). Provisioning is via the consent flow
@@ -624,53 +557,26 @@ public class SettingsController : ControllerBase
 
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpGet("focustunes-api-key")]
-    public async Task<ActionResult<FocusTunesApiKeyStatusDto>> GetFocusTunesApiKeyStatus()
-    {
-        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
-        if (user is null) return Unauthorized();
-        return ToFocusTunesApiKeyStatusDto(user);
-    }
+    public async Task<ActionResult<FocusTunesApiKeyStatusDto>> GetFocusTunesApiKeyStatus() =>
+        await GetApiKeyStatusAsync(ToFocusTunesApiKeyStatusDto);
 
     internal static FocusTunesApiKeyStatusDto ToFocusTunesApiKeyStatusDto(AuthUserEntity user) =>
         new() { HasKey = user.FocusTunesApiKeyHash != null, CreatedAt = user.FocusTunesApiKeyCreatedAt };
 
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("focustunes-api-key/generate")]
-    public async Task<ActionResult<FocusTunesApiKeyGenerateResponseDto>> GenerateFocusTunesApiKey()
-    {
-        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
-        if (user is null) return Unauthorized();
+    public async Task<ActionResult<FocusTunesApiKeyGenerateResponseDto>> GenerateFocusTunesApiKey() =>
+        await GenerateApiKeyAsync(ApiKeySlots.FocusTunes,
+            (key, createdAt) => new FocusTunesApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = createdAt });
 
-        var key = RotateFocusTunesKey(user, DateTime.UtcNow);
-        await _db.SaveChangesAsync();
-        return new FocusTunesApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = user.FocusTunesApiKeyCreatedAt!.Value };
-    }
-
-    /// <summary>Core of AuthController.FocusTunesConnect. Same pattern as RotateFocusGuardKey.
-    /// Caller must SaveChanges.</summary>
-    internal static string RotateFocusTunesKey(AuthUserEntity user, DateTime now)
-    {
-        var key = AuthSessionService.GenerateToken();
-        user.FocusTunesApiKeyHash = AuthSessionService.HashToken(key);
-        user.FocusTunesApiKeyCreatedAt = now;
-        return key;
-    }
+    /// <summary>The focustunes slot's rotation as a method group for
+    /// AuthController.FocusTunesConnect. Same pattern as RotateFocusGuardKey. Caller must
+    /// SaveChanges.</summary>
+    internal static string RotateFocusTunesKey(AuthUserEntity user, DateTime now) => ApiKeySlots.FocusTunes.Rotate(user, now);
 
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("focustunes-api-key/revoke")]
-    public async Task<IActionResult> RevokeFocusTunesApiKey()
-    {
-        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
-        if (user is null) return Unauthorized();
-
-        user.FocusTunesApiKeyHash = null;
-        user.FocusTunesApiKeyCreatedAt = null;
-        await _db.SaveChangesAsync();
-        return NoContent();
-    }
+    public async Task<IActionResult> RevokeFocusTunesApiKey() => await RevokeApiKeyAsync(ApiKeySlots.FocusTunes);
 
     // Same three-endpoint shape again, for the separate studylife-tray desktop-app key slot
     // (AuthUserEntity.TrayApiKeyHash). Provisioning is via the consent flow
@@ -679,53 +585,25 @@ public class SettingsController : ControllerBase
 
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpGet("tray-api-key")]
-    public async Task<ActionResult<TrayApiKeyStatusDto>> GetTrayApiKeyStatus()
-    {
-        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
-        if (user is null) return Unauthorized();
-        return ToTrayApiKeyStatusDto(user);
-    }
+    public async Task<ActionResult<TrayApiKeyStatusDto>> GetTrayApiKeyStatus() =>
+        await GetApiKeyStatusAsync(ToTrayApiKeyStatusDto);
 
     internal static TrayApiKeyStatusDto ToTrayApiKeyStatusDto(AuthUserEntity user) =>
         new() { HasKey = user.TrayApiKeyHash != null, CreatedAt = user.TrayApiKeyCreatedAt };
 
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("tray-api-key/generate")]
-    public async Task<ActionResult<TrayApiKeyGenerateResponseDto>> GenerateTrayApiKey()
-    {
-        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
-        if (user is null) return Unauthorized();
+    public async Task<ActionResult<TrayApiKeyGenerateResponseDto>> GenerateTrayApiKey() =>
+        await GenerateApiKeyAsync(ApiKeySlots.Tray,
+            (key, createdAt) => new TrayApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = createdAt });
 
-        var key = RotateTrayKey(user, DateTime.UtcNow);
-        await _db.SaveChangesAsync();
-        return new TrayApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = user.TrayApiKeyCreatedAt!.Value };
-    }
-
-    /// <summary>Core of AuthController.TrayConnect. Same pattern as RotateFocusTunesKey.
-    /// Caller must SaveChanges.</summary>
-    internal static string RotateTrayKey(AuthUserEntity user, DateTime now)
-    {
-        var key = AuthSessionService.GenerateToken();
-        user.TrayApiKeyHash = AuthSessionService.HashToken(key);
-        user.TrayApiKeyCreatedAt = now;
-        return key;
-    }
+    /// <summary>The tray slot's rotation as a method group for AuthController.TrayConnect. Same
+    /// pattern as RotateFocusTunesKey. Caller must SaveChanges.</summary>
+    internal static string RotateTrayKey(AuthUserEntity user, DateTime now) => ApiKeySlots.Tray.Rotate(user, now);
 
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("tray-api-key/revoke")]
-    public async Task<IActionResult> RevokeTrayApiKey()
-    {
-        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
-        if (user is null) return Unauthorized();
-
-        user.TrayApiKeyHash = null;
-        user.TrayApiKeyCreatedAt = null;
-        await _db.SaveChangesAsync();
-        return NoContent();
-    }
+    public async Task<IActionResult> RevokeTrayApiKey() => await RevokeApiKeyAsync(ApiKeySlots.Tray);
 
     // Unlike every other slot above (one key per user, a column on AuthUserEntity), the
     // studylife-webhooks registration-management slot supports multiple NAMED keys per user
@@ -796,13 +674,8 @@ public class SettingsController : ControllerBase
 
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpGet("developer-api-key")]
-    public async Task<ActionResult<DeveloperApiKeyStatusDto>> GetDeveloperApiKeyStatus()
-    {
-        var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
-        if (user is null) return Unauthorized();
-        return ToDeveloperApiKeyStatusDto(user);
-    }
+    public async Task<ActionResult<DeveloperApiKeyStatusDto>> GetDeveloperApiKeyStatus() =>
+        await GetApiKeyStatusAsync(ToDeveloperApiKeyStatusDto);
 
     internal static DeveloperApiKeyStatusDto ToDeveloperApiKeyStatusDto(AuthUserEntity user) =>
         new() { HasKey = user.DeveloperApiKeyHash != null, CreatedAt = user.DeveloperApiKeyCreatedAt };
@@ -815,13 +688,11 @@ public class SettingsController : ControllerBase
         var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
 
-        var key = AuthSessionService.GenerateToken();
-        user.DeveloperApiKeyHash = AuthSessionService.HashToken(key);
-        user.DeveloperApiKeyCreatedAt = DateTime.UtcNow;
+        var key = ApiKeySlots.Developer.Rotate(user, DateTime.UtcNow);
         await _db.SaveChangesAsync();
 
         await _developerProxyClient.RegisterKeyAsync(userId, key, ct);
-        return new DeveloperApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = user.DeveloperApiKeyCreatedAt.Value };
+        return new DeveloperApiKeyGenerateResponseDto { ApiKey = key, CreatedAt = user.DeveloperApiKeyCreatedAt!.Value };
     }
 
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
@@ -832,8 +703,7 @@ public class SettingsController : ControllerBase
         var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return Unauthorized();
 
-        user.DeveloperApiKeyHash = null;
-        user.DeveloperApiKeyCreatedAt = null;
+        ApiKeySlots.Developer.Revoke(user);
         await _db.SaveChangesAsync();
 
         await _developerProxyClient.RevokeKeyAsync(userId, ct);
