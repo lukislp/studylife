@@ -1,3 +1,10 @@
+## [3.16.13](https://github.com/lukislp/studylife/compare/v3.16.12...v3.16.13) (2026-09-13)
+
+
+### Bug Fixes
+
+* **k8s:** make the pg pooler survive a node drain (instances 2 + anti-affinity) ([#217](https://github.com/lukislp/studylife/issues/217)) ([40b0081](https://github.com/lukislp/studylife/commit/40b0081329a43e9f6b169c2433dc93abb59c8924))
+
 ## [3.16.12](https://github.com/lukislp/studylife/compare/v3.16.11...v3.16.12) (2026-09-13)
 
 
