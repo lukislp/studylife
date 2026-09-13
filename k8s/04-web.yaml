@@ -119,6 +119,11 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: {drop: ["ALL"]}
+            # Nothing this pod produces belongs to the image layer: state is in Postgres, the
+            # DataProtection key ring in Redis, and the Piper/Whisper models are read-only
+            # image content. The three emptyDirs below cover every path that still has to be
+            # writable (see volumeMounts).
+            readOnlyRootFilesystem: true
           envFrom:
             - configMapRef: {name: studylife-config}
             - secretRef: {name: studylife-secrets}
@@ -263,6 +268,22 @@ spec:
             - name: apns-key
               mountPath: /secrets/apns
               readOnly: true
+            # .NET creates its diagnostic IPC socket and debug pipes here on every start, and
+            # Path.GetTempPath() is where the backup/restore upload path spools its files
+            # (BackupController, DatabaseBackupService).
+            - name: tmp
+              mountPath: /tmp
+            # $HOME of the aspnet image's app user (1654). ONNX Runtime writes a device/telemetry
+            # cache under ~/.cache/Microsoft the first time a Piper voice session is created
+            # ("read note aloud"), which only happens lazily on first use.
+            - name: home
+              mountPath: /home/app
+            # Program.cs unconditionally does Directory.CreateDirectory(<ContentRoot>/app_data)
+            # at startup, and DatabaseBackupService writes its pre-restore copies into
+            # app_data/backups - both paths exist for the SQLite/single-Pi flavour of this same
+            # image. Under Postgres nothing durable is kept here, so an emptyDir is enough.
+            - name: app-data
+              mountPath: /app/app_data
       volumes:
         - name: web-backend-tls
           secret: {secretName: studylife-web-backend-tls}
@@ -270,6 +291,12 @@ spec:
           secret: {secretName: studylife-dataprotection-tls}
         - name: apns-key
           secret: {secretName: studylife-apns}
+        - name: tmp
+          emptyDir: {sizeLimit: 512Mi}
+        - name: home
+          emptyDir: {sizeLimit: 64Mi}
+        - name: app-data
+          emptyDir: {sizeLimit: 512Mi}
 ---
 # type: ClusterIP instead of LoadBalancer - TLS termination and the stable external address are
 # now handled by the ingress controller in front (k8s/07-ingress.yaml + MetalLB, see
