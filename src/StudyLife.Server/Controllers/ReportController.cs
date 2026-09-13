@@ -71,7 +71,7 @@ public class ReportController : ControllerBase
     private async Task<ReportSummaryDto> ComputeAsync(DateTime now, ProgrammeScope scope)
     {
         var settingsEntity = await _db.Settings.AsNoTracking().FirstOrDefaultAsync() ?? new UserSettingsEntity();
-        var settings = SettingsController.ToDto(settingsEntity);
+        var settings = SettingsService.ToDto(settingsEntity);
 
         var allSessions = await _loader.LoadAllSessionsAsync();
         // GET /api/sessions/history?days=3650 (onlyCompleted defaults to true, i.e. studied-only) -

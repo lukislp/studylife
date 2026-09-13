@@ -101,7 +101,7 @@ public class DashboardController : ControllerBase
     private async Task<DashboardSummaryDto> ComputeAsync(DateTime now, ProgrammeScope scope)
     {
         var settingsEntity = await _db.Settings.AsNoTracking().FirstOrDefaultAsync() ?? new UserSettingsEntity();
-        var settings = SettingsController.ToDto(settingsEntity);
+        var settings = SettingsService.ToDto(settingsEntity);
 
         // Sessions/History/HeavyHistory are all the same underlying table, filtered only by a
         // date window relative to the current moment - one fetch here instead of three separate

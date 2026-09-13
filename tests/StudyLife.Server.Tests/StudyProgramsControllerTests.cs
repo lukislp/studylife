@@ -445,7 +445,7 @@ public class StudyProgramsControllerTests : IClassFixture<CustomWebApplicationFa
 
 /// <summary>
 /// Own factory instance (fresh DB): exercises hiding the built-in study program
-/// (SettingsController.DismissBuiltInProgram) end to end, including its guard (needs a real
+/// (SettingsService.DismissBuiltInProgramAsync) end to end, including its guard (needs a real
 /// program to already exist) and the mirrored guard on StudyProgramService.DeleteAsync once
 /// dismissed (refuses to remove the user's last program) - both need a controlled program
 /// count that the shared-DB StudyProgramsControllerTests above can't guarantee, and dismissal

@@ -1,11 +1,9 @@
 using System.Reflection;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using StudyLife.Server.Auth;
 using StudyLife.Server.Configuration;
-using StudyLife.Server.Data;
 using StudyLife.Server.Services;
 using StudyLife.Shared;
 
@@ -25,20 +23,19 @@ namespace StudyLife.Server.Controllers;
 [Route("api/system")]
 public class SystemController : ControllerBase
 {
-    private readonly StudyLifeDb _db;
+    private readonly ICalendarTokenService _calendarTokens;
     private readonly bool _rawBackupSupported;
-    private readonly bool _demoMode;
     private readonly IOptionsMonitor<TelemetryOptions> _telemetryOptions;
 
     // IConfiguration stays only for DemoModeGuard (two top-level env vars, not a section - see
     // AuthController's field comment).
-    public SystemController(StudyLifeDb db,
+    public SystemController(ICalendarTokenService calendarTokens,
         IConfiguration config,
         IOptionsMonitor<TelemetryOptions> telemetryOptions,
         Services.DatabaseBackupService? backupService = null,
         Services.DatabaseRestoreService? restoreService = null)
     {
-        _db = db;
+        _calendarTokens = calendarTokens;
         _telemetryOptions = telemetryOptions;
         // Same derivation as BackupController.IsRawBackupAvailable: both services are
         // only registered in SQLite mode (Program.cs) - on Postgres the external backup
@@ -51,7 +48,6 @@ public class SystemController : ControllerBase
         // about whether the write-block middleware is actually registered.
         _rawBackupSupported = backupService is not null && restoreService is not null
             && !DemoModeGuard.IsEnabled(config);
-        _demoMode = DemoModeGuard.IsEnabled(config);
     }
 
     /// <summary>
@@ -92,24 +88,16 @@ public class SystemController : ControllerBase
     public async Task<ActionResult<CalendarTokenResponseDto>> GetCalendarToken()
     {
         var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
-        if (user is null) return Unauthorized();
-
-        if (user.CalendarToken is null)
+        var result = await _calendarTokens.GetOrCreateAsync(userId);
+        return result.Outcome switch
         {
-            // On a demo instance this branch is normally unreachable (DemoSeeder pre-seeds the
-            // token), but this lazy create is a GET that PERSISTS - the write-block middleware
-            // in Program.cs only covers non-GET methods, so without this check a seeder change
-            // (e.g. dropping the pre-seeded token, or a second demo user) would silently turn
-            // this endpoint into the demo's only visitor-reachable DB write.
-            if (_demoMode)
-                return StatusCode(StatusCodes.Status503ServiceUnavailable,
-                    new { error = "demo calendar token not seeded" });
-            user.CalendarToken = AuthSessionService.GenerateToken();
-            user.CalendarTokenCreatedAt = DateTime.UtcNow;
-            await _db.SaveChangesAsync();
-        }
-        return new CalendarTokenResponseDto { CalendarToken = user.CalendarToken };
+            CalendarTokenOutcome.UnknownUser => Unauthorized(),
+            // Demo instance whose seeder left no token: creating one here would be the demo's
+            // only visitor-reachable DB write - see CalendarTokenService.GetOrCreateAsync.
+            CalendarTokenOutcome.DemoNotSeeded => StatusCode(StatusCodes.Status503ServiceUnavailable,
+                new { error = "demo calendar token not seeded" }),
+            _ => new CalendarTokenResponseDto { CalendarToken = result.Token! },
+        };
     }
 
     /// <summary>
@@ -122,13 +110,9 @@ public class SystemController : ControllerBase
     public async Task<ActionResult<RegenerateCalendarTokenResponseDto>> RegenerateCalendarToken()
     {
         var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
-        if (user is null) return Unauthorized();
-
-        user.CalendarToken = AuthSessionService.GenerateToken();
-        user.CalendarTokenCreatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
-        return new RegenerateCalendarTokenResponseDto { CalendarToken = user.CalendarToken };
+        var result = await _calendarTokens.RegenerateAsync(userId);
+        if (result.Outcome == CalendarTokenOutcome.UnknownUser) return Unauthorized();
+        return new RegenerateCalendarTokenResponseDto { CalendarToken = result.Token! };
     }
 
     /// <summary>

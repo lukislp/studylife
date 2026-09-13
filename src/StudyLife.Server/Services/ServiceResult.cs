@@ -22,14 +22,24 @@ public enum ServiceOutcome
     /// <summary>The input failed a domain rule; <c>Error</c> carries the exact, stable message the
     /// endpoint has always returned, and controllers answer 400 with it.</summary>
     Invalid,
+    /// <summary>A supplied precondition no longer holds and the CURRENT state is handed back so
+    /// the caller can rebase; controllers answer 409 with that value. Only the settings PUT's
+    /// optional Version check produces this - see UserSettingsDto.Version.</summary>
+    Conflict,
+    /// <summary>The authenticated user id no longer resolves to a row; controllers answer 401.
+    /// Reachable only from the session-gated endpoints, which carry a user id that WAS valid
+    /// when the request was authenticated - a deleted account mid-request, not a missing
+    /// credential (the gate has already run by then).</summary>
+    Unauthorized,
 }
 
-/// <summary>Outcome of a domain operation that produces no payload (deletes).</summary>
+/// <summary>Outcome of a domain operation that produces no payload (deletes, revokes).</summary>
 public readonly record struct ServiceResult(ServiceOutcome Outcome, string? Error)
 {
     public static ServiceResult Success() => new(ServiceOutcome.Success, null);
     public static ServiceResult NotFound() => new(ServiceOutcome.NotFound, null);
     public static ServiceResult Invalid(string error) => new(ServiceOutcome.Invalid, error);
+    public static ServiceResult Unauthorized() => new(ServiceOutcome.Unauthorized, null);
 }
 
 /// <summary>Outcome of a domain operation that produces a DTO on success.</summary>
@@ -38,6 +48,12 @@ public readonly record struct ServiceResult<T>(ServiceOutcome Outcome, T? Value,
     public static ServiceResult<T> Success(T value) => new(ServiceOutcome.Success, value, null);
     public static ServiceResult<T> NotFound() => new(ServiceOutcome.NotFound, default, null);
     public static ServiceResult<T> Invalid(string error) => new(ServiceOutcome.Invalid, default, error);
+
+    /// <summary>Carries the CURRENT state, not the rejected input - that is the whole point of
+    /// the 409 body.</summary>
+    public static ServiceResult<T> Conflict(T current) => new(ServiceOutcome.Conflict, current, null);
+
+    public static ServiceResult<T> Unauthorized() => new(ServiceOutcome.Unauthorized, default, null);
 }
 
 /// <summary>
@@ -56,6 +72,8 @@ public static class ServiceResultExtensions
         {
             ServiceOutcome.NotFound => controller.NotFound(),
             ServiceOutcome.Invalid => controller.BadRequest(result.Error),
+            ServiceOutcome.Conflict => controller.Conflict(result.Value),
+            ServiceOutcome.Unauthorized => controller.Unauthorized(),
             _ => result.Value!,
         };
 
@@ -65,6 +83,8 @@ public static class ServiceResultExtensions
         {
             ServiceOutcome.NotFound => controller.NotFound(),
             ServiceOutcome.Invalid => controller.BadRequest(result.Error),
+            ServiceOutcome.Conflict => controller.Conflict(result.Value),
+            ServiceOutcome.Unauthorized => controller.Unauthorized(),
             _ => controller.Ok(result.Value),
         };
 
@@ -74,6 +94,7 @@ public static class ServiceResultExtensions
         {
             ServiceOutcome.NotFound => controller.NotFound(),
             ServiceOutcome.Invalid => controller.BadRequest(result.Error),
+            ServiceOutcome.Unauthorized => controller.Unauthorized(),
             _ => controller.NoContent(),
         };
 }

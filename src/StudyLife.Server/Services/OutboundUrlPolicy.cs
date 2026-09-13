@@ -4,7 +4,7 @@ namespace StudyLife.Server.Services;
 
 /// <summary>
 /// Validation for URLs the SERVER will later connect to on a user's behalf - today the Web Push
-/// endpoint a browser hands PushController.Subscribe. Such a URL used to be stored verbatim and
+/// endpoint a browser hands PushService.SubscribeAsync. Such a URL used to be stored verbatim and
 /// POSTed to from the worker on every reminder cycle, so a caller could point it at
 /// http://10.0.0.5:8080/... or a cloud metadata address and use the server as a blind
 /// request proxy into the cluster network (2026-09 audit S4). Push services are always public

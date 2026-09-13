@@ -144,7 +144,7 @@ public sealed class AiProxyClient
     }
 
     /// <summary>Registers `userId`'s real AiApiKey with studylife-ai, called the moment the
-    /// plaintext exists (SettingsController.GenerateAiApiKey) and retried from the AI key outbox
+    /// plaintext exists (ApiKeyService.GenerateAiKeyAsync) and retried from the AI key outbox
     /// (BackgroundTaskService.RunAiKeyOutboxAsync, audit A7) until it is confirmed delivered.
     /// Never throws - a studylife-ai outage must not fail key generation itself. Returns true on
     /// confirmed delivery (including the "integration not configured" no-op, same as before the
@@ -155,7 +155,7 @@ public sealed class AiProxyClient
             new Dictionary<string, string> { ["user_id"] = userId.ToString(), ["ai_api_key"] = aiApiKey }, ct);
 
     /// <summary>Revokes `userId`'s key from studylife-ai's registry, called on
-    /// SettingsController.RevokeAiApiKey and retried from the AI key outbox. Same never-throws/
+    /// ApiKeyService.RevokeAiKeyAsync and retried from the AI key outbox. Same never-throws/
     /// bool-success reasoning as RegisterKeyAsync.</summary>
     public Task<bool> RevokeKeyAsync(int userId, CancellationToken ct) =>
         PostInternalAsync("/internal/revoke-key",

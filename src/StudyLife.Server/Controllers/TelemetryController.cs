@@ -50,7 +50,7 @@ public class TelemetryController : ControllerBase
     public async Task<IActionResult> Post([FromBody] TelemetryBatchDto batch)
     {
         // Defense in depth alongside [RequestSizeLimit]/[RejectOversizedBody] above - same
-        // pattern as BackupController.ImportJson.
+        // pattern as BackupDataService.ImportJsonAsync.
         if (Request.ContentLength is { } contentLength && contentLength > MaxBodyBytes)
             return StatusCode(StatusCodes.Status413PayloadTooLarge, new { error = "Request body is too large (max 32 KB)." });
 

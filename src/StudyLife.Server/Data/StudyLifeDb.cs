@@ -113,7 +113,7 @@ public class StudyLifeDb : DbContext
 
         // "One row per user" enforced at the DB level (bug fix): UserSettingsEntity/TimerStateEntity
         // were previously singleton-per-user by convention only - multiple independent
-        // get-or-create call sites (SettingsController.Save, BackupController.
+        // get-or-create call sites (SettingsService.SaveAsync, BackupController.
         // TouchLastBackupDownloadAt, TimerStateService.SaveAsync/SetLiveActivityPushTokenAsync) could
         // race on a user's very first write and each insert their own row, after which
         // FirstOrDefaultAsync picked one of the duplicates nondeterministically forever. The
@@ -593,7 +593,7 @@ public class UserSettingsEntity
     public int AuthUserId { get; set; }
     /// <summary>
     /// Optimistic-concurrency counter (audit S4/S5): starts at 0 for a freshly created row and
-    /// increments by exactly 1 on every successful SettingsController.Save PUT. GET always
+    /// increments by exactly 1 on every successful SettingsService.SaveAsync PUT. GET always
     /// returns the current value (UserSettingsDto.Version); a PUT that supplies it back gets
     /// rejected with 409 Conflict unless it still matches the row's current value - this is
     /// what closes the "two devices doing full read-modify-write PUTs silently revert each
@@ -602,8 +602,8 @@ public class UserSettingsEntity
     /// app-incremented int column - not an EF IsConcurrencyToken()/rowversion - specifically so
     /// the precondition can stay OPTIONAL: a PUT that omits Version entirely (older clients,
     /// Home Assistant, ad-hoc scripts against the API) must keep today's plain
-    /// last-writer-wins behavior untouched, see SettingsController.Save. Not bumped by
-    /// BackupController.TouchLastBackupDownloadAt or SettingsController's progress-share
+    /// last-writer-wins behavior untouched, see SettingsService.SaveAsync. Not bumped by
+    /// BackupDataService.TouchLastBackupDownloadAsync or SettingsController's progress-share
     /// endpoints - those already write only their own narrow field(s) outside the normal PUT
     /// (same "set directly, not via the normal settings PUT" rationale as
     /// LastBackupDownloadAt/ProgressShareEnabled below), so they don't participate in the
@@ -689,7 +689,7 @@ public class UserSettingsEntity
     /// Hides the built-in study program (CourseCatalog.AppliedAICourses - the developer's own
     /// real degree, hardcoded as a shared fallback so nobody starts with zero selectable
     /// programs) from this user's switcher for good. Set exclusively via
-    /// SettingsController.DismissBuiltInProgram, NOT via SettingsController.Save - same
+    /// SettingsService.DismissBuiltInProgramAsync, NOT via SettingsService.SaveAsync - same
     /// dedicated-write-path rationale as ProgressShareEnabled below. That endpoint only allows
     /// setting this once the user already has at least one real (custom) StudyProgramEntity,
     /// and StudyProgramService.DeleteAsync refuses to remove a user's last remaining custom
@@ -698,8 +698,8 @@ public class UserSettingsEntity
     /// </summary>
     public bool BuiltInProgramDismissed { get; set; }
     /// <summary>
-    /// Read-only progress link active? Set exclusively via SettingsController.Enable/
-    /// Disable/RegenerateProgressShareToken, NOT via SettingsController.Save - same
+    /// Read-only progress link active? Set exclusively via SettingsService.EnableProgressShareAsync/
+    /// DisableProgressShareAsync/RegenerateProgressShareTokenAsync, NOT via SettingsService.SaveAsync - same
     /// rationale as LastBackupDownloadAt (dedicated write path instead of PUT).
     /// </summary>
     public bool ProgressShareEnabled { get; set; }

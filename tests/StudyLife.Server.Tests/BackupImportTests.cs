@@ -13,7 +13,7 @@ namespace StudyLife.Server.Tests;
 /// own data, with id remapping for custom study programs/courses/groups and every cross-
 /// reference (Sessions/CourseGoals/CourseResources/SessionTemplates' CourseId, Notes'
 /// SessionId/RelatedNoteIds, Settings' ActiveStudyProgramId/Selected-/CompletedCourseIds). See
-/// BackupController.ImportJson for the exact remap/drop design. Demo-mode blocking is covered
+/// BackupDataService.ImportJsonAsync for the exact remap/drop design. Demo-mode blocking is covered
 /// separately in AuthControllerEdgeTests.cs (AuthControllerDemoModeTests.
 /// ImportJson_IsBlockedOnDemoInstance) - /api/backup is blocked unconditionally there, so that's
 /// a regression test, not new blocking logic tied to this endpoint specifically.

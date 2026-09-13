@@ -6,7 +6,7 @@ namespace StudyLife.Server.Services;
 /// <summary>
 /// Answers 413 from the declared Content-Length BEFORE model binding runs. [RequestSizeLimit]
 /// only bites when Kestrel actually reads past the limit, and the in-action ContentLength check
-/// BackupController.ImportJson used as defense in depth now runs AFTER [ApiController] model
+/// BackupDataService.ImportJsonAsync used as defense in depth now runs AFTER [ApiController] model
 /// validation - since the DTOs carry [MaxLength] limits, an oversized note inside an oversized
 /// import used to surface as a 400 validation error instead of the honest 413. A resource filter
 /// sits in front of binding and validation alike, so the size answer stays 413 regardless of

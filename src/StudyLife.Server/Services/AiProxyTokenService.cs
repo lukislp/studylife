@@ -89,7 +89,7 @@ public static class AiProxyTokenService
     }
 
     // HMAC-SHA256, base64url without padding - same encoding style as
-    // AuthSessionService.GenerateToken/SettingsController.GenerateShareToken, just signed
+    // AuthSessionService.GenerateToken/SettingsService.GenerateShareToken, just signed
     // instead of random.
     private static string Sign(string payload, string secret)
     {
