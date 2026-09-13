@@ -53,5 +53,6 @@
   "DictateSilent": "Не е засечена реч",
   "DictateBrowserVoice": "Слушане чрез разпознаване на реч на браузъра…",
   "CaptureSourceLinkLabel": "Виж оригинала",
-  "RelatedNotesLabel": "Свързани бележки"
+  "RelatedNotesLabel": "Свързани бележки",
+  "AriaCloseDialog": "Затваряне на диалога"
 }

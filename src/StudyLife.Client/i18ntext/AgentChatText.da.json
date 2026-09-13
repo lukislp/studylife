@@ -15,5 +15,6 @@
   "ErrorGeneric": "Noget gik galt. Prøv igen.",
   "PendingActionTitle": "Denne handling kræver din bekræftelse",
   "Approve": "Godkend",
-  "Reject": "Afvis"
+  "Reject": "Afvis",
+  "AriaCloseDialog": "Luk dialog"
 }

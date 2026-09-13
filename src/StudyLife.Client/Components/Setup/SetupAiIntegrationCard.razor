@@ -48,10 +48,10 @@
 @if (_confirmingDisable)
 {
     <div class="modal-overlay" @onclick="() => _confirmingDisable = false">
-        <div class="modal" @onclick:stopPropagation="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ai-key-disable-title" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h3>@T.AiKeyDisableConfirmTitle</h3>
-                <button type="button" class="modal-close" @onclick="() => _confirmingDisable = false">✕</button>
+                <h3 id="ai-key-disable-title">@T.AiKeyDisableConfirmTitle</h3>
+                <button type="button" class="modal-close" aria-label="@T.AriaCloseDialog" @onclick="() => _confirmingDisable = false">✕</button>
             </div>
             <div class="modal-body">
                 <p>⚠️ @T.AiKeyDisableConfirmWarning</p>

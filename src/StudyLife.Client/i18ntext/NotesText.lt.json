@@ -53,5 +53,6 @@
   "DictateSilent": "Kalba neaptikta",
   "DictateBrowserVoice": "Klausoma naudojant naršyklės kalbos atpažinimą…",
   "CaptureSourceLinkLabel": "Žiūrėti originalą",
-  "RelatedNotesLabel": "Susiję užrašai"
+  "RelatedNotesLabel": "Susiję užrašai",
+  "AriaCloseDialog": "Uždaryti dialogo langą"
 }

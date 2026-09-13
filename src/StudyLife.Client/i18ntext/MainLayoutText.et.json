@@ -32,5 +32,9 @@
   "PendingSyncTooltip": "{0} muudatust ootab sünkroonimist",
   "UpdateAvailableText": "Uus versioon on saadaval",
   "UpdateReloadButton": "Laadi uuesti",
-  "AgentChatLabel": "Tehisintellekti abiline"
+  "AgentChatLabel": "Tehisintellekti abiline",
+  "AriaCloseDialog": "Sulge dialoog",
+  "AriaDismissUpdate": "Peida uuendusteade",
+  "AriaOpenMenu": "Ava menüü",
+  "AriaCloseMenu": "Sulge menüü"
 }

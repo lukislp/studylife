@@ -104,5 +104,6 @@
     "CourseSparkTooltip":  "Ore a settimana, ultime 12 settimane",
     "CourseEctsRingFormat":  "{0} su {1} ECTS ottenuti",
     "WeekdayRanking":  "Classifica dei giorni della settimana",
-    "WeekdayRankingSubtitle":  "Quale giorno della settimana porta più ore di studio"
+    "WeekdayRankingSubtitle":  "Quale giorno della settimana porta più ore di studio",
+    "AriaCloseDetails":  "Chiudi dettagli"
 }

@@ -61,5 +61,7 @@
   "TimerModeDesc_micro": "5 minutit fookust, 1 minut pausi. Väikesed sammud madala energiaga päevadeks või tegevuse taasalustamiseks.",
   "TimerModeDesc_burst": "15 minutit fookust, 3 minutit pausi. Rohkem ruumi kui sprindis, ikkagi kiires tempos.",
   "TimerModeDesc_deepdive": "120 minutit fookust, 20 minutit pausi. Kui pead täielikult probleemi sisse kaduma.",
-  "TimerModeDesc_marathon": "180 minutit fookust, 30 minutit pausi. Üks pikk, katkematu pingutus — eksamiks õppimise territoorium."
+  "TimerModeDesc_marathon": "180 minutit fookust, 30 minutit pausi. Üks pikk, katkematu pingutus — eksamiks õppimise territoorium.",
+  "AriaStartTimer": "Käivita taimer",
+  "AriaPauseTimer": "Peata taimer"
 }

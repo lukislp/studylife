@@ -32,5 +32,9 @@
   "PendingSyncTooltip": "{0} zmian czeka na synchronizację",
   "UpdateAvailableText": "Dostępna nowa wersja",
   "UpdateReloadButton": "Załaduj ponownie",
-  "AgentChatLabel": "Asystent AI"
+  "AgentChatLabel": "Asystent AI",
+  "AriaCloseDialog": "Zamknij okno dialogowe",
+  "AriaDismissUpdate": "Odrzuć powiadomienie o aktualizacji",
+  "AriaOpenMenu": "Otwórz menu",
+  "AriaCloseMenu": "Zamknij menu"
 }

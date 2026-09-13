@@ -61,7 +61,7 @@
         <div class="heatmap-detail">
             <div class="heatmap-detail-head">
                 <span class="heatmap-detail-date">@($"{LocalDate.Weekday(_selectedDay.Date, false)}, {LocalDate.Short(_selectedDay.Date)}")</span>
-                <button type="button" class="heatmap-detail-close" @onclick="() => _selectedDay = null">✕</button>
+                <button type="button" class="heatmap-detail-close" aria-label="@CloseDetailsLabel" @onclick="() => _selectedDay = null">✕</button>
             </div>
             @if (_selectedDay.Courses.Count == 0)
             {
@@ -106,6 +106,7 @@
     [Parameter] public List<List<HeatDay>> Weeks { get; set; } = new();
     [Parameter] public List<string> MonthLabels { get; set; } = new();
     [Parameter] public string NoSessionText { get; set; } = "";
+    [Parameter] public string CloseDetailsLabel { get; set; } = "";
     [Parameter] public string LessText { get; set; } = "";
     [Parameter] public string MoreText { get; set; } = "";
     [Parameter] public string SessionCountFormat { get; set; } = "";

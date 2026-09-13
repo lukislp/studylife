@@ -77,5 +77,6 @@
   "RegisterInviteRequiredHint": "Der kræves et invitationslink for at registrere sig. Brug det link, du har fået.",
   "RegisterInviteInvalid": "Dette invitationslink er ugyldigt, udløbet eller allerede brugt.",
   "PasskeysRevokeOthers": "Log ud på alle andre enheder",
-  "PasskeysRevokeOthersDone": "Alle andre enheder er blevet logget ud."
+  "PasskeysRevokeOthersDone": "Alle andre enheder er blevet logget ud.",
+  "AriaCloseDialog": "Luk dialog"
 }

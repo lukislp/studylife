@@ -286,5 +286,9 @@
   "MarketplaceDemoNotice": "Das Installieren von Add-ons ist auf dieser Demo-Instanz deaktiviert.",
   "ClientKeysHeading": "Verbundene Add-ons",
   "TelemetryHeading": "Nutzungs- und Fehlerberichte",
-  "TelemetryDesc": "Hilft uns, Bugs und langsame Stellen zu finden, indem anonyme Performance- und Fehlerdaten gesendet werden — nie deine Notizen, Sessions oder Gesundheitsdaten. Du kannst das jederzeit deaktivieren."
+  "TelemetryDesc": "Hilft uns, Bugs und langsame Stellen zu finden, indem anonyme Performance- und Fehlerdaten gesendet werden — nie deine Notizen, Sessions oder Gesundheitsdaten. Du kannst das jederzeit deaktivieren.",
+  "AriaCloseDialog": "Dialog schließen",
+  "AriaRemoveGroup": "Gruppe entfernen",
+  "AriaRemoveCourse": "Kurs entfernen",
+  "AriaDeleteTimerMode": "Timer-Modus löschen"
 }

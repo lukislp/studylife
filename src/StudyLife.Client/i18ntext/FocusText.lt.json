@@ -61,5 +61,7 @@
   "TimerModeDesc_micro": "5 minutės fokuso, 1 minutė pertrauka. Maži žingsniai mažos energijos dienoms arba norint pajudėti iš vietos.",
   "TimerModeDesc_burst": "15 minučių fokuso, 3 minučių pertrauka. Daugiau erdvės nei sprinte, bet vis dar greitas tempas.",
   "TimerModeDesc_deepdive": "120 minučių fokuso, 20 minučių pertrauka. Kai reikia visiškai dingti problemoje.",
-  "TimerModeDesc_marathon": "180 minučių fokuso, 30 minučių pertrauka. Vienas ilgas, nepertraukiamas stūmimas — egzaminų pasiruošimo teritorija."
+  "TimerModeDesc_marathon": "180 minučių fokuso, 30 minučių pertrauka. Vienas ilgas, nepertraukiamas stūmimas — egzaminų pasiruošimo teritorija.",
+  "AriaStartTimer": "Paleisti laikmatį",
+  "AriaPauseTimer": "Pristabdyti laikmatį"
 }

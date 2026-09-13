@@ -61,5 +61,7 @@
   "TimerModeDesc_micro": "5 minut fokusu, 1 minuta pauzy. Malé kroky pro dny s nízkou energií nebo k rozhýbání se.",
   "TimerModeDesc_burst": "15 minut fokusu, 3 minuty pauzy. Více prostoru než sprint, pořád svižné tempo.",
   "TimerModeDesc_deepdive": "120 minut fokusu, 20 minut pauzy. Pro chvíle, kdy se potřebuješ ztratit v problému.",
-  "TimerModeDesc_marathon": "180 minut fokusu, 30 minut pauzy. Jeden dlouhý, nepřerušovaný tah — teritorium přípravy na zkoušky."
+  "TimerModeDesc_marathon": "180 minut fokusu, 30 minut pauzy. Jeden dlouhý, nepřerušovaný tah — teritorium přípravy na zkoušky.",
+  "AriaStartTimer": "Spustit časovač",
+  "AriaPauseTimer": "Pozastavit časovač"
 }

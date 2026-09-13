@@ -15,5 +15,6 @@
   "ErrorGeneric": "Valami hiba történt. Kérlek próbáld újra.",
   "PendingActionTitle": "Ehhez a művelethez a jóváhagyásod szükséges",
   "Approve": "Jóváhagyás",
-  "Reject": "Elutasítás"
+  "Reject": "Elutasítás",
+  "AriaCloseDialog": "Párbeszédpanel bezárása"
 }

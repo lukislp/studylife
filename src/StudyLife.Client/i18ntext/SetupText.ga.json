@@ -286,5 +286,9 @@
   "MarketplaceDemoNotice": "Tá suiteáil breiseán díchumasaithe ar an gcás taispeána seo.",
   "ClientKeysHeading": "Breiseáin ceangailte",
   "TelemetryHeading": "Tuairiscí Úsáide agus Earráidí",
-  "TelemetryDesc": "Cabhraíonn sé linn fabhtanna agus moilleanna a aimsiú trí shonraí feidhmíochta agus earráidí gan ainm a sheoladh — ní do nótaí, seisiúin, ná sonraí sláinte, riamh. Is féidir leat é seo a mhúchadh am ar bith."
+  "TelemetryDesc": "Cabhraíonn sé linn fabhtanna agus moilleanna a aimsiú trí shonraí feidhmíochta agus earráidí gan ainm a sheoladh — ní do nótaí, seisiúin, ná sonraí sláinte, riamh. Is féidir leat é seo a mhúchadh am ar bith.",
+  "AriaCloseDialog": "Dún an dialóg",
+  "AriaRemoveGroup": "Bain an grúpa",
+  "AriaRemoveCourse": "Bain an cúrsa",
+  "AriaDeleteTimerMode": "Scrios modh an amadóra"
 }

@@ -53,5 +53,6 @@
   "DictateSilent": "Nem észleltünk beszédet",
   "DictateBrowserVoice": "Hallgatás a böngésző beszédfelismerésével…",
   "CaptureSourceLinkLabel": "Eredeti megtekintése",
-  "RelatedNotesLabel": "Kapcsolódó jegyzetek"
+  "RelatedNotesLabel": "Kapcsolódó jegyzetek",
+  "AriaCloseDialog": "Párbeszédpanel bezárása"
 }

@@ -53,5 +53,6 @@
   "DictateSilent": "Níor braitheadh aon chaint",
   "DictateBrowserVoice": "Ag éisteacht trí aitheantóireacht ghutha an bhrabhsálaí…",
   "CaptureSourceLinkLabel": "Féach ar an mbunleagan",
-  "RelatedNotesLabel": "Nótaí gaolmhara"
+  "RelatedNotesLabel": "Nótaí gaolmhara",
+  "AriaCloseDialog": "Dún an dialóg"
 }

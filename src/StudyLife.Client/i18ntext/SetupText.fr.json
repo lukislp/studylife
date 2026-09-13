@@ -286,5 +286,9 @@
   "MarketplaceDemoNotice": "L'installation d'extensions est désactivée sur cette instance de démonstration.",
   "ClientKeysHeading": "Extensions connectées",
   "TelemetryHeading": "Rapports d'utilisation et d'erreurs",
-  "TelemetryDesc": "Nous aide à repérer les bugs et les ralentissements en envoyant des données anonymes de performance et d'erreurs — jamais tes notes, séances ou données de santé. Tu peux désactiver cela à tout moment."
+  "TelemetryDesc": "Nous aide à repérer les bugs et les ralentissements en envoyant des données anonymes de performance et d'erreurs — jamais tes notes, séances ou données de santé. Tu peux désactiver cela à tout moment.",
+  "AriaCloseDialog": "Fermer la boîte de dialogue",
+  "AriaRemoveGroup": "Supprimer le groupe",
+  "AriaRemoveCourse": "Supprimer le cours",
+  "AriaDeleteTimerMode": "Supprimer le mode de minuterie"
 }

@@ -53,5 +53,6 @@
   "DictateSilent": "Ingen tale registreret",
   "DictateBrowserVoice": "Lytter via browserens talegenkendelse…",
   "CaptureSourceLinkLabel": "Se original",
-  "RelatedNotesLabel": "Relaterede noter"
+  "RelatedNotesLabel": "Relaterede noter",
+  "AriaCloseDialog": "Luk dialog"
 }

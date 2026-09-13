@@ -77,5 +77,6 @@
   "RegisterInviteRequiredHint": "Za registracijo je potrebna povezava za povabilo. Uporabi povezavo, ki si jo prejel/a.",
   "RegisterInviteInvalid": "Ta povezava za povabilo je neveljavna, potekla ali že uporabljena.",
   "PasskeysRevokeOthers": "Odjava na vseh drugih napravah",
-  "PasskeysRevokeOthersDone": "Vse druge naprave so bile odjavljene."
+  "PasskeysRevokeOthersDone": "Vse druge naprave so bile odjavljene.",
+  "AriaCloseDialog": "Zapri pogovorno okno"
 }

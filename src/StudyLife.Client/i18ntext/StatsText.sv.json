@@ -104,5 +104,6 @@
     "CourseSparkTooltip":  "Timmar per vecka, senaste 12 veckorna",
     "CourseEctsRingFormat":  "{0} av {1} hp intjänade",
     "WeekdayRanking":  "Rankning av veckodagar",
-    "WeekdayRankingSubtitle":  "Vilken veckodag ger flest studietimmar"
+    "WeekdayRankingSubtitle":  "Vilken veckodag ger flest studietimmar",
+    "AriaCloseDetails":  "Stäng detaljer"
 }

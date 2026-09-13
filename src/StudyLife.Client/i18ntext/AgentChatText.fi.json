@@ -15,5 +15,6 @@
   "ErrorGeneric": "Jokin meni pieleen. Yritä uudelleen.",
   "PendingActionTitle": "Tämä toiminto tarvitsee vahvistuksesi",
   "Approve": "Hyväksy",
-  "Reject": "Hylkää"
+  "Reject": "Hylkää",
+  "AriaCloseDialog": "Sulje valintaikkuna"
 }

@@ -15,10 +15,10 @@
 @if (Open)
 {
     <div class="modal-overlay" @onclick="CloseAsync">
-        <div class="modal acm-modal" @onclick:stopPropagation="true">
+        <div class="modal acm-modal" role="dialog" aria-modal="true" aria-labelledby="agent-chat-title" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h3>@T.Title</h3>
-                <button type="button" class="modal-close" @onclick="CloseAsync">✕</button>
+                <h3 id="agent-chat-title">@T.Title</h3>
+                <button type="button" class="modal-close" aria-label="@T.AriaCloseDialog" @onclick="CloseAsync">✕</button>
             </div>
             <div class="modal-body acm-body">
                 @if (_checkingKey)

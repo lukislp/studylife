@@ -54,5 +54,8 @@
   "TemplateNamePlaceholder": "Όνομα προτύπου",
   "TemplateNameRequiredError": "Παρακαλώ εισάγετε ένα όνομα για το πρότυπο.",
   "TemplateSaveFailed": "Το πρότυπο δεν μπόρεσε να αποθηκευτεί.",
-  "WeekPlanLinkButton": "Εκτύπωση εβδομαδιαίου προγράμματος"
+  "WeekPlanLinkButton": "Εκτύπωση εβδομαδιαίου προγράμματος",
+  "AriaCloseDialog": "Κλείσιμο παραθύρου διαλόγου",
+  "AriaPreviousWeek": "Προηγούμενη εβδομάδα",
+  "AriaNextWeek": "Επόμενη εβδομάδα"
 }

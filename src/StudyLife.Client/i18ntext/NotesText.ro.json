@@ -53,5 +53,6 @@
   "DictateSilent": "Nu s-a detectat nicio vorbire",
   "DictateBrowserVoice": "Se ascultă prin recunoașterea vocală a browserului…",
   "CaptureSourceLinkLabel": "Vezi originalul",
-  "RelatedNotesLabel": "Notițe conexe"
+  "RelatedNotesLabel": "Notițe conexe",
+  "AriaCloseDialog": "Închide dialogul"
 }

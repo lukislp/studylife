@@ -77,5 +77,6 @@
   "RegisterInviteRequiredHint": "Do rejestracji wymagany jest link z zaproszeniem. Użyj linku, który otrzymałeś/aś.",
   "RegisterInviteInvalid": "Ten link z zaproszeniem jest nieprawidłowy, wygasł lub został już użyty.",
   "PasskeysRevokeOthers": "Wyloguj na wszystkich innych urządzeniach",
-  "PasskeysRevokeOthersDone": "Wszystkie inne urządzenia zostały wylogowane."
+  "PasskeysRevokeOthersDone": "Wszystkie inne urządzenia zostały wylogowane.",
+  "AriaCloseDialog": "Zamknij okno dialogowe"
 }

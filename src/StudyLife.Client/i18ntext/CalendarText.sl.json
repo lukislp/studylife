@@ -54,5 +54,8 @@
   "TemplateNamePlaceholder": "Ime predloge",
   "TemplateNameRequiredError": "Vnesi ime predloge.",
   "TemplateSaveFailed": "Predloge ni bilo mogoče shraniti.",
-  "WeekPlanLinkButton": "Natisni tedenski načrt"
+  "WeekPlanLinkButton": "Natisni tedenski načrt",
+  "AriaCloseDialog": "Zapri pogovorno okno",
+  "AriaPreviousWeek": "Prejšnji teden",
+  "AriaNextWeek": "Naslednji teden"
 }

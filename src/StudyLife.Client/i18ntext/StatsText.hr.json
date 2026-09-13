@@ -104,5 +104,6 @@
     "CourseSparkTooltip":  "Sati tjedno, zadnjih 12 tjedana",
     "CourseEctsRingFormat":  "{0} od {1} ECTS stečeno",
     "WeekdayRanking":  "Poredak dana u tjednu",
-    "WeekdayRankingSubtitle":  "Koji dan u tjednu donosi najviše sati učenja"
+    "WeekdayRankingSubtitle":  "Koji dan u tjednu donosi najviše sati učenja",
+    "AriaCloseDetails":  "Zatvori pojedinosti"
 }

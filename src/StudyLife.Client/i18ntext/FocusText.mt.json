@@ -61,5 +61,7 @@
   "TimerModeDesc_micro": "5 minuti fokus, minuta mistrieħ. Passi żgħar għal jiem b'enerġija baxxa jew biex tibda tiċċaqlaq mill-ġdid.",
   "TimerModeDesc_burst": "15-il minuta fokus, 3 minuti mistrieħ. Aktar spazju minn sprint, xorta ritmu mgħaġġel.",
   "TimerModeDesc_deepdive": "120 minuta fokus, 20 minuta mistrieħ. Għal meta jkollok bżonn tisparixxi għal kollox f'xi problema.",
-  "TimerModeDesc_marathon": "180 minuta fokus, 30 minuta mistrieħ. Spinta twila u mingħajr waqfien — territorju ta' tħejjija għall-eżamijiet."
+  "TimerModeDesc_marathon": "180 minuta fokus, 30 minuta mistrieħ. Spinta twila u mingħajr waqfien — territorju ta' tħejjija għall-eżamijiet.",
+  "AriaStartTimer": "Ibda t-timer",
+  "AriaPauseTimer": "Waqqaf it-timer"
 }

@@ -53,5 +53,6 @@
   "DictateSilent": "Nie wykryto mowy",
   "DictateBrowserVoice": "Nasłuchiwanie przez rozpoznawanie mowy przeglądarki…",
   "CaptureSourceLinkLabel": "Zobacz oryginał",
-  "RelatedNotesLabel": "Powiązane notatki"
+  "RelatedNotesLabel": "Powiązane notatki",
+  "AriaCloseDialog": "Zamknij okno dialogowe"
 }

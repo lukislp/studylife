@@ -15,5 +15,6 @@
   "ErrorGeneric": "Nešto je pošlo po zlu. Pokušaj ponovno.",
   "PendingActionTitle": "Ova radnja zahtijeva tvoju potvrdu",
   "Approve": "Odobri",
-  "Reject": "Odbij"
+  "Reject": "Odbij",
+  "AriaCloseDialog": "Zatvori dijalog"
 }

@@ -77,5 +77,6 @@
   "RegisterInviteRequiredHint": "Za registraciju je potrebna poveznica s pozivnicom. Upotrijebi poveznicu koju si dobio/la.",
   "RegisterInviteInvalid": "Ova poveznica s pozivnicom nije valjana, istekla je ili je već iskorištena.",
   "PasskeysRevokeOthers": "Odjavi se na svim ostalim uređajima",
-  "PasskeysRevokeOthersDone": "Svi ostali uređaji su odjavljeni."
+  "PasskeysRevokeOthersDone": "Svi ostali uređaji su odjavljeni.",
+  "AriaCloseDialog": "Zatvori dijalog"
 }

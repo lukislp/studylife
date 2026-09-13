@@ -15,5 +15,6 @@
   "ErrorGeneric": "Nekaj je šlo narobe. Poskusite znova.",
   "PendingActionTitle": "To dejanje potrebuje vašo potrditev",
   "Approve": "Odobri",
-  "Reject": "Zavrni"
+  "Reject": "Zavrni",
+  "AriaCloseDialog": "Zapri pogovorno okno"
 }

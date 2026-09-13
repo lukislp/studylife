@@ -54,5 +54,8 @@
   "TemplateNamePlaceholder": "Název šablony",
   "TemplateNameRequiredError": "Zadej prosím název šablony.",
   "TemplateSaveFailed": "Šablonu se nepodařilo uložit.",
-  "WeekPlanLinkButton": "Vytisknout týdenní plán"
+  "WeekPlanLinkButton": "Vytisknout týdenní plán",
+  "AriaCloseDialog": "Zavřít dialog",
+  "AriaPreviousWeek": "Předchozí týden",
+  "AriaNextWeek": "Další týden"
 }

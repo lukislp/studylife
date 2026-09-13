@@ -286,5 +286,9 @@
   "MarketplaceDemoNotice": "Instalowanie dodatków jest wyłączone w tej instancji demonstracyjnej.",
   "ClientKeysHeading": "Połączone dodatki",
   "TelemetryHeading": "Raporty użycia i błędów",
-  "TelemetryDesc": "Pomaga nam wykrywać usterki i spowolnienia poprzez wysyłanie anonimowych danych o wydajności i błędach — nigdy Twoje notatki, sesje ani dane zdrowotne. Możesz to wyłączyć w każdej chwili."
+  "TelemetryDesc": "Pomaga nam wykrywać usterki i spowolnienia poprzez wysyłanie anonimowych danych o wydajności i błędach — nigdy Twoje notatki, sesje ani dane zdrowotne. Możesz to wyłączyć w każdej chwili.",
+  "AriaCloseDialog": "Zamknij okno dialogowe",
+  "AriaRemoveGroup": "Usuń grupę",
+  "AriaRemoveCourse": "Usuń kurs",
+  "AriaDeleteTimerMode": "Usuń tryb minutnika"
 }

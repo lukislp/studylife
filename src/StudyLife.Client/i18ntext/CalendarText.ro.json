@@ -54,5 +54,8 @@
   "TemplateNamePlaceholder": "Numele șablonului",
   "TemplateNameRequiredError": "Introdu un nume pentru șablon.",
   "TemplateSaveFailed": "Șablonul nu a putut fi salvat.",
-  "WeekPlanLinkButton": "Tipărește planul săptămânal"
+  "WeekPlanLinkButton": "Tipărește planul săptămânal",
+  "AriaCloseDialog": "Închide dialogul",
+  "AriaPreviousWeek": "Săptămâna anterioară",
+  "AriaNextWeek": "Săptămâna următoare"
 }

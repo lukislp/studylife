@@ -104,5 +104,6 @@
     "CourseSparkTooltip":  "Uaireanta in aghaidh na seachtaine, an 12 sheachtain dheireanacha",
     "CourseEctsRingFormat":  "{0} as {1} ECTS tuillte",
     "WeekdayRanking":  "Rangú laethanta na seachtaine",
-    "WeekdayRankingSubtitle":  "Cén lá den tseachtain is mó a thugann uaireanta staidéir"
+    "WeekdayRankingSubtitle":  "Cén lá den tseachtain is mó a thugann uaireanta staidéir",
+    "AriaCloseDetails":  "Dún na sonraí"
 }

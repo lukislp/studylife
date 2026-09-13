@@ -54,5 +54,8 @@
   "TemplateNamePlaceholder": "Veidnes nosaukums",
   "TemplateNameRequiredError": "Lūdzu, ievadi veidnes nosaukumu.",
   "TemplateSaveFailed": "Veidni neizdevās saglabāt.",
-  "WeekPlanLinkButton": "Drukāt nedēļas plānu"
+  "WeekPlanLinkButton": "Drukāt nedēļas plānu",
+  "AriaCloseDialog": "Aizvērt dialoglodziņu",
+  "AriaPreviousWeek": "Iepriekšējā nedēļa",
+  "AriaNextWeek": "Nākamā nedēļa"
 }

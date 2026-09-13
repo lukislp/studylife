@@ -38,7 +38,7 @@
             <div class="heatmap-detail donut-detail">
                 <div class="heatmap-detail-head">
                     <span class="heatmap-detail-date"><span class="donut-swatch" style="background:@_selected.Color"></span> @_selected.Name</span>
-                    <button type="button" class="heatmap-detail-close" @onclick="() => _selected = null">✕</button>
+                    <button type="button" class="heatmap-detail-close" aria-label="@CloseDetailsLabel" @onclick="() => _selected = null">✕</button>
                 </div>
                 <div class="heatmap-detail-summary">@_selected.HoursLabel · @string.Format(SessionCountFormat ?? "", _selected.SessionCount)</div>
                 <div class="mini-bar-chart donut-detail-chart">
@@ -104,6 +104,7 @@
     [Parameter] public string Gradient { get; set; } = "";
     [Parameter] public double TotalHours { get; set; }
     [Parameter] public string TotalLabel { get; set; } = "";
+    [Parameter] public string CloseDetailsLabel { get; set; } = "";
     [Parameter] public string EmptyText { get; set; } = "";
     [Parameter] public string SessionCountFormat { get; set; } = "";
     [Parameter] public string ClickHintText { get; set; } = "";

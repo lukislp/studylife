@@ -13,7 +13,9 @@
 @if (Open)
 {
     <div class="modal-overlay gs-overlay" @onclick="CloseAsync">
-        <div class="gs-box" @onclick:stopPropagation="true">
+        @* No visible heading in this palette, so aria-label carries the accessible name
+           instead of aria-labelledby (same text as the button that opens it). *@
+        <div class="gs-box" role="dialog" aria-modal="true" aria-label="@T.SearchLabel" @onclick:stopPropagation="true">
             <input @ref="_inputRef"
                    class="gs-input"
                    type="text"

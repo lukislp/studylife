@@ -15,5 +15,6 @@
   "ErrorGeneric": "Ceva nu a mers bine. Încearcă din nou.",
   "PendingActionTitle": "Această acțiune necesită confirmarea ta",
   "Approve": "Aprobă",
-  "Reject": "Respinge"
+  "Reject": "Respinge",
+  "AriaCloseDialog": "Închide dialogul"
 }

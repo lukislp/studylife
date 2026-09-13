@@ -77,5 +77,6 @@
   "RegisterInviteRequiredHint": "En inbjudningslänk krävs för att registrera sig. Använd länken du har fått.",
   "RegisterInviteInvalid": "Den här inbjudningslänken är ogiltig, har gått ut eller har redan använts.",
   "PasskeysRevokeOthers": "Logga ut på alla andra enheter",
-  "PasskeysRevokeOthersDone": "Alla andra enheter har loggats ut."
+  "PasskeysRevokeOthersDone": "Alla andra enheter har loggats ut.",
+  "AriaCloseDialog": "Stäng dialogruta"
 }

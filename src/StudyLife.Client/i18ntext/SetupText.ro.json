@@ -286,5 +286,9 @@
   "MarketplaceDemoNotice": "Instalarea suplimentelor este dezactivată pe această instanță demonstrativă.",
   "ClientKeysHeading": "Suplimente conectate",
   "TelemetryHeading": "Rapoarte de utilizare și erori",
-  "TelemetryDesc": "Ne ajută să detectăm buguri și puncte lente prin trimiterea de date anonime despre performanță și erori — niciodată notițele, sesiunile sau datele tale de sănătate. Poți dezactiva asta oricând."
+  "TelemetryDesc": "Ne ajută să detectăm buguri și puncte lente prin trimiterea de date anonime despre performanță și erori — niciodată notițele, sesiunile sau datele tale de sănătate. Poți dezactiva asta oricând.",
+  "AriaCloseDialog": "Închide dialogul",
+  "AriaRemoveGroup": "Elimină grupul",
+  "AriaRemoveCourse": "Elimină cursul",
+  "AriaDeleteTimerMode": "Șterge modul cronometru"
 }

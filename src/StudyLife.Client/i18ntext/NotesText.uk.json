@@ -53,5 +53,6 @@
   "DictateSilent": "Мовлення не виявлено",
   "DictateBrowserVoice": "Прослуховування через розпізнавання мовлення браузера…",
   "CaptureSourceLinkLabel": "Переглянути оригінал",
-  "RelatedNotesLabel": "Пов'язані нотатки"
+  "RelatedNotesLabel": "Пов'язані нотатки",
+  "AriaCloseDialog": "Закрити діалог"
 }

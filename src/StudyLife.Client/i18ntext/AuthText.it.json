@@ -77,5 +77,6 @@
   "RegisterInviteRequiredHint": "Per registrarsi è necessario un link di invito. Usa il link che ti è stato fornito.",
   "RegisterInviteInvalid": "Questo link di invito non è valido, è scaduto o è già stato utilizzato.",
   "PasskeysRevokeOthers": "Esci da tutti gli altri dispositivi",
-  "PasskeysRevokeOthersDone": "Tutti gli altri dispositivi sono stati disconnessi."
+  "PasskeysRevokeOthersDone": "Tutti gli altri dispositivi sono stati disconnessi.",
+  "AriaCloseDialog": "Chiudi finestra di dialogo"
 }

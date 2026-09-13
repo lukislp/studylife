@@ -104,5 +104,6 @@
     "CourseSparkTooltip":  "Hodiny týdně, posledních 12 týdnů",
     "CourseEctsRingFormat":  "{0} z {1} ECTS získáno",
     "WeekdayRanking":  "Žebříček dnů v týdnu",
-    "WeekdayRankingSubtitle":  "Který den v týdnu přináší nejvíce hodin studia"
+    "WeekdayRankingSubtitle":  "Který den v týdnu přináší nejvíce hodin studia",
+    "AriaCloseDetails":  "Zavřít podrobnosti"
 }

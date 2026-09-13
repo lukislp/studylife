@@ -104,5 +104,6 @@
     "CourseSparkTooltip":  "Tunnit viikossa, viimeiset 12 viikkoa",
     "CourseEctsRingFormat":  "{0} / {1} op ansaittu",
     "WeekdayRanking":  "Viikonpäivien ranking",
-    "WeekdayRankingSubtitle":  "Mikä viikonpäivä tuo eniten opiskelutunteja"
+    "WeekdayRankingSubtitle":  "Mikä viikonpäivä tuo eniten opiskelutunteja",
+    "AriaCloseDetails":  "Sulje tiedot"
 }

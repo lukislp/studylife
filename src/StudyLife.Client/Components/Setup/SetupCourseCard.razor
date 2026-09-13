@@ -19,7 +19,7 @@
             @if (Completed) { <span class="cc-done">✓</span> }
             else if (Selected) { <span>✓</span> }
         </div>
-        <button type="button" class="cc-resources-btn" title="@ResourcesLabel" @onclick:stopPropagation="true"
+        <button type="button" class="cc-resources-btn" aria-label="@ResourcesLabel" title="@ResourcesLabel" @onclick:stopPropagation="true"
                 @onclick="() => OnResourcesClick.InvokeAsync()">
             🔗
         </button>

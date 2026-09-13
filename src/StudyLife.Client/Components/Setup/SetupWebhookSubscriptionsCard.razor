@@ -34,10 +34,10 @@
 @if (_confirmingDeleteId is { } deleteId)
 {
     <div class="modal-overlay" @onclick="() => _confirmingDeleteId = null">
-        <div class="modal" @onclick:stopPropagation="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="webhook-subscription-delete-title" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h3>@T.WebhookSubscriptionDeleteConfirmTitle</h3>
-                <button type="button" class="modal-close" @onclick="() => _confirmingDeleteId = null">✕</button>
+                <h3 id="webhook-subscription-delete-title">@T.WebhookSubscriptionDeleteConfirmTitle</h3>
+                <button type="button" class="modal-close" aria-label="@T.AriaCloseDialog" @onclick="() => _confirmingDeleteId = null">✕</button>
             </div>
             <div class="modal-body">
                 <p>⚠️ @T.WebhookSubscriptionDeleteConfirmWarning</p>

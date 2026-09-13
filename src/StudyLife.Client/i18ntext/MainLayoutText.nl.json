@@ -32,5 +32,9 @@
   "PendingSyncTooltip": "{0} wijzigingen wachten op synchronisatie",
   "UpdateAvailableText": "Nieuwe versie beschikbaar",
   "UpdateReloadButton": "Opnieuw laden",
-  "AgentChatLabel": "AI-assistent"
+  "AgentChatLabel": "AI-assistent",
+  "AriaCloseDialog": "Dialoogvenster sluiten",
+  "AriaDismissUpdate": "Updatemelding sluiten",
+  "AriaOpenMenu": "Menu openen",
+  "AriaCloseMenu": "Menu sluiten"
 }

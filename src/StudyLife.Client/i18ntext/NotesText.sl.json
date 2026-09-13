@@ -53,5 +53,6 @@
   "DictateSilent": "Ni zaznanega govora",
   "DictateBrowserVoice": "Poslušanje s prepoznavanjem govora brskalnika…",
   "CaptureSourceLinkLabel": "Poglej izvirnik",
-  "RelatedNotesLabel": "Povezani zapiski"
+  "RelatedNotesLabel": "Povezani zapiski",
+  "AriaCloseDialog": "Zapri pogovorno okno"
 }
