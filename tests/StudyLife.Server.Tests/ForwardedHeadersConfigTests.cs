@@ -1,5 +1,5 @@
 using System.Net;
-using Microsoft.Extensions.Configuration;
+using StudyLife.Server.Configuration;
 using StudyLife.Server.Services;
 
 namespace StudyLife.Server.Tests;
@@ -11,10 +11,11 @@ namespace StudyLife.Server.Tests;
 /// </summary>
 public class ForwardedHeadersConfigTests
 {
-    private static IConfiguration Config(params (string Key, string Value)[] settings) =>
-        new ConfigurationBuilder()
-            .AddInMemoryCollection(settings.Select(s => new KeyValuePair<string, string?>(s.Key, s.Value)))
-            .Build();
+    // Bound through the same section name and options class Program.cs uses, so the keys under
+    // test stay the real "ForwardedHeaders:..." configuration keys.
+    private static TrustedProxyOptions Config(params (string Key, string Value)[] settings) =>
+        TestOptions.Configuration(settings.Select(s => (s.Key, (string?)s.Value)).ToArray())
+            .Bind<TrustedProxyOptions>(TrustedProxyOptions.SectionName);
 
     private static bool Trusts(Microsoft.AspNetCore.Builder.ForwardedHeadersOptions options, string ip)
     {

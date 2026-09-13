@@ -2,7 +2,9 @@ using System.Reflection;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using StudyLife.Server.Auth;
+using StudyLife.Server.Configuration;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
 using StudyLife.Shared;
@@ -26,13 +28,18 @@ public class SystemController : ControllerBase
     private readonly StudyLifeDb _db;
     private readonly bool _rawBackupSupported;
     private readonly bool _demoMode;
+    private readonly IOptionsMonitor<TelemetryOptions> _telemetryOptions;
 
+    // IConfiguration stays only for DemoModeGuard (two top-level env vars, not a section - see
+    // AuthController's field comment).
     public SystemController(StudyLifeDb db,
         IConfiguration config,
+        IOptionsMonitor<TelemetryOptions> telemetryOptions,
         Services.DatabaseBackupService? backupService = null,
         Services.DatabaseRestoreService? restoreService = null)
     {
         _db = db;
+        _telemetryOptions = telemetryOptions;
         // Same derivation as BackupController.IsRawBackupAvailable: both services are
         // only registered in SQLite mode (Program.cs) - on Postgres the external backup
         // path (e.g. R2) takes over, and the raw endpoints report 501.
@@ -61,15 +68,14 @@ public class SystemController : ControllerBase
         // stale capability info would otherwise show/hide UI incorrectly (see the
         // /api fallback comment in Program.cs about NSURLCache poisoning).
         Response.Headers.CacheControl = "no-store";
-        var configuration = HttpContext.RequestServices.GetRequiredService<IConfiguration>();
-        return Ok(BuildCapabilities(configuration, _rawBackupSupported));
+        return Ok(BuildCapabilities(_telemetryOptions.CurrentValue, _rawBackupSupported));
     }
 
     // internal instead of private: reused by SetupController (bundle endpoint) so both call
     // sites compute the exact same DTO for the same rawBackupSupported input.
-    internal static SystemCapabilitiesResponseDto BuildCapabilities(IConfiguration configuration, bool rawBackupSupported)
+    internal static SystemCapabilitiesResponseDto BuildCapabilities(TelemetryOptions telemetry, bool rawBackupSupported)
     {
-        var sampleRatio = configuration.GetValue<double?>("Telemetry:ClientSampleRatio") ?? 0.10;
+        var sampleRatio = telemetry.ClientSampleRatio ?? TelemetryOptions.DefaultSampleRatio;
         return new SystemCapabilitiesResponseDto
         {
             RawBackupSupported = rawBackupSupported,

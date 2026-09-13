@@ -1,6 +1,7 @@
 using System.Net;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
+using StudyLife.Server.Configuration;
 using StudyLife.Server.Services;
 
 namespace StudyLife.Server.Tests;
@@ -32,7 +33,7 @@ public class AiProxyClientTests
         };
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(config).Build();
         var httpClient = handler != null ? new HttpClient(handler) : null;
-        return new AiProxyClient(configuration, NullLogger<AiProxyClient>.Instance, httpClient);
+        return new AiProxyClient(TestOptions.For<StudyLifeAiOptions>(configuration), NullLogger<AiProxyClient>.Instance, httpClient);
     }
 
     [Fact]

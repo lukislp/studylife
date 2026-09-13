@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Configuration;
+using StudyLife.Server.Configuration;
 using StudyLife.Server.Services;
 
 namespace StudyLife.Server.Tests;
@@ -10,13 +10,9 @@ namespace StudyLife.Server.Tests;
 /// </summary>
 public class ConsentRedirectPolicyTests
 {
-    private static ConsentRedirectPolicy Build(params (string Key, string Value)[] settings)
-    {
-        var config = new ConfigurationBuilder()
-            .AddInMemoryCollection(settings.Select(s => new KeyValuePair<string, string?>(s.Key, s.Value)))
-            .Build();
-        return new ConsentRedirectPolicy(config);
-    }
+    private static ConsentRedirectPolicy Build(params (string Key, string Value)[] settings) =>
+        new(TestOptions.MonitorFor<ConsentOptions>(
+            settings.Select(s => (s.Key, (string?)s.Value)).ToArray()));
 
     [Theory]
     [InlineData("mcp", "http://127.0.0.1:8765/callback")]

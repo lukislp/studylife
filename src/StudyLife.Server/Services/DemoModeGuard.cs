@@ -13,6 +13,13 @@ namespace StudyLife.Server.Services;
 /// value is required to actually arm it. Half-enabling only one side (e.g. wipe but no
 /// write-block, or vice versa) would be worse than either extreme, so a missing/wrong
 /// confirmation disables demo mode ENTIRELY - the instance just runs normally.
+///
+/// Deliberately still reads IConfiguration rather than an options class (2026-09 typed-options
+/// pass): DEMO_MODE/DEMO_MODE_CONFIRM_DATA_LOSS are two TOP-LEVEL environment variables, not a
+/// configuration section that could be bound, and Program.cs asks this question before the DI
+/// container exists. This class already is the typed façade the options classes provide for the
+/// sections - the two key names live here and nowhere else, and every consumer calls this method
+/// instead of spelling them out.
 /// </summary>
 public static class DemoModeGuard
 {

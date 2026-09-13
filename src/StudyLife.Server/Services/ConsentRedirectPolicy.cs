@@ -1,4 +1,5 @@
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using StudyLife.Server.Configuration;
 
 namespace StudyLife.Server.Services;
 
@@ -26,14 +27,17 @@ namespace StudyLife.Server.Services;
 /// </summary>
 public sealed class ConsentRedirectPolicy
 {
-    public const string ConfigSectionName = "Consent:AllowedRedirectUris";
+    public const string ConfigSectionName = ConsentOptions.SectionName + ":AllowedRedirectUris";
 
     private static readonly HashSet<string> LoopbackAudiences = new(StringComparer.Ordinal) { "mcp", "tray" };
     private static readonly HashSet<string> ChromeExtensionAudiences = new(StringComparer.Ordinal) { "capture", "focusguard", "focustunes" };
 
-    private readonly IConfiguration _config;
+    private readonly IOptionsMonitor<ConsentOptions> _consent;
 
-    public ConsentRedirectPolicy(IConfiguration config) => _config = config;
+    // Singleton that used to re-read the configuration section on every check, so a monitor (not
+    // a frozen IOptions snapshot) keeps a configuration reload taking effect exactly as before -
+    // and CurrentValue is a cached field read instead of the former string lookup + rebind.
+    public ConsentRedirectPolicy(IOptionsMonitor<ConsentOptions> consent) => _consent = consent;
 
     public bool IsAllowed(string audience, string? redirectUri)
     {
@@ -42,7 +46,13 @@ public sealed class ConsentRedirectPolicy
         if (LoopbackAudiences.Contains(audience) && IsLoopback(uri)) return true;
         if (ChromeExtensionAudiences.Contains(audience) && IsChromeExtensionCallback(uri)) return true;
 
-        var configured = _config.GetSection($"{ConfigSectionName}:{audience}").Get<string[]>() ?? [];
+        // Case-insensitive audience lookup on purpose: configuration keys themselves are
+        // case-insensitive, so "Consent__AllowedRedirectUris__MCP__0" used to match audience
+        // "mcp" and still has to. The bound dictionary is tiny (one entry per configured
+        // audience), so the scan costs nothing worth a custom comparer.
+        var configured = _consent.CurrentValue.AllowedRedirectUris
+            .FirstOrDefault(entry => string.Equals(entry.Key, audience, StringComparison.OrdinalIgnoreCase))
+            .Value ?? [];
         return configured.Contains(redirectUri!, StringComparer.Ordinal);
     }
 

@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.Net.Http.Json;
+using Microsoft.Extensions.Options;
+using StudyLife.Server.Configuration;
 
 namespace StudyLife.Server.Services;
 
@@ -38,12 +40,13 @@ public sealed class WebhooksProxyClient
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
     private readonly SemaphoreSlim _inFlight = new(MaxInFlight, MaxInFlight);
 
-    public WebhooksProxyClient(IConfiguration configuration, ILogger<WebhooksProxyClient> logger, HttpClient? httpClient = null)
+    public WebhooksProxyClient(IOptions<StudyLifeWebhooksOptions> options, ILogger<WebhooksProxyClient> logger, HttpClient? httpClient = null)
     {
         _logger = logger;
         _http = httpClient ?? new HttpClient { Timeout = RequestTimeout };
-        _baseUrl = NullIfEmpty(configuration["StudyLifeWebhooks:BaseUrl"])?.TrimEnd('/');
-        _sharedSecret = NullIfEmpty(configuration["StudyLifeWebhooks:SharedSecret"]);
+        var webhooks = options.Value;
+        _baseUrl = NullIfEmpty(webhooks.BaseUrl)?.TrimEnd('/');
+        _sharedSecret = NullIfEmpty(webhooks.SharedSecret);
 
         if (Enabled)
             _logger.LogInformation("studylife-webhooks integration active (BaseUrl {BaseUrl})", _baseUrl);

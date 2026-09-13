@@ -1,5 +1,6 @@
 using System.Net;
 using Microsoft.AspNetCore.HttpOverrides;
+using StudyLife.Server.Configuration;
 
 namespace StudyLife.Server.Services;
 
@@ -41,7 +42,7 @@ public static class ForwardedHeadersConfig
         ("192.168.0.0", 16),   // RFC1918
     ];
 
-    public static ForwardedHeadersOptions Build(IConfiguration configuration)
+    public static ForwardedHeadersOptions Build(TrustedProxyOptions trustedProxies)
     {
         var options = new ForwardedHeadersOptions
         {
@@ -50,9 +51,8 @@ public static class ForwardedHeadersConfig
         options.KnownIPNetworks.Clear();
         options.KnownProxies.Clear();
 
-        var section = configuration.GetSection(SectionName);
-        var networks = section.GetSection("KnownNetworks").Get<string[]>() ?? [];
-        var proxies = section.GetSection("KnownProxies").Get<string[]>() ?? [];
+        var networks = trustedProxies.KnownNetworks;
+        var proxies = trustedProxies.KnownProxies;
 
         if (networks.Length == 0 && proxies.Length == 0)
         {
@@ -71,7 +71,7 @@ public static class ForwardedHeadersConfig
             }
         }
 
-        var forwardLimit = section.GetValue<int?>("ForwardLimit");
+        var forwardLimit = trustedProxies.ForwardLimit;
         if (forwardLimit is not null)
         {
             if (forwardLimit < 1)

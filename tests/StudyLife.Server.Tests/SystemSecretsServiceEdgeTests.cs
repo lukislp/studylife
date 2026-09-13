@@ -3,6 +3,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
+using StudyLife.Server.Configuration;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
 
@@ -102,9 +103,9 @@ public class SystemSecretsServiceEdgeTests : IDisposable
                 "WHERE \"Id\" = 1;"));
 
         using var db = NewContext(hook);
-        var service = new SystemSecretsService(db);
+        var service = new SystemSecretsService(db, TestOptions.For<VapidOptions>());
 
-        var keys = await service.EnsureVapidKeysAsync(new ConfigurationBuilder().Build());
+        var keys = await service.EnsureVapidKeysAsync();
 
         Assert.Equal("winner-pub", keys.PublicKey);
         Assert.Equal("winner-priv", keys.PrivateKey);
@@ -122,7 +123,7 @@ public class SystemSecretsServiceEdgeTests : IDisposable
                 "UPDATE \"SystemSecrets\" SET \"SetupSecretCode\" = 'WINR-CODE' WHERE \"Id\" = 1;"));
 
         using var db = NewContext(hook);
-        var service = new SystemSecretsService(db);
+        var service = new SystemSecretsService(db, TestOptions.For<VapidOptions>());
 
         var code = await service.EnsureSetupSecretAsync();
 
@@ -144,7 +145,7 @@ public class SystemSecretsServiceEdgeTests : IDisposable
                 "VALUES (1, NULL, NULL, NULL, 'RACE-CODE');"));
 
         using var db = NewContext(hook);
-        var service = new SystemSecretsService(db);
+        var service = new SystemSecretsService(db, TestOptions.For<VapidOptions>());
 
         var code = await service.EnsureSetupSecretAsync();
 

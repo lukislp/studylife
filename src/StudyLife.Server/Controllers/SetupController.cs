@@ -2,7 +2,9 @@ using System.Reflection;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using StudyLife.Server.Auth;
+using StudyLife.Server.Configuration;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
 using StudyLife.Shared;
@@ -42,17 +44,22 @@ namespace StudyLife.Server.Controllers;
 public class SetupController : ControllerBase
 {
     private readonly StudyLifeDb _db;
+    // IConfiguration stays only for DemoModeGuard (two top-level env vars, not a section - see
+    // AuthController's field comment).
     private readonly IConfiguration _config;
     private readonly IOwnershipService _ownership;
+    private readonly IOptionsMonitor<TelemetryOptions> _telemetryOptions;
     private readonly DatabaseBackupService? _backupService;
     private readonly DatabaseRestoreService? _restoreService;
 
     public SetupController(StudyLifeDb db, IConfiguration config, IOwnershipService ownership,
+        IOptionsMonitor<TelemetryOptions> telemetryOptions,
         DatabaseBackupService? backupService = null, DatabaseRestoreService? restoreService = null)
     {
         _db = db;
         _config = config;
         _ownership = ownership;
+        _telemetryOptions = telemetryOptions;
         _backupService = backupService;
         _restoreService = restoreService;
     }
@@ -80,7 +87,7 @@ public class SetupController : ControllerBase
         return new SetupOverviewDto
         {
             Settings = SettingsController.ToDto(settingsEntity),
-            Capabilities = SystemController.BuildCapabilities(_config, rawBackupSupported),
+            Capabilities = SystemController.BuildCapabilities(_telemetryOptions.CurrentValue, rawBackupSupported),
             Version = new VersionResponseDto
             {
                 Version = Assembly.GetExecutingAssembly()

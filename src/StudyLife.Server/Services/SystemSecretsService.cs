@@ -1,6 +1,8 @@
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using StudyLife.Server.Configuration;
 using StudyLife.Server.Data;
 
 namespace StudyLife.Server.Services;
@@ -49,18 +51,25 @@ public sealed class SystemSecretsService
     private const int RowId = 1;
 
     private readonly StudyLifeDb _db;
+    private readonly VapidOptions _vapid;
 
-    public SystemSecretsService(StudyLifeDb db) => _db = db;
+    public SystemSecretsService(StudyLifeDb db, IOptions<VapidOptions> vapidOptions)
+    {
+        _db = db;
+        // Read once: this runs exactly once per process, in the startup scope, long before any
+        // configuration source could be reloaded.
+        _vapid = vapidOptions.Value;
+    }
 
-    public async Task<VapidKeys> EnsureVapidKeysAsync(IConfiguration config)
+    public async Task<VapidKeys> EnsureVapidKeysAsync()
     {
         // Config override first (e.g. ENV Vapid__PublicKey/Vapid__PrivateKey) - allows an
         // operator to pin an externally managed key pair without touching the DB.
-        var configPublic = config["Vapid:PublicKey"];
-        var configPrivate = config["Vapid:PrivateKey"];
+        var configPublic = _vapid.PublicKey;
+        var configPrivate = _vapid.PrivateKey;
         if (!string.IsNullOrWhiteSpace(configPublic) && !string.IsNullOrWhiteSpace(configPrivate))
         {
-            var configSubject = config["Vapid:Subject"];
+            var configSubject = _vapid.Subject;
             return new VapidKeys(
                 string.IsNullOrWhiteSpace(configSubject) ? DefaultVapidSubject : configSubject,
                 configPublic, configPrivate);
