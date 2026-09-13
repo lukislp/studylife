@@ -764,35 +764,40 @@ tightly restricted via NetworkPolicy anyway).
 
 ## CI Validation of the Scaling Artifacts
 
-`.gitlab-ci.yml` has two purely validating jobs in the `test` stage - they run on every push/MR
-like the other `test:*` jobs, need no real cluster/registry credentials, and trigger NO
+`.github/workflows/ci-cd.yml` has two purely validating jobs in the `test` stage - they run on
+every push/PR (plus `merge_group` runs of the same checks before a queued PR actually merges)
+like the other `test-*` jobs, need no real cluster/registry credentials, and trigger NO
 deployment:
 
-- **`test:k8s-manifests`**: [`kubeconform`](https://github.com/yannh/kubeconform) validates
+- **`test-k8s-manifests`**: [`kubeconform`](https://github.com/yannh/kubeconform) validates
   `k8s/*.yaml` offline against bundled OpenAPI schemas (`-ignore-missing-schemas` skips the
   CloudNativePG `Cluster` CRD for lack of a bundled schema, instead of treating it as an error -
   the 9 remaining standard K8s objects are genuinely validated). Deliberately NOT
   `kubectl apply --dry-run=client`: despite `--validate=false`, this still needs API discovery
   against a real server and fails in CI with no cluster connection at all - tested and confirmed
   locally before this decision was made.
-- **`test:compose-scale`**: `docker compose -f docker-compose.scale.yml config` (a pure
+- **`test-compose-scale`**: `docker compose -f docker-compose.scale.yml config` (a pure
   syntax/interpolation check, no actual startup).
 
-No new image-build job needed: `docker:server` (uses `src/StudyLife.Server/Dockerfile`, see
+No new image-build job needed: `docker-server` (uses `src/StudyLife.Server/Dockerfile`, see
 above) already builds the single image that works equally for SQLite/Postgres, Memory/Redis,
 single-/multi-worker - it's all runtime configuration, no build difference. The new files
-(`IWorkerShardClaim` and others) are automatically covered by the existing `test:unit` job.
+(`IWorkerShardClaim` and others) are automatically covered by the existing `test-unit` job.
 Automatic deployment (`kubectl apply` against a real cluster) is deliberately NOT part of this
 pipeline extension.
 
-**Container scanning (`trivy:server`, new)**: originally left out on purpose (pure home-network
+**Container scanning (`trivy-server`)**: originally left out on purpose (pure home-network
 setup, no internet exposure) - that reasoning no longer holds now that studylife-web also sits
-behind a public domain via NPM/MetalLB. Runs after `docker:server` against the freshly pushed
-image (`docker pull` + `aquasec/trivy:latest image`), `--exit-code 0` (purely informational,
-doesn't block the pipeline) - most findings would be CVEs in the Microsoft base image itself
-anyway, which only a base-image update can fix, so no release should be unexpectedly blocked
-because of it. The same check (informational, `docker pull` + `aquasec/trivy:latest`) runs for
-piwatch in `build-and-push.ps1` itself, because that separate repo has no CI of its own.
+behind a public domain via NPM/MetalLB. Runs after `docker-server` against the freshly pushed
+amd64 image (by digest, via `aquasecurity/trivy-action`): a first pass reports HIGH+CRITICAL
+findings with `exit-code: 0` (purely informational - most HIGH findings would be CVEs in the
+Ubuntu base image itself anyway, which only a base-image update can fix, so no release should be
+unexpectedly blocked because of those), a second pass then gates with `exit-code: 1` on any
+still-*fixable* CRITICAL finding (`ignore-unfixed: true`) and blocks `docker-manifest-merge` -
+i.e. publication of the version tag Flux watches - so a genuinely fixable Critical CVE stops the
+release before anything can auto-deploy, instead of only being reported after the fact (2026-09
+audit finding I1). The same check (informational, `docker pull` + `aquasec/trivy:latest`) runs
+for piwatch in `build-and-push.ps1` itself, because that separate repo has no CI of its own.
 
 ## Hardware Sizing for a Multi-Node Bare-Metal Cluster (e.g., 4× Raspberry Pi)
 
@@ -1916,10 +1921,11 @@ commit back to `master`.
   internals hack that could potentially break with any operator update) - disproportionate for
   pure pooler connection statistics, when DB availability itself is already covered via port
   9187. No Prometheus job/dashboard for this until CNPG fixes it upstream.
-- **No central, Alertmanager-spanning alerting for GitLab itself** - GitLab (externally hosted,
-  Docker-based) is a single point of failure for the entire Flux GitOps chain (image updates,
-  dashboard/config auto-deploy) - whether/how GitLab itself is secured is outside the scope of
-  this document.
+- **No central, Alertmanager-spanning alerting for GitHub itself** - since the migration off
+  GitLab (see "GitLab Integration: Kubernetes Agent + Flux Image Automation" above),
+  `github.com`/GHCR (both third-party SaaS) are a single point of failure for the entire Flux
+  GitOps chain (image updates, dashboard/config auto-deploy) - whether/how that dependency is
+  mitigated is outside the scope of this document.
 - **piwatch runs without `runAsNonRoot`** (unlike studylife-web/-worker, whose Dockerfile already
   sets `USER app`) - the piwatch image has no `USER` directive, so it would crash immediately
   with `runAsNonRoot: true`. `allowPrivilegeEscalation: false` + capability drop are still set

@@ -292,7 +292,7 @@ cd src/StudyLife.Server
 dotnet run
 ```
 
-The app is then reachable at `https://localhost:5001`. The SQLite database is automatically created under `app_data/studylife.db`.
+The app is then reachable at `https://localhost:53963`. The SQLite database is automatically created under `app_data/studylife.db`.
 
 ### Project Structure
 
@@ -371,7 +371,7 @@ Runs as GitHub Actions (`.github/workflows/ci-cd.yml`) on every push to `main` a
 | version | `get-version` | Semantic Release dry run against Conventional Commits; fails the run if no releasable version is determined. Push events only |
 | publish | `publish-server` | `dotnet publish` (linux-x64 + linux-arm64) + ZIP artifact. Push to `main` only, and only if `get-version` found a releasable version |
 | docker | `docker-server` | Multi-arch (amd64/arm64) Docker image, built and pushed to the public `ghcr.io/lukislp/studylife-server` registry |
-| docker | `trivy-server` | Container vulnerability scan (Trivy) of the freshly published image, informational only (does not block the pipeline) |
+| docker | `trivy-server` | Container vulnerability scan (Trivy) of the freshly published image; reports HIGH+CRITICAL informationally, but blocks `docker-manifest-merge` (and thereby the release) on any fixable CRITICAL finding |
 | release | `semantic-release` | Real semantic-release run: publishes the GitHub release + changelog, commits the coverage badge, then signs `server.zip` (keyless Sigstore bundle + GitHub build provenance uploaded next to it) |
 | deploy | `deploy-bump` | Writes the released version into the `k8s/` manifests and pushes it over the deploy key, so Flux (read-only) rolls the new image out - replaces Flux's image-update automation |
 
