@@ -15,5 +15,6 @@
   "ErrorGeneric": "Midagi läks valesti. Palun proovi uuesti.",
   "PendingActionTitle": "See toiming vajab sinu kinnitust",
   "Approve": "Kinnita",
-  "Reject": "Keeldu"
+  "Reject": "Keeldu",
+  "AriaCloseDialog": "Sulge dialoog"
 }

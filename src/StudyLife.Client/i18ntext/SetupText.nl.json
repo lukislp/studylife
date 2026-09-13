@@ -286,5 +286,9 @@
   "MarketplaceDemoNotice": "Het installeren van add-ons is uitgeschakeld op deze demo-instantie.",
   "ClientKeysHeading": "Verbonden add-ons",
   "TelemetryHeading": "Gebruiks- en foutrapporten",
-  "TelemetryDesc": "Helpt ons bugs en trage plekken op te sporen door anonieme prestatie- en foutgegevens te versturen — nooit je notities, sessies of gezondheidsgegevens. Je kunt dit altijd uitschakelen."
+  "TelemetryDesc": "Helpt ons bugs en trage plekken op te sporen door anonieme prestatie- en foutgegevens te versturen — nooit je notities, sessies of gezondheidsgegevens. Je kunt dit altijd uitschakelen.",
+  "AriaCloseDialog": "Dialoogvenster sluiten",
+  "AriaRemoveGroup": "Groep verwijderen",
+  "AriaRemoveCourse": "Vak verwijderen",
+  "AriaDeleteTimerMode": "Timermodus verwijderen"
 }

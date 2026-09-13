@@ -54,5 +54,8 @@
   "TemplateNamePlaceholder": "Sjabloonnaam",
   "TemplateNameRequiredError": "Voer een naam in voor de sjabloon.",
   "TemplateSaveFailed": "De sjabloon kon niet worden opgeslagen.",
-  "WeekPlanLinkButton": "Weekplan afdrukken"
+  "WeekPlanLinkButton": "Weekplan afdrukken",
+  "AriaCloseDialog": "Dialoogvenster sluiten",
+  "AriaPreviousWeek": "Vorige week",
+  "AriaNextWeek": "Volgende week"
 }

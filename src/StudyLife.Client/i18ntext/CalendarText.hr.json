@@ -54,5 +54,8 @@
   "TemplateNamePlaceholder": "Naziv predloška",
   "TemplateNameRequiredError": "Unesi naziv predloška.",
   "TemplateSaveFailed": "Predložak nije bilo moguće spremiti.",
-  "WeekPlanLinkButton": "Ispiši tjedni plan"
+  "WeekPlanLinkButton": "Ispiši tjedni plan",
+  "AriaCloseDialog": "Zatvori dijalog",
+  "AriaPreviousWeek": "Prethodni tjedan",
+  "AriaNextWeek": "Sljedeći tjedan"
 }

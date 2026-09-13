@@ -15,5 +15,6 @@
   "ErrorGeneric": "Une erreur s'est produite. Veuillez réessayer.",
   "PendingActionTitle": "Cette action nécessite votre confirmation",
   "Approve": "Approuver",
-  "Reject": "Rejeter"
+  "Reject": "Rejeter",
+  "AriaCloseDialog": "Fermer la boîte de dialogue"
 }

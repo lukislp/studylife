@@ -53,5 +53,6 @@
   "DictateSilent": "Geen spraak gedetecteerd",
   "DictateBrowserVoice": "Luisteren via spraakherkenning van de browser…",
   "CaptureSourceLinkLabel": "Origineel bekijken",
-  "RelatedNotesLabel": "Gerelateerde notities"
+  "RelatedNotesLabel": "Gerelateerde notities",
+  "AriaCloseDialog": "Dialoogvenster sluiten"
 }

@@ -53,5 +53,6 @@
   "DictateSilent": "Ma nstab ebda diskors",
   "DictateBrowserVoice": "Qed jisma' permezz tar-rikonoxximent tal-vuċi tal-browser…",
   "CaptureSourceLinkLabel": "Ara l-oriġinal",
-  "RelatedNotesLabel": "Noti relatati"
+  "RelatedNotesLabel": "Noti relatati",
+  "AriaCloseDialog": "Agħlaq id-djalogu"
 }

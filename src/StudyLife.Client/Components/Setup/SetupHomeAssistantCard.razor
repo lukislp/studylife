@@ -53,10 +53,10 @@
 @if (_confirmingRegenerate)
 {
     <div class="modal-overlay" @onclick="() => _confirmingRegenerate = false">
-        <div class="modal" @onclick:stopPropagation="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ha-key-regenerate-title" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h3>@T.HaKeyRegenerateConfirmTitle</h3>
-                <button type="button" class="modal-close" @onclick="() => _confirmingRegenerate = false">✕</button>
+                <h3 id="ha-key-regenerate-title">@T.HaKeyRegenerateConfirmTitle</h3>
+                <button type="button" class="modal-close" aria-label="@T.AriaCloseDialog" @onclick="() => _confirmingRegenerate = false">✕</button>
             </div>
             <div class="modal-body">
                 <p>⚠️ @T.HaKeyRegenerateConfirmWarning</p>
@@ -76,10 +76,10 @@
 @if (_confirmingRevoke)
 {
     <div class="modal-overlay" @onclick="() => _confirmingRevoke = false">
-        <div class="modal" @onclick:stopPropagation="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ha-key-revoke-title" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h3>@T.HaKeyRevokeConfirmTitle</h3>
-                <button type="button" class="modal-close" @onclick="() => _confirmingRevoke = false">✕</button>
+                <h3 id="ha-key-revoke-title">@T.HaKeyRevokeConfirmTitle</h3>
+                <button type="button" class="modal-close" aria-label="@T.AriaCloseDialog" @onclick="() => _confirmingRevoke = false">✕</button>
             </div>
             <div class="modal-body">
                 <p>⚠️ @T.HaKeyRevokeConfirmWarning</p>

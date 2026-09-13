@@ -15,5 +15,6 @@
   "ErrorGeneric": "Coś poszło nie tak. Spróbuj ponownie.",
   "PendingActionTitle": "Ta czynność wymaga Twojego potwierdzenia",
   "Approve": "Zatwierdź",
-  "Reject": "Odrzuć"
+  "Reject": "Odrzuć",
+  "AriaCloseDialog": "Zamknij okno dialogowe"
 }

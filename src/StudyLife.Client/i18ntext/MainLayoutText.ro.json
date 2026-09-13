@@ -32,5 +32,9 @@
   "PendingSyncTooltip": "{0} modificări așteaptă sincronizarea",
   "UpdateAvailableText": "O versiune nouă este disponibilă",
   "UpdateReloadButton": "Reîncarcă",
-  "AgentChatLabel": "Asistent AI"
+  "AgentChatLabel": "Asistent AI",
+  "AriaCloseDialog": "Închide dialogul",
+  "AriaDismissUpdate": "Închide notificarea de actualizare",
+  "AriaOpenMenu": "Deschide meniul",
+  "AriaCloseMenu": "Închide meniul"
 }

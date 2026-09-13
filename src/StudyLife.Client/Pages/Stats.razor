@@ -90,7 +90,7 @@
         {
             <StatsHeatmapCard Label="@T.StudyHeatmap" Weeks="@_heatmapWeeks" MonthLabels="@_heatmapMonthLabels"
                 NoSessionText="@T.NoSession" LessText="@T.Less" MoreText="@T.More" SessionCountFormat="@T.SessionCountFormat"
-                AllCoursesText="@T.HeatmapFilterAll" />
+                AllCoursesText="@T.HeatmapFilterAll" CloseDetailsLabel="@T.AriaCloseDetails" />
 
             <StatsGoalHistoryCard Label="@T.GoalHistory" Weeks="@_goalHistoryWeeks" SummaryFormat="@T.GoalHistorySummaryFormat" />
 
@@ -99,7 +99,9 @@
             <StatsCourseDonutCard Label="@T.TimeByCourse" Slices="@_donutSlices" Gradient="@_donutGradient"
                 TotalHours="@_donutTotalHours" TotalLabel="@T.DonutTotalLabel" EmptyText="@T.NoSessionsLast12Months"
                 SessionCountFormat="@T.SessionCountFormat" ClickHintText="@T.DonutClickHint"
-                RecentSessionsText="@T.DonutDetailRecentSessions" MoreSessionsFormat="@T.DonutDetailMoreFormat" />
+                RecentSessionsText="@T.DonutDetailRecentSessions" MoreSessionsFormat="@T.DonutDetailMoreFormat"
+
+                CloseDetailsLabel="@T.AriaCloseDetails" />
 
             <StatsCourseBalanceCard Label="@T.CourseBalance" Rows="@_courseBalanceRows"
                 TargetLabel="@T.CourseBalanceTargetLabel" ActualLabel="@T.CourseBalanceActualLabel"
@@ -113,7 +115,7 @@
 
             <StatsTimeHeatmapCard Label="@T.TimeHeatmap" Rows="@_timeHeatmapRows" NoSessionText="@T.NoSession"
                 LessText="@T.Less" MoreText="@T.More" TooltipFormat="@T.TimeHeatmapTooltipFormat" EmptyText="@T.TimeHeatmapEmpty"
-                SessionCountFormat="@T.SessionCountFormat" />
+                SessionCountFormat="@T.SessionCountFormat" CloseDetailsLabel="@T.AriaCloseDetails" />
 
             <StatsSessionLengthHistogramCard Label="@T.SessionLengthHistogram" Buckets="@_sessionLengthBuckets"
                 CountFormat="@T.SessionCountFormat" EmptyText="@T.NoStudySessionsYet" />

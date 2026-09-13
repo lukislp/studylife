@@ -15,5 +15,6 @@
   "ErrorGeneric": "Tharla earráid. Bain triail eile as le do thoil.",
   "PendingActionTitle": "Teastaíonn do dhearbhú don ghníomh seo",
   "Approve": "Ceadaigh",
-  "Reject": "Diúltaigh"
+  "Reject": "Diúltaigh",
+  "AriaCloseDialog": "Dún an dialóg"
 }

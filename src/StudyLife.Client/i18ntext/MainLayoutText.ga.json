@@ -32,5 +32,9 @@
   "PendingSyncTooltip": "{0} athrú ag fanacht le sioncrónú",
   "UpdateAvailableText": "Leagan nua ar fáil",
   "UpdateReloadButton": "Athlódáil",
-  "AgentChatLabel": "Cúntóir IA"
+  "AgentChatLabel": "Cúntóir IA",
+  "AriaCloseDialog": "Dún an dialóg",
+  "AriaDismissUpdate": "Cuir fógra an nuashonraithe i leataobh",
+  "AriaOpenMenu": "Oscail an roghchlár",
+  "AriaCloseMenu": "Dún an roghchlár"
 }

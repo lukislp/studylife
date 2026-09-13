@@ -32,5 +32,9 @@
   "PendingSyncTooltip": "{0} promjena čeka sinkronizaciju",
   "UpdateAvailableText": "Dostupna je nova verzija",
   "UpdateReloadButton": "Ponovno učitaj",
-  "AgentChatLabel": "AI asistent"
+  "AgentChatLabel": "AI asistent",
+  "AriaCloseDialog": "Zatvori dijalog",
+  "AriaDismissUpdate": "Odbaci obavijest o ažuriranju",
+  "AriaOpenMenu": "Otvori izbornik",
+  "AriaCloseMenu": "Zatvori izbornik"
 }

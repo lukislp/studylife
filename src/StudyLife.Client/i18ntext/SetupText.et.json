@@ -286,5 +286,9 @@
   "MarketplaceDemoNotice": "Lisandmoodulite paigaldamine on selles demoversioonis keelatud.",
   "ClientKeysHeading": "Ühendatud lisad",
   "TelemetryHeading": "Kasutus- ja vearaportid",
-  "TelemetryDesc": "Aitab meil leida vigu ja aeglaseid kohti, saates anonüümseid jõudlus- ja veaandmeid — mitte kunagi sinu märkmeid, seansse ega terviseandmeid. Saad selle igal ajal välja lülitada."
+  "TelemetryDesc": "Aitab meil leida vigu ja aeglaseid kohti, saates anonüümseid jõudlus- ja veaandmeid — mitte kunagi sinu märkmeid, seansse ega terviseandmeid. Saad selle igal ajal välja lülitada.",
+  "AriaCloseDialog": "Sulge dialoog",
+  "AriaRemoveGroup": "Eemalda rühm",
+  "AriaRemoveCourse": "Eemalda aine",
+  "AriaDeleteTimerMode": "Kustuta taimeri režiim"
 }

@@ -61,5 +61,7 @@
   "TimerModeDesc_micro": "5 minūtes fokusa, 1 minūte pauzes. Mazi soļi zemas enerģijas dienām vai lai izkustētos no vietas.",
   "TimerModeDesc_burst": "15 minūtes fokusa, 3 minūtes pauzes. Vairāk telpas nekā sprintā, tomēr ātrā tempā.",
   "TimerModeDesc_deepdive": "120 minūtes fokusa, 20 minūtes pauzes. Kad tev jāpazūd pilnībā kādā problēmā.",
-  "TimerModeDesc_marathon": "180 minūtes fokusa, 30 minūtes pauzes. Viens garš, nepārtraukts spriegums — eksāmenu sagatavošanās teritorija."
+  "TimerModeDesc_marathon": "180 minūtes fokusa, 30 minūtes pauzes. Viens garš, nepārtraukts spriegums — eksāmenu sagatavošanās teritorija.",
+  "AriaStartTimer": "Sākt taimeri",
+  "AriaPauseTimer": "Apturēt taimeri"
 }

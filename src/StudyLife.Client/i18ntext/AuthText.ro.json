@@ -77,5 +77,6 @@
   "RegisterInviteRequiredHint": "Este necesar un link de invitație pentru înregistrare. Folosește linkul primit.",
   "RegisterInviteInvalid": "Acest link de invitație este invalid, expirat sau deja folosit.",
   "PasskeysRevokeOthers": "Deconectare de pe toate celelalte dispozitive",
-  "PasskeysRevokeOthersDone": "Toate celelalte dispozitive au fost deconectate."
+  "PasskeysRevokeOthersDone": "Toate celelalte dispozitive au fost deconectate.",
+  "AriaCloseDialog": "Închide dialogul"
 }

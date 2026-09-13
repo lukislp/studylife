@@ -53,5 +53,6 @@
   "DictateSilent": "Kõnet ei tuvastatud",
   "DictateBrowserVoice": "Kuulamine brauseri kõnetuvastuse abil…",
   "CaptureSourceLinkLabel": "Vaata originaali",
-  "RelatedNotesLabel": "Seotud märkmed"
+  "RelatedNotesLabel": "Seotud märkmed",
+  "AriaCloseDialog": "Sulge dialoog"
 }

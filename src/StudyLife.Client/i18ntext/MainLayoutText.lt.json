@@ -32,5 +32,9 @@
   "PendingSyncTooltip": "{0} pakeitimai laukia sinchronizavimo",
   "UpdateAvailableText": "Yra nauja versija",
   "UpdateReloadButton": "Įkelti iš naujo",
-  "AgentChatLabel": "AI asistentas"
+  "AgentChatLabel": "AI asistentas",
+  "AriaCloseDialog": "Uždaryti dialogo langą",
+  "AriaDismissUpdate": "Atmesti naujinimo pranešimą",
+  "AriaOpenMenu": "Atidaryti meniu",
+  "AriaCloseMenu": "Uždaryti meniu"
 }

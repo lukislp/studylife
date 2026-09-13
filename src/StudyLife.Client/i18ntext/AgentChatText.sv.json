@@ -15,5 +15,6 @@
   "ErrorGeneric": "Något gick fel. Försök igen.",
   "PendingActionTitle": "Den här åtgärden behöver din bekräftelse",
   "Approve": "Godkänn",
-  "Reject": "Avvisa"
+  "Reject": "Avvisa",
+  "AriaCloseDialog": "Stäng dialogruta"
 }

@@ -15,5 +15,6 @@
   "ErrorGeneric": "Xi ħaġa marret ħażin. Jekk jogħġbok erġa' pprova.",
   "PendingActionTitle": "Din l-azzjoni teħtieġ il-konferma tiegħek",
   "Approve": "Approva",
-  "Reject": "Irrifjuta"
+  "Reject": "Irrifjuta",
+  "AriaCloseDialog": "Agħlaq id-djalogu"
 }

@@ -15,5 +15,6 @@
   "ErrorGeneric": "Niečo sa pokazilo. Skúste to znova.",
   "PendingActionTitle": "Táto akcia vyžaduje vaše potvrdenie",
   "Approve": "Schváliť",
-  "Reject": "Odmietnuť"
+  "Reject": "Odmietnuť",
+  "AriaCloseDialog": "Zavrieť dialóg"
 }

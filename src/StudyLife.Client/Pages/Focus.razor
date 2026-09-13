@@ -48,6 +48,7 @@
 
         <div class="timer-controls-row">
             <FocusTimerControls IsRunning="_isRunning" ResetTitle="@T.Reset" SkipTitle="@T.TryAnotherMode"
+                                 PlayLabel="@T.AriaStartTimer" PauseLabel="@T.AriaPauseTimer"
                                  OnReset="ResetTimer" OnToggle="ToggleTimer" OnNext="NextMode" />
 
             <FocusAmbientControl IsOpen="_ambientPopoverOpen" SoundType="_ambientType" Volume="_ambientVolume"

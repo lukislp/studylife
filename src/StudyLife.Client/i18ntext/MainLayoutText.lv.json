@@ -32,5 +32,9 @@
   "PendingSyncTooltip": "{0} izmaiņas gaida sinhronizāciju",
   "UpdateAvailableText": "Pieejama jauna versija",
   "UpdateReloadButton": "Pārlādēt",
-  "AgentChatLabel": "AI asistents"
+  "AgentChatLabel": "AI asistents",
+  "AriaCloseDialog": "Aizvērt dialoglodziņu",
+  "AriaDismissUpdate": "Noraidīt atjauninājuma paziņojumu",
+  "AriaOpenMenu": "Atvērt izvēlni",
+  "AriaCloseMenu": "Aizvērt izvēlni"
 }

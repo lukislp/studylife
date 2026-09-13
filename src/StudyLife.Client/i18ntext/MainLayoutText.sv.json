@@ -32,5 +32,9 @@
   "PendingSyncTooltip": "{0} ändringar väntar på synkronisering",
   "UpdateAvailableText": "Ny version tillgänglig",
   "UpdateReloadButton": "Ladda om",
-  "AgentChatLabel": "AI-assistent"
+  "AgentChatLabel": "AI-assistent",
+  "AriaCloseDialog": "Stäng dialogruta",
+  "AriaDismissUpdate": "Stäng uppdateringsmeddelandet",
+  "AriaOpenMenu": "Öppna meny",
+  "AriaCloseMenu": "Stäng meny"
 }

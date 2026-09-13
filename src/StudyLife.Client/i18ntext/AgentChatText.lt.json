@@ -15,5 +15,6 @@
   "ErrorGeneric": "Kažkas nutiko ne taip. Bandykite dar kartą.",
   "PendingActionTitle": "Šiam veiksmui reikia jūsų patvirtinimo",
   "Approve": "Patvirtinti",
-  "Reject": "Atmesti"
+  "Reject": "Atmesti",
+  "AriaCloseDialog": "Uždaryti dialogo langą"
 }

@@ -54,5 +54,8 @@
   "TemplateNamePlaceholder": "Template name",
   "TemplateNameRequiredError": "Please enter a name for the template.",
   "TemplateSaveFailed": "The template couldn't be saved.",
-  "WeekPlanLinkButton": "Print week plan"
+  "WeekPlanLinkButton": "Print week plan",
+  "AriaCloseDialog": "Close dialog",
+  "AriaPreviousWeek": "Previous week",
+  "AriaNextWeek": "Next week"
 }

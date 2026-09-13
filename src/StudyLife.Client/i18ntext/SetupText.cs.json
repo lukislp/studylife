@@ -286,5 +286,9 @@
   "MarketplaceDemoNotice": "Instalace doplňků je na této demo instanci zakázána.",
   "ClientKeysHeading": "Připojené doplňky",
   "TelemetryHeading": "Hlášení o používání a chybách",
-  "TelemetryDesc": "Pomáhá nám odhalit chyby a zpomalení odesíláním anonymních dat o výkonu a chybách — nikdy tvé poznámky, session ani zdravotní údaje. Kdykoli to můžeš vypnout."
+  "TelemetryDesc": "Pomáhá nám odhalit chyby a zpomalení odesíláním anonymních dat o výkonu a chybách — nikdy tvé poznámky, session ani zdravotní údaje. Kdykoli to můžeš vypnout.",
+  "AriaCloseDialog": "Zavřít dialog",
+  "AriaRemoveGroup": "Odebrat skupinu",
+  "AriaRemoveCourse": "Odebrat předmět",
+  "AriaDeleteTimerMode": "Smazat režim časovače"
 }

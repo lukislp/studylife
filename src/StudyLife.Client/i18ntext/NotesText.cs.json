@@ -53,5 +53,6 @@
   "DictateSilent": "Nebyla zjištěna žádná řeč",
   "DictateBrowserVoice": "Naslouchání pomocí rozpoznávání řeči prohlížeče…",
   "CaptureSourceLinkLabel": "Zobrazit originál",
-  "RelatedNotesLabel": "Související poznámky"
+  "RelatedNotesLabel": "Související poznámky",
+  "AriaCloseDialog": "Zavřít dialog"
 }

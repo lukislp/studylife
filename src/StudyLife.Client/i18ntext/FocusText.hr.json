@@ -61,5 +61,7 @@
   "TimerModeDesc_micro": "5 minuta fokusa, 1 minuta pauze. Mali koraci za dane niske energije ili za pokretanje.",
   "TimerModeDesc_burst": "15 minuta fokusa, 3 minute pauze. Više prostora nego sprint, i dalje brzog tempa.",
   "TimerModeDesc_deepdive": "120 minuta fokusa, 20 minuta pauze. Za kad se trebaš potpuno izgubiti u problemu.",
-  "TimerModeDesc_marathon": "180 minuta fokusa, 30 minuta pauze. Jedan dugi, neprekinuti pritisak — teritorij pripreme za ispit."
+  "TimerModeDesc_marathon": "180 minuta fokusa, 30 minuta pauze. Jedan dugi, neprekinuti pritisak — teritorij pripreme za ispit.",
+  "AriaStartTimer": "Pokreni mjerač vremena",
+  "AriaPauseTimer": "Pauziraj mjerač vremena"
 }

@@ -54,5 +54,8 @@
   "TemplateNamePlaceholder": "Nazwa szablonu",
   "TemplateNameRequiredError": "Podaj nazwę szablonu.",
   "TemplateSaveFailed": "Nie udało się zapisać szablonu.",
-  "WeekPlanLinkButton": "Drukuj plan tygodnia"
+  "WeekPlanLinkButton": "Drukuj plan tygodnia",
+  "AriaCloseDialog": "Zamknij okno dialogowe",
+  "AriaPreviousWeek": "Poprzedni tydzień",
+  "AriaNextWeek": "Następny tydzień"
 }

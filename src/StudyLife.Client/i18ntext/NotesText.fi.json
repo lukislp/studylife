@@ -53,5 +53,6 @@
   "DictateSilent": "Puhetta ei havaittu",
   "DictateBrowserVoice": "Kuunnellaan selaimen puheentunnistuksella…",
   "CaptureSourceLinkLabel": "Näytä alkuperäinen",
-  "RelatedNotesLabel": "Liittyvät muistiinpanot"
+  "RelatedNotesLabel": "Liittyvät muistiinpanot",
+  "AriaCloseDialog": "Sulje valintaikkuna"
 }

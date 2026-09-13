@@ -104,5 +104,6 @@
     "CourseSparkTooltip":  "Órák hetente, az utolsó 12 hét",
     "CourseEctsRingFormat":  "{0} / {1} ECTS megszerezve",
     "WeekdayRanking":  "A hét napjainak rangsora",
-    "WeekdayRankingSubtitle":  "Melyik nap hozza a legtöbb tanulási órát"
+    "WeekdayRankingSubtitle":  "Melyik nap hozza a legtöbb tanulási órát",
+    "AriaCloseDetails":  "Részletek bezárása"
 }

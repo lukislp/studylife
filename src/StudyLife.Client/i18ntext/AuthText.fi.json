@@ -77,5 +77,6 @@
   "RegisterInviteRequiredHint": "Rekisteröitymiseen tarvitaan kutsulinkki. Käytä linkkiä, jonka sait.",
   "RegisterInviteInvalid": "Tämä kutsulinkki on virheellinen, vanhentunut tai jo käytetty.",
   "PasskeysRevokeOthers": "Kirjaudu ulos kaikilta muilta laitteilta",
-  "PasskeysRevokeOthersDone": "Kaikki muut laitteet on kirjattu ulos."
+  "PasskeysRevokeOthersDone": "Kaikki muut laitteet on kirjattu ulos.",
+  "AriaCloseDialog": "Sulje valintaikkuna"
 }

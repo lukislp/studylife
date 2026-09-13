@@ -104,5 +104,6 @@
     "CourseSparkTooltip":  "Tunnid nädalas, viimased 12 nädalat",
     "CourseEctsRingFormat":  "{0} / {1} EAP teenitud",
     "WeekdayRanking":  "Nädalapäevade edetabel",
-    "WeekdayRankingSubtitle":  "Milline nädalapäev toob kõige rohkem õpitunde"
+    "WeekdayRankingSubtitle":  "Milline nädalapäev toob kõige rohkem õpitunde",
+    "AriaCloseDetails":  "Sulge üksikasjad"
 }

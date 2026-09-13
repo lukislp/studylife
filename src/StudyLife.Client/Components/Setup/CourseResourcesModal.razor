@@ -10,10 +10,10 @@
    custom courses - see CourseResourceEntity in StudyLifeDb.cs. *@
 
 <div class="modal-overlay" @onclick="() => OnClose.InvokeAsync()">
-    <div class="modal cr-modal" @onclick:stopPropagation="true">
+    <div class="modal cr-modal" role="dialog" aria-modal="true" aria-labelledby="course-resources-title" @onclick:stopPropagation="true">
         <div class="modal-header">
-            <h3>@string.Format(T.CourseResourcesModalTitleFormat ?? "", CourseName)</h3>
-            <button type="button" class="modal-close" @onclick="() => OnClose.InvokeAsync()">✕</button>
+            <h3 id="course-resources-title">@string.Format(T.CourseResourcesModalTitleFormat ?? "", CourseName)</h3>
+            <button type="button" class="modal-close" aria-label="@T.AriaCloseDialog" @onclick="() => OnClose.InvokeAsync()">✕</button>
         </div>
         <div class="modal-body">
             @if (_error != null)
@@ -32,7 +32,7 @@
                         var r = resource;
                         <div class="cr-row">
                             <a class="cr-row-link" href="@r.Url" target="_blank" rel="noopener noreferrer">@r.Title</a>
-                            <button type="button" class="btn-danger cr-row-delete" title="@T.CourseResourcesDeleteButton"
+                            <button type="button" class="btn-danger cr-row-delete" aria-label="@T.CourseResourcesDeleteButton" title="@T.CourseResourcesDeleteButton"
                                     @onclick="() => _confirmDelete = r">
                                 🗑
                             </button>
@@ -57,10 +57,10 @@
 @if (_confirmDelete != null)
 {
     <div class="modal-overlay" @onclick="() => _confirmDelete = null">
-        <div class="modal" @onclick:stopPropagation="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="course-resources-delete-title" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h3>@T.CourseResourcesConfirmTitle</h3>
-                <button type="button" class="modal-close" @onclick="() => _confirmDelete = null">✕</button>
+                <h3 id="course-resources-delete-title">@T.CourseResourcesConfirmTitle</h3>
+                <button type="button" class="modal-close" aria-label="@T.AriaCloseDialog" @onclick="() => _confirmDelete = null">✕</button>
             </div>
             <div class="modal-body">
                 <p>⚠️ @string.Format(T.CourseResourcesConfirmWarning ?? "", _confirmDelete.Title)</p>

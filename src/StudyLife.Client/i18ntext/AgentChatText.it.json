@@ -15,5 +15,6 @@
   "ErrorGeneric": "Qualcosa è andato storto. Riprova.",
   "PendingActionTitle": "Questa azione richiede la tua conferma",
   "Approve": "Approva",
-  "Reject": "Rifiuta"
+  "Reject": "Rifiuta",
+  "AriaCloseDialog": "Chiudi finestra di dialogo"
 }

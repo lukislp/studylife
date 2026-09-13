@@ -9,10 +9,10 @@
    (shared.css: .modal-overlay/.modal), the content gets its own .apm-* styles (setup.css). *@
 
 <div class="modal-overlay" @onclick="() => OnClose.InvokeAsync()">
-    <div class="modal program-modal" @onclick:stopPropagation="true">
+    <div class="modal program-modal" role="dialog" aria-modal="true" aria-labelledby="add-study-program-title" @onclick:stopPropagation="true">
         <div class="modal-header">
-            <h3>@T.ProgramModalTitle</h3>
-            <button type="button" class="modal-close" @onclick="() => OnClose.InvokeAsync()">✕</button>
+            <h3 id="add-study-program-title">@T.ProgramModalTitle</h3>
+            <button type="button" class="modal-close" aria-label="@T.AriaCloseDialog" @onclick="() => OnClose.InvokeAsync()">✕</button>
         </div>
         <div class="modal-body program-modal-body">
 
@@ -40,7 +40,7 @@
                             <div class="apm-group-row">
                                 <span class="apm-group-name">@g.Name</span>
                                 <span class="apm-group-quota">@g.EctsQuota ECTS</span>
-                                <button type="button" class="cm-delete" @onclick="() => RemoveGroup(g)">✕</button>
+                                <button type="button" class="cm-delete" aria-label="@T.AriaRemoveGroup" @onclick="() => RemoveGroup(g)">✕</button>
                             </div>
                         }
                     </div>
@@ -73,7 +73,7 @@
                             <span class="apm-semester-title">@string.Format(T.SemesterLabel ?? "", semIndex + 1)</span>
                             @if (_semesters.Count > 1)
                             {
-                                <button type="button" class="cm-delete" title="@T.ProgramRemoveSemesterTitle"
+                                <button type="button" class="cm-delete" aria-label="@T.ProgramRemoveSemesterTitle" title="@T.ProgramRemoveSemesterTitle"
                                         @onclick="() => RemoveSemester(semIndex)">✕</button>
                             }
                         </div>
@@ -95,7 +95,7 @@
                                         {
                                             <span class="apm-course-group-pill">@c.Group</span>
                                         }
-                                        <button type="button" class="cm-delete" @onclick="() => RemoveCourse(sem, c)">✕</button>
+                                        <button type="button" class="cm-delete" aria-label="@T.AriaRemoveCourse" @onclick="() => RemoveCourse(sem, c)">✕</button>
                                     </div>
                                 }
                             </div>

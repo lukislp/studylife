@@ -54,5 +54,8 @@
   "TemplateNamePlaceholder": "Mallin nimi",
   "TemplateNameRequiredError": "Anna mallille nimi.",
   "TemplateSaveFailed": "Mallia ei voitu tallentaa.",
-  "WeekPlanLinkButton": "Tulosta viikkosuunnitelma"
+  "WeekPlanLinkButton": "Tulosta viikkosuunnitelma",
+  "AriaCloseDialog": "Sulje valintaikkuna",
+  "AriaPreviousWeek": "Edellinen viikko",
+  "AriaNextWeek": "Seuraava viikko"
 }

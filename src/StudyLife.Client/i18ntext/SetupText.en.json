@@ -286,5 +286,9 @@
   "MarketplaceDemoNotice": "Installing add-ons is disabled on this demo instance.",
   "ClientKeysHeading": "Connected add-ons",
   "TelemetryHeading": "Usage & Error Reports",
-  "TelemetryDesc": "Helps us catch bugs and slow spots by sending anonymous performance and error data — never your notes, sessions, or health data. You can turn this off anytime."
+  "TelemetryDesc": "Helps us catch bugs and slow spots by sending anonymous performance and error data — never your notes, sessions, or health data. You can turn this off anytime.",
+  "AriaCloseDialog": "Close dialog",
+  "AriaRemoveGroup": "Remove group",
+  "AriaRemoveCourse": "Remove course",
+  "AriaDeleteTimerMode": "Delete timer mode"
 }

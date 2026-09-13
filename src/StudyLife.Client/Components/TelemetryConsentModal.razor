@@ -11,9 +11,9 @@
 @if (Show)
 {
     <div class="modal-overlay">
-        <div class="modal" @onclick:stopPropagation="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="telemetry-consent-title" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h3>@T.Heading</h3>
+                <h3 id="telemetry-consent-title">@T.Heading</h3>
             </div>
             <div class="modal-body">
                 <p class="ss-desc">@T.ExplainWhatText</p>

@@ -61,5 +61,7 @@
   "TimerModeDesc_micro": "5 minutters fokus, 1 minuts pause. Små skridt til dage med lav energi eller for at komme i gang igen.",
   "TimerModeDesc_burst": "15 minutters fokus, 3 minutters pause. Mere plads end et sprint, stadig højt tempo.",
   "TimerModeDesc_deepdive": "120 minutters fokus, 20 minutters pause. Når du skal forsvinde helt ind i et problem.",
-  "TimerModeDesc_marathon": "180 minutters fokus, 30 minutters pause. Ét langt, uafbrudt ryk — eksamenslæsnings-territorium."
+  "TimerModeDesc_marathon": "180 minutters fokus, 30 minutters pause. Ét langt, uafbrudt ryk — eksamenslæsnings-territorium.",
+  "AriaStartTimer": "Start timer",
+  "AriaPauseTimer": "Sæt timer på pause"
 }

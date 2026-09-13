@@ -54,5 +54,8 @@
   "TemplateNamePlaceholder": "Име на шаблона",
   "TemplateNameRequiredError": "Моля, въведи име за шаблона.",
   "TemplateSaveFailed": "Шаблонът не можа да бъде запазен.",
-  "WeekPlanLinkButton": "Отпечатай седмичния план"
+  "WeekPlanLinkButton": "Отпечатай седмичния план",
+  "AriaCloseDialog": "Затваряне на диалога",
+  "AriaPreviousWeek": "Предишна седмица",
+  "AriaNextWeek": "Следваща седмица"
 }

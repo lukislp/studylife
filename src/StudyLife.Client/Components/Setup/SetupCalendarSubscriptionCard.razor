@@ -19,10 +19,10 @@
 @if (_confirming)
 {
     <div class="modal-overlay" @onclick="() => _confirming = false">
-        <div class="modal" @onclick:stopPropagation="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="calendar-subscription-regenerate-title" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h3>@RegenerateConfirmTitle</h3>
-                <button type="button" class="modal-close" @onclick="() => _confirming = false">✕</button>
+                <h3 id="calendar-subscription-regenerate-title">@RegenerateConfirmTitle</h3>
+                <button type="button" class="modal-close" aria-label="@CloseLabel" @onclick="() => _confirming = false">✕</button>
             </div>
             <div class="modal-body">
                 <p>⚠️ @RegenerateConfirmWarning</p>
@@ -41,6 +41,7 @@
 
 @code {
     [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string CloseLabel { get; set; } = "";
     [Parameter] public string Desc { get; set; } = "";
     [Parameter] public string IcsUrl { get; set; } = "";
     [Parameter] public string CopyText { get; set; } = "";

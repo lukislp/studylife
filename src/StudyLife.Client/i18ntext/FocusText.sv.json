@@ -61,5 +61,7 @@
   "TimerModeDesc_micro": "5 minuters fokus, 1 minuts paus. Små steg för dagar med låg energi eller för att komma loss.",
   "TimerModeDesc_burst": "15 minuters fokus, 3 minuters paus. Mer utrymme än ett sprint, ändå högt tempo.",
   "TimerModeDesc_deepdive": "120 minuters fokus, 20 minuters paus. När du behöver försvinna helt in i ett problem.",
-  "TimerModeDesc_marathon": "180 minuters fokus, 30 minuters paus. Ett långt, oavbrutet ryck — tentaplugg-territorium."
+  "TimerModeDesc_marathon": "180 minuters fokus, 30 minuters paus. Ett långt, oavbrutet ryck — tentaplugg-territorium.",
+  "AriaStartTimer": "Starta timer",
+  "AriaPauseTimer": "Pausa timer"
 }

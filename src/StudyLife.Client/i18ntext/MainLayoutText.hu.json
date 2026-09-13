@@ -32,5 +32,9 @@
   "PendingSyncTooltip": "{0} változás vár szinkronizálásra",
   "UpdateAvailableText": "Új verzió érhető el",
   "UpdateReloadButton": "Újratöltés",
-  "AgentChatLabel": "AI asszisztens"
+  "AgentChatLabel": "AI asszisztens",
+  "AriaCloseDialog": "Párbeszédpanel bezárása",
+  "AriaDismissUpdate": "Frissítési értesítés elvetése",
+  "AriaOpenMenu": "Menü megnyitása",
+  "AriaCloseMenu": "Menü bezárása"
 }

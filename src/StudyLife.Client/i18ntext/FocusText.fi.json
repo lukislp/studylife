@@ -61,5 +61,7 @@
   "TimerModeDesc_micro": "5 minuuttia fokusta, 1 minuutin tauko. Pieniä askelia vähäenergisille päiville tai jumin purkamiseen.",
   "TimerModeDesc_burst": "15 minuuttia fokusta, 3 minuutin tauko. Enemmän tilaa kuin sprintissä, silti nopeatempoinen.",
   "TimerModeDesc_deepdive": "120 minuuttia fokusta, 20 minuutin tauko. Kun sinun täytyy kadota kokonaan ongelmaan.",
-  "TimerModeDesc_marathon": "180 minuuttia fokusta, 30 minuutin tauko. Yksi pitkä, keskeytymätön veto — tenttiin lukemisen aluetta."
+  "TimerModeDesc_marathon": "180 minuuttia fokusta, 30 minuutin tauko. Yksi pitkä, keskeytymätön veto — tenttiin lukemisen aluetta.",
+  "AriaStartTimer": "Käynnistä ajastin",
+  "AriaPauseTimer": "Keskeytä ajastin"
 }

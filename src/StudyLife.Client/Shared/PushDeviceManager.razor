@@ -16,10 +16,10 @@
 @if (Open)
 {
     <div class="modal-overlay" @onclick="CloseAsync">
-        <div class="modal pdm-modal" @onclick:stopPropagation="true">
+        <div class="modal pdm-modal" role="dialog" aria-modal="true" aria-labelledby="push-devices-title" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h3>@T.PushDevicesTitle</h3>
-                <button type="button" class="modal-close" @onclick="CloseAsync">✕</button>
+                <h3 id="push-devices-title">@T.PushDevicesTitle</h3>
+                <button type="button" class="modal-close" aria-label="@T.AriaCloseDialog" @onclick="CloseAsync">✕</button>
             </div>
             <div class="modal-body">
                 @if (_loading)
@@ -66,10 +66,10 @@
 @if (_confirmDeleteDevice != null)
 {
     <div class="modal-overlay" @onclick="() => _confirmDeleteDevice = null">
-        <div class="modal" @onclick:stopPropagation="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="push-devices-delete-confirm-title" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h3>@T.PushDevicesConfirmTitle</h3>
-                <button type="button" class="modal-close" @onclick="() => _confirmDeleteDevice = null">✕</button>
+                <h3 id="push-devices-delete-confirm-title">@T.PushDevicesConfirmTitle</h3>
+                <button type="button" class="modal-close" aria-label="@T.AriaCloseDialog" @onclick="() => _confirmDeleteDevice = null">✕</button>
             </div>
             <div class="modal-body">
                 <p>⚠️ @string.Format(T.PushDevicesConfirmWarning ?? "", FriendlyLabel(_confirmDeleteDevice.UserAgent))</p>

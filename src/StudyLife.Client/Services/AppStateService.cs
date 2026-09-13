@@ -375,7 +375,7 @@ public class AppStateService : IAsyncDisposable
     /// </summary>
     private void StartChangeStream()
     {
-        if (string.IsNullOrEmpty(_sessionTokenStore.Token) || _changeStreamCts != null) return;
+        if (_disposed || string.IsNullOrEmpty(_sessionTokenStore.Token) || _changeStreamCts != null) return;
         var cts = new CancellationTokenSource();
         _changeStreamCts = cts;
         _ = RunChangeStreamAsync(cts.Token);
@@ -681,8 +681,40 @@ public class AppStateService : IAsyncDisposable
     private static string ComputeHash(List<StudySessionDto> sessions)
         => JsonSerializer.Serialize(sessions.OrderBy(s => s.Id).ToList());
 
+    private bool _disposed;
+
+    /// <summary>
+    /// Releases everything this service owns for the lifetime of the app: the 30 s refresh timer,
+    /// the server change stream (its CancellationTokenSource plus the reader loop running on it),
+    /// both lazily imported JS modules, and - the part that used to be missing - the two callbacks
+    /// the constructor registered on SessionTokenStore. That store outlives an individual
+    /// AppStateService (the native host builds a fresh scoped provider on a relogin while keeping
+    /// the singleton store), so a left-behind OnTokenAvailable handler kept every disposed
+    /// instance alive and let it open a SECOND change stream on the next login - one extra SSE
+    /// connection and one extra poll loop per session, none of them ever released.
+    /// Idempotent (a second call does nothing) and never throws: on a tab close the JS runtime is
+    /// already gone, so both module disposals stay best-effort, exactly as the accent module
+    /// always was.
+    /// The queue gate (a SemaphoreSlim) is deliberately NOT disposed: it holds no unmanaged handle
+    /// (nothing ever touches AvailableWaitHandle), while a fire-and-forget queue replay started by
+    /// the change stream may still be inside it and would get an ObjectDisposedException instead
+    /// of finishing its localStorage write.
+    /// </summary>
     public async ValueTask DisposeAsync()
     {
+        if (_disposed) return;
+        _disposed = true;
+
+        // Unhook first, so nothing can restart the stream while it is being torn down.
+        _sessionTokenStore.OnTokenAvailable -= StartChangeStream;
+        // Composition hook from the constructor - only clear it while it is still ours: during a
+        // relogin a newer AppStateService may already have taken it over.
+        Func<Task> ownPurgeHook = PurgeOnLogoutAsync;
+        if (_sessionTokenStore.OnLoggedOutAsync == ownPurgeHook)
+            _sessionTokenStore.OnLoggedOutAsync = null;
+
+        StopChangeStream();
+
         if (_refreshTimer != null)
         {
             await _refreshTimer.DisposeAsync();
@@ -692,6 +724,11 @@ public class AppStateService : IAsyncDisposable
         {
             try { await _accentModule.DisposeAsync(); } catch { /* connection may already be gone (tab close) */ }
             _accentModule = null;
+        }
+        if (_cachePurgeModule != null)
+        {
+            try { await _cachePurgeModule.DisposeAsync(); } catch { /* connection may already be gone (tab close) */ }
+            _cachePurgeModule = null;
         }
     }
 

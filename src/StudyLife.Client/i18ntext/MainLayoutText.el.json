@@ -32,5 +32,9 @@
   "PendingSyncTooltip": "{0} αλλαγές αναμένουν συγχρονισμό",
   "UpdateAvailableText": "Διαθέσιμη νέα έκδοση",
   "UpdateReloadButton": "Επαναφόρτωση",
-  "AgentChatLabel": "Βοηθός AI"
+  "AgentChatLabel": "Βοηθός AI",
+  "AriaCloseDialog": "Κλείσιμο παραθύρου διαλόγου",
+  "AriaDismissUpdate": "Απόκρυψη ειδοποίησης ενημέρωσης",
+  "AriaOpenMenu": "Άνοιγμα μενού",
+  "AriaCloseMenu": "Κλείσιμο μενού"
 }

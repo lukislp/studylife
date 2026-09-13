@@ -32,5 +32,9 @@
   "PendingSyncTooltip": "{0} muutosta odottaa synkronointia",
   "UpdateAvailableText": "Uusi versio saatavilla",
   "UpdateReloadButton": "Lataa uudelleen",
-  "AgentChatLabel": "Tekoälyavustaja"
+  "AgentChatLabel": "Tekoälyavustaja",
+  "AriaCloseDialog": "Sulje valintaikkuna",
+  "AriaDismissUpdate": "Ohita päivitysilmoitus",
+  "AriaOpenMenu": "Avaa valikko",
+  "AriaCloseMenu": "Sulje valikko"
 }

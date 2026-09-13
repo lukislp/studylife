@@ -15,5 +15,6 @@
   "ErrorGeneric": "Algo salió mal. Inténtalo de nuevo.",
   "PendingActionTitle": "Esta acción necesita tu confirmación",
   "Approve": "Aprobar",
-  "Reject": "Rechazar"
+  "Reject": "Rechazar",
+  "AriaCloseDialog": "Cerrar diálogo"
 }

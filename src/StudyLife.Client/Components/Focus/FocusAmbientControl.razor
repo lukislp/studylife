@@ -1,5 +1,5 @@
 <div class="ambient-control">
-    <button class="btn-timer ambient-toggle @(SoundType != "off" ? "active" : "")" @onclick="() => OnTogglePopover.InvokeAsync()" title="@AmbientSoundTitle">
+    <button class="btn-timer ambient-toggle @(SoundType != "off" ? "active" : "")" aria-label="@AmbientSoundTitle" @onclick="() => OnTogglePopover.InvokeAsync()" title="@AmbientSoundTitle">
         @(SoundType == "off" ? "🔈" : "🔊")
     </button>
     @if (IsOpen)

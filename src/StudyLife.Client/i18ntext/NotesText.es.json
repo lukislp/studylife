@@ -53,5 +53,6 @@
   "DictateSilent": "No se detectó voz",
   "DictateBrowserVoice": "Escuchando mediante el reconocimiento de voz del navegador…",
   "CaptureSourceLinkLabel": "Ver original",
-  "RelatedNotesLabel": "Notas relacionadas"
+  "RelatedNotesLabel": "Notas relacionadas",
+  "AriaCloseDialog": "Cerrar diálogo"
 }

@@ -48,7 +48,7 @@
             <div class="heatmap-detail">
                 <div class="heatmap-detail-head">
                     <span class="heatmap-detail-date">@_selectedCell.WeekdayLabel, @($"{_selectedCell.Hour:00}:00–{(_selectedCell.Hour + 1) % 24:00}:00")</span>
-                    <button type="button" class="heatmap-detail-close" @onclick="() => _selectedCell = null">✕</button>
+                    <button type="button" class="heatmap-detail-close" aria-label="@CloseDetailsLabel" @onclick="() => _selectedCell = null">✕</button>
                 </div>
                 @if (_selectedCell.Courses.Count == 0)
                 {
@@ -86,6 +86,7 @@
     [Parameter] public string Label { get; set; } = "";
     [Parameter] public List<List<TimeHeatCell>> Rows { get; set; } = new();
     [Parameter] public string NoSessionText { get; set; } = "";
+    [Parameter] public string CloseDetailsLabel { get; set; } = "";
     [Parameter] public string LessText { get; set; } = "";
     [Parameter] public string MoreText { get; set; } = "";
     [Parameter] public string TooltipFormat { get; set; } = "";

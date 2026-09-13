@@ -54,5 +54,8 @@
   "TemplateNamePlaceholder": "Mallens namn",
   "TemplateNameRequiredError": "Ange ett namn för mallen.",
   "TemplateSaveFailed": "Mallen kunde inte sparas.",
-  "WeekPlanLinkButton": "Skriv ut veckoplan"
+  "WeekPlanLinkButton": "Skriv ut veckoplan",
+  "AriaCloseDialog": "Stäng dialogruta",
+  "AriaPreviousWeek": "Föregående vecka",
+  "AriaNextWeek": "Nästa vecka"
 }

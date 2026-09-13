@@ -54,5 +54,8 @@
   "TemplateNamePlaceholder": "Skabelonnavn",
   "TemplateNameRequiredError": "Angiv venligst et navn til skabelonen.",
   "TemplateSaveFailed": "Skabelonen kunne ikke gemmes.",
-  "WeekPlanLinkButton": "Print ugeplan"
+  "WeekPlanLinkButton": "Print ugeplan",
+  "AriaCloseDialog": "Luk dialog",
+  "AriaPreviousWeek": "Forrige uge",
+  "AriaNextWeek": "Næste uge"
 }

@@ -15,5 +15,6 @@
   "ErrorGeneric": "Er is iets misgegaan. Probeer het opnieuw.",
   "PendingActionTitle": "Deze actie heeft jouw bevestiging nodig",
   "Approve": "Goedkeuren",
-  "Reject": "Afwijzen"
+  "Reject": "Afwijzen",
+  "AriaCloseDialog": "Dialoogvenster sluiten"
 }

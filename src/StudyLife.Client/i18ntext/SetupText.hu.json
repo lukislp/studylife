@@ -286,5 +286,9 @@
   "MarketplaceDemoNotice": "A bővítmények telepítése le van tiltva ezen a demó példányon.",
   "ClientKeysHeading": "Csatlakoztatott kiegészítők",
   "TelemetryHeading": "Használati és hibajelentések",
-  "TelemetryDesc": "Segít nekünk megtalálni a hibákat és a lassú részeket névtelen teljesítmény- és hibaadatok küldésével — soha nem a jegyzeteidet, munkameneteidet vagy egészségügyi adataidat. Ezt bármikor kikapcsolhatod."
+  "TelemetryDesc": "Segít nekünk megtalálni a hibákat és a lassú részeket névtelen teljesítmény- és hibaadatok küldésével — soha nem a jegyzeteidet, munkameneteidet vagy egészségügyi adataidat. Ezt bármikor kikapcsolhatod.",
+  "AriaCloseDialog": "Párbeszédpanel bezárása",
+  "AriaRemoveGroup": "Csoport eltávolítása",
+  "AriaRemoveCourse": "Kurzus eltávolítása",
+  "AriaDeleteTimerMode": "Időzítő mód törlése"
 }

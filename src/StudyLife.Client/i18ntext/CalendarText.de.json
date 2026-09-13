@@ -54,5 +54,8 @@
   "TemplateNamePlaceholder": "Name der Vorlage",
   "TemplateNameRequiredError": "Bitte einen Namen für die Vorlage angeben.",
   "TemplateSaveFailed": "Die Vorlage konnte nicht gespeichert werden.",
-  "WeekPlanLinkButton": "Wochenplan drucken"
+  "WeekPlanLinkButton": "Wochenplan drucken",
+  "AriaCloseDialog": "Dialog schließen",
+  "AriaPreviousWeek": "Vorherige Woche",
+  "AriaNextWeek": "Nächste Woche"
 }

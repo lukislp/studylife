@@ -77,5 +77,6 @@
   "RegisterInviteRequiredHint": "Reģistrācijai nepieciešama uzaicinājuma saite. Izmanto saņemto saiti.",
   "RegisterInviteInvalid": "Šī uzaicinājuma saite nav derīga, ir beigusies vai jau izmantota.",
   "PasskeysRevokeOthers": "Izrakstīties visās citās ierīcēs",
-  "PasskeysRevokeOthersDone": "Visas citas ierīces ir izrakstītas."
+  "PasskeysRevokeOthersDone": "Visas citas ierīces ir izrakstītas.",
+  "AriaCloseDialog": "Aizvērt dialoglodziņu"
 }

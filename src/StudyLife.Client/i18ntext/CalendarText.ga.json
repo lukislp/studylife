@@ -54,5 +54,8 @@
   "TemplateNamePlaceholder": "Ainm an teimpléid",
   "TemplateNameRequiredError": "Cuir ainm isteach don teimpléad le do thoil.",
   "TemplateSaveFailed": "Níorbh fhéidir an teimpléad a shábháil.",
-  "WeekPlanLinkButton": "Priontáil an plean seachtainiúil"
+  "WeekPlanLinkButton": "Priontáil an plean seachtainiúil",
+  "AriaCloseDialog": "Dún an dialóg",
+  "AriaPreviousWeek": "An tseachtain roimhe",
+  "AriaNextWeek": "An tseachtain seo chugainn"
 }

@@ -104,5 +104,6 @@
     "CourseSparkTooltip":  "Години на тиждень, останні 12 тижнів",
     "CourseEctsRingFormat":  "{0} з {1} ECTS здобуто",
     "WeekdayRanking":  "Рейтинг днів тижня",
-    "WeekdayRankingSubtitle":  "Який день тижня приносить найбільше годин навчання"
+    "WeekdayRankingSubtitle":  "Який день тижня приносить найбільше годин навчання",
+    "AriaCloseDetails":  "Закрити подробиці"
 }

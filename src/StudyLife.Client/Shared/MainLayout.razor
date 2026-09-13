@@ -46,7 +46,7 @@
             {
                 <span>@T.UpdateAvailableText</span>
                 <button type="button" class="btn-primary" @onclick="ReloadForUpdateAsync">@T.UpdateReloadButton</button>
-                <button type="button" class="ut-close" @onclick="() => _updateAvailable = false">✕</button>
+                <button type="button" class="ut-close" aria-label="@T.AriaDismissUpdate" @onclick="() => _updateAvailable = false">✕</button>
             }
         </div>
     }
@@ -124,10 +124,10 @@
         else if (_fabOpen)
         {
             <div class="fab-actions" @onclick:stopPropagation="true">
-                <button class="fab-action" title="@T.SearchLabel" @onclick="OpenSearchFromFab">
+                <button class="fab-action" aria-label="@T.SearchLabel" title="@T.SearchLabel" @onclick="OpenSearchFromFab">
                     <span>⌕</span>
                 </button>
-                <button class="fab-action" title="@CurrentLanguage.Name" @onclick="OpenLangFromFab">
+                <button class="fab-action" aria-label="@CurrentLanguage.Name" title="@CurrentLanguage.Name" @onclick="OpenLangFromFab">
                     <span class="lang-flag">@CurrentLanguage.Flag</span>
                 </button>
                 @* Hidden on public demo instances: push subscription and passkey/device-link
@@ -135,19 +135,19 @@
                    dialogs would only ever show errors there. Search + language stay. *@
                 @if (!_demoMode)
                 {
-                    <button class="fab-action" title="@T.PushDevicesLabel" @onclick="OpenDeviceManagerFromFab">
+                    <button class="fab-action" aria-label="@T.PushDevicesLabel" title="@T.PushDevicesLabel" @onclick="OpenDeviceManagerFromFab">
                         <span>🔔</span>
                     </button>
-                    <button class="fab-action" title="@T.PasskeysLabel" @onclick="OpenPasskeyManagerFromFab">
+                    <button class="fab-action" aria-label="@T.PasskeysLabel" title="@T.PasskeysLabel" @onclick="OpenPasskeyManagerFromFab">
                         <span>🔑</span>
                     </button>
-                    <button class="fab-action" title="@T.AgentChatLabel" @onclick="OpenAgentChatFromFab">
+                    <button class="fab-action" aria-label="@T.AgentChatLabel" title="@T.AgentChatLabel" @onclick="OpenAgentChatFromFab">
                         <span>💬</span>
                     </button>
                 }
             </div>
         }
-        <button class="fab-main @(_fabOpen || _langPopupOpen ? "open" : "")" @onclick="ToggleFab" @onclick:stopPropagation="true">
+        <button class="fab-main @(_fabOpen || _langPopupOpen ? "open" : "")" aria-label="@(_fabOpen || _langPopupOpen ? T.AriaCloseMenu : T.AriaOpenMenu)" @onclick="ToggleFab" @onclick:stopPropagation="true">
             <span>@((_fabOpen || _langPopupOpen) ? "✕" : "⋯")</span>
         </button>
     </div>

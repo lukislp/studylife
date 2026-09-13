@@ -104,5 +104,6 @@
     "CourseSparkTooltip":  "Valandos per savaitę, paskutinės 12 savaičių",
     "CourseEctsRingFormat":  "{0} iš {1} ECTS gauta",
     "WeekdayRanking":  "Savaitės dienų reitingas",
-    "WeekdayRankingSubtitle":  "Kuri savaitės diena duoda daugiausia studijų valandų"
+    "WeekdayRankingSubtitle":  "Kuri savaitės diena duoda daugiausia studijų valandų",
+    "AriaCloseDetails":  "Uždaryti išsamią informaciją"
 }
