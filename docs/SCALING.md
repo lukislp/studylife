@@ -1658,10 +1658,28 @@ sealing (used locally, NOT committed to the repo). `k8s/sealed-secrets/` deliber
 outside `bootstrap-cluster.ps1`'s automatic glob loop (its own subdirectory) - applying it is an
 explicit, deliberate step.
 
-**7 secrets migrated** (real, human-created credential material - NOT the CNPG/cnpg-system
-internal CA/TLS secrets that the operator automatically regenerates itself):
+**7 secrets migrated initially** (real, human-created credential material - NOT the
+CNPG/cnpg-system internal CA/TLS secrets that the operator automatically regenerates itself):
 `r2-backup-credentials`, `studylife-secrets`, `studylife-pg-app-secret` (all in
 `studylife-scale`), `studylife-git-auth`, `studylife-registry-auth` (both in `flux-system`).
+
+**Completed cluster-wide on 2026-09-13** - until then eleven more hand-created secrets still
+existed only inside the cluster, so a rebuild would have lost them permanently. Every one of
+them is now sealed, in the repo that owns the app it belongs to:
+
+| Secret | Lives in |
+| --- | --- |
+| `studylife-scale/redis-auth`, `studylife-scale/studylife-apns` | this repo, `k8s/sealed-secrets/studylife-scale/` |
+| `velero/velero-r2-credentials`, `velero/velero-repo-credentials`, `tailscale/operator-oauth` | `homelab-infra`, `sealed-secrets/<namespace>/` |
+| `studylife-ai`, `studylife-alexa`, `studylife-mcp`, `studylife-webhooks`, `studylife-developers` (one `*-secrets` each) | each app's own repo, `k8s/02-secret-sealed.yaml`, next to the placeholder `k8s/02-secret.yaml` |
+| `homelab-autodoc/autodoc-server-secrets` | `homelab-autodoc`, `k8s/01-secrets-sealed.yaml` |
+
+Deliberately still NOT sealed, for the same reason as the CNPG ones above - something else
+owns and rotates them, and freezing a copy would either be overwritten or, worse, win and
+pin a stale certificate: `cert-manager/cert-manager-webhook-ca`, `cnpg-system/cnpg-ca-secret`,
+`metallb-system/memberlist` + `metallb-webhook-cert`, the `*.node-password.k3s` secrets in
+`kube-system`, and the Tailscale operator's own device state (`tailscale/operator`, the
+`ts-*-funnel-*` secrets) - only its OAuth client, which a human created, is sealed.
 
 **Conflict found live (important)**: `studylife-tls`/`grafana-tls` were INITIALLY migrated too,
 but had to be removed again - both are now managed by cert-manager (see the TLS section above)
@@ -1693,6 +1711,16 @@ newly generated password (not just a byte comparison) - the CNPG cluster stayed 
 
 `studylife-tls`/`grafana-tls` deliberately remain OUTSIDE this management (see above - cert-manager
 is the sole owner here).
+
+**Adoption without deleting anything (2026-09-13, the method to use from now on)**: the
+controller does adopt a foreign Secret if that Secret asks it to - annotate the live Secret
+`sealedsecrets.bitnami.com/managed=true`, then `kubectl apply -f <the one sealed file>`. The
+Secret gains an `ownerReference` of kind `SealedSecret` and the SealedSecret reports
+`Synced: True`, with no deletion window at all, so no pod can ever observe a missing Secret -
+strictly better than the delete-both-and-reapply dance described above. Verification used for
+all eleven: a sha256 per key captured BEFORE and compared AFTER (must be byte-identical - a
+single changed byte breaks the app), then `Synced: True` plus the consuming pods still Ready
+and un-restarted. An unchanged Secret needs no rollout, so none was triggered.
 
 **CRITICAL**: the controller generates its own TLS key pair (a secret labeled
 `sealedsecrets.bitnami.com/sealed-secrets-key` in the controller namespace) - if this key is
