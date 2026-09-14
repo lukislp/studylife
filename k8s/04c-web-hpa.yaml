@@ -5,6 +5,11 @@
 # previous fixed 2) for the same reason as the worker: "scaling down" only becomes visible with
 # a real lower bound. maxReplicas=4 as a Pi-appropriate upper bound (4x the 900m CPU limit from
 # k8s/04-web.yaml = 3600m, still under a single node's 4-core capacity).
+#
+# minReplicas raised back to 2 on 2026-09-14: with only two schedulable nodes (pinode01 carries
+# studylife/relief:NoSchedule) and nodes that demonstrably stall under I/O pressure for a minute
+# at a time, a single replica turns one stalled node into a full outage. The PodDisruptionBudget
+# for web asks for minAvailable 1, which a single replica can never satisfy during a drain either.
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -15,7 +20,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: studylife-web
-  minReplicas: 1
+  minReplicas: 2
   maxReplicas: 4
   metrics:
     - type: Resource
@@ -26,12 +31,22 @@ spec:
           averageUtilization: 70
     # Memory as a second signal (2026-09 audit M8): the documented failure mode of this pod is
     # OOM from resident speech models, which CPU utilization does not see coming.
+    #
+    # AverageValue, NOT Utilization. Utilization is measured against the 300Mi *request*, but the
+    # pod's idle baseline is already ~245Mi of .NET runtime and caches, i.e. 79% before a single
+    # model is loaded. That sits permanently above any sane Utilization target, so the autoscaler
+    # pinned the deployment at maxReplicas around the clock while CPU sat at 3%, and extra
+    # replicas cannot lower a per-pod baseline. Measured live on 2026-09-14.
+    #
+    # 800Mi is chosen against the 1200Mi limit in k8s/04-web.yaml, not against the request: a pod
+    # holding the ~600Mi of speech models noted under scaleUp below pushes the average towards it
+    # and scales out while 400Mi of headroom to the limit remain. Idle pods stay far below it.
     - type: Resource
       resource:
         name: memory
         target:
-          type: Utilization
-          averageUtilization: 75
+          type: AverageValue
+          averageValue: 800Mi
   behavior:
     # Same trade-off as for the worker: cautious scale-down (5-minute stabilization window
     # instead of immediate), so a brief drop in a load spike doesn't immediately trigger
