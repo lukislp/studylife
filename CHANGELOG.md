@@ -1,3 +1,10 @@
+## [3.16.20](https://github.com/lukislp/studylife/compare/v3.16.19...v3.16.20) (2026-09-14)
+
+
+### Bug Fixes
+
+* **k8s:** stop the web autoscaler pinning itself at maxReplicas ([#230](https://github.com/lukislp/studylife/issues/230)) ([a4d558e](https://github.com/lukislp/studylife/commit/a4d558e98e76de2daf4a95f5165d495cb741ad65))
+
 ## [3.16.19](https://github.com/lukislp/studylife/compare/v3.16.18...v3.16.19) (2026-09-13)
 
 
