@@ -111,7 +111,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: studylife
-          image: ghcr.io/lukislp/studylife-server:3.16.19 # set by the deploy-bump job (ci-cd.yml) on every release
+          image: ghcr.io/lukislp/studylife-server:3.16.20 # set by the deploy-bump job (ci-cd.yml) on every release
           imagePullPolicy: Always
           lifecycle:
             preStop:
