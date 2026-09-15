@@ -12,8 +12,7 @@ namespace StudyLife.Client.Services;
 /// over the wire) is reused here rather than inventing a parallel type - it is already a plain
 /// class, not a value tuple, so it doesn't trip the Mono AOT LINQ-over-tuple crash documented on
 /// <see cref="CardioFitnessPoint"/>, and duplicating an already-non-tuple shape only to satisfy
-/// the letter of "a small sealed class" would be exactly the premature-abstraction CLAUDE.md
-/// warns against.
+/// the letter of "a small sealed class" would be premature abstraction for no gain.
 /// </summary>
 public interface INativeTelemetry
 {
