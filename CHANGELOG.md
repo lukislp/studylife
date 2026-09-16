@@ -1,3 +1,10 @@
+# [3.17.0](https://github.com/lukislp/studylife/compare/v3.16.21...v3.17.0) (2026-09-16)
+
+
+### Features
+
+* **auth:** let add-ons start, pause and stop the live timer ([#240](https://github.com/lukislp/studylife/issues/240)) ([12e7a26](https://github.com/lukislp/studylife/commit/12e7a268b0e3d95aeb981ac54800f0a66a6b7d48))
+
 ## [3.16.21](https://github.com/lukislp/studylife/compare/v3.16.20...v3.16.21) (2026-09-16)
 
 
