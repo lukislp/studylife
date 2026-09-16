@@ -111,6 +111,24 @@ public class DeveloperControllerTests : IClassFixture<CustomWebApplicationFactor
     }
 
     [Fact]
+    public async Task Create_TimerStateSaveScope_IsAccepted()
+    {
+        // TimerState.Save is the one publicly grantable scope that no hardcoded slot has - see the
+        // reasoning at its entry in ApiKeyScopes.PubliclyGrantable. Writing the timer used to be
+        // session-only, so this asserts the grant itself, not just that some scope round-trips.
+        var request = ValidRequest("editor-integration");
+        request.RequestedScopes = new List<string> { "TimerState.Get", "TimerState.Save" };
+
+        var response = await _client.PostAsJsonAsync("/api/developer/clients", request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var created = await response.Content.ReadFromJsonAsync<DeveloperClientDto>();
+        Assert.Contains("TimerState.Save", created!.RequestedScopes);
+
+        await _client.DeleteAsync("/api/developer/clients/editor-integration");
+    }
+
+    [Fact]
     public async Task Update_AddsAScope_PersistsOnTheRegistrationOnly()
     {
         await _client.PostAsJsonAsync("/api/developer/clients", ValidRequest("expandable-client"));

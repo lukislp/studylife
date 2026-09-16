@@ -26,6 +26,7 @@ public static class MarketplaceScopeLabels
         ["CourseGoals.Save"] = "Set course goals",
         ["CourseGoals.Delete"] = "Delete course goals",
         ["TimerState.Get"] = "Read live timer state",
+        ["TimerState.Save"] = "Start, pause and stop the live timer",
         ["Courses.GetAll"] = "Read the course catalog",
         ["StudyPrograms.GetAll"] = "Read study programs",
         ["StudyPrograms.Get"] = "Read a study program's detail",
