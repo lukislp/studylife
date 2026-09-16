@@ -229,7 +229,8 @@ public static class ApiKeyScopes
     /// those stay reachable only via a session or one of the 8 pre-vetted, code-reviewed slots,
     /// never via a scope an arbitrary third-party developer can self-select. Every entry here
     /// mirrors something already proven safe to expose, drawn from the union of Ha/Ai/Mcp/
-    /// Capture/Webhooks above.
+    /// Capture/Webhooks above - with ONE deliberate exception, TimerState.Save, whose reasoning
+    /// is spelled out at its entry below.
     /// </summary>
     public static readonly IReadOnlySet<Endpoint> PubliclyGrantable = new HashSet<Endpoint>
     {
@@ -248,6 +249,23 @@ public static class ApiKeyScopes
         new("CourseGoals", "Save"),
         new("CourseGoals", "Delete"),
         new("TimerState", "Get"),
+        // The one entry here NOT mirrored from a hardcoded slot above: no slot has ever been
+        // granted TimerState.Save, writing the timer was session-only until now. Exposed
+        // deliberately so an add-on can start/pause/stop a session where the user actually is -
+        // editor, chat, voice - instead of only reporting what the browser already started.
+        // Safe for three reasons that do not hold for the write endpoints kept out of this list:
+        //  1. The write path was BUILT for foreign pushers. TimerStateService.SaveAsync is
+        //     last-write-wins with a RowVersion retry, answers 200 with the authoritative row
+        //     instead of 409, and accepts a MISSING ClientSequence precisely so clients that
+        //     know nothing about sequence numbers can push (its doc comment names Home Assistant
+        //     and "any other pusher"). A second writer is anticipated, not tolerated.
+        //  2. Nothing is destroyed. The worst case is a running session the user did not intend,
+        //     which they end with one click - unlike Notes.Delete or Settings.Save, there is no
+        //     state here that cannot be trivially undone.
+        //  3. It is granted per client on the consent screen, where it reads as "Start, pause and
+        //     stop the live timer" (MarketplaceScopeLabels) - the user sees exactly what they
+        //     hand over, and to whom.
+        new("TimerState", "Save"),
         new("Courses", "GetAll"),
         new("StudyPrograms", "GetAll"),
         new("StudyPrograms", "Get"),
