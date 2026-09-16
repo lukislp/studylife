@@ -1,3 +1,10 @@
+## [3.16.21](https://github.com/lukislp/studylife/compare/v3.16.20...v3.16.21) (2026-09-16)
+
+
+### Bug Fixes
+
+* **k8s:** drop the root init container from the Redis pod ([#239](https://github.com/lukislp/studylife/issues/239)) ([f7bce39](https://github.com/lukislp/studylife/commit/f7bce39341e3e2c5e7cb3f460d9984f911b4497d))
+
 ## [3.16.20](https://github.com/lukislp/studylife/compare/v3.16.19...v3.16.20) (2026-09-14)
 
 
