@@ -123,6 +123,18 @@ spec:
       # Redis needs no Kubernetes API access whatsoever - token automount explicitly off
       # (defense in depth, prevents misuse of a mounted API token by a compromised pod).
       automountServiceAccountToken: false
+      # Replaces the root init container that used to chown /data on every start.
+      # The kubelet applies this group to the volume at mount time, so the non-root
+      # redis below can write its dump and cluster state without anything in this pod
+      # ever running as root - which was the only thing keeping this workload off the
+      # restricted Pod Security level. OnRootMismatch skips the recursive walk when the
+      # top-level ownership already matches, which is the normal case once a volume has
+      # been mounted before. Existing volumes are already owned by 999:999 from the old
+      # init container, so nothing has to be fixed up on the first rollout.
+      # Same shape the Redis in claude-queue-platform already uses.
+      securityContext:
+        fsGroup: 999
+        fsGroupChangePolicy: OnRootMismatch
       # Soft (preferred), not hard - see the k8s/04-web.yaml comment. With 6 pods across e.g. 4
       # nodes, at least 2 nodes will get 2 pods each anyway, but the anti-affinity still helps
       # the scheduler avoid placing a master and its corresponding replica (from "redis-cli
@@ -137,20 +149,6 @@ spec:
                 labelSelector:
                   matchLabels: { app: redis-cluster }
                 topologyKey: kubernetes.io/hostname
-      initContainers:
-        # /data was written by the root era (the explicit redis-server command
-        # bypasses the image entrypoint's own user drop, so the process really
-        # ran as root); chown on every start - idempotent - so the non-root
-        # redis below keeps writing its dump and cluster state. The only root
-        # in the pod.
-        - name: fix-data-ownership
-          image: busybox:1.38.0
-          command: ["chown", "-R", "999:999", "/data"]
-          securityContext:
-            runAsUser: 0
-          volumeMounts:
-            - name: data
-              mountPath: /data
       containers:
         - name: redis
           # Pinned by digest instead of the floating "7-alpine" tag: with a floating tag every
