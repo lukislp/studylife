@@ -1,3 +1,11 @@
+## [3.17.1](https://github.com/lukislp/studylife/compare/v3.17.0...v3.17.1) (2026-09-17)
+
+
+### Bug Fixes
+
+* **deps:** Bump bunit from 2.10.3 to 2.11.3 ([4776b00](https://github.com/lukislp/studylife/commit/4776b0020a073f4a0982a63dfe861ba398d6aff2))
+* **deps:** Bump the dotnet group with 1 update ([d320741](https://github.com/lukislp/studylife/commit/d3207410b1124486ea6f72705d390db53cc835ee))
+
 # [3.17.0](https://github.com/lukislp/studylife/compare/v3.16.21...v3.17.0) (2026-09-16)
 
 
