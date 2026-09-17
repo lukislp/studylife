@@ -141,7 +141,7 @@ jobs:
       - run: dotnet workload restore StudyLife.sln
       - run: dotnet restore StudyLife.sln --locked-mode
       - name: Known-vulnerable NuGet packages (High/Critical fail the build)
-        uses: lukislp/ci-workflows/.github/actions/nuget-severity-gate@d44f7d506a81c2b2ae01ccecc755611df2516142 # v1.5.1
+        uses: lukislp/ci-workflows/.github/actions/nuget-severity-gate@6359eceb62d0b73e016578fe970182a430aa0ba4 # v1.5.3
         with:
           solution: StudyLife.sln
 
@@ -305,14 +305,14 @@ jobs:
       # this: @semantic-release/git's verifyConditions runs `git push --dry-run` even in
       # get-version's dry-run mode. Setup: see enable-main-protection.sh next to the repo.
       - name: Push as the semantic-release deploy key (if configured)
-        uses: lukislp/ci-workflows/.github/actions/deploy-key-push@d44f7d506a81c2b2ae01ccecc755611df2516142 # v1.5.1
+        uses: lukislp/ci-workflows/.github/actions/deploy-key-push@6359eceb62d0b73e016578fe970182a430aa0ba4 # v1.5.3
         with:
           deploy-key: ${{ secrets.SEMANTIC_RELEASE_DEPLOY_KEY }}
       # The action derives new_release_version / new_release_published from semantic-release's
       # own dry-run log line and treats "no relevant changes" (which exits non-zero, observed
       # 2026-09-11 on a ci:-only push) as the expected no-release outcome, not a red job.
       - id: semrel
-        uses: lukislp/ci-workflows/.github/actions/semantic-release@d44f7d506a81c2b2ae01ccecc755611df2516142 # v1.5.1
+        uses: lukislp/ci-workflows/.github/actions/semantic-release@6359eceb62d0b73e016578fe970182a430aa0ba4 # v1.5.3
         with:
           dry-run: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -540,7 +540,7 @@ jobs:
       # Same deploy-key push as the release jobs - the default branch only takes direct pushes
       # from that key, so this job cannot fall back to GITHUB_TOKEN.
       - name: Push as the semantic-release deploy key
-        uses: lukislp/ci-workflows/.github/actions/deploy-key-push@d44f7d506a81c2b2ae01ccecc755611df2516142 # v1.5.1
+        uses: lukislp/ci-workflows/.github/actions/deploy-key-push@6359eceb62d0b73e016578fe970182a430aa0ba4 # v1.5.3
         with:
           deploy-key: ${{ secrets.SEMANTIC_RELEASE_DEPLOY_KEY }}
           required: "true"
@@ -662,11 +662,11 @@ jobs:
       # this: @semantic-release/git's verifyConditions runs `git push --dry-run` even in
       # get-version's dry-run mode. Setup: see enable-main-protection.sh next to the repo.
       - name: Push as the semantic-release deploy key (if configured)
-        uses: lukislp/ci-workflows/.github/actions/deploy-key-push@d44f7d506a81c2b2ae01ccecc755611df2516142 # v1.5.1
+        uses: lukislp/ci-workflows/.github/actions/deploy-key-push@6359eceb62d0b73e016578fe970182a430aa0ba4 # v1.5.3
         with:
           deploy-key: ${{ secrets.SEMANTIC_RELEASE_DEPLOY_KEY }}
       - id: semrel
-        uses: lukislp/ci-workflows/.github/actions/semantic-release@d44f7d506a81c2b2ae01ccecc755611df2516142 # v1.5.1
+        uses: lukislp/ci-workflows/.github/actions/semantic-release@6359eceb62d0b73e016578fe970182a430aa0ba4 # v1.5.3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -686,7 +686,7 @@ jobs:
           fi
           git checkout -B main origin/main
       - if: steps.semrel.outcome == 'failure'
-        uses: lukislp/ci-workflows/.github/actions/semantic-release@d44f7d506a81c2b2ae01ccecc755611df2516142 # v1.5.1
+        uses: lukislp/ci-workflows/.github/actions/semantic-release@6359eceb62d0b73e016578fe970182a430aa0ba4 # v1.5.3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       # Signed release asset (OpenSSF Scorecard "Signed-Releases"): the same keyless Sigstore
