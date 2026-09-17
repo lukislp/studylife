@@ -88,7 +88,7 @@ flowchart LR
     StudyLifeFocus -- "X-Api-Key\n(read-only, 2 fixed slots)" --> API
     Cli -- "X-Api-Key\n(dynamic OAuth client)" --> API
     VsCode -- "X-Api-Key\n(dynamic OAuth client)" --> API
-    Telegram -- "X-Api-Key\n(dynamic OAuth client, single account)" --> API
+    Telegram -- "X-Api-Key\n(dynamic OAuth client, per chat)" --> API
     Alexa -- "account linking\n(dynamic OAuth client)" --> API
     Display -- "X-Api-Key\n(dynamic OAuth client, read-only)" --> API
 ```
@@ -439,7 +439,7 @@ exactly those scopes, and the resulting key can only reach what it asked for.
 | [studylife-focus](https://github.com/lukislp/studylife-focus) | Chrome extension (MV3): Guard blocks/allows sites during a session, Tune switches a Spotify playlist | Two fixed slots `focusguard`/`focustunes`, each via its own consent flow | Yes (`GET /api/timerstate` only) |
 | [studylife-cli](https://github.com/lukislp/studylife-cli) | Terminal client for notes, sessions, goals, timer, courses, programs, webhooks; `--json` on every command | Dynamic OAuth client (`studylife login` opens the browser) | No (whichever write scopes you grant) |
 | [studylife-vscode](https://github.com/lukislp/studylife-vscode) | VS Code sidebar: control the focus timer, log coding time as study sessions | Dynamic OAuth client | No (`TimerState.Save`, `Sessions.Create`) |
-| [studylife-telegram](https://github.com/lukislp/studylife-telegram) | Telegram bot: start/pause/stop the timer, today/agenda, quick notes, session-event and reminder messages | Dynamic OAuth client, one key for the single account it serves (chat allowlist on the bot side); receives events as a studylife-webhooks subscriber | No (timer, sessions, notes) |
+| [studylife-telegram](https://github.com/lukislp/studylife-telegram) | Telegram bot: start/pause/stop the timer, today/agenda, quick notes, session-event and reminder messages | Dynamic OAuth client, one key per chat obtained with `/login` (PKCE, callback on the bot); receives events as a studylife-webhooks subscriber | No (timer, sessions, notes) |
 | [studylife-alexa](https://github.com/lukislp/studylife-alexa) | Alexa Skill backend: study time, next session, goals, program progress, note search, create a note by voice | Account linking: its own OAuth 2.0 server wraps the dynamic-client consent flow | Mostly (only `Notes.Create` writes) |
 | [studylife-display](https://github.com/lukislp/studylife-display) | Raspberry Pi e-paper dashboard: today's hours, streak, next exam countdown, weekly goal, heatmap, timer line | Dynamic OAuth client with three read scopes | Yes |
 | [studylife-webhooks](https://github.com/lukislp/studylife-webhooks) | Outbound fan-out: signed HTTP callbacks for session/note/goal/... events to Zapier, n8n, Discord, bots | StudyLife calls it with a shared secret; subscriptions are managed from the Setup page or with a named fixed-slot `webhooks` key | n/a (never calls back into study data) |
