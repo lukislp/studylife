@@ -1,3 +1,10 @@
+## [3.17.3](https://github.com/lukislp/studylife/compare/v3.17.2...v3.17.3) (2026-09-20)
+
+
+### Bug Fixes
+
+* **ci:** load the SSH public key for the deploy-bump commit signature ([#249](https://github.com/lukislp/studylife/issues/249)) ([9982939](https://github.com/lukislp/studylife/commit/99829393986226c556bfed0195d48ba718c6dea2)), closes [#248](https://github.com/lukislp/studylife/issues/248)
+
 ## [3.17.2](https://github.com/lukislp/studylife/compare/v3.17.1...v3.17.2) (2026-09-20)
 
 
