@@ -1,3 +1,10 @@
+## [3.17.2](https://github.com/lukislp/studylife/compare/v3.17.1...v3.17.2) (2026-09-20)
+
+
+### Bug Fixes
+
+* **ci:** SSH-sign the deploy-bump commit ([#248](https://github.com/lukislp/studylife/issues/248)) ([59e22b6](https://github.com/lukislp/studylife/commit/59e22b67f8f0b3aa04d25ebf3cfc346ae4e54584))
+
 ## [3.17.1](https://github.com/lukislp/studylife/compare/v3.17.0...v3.17.1) (2026-09-17)
 
 
