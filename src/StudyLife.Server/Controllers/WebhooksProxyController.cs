@@ -42,6 +42,7 @@ public class WebhooksProxyController : ControllerBase
         ProxyAsync(() => _client.ListWebhooksAsync(_currentUser.AuthUserId, ct));
 
     [HttpPost]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting(RateLimitPolicies.Expensive)]
     public async Task<IActionResult> Create([FromBody] CreateWebhookRequestDto dto, CancellationToken ct)
     {
         // The target is a URL studylife-webhooks later POSTs to unattended from inside the

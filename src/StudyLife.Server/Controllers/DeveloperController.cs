@@ -32,6 +32,7 @@ public class DeveloperController : ControllerBase
     public async Task<ActionResult<List<DeveloperClientDto>>> GetAll() => await _clients.GetAllAsync();
 
     [HttpPost]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting(RateLimitPolicies.Expensive)]
     public async Task<ActionResult<DeveloperClientDto>> Create(CreateDeveloperClientRequestDto request) =>
         (await _clients.CreateAsync(request)).ToActionResult(this);
 
