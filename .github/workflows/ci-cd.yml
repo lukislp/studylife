@@ -46,7 +46,7 @@ jobs:
             ghcr.io:443
             github.com:22
             github.com:443
-            hosted-compute-watchdog-prod-iad-02.githubapp.com:443
+            *.githubapp.com:443
             mcr.microsoft.com:443
             pkg-containers.githubusercontent.com:443
             production.cloudfront.docker.com:443
@@ -144,7 +144,7 @@ jobs:
             ghcr.io:443
             github.com:22
             github.com:443
-            hosted-compute-watchdog-prod-iad-02.githubapp.com:443
+            *.githubapp.com:443
             mcr.microsoft.com:443
             pkg-containers.githubusercontent.com:443
             production.cloudfront.docker.com:443
@@ -192,7 +192,7 @@ jobs:
             ghcr.io:443
             github.com:22
             github.com:443
-            hosted-compute-watchdog-prod-iad-02.githubapp.com:443
+            *.githubapp.com:443
             mcr.microsoft.com:443
             pkg-containers.githubusercontent.com:443
             production.cloudfront.docker.com:443
@@ -244,7 +244,7 @@ jobs:
             ghcr.io:443
             github.com:22
             github.com:443
-            hosted-compute-watchdog-prod-iad-02.githubapp.com:443
+            *.githubapp.com:443
             mcr.microsoft.com:443
             pkg-containers.githubusercontent.com:443
             production.cloudfront.docker.com:443
@@ -298,7 +298,7 @@ jobs:
             ghcr.io:443
             github.com:22
             github.com:443
-            hosted-compute-watchdog-prod-iad-02.githubapp.com:443
+            *.githubapp.com:443
             mcr.microsoft.com:443
             pkg-containers.githubusercontent.com:443
             production.cloudfront.docker.com:443
@@ -364,7 +364,7 @@ jobs:
             ghcr.io:443
             github.com:22
             github.com:443
-            hosted-compute-watchdog-prod-iad-02.githubapp.com:443
+            *.githubapp.com:443
             mcr.microsoft.com:443
             pkg-containers.githubusercontent.com:443
             production.cloudfront.docker.com:443
@@ -429,7 +429,7 @@ jobs:
             ghcr.io:443
             github.com:22
             github.com:443
-            hosted-compute-watchdog-prod-iad-02.githubapp.com:443
+            *.githubapp.com:443
             mcr.microsoft.com:443
             pkg-containers.githubusercontent.com:443
             production.cloudfront.docker.com:443
@@ -481,7 +481,7 @@ jobs:
             ghcr.io:443
             github.com:22
             github.com:443
-            hosted-compute-watchdog-prod-iad-02.githubapp.com:443
+            *.githubapp.com:443
             mcr.microsoft.com:443
             pkg-containers.githubusercontent.com:443
             production.cloudfront.docker.com:443
@@ -529,7 +529,7 @@ jobs:
             ghcr.io:443
             github.com:22
             github.com:443
-            hosted-compute-watchdog-prod-iad-02.githubapp.com:443
+            *.githubapp.com:443
             mcr.microsoft.com:443
             pkg-containers.githubusercontent.com:443
             production.cloudfront.docker.com:443
@@ -598,7 +598,7 @@ jobs:
             ghcr.io:443
             github.com:22
             github.com:443
-            hosted-compute-watchdog-prod-iad-02.githubapp.com:443
+            *.githubapp.com:443
             mcr.microsoft.com:443
             pkg-containers.githubusercontent.com:443
             production.cloudfront.docker.com:443
@@ -679,7 +679,7 @@ jobs:
             ghcr.io:443
             github.com:22
             github.com:443
-            hosted-compute-watchdog-prod-iad-02.githubapp.com:443
+            *.githubapp.com:443
             mcr.microsoft.com:443
             pkg-containers.githubusercontent.com:443
             production.cloudfront.docker.com:443
@@ -776,7 +776,7 @@ jobs:
             ghcr.io:443
             github.com:22
             github.com:443
-            hosted-compute-watchdog-prod-iad-02.githubapp.com:443
+            *.githubapp.com:443
             mcr.microsoft.com:443
             pkg-containers.githubusercontent.com:443
             production.cloudfront.docker.com:443
@@ -871,7 +871,7 @@ jobs:
             ghcr.io:443
             github.com:22
             github.com:443
-            hosted-compute-watchdog-prod-iad-02.githubapp.com:443
+            *.githubapp.com:443
             mcr.microsoft.com:443
             pkg-containers.githubusercontent.com:443
             production.cloudfront.docker.com:443
@@ -979,7 +979,7 @@ jobs:
             ghcr.io:443
             github.com:22
             github.com:443
-            hosted-compute-watchdog-prod-iad-02.githubapp.com:443
+            *.githubapp.com:443
             mcr.microsoft.com:443
             pkg-containers.githubusercontent.com:443
             production.cloudfront.docker.com:443
@@ -1088,7 +1088,7 @@ jobs:
             ghcr.io:443
             github.com:22
             github.com:443
-            hosted-compute-watchdog-prod-iad-02.githubapp.com:443
+            *.githubapp.com:443
             mcr.microsoft.com:443
             pkg-containers.githubusercontent.com:443
             production.cloudfront.docker.com:443
@@ -1169,7 +1169,7 @@ jobs:
             ghcr.io:443
             github.com:22
             github.com:443
-            hosted-compute-watchdog-prod-iad-02.githubapp.com:443
+            *.githubapp.com:443
             mcr.microsoft.com:443
             pkg-containers.githubusercontent.com:443
             production.cloudfront.docker.com:443
