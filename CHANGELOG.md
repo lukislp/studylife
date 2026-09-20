@@ -1,3 +1,10 @@
+## [3.17.5](https://github.com/lukislp/studylife/compare/v3.17.4...v3.17.5) (2026-09-20)
+
+
+### Bug Fixes
+
+* **rate-limiting:** cap OAuth client and webhook registration endpoints ([#254](https://github.com/lukislp/studylife/issues/254)) ([afe4287](https://github.com/lukislp/studylife/commit/afe4287ea0bc7f647d0b7cb4d801bf8c544cf0c5))
+
 ## [3.17.4](https://github.com/lukislp/studylife/compare/v3.17.3...v3.17.4) (2026-09-20)
 
 
