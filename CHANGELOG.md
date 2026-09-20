@@ -1,3 +1,10 @@
+## [3.17.4](https://github.com/lukislp/studylife/compare/v3.17.3...v3.17.4) (2026-09-20)
+
+
+### Bug Fixes
+
+* **ci:** use the account's noreply email for the deploy-bump commit ([#250](https://github.com/lukislp/studylife/issues/250)) ([3b589ce](https://github.com/lukislp/studylife/commit/3b589ce8cd1f39460eb29012710153694c8f5d65))
+
 ## [3.17.3](https://github.com/lukislp/studylife/compare/v3.17.2...v3.17.3) (2026-09-20)
 
 
