@@ -40,10 +40,11 @@ jobs:
             auth.docker.io:443
             builds.dotnet.microsoft.com:443
             check.trivy.dev:443
-            crl3.digicert.com:443
+            crl3.digicert.com:80
             dc.services.visualstudio.com:443
             fulcio.sigstore.dev:443
             ghcr.io:443
+            github.com:22
             github.com:443
             hosted-compute-watchdog-prod-iad-02.githubapp.com:443
             mcr.microsoft.com:443
@@ -137,10 +138,11 @@ jobs:
             auth.docker.io:443
             builds.dotnet.microsoft.com:443
             check.trivy.dev:443
-            crl3.digicert.com:443
+            crl3.digicert.com:80
             dc.services.visualstudio.com:443
             fulcio.sigstore.dev:443
             ghcr.io:443
+            github.com:22
             github.com:443
             hosted-compute-watchdog-prod-iad-02.githubapp.com:443
             mcr.microsoft.com:443
@@ -184,10 +186,11 @@ jobs:
             auth.docker.io:443
             builds.dotnet.microsoft.com:443
             check.trivy.dev:443
-            crl3.digicert.com:443
+            crl3.digicert.com:80
             dc.services.visualstudio.com:443
             fulcio.sigstore.dev:443
             ghcr.io:443
+            github.com:22
             github.com:443
             hosted-compute-watchdog-prod-iad-02.githubapp.com:443
             mcr.microsoft.com:443
@@ -235,10 +238,11 @@ jobs:
             auth.docker.io:443
             builds.dotnet.microsoft.com:443
             check.trivy.dev:443
-            crl3.digicert.com:443
+            crl3.digicert.com:80
             dc.services.visualstudio.com:443
             fulcio.sigstore.dev:443
             ghcr.io:443
+            github.com:22
             github.com:443
             hosted-compute-watchdog-prod-iad-02.githubapp.com:443
             mcr.microsoft.com:443
@@ -288,10 +292,11 @@ jobs:
             auth.docker.io:443
             builds.dotnet.microsoft.com:443
             check.trivy.dev:443
-            crl3.digicert.com:443
+            crl3.digicert.com:80
             dc.services.visualstudio.com:443
             fulcio.sigstore.dev:443
             ghcr.io:443
+            github.com:22
             github.com:443
             hosted-compute-watchdog-prod-iad-02.githubapp.com:443
             mcr.microsoft.com:443
@@ -353,10 +358,11 @@ jobs:
             auth.docker.io:443
             builds.dotnet.microsoft.com:443
             check.trivy.dev:443
-            crl3.digicert.com:443
+            crl3.digicert.com:80
             dc.services.visualstudio.com:443
             fulcio.sigstore.dev:443
             ghcr.io:443
+            github.com:22
             github.com:443
             hosted-compute-watchdog-prod-iad-02.githubapp.com:443
             mcr.microsoft.com:443
@@ -417,10 +423,11 @@ jobs:
             auth.docker.io:443
             builds.dotnet.microsoft.com:443
             check.trivy.dev:443
-            crl3.digicert.com:443
+            crl3.digicert.com:80
             dc.services.visualstudio.com:443
             fulcio.sigstore.dev:443
             ghcr.io:443
+            github.com:22
             github.com:443
             hosted-compute-watchdog-prod-iad-02.githubapp.com:443
             mcr.microsoft.com:443
@@ -468,10 +475,11 @@ jobs:
             auth.docker.io:443
             builds.dotnet.microsoft.com:443
             check.trivy.dev:443
-            crl3.digicert.com:443
+            crl3.digicert.com:80
             dc.services.visualstudio.com:443
             fulcio.sigstore.dev:443
             ghcr.io:443
+            github.com:22
             github.com:443
             hosted-compute-watchdog-prod-iad-02.githubapp.com:443
             mcr.microsoft.com:443
@@ -515,10 +523,11 @@ jobs:
             auth.docker.io:443
             builds.dotnet.microsoft.com:443
             check.trivy.dev:443
-            crl3.digicert.com:443
+            crl3.digicert.com:80
             dc.services.visualstudio.com:443
             fulcio.sigstore.dev:443
             ghcr.io:443
+            github.com:22
             github.com:443
             hosted-compute-watchdog-prod-iad-02.githubapp.com:443
             mcr.microsoft.com:443
@@ -583,10 +592,11 @@ jobs:
             auth.docker.io:443
             builds.dotnet.microsoft.com:443
             check.trivy.dev:443
-            crl3.digicert.com:443
+            crl3.digicert.com:80
             dc.services.visualstudio.com:443
             fulcio.sigstore.dev:443
             ghcr.io:443
+            github.com:22
             github.com:443
             hosted-compute-watchdog-prod-iad-02.githubapp.com:443
             mcr.microsoft.com:443
@@ -663,10 +673,11 @@ jobs:
             auth.docker.io:443
             builds.dotnet.microsoft.com:443
             check.trivy.dev:443
-            crl3.digicert.com:443
+            crl3.digicert.com:80
             dc.services.visualstudio.com:443
             fulcio.sigstore.dev:443
             ghcr.io:443
+            github.com:22
             github.com:443
             hosted-compute-watchdog-prod-iad-02.githubapp.com:443
             mcr.microsoft.com:443
@@ -759,10 +770,11 @@ jobs:
             auth.docker.io:443
             builds.dotnet.microsoft.com:443
             check.trivy.dev:443
-            crl3.digicert.com:443
+            crl3.digicert.com:80
             dc.services.visualstudio.com:443
             fulcio.sigstore.dev:443
             ghcr.io:443
+            github.com:22
             github.com:443
             hosted-compute-watchdog-prod-iad-02.githubapp.com:443
             mcr.microsoft.com:443
@@ -853,10 +865,11 @@ jobs:
             auth.docker.io:443
             builds.dotnet.microsoft.com:443
             check.trivy.dev:443
-            crl3.digicert.com:443
+            crl3.digicert.com:80
             dc.services.visualstudio.com:443
             fulcio.sigstore.dev:443
             ghcr.io:443
+            github.com:22
             github.com:443
             hosted-compute-watchdog-prod-iad-02.githubapp.com:443
             mcr.microsoft.com:443
@@ -960,10 +973,11 @@ jobs:
             auth.docker.io:443
             builds.dotnet.microsoft.com:443
             check.trivy.dev:443
-            crl3.digicert.com:443
+            crl3.digicert.com:80
             dc.services.visualstudio.com:443
             fulcio.sigstore.dev:443
             ghcr.io:443
+            github.com:22
             github.com:443
             hosted-compute-watchdog-prod-iad-02.githubapp.com:443
             mcr.microsoft.com:443
@@ -1068,10 +1082,11 @@ jobs:
             auth.docker.io:443
             builds.dotnet.microsoft.com:443
             check.trivy.dev:443
-            crl3.digicert.com:443
+            crl3.digicert.com:80
             dc.services.visualstudio.com:443
             fulcio.sigstore.dev:443
             ghcr.io:443
+            github.com:22
             github.com:443
             hosted-compute-watchdog-prod-iad-02.githubapp.com:443
             mcr.microsoft.com:443
@@ -1148,10 +1163,11 @@ jobs:
             auth.docker.io:443
             builds.dotnet.microsoft.com:443
             check.trivy.dev:443
-            crl3.digicert.com:443
+            crl3.digicert.com:80
             dc.services.visualstudio.com:443
             fulcio.sigstore.dev:443
             ghcr.io:443
+            github.com:22
             github.com:443
             hosted-compute-watchdog-prod-iad-02.githubapp.com:443
             mcr.microsoft.com:443
