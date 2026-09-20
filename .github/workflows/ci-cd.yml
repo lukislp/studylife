@@ -545,6 +545,8 @@ jobs:
           deploy-key: ${{ secrets.SEMANTIC_RELEASE_DEPLOY_KEY }}
           required: "true"
       - name: Point the manifests at the released image and push
+        env:
+          DEPLOY_SIGNING_KEY: ${{ secrets.DEPLOY_SIGNING_KEY }}
         run: |
           set -eu
           for f in $(grep -rlE 'ghcr\.io/lukislp/studylife-server:' k8s --include='*.yaml' | grep -v '/flux/'); do
@@ -557,7 +559,18 @@ jobs:
           git diff --stat
           git config user.name "studylife-deploy"
           git config user.email "deploy@studylife.local"
-          git commit -am "chore(deploy): image ${NEXT_VERSION} [skip ci]"
+          # SSH-sign this bot commit so it shows "Verified" (2026-09-20 audit): the deploy key
+          # above only authenticates the push, it can't sign - GitHub auto-signs commits only when
+          # it creates them itself via the API (as semantic-release's commits are), never a raw
+          # `git commit`. This is a separate signing-only key registered on the account
+          # (github.com/settings/keys), not the push-authorizing deploy key.
+          signing_key="$RUNNER_TEMP/deploy_signing_key"
+          printf '%s\n' "$DEPLOY_SIGNING_KEY" > "$signing_key"
+          chmod 600 "$signing_key"
+          git config gpg.format ssh
+          git config user.signingkey "$signing_key"
+          git config commit.gpgsign true
+          git commit -S -am "chore(deploy): image ${NEXT_VERSION} [skip ci]"
           # The branch may have moved (an out-of-band push) between checkout and now - rebase, retry.
           for attempt in 1 2 3; do
             git push origin HEAD:main && exit 0
