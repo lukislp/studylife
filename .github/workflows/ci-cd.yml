@@ -558,7 +558,12 @@ jobs:
           fi
           git diff --stat
           git config user.name "studylife-deploy"
-          git config user.email "deploy@studylife.local"
+          # GitHub's SSH signature verification also checks the committer email against the
+          # signing key's owning account (like GPG) - a synthetic "@studylife.local" address
+          # verifies the signature bytes fine but comes back "reason: no_user" (hit live
+          # 2026-09-20, v3.17.3), since no account owns that address. Use the account's own
+          # noreply email instead, matching what shows up as "verified" on every other commit here.
+          git config user.email "155678024+lukislp@users.noreply.github.com"
           # SSH-sign this bot commit so it shows "Verified" (2026-09-20 audit): the deploy key
           # above only authenticates the push, it can't sign - GitHub auto-signs commits only when
           # it creates them itself via the API (as semantic-release's commits are), never a raw
