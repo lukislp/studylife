@@ -1,3 +1,10 @@
+## [3.17.6](https://github.com/lukislp/studylife/compare/v3.17.5...v3.17.6) (2026-09-20)
+
+
+### Bug Fixes
+
+* **ci:** correct two missing Harden Runner allowlist entries ([#256](https://github.com/lukislp/studylife/issues/256)) ([ef4cbe9](https://github.com/lukislp/studylife/commit/ef4cbe98e32600119da17e042bc3d8836347a8bc)), closes [#255](https://github.com/lukislp/studylife/issues/255)
+
 ## [3.17.5](https://github.com/lukislp/studylife/compare/v3.17.4...v3.17.5) (2026-09-20)
 
 
