@@ -567,8 +567,12 @@ jobs:
           signing_key="$RUNNER_TEMP/deploy_signing_key"
           printf '%s\n' "$DEPLOY_SIGNING_KEY" > "$signing_key"
           chmod 600 "$signing_key"
+          # git's ssh signing backend loads the *public* key from user.signingkey (not the
+          # private key path directly) - without this .pub file alongside it, signing fails with
+          # "Couldn't load public key ...: No such file or directory" (hit live 2026-09-20, v3.17.2).
+          ssh-keygen -y -f "$signing_key" > "$signing_key.pub"
           git config gpg.format ssh
-          git config user.signingkey "$signing_key"
+          git config user.signingkey "$signing_key.pub"
           git config commit.gpgsign true
           git commit -S -am "chore(deploy): image ${NEXT_VERSION} [skip ci]"
           # The branch may have moved (an out-of-band push) between checkout and now - rebase, retry.
