@@ -140,8 +140,8 @@ public partial class AuthController : ControllerBase
         var configuredOrigins = fido2.Origins;
         return new Fido2(new Fido2Configuration
         {
-            ServerDomain = string.IsNullOrWhiteSpace(configuredDomain) ? Request.Host.Host : configuredDomain,
-            ServerName = "StudyLife",
+            RPID = string.IsNullOrWhiteSpace(configuredDomain) ? Request.Host.Host : configuredDomain,
+            RPName = "StudyLife",
             Origins = configuredOrigins is { Length: > 0 }
                 ? configuredOrigins.ToHashSet()
                 : new HashSet<string> { $"{Request.Scheme}://{Request.Host}" },
