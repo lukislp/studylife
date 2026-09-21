@@ -1,0 +1,67 @@
+name: AI review (Dependabot)
+
+# Pilot: replaces the shared dependabot-auto-merge.yml's blind approve with an actual content
+# review of the diff, using GPT-5.6 Luna via the OpenAI key already proven in studylife-ai's
+# eval.yml. Only patch/minor Dependabot bumps are reviewed - majors always stay manual, same
+# convention as the shared workflow. On a positive verdict this approves (satisfies both the
+# required review count and CODEOWNERS, since AUTOMERGE_TOKEN's account is the sole codeowner)
+# and enables auto-merge; on a negative verdict it leaves a comment and does nothing else, so
+# the PR sits for manual review exactly like a major bump would.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  ai-review:
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      HAS_TOKENS: ${{ secrets.AUTOMERGE_TOKEN != '' && secrets.OPENAI_API_KEY != '' }}
+    steps:
+      - id: meta
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - if: env.HAS_TOKENS == 'true' && (steps.meta.outputs.update-type == 'version-update:semver-patch' || steps.meta.outputs.update-type == 'version-update:semver-minor')
+        env:
+          GH_TOKEN: ${{ secrets.AUTOMERGE_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          set -euo pipefail
+          # Truncate - a Dependabot version bump never needs more than this to judge, and it
+          # keeps the request small and cheap.
+          diff="$(gh pr diff "$PR_URL" | head -c 8000)"
+          payload="$(jq -n --arg diff "$diff" '{
+            model: "gpt-5.6-luna",
+            reasoning_effort: "low",
+            messages: [{
+              role: "user",
+              content: ("You are reviewing an automated Dependabot dependency-bump pull request. Reply with exactly one word on the first line: APPROVE or FLAG. APPROVE only for a routine, low-risk version bump with no suspicious changes (no unrelated files, no injected scripts, no unexpected lockfile/license tampering). FLAG for anything else, followed by a one-sentence reason.\n\nDiff:\n" + $diff)
+            }]
+          }')"
+          response="$(curl -sS https://api.openai.com/v1/chat/completions \
+            -H "Authorization: Bearer $OPENAI_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "$payload")"
+          content="$(echo "$response" | jq -r '.choices[0].message.content // empty')"
+          if [ -z "$content" ]; then
+            echo "::warning::empty/unexpected OpenAI response, leaving for manual review: $response"
+            exit 0
+          fi
+          verdict="$(echo "$content" | head -1 | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]')"
+          echo "$content" | tee -a "$GITHUB_STEP_SUMMARY"
+          if [ "$verdict" = "APPROVE" ]; then
+            gh pr review "$PR_URL" --approve --body "Reviewed by GPT-5.6 Luna: routine dependency bump, no issues found."
+            gh pr merge "$PR_URL" --auto --squash
+          else
+            gh pr comment "$PR_URL" --body "🤖 AI review flagged this PR for manual attention:
+
+          $content"
+          fi
+      - if: env.HAS_TOKENS != 'true'
+        run: echo "AUTOMERGE_TOKEN or OPENAI_API_KEY is not set - leaving this PR for a manual merge"

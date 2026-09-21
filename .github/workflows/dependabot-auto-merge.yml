@@ -1,9 +1,11 @@
 name: Dependabot auto-merge
 
-# Thin caller of the shared implementation in lukislp/ci-workflows (auto-merge of Dependabot
-# patch/minor updates, update-stale for every PR that is behind the tip) - the triggers stay
-# here because a reusable workflow cannot declare them for the caller. Needs the AUTOMERGE_TOKEN
-# repository secret (fine-grained PAT, contents + pull requests write).
+# Thin caller of the shared implementation in lukislp/ci-workflows (update-stale for every PR
+# that is behind the tip) - the triggers stay here because a reusable workflow cannot declare
+# them for the caller. AUTOMERGE_TOKEN is deliberately NOT passed below: studylife pilots its
+# own content-reviewed approve+merge instead (see ai-review.yml), so the shared workflow's own
+# blind approve+auto-merge steps stay no-ops here (they'd otherwise race the AI gate - whichever
+# workflow's approve landed first would decide the PR, making the review meaningless).
 on:
   pull_request_target:
     types: [opened, synchronize, reopened, auto_merge_enabled]
@@ -18,5 +20,3 @@ permissions:
 jobs:
   dependabot:
     uses: lukislp/ci-workflows/.github/workflows/dependabot-auto-merge.yml@12fc77e53b1c5f2a28730f7607f16f628311ae39 # v1.7.0
-    secrets:
-      AUTOMERGE_TOKEN: ${{ secrets.AUTOMERGE_TOKEN }}
