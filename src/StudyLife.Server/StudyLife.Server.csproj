@@ -57,7 +57,7 @@
       Condition="Exists('$(OpenApiDocumentsDirectory)\$(MSBuildProjectName).json')" />
   </Target>
   <ItemGroup>
-    <PackageReference Include="Fido2.AspNet" Version="4.0.1" />
+    <PackageReference Include="Fido2.AspNet" Version="4.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.12" />
     <!-- Audit finding D2: formal API contract. AddOpenApi()/MapOpenApi() (Program.cs) serve the
          live document at /openapi/v1.json; ApiDescription.Server hooks a build-time generation
