@@ -5108,7 +5108,10 @@
             "type": [
               "null",
               "array"
-            ]
+            ],
+            "items": {
+              "$ref": "#/components/schemas/AuthenticatorTransport"
+            }
           }
         }
       },
@@ -5266,7 +5269,14 @@
             "$ref": "#/components/schemas/AssertionResponse"
           },
           "type": {
-            "$ref": "#/components/schemas/PublicKeyCredentialType"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PublicKeyCredentialType"
+              }
+            ]
           },
           "extensions": {
             "$ref": "#/components/schemas/AuthenticationExtensionsClientOutputs"
@@ -5297,7 +5307,14 @@
             "format": "byte"
           },
           "type": {
-            "$ref": "#/components/schemas/PublicKeyCredentialType"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PublicKeyCredentialType"
+              }
+            ]
           },
           "response": {
             "$ref": "#/components/schemas/AttestationResponse"
@@ -5309,6 +5326,16 @@
             "$ref": "#/components/schemas/AuthenticationExtensionsClientOutputs"
           }
         }
+      },
+      "AuthenticatorTransport": {
+        "enum": [
+          "usb",
+          "nfc",
+          "ble",
+          "smart-card",
+          "hybrid",
+          "internal"
+        ]
       },
       "AuthExchangeRequestDto": {
         "required": [
@@ -6074,7 +6101,14 @@
           }
         }
       },
-      "CredentialProtectionPolicy": { },
+      "CredentialProtectionPolicy": {
+        "enum": [
+          "userVerificationOptional",
+          "userVerificationOptionalWithCredentialIDList",
+          "userVerificationRequired",
+          null
+        ]
+      },
       "CustomCourseExportDto": {
         "required": [
           "id",
@@ -8760,7 +8794,13 @@
           }
         }
       },
-      "PublicKeyCredentialType": { },
+      "PublicKeyCredentialType": {
+        "enum": [
+          "public-key",
+          "invalid",
+          null
+        ]
+      },
       "PushPublicKeyResponseDto": {
         "required": [
           "publicKey"
