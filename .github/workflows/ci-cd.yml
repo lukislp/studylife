@@ -61,7 +61,7 @@ jobs:
             token.actions.githubusercontent.com:443
             tuf-repo-cdn.sigstore.dev:443
             uploads.github.com:443
-            westus.data.mcr.microsoft.com:443
+            *.data.mcr.microsoft.com:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
@@ -159,7 +159,7 @@ jobs:
             token.actions.githubusercontent.com:443
             tuf-repo-cdn.sigstore.dev:443
             uploads.github.com:443
-            westus.data.mcr.microsoft.com:443
+            *.data.mcr.microsoft.com:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
@@ -207,7 +207,7 @@ jobs:
             token.actions.githubusercontent.com:443
             tuf-repo-cdn.sigstore.dev:443
             uploads.github.com:443
-            westus.data.mcr.microsoft.com:443
+            *.data.mcr.microsoft.com:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
@@ -259,7 +259,7 @@ jobs:
             token.actions.githubusercontent.com:443
             tuf-repo-cdn.sigstore.dev:443
             uploads.github.com:443
-            westus.data.mcr.microsoft.com:443
+            *.data.mcr.microsoft.com:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
@@ -313,7 +313,7 @@ jobs:
             token.actions.githubusercontent.com:443
             tuf-repo-cdn.sigstore.dev:443
             uploads.github.com:443
-            westus.data.mcr.microsoft.com:443
+            *.data.mcr.microsoft.com:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
@@ -379,7 +379,7 @@ jobs:
             token.actions.githubusercontent.com:443
             tuf-repo-cdn.sigstore.dev:443
             uploads.github.com:443
-            westus.data.mcr.microsoft.com:443
+            *.data.mcr.microsoft.com:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
@@ -444,7 +444,7 @@ jobs:
             token.actions.githubusercontent.com:443
             tuf-repo-cdn.sigstore.dev:443
             uploads.github.com:443
-            westus.data.mcr.microsoft.com:443
+            *.data.mcr.microsoft.com:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: docker run --rm -v "${{ github.workspace }}:/repo" -w /repo ghcr.io/yannh/kubeconform:latest-alpine -summary -ignore-missing-schemas k8s/
       # Audit finding O4: also validate what actually gets applied via Flux's Kustomization
@@ -496,7 +496,7 @@ jobs:
             token.actions.githubusercontent.com:443
             tuf-repo-cdn.sigstore.dev:443
             uploads.github.com:443
-            westus.data.mcr.microsoft.com:443
+            *.data.mcr.microsoft.com:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # Pure syntax/interpolation check (no startup) - catches broken YAML or wrong
       # variable references before someone tests "docker compose up" by hand.
@@ -544,7 +544,7 @@ jobs:
             token.actions.githubusercontent.com:443
             tuf-repo-cdn.sigstore.dev:443
             uploads.github.com:443
-            westus.data.mcr.microsoft.com:443
+            *.data.mcr.microsoft.com:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
@@ -605,6 +605,7 @@ jobs:
             *.blob.core.windows.net:443
             raw.githubusercontent.com:443
             registry-1.docker.io:443
+            registry.npmjs.org:443
             rekor.sigstore.dev:443
             release-assets.githubusercontent.com:443
             results-receiver.actions.githubusercontent.com:443
@@ -613,7 +614,7 @@ jobs:
             token.actions.githubusercontent.com:443
             tuf-repo-cdn.sigstore.dev:443
             uploads.github.com:443
-            westus.data.mcr.microsoft.com:443
+            *.data.mcr.microsoft.com:443
       # ref: main (branch tip), NOT the push-event SHA: Flux's image-update automation commits
       # "[skip ci]" bumps to main that can land between the triggering push and this job actually
       # running (the concurrency group can queue it behind a whole release chain). semantic-release
@@ -694,7 +695,7 @@ jobs:
             token.actions.githubusercontent.com:443
             tuf-repo-cdn.sigstore.dev:443
             uploads.github.com:443
-            westus.data.mcr.microsoft.com:443
+            *.data.mcr.microsoft.com:443
       # ref: main to match get-version's analysis target (see its checkout comment) - the
       # binaries stamped with NEXT_VERSION must be built from the same tree that version was
       # computed for, not from an event SHA that may be a [skip ci] Flux bump behind it.
@@ -791,7 +792,7 @@ jobs:
             token.actions.githubusercontent.com:443
             tuf-repo-cdn.sigstore.dev:443
             uploads.github.com:443
-            westus.data.mcr.microsoft.com:443
+            *.data.mcr.microsoft.com:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -886,7 +887,7 @@ jobs:
             token.actions.githubusercontent.com:443
             tuf-repo-cdn.sigstore.dev:443
             uploads.github.com:443
-            westus.data.mcr.microsoft.com:443
+            *.data.mcr.microsoft.com:443
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           path: /tmp/digests
@@ -994,7 +995,7 @@ jobs:
             token.actions.githubusercontent.com:443
             tuf-repo-cdn.sigstore.dev:443
             uploads.github.com:443
-            westus.data.mcr.microsoft.com:443
+            *.data.mcr.microsoft.com:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
@@ -1103,7 +1104,7 @@ jobs:
             token.actions.githubusercontent.com:443
             tuf-repo-cdn.sigstore.dev:443
             uploads.github.com:443
-            westus.data.mcr.microsoft.com:443
+            *.data.mcr.microsoft.com:443
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: digests-amd64
@@ -1176,6 +1177,7 @@ jobs:
             *.blob.core.windows.net:443
             raw.githubusercontent.com:443
             registry-1.docker.io:443
+            registry.npmjs.org:443
             rekor.sigstore.dev:443
             release-assets.githubusercontent.com:443
             results-receiver.actions.githubusercontent.com:443
@@ -1184,7 +1186,7 @@ jobs:
             token.actions.githubusercontent.com:443
             tuf-repo-cdn.sigstore.dev:443
             uploads.github.com:443
-            westus.data.mcr.microsoft.com:443
+            *.data.mcr.microsoft.com:443
       # ref: main for the same reason as get-version's checkout (see there): the real release
       # must be cut from the branch tip get-version analyzed, or the "behind the remote" guard
       # trips on the event SHA whenever a Flux [skip ci] bump raced in. The retry below still
