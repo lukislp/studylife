@@ -635,7 +635,7 @@ jobs:
       # this: @semantic-release/git's verifyConditions runs `git push --dry-run` even in
       # get-version's dry-run mode. Setup: see enable-main-protection.sh next to the repo.
       - name: Push as the semantic-release deploy key (if configured)
-        uses: lukislp/ci-workflows/.github/actions/deploy-key-push@d6ea7363956999dc7b3695e8b446f6361b102c6b # v1.5.4
+        uses: lukislp/ci-workflows/.github/actions/deploy-key-push@045f17628d155f7e56c2f6ebdbd473b31e247112 # v1.6.0
         with:
           deploy-key: ${{ secrets.SEMANTIC_RELEASE_DEPLOY_KEY }}
       # The action derives new_release_version / new_release_published from semantic-release's
@@ -1002,7 +1002,7 @@ jobs:
       # Same deploy-key push as the release jobs - the default branch only takes direct pushes
       # from that key, so this job cannot fall back to GITHUB_TOKEN.
       - name: Push as the semantic-release deploy key
-        uses: lukislp/ci-workflows/.github/actions/deploy-key-push@d6ea7363956999dc7b3695e8b446f6361b102c6b # v1.5.4
+        uses: lukislp/ci-workflows/.github/actions/deploy-key-push@045f17628d155f7e56c2f6ebdbd473b31e247112 # v1.6.0
         with:
           deploy-key: ${{ secrets.SEMANTIC_RELEASE_DEPLOY_KEY }}
           required: "true"
@@ -1212,7 +1212,7 @@ jobs:
       # this: @semantic-release/git's verifyConditions runs `git push --dry-run` even in
       # get-version's dry-run mode. Setup: see enable-main-protection.sh next to the repo.
       - name: Push as the semantic-release deploy key (if configured)
-        uses: lukislp/ci-workflows/.github/actions/deploy-key-push@d6ea7363956999dc7b3695e8b446f6361b102c6b # v1.5.4
+        uses: lukislp/ci-workflows/.github/actions/deploy-key-push@045f17628d155f7e56c2f6ebdbd473b31e247112 # v1.6.0
         with:
           deploy-key: ${{ secrets.SEMANTIC_RELEASE_DEPLOY_KEY }}
       - id: semrel
