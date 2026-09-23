@@ -251,7 +251,7 @@ spec:
         # shard-claim keys (see RedisWorkerShardClaim.cs) directly as a Prometheus metric,
         # WITHOUT any app code change - the basis of the worker shard dashboard.
         - name: redis-exporter
-          image: oliver006/redis_exporter:v1.91.1
+          image: oliver006/redis_exporter:v1.92.0
           # With requirepass active this exporter needs the password too, or every scrape fails
           # (NOAUTH) and the shard-claim dashboard silently goes stale while the exporter's OWN
           # /health below stays green (it only checks the exporter process, not its Redis link).
