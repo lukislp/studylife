@@ -13,7 +13,7 @@
 > extensions, CLI, VS Code, Telegram, Alexa, an e-paper display, webhooks) that all talk to
 > this one API.
 
-[<!-- VIDEO (40 s): drag brag-v3.mp4 onto the empty line below in the GitHub web editor -->](https://github.com/user-attachments/assets/629aa127-8794-4bbb-89ac-f55b7af93165)
+https://github.com/user-attachments/assets/629aa127-8794-4bbb-89ac-f55b7af93165
 
 
 **[Live demo](https://studylife-demo.lktec.org)** — read-only, running the actual
