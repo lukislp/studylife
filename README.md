@@ -12,6 +12,9 @@
 > extensions, CLI, VS Code, Telegram, Alexa, an e-paper display, webhooks) that all talk to
 > this one API.
 
+<!-- VIDEO (40 s): drag brag-v3.mp4 onto the empty line below in the GitHub web editor -->
+
+
 **[Live demo](https://studylife-demo.lktec.org)** — read-only, running the actual
 `ghcr.io/lukislp/studylife-server:latest` image published by this repo's own CI/CD pipeline
 (`DEMO_MODE=true` plus the explicit `DEMO_MODE_CONFIRM_DATA_LOSS` confirmation, see
@@ -125,6 +128,11 @@ always pixel-identical.
 ---
 
 ## Features
+
+**Product tour (1 min)**: focus timer, exam planner, dashboard, notes with dictation and read-aloud, the AI assistant, the command palette and passkey sign-in.
+
+<!-- VIDEO (1 min): drag brag-v4.mp4 onto the empty line below in the GitHub web editor -->
+
 
 ### Accounts & Login
 - Passwordless login via passkey (WebAuthn) - no password to remember or leak
