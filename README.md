@@ -1,3 +1,4 @@
+
 # StudyLife
 
 [![CI/CD](https://github.com/lukislp/studylife/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/lukislp/studylife/actions/workflows/ci-cd.yml) [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/lukislp/studylife/badge)](https://scorecard.dev/viewer/?uri=github.com/lukislp/studylife) [![CodeQL](https://github.com/lukislp/studylife/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/lukislp/studylife/security/code-scanning)
@@ -12,7 +13,7 @@
 > extensions, CLI, VS Code, Telegram, Alexa, an e-paper display, webhooks) that all talk to
 > this one API.
 
-<!-- VIDEO (40 s): drag brag-v3.mp4 onto the empty line below in the GitHub web editor -->
+[<!-- VIDEO (40 s): drag brag-v3.mp4 onto the empty line below in the GitHub web editor -->](https://github.com/user-attachments/assets/629aa127-8794-4bbb-89ac-f55b7af93165)
 
 
 **[Live demo](https://studylife-demo.lktec.org)** — read-only, running the actual
@@ -131,7 +132,7 @@ always pixel-identical.
 
 **Product tour (1 min)**: focus timer, exam planner, dashboard, notes with dictation and read-aloud, the AI assistant, the command palette and passkey sign-in.
 
-<!-- VIDEO (1 min): drag brag-v4.mp4 onto the empty line below in the GitHub web editor -->
+https://github.com/user-attachments/assets/0498d54b-f7e3-4854-b7cf-8eea538dd112
 
 
 ### Accounts & Login
