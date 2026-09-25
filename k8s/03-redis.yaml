@@ -161,7 +161,7 @@ spec:
           # Tag AND digest on purpose: the digest is what gets pulled, the tag is the human- and
           # Renovate-readable version. Renovate's kubernetes manager (renovate.json) moves both
           # together from here, so updates stay a reviewable pull request.
-          image: redis:8.10.2-alpine@sha256:72cedd9603038893af961e90ac5e1a1a0d8377d5e338dbdad8fe284ea25de18f
+          image: redis:8.10.2-alpine@sha256:3811787313eba226a2ef38658c6ccb91cd5e110edc89c37767de373120a0e5a0
           # Redis AUTH (audit O6 round 2, enabled 2026-09 via the zero-downtime ACL path in
           # docs/SCALING.md "Redis AUTH"): requirepass locks the default user, masterauth lets
           # each replica keep authenticating to its master (replication runs over the regular
