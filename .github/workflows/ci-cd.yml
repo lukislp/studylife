@@ -643,7 +643,7 @@ jobs:
       # own dry-run log line and treats "no relevant changes" (which exits non-zero, observed
       # 2026-09-11 on a ci:-only push) as the expected no-release outcome, not a red job.
       - id: semrel
-        uses: lukislp/ci-workflows/.github/actions/semantic-release@d6ea7363956999dc7b3695e8b446f6361b102c6b # v1.5.4
+        uses: lukislp/ci-workflows/.github/actions/semantic-release@a5f01cccfa7a63023b5a2f67993f771d856c0ee4 # v1.7.1
         with:
           dry-run: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -1228,7 +1228,7 @@ jobs:
         with:
           deploy-key: ${{ secrets.SEMANTIC_RELEASE_DEPLOY_KEY }}
       - id: semrel
-        uses: lukislp/ci-workflows/.github/actions/semantic-release@d6ea7363956999dc7b3695e8b446f6361b102c6b # v1.5.4
+        uses: lukislp/ci-workflows/.github/actions/semantic-release@a5f01cccfa7a63023b5a2f67993f771d856c0ee4 # v1.7.1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -1248,7 +1248,7 @@ jobs:
           fi
           git checkout -B main origin/main
       - if: steps.semrel.outcome == 'failure'
-        uses: lukislp/ci-workflows/.github/actions/semantic-release@d6ea7363956999dc7b3695e8b446f6361b102c6b # v1.5.4
+        uses: lukislp/ci-workflows/.github/actions/semantic-release@a5f01cccfa7a63023b5a2f67993f771d856c0ee4 # v1.7.1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       # Signed release asset (OpenSSF Scorecard "Signed-Releases"): the same keyless Sigstore
