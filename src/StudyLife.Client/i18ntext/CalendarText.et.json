@@ -16,7 +16,7 @@
   "ConfirmDeleteQuestion": "Kas soovid selle seansi tõesti kustutada?",
   "ConfirmDeleteYes": "Jah, kustuta",
   "ConfirmDeleteCancel": "Tühista",
-  "SessionOverlapWarning": "See kattub seansiga {0}. Salvesta uuesti, et see siiski säilitada.",
+  "SessionOverlapWarning": "See kattub seansiga {0}. Vali teine aeg.",
   "DeleteThisOnly": "Ainult see seanss",
   "DeleteThisAndFollowing": "See ja kõik järgnevad",
   "DeleteEntireSeries": "Kustuta kogu seeria",

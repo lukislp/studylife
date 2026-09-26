@@ -436,10 +436,13 @@
 
     private async Task AcceptExamPlan()
     {
-        var count = _examProposals.Count;
+        // Only proposals that actually saved are cleared and counted - a rejected one (e.g. it
+        // now overlaps something already on the calendar) stays visible instead of being
+        // reported as accepted while silently never having been created.
+        var count = 0;
         foreach (var p in _examProposals.ToList())
         {
-            await State.SaveSessionAsync(new StudySession
+            var outcome = await State.SaveSessionAsync(new StudySession
             {
                 CourseId = p.CourseId,
                 CourseName = p.CourseName,
@@ -449,11 +452,15 @@
                 Topic = p.Topic,
                 TimerModeId = new Random().Next(1, DefaultData.TimerModes.Count + 1),
             });
+            if (outcome.Success)
+            {
+                _examProposals.Remove(p);
+                count++;
+            }
         }
         _sessions = await State.GetSessionsAsync();
-        _examProposals.Clear();
         _examUsedFallbackTopic = false;
-        _examGenerated = false;
+        _examGenerated = _examProposals.Count > 0;
         _examAcceptedCount = count;
         _examAcceptedMessage = string.Format(T.ExamPlanAccepted, count);
         RecalcWeekHours();
@@ -565,10 +572,12 @@
 
     private async Task AcceptWeekPlan()
     {
-        var count = _weekProposals.Count;
+        // Only proposals that actually saved are cleared and counted - see AcceptExamPlan's
+        // comment above for why.
+        var count = 0;
         foreach (var p in _weekProposals.ToList())
         {
-            await State.SaveSessionAsync(new StudySession
+            var outcome = await State.SaveSessionAsync(new StudySession
             {
                 CourseId = p.CourseId,
                 CourseName = p.CourseName,
@@ -578,13 +587,20 @@
                 Topic = p.Topic,
                 TimerModeId = new Random().Next(1, DefaultData.TimerModes.Count + 1),
             });
+            if (outcome.Success)
+            {
+                _weekProposals.Remove(p);
+                count++;
+            }
         }
         _sessions = await State.GetSessionsAsync();
-        _weekProposals.Clear();
-        _weekCourseHints.Clear();
-        _weekHintFacts.Clear();
-        _weekFallbackCourseIds.Clear();
-        _weekGenerated = false;
+        if (_weekProposals.Count == 0)
+        {
+            _weekCourseHints.Clear();
+            _weekHintFacts.Clear();
+            _weekFallbackCourseIds.Clear();
+            _weekGenerated = false;
+        }
         _weekAcceptedCount = count;
         _weekAcceptedMessage = string.Format(T.WeekPlanAccepted, count);
         RecalcWeekHours();

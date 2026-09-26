@@ -86,7 +86,6 @@ public partial class Calendar
         var newStart = _formStart.Date + (template.DefaultStartTime ?? _formStart.TimeOfDay);
         _formStart = newStart;
         _formEnd = newStart.AddMinutes(template.DurationMinutes);
-        _warningAcknowledged = false;
         _formWarning = null;
     }
 

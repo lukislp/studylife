@@ -16,7 +16,7 @@
   "ConfirmDeleteQuestion": "Chiar ștergi această sesiune?",
   "ConfirmDeleteYes": "Da, șterge",
   "ConfirmDeleteCancel": "Anulează",
-  "SessionOverlapWarning": "Aceasta se suprapune cu {0}. Salvează din nou pentru a o păstra oricum.",
+  "SessionOverlapWarning": "Aceasta se suprapune cu {0}. Alege altă oră.",
   "DeleteThisOnly": "Doar această sesiune",
   "DeleteThisAndFollowing": "Aceasta și toate următoarele",
   "DeleteEntireSeries": "Șterge toată seria",

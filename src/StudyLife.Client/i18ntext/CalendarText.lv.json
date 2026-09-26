@@ -16,7 +16,7 @@
   "ConfirmDeleteQuestion": "Vai tiešām dzēst šo sesiju?",
   "ConfirmDeleteYes": "Jā, dzēst",
   "ConfirmDeleteCancel": "Atcelt",
-  "SessionOverlapWarning": "Šī sesija pārklājas ar {0}. Saglabājiet vēlreiz, lai to tomēr paturētu.",
+  "SessionOverlapWarning": "Šī sesija pārklājas ar {0}. Izvēlieties citu laiku.",
   "DeleteThisOnly": "Tikai šo sesiju",
   "DeleteThisAndFollowing": "Šo un visas nākamās",
   "DeleteEntireSeries": "Dzēst visu sēriju",

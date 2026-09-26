@@ -16,7 +16,7 @@
   "ConfirmDeleteQuestion": "Na pewno usunąć tę sesję?",
   "ConfirmDeleteYes": "Tak, usuń",
   "ConfirmDeleteCancel": "Anuluj",
-  "SessionOverlapWarning": "To nakłada się na {0}. Zapisz ponownie, aby zachować mimo to.",
+  "SessionOverlapWarning": "To nakłada się na {0}. Wybierz inny termin.",
   "DeleteThisOnly": "Tylko ta sesja",
   "DeleteThisAndFollowing": "Ta i wszystkie kolejne",
   "DeleteEntireSeries": "Usuń całą serię",

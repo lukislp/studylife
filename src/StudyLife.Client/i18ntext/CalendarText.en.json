@@ -16,7 +16,7 @@
   "ConfirmDeleteQuestion": "Really delete this session?",
   "ConfirmDeleteYes": "Yes, delete",
   "ConfirmDeleteCancel": "Cancel",
-  "SessionOverlapWarning": "This overlaps with {0}. Save again to keep it anyway.",
+  "SessionOverlapWarning": "This overlaps with {0}. Choose a different time.",
   "DeleteThisOnly": "This session only",
   "DeleteThisAndFollowing": "This and all following",
   "DeleteEntireSeries": "Delete entire series",

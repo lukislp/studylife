@@ -10,6 +10,15 @@ using StudyLife.Shared;
 
 namespace StudyLife.Client.Services;
 
+/// <summary>Result of <see cref="AppStateService.SaveSessionAsync"/> - lets a caller distinguish
+/// "saved" from "the server rejected it" (e.g. an overlapping session) without every call site
+/// having to know the transport details.</summary>
+public readonly record struct SaveSessionOutcome(bool Success, string? Error)
+{
+    public static readonly SaveSessionOutcome Ok = new(true, null);
+    public static SaveSessionOutcome Failed(string error) => new(false, error);
+}
+
 public class AppStateService : IAsyncDisposable
 {
     private readonly HttpClient _http;
@@ -1513,29 +1522,51 @@ public class AppStateService : IAsyncDisposable
         return _sessionsCache;
     }
 
-    public async Task SaveSessionAsync(StudySession session)
+    /// <summary>
+    /// Previously a bare Task: a non-success response (e.g. the server rejecting an overlapping
+    /// session) was neither an exception nor surfaced anywhere - the offline catch below only
+    /// fires for actual network/transport failures, so a definitive 400 fell through both paths
+    /// silently. Callers that only need "fire and forget" (an already-validated recurring
+    /// occurrence, an ICS import row) can still just await this without inspecting the result;
+    /// callers that let the user act on a single, possibly-rejected save (the session dialog, the
+    /// planner's batch accept) now can.
+    /// </summary>
+    public async Task<SaveSessionOutcome> SaveSessionAsync(StudySession session)
     {
+        HttpResponseMessage response;
         try
         {
-            if (session.Id == 0)
-            {
-                var response = await _http.PostAsJsonAsync("api/sessions", ToDto(session), StudyLifeJson.Options);
-                if (response.IsSuccessStatusCode)
-                {
-                    var dto = await response.Content.ReadFromJsonAsync<StudySessionDto>(StudyLifeJson.Options);
-                    if (dto != null) session.Id = dto.Id;
-                }
-            }
-            else
-            {
-                await _http.PutAsJsonAsync($"api/sessions/{session.Id}", ToDto(session), StudyLifeJson.Options);
-            }
+            response = session.Id == 0
+                ? await _http.PostAsJsonAsync("api/sessions", ToDto(session), StudyLifeJson.Options)
+                : await _http.PutAsJsonAsync($"api/sessions/{session.Id}", ToDto(session), StudyLifeJson.Options);
         }
-        catch { await EnqueueSaveSessionAsync(ToDto(session)); /* offline: replay later */ }
+        catch
+        {
+            await EnqueueSaveSessionAsync(ToDto(session)); /* offline: replay later */
+            _sessionsCache = null;
+            InvalidateHistoryMemo();
+            OnSessionsChanged?.Invoke();
+            NotifyStateChanged();
+            return SaveSessionOutcome.Ok;
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            // BadRequest(string) on the server serializes as a plain JSON string body.
+            var error = await response.Content.ReadFromJsonAsync<string>() ?? await response.Content.ReadAsStringAsync();
+            return SaveSessionOutcome.Failed(error);
+        }
+
+        if (session.Id == 0)
+        {
+            var dto = await response.Content.ReadFromJsonAsync<StudySessionDto>(StudyLifeJson.Options);
+            if (dto != null) session.Id = dto.Id;
+        }
         _sessionsCache = null;
         InvalidateHistoryMemo();
         OnSessionsChanged?.Invoke();
         NotifyStateChanged();
+        return SaveSessionOutcome.Ok;
     }
 
     public async Task DeleteSessionAsync(int id)

@@ -15,7 +15,6 @@ public partial class Calendar
     private DateTime _formEnd;
     private string? _formError;
     private string? _formWarning;
-    private bool _warningAcknowledged;
     private bool _confirmingDelete;
 
     private void OnDayClick(DateTime day, MouseEventArgs e)
@@ -31,7 +30,6 @@ public partial class Calendar
         SuggestTopic();
         _formError = null;
         _formWarning = null;
-        _warningAcknowledged = false;
         _confirmingDelete = false;
         _formStart = start;
         _formEnd = start.AddHours(1);
@@ -52,7 +50,6 @@ public partial class Calendar
         _formEnd = s.EndTime;
         _formError = null;
         _formWarning = null;
-        _warningAcknowledged = false;
         _confirmingDelete = false;
         _formRepeatWeekly = false;
         ResetTemplateFormState();
@@ -61,7 +58,6 @@ public partial class Calendar
 
     private void OnFormFieldChanged()
     {
-        _warningAcknowledged = false;
         _formWarning = null;
         SuggestTopic();
     }
@@ -87,19 +83,18 @@ public partial class Calendar
         }
         _formError = null;
 
-        if (!_warningAcknowledged)
+        // A hard block, not a dismissible warning: the server rejects an overlapping session
+        // outright now (a person can only be doing one thing at a time), so letting the user
+        // "save again to keep it anyway" would just mean a second, confusing failure below.
+        var editId = _editSession?.Id ?? 0;
+        var conflict = _sessions.FirstOrDefault(s =>
+            s.Id != editId &&
+            s.StartTime < _formEnd && s.EndTime > _formStart);
+        if (conflict != null)
         {
-            var editId = _editSession?.Id ?? 0;
-            var conflict = _sessions.FirstOrDefault(s =>
-                s.Id != editId &&
-                s.StartTime < _formEnd && s.EndTime > _formStart);
-            if (conflict != null)
-            {
-                _formWarning = string.Format(T.SessionOverlapWarning ?? "",
-                    $"{conflict.CourseName} ({LocalDate.Time(conflict.StartTime)}–{LocalDate.Time(conflict.EndTime)})");
-                _warningAcknowledged = true;
-                return;
-            }
+            _formWarning = string.Format(T.SessionOverlapWarning ?? "",
+                $"{conflict.CourseName} ({LocalDate.Time(conflict.StartTime)}–{LocalDate.Time(conflict.EndTime)})");
+            return;
         }
         _formWarning = null;
 
@@ -116,7 +111,15 @@ public partial class Calendar
 
         var isRepeating = isNew && _formRepeatWeekly && _formRepeatUntil.Date >= _formStart.Date;
         if (isRepeating) session.RecurrenceGroupId = Guid.NewGuid().ToString();
-        await State.SaveSessionAsync(session);
+        var outcome = await State.SaveSessionAsync(session);
+        if (!outcome.Success)
+        {
+            // Stale client-side _sessions snapshot let the check above miss a real conflict (or
+            // some other server-side rejection) - keep the modal open with the real reason
+            // instead of closing it as if the save had gone through.
+            _formError = outcome.Error;
+            return;
+        }
 
         if (isRepeating)
         {
@@ -147,8 +150,10 @@ public partial class Calendar
                             TimerModeId = new Random().Next(1, DefaultData.TimerModes.Count + 1),
                             RecurrenceGroupId = session.RecurrenceGroupId,
                         };
-                        await State.SaveSessionAsync(repeated);
-                        count++;
+                        // A later occurrence landing on top of something already on the calendar
+                        // is skipped rather than aborting the whole series - same precedent as
+                        // MaxRepeatOccurrences above silently capping the series length.
+                        if ((await State.SaveSessionAsync(repeated)).Success) count++;
                     }
                 }
                 occurrenceDate = occurrenceDate.AddDays(1);
@@ -185,7 +190,6 @@ public partial class Calendar
         _editSession = null;
         _confirmingDelete = false;
         _formWarning = null;
-        _warningAcknowledged = false;
         ResetTemplateFormState();
     }
 }

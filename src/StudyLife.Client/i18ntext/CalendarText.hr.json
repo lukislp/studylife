@@ -16,7 +16,7 @@
   "ConfirmDeleteQuestion": "Stvarno želite izbrisati ovu sesiju?",
   "ConfirmDeleteYes": "Da, izbriši",
   "ConfirmDeleteCancel": "Odustani",
-  "SessionOverlapWarning": "Ovo se preklapa s {0}. Spremite ponovno da biste je ipak zadržali.",
+  "SessionOverlapWarning": "Ovo se preklapa s {0}. Odaberite drugo vrijeme.",
   "DeleteThisOnly": "Samo ova sesija",
   "DeleteThisAndFollowing": "Ova i sve sljedeće",
   "DeleteEntireSeries": "Izbriši cijeli niz",

@@ -16,7 +16,7 @@
   "ConfirmDeleteQuestion": "Deze sessie echt verwijderen?",
   "ConfirmDeleteYes": "Ja, verwijderen",
   "ConfirmDeleteCancel": "Annuleren",
-  "SessionOverlapWarning": "Dit overlapt met {0}. Sla opnieuw op om het toch te behouden.",
+  "SessionOverlapWarning": "Dit overlapt met {0}. Kies een ander tijdstip.",
   "DeleteThisOnly": "Alleen deze sessie",
   "DeleteThisAndFollowing": "Deze en alle volgende",
   "DeleteEntireSeries": "Hele reeks verwijderen",

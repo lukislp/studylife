@@ -16,7 +16,7 @@
   "ConfirmDeleteQuestion": "Diese Sitzung wirklich löschen?",
   "ConfirmDeleteYes": "Ja, löschen",
   "ConfirmDeleteCancel": "Abbrechen",
-  "SessionOverlapWarning": "Diese Sitzung überschneidet sich mit {0}. Erneut speichern, um sie trotzdem zu behalten.",
+  "SessionOverlapWarning": "Diese Sitzung überschneidet sich mit {0}. Wähle eine andere Zeit.",
   "DeleteThisOnly": "Nur diese Session",
   "DeleteThisAndFollowing": "Diese und alle folgenden",
   "DeleteEntireSeries": "Ganze Serie löschen",
