@@ -31,7 +31,12 @@ public class BackgroundTaskServicePushNotificationTests : IClassFixture<CustomWe
         _service = BackgroundTaskServiceTestFactory.Create(factory);
     }
 
-    private async Task<int> CreateSessionAsync(int courseId, DateTime start, bool isCompleted = false)
+    // duration defaults to 10 minutes, not the old 1 hour: the five tests in this class all book
+    // a session a few minutes from "now" (to land inside the "due soon" reminder window), and
+    // with a 1-hour duration those all overlapped each other, which the server now rejects (a
+    // user can only be in one session at a time). Each call site below also gives its session
+    // a distinct start a few seconds apart from the others for the same reason.
+    private async Task<int> CreateSessionAsync(int courseId, DateTime start, bool isCompleted = false, TimeSpan? duration = null)
     {
         var dto = new StudySessionDto
         {
@@ -39,7 +44,7 @@ public class BackgroundTaskServicePushNotificationTests : IClassFixture<CustomWe
             CourseName = "Push Test Course",
             CourseColor = "#6C5CE7",
             StartTime = start,
-            EndTime = start.AddHours(1),
+            EndTime = start.Add(duration ?? TimeSpan.FromMinutes(10)),
             IsCompleted = isCompleted,
             TimerModeId = 1,
         };
@@ -74,7 +79,7 @@ public class BackgroundTaskServicePushNotificationTests : IClassFixture<CustomWe
         });
         var endpoint = $"https://push.example.com/{Guid.NewGuid():N}";
         await SubscribeAsync(endpoint, "p256dh-key-value", "auth-key-value");
-        var sessionId = await CreateSessionAsync(1, DateTime.Now.AddMinutes(4));
+        var sessionId = await CreateSessionAsync(1, DateTime.Now.AddSeconds(110), duration: TimeSpan.FromSeconds(10));
 
         // The endpoint is syntactically valid but unreachable - SendPushAsync catches the
         // error per subscription (WebPushClient fails at encryption with the placeholder keys,
@@ -102,7 +107,7 @@ public class BackgroundTaskServicePushNotificationTests : IClassFixture<CustomWe
         });
         var endpoint = $"https://push.example.com/{Guid.NewGuid():N}";
         await SubscribeAsync(endpoint, "p256dh-key-value", "auth-key-value");
-        var sessionId = await CreateSessionAsync(2, DateTime.Now.AddMinutes(4));
+        var sessionId = await CreateSessionAsync(2, DateTime.Now.AddSeconds(90), duration: TimeSpan.FromSeconds(10));
 
         await InvokeAsync();
 
@@ -121,7 +126,7 @@ public class BackgroundTaskServicePushNotificationTests : IClassFixture<CustomWe
         var (p256dh, auth) = FakePushKeys.Generate();
         // Loopback fake endpoint: bypasses the public-https policy of the API (see PushTestSubscriptions).
         await PushTestSubscriptions.InsertAsync(_factory, gone.Url, p256dh, auth);
-        var sessionId = await CreateSessionAsync(3, DateTime.Now.AddMinutes(4));
+        var sessionId = await CreateSessionAsync(3, DateTime.Now.AddSeconds(70), duration: TimeSpan.FromSeconds(10));
 
         await InvokeAsync();
 
@@ -142,7 +147,7 @@ public class BackgroundTaskServicePushNotificationTests : IClassFixture<CustomWe
         // Cleanup only runs if RunPushNotificationsAsync gets past the early "no session in the
         // window" return (line 25 in BackgroundTaskService.Reminders.cs) - hence a regular
         // due session as trigger.
-        await CreateSessionAsync(4, DateTime.Now.AddMinutes(4));
+        await CreateSessionAsync(4, DateTime.Now.AddSeconds(50), duration: TimeSpan.FromSeconds(10));
 
         using (var scope = _factory.Services.CreateScope())
         {
@@ -173,7 +178,7 @@ public class BackgroundTaskServicePushNotificationTests : IClassFixture<CustomWe
         });
         var endpoint = $"https://push.example.com/{Guid.NewGuid():N}";
         await SubscribeAsync(endpoint, "p256dh-key-value", "auth-key-value");
-        var sessionId = await CreateSessionAsync(5, DateTime.Now.AddSeconds(30));
+        var sessionId = await CreateSessionAsync(5, DateTime.Now.AddSeconds(30), duration: TimeSpan.FromSeconds(10));
 
         await InvokeAsync();
 
@@ -587,6 +592,10 @@ public class BackgroundTaskServiceSessionReminderTitleArmsTests : IClassFixture<
         _service = BackgroundTaskServiceTestFactory.Create(factory);
     }
 
+    // 10 minutes, not the usual 1 hour: NearestDueThreshold_60_30_And1_EachProducesItsOwnReminderKey
+    // below creates three of these 50/25/0.67 minutes apart to test each threshold arm
+    // independently - with a 1-hour duration those three would overlap each other, which the
+    // server now rejects (a user can only be in one session at a time).
     private async Task<int> CreateSessionAsync(int courseId, DateTime start)
     {
         var response = await _client.PostAsJsonAsync("/api/sessions", new StudySessionDto
@@ -595,7 +604,7 @@ public class BackgroundTaskServiceSessionReminderTitleArmsTests : IClassFixture<
             CourseName = "Title Arm Course",
             CourseColor = "#6C5CE7",
             StartTime = start,
-            EndTime = start.AddHours(1),
+            EndTime = start.AddMinutes(10),
             IsCompleted = false,
             TimerModeId = 1,
         });

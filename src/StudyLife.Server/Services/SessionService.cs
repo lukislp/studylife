@@ -184,6 +184,10 @@ public class SessionService : ISessionService
         var course = await _courseResolver.ResolveAsync(dto.CourseId);
         if (course == null) return ServiceResult<StudySessionDto>.Invalid(CourseValidationMessages.UnknownCourseId(dto.CourseId));
 
+        var overlap = await FindOverlapAsync(dto.StartTime, dto.EndTime, excludeId: null);
+        if (overlap != null)
+            return ServiceResult<StudySessionDto>.Invalid(SessionValidationMessages.Overlaps(overlap.Id, overlap.CourseName));
+
         var entity = ToEntity(dto);
         entity.Id = 0;
         entity.CourseName = course.Name;
@@ -218,6 +222,10 @@ public class SessionService : ISessionService
             entity.CourseName = course.Name;
             entity.CourseColor = course.Color;
         }
+
+        var overlap = await FindOverlapAsync(dto.StartTime, dto.EndTime, excludeId: id);
+        if (overlap != null)
+            return ServiceResult<StudySessionDto>.Invalid(SessionValidationMessages.Overlaps(overlap.Id, overlap.CourseName));
 
         var oldStartTime = entity.StartTime;
         var wasCompletedBefore = entity.IsCompleted;
@@ -423,6 +431,19 @@ public class SessionService : ISessionService
         if (dto.EndTime - dto.StartTime > TimeSpan.FromHours(24)) return "A session cannot last longer than 24 hours.";
         return null;
     }
+
+    /// <summary>
+    /// The first existing session for this user (StudySessionEntity's global query filter already
+    /// scopes _db.Sessions to AuthUserId) whose [StartTime, EndTime) overlaps the given window, or
+    /// null. Checked regardless of course - a user can only be doing one thing at a time, so two
+    /// sessions for DIFFERENT courses at the same time are exactly as invalid as two for the same
+    /// one. Touching boundaries (one session's EndTime equal to another's StartTime) are NOT an
+    /// overlap, so back-to-back sessions remain possible.
+    /// </summary>
+    private Task<StudySessionEntity?> FindOverlapAsync(DateTime start, DateTime end, int? excludeId) =>
+        _db.Sessions
+            .Where(s => excludeId == null || s.Id != excludeId)
+            .FirstOrDefaultAsync(s => s.StartTime < end && s.EndTime > start);
 
     // internal instead of private: reused by BackupController (JSON export), MetricsController
     // and SummaryInputLoader, so none of them has to duplicate the same mapping again.
