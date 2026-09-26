@@ -7,6 +7,7 @@
   "PhaseFocus": "Focus",
   "SessionCompletedTitle": "Sesiune de studiu finalizată 🎉",
   "SessionCompletedBody": "{0} – muncă excelentă!",
+  "SessionSaveFailedTitle": "Sesiunea nu a putut fi salvată",
   "PhaseBreakLabel": "pauză",
   "PhaseFocusLabel": "focus",
   "Reset": "Resetează",

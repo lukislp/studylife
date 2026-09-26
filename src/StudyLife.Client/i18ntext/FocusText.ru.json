@@ -7,6 +7,7 @@
   "PhaseFocus": "Фокус",
   "SessionCompletedTitle": "Учебная сессия завершена 🎉",
   "SessionCompletedBody": "{0} – отличная работа!",
+  "SessionSaveFailedTitle": "Не удалось сохранить сессию",
   "PhaseBreakLabel": "перерыв",
   "PhaseFocusLabel": "фокус",
   "Reset": "Сбросить",

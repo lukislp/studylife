@@ -128,6 +128,9 @@ public partial class Calendar
         _importBusy = true;
         try
         {
+            // Only actually-saved events are counted - a rejected one (e.g. it overlaps a
+            // session already on the calendar) must not be reported as imported when it was
+            // silently never created (same fix as Planner's AcceptExamPlan/AcceptWeekPlan).
             var imported = 0;
             foreach (var candidate in _importCandidates.Where(c => c.Selected))
             {
@@ -143,8 +146,7 @@ public partial class Calendar
                     Notes = candidate.Event.Description,
                     TimerModeId = new Random().Next(1, DefaultData.TimerModes.Count + 1),
                 };
-                await State.SaveSessionAsync(session);
-                imported++;
+                if ((await State.SaveSessionAsync(session)).Success) imported++;
             }
             _sessions = await State.GetSessionsAsync();
             _importSummary = string.Format(T.ImportSummary ?? "", imported);

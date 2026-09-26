@@ -522,7 +522,17 @@
         if (_activeSession != null)
         {
             _activeSession.IsCompleted = true;
-            await State.SaveSessionAsync(_activeSession);
+            var outcome = await State.SaveSessionAsync(_activeSession);
+            // _activeSession is always an existing session already in progress (its StartTime/
+            // EndTime aren't changed here, only IsCompleted), so the server's overlap check
+            // excludes it from conflicting with its own unchanged time - a rejection here would
+            // have to come from something else. Surfaced rather than silently proceeding as if
+            // the completed flag had actually been saved (same fix as the ICS import above and
+            // Planner's AcceptExamPlan/AcceptWeekPlan).
+            if (!outcome.Success)
+            {
+                await Notifications.ShowLocalNotificationAsync(T.SessionSaveFailedTitle, outcome.Error ?? "");
+            }
         }
         try { await JS.InvokeVoidAsync("playCompletionSound"); } catch { /* best-effort, ignore */ }
         _motivationText = GetRandomMotivation();

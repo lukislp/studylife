@@ -7,6 +7,7 @@
   "PhaseFocus": "Focus",
   "SessionCompletedTitle": "Session d'étude terminée 🎉",
   "SessionCompletedBody": "{0} – bravo pour ce travail !",
+  "SessionSaveFailedTitle": "Impossible d'enregistrer la session",
   "PhaseBreakLabel": "pause",
   "PhaseFocusLabel": "focus",
   "Reset": "Réinitialiser",

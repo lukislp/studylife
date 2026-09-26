@@ -7,6 +7,7 @@
   "PhaseFocus": "Fokuss",
   "SessionCompletedTitle": "Mācību sesija pabeigta 🎉",
   "SessionCompletedBody": "{0} – lielisks darbs!",
+  "SessionSaveFailedTitle": "Neizdevās saglabāt sesiju",
   "PhaseBreakLabel": "pārtraukums",
   "PhaseFocusLabel": "fokuss",
   "Reset": "Atiestatīt",

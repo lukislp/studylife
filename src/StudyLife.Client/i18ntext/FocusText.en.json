@@ -8,6 +8,7 @@
   "PhaseFocus": "Focus",
   "SessionCompletedTitle": "Study session completed 🎉",
   "SessionCompletedBody": "{0} – great work!",
+  "SessionSaveFailedTitle": "Couldn't save session",
   "PhaseBreakLabel": "break",
   "PhaseFocusLabel": "focus",
   "Reset": "Reset",

@@ -8,6 +8,7 @@
   "PhaseFocus": "Fokus",
   "SessionCompletedTitle": "Lerneinheit abgeschlossen 🎉",
   "SessionCompletedBody": "{0} – Großartige Arbeit!",
+  "SessionSaveFailedTitle": "Session konnte nicht gespeichert werden",
   "PhaseBreakLabel": "Pause",
   "PhaseFocusLabel": "Fokus",
   "Reset": "Zurücksetzen",
