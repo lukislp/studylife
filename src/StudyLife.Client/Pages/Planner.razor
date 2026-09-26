@@ -80,18 +80,37 @@
                 {
                     <div class="planner-proposal dash-card">
                         <div class="card-label">@string.Format(T.ProposalHeading, _examProposals.Count, ExamProposalHours.ToString("0.0"))</div>
-                        <div class="planner-proposal-list">
-                            @foreach (var p in _examProposals)
-                            {
-                                var prop = p;
-                                <div class="planner-proposal-row" style="--c:@prop.CourseColor">
-                                    <div class="ppr-date">@($"{LocalDate.Weekday(prop.Start, true)}, {LocalDate.DayMonth(prop.Start)}")</div>
-                                    <div class="ppr-time">@LocalDate.Time(prop.Start)–@LocalDate.Time(prop.End)</div>
-                                    <div class="ppr-topic">@prop.Topic</div>
-                                    <button class="ppr-remove" aria-label="@T.RemoveProposalTitle" title="@T.RemoveProposalTitle" @onclick="() => _examProposals.Remove(prop)">✕</button>
-                                </div>
-                            }
+                        <div class="planner-view-toggle">
+                            <button type="button" class="planner-view-opt @(_examViewMode == "list" ? "active" : "")" @onclick='() => _examViewMode = "list"'>@T.ViewAsListButton</button>
+                            <button type="button" class="planner-view-opt @(_examViewMode == "calendar" ? "active" : "")" @onclick='() => _examViewMode = "calendar"'>@T.ViewAsCalendarButton</button>
                         </div>
+                        @if (_examViewMode == "calendar")
+                        {
+                            <div class="planner-cal-wrap">
+                                <PlannerCalendarPreview ContainerId="planner-cal-exam"
+                                                         Proposals="_examProposals"
+                                                         ExistingSessions="_sessions"
+                                                         ConfirmTitle="@T.ConfirmProposalTitle"
+                                                         RemoveTitle="@T.RemoveProposalTitle"
+                                                         OnConfirmOne="@(p => ConfirmSingleProposal(_examProposals, p))"
+                                                         OnRemoveOne="@(p => _examProposals.Remove(p))" />
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="planner-proposal-list">
+                                @foreach (var p in _examProposals)
+                                {
+                                    var prop = p;
+                                    <div class="planner-proposal-row" style="--c:@prop.CourseColor">
+                                        <div class="ppr-date">@($"{LocalDate.Weekday(prop.Start, true)}, {LocalDate.DayMonth(prop.Start)}")</div>
+                                        <div class="ppr-time">@LocalDate.Time(prop.Start)–@LocalDate.Time(prop.End)</div>
+                                        <div class="ppr-topic">@prop.Topic</div>
+                                        <button class="ppr-remove" aria-label="@T.RemoveProposalTitle" title="@T.RemoveProposalTitle" @onclick="() => _examProposals.Remove(prop)">✕</button>
+                                    </div>
+                                }
+                            </div>
+                        }
                         <button class="btn-primary" @onclick="AcceptExamPlan">@T.AcceptExamPlanButton</button>
                     </div>
                 }
@@ -158,19 +177,38 @@
             {
                 <div class="planner-proposal dash-card">
                     <div class="card-label">@string.Format(T.WeekPlanHeading, _weekProposals.Count, WeekProposalHours.ToString("0.0"))</div>
-                    <div class="planner-proposal-list">
-                        @foreach (var p in _weekProposals)
-                        {
-                            var prop = p;
-                            <div class="planner-proposal-row" style="--c:@prop.CourseColor">
-                                <div class="ppr-date">@($"{LocalDate.Weekday(prop.Start, true)}, {LocalDate.DayMonth(prop.Start)}")</div>
-                                <div class="ppr-time">@LocalDate.Time(prop.Start)–@LocalDate.Time(prop.End)</div>
-                                <div class="ppr-course">@prop.CourseName</div>
-                                <div class="ppr-topic">@prop.Topic</div>
-                                <button class="ppr-remove" aria-label="@T.RemoveProposalTitle" title="@T.RemoveProposalTitle" @onclick="() => _weekProposals.Remove(prop)">✕</button>
-                            </div>
-                        }
+                    <div class="planner-view-toggle">
+                        <button type="button" class="planner-view-opt @(_weekViewMode == "list" ? "active" : "")" @onclick='() => _weekViewMode = "list"'>@T.ViewAsListButton</button>
+                        <button type="button" class="planner-view-opt @(_weekViewMode == "calendar" ? "active" : "")" @onclick='() => _weekViewMode = "calendar"'>@T.ViewAsCalendarButton</button>
                     </div>
+                    @if (_weekViewMode == "calendar")
+                    {
+                        <div class="planner-cal-wrap">
+                            <PlannerCalendarPreview ContainerId="planner-cal-week"
+                                                     Proposals="_weekProposals"
+                                                     ExistingSessions="_sessions"
+                                                     ConfirmTitle="@T.ConfirmProposalTitle"
+                                                     RemoveTitle="@T.RemoveProposalTitle"
+                                                     OnConfirmOne="@(p => ConfirmSingleProposal(_weekProposals, p))"
+                                                     OnRemoveOne="@(p => _weekProposals.Remove(p))" />
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="planner-proposal-list">
+                            @foreach (var p in _weekProposals)
+                            {
+                                var prop = p;
+                                <div class="planner-proposal-row" style="--c:@prop.CourseColor">
+                                    <div class="ppr-date">@($"{LocalDate.Weekday(prop.Start, true)}, {LocalDate.DayMonth(prop.Start)}")</div>
+                                    <div class="ppr-time">@LocalDate.Time(prop.Start)–@LocalDate.Time(prop.End)</div>
+                                    <div class="ppr-course">@prop.CourseName</div>
+                                    <div class="ppr-topic">@prop.Topic</div>
+                                    <button class="ppr-remove" aria-label="@T.RemoveProposalTitle" title="@T.RemoveProposalTitle" @onclick="() => _weekProposals.Remove(prop)">✕</button>
+                                </div>
+                            }
+                        </div>
+                    }
                     <button class="btn-primary" @onclick="AcceptWeekPlan">@T.AcceptWeekPlanButton</button>
                 </div>
             }
@@ -220,6 +258,7 @@
     private List<string> _examOpenTopics = new();
     private int _examCourseTotalTopics;
     private List<PlanProposal> _examProposals = new();
+    private string _examViewMode = "list"; // "list" | "calendar"
     private bool _examUsedFallbackTopic; // true = every proposal's Topic came from T.ReviewTopicFallback
     private bool _examGenerated;
     private string? _examError;
@@ -232,6 +271,7 @@
     private double _weekAlreadyHours;
     private double _weekRemainingHours;
     private List<PlanProposal> _weekProposals = new();
+    private string _weekViewMode = "list"; // "list" | "calendar"
     private HashSet<int> _weekFallbackCourseIds = new(); // course ids whose proposals' Topic came from T.ReviewTopicFallback
     private bool _weekGenerated;
     private string? _weekAcceptedMessage;
@@ -434,6 +474,40 @@
         _examGenerated = true;
     }
 
+    private static StudySession ToNewSession(PlanProposal p) => new()
+    {
+        CourseId = p.CourseId,
+        CourseName = p.CourseName,
+        CourseColor = p.CourseColor,
+        StartTime = p.Start,
+        EndTime = p.End,
+        Topic = p.Topic,
+        TimerModeId = new Random().Next(1, DefaultData.TimerModes.Count + 1),
+    };
+
+    /// <summary>Confirms exactly one proposal from the calendar preview (PlannerCalendarPreview's
+    /// per-block ✓ button) - AcceptExamPlan/AcceptWeekPlan below do the same for the whole batch.
+    /// `proposals` is whichever of _examProposals/_weekProposals the caller passed, so this one
+    /// method serves both tabs.</summary>
+    private async Task ConfirmSingleProposal(List<PlanProposal> proposals, PlanProposal p)
+    {
+        var outcome = await State.SaveSessionAsync(ToNewSession(p));
+        if (!outcome.Success) return; // stays visible in the preview - the server had a reason (e.g. a new overlap)
+        proposals.Remove(p);
+        _sessions = await State.GetSessionsAsync();
+        if (ReferenceEquals(proposals, _examProposals))
+        {
+            _examAcceptedCount = 1;
+            _examAcceptedMessage = string.Format(T.ExamPlanAccepted, 1);
+        }
+        else
+        {
+            _weekAcceptedCount = 1;
+            _weekAcceptedMessage = string.Format(T.WeekPlanAccepted, 1);
+        }
+        RecalcWeekHours();
+    }
+
     private async Task AcceptExamPlan()
     {
         // Only proposals that actually saved are cleared and counted - a rejected one (e.g. it
@@ -442,16 +516,7 @@
         var count = 0;
         foreach (var p in _examProposals.ToList())
         {
-            var outcome = await State.SaveSessionAsync(new StudySession
-            {
-                CourseId = p.CourseId,
-                CourseName = p.CourseName,
-                CourseColor = p.CourseColor,
-                StartTime = p.Start,
-                EndTime = p.End,
-                Topic = p.Topic,
-                TimerModeId = new Random().Next(1, DefaultData.TimerModes.Count + 1),
-            });
+            var outcome = await State.SaveSessionAsync(ToNewSession(p));
             if (outcome.Success)
             {
                 _examProposals.Remove(p);
@@ -577,16 +642,7 @@
         var count = 0;
         foreach (var p in _weekProposals.ToList())
         {
-            var outcome = await State.SaveSessionAsync(new StudySession
-            {
-                CourseId = p.CourseId,
-                CourseName = p.CourseName,
-                CourseColor = p.CourseColor,
-                StartTime = p.Start,
-                EndTime = p.End,
-                Topic = p.Topic,
-                TimerModeId = new Random().Next(1, DefaultData.TimerModes.Count + 1),
-            });
+            var outcome = await State.SaveSessionAsync(ToNewSession(p));
             if (outcome.Success)
             {
                 _weekProposals.Remove(p);

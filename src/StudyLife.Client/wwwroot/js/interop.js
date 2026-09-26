@@ -424,6 +424,25 @@ function scrollElementToCurrentTime(scrollContainerId) {
     container.scrollTop = Math.max(0, Math.min(target, maxScroll));
 }
 
+// Same geometry as scrollElementToCurrentTime above, generalized to an arbitrary selector
+// instead of hardcoding .cal-now-line - used by the planner's calendar preview (PlannerCalendarPreview.razor)
+// to open scrolled to the first proposed session instead of midnight. A no-op if either the
+// container or a matching element isn't in the DOM.
+function scrollElementToSelector(scrollContainerId, targetSelector) {
+    var container = document.getElementById(scrollContainerId);
+    if (!container) return;
+    var target = container.querySelector(targetSelector);
+    if (!target) return;
+
+    var containerRect = container.getBoundingClientRect();
+    var targetRect = target.getBoundingClientRect();
+    var targetOffsetInContent = (targetRect.top - containerRect.top) + container.scrollTop;
+
+    var scrollTo = targetOffsetInContent - container.clientHeight * 0.3;
+    var maxScroll = container.scrollHeight - container.clientHeight;
+    container.scrollTop = Math.max(0, Math.min(scrollTo, maxScroll));
+}
+
 // "Read note aloud" fallback for languages without a server-side Piper voice: the
 // browser's own built-in synthesis, so the feature still works everywhere, just with
 // whatever voice quality the OS/browser ships - no server round-trip, no audio bytes.

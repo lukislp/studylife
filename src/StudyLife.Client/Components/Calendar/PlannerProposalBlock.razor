@@ -1,0 +1,28 @@
+@using StudyLife.Shared
+
+<div class="cal-session cal-session-ghost" style="top:@(Top)px;height:@(Height)px;--c:@Proposal.CourseColor"
+     @onclick:stopPropagation="true">
+    <div class="cs-name">@Proposal.CourseName</div>
+    @if (!string.IsNullOrEmpty(Proposal.Topic))
+    {
+        <div class="cs-topic">@Proposal.Topic</div>
+    }
+    <div class="cs-time">@LocalDate.Time(Proposal.Start)–@LocalDate.Time(Proposal.End)</div>
+    <div class="cs-ghost-actions">
+        <button type="button" class="cs-ghost-btn cs-ghost-confirm" title="@ConfirmTitle" aria-label="@ConfirmTitle"
+                @onclick="() => OnConfirm.InvokeAsync()">✓</button>
+        <button type="button" class="cs-ghost-btn cs-ghost-remove" title="@RemoveTitle" aria-label="@RemoveTitle"
+                @onclick="() => OnRemove.InvokeAsync()">✕</button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public PlanProposal Proposal { get; set; } = new();
+    [Parameter] public EventCallback OnConfirm { get; set; }
+    [Parameter] public EventCallback OnRemove { get; set; }
+    [Parameter] public string? ConfirmTitle { get; set; }
+    [Parameter] public string? RemoveTitle { get; set; }
+
+    private int Top => Proposal.Start.Hour * 60 + Proposal.Start.Minute;
+    private double Height => Math.Max(30, (Proposal.End - Proposal.Start).TotalMinutes);
+}

@@ -1,3 +1,13 @@
+/* === Stats Page === */
+/* The root element carries "setup-page" (setup.css: max-width: 800px, shared with the actual
+   Setup page) - overridden here for stats-page specifically rather than removed from the
+   markup, since .setup-page's other rules (padding) are still wanted. Two classes, not one:
+   stats.css loads BEFORE setup.css in the fixed sheet order (js/boot-loading.js), so a
+   same-specificity single-class .stats-page rule would lose the cascade to .setup-page's later
+   max-width - .setup-page.stats-page's higher specificity wins regardless of load order.
+   Matches Calendar/Focus/Planner, none of which are capped like this. */
+.setup-page.stats-page { max-width: none; }
+
 /* Year in review / Wrapped */
 .wrapped-trigger-btn {
     display: inline-block;
@@ -263,8 +273,12 @@ button.time-heatmap-cell.selected { outline: 2px solid var(--accent); outline-of
 .timeline-chart { display: flex; align-items: flex-end; gap: 0.4rem; height: 110px; width: max-content; min-width: 100%; }
 /* Wide enough for the full "dd.MM.yy" label below (~46px at 0.6rem monospace) - each column
    reserves its own label space so consecutive dates can't visually overlap. The chart already
-   scrolls horizontally (.timeline-chart-wrap), same established pattern as the heatmap. */
-.timeline-col { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; height: 100%; width: 54px; flex-shrink: 0; }
+   scrolls horizontally (.timeline-chart-wrap), same established pattern as the heatmap.
+   flex-grow (not a fixed width) so a handful of columns spread out to use a wide card instead of
+   clustering at the left with empty space trailing them - flex-shrink stays 0 and flex-basis
+   stays 54px, so once enough columns exist to fill/overflow the card, growth has nothing left to
+   distribute and the original fixed-width/horizontal-scroll behavior takes over unchanged. */
+.timeline-col { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; height: 100%; flex: 1 0 54px; max-width: 120px; }
 .timeline-track { position: relative; flex: 1 1 auto; width: 100%; max-width: 22px; display: flex; align-items: flex-end; background: var(--bg3); border-radius: 3px; }
 .timeline-fill { width: 100%; background: var(--accent); border-radius: 3px; min-height: 2px; transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
 .timeline-label { font-size: 0.6rem; color: var(--text3); font-family: var(--font-mono); white-space: nowrap; }

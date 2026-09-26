@@ -1,0 +1,85 @@
+@using StudyLife.Client.Models
+@using StudyLife.Shared
+@inject IJSRuntime JS
+
+<!-- Same structure as Calendar.razor's grid (cal-outer/cal-inner/cal-header-row/cal-grid), but
+     scoped to exactly the days this batch of proposals spans instead of a browsable week/day -
+     this is a preview of a specific plan, not a general calendar. Reuses CalendarDayColumn (real
+     sessions, "now" line, today/past styling) via its GhostContent slot for the proposed
+     sessions, so the visual language matches the real calendar exactly. -->
+<div class="cal-outer" id="@ContainerId">
+    <div class="cal-inner">
+        <div class="cal-header-row">
+            <div class="cal-hours-spacer"></div>
+            @foreach (var day in VisibleDays)
+            {
+                var dayRef = day;
+                <CalendarDayHeaderCell Date="dayRef" />
+            }
+        </div>
+        <div class="cal-scroll-body">
+            <div class="cal-grid">
+                <div class="cal-hours">
+                    @for (int h = 0; h <= 23; h++)
+                    {
+                        <div class="hour-label" style="top: @(h * 60)px">@h.ToString("00"):00</div>
+                    }
+                    <div class="hour-label hour-label-end">24:00</div>
+                </div>
+                @foreach (var day in VisibleDays)
+                {
+                    var dayRef = day;
+                    <CalendarDayColumn Date="dayRef" Sessions="ExistingSessionsForDay(dayRef)">
+                        <GhostContent>
+                            @foreach (var proposal in ProposalsForDay(dayRef))
+                            {
+                                var p = proposal;
+                                <PlannerProposalBlock Proposal="p"
+                                                       ConfirmTitle="@ConfirmTitle"
+                                                       RemoveTitle="@RemoveTitle"
+                                                       OnConfirm="@(() => OnConfirmOne.InvokeAsync(p))"
+                                                       OnRemove="@(() => OnRemoveOne.InvokeAsync(p))" />
+                            }
+                        </GhostContent>
+                    </CalendarDayColumn>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string ContainerId { get; set; } = "planner-cal-outer";
+    [Parameter] public List<PlanProposal> Proposals { get; set; } = new();
+    [Parameter] public List<StudySession> ExistingSessions { get; set; } = new();
+    [Parameter] public EventCallback<PlanProposal> OnConfirmOne { get; set; }
+    [Parameter] public EventCallback<PlanProposal> OnRemoveOne { get; set; }
+    [Parameter] public string? ConfirmTitle { get; set; }
+    [Parameter] public string? RemoveTitle { get; set; }
+
+    private DateTime? _scrolledForFirstDay;
+
+    private List<DateTime> VisibleDays => Proposals
+        .Select(p => p.Start.Date)
+        .Distinct()
+        .OrderBy(d => d)
+        .ToList();
+
+    private List<PlanProposal> ProposalsForDay(DateTime day) =>
+        Proposals.Where(p => p.Start.Date == day).ToList();
+
+    private List<StudySession> ExistingSessionsForDay(DateTime day) =>
+        ExistingSessions.Where(s => s.StartTime.Date == day).ToList();
+
+    // Re-scrolls when the visible day range actually changes (e.g. switching from the exam plan
+    // tab to the week plan tab), but NOT on every confirm/remove within the same range - those
+    // mutate Proposals without changing which days are shown, and jumping the scroll position
+    // back after every single click would be jarring.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        var firstDay = VisibleDays.FirstOrDefault();
+        if (Proposals.Count == 0 || _scrolledForFirstDay == firstDay) return;
+        _scrolledForFirstDay = firstDay;
+        await JS.InvokeVoidAsync("scrollElementToSelector", ContainerId, ".cal-session-ghost");
+    }
+}

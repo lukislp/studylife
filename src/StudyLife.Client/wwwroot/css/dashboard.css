@@ -1,7 +1,10 @@
 /* === Dashboard === */
+/* No cap, matching Calendar/Focus/Planner/Stats/Setup - .dashboard is exclusive to Index.razor,
+   so this can be changed directly rather than needing an override class like the pages that
+   share .setup-page. The 2-column .dash-grid below (1fr 1fr) already scales its columns to fill
+   whatever width is available. */
 .dashboard {
     padding: 2.5rem 2rem;
-    max-width: 900px;
 }
 
 .dash-header { margin-bottom: 2rem; }

@@ -1,5 +1,16 @@
 /* === Planner Page === */
-.planner-page { max-width: 720px; }
+/* The root element carries BOTH "setup-page" (setup.css: max-width: 800px - shared with the
+   actual Setup page, which does want a centered narrow form) and "planner-page". Overridden
+   here rather than removed from the markup, since planner.css loads after setup.css in the
+   fixed sheet order (js/boot-loading.js) and .setup-page's OTHER rules (padding) are still
+   wanted - just not this one. Matches Calendar/Focus (calendar.css's .calendar-page, focus.css's
+   .focus-page), which never had this cap to begin with. */
+.planner-page { max-width: none; }
+/* Form and intro text stay a comfortable reading width - form fields/labels were never meant
+   to stretch. The generated proposal (.planner-proposal, below the form) is deliberately NOT
+   capped here, so once it holds the calendar preview, that grid gets to use the width the page
+   now actually has - exactly the piece that benefits from it, not the form next to it. */
+.planner-intro, .planner-form { max-width: 720px; }
 
 .planner-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; }
 .planner-tab {
@@ -69,5 +80,55 @@
 
 @media (max-width: 700px) {
     .ppr-course { display: none; }
+}
+
+/* === Calendar preview (exam/week plan review as a grid instead of a list) === */
+.planner-view-toggle { display: inline-flex; gap: 0.35rem; }
+.planner-view-opt {
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    font-size: 0.8rem;
+    font-weight: 500;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: var(--transition);
+}
+.planner-view-opt:hover { color: var(--text); border-color: var(--border2); }
+.planner-view-opt.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* cal-outer's flex:1/min-height:0 (calendar.css) sizes it against Calendar.razor's full-height
+   flex page - the planner page is a normal scrolling document, so a fixed height is given here
+   instead, with the outer border moved onto this wrapper. */
+.planner-cal-wrap { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.planner-cal-wrap .cal-outer { height: 60vh; max-height: 520px; border: none; border-radius: 0; }
+
+.cal-session-ghost {
+    border-style: dashed;
+    border-width: 1px 1px 1px 3px;
+    background: color-mix(in srgb, var(--c) 12%, var(--bg2));
+}
+.cs-ghost-actions { position: absolute; top: 2px; right: 2px; display: flex; gap: 2px; }
+.cs-ghost-btn {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: none;
+    font-size: 0.6rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #fff;
+}
+.cs-ghost-confirm { background: #00b894; }
+.cs-ghost-remove { background: var(--danger, #e74c3c); }
+.cs-ghost-confirm:hover, .cs-ghost-remove:hover { filter: brightness(1.1); }
+
+@media (max-width: 700px) {
+    .planner-cal-wrap .cal-outer { height: 70vh; }
 }
 

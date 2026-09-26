@@ -15,6 +15,7 @@
             var s = session;
             <CalendarSessionBlock Session="s" OnClick="@(() => OnSessionClick.InvokeAsync(s))" />
         }
+        @GhostContent
     </div>
 </div>
 
@@ -23,6 +24,10 @@
     [Parameter] public List<StudySession> Sessions { get; set; } = new();
     [Parameter] public EventCallback<MouseEventArgs> OnDayClick { get; set; }
     [Parameter] public EventCallback<StudySession> OnSessionClick { get; set; }
+    /// <summary>Extra content absolutely-positioned into the same 1440px-tall day-body as the real
+    /// session blocks above - used by PlannerCalendarPreview.razor to overlay not-yet-created
+    /// proposed sessions without duplicating this component's real-session rendering.</summary>
+    [Parameter] public RenderFragment? GhostContent { get; set; }
 
     private bool IsToday => Date.Date == DateTime.Today;
     private bool IsPast => Date.Date < DateTime.Today;
