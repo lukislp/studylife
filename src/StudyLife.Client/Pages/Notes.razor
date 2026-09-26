@@ -758,7 +758,15 @@ else
         _dictationUsingBrowserFallback = false;
         var lang = await I18nText.GetCurrentLanguageAsync();
 
-        if (await JS.InvokeAsync<bool>("startDictationRecording"))
+        // Both calls below reject (rather than resolve false) when the browser has no
+        // SpeechRecognition implementation at all (every WebKit/Safari browser, including iOS) -
+        // caught here so that lands on the existing "unavailable" UX instead of the page's
+        // <ErrorBoundary>.
+        bool recording;
+        try { recording = await JS.InvokeAsync<bool>("startDictationRecording"); }
+        catch { recording = false; }
+
+        if (recording)
         {
             _dictationRecording = true;
             _dictationAutoStopTimer = new System.Threading.Timer(
@@ -773,7 +781,11 @@ else
         // worth being explicit that, unlike everything else here, most browsers' implementation
         // sends the audio to their own cloud speech service rather than recognizing it locally.
         var locale = SpeechLocales.GetValueOrDefault(lang, lang);
-        if (await JS.InvokeAsync<bool>("startBrowserSpeechRecognition", locale))
+        bool browserFallback;
+        try { browserFallback = await JS.InvokeAsync<bool>("startBrowserSpeechRecognition", locale); }
+        catch { browserFallback = false; }
+
+        if (browserFallback)
         {
             _dictationUsingBrowserFallback = true;
             _dictationRecording = true;
