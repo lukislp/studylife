@@ -16,7 +16,7 @@
   "ConfirmDeleteQuestion": "Vill du verkligen ta bort denna session?",
   "ConfirmDeleteYes": "Ja, ta bort",
   "ConfirmDeleteCancel": "Avbryt",
-  "SessionOverlapWarning": "Detta överlappar med {0}. Spara igen för att behålla den ändå.",
+  "SessionOverlapWarning": "Detta överlappar med {0}. Välj en annan tid.",
   "DeleteThisOnly": "Endast denna session",
   "DeleteThisAndFollowing": "Denna och alla följande",
   "DeleteEntireSeries": "Ta bort hela serien",

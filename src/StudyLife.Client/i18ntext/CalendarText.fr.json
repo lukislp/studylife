@@ -16,7 +16,7 @@
   "ConfirmDeleteQuestion": "Vraiment supprimer cette session ?",
   "ConfirmDeleteYes": "Oui, supprimer",
   "ConfirmDeleteCancel": "Annuler",
-  "SessionOverlapWarning": "Ceci chevauche {0}. Enregistrez à nouveau pour confirmer malgré tout.",
+  "SessionOverlapWarning": "Ceci chevauche {0}. Choisissez un autre horaire.",
   "DeleteThisOnly": "Seulement cette session",
   "DeleteThisAndFollowing": "Celle-ci et toutes les suivantes",
   "DeleteEntireSeries": "Supprimer toute la série",

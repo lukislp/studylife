@@ -16,7 +16,7 @@
   "ConfirmDeleteQuestion": "Ar tikrai norite ištrinti šią sesiją?",
   "ConfirmDeleteYes": "Taip, ištrinti",
   "ConfirmDeleteCancel": "Atšaukti",
-  "SessionOverlapWarning": "Tai sutampa su {0}. Išsaugokite dar kartą, jei vis tiek norite ją palikti.",
+  "SessionOverlapWarning": "Tai sutampa su {0}. Pasirinkite kitą laiką.",
   "DeleteThisOnly": "Tik šią sesiją",
   "DeleteThisAndFollowing": "Šią ir visas kitas",
   "DeleteEntireSeries": "Ištrinti visą seriją",

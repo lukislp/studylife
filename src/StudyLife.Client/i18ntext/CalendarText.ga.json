@@ -16,7 +16,7 @@
   "ConfirmDeleteQuestion": "An bhfuil tú cinnte gur mian leat an seisiún seo a scriosadh?",
   "ConfirmDeleteYes": "Sea, scrios",
   "ConfirmDeleteCancel": "Cealaigh",
-  "SessionOverlapWarning": "Forluíonn sé seo le {0}. Sábháil arís chun é a choinneáil mar sin féin.",
+  "SessionOverlapWarning": "Forluíonn sé seo le {0}. Roghnaigh am eile.",
   "DeleteThisOnly": "An seisiún seo amháin",
   "DeleteThisAndFollowing": "Seo agus na cinn a leanann",
   "DeleteEntireSeries": "Scrios an tsraith ar fad",

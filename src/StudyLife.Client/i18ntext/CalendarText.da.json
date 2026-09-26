@@ -16,7 +16,7 @@
   "ConfirmDeleteQuestion": "Vil du virkelig slette denne session?",
   "ConfirmDeleteYes": "Ja, slet",
   "ConfirmDeleteCancel": "Annuller",
-  "SessionOverlapWarning": "Dette overlapper med {0}. Gem igen for at beholde den alligevel.",
+  "SessionOverlapWarning": "Dette overlapper med {0}. Vælg et andet tidspunkt.",
   "DeleteThisOnly": "Kun denne session",
   "DeleteThisAndFollowing": "Denne og alle efterfølgende",
   "DeleteEntireSeries": "Slet hele serien",

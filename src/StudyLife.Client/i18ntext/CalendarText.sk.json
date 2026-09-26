@@ -16,7 +16,7 @@
   "ConfirmDeleteQuestion": "Naozaj odstrániť túto reláciu?",
   "ConfirmDeleteYes": "Áno, odstrániť",
   "ConfirmDeleteCancel": "Zrušiť",
-  "SessionOverlapWarning": "Toto sa prekrýva s {0}. Uložte znova, ak ju chcete napriek tomu zachovať.",
+  "SessionOverlapWarning": "Toto sa prekrýva s {0}. Vyberte iný čas.",
   "DeleteThisOnly": "Iba túto reláciu",
   "DeleteThisAndFollowing": "Túto a všetky nasledujúce",
   "DeleteEntireSeries": "Odstrániť celú sériu",

@@ -16,7 +16,7 @@
   "ConfirmDeleteQuestion": "Tassew tħassar din is-sessjoni?",
   "ConfirmDeleteYes": "Iva, ħassar",
   "ConfirmDeleteCancel": "Ikkanċella",
-  "SessionOverlapWarning": "Din tikkoinċidi ma' {0}. Erġa' issejvja biex iżżommha xorta waħda.",
+  "SessionOverlapWarning": "Din tikkoinċidi ma' {0}. Agħżel ħin ieħor.",
   "DeleteThisOnly": "Din is-sessjoni biss",
   "DeleteThisAndFollowing": "Din u dawk kollha ta' wara",
   "DeleteEntireSeries": "Ħassar is-serje kollha",

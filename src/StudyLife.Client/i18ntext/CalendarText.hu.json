@@ -16,7 +16,7 @@
   "ConfirmDeleteQuestion": "Biztosan törlöd ezt a munkamenetet?",
   "ConfirmDeleteYes": "Igen, törlés",
   "ConfirmDeleteCancel": "Mégse",
-  "SessionOverlapWarning": "Ez ütközik ezzel: {0}. Mentsd el újra, ha mégis meg szeretnéd tartani.",
+  "SessionOverlapWarning": "Ez ütközik ezzel: {0}. Válassz másik időpontot.",
   "DeleteThisOnly": "Csak ez a munkamenet",
   "DeleteThisAndFollowing": "Ez és az összes következő",
   "DeleteEntireSeries": "Teljes sorozat törlése",

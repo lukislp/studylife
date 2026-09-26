@@ -16,7 +16,7 @@
   "ConfirmDeleteQuestion": "Opravdu smazat tento studijní blok?",
   "ConfirmDeleteYes": "Ano, smazat",
   "ConfirmDeleteCancel": "Zrušit",
-  "SessionOverlapWarning": "Toto se překrývá s {0}. Uložte znovu, pokud jej chcete přesto zachovat.",
+  "SessionOverlapWarning": "Toto se překrývá s {0}. Vyberte jiný čas.",
   "DeleteThisOnly": "Pouze tento blok",
   "DeleteThisAndFollowing": "Tento a všechny následující",
   "DeleteEntireSeries": "Smazat celou sérii",

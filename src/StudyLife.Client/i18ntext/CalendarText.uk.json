@@ -16,7 +16,7 @@
   "ConfirmDeleteQuestion": "Дійсно видалити цю сесію?",
   "ConfirmDeleteYes": "Так, видалити",
   "ConfirmDeleteCancel": "Скасувати",
-  "SessionOverlapWarning": "Це перетинається з {0}. Збережіть ще раз, щоб залишити її попри це.",
+  "SessionOverlapWarning": "Це перетинається з {0}. Виберіть інший час.",
   "DeleteThisOnly": "Тільки цю сесію",
   "DeleteThisAndFollowing": "Цю і всі наступні",
   "DeleteEntireSeries": "Видалити всю серію",

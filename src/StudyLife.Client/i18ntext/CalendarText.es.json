@@ -16,7 +16,7 @@
   "ConfirmDeleteQuestion": "¿Eliminar esta sesión de verdad?",
   "ConfirmDeleteYes": "Sí, eliminar",
   "ConfirmDeleteCancel": "Cancelar",
-  "SessionOverlapWarning": "Esto se solapa con {0}. Guarda de nuevo para mantenerlo de todos modos.",
+  "SessionOverlapWarning": "Esto se solapa con {0}. Elige otro horario.",
   "DeleteThisOnly": "Solo esta sesión",
   "DeleteThisAndFollowing": "Esta y todas las siguientes",
   "DeleteEntireSeries": "Eliminar toda la serie",

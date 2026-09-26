@@ -16,7 +16,7 @@
   "ConfirmDeleteQuestion": "Poistetaanko tämä jakso varmasti?",
   "ConfirmDeleteYes": "Kyllä, poista",
   "ConfirmDeleteCancel": "Peruuta",
-  "SessionOverlapWarning": "Tämä on päällekkäin jakson {0} kanssa. Tallenna uudelleen pitääksesi sen silti.",
+  "SessionOverlapWarning": "Tämä on päällekkäin jakson {0} kanssa. Valitse toinen ajankohta.",
   "DeleteThisOnly": "Vain tämä jakso",
   "DeleteThisAndFollowing": "Tämä ja kaikki seuraavat",
   "DeleteEntireSeries": "Poista koko sarja",

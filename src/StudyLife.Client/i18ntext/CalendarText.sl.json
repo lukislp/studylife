@@ -16,7 +16,7 @@
   "ConfirmDeleteQuestion": "Res želite izbrisati to sejo?",
   "ConfirmDeleteYes": "Da, izbriši",
   "ConfirmDeleteCancel": "Prekliči",
-  "SessionOverlapWarning": "To se prekriva s {0}. Znova shranite, če jo želite kljub temu obdržati.",
+  "SessionOverlapWarning": "To se prekriva s {0}. Izberite drug čas.",
   "DeleteThisOnly": "Samo to sejo",
   "DeleteThisAndFollowing": "To in vse naslednje",
   "DeleteEntireSeries": "Izbriši celoten niz",

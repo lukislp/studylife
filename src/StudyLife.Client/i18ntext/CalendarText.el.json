@@ -16,7 +16,7 @@
   "ConfirmDeleteQuestion": "Θέλετε σίγουρα να διαγράψετε αυτή τη συνεδρία;",
   "ConfirmDeleteYes": "Ναι, διαγραφή",
   "ConfirmDeleteCancel": "Ακύρωση",
-  "SessionOverlapWarning": "Αυτό επικαλύπτεται με {0}. Αποθηκεύστε ξανά για να το διατηρήσετε ούτως ή άλλως.",
+  "SessionOverlapWarning": "Αυτό επικαλύπτεται με {0}. Επιλέξτε διαφορετική ώρα.",
   "DeleteThisOnly": "Μόνο αυτή τη συνεδρία",
   "DeleteThisAndFollowing": "Αυτή και όλες τις επόμενες",
   "DeleteEntireSeries": "Διαγραφή ολόκληρης της σειράς",

@@ -16,7 +16,7 @@
   "ConfirmDeleteQuestion": "Наистина ли да изтрия тази сесия?",
   "ConfirmDeleteYes": "Да, изтрий",
   "ConfirmDeleteCancel": "Отказ",
-  "SessionOverlapWarning": "Това се припокрива с {0}. Запазете отново, за да го запазите въпреки това.",
+  "SessionOverlapWarning": "Това се припокрива с {0}. Изберете друго време.",
   "DeleteThisOnly": "Само тази сесия",
   "DeleteThisAndFollowing": "Тази и всички следващи",
   "DeleteEntireSeries": "Изтриване на цялата поредица",
