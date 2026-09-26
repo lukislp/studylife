@@ -1,5 +1,9 @@
 /* === Setup Page === */
 .setup-page { padding: 2.5rem 2rem; max-width: 800px; }
+/* Setup page specifically (not the other 5 pages sharing .setup-page: Notes/Report/WeekPlan keep
+   the 800px cap, Planner/Stats already override it the same way) - matches Calendar/Focus, which
+   were never capped like this. */
+.setup-page.setup-main-page { max-width: none; }
 .setup-header { margin-bottom: 2.5rem; }
 .setup-header h1 { font-size: 1.75rem; font-weight: 300; letter-spacing: -0.02em; }
 .setup-header p { color: var(--text2); margin-top: 0.4rem; font-size: 0.875rem; }
