@@ -82,6 +82,7 @@
   "TimerModesLabel": "Savi taimera režīmi",
   "TimerModesDesc": "Izveido savus fokusa ritmus — tie parādās Fokusa lapā līdzās iebūvētajiem režīmiem.",
   "TimerModeNamePlaceholder": "Nosaukums (piem., Deep Work)",
+  "TimerModeDuplicateNameError": "Režīms ar šādu nosaukumu jau pastāv.",
   "TimerModeFocusLabel": "Fokuss (min)",
   "TimerModeBreakLabel": "Pārtraukums (min)",
   "TimerModeRoundsLabel": "Raundi",
