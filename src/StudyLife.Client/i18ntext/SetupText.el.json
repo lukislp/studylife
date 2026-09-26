@@ -82,6 +82,7 @@
   "TimerModesLabel": "Προσαρμοσμένες λειτουργίες χρονομέτρου",
   "TimerModesDesc": "Δημιούργησε τους δικούς σου ρυθμούς συγκέντρωσης — εμφανίζονται στη σελίδα Συγκέντρωση δίπλα στις ενσωματωμένες λειτουργίες.",
   "TimerModeNamePlaceholder": "Όνομα (π.χ. Deep Work)",
+  "TimerModeDuplicateNameError": "Υπάρχει ήδη μια λειτουργία με αυτό το όνομα.",
   "TimerModeFocusLabel": "Συγκέντρωση (λεπτά)",
   "TimerModeBreakLabel": "Διάλειμμα (λεπτά)",
   "TimerModeRoundsLabel": "Γύροι",

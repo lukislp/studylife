@@ -82,6 +82,7 @@
   "TimerModesLabel": "Lastni načini časovnika",
   "TimerModesDesc": "Ustvari svoje ritme fokusa — prikažejo se na strani Fokus poleg vgrajenih načinov.",
   "TimerModeNamePlaceholder": "Ime (npr. Deep Work)",
+  "TimerModeDuplicateNameError": "Način s tem imenom že obstaja.",
   "TimerModeFocusLabel": "Fokus (min)",
   "TimerModeBreakLabel": "Odmor (min)",
   "TimerModeRoundsLabel": "Krogi",

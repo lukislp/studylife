@@ -82,6 +82,7 @@
   "TimerModesLabel": "Modi tat-tajmer personalizzati",
   "TimerModesDesc": "Oħloq ir-ritmi ta' fokus tiegħek — jidhru fil-paġna Fokus ħdejn il-modi inkorporati.",
   "TimerModeNamePlaceholder": "Isem (eż. Deep Work)",
+  "TimerModeDuplicateNameError": "Diġà jeżisti mod b'dan l-isem.",
   "TimerModeFocusLabel": "Fokus (min)",
   "TimerModeBreakLabel": "Pawża (min)",
   "TimerModeRoundsLabel": "Rawnds",

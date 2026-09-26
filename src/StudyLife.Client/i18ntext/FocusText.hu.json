@@ -7,6 +7,7 @@
   "PhaseFocus": "Fókusz",
   "SessionCompletedTitle": "Tanulási munkamenet befejezve 🎉",
   "SessionCompletedBody": "{0} – szép munka!",
+  "SessionSaveFailedTitle": "A munkamenetet nem sikerült menteni",
   "PhaseBreakLabel": "szünet",
   "PhaseFocusLabel": "fókusz",
   "Reset": "Visszaállítás",

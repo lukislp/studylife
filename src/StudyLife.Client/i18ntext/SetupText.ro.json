@@ -82,6 +82,7 @@
   "TimerModesLabel": "Moduri de cronometru personalizate",
   "TimerModesDesc": "Creează-ți propriile ritmuri de focus — apar pe pagina Focus lângă modurile integrate.",
   "TimerModeNamePlaceholder": "Nume (de ex. Deep Work)",
+  "TimerModeDuplicateNameError": "Există deja un mod cu acest nume.",
   "TimerModeFocusLabel": "Focus (min)",
   "TimerModeBreakLabel": "Pauză (min)",
   "TimerModeRoundsLabel": "Runde",

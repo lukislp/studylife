@@ -7,6 +7,7 @@
   "PhaseFocus": "Fokus",
   "SessionCompletedTitle": "Učna seja zaključena 🎉",
   "SessionCompletedBody": "{0} – odlično delo!",
+  "SessionSaveFailedTitle": "Seje ni bilo mogoče shraniti",
   "PhaseBreakLabel": "odmor",
   "PhaseFocusLabel": "fokus",
   "Reset": "Ponastavi",

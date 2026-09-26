@@ -82,6 +82,7 @@
   "TimerModesLabel": "Omat ajastintilat",
   "TimerModesDesc": "Luo omat fokusrytmisi — ne näkyvät Fokus-sivulla sisäänrakennettujen tilojen rinnalla.",
   "TimerModeNamePlaceholder": "Nimi (esim. Deep Work)",
+  "TimerModeDuplicateNameError": "Tämänniminen tila on jo olemassa.",
   "TimerModeFocusLabel": "Fokus (min)",
   "TimerModeBreakLabel": "Tauko (min)",
   "TimerModeRoundsLabel": "Kierrokset",

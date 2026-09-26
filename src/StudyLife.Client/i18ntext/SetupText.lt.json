@@ -82,6 +82,7 @@
   "TimerModesLabel": "Savi laikmačio režimai",
   "TimerModesDesc": "Susikurk savo fokusavimo ritmus — jie rodomi Fokuso puslapyje šalia įtaisytųjų režimų.",
   "TimerModeNamePlaceholder": "Pavadinimas (pvz., Deep Work)",
+  "TimerModeDuplicateNameError": "Toks režimo pavadinimas jau naudojamas.",
   "TimerModeFocusLabel": "Fokusas (min.)",
   "TimerModeBreakLabel": "Pertrauka (min.)",
   "TimerModeRoundsLabel": "Raundai",

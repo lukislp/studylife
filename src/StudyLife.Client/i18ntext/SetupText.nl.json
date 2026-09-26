@@ -82,6 +82,7 @@
   "TimerModesLabel": "Eigen timermodi",
   "TimerModesDesc": "Maak je eigen focusritmes — ze verschijnen op de Focus-pagina naast de ingebouwde modi.",
   "TimerModeNamePlaceholder": "Naam (bijv. Deep Work)",
+  "TimerModeDuplicateNameError": "Er bestaat al een modus met deze naam.",
   "TimerModeFocusLabel": "Focus (min)",
   "TimerModeBreakLabel": "Pauze (min)",
   "TimerModeRoundsLabel": "Rondes",

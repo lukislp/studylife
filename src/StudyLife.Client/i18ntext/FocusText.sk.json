@@ -7,6 +7,7 @@
   "PhaseFocus": "Fokus",
   "SessionCompletedTitle": "Študijná relácia dokončená 🎉",
   "SessionCompletedBody": "{0} – skvelá práca!",
+  "SessionSaveFailedTitle": "Reláciu sa nepodarilo uložiť",
   "PhaseBreakLabel": "prestávka",
   "PhaseFocusLabel": "fokus",
   "Reset": "Reset",

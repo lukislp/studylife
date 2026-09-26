@@ -7,6 +7,7 @@
   "PhaseFocus": "Fokus",
   "SessionCompletedTitle": "Opiskelujakso suoritettu 🎉",
   "SessionCompletedBody": "{0} – hyvää työtä!",
+  "SessionSaveFailedTitle": "Jaksoa ei voitu tallentaa",
   "PhaseBreakLabel": "tauko",
   "PhaseFocusLabel": "fokus",
   "Reset": "Nollaa",

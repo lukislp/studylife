@@ -20,8 +20,12 @@
         </div>
     }
 
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <div style="color:var(--danger,#e74c3c);font-size:0.8rem;margin-bottom:0.5rem">⚠️ @_error</div>
+    }
     <div class="field" style="margin-bottom:0.75rem">
-        <input class="input input-sm" maxlength="24" placeholder="@NamePlaceholder" @bind="_name" @bind:event="oninput" />
+        <input class="input input-sm" maxlength="24" placeholder="@NamePlaceholder" @bind="_name" @bind:event="oninput" @bind:after="() => _error = null" />
     </div>
     <div class="field-row" style="margin-bottom:0.75rem">
         <div class="field">
@@ -49,6 +53,10 @@
     [Parameter] public string BreakLabel { get; set; } = "";
     [Parameter] public string RoundsLabel { get; set; } = "";
     [Parameter] public string AddButtonText { get; set; } = "";
+    /// <summary>Shown instead of adding when the entered name (case-insensitively) already
+    /// belongs to another custom mode - two modes with the same name would be indistinguishable
+    /// wherever modes are picked by name (Focus page, session dialogs).</summary>
+    [Parameter] public string? DuplicateNameError { get; set; }
     [Parameter] public List<TimerMode> Modes { get; set; } = new();
     /// <summary>New mode without an ID - the parent assigns the ID and serializes (deferred save-button flow).</summary>
     [Parameter] public EventCallback<TimerMode> OnAdd { get; set; }
@@ -58,12 +66,18 @@
     private int _focusMinutes = 25;
     private int _breakMinutes = 5;
     private int _rounds = 4;
+    private string? _error;
 
     private async Task Add()
     {
         var name = _name.Trim();
         if (name.Length == 0) return;
         if (name.Length > 24) name = name[..24];
+        if (Modes.Any(m => string.Equals(m.Name, name, StringComparison.OrdinalIgnoreCase)))
+        {
+            _error = DuplicateNameError;
+            return;
+        }
         var mode = new TimerMode
         {
             Name = name,
@@ -72,6 +86,7 @@
             Rounds = Math.Clamp(_rounds, 1, 10),
         };
         _name = "";
+        _error = null;
         await OnAdd.InvokeAsync(mode);
     }
 }

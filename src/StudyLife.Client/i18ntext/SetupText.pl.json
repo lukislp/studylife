@@ -82,6 +82,7 @@
   "TimerModesLabel": "Własne tryby minutnika",
   "TimerModesDesc": "Stwórz własne rytmy skupienia — pojawią się na stronie Fokus obok wbudowanych trybów.",
   "TimerModeNamePlaceholder": "Nazwa (np. Deep Work)",
+  "TimerModeDuplicateNameError": "Tryb o tej nazwie już istnieje.",
   "TimerModeFocusLabel": "Skupienie (min)",
   "TimerModeBreakLabel": "Przerwa (min)",
   "TimerModeRoundsLabel": "Rundy",

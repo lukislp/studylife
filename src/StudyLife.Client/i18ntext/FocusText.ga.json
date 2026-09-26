@@ -7,6 +7,7 @@
   "PhaseFocus": "Fócas",
   "SessionCompletedTitle": "Seisiún staidéir críochnaithe 🎉",
   "SessionCompletedBody": "{0} – obair mhaith!",
+  "SessionSaveFailedTitle": "Níorbh fhéidir an seisiún a shábháil",
   "PhaseBreakLabel": "sos",
   "PhaseFocusLabel": "fócas",
   "Reset": "Athshocraigh",

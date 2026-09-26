@@ -82,6 +82,7 @@
   "TimerModesLabel": "Modalità timer personalizzate",
   "TimerModesDesc": "Crea i tuoi ritmi di focus: appaiono nella pagina Focus accanto alle modalità integrate.",
   "TimerModeNamePlaceholder": "Nome (es. Deep Work)",
+  "TimerModeDuplicateNameError": "Esiste già una modalità con questo nome.",
   "TimerModeFocusLabel": "Focus (min)",
   "TimerModeBreakLabel": "Pausa (min)",
   "TimerModeRoundsLabel": "Round",

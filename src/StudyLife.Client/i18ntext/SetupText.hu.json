@@ -82,6 +82,7 @@
   "TimerModesLabel": "Egyéni időzítő módok",
   "TimerModesDesc": "Hozd létre a saját fókuszritmusaidat — a Fókusz oldalon jelennek meg a beépített módok mellett.",
   "TimerModeNamePlaceholder": "Név (pl. Deep Work)",
+  "TimerModeDuplicateNameError": "Már létezik ilyen nevű mód.",
   "TimerModeFocusLabel": "Fókusz (perc)",
   "TimerModeBreakLabel": "Szünet (perc)",
   "TimerModeRoundsLabel": "Körök",

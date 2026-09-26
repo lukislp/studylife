@@ -7,6 +7,7 @@
   "PhaseFocus": "Fokusas",
   "SessionCompletedTitle": "Mokymosi sesija baigta 🎉",
   "SessionCompletedBody": "{0} – puikus darbas!",
+  "SessionSaveFailedTitle": "Nepavyko išsaugoti sesijos",
   "PhaseBreakLabel": "pertrauka",
   "PhaseFocusLabel": "fokusas",
   "Reset": "Atstatyti",

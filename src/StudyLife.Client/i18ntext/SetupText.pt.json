@@ -82,6 +82,7 @@
   "TimerModesLabel": "Modos de temporizador personalizados",
   "TimerModesDesc": "Cria os teus próprios ritmos de foco — aparecem na página Foco ao lado dos modos integrados.",
   "TimerModeNamePlaceholder": "Nome (p. ex. Deep Work)",
+  "TimerModeDuplicateNameError": "Já existe um modo com este nome.",
   "TimerModeFocusLabel": "Foco (min)",
   "TimerModeBreakLabel": "Pausa (min)",
   "TimerModeRoundsLabel": "Rondas",
