@@ -53,6 +53,9 @@ public class StatsSummaryEndpointTests
         // A few sessions logged against the second programme's own courses - membership in a
         // programme's catalog is what BuildProgramComparison filters history by, independent of
         // SelectedCourseIds (that only affects the ACTIVE programme's own course-list rows).
+        // Hours 17-19, not 14-16: SeedRealisticDatasetAsync above already books a session on day
+        // -6 (its own i=2 iteration) at 15:00-16:00, which the server now rejects as an overlap
+        // with this loop's day -6 session for the same user.
         foreach (var (course, i) in customCourses!.Select((c, i) => (c, i)))
         {
             Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/api/sessions", new StudySessionDto
@@ -60,8 +63,8 @@ public class StatsSummaryEndpointTests
                 CourseId = course.Id,
                 CourseName = course.Name,
                 CourseColor = course.Color,
-                StartTime = now.Date.AddDays(-(i + 1) * 2).AddHours(14),
-                EndTime = now.Date.AddDays(-(i + 1) * 2).AddHours(16),
+                StartTime = now.Date.AddDays(-(i + 1) * 2).AddHours(17),
+                EndTime = now.Date.AddDays(-(i + 1) * 2).AddHours(19),
                 IsCompleted = true,
             })).StatusCode);
         }

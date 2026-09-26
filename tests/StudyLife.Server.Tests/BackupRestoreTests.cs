@@ -25,12 +25,16 @@ public class BackupRestoreTests
     // The marker lives in Topic, not CourseName (audit finding M2: POST /api/sessions now
     // derives CourseName server-side from the resolved catalog course, so a client-supplied
     // value there can no longer distinguish sessions for this raw-backup round-trip test).
-    private static StudySessionDto MakeSession(string topicMarker) => new()
+    // hourOffset defaults to the original fixed hour (10-11) - RoundTrip_StageLeavesLiveDbUntouched_
+    // ApplyRestoresBackupState below calls this twice against the same DB (courseA then courseB),
+    // and the server now rejects a session that overlaps another one for the same user, so the
+    // second call passes a different hour.
+    private static StudySessionDto MakeSession(string topicMarker, int hourOffset = 10) => new()
     {
         CourseId = 1,
         CourseName = "irrelevant",
-        StartTime = DateTime.Today.AddDays(-1).AddHours(10),
-        EndTime = DateTime.Today.AddDays(-1).AddHours(11),
+        StartTime = DateTime.Today.AddDays(-1).AddHours(hourOffset),
+        EndTime = DateTime.Today.AddDays(-1).AddHours(hourOffset + 1),
         Topic = topicMarker,
         IsCompleted = false,
         TimerModeId = 1,
@@ -110,7 +114,7 @@ public class BackupRestoreTests
         var backupBytes = await download.Content.ReadAsByteArrayAsync();
 
         // 3. Create FURTHER data - the live state now differs from the backup.
-        var createB = await client.PostAsJsonAsync("/api/sessions", MakeSession(courseB));
+        var createB = await client.PostAsJsonAsync("/api/sessions", MakeSession(courseB, hourOffset: 14));
         Assert.Equal(HttpStatusCode.OK, createB.StatusCode);
 
         var stagingPath = DatabaseRestoreService.GetStagingPath(factory.DbPath);

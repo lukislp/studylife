@@ -1,5 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
+using Microsoft.EntityFrameworkCore;
+using StudyLife.Server.Data;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Tests;
@@ -142,24 +144,36 @@ public class MetricsControllerTests
         Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
 
         // The fixture's single 220h session (2026-02-19T00:00..2026-02-28T04:00) can't be created
-        // through the real endpoint as one row - SessionService.Validate caps a single
-        // session at 24h. Split into 10x 22h sessions on the SAME start date instead (no overlap
-        // check exists) - same total hours (220), same calendar day (still within February, still
-        // within the last-completed week 2026-02-16..02-23), same forecast pace (recentWeeklyHours
-        // only depends on the total, not the session count) - only SessionCount differs (10, not 1).
-        for (var i = 0; i < 10; i++)
+        // through the real endpoint as one row - SessionService.Validate caps a single session at
+        // 24h - nor as 10 real-time rows through it either, now that the server also rejects
+        // overlapping sessions for the same user (10x 22h on the same start date all fully
+        // overlap, and 220h of non-overlapping time doesn't fit in a single week regardless of
+        // how it's sliced). Inserted directly via EF instead, bypassing SessionService's write-path
+        // validation entirely (same pattern as SessionsControllerTests.
+        // CreateOrphanSessionDirectlyAsync) - AuthUserId is auto-stamped on save
+        // (StudyLifeDb.StampAuthUserIdOnAddedEntries). Same total hours (220), same calendar day
+        // (still within February, still within the last-completed week 2026-02-16..02-23), same
+        // forecast pace (recentWeeklyHours only depends on the total, not the session count) -
+        // only SessionCount differs (10, not 1). This is testing metrics AGGREGATION against the
+        // shared cross-repo fixture numbers, not session-write validation, so bypassing that
+        // validation here is correct rather than a workaround to avoid.
+        await factory.WithDbAsync(async db =>
         {
-            var sessionResponse = await client.PostAsJsonAsync("/api/sessions", new StudySessionDto
+            for (var i = 0; i < 10; i++)
             {
-                CourseId = c1.Id,
-                CourseName = "C1",
-                CourseColor = "#111111",
-                StartTime = new DateTime(2026, 2, 19, 0, 0, 0),
-                EndTime = new DateTime(2026, 2, 19, 22, 0, 0),
-                IsCompleted = true,
-            });
-            Assert.Equal(HttpStatusCode.OK, sessionResponse.StatusCode);
-        }
+                db.Sessions.Add(new StudySessionEntity
+                {
+                    CourseId = c1.Id,
+                    CourseName = "C1",
+                    CourseColor = "#111111",
+                    StartTime = new DateTime(2026, 2, 19, 0, 0, 0),
+                    EndTime = new DateTime(2026, 2, 19, 22, 0, 0),
+                    IsCompleted = true,
+                    TimerModeId = 1,
+                });
+            }
+            await db.SaveChangesAsync();
+        });
 
         var response = await client.GetAsync("/api/metrics/summary?now=2026-03-01T12:00:00");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

@@ -25,6 +25,15 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
         _client = factory.CreateClient();
     }
 
+    /// <summary>Tests in this class share one DB (see CustomWebApplicationFactory), and the
+    /// server now rejects a session that overlaps another one for the same user (regardless of
+    /// course - a person can only be doing one thing at a time). A single shared default start
+    /// time would therefore make every caller that doesn't care about a specific time collide
+    /// with every other one. Each call below that omits `start` gets its own slot instead - far
+    /// enough in the future, and spaced widely enough apart, that it can never coincide with any
+    /// of this file's explicit AddDays(...)/AddHours(...) times either.</summary>
+    private static long _defaultSessionSlot;
+
     private static StudySessionDto ValidSession(
         int courseId = 1,
         string courseName = "Analysis 1",
@@ -33,7 +42,7 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
         bool isCompleted = false,
         string? recurrenceGroupId = null)
     {
-        var s = start ?? DateTime.UtcNow.AddDays(1);
+        var s = start ?? DateTime.UtcNow.AddDays(2000).AddHours(Interlocked.Increment(ref _defaultSessionSlot) * 2);
         var e = end ?? s.AddHours(1);
         return new StudySessionDto
         {
@@ -156,6 +165,80 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    // ---------- Overlap check ----------
+    // A user can only be doing one thing at a time, so CreateAsync/UpdateAsync now reject a
+    // session whose [StartTime, EndTime) overlaps another one of the SAME user's, regardless of
+    // course. Found live: the vscode extension's passive "coding time" suggestion booked a
+    // session fully inside an already-planned one for the same course, with no error from either
+    // client or server - both counted toward the week's hours.
+
+    [Fact]
+    public async Task Create_OverlapsExistingSession_SameCourse_ReturnsBadRequestNamingTheConflict()
+    {
+        var existing = await CreateAsync(ValidSession(courseId: 40, start: DateTime.UtcNow.AddDays(60)));
+        // Fully inside the existing session's window - same shape as the live vscode bug.
+        var overlapping = ValidSession(courseId: 40, start: existing.StartTime.AddMinutes(5), end: existing.StartTime.AddMinutes(35));
+
+        var response = await _client.PostAsJsonAsync("/api/sessions", overlapping);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains(existing.Id.ToString(), body);
+    }
+
+    [Fact]
+    public async Task Create_OverlapsExistingSession_DifferentCourse_ReturnsBadRequest()
+    {
+        // A user can only be doing one thing at a time - the check is NOT scoped to matching
+        // courses, unlike every other CreateAsync validation (CourseId, CourseName, ...).
+        var existing = await CreateAsync(ValidSession(courseId: 40, start: DateTime.UtcNow.AddDays(61)));
+        var overlapping = ValidSession(courseId: 41, start: existing.StartTime.AddMinutes(-10), end: existing.StartTime.AddMinutes(10));
+
+        var response = await _client.PostAsJsonAsync("/api/sessions", overlapping);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Create_BackToBackWithNoGap_Succeeds()
+    {
+        // Touching boundaries (one session's EndTime equal to another's StartTime) are NOT an
+        // overlap - back-to-back sessions must remain possible.
+        var first = await CreateAsync(ValidSession(courseId: 42, start: DateTime.UtcNow.AddDays(62)));
+        var backToBack = ValidSession(courseId: 42, start: first.EndTime, end: first.EndTime.AddHours(1));
+
+        var response = await _client.PostAsJsonAsync("/api/sessions", backToBack);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Update_MovedToOverlapAnotherSession_ReturnsBadRequest()
+    {
+        var untouched = await CreateAsync(ValidSession(courseId: 43, start: DateTime.UtcNow.AddDays(63)));
+        var toMove = await CreateAsync(ValidSession(courseId: 44, start: DateTime.UtcNow.AddDays(64)));
+
+        var moved = ValidSession(courseId: 44, start: untouched.StartTime.AddMinutes(10), end: untouched.EndTime.AddMinutes(10));
+        moved.Id = toMove.Id;
+        var response = await _client.PutAsJsonAsync($"/api/sessions/{toMove.Id}", moved);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Update_UnchangedTime_DoesNotConflictWithItself()
+    {
+        // FindOverlapAsync must exclude the session being updated from its own check, or every
+        // no-op save (e.g. just renaming the topic) would reject itself.
+        var created = await CreateAsync(ValidSession(courseId: 45, start: DateTime.UtcNow.AddDays(65)));
+
+        var renamed = ValidSession(courseId: 45, courseName: "Renamed", start: created.StartTime, end: created.EndTime);
+        renamed.Id = created.Id;
+        var response = await _client.PutAsJsonAsync($"/api/sessions/{created.Id}", renamed);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
     // ---------- GET /api/sessions ----------
 
     [Fact]
@@ -206,9 +289,12 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
     [Fact]
     public async Task GetHistory_OnlyCompletedFalse_IncludesFutureUncompletedSessions()
     {
+        // Hours 4-5, not 2-3: GetHistory_DefaultOnlyCompleted_... above already books a future
+        // session at now+2h/+3h in this shared-DB class, and the server now rejects an
+        // overlapping session for the same user regardless of course.
         var now = DateTime.Now;
         var futureNotCompleted = await CreateAsync(ValidSession(
-            courseId: 41, start: now.AddHours(2), end: now.AddHours(3), isCompleted: false));
+            courseId: 41, start: now.AddHours(4), end: now.AddHours(5), isCompleted: false));
 
         var response = await _client.GetAsync("/api/sessions/history?days=30&onlyCompleted=false");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -390,7 +476,10 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
     [Fact]
     public async Task Update_StartTimeUnchanged_KeepsSentReminders()
     {
-        var created = await CreateAsync(ValidSession(courseId: 52, start: DateTime.UtcNow.AddDays(3)));
+        // Day 4, not day 3: Update_StartTimeChanged_ClearsStaleSentReminders above already books
+        // courseId 52 on day 3 in this shared-DB class, and the server now rejects an
+        // overlapping session for the same user regardless of course.
+        var created = await CreateAsync(ValidSession(courseId: 52, start: DateTime.UtcNow.AddDays(4)));
         await SeedSentReminderAsync($"{created.Id}:reminder60");
 
         var sameTime = ValidSession(courseId: 52, courseName: "Renamed", start: created.StartTime);
@@ -421,7 +510,10 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
     [Fact]
     public async Task Delete_ExistingSession_RemovesItFromSubsequentGet()
     {
-        var created = await CreateAsync(ValidSession(courseId: 4, start: DateTime.UtcNow.AddDays(2)));
+        // Day 17: an otherwise-unused day in this shared-DB class - DeleteSeries_WithoutFromDate_
+        // RemovesAllOccurrences below also books a session at bare AddDays(2), and the server now
+        // rejects an overlapping session for the same user regardless of course.
+        var created = await CreateAsync(ValidSession(courseId: 4, start: DateTime.UtcNow.AddDays(17)));
 
         var getBefore = await _client.GetAsync("/api/sessions");
         var before = await getBefore.Content.ReadFromJsonAsync<List<StudySessionDto>>();
@@ -452,9 +544,14 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
     public async Task DeleteSeries_WithoutFromDate_RemovesAllOccurrences()
     {
         var groupId = Guid.NewGuid().ToString();
-        var occ1 = await CreateAsync(ValidSession(courseId: 5, start: DateTime.UtcNow.AddDays(2), recurrenceGroupId: groupId));
-        var occ2 = await CreateAsync(ValidSession(courseId: 5, start: DateTime.UtcNow.AddDays(9), recurrenceGroupId: groupId));
-        var occ3 = await CreateAsync(ValidSession(courseId: 5, start: DateTime.UtcNow.AddDays(16), recurrenceGroupId: groupId));
+        // Days 19/26/33, not 2/9/16: DeleteSeries_WithFromDate_RemovesOnlyOccurrencesFromThatDate-
+        // Forward below pins fixed sessions at day2/day9/day16 10:00-11:00 UTC. Bare AddDays(N)
+        // floats with the current time of day, so it would only collide with those when this
+        // suite happens to run within that hour (as it did at 10:02 UTC) - picking days that test
+        // doesn't use avoids the flake entirely instead of dodging just this run's collision.
+        var occ1 = await CreateAsync(ValidSession(courseId: 5, start: DateTime.UtcNow.AddDays(19), recurrenceGroupId: groupId));
+        var occ2 = await CreateAsync(ValidSession(courseId: 5, start: DateTime.UtcNow.AddDays(26), recurrenceGroupId: groupId));
+        var occ3 = await CreateAsync(ValidSession(courseId: 5, start: DateTime.UtcNow.AddDays(33), recurrenceGroupId: groupId));
 
         var deleteResponse = await _client.DeleteAsync($"/api/sessions/series/{groupId}");
         Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
@@ -510,7 +607,10 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
     {
         // CourseName is deliberately arbitrary - audit finding M2: the server derives it from
         // the resolved catalog course (id 7), so the SUMMARY assertion below keys off that name.
-        var created = await CreateAsync(ValidSession(courseId: 7, courseName: "ICS-Kurs", start: DateTime.UtcNow.AddDays(3)));
+        // Day 18: an otherwise-unused day in this shared-DB class - Update_StartTimeChanged_
+        // ClearsStaleSentReminders above also books a session at bare AddDays(3), and the server
+        // now rejects an overlapping session for the same user regardless of course.
+        var created = await CreateAsync(ValidSession(courseId: 7, courseName: "ICS-Kurs", start: DateTime.UtcNow.AddDays(18)));
         var expectedName = ExpectedCourse(7).Name;
 
         var tokenResponse = await _client.GetAsync("/api/system/calendar-token");

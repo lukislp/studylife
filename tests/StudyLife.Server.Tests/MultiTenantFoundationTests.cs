@@ -109,8 +109,11 @@ public class MultiTenantQueryFilterTests : IClassFixture<CustomWebApplicationFac
 
     /// <summary>Both tests share a factory/DB (IClassFixture) - the marker makes the
     /// seeded rows uniquely identifiable per test, instead of relying on a "pristine"
-    /// DB (see usage comment in CustomWebApplicationFactory).</summary>
-    private async Task SeedViaApiAsync(string marker)
+    /// DB (see usage comment in CustomWebApplicationFactory). `hour` defaults to the
+    /// original fixed hour - both call sites used the exact same hardcoded window, which the
+    /// server now rejects as an overlap for the same user, so the second caller passes a
+    /// different hour.</summary>
+    private async Task SeedViaApiAsync(string marker, int hour = 9)
     {
         // The marker lives in Topic, not CourseName (audit finding M2: CourseName is now
         // server-derived from the resolved catalog course, see CourseResolver - a client-
@@ -121,8 +124,8 @@ public class MultiTenantQueryFilterTests : IClassFixture<CustomWebApplicationFac
             CourseName = "Filter Course",
             CourseColor = "#6C5CE7",
             Topic = marker,
-            StartTime = new DateTime(2026, 3, 2, 9, 0, 0),
-            EndTime = new DateTime(2026, 3, 2, 10, 0, 0),
+            StartTime = new DateTime(2026, 3, 2, hour, 0, 0),
+            EndTime = new DateTime(2026, 3, 2, hour + 1, 0, 0),
             IsCompleted = true,
             TimerModeId = 1,
         });
@@ -171,7 +174,7 @@ public class MultiTenantQueryFilterTests : IClassFixture<CustomWebApplicationFac
     [Fact]
     public async Task QueryFilters_ReturnNothingForAForeignAuthUserId()
     {
-        await SeedViaApiAsync("filter");
+        await SeedViaApiAsync("filter", hour: 13);
 
         await _factory.WithDbAsync(async db =>
         {

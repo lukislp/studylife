@@ -121,4 +121,11 @@ public static class CourseValidationMessages
 public static class SessionValidationMessages
 {
     public static string UnknownSessionId(int sessionId) => $"SessionId {sessionId} does not exist.";
+
+    /// <summary>A new/moved session's [StartTime, EndTime) would overlap an existing one for the
+    /// same user - see SessionService.HasOverlapAsync. Names the conflicting session so the
+    /// client (and whoever reads the error) can tell which one to check without a second
+    /// round trip.</summary>
+    public static string Overlaps(int conflictingSessionId, string conflictingCourseName) =>
+        $"Overlaps session {conflictingSessionId} ({conflictingCourseName}) - a user can only be in one session at a time.";
 }
