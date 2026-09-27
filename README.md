@@ -544,3 +544,7 @@ built on the [Mimic 3 voices](https://github.com/MycroftAI/mimic3-voices) datase
 German voice (`de_DE-thorsten-low`, [Thorsten-Voice](https://github.com/thorstenMueller/Thorsten-Voice))
 is CC0. Both via [rhasspy/piper-voices](https://huggingface.co/rhasspy/piper-voices); see
 [docs/TTS-VOICES.md](docs/TTS-VOICES.md) for the full coverage matrix and licenses.
+
+Music in the demo videos above: "Happy Beats & Business Moves Vol. 12" by Sascha Ende
+([ende.app](https://ende.app/en/song/12881-happy-beats-business-moves-vol-12)), licensed under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
