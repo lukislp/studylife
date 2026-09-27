@@ -196,8 +196,13 @@ public class DashboardSummaryEndpointTests
         // Right now: an in-progress session and a later-today upcoming one.
         Add(courseIds[0], now.AddHours(-1), now.AddHours(1), completed: false);
         Add(courseIds[1 % courseIds.Count], now.AddHours(2), now.AddHours(3), completed: false);
-        // Today, already studied.
-        Add(courseIds[2 % courseIds.Count], now.Date.AddHours(7), now.Date.AddHours(8), completed: true);
+        // Today, already studied. Anchored 12h opposite `now` (not a fixed 07:00) so this can
+        // never collide with the two sessions above regardless of what time of day the test
+        // happens to run - found live 2026-09-27: a CI run around 08:00 made now±1h overlap a
+        // fixed 07:00-08:00 slot, which the server's session-overlap validation then correctly
+        // rejected.
+        var studiedTodayStart = now.Date.AddHours((now.Hour + 12) % 24);
+        Add(courseIds[2 % courseIds.Count], studiedTodayStart, studiedTodayStart.AddHours(1), completed: true);
 
         // This week, spread across courses/days (week hours, streak, focus score).
         for (var daysAgo = 1; daysAgo <= 5; daysAgo++)

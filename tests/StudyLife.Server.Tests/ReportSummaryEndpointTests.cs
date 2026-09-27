@@ -145,7 +145,13 @@ public class ReportSummaryEndpointTests
         });
 
         // Today, already studied, and an in-progress one that only counts once its end passes.
-        Add(courseIds[0], now.Date.AddHours(7), now.Date.AddHours(8), completed: true);
+        // The "already studied" slot is anchored 12h opposite `now` (not a fixed 07:00) so it
+        // can never collide with the in-progress session below regardless of what time of day
+        // the test happens to run - found live 2026-09-27: a CI run around 08:00 made now±1h
+        // overlap a fixed 07:00-08:00 slot, which the server's session-overlap validation then
+        // correctly rejected.
+        var studiedTodayStart = now.Date.AddHours((now.Hour + 12) % 24);
+        Add(courseIds[0], studiedTodayStart, studiedTodayStart.AddHours(1), completed: true);
         Add(courseIds[1 % courseIds.Count], now.AddHours(-1), now.AddHours(1), completed: false);
 
         // This week, spread across courses/days.

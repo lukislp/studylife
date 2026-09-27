@@ -151,10 +151,15 @@ public class WrappedSummaryEndpointTests
         for (var daysAgo = 1; daysAgo <= 5; daysAgo++)
             Add(courseIds[daysAgo % courseIds.Count], now.Date.AddDays(-daysAgo).AddHours(9), now.Date.AddDays(-daysAgo).AddHours(11), completed: true);
 
-        // Weekend sessions (weekend-warrior style achievement categories).
+        // Weekend sessions (weekend-warrior style achievement categories). Afternoon hours
+        // (14-17h), disjoint from the daysAgo loop's fixed 9-11h slot above - lastSaturday can
+        // land on any of those same days depending on the weekday `now` falls on (e.g. found
+        // live 2026-09-27: a Sunday run made lastSaturday == yesterday, i.e. daysAgo == 1,
+        // and 10-13h overlapped that loop's 9-11h, which the server's session-overlap
+        // validation then correctly rejected).
         var lastSaturday = now.Date;
         while (lastSaturday.DayOfWeek != DayOfWeek.Saturday) lastSaturday = lastSaturday.AddDays(-1);
-        Add(courseIds[2 % courseIds.Count], lastSaturday.AddHours(10), lastSaturday.AddHours(13), completed: true);
+        Add(courseIds[2 % courseIds.Count], lastSaturday.AddHours(14), lastSaturday.AddHours(17), completed: true);
 
         // Inside the 365-day recap window, spread over months.
         for (var week = 2; week <= 40; week += 4)
