@@ -1,9 +1,11 @@
-# Daily base backup in addition to continuous WAL archiving (see k8s/02-postgres.yaml,
-# commented out there until the R2 secret exists). Do NOT apply as long as
-# spec.backup.barmanObjectStore is still commented out in the cluster manifest - CNPG would
-# otherwise log a failing backup attempt every day without an object storage target
-# configured. Order: create the R2 secret -> uncomment the backup block in 02-postgres.yaml
-# -> apply this manifest.
+# Daily base backup in addition to the continuous WAL archiving configured on the Cluster
+# (k8s/02-postgres.yaml, plugins block) - both through the CNPG Barman Cloud Plugin since
+# 2026-09-29. Without a periodic base backup the WAL archive grows forever and recovery would
+# have to replay from the very first segment; the 30d retention on the ObjectStore
+# (k8s/02b-objectstore.yaml) only prunes WALs older than the oldest still-retained backup.
+# Do NOT apply while the Cluster's spec.plugins entry for barman-cloud.cloudnative-pg.io or the
+# ObjectStore r2-studylife is absent: CNPG would log a failing backup every day with no object
+# store to write to. Order: R2 secret -> ObjectStore -> Cluster plugins block -> this manifest.
 apiVersion: postgresql.cnpg.io/v1
 kind: ScheduledBackup
 metadata:
@@ -12,5 +14,9 @@ metadata:
 spec:
   schedule: "0 0 3 * * *" # daily at 03:00 (CNPG uses a 6-field cron format with seconds)
   backupOwnerReference: self
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io
+  target: prefer-standby # 3 instances: take the base backup from a replica, not the primary
   cluster:
     name: studylife-pg

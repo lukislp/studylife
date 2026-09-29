@@ -13,9 +13,11 @@
   placeholders) and the Redis cluster bootstrap.
 
   NOT included (deliberately, see docs/SCALING.md):
-    - R2 backup CronJob (k8s/08-scheduled-backup.yaml) - needs a manually created
-      R2 secret plus the backup block in k8s/02-postgres.yaml uncommented beforehand. Include it anyway with
-      -WithR2Backup (only useful if both are already done).
+    - R2 backup (k8s/02b-objectstore.yaml + k8s/08-scheduled-backup.yaml) - needs a manually
+      created R2 secret and the CNPG Barman Cloud Plugin (homelab-infra cluster/12-barman-cloud-
+      plugin.yaml) installed beforehand; without the plugin the ObjectStore CRD does not exist
+      and the Cluster's plugins block in k8s/02-postgres.yaml cannot archive. Include them
+      anyway with -WithR2Backup (only useful if both are already done).
     - TLS certificate (Cloudflare Origin CA) - the "studylife-tls" secret referenced in
       k8s/07c-gateway.yaml does not correspond to an automatically created secret; without it,
       the Gateway listener still runs per its own comment, just without TLS termination.
@@ -79,7 +81,7 @@ if ($LASTEXITCODE -ne 0) { throw "kubectl apply failed for dev/01-secrets.yaml" 
 # literal is an untyped Object[] at runtime, which .NET's generic AddRange(IEnumerable<string>)
 # doesn't always accept (type conversion error). "-contains" doesn't have this problem.
 $skip = @()
-if (-not $WithR2Backup) { $skip += "08-scheduled-backup.yaml" }
+if (-not $WithR2Backup) { $skip += "02b-objectstore.yaml"; $skip += "08-scheduled-backup.yaml" }
 
 $files = Get-ChildItem $K8sDir -Filter "*.yaml" | Sort-Object Name
 foreach ($f in $files) {

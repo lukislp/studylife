@@ -93,22 +93,28 @@ spec:
   # Continuous WAL archiving + daily base backups to Cloudflare R2 (S3-compatible) - in
   # addition to the replica redundancy above, this also protects against data
   # corruption/accidental DELETE (replicas only protect against node failure, not against a
-  # faulty write that gets replicated to all replicas immediately). The "r2-backup-credentials"
-  # secret + the "studylifebackup" bucket exist, hence active. retentionPolicy "30d" (raised from
-  # 3d 2026-09-13). 3d had been chosen on the assumption that R2 storage/cost scales with the
-  # window - measured, it does not matter here: the database is ~9.5MB, so a month of daily
-  # gzip-compressed base backups plus their WAL segments stays far inside R2's free tier. 3d
-  # was the real risk instead - a corruption or bad migration noticed on a Monday could not be
-  # rewound past Friday, and point-in-time recovery is the entire reason this archive exists.
-  # CNPG's own operator automatically deletes backups/WALs beyond this window (confirmed
-  # against the installed CNPG 1.24 CRD schema, no additional CronJob needed).
-  backup:
-    barmanObjectStore:
-      destinationPath: "s3://studylifebackup/"
-      endpointURL: "https://44ffca74c2d2f27b33389c8f54f95edf.r2.cloudflarestorage.com"
-      s3Credentials:
-        accessKeyId: { name: r2-backup-credentials, key: ACCESS_KEY_ID }
-        secretAccessKey: { name: r2-backup-credentials, key: ACCESS_SECRET_KEY }
-      wal: { compression: gzip }
-      data: { compression: gzip }
-    retentionPolicy: "30d"
+  # faulty write that gets replicated to all replicas immediately).
+  #
+  # Since 2026-09-29 this runs through the CNPG Barman Cloud Plugin instead of the in-tree
+  # spec.backup.barmanObjectStore block (deprecated, removed in CNPG 1.30). WHERE the archive
+  # goes (bucket, credentials, compression) and HOW LONG it is kept (retentionPolicy "30d") now
+  # live on the ObjectStore in k8s/02b-objectstore.yaml - the plugin keeps retention on the
+  # ObjectStore, not on the Cluster. The reasoning behind 30d, for the record: it was briefly
+  # 3d on the assumption that R2 storage/cost scales with the window - measured, it does not
+  # matter here, the database is ~9.5MB, so a month of daily gzip-compressed base backups plus
+  # their WAL segments stays far inside R2's free tier. 3d was the real risk instead - a
+  # corruption or bad migration noticed on a Monday could not be rewound past Friday, and
+  # point-in-time recovery is the entire reason this archive exists.
+  #
+  # The switch from the in-tree block to this plugins entry was ONE atomic edit - a Cluster
+  # with neither is a Cluster that is not archiving. serverName is pinned explicitly: it
+  # defaults to the Cluster name on both paths, but if it ever drifts barman silently starts a
+  # NEW tree in the bucket and the 30d recovery window restarts at zero while archiving keeps
+  # reporting healthy. Must stay "studylife-pg". Verified on migration: firstRecoverabilityPoint
+  # unchanged, i.e. the plugin continued the tree the in-tree path had written.
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: r2-studylife
+        serverName: studylife-pg

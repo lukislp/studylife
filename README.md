@@ -325,7 +325,7 @@ kubectl apply -f k8s/
 The manifests under `k8s/` deploy the full stack pulling the public `ghcr.io/lukislp/studylife-server` image - no registry login needed:
 
 - `04-web.yaml` / `05-worker.yaml` - the two Deployments (same image, `Worker__Enabled` differs), each with a CPU-based HorizontalPodAutoscaler (`04c`/`05c`: web 2-4, worker 1-4 replicas), surge-only rollouts, read-only root filesystems, and a PodDisruptionBudget (`10-...`)
-- `02-postgres.yaml` - a 3-instance PostgreSQL 16 cluster via CloudNativePG, `11-pooler.yaml` a PgBouncer pooler in front of it, `08-scheduled-backup.yaml` a daily 03:00 backup to S3-compatible object storage (30-day retention)
+- `02-postgres.yaml` - a 3-instance PostgreSQL 16 cluster via CloudNativePG, `11-pooler.yaml` a PgBouncer pooler in front of it, `02b-objectstore.yaml` + `08-scheduled-backup.yaml` the Barman Cloud Plugin object store and the daily 03:00 base backup to S3-compatible object storage (30-day retention)
 - `03-redis.yaml` - a 6-node Redis Cluster StatefulSet with client TLS and a dedicated ACL user
 - `07d-httproutes.yaml` - Gateway API `HTTPRoute` for NGINX Gateway Fabric with backend TLS, asset caching, and an edge rate limit
 - `12-network-policies.yaml` - default-deny ingress plus explicit allow rules (gateway to web, studylife-ai/-mcp/-developers to web, app to Postgres/pooler/Redis, Prometheus to the metrics ports)

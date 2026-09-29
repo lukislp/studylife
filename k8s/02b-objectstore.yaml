@@ -1,0 +1,24 @@
+# Object store for the CNPG Barman Cloud Plugin - the near-verbatim lift of the former
+# spec.backup.barmanObjectStore block of k8s/02-postgres.yaml, with the retention policy moved
+# here (the plugin keeps retention on the ObjectStore, not on the Cluster). Same R2 bucket,
+# same secret keys, same layout in the bucket (<destinationPath>/<serverName>/{base,wals}), so
+# the backups taken by the in-tree path stay restorable; nothing is re-uploaded.
+# spec.configuration.serverName must stay EMPTY here - the server name is pinned in the
+# Cluster's plugin parameters instead (see 02-postgres.yaml).
+# Apply BEFORE the Cluster change; the plugin (homelab-infra cluster/12-barman-cloud-plugin.yaml)
+# must be installed first or the barmancloud.cnpg.io CRD does not exist.
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: r2-studylife
+  namespace: studylife-scale
+spec:
+  retentionPolicy: "30d"
+  configuration:
+    destinationPath: "s3://studylifebackup/"
+    endpointURL: "https://44ffca74c2d2f27b33389c8f54f95edf.r2.cloudflarestorage.com"
+    s3Credentials:
+      accessKeyId: { name: r2-backup-credentials, key: ACCESS_KEY_ID }
+      secretAccessKey: { name: r2-backup-credentials, key: ACCESS_SECRET_KEY }
+    wal: { compression: gzip }
+    data: { compression: gzip }

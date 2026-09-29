@@ -1128,7 +1128,15 @@ automatically deletes backups/WALs beyond this window, no additional CronJob nee
 briefly 3d (2026-09-03 to 2026-09-13) to save R2 storage; at a ~9.5MB database that saved
 nothing measurable and cost the ability to rewind past the last three days, so it went to 30d.
 
-**Is now active on prod** (`spec.backup` in `k8s/02-postgres.yaml` no longer commented out,
+**Migrated to the Barman Cloud Plugin on 2026-09-29.** The in-tree `spec.backup.barmanObjectStore`
+block is gone from `k8s/02-postgres.yaml`; the same bucket, credentials, compression and the 30d
+retention now live on the `ObjectStore` in `k8s/02b-objectstore.yaml`, the Cluster carries a
+`spec.plugins` entry (`serverName` pinned to `studylife-pg`), and `k8s/08-scheduled-backup.yaml`
+uses `method: plugin`. Nothing in the bucket was re-uploaded; `firstRecoverabilityPoint` stayed
+where it was, which is the proof the plugin continued the existing tree. The paragraphs below
+describe the in-tree era and are kept as history.
+
+**Was active on prod with the in-tree block** (`spec.backup` in `k8s/02-postgres.yaml` no longer commented out,
 secret + bucket exist). Ran through it live and found two real pitfalls in the process:
 
 - **`destinationPath`/bucket name must match exactly** - a typo here (the bucket was named
