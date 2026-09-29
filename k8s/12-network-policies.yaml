@@ -440,7 +440,7 @@ spec:
 #     an open 10.43.0.1:443 connection right now. Without it the operator loses the instance
 #     state it needs to run failover.
 #   - HTTPS to anywhere: WAL archiving and base backups go to Cloudflare R2
-#     (spec.backup.barmanObjectStore, s3://studylifebackup/ at an r2.cloudflarestorage.com
+#     (Barman Cloud Plugin ObjectStore k8s/02b-objectstore.yaml, s3://studylifebackup/ at an r2.cloudflarestorage.com
 #     endpoint). This one fails SILENTLY if it is cut - Postgres keeps serving, WALs just stop
 #     being archived and the backups quietly rot, so the ContinuousArchiving condition on the
 #     Cluster is the thing to check after any change here. R2 sits behind Cloudflare anycast
