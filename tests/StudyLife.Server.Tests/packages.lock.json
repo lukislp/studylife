@@ -88,10 +88,10 @@
       },
       "Fido2": {
         "type": "Transitive",
-        "resolved": "4.1.0",
-        "contentHash": "Z8wgC8OEF0JsNjohq4JM1eju60hF0uMxHms1XiiXSOQcsXh+bXKvZO22JOoeb1zrYSTcYIxSPd2JDVFEmwz93g==",
+        "resolved": "4.1.1",
+        "contentHash": "6moRZconWB9keHssQ0HXkoZgP48WX+rKH9PZldkQZLyy+Aua/gd0H6YNQfP8epgewd4ANEqNvPcherPJV7R1sw==",
         "dependencies": {
-          "Fido2.Models": "4.1.0",
+          "Fido2.Models": "4.1.1",
           "Microsoft.Extensions.Http": "9.0.0",
           "Microsoft.IdentityModel.JsonWebTokens": "8.2.0",
           "NSec.Cryptography": "25.4.0",
@@ -100,17 +100,17 @@
       },
       "Fido2.AspNet": {
         "type": "Transitive",
-        "resolved": "4.1.0",
-        "contentHash": "WPPuWYXOLMWpaLTMF7lP8Qa7uOlHSXrh+igPmSm58F+NrDg4seUiGdlp+LGElX+8Fr7q+MKTpzUrD6XuO0WZzA==",
+        "resolved": "4.1.1",
+        "contentHash": "habU7s6L0PUjPWRlRQMBtqnKDgRlp5OTQC32uWfFJy192vjBHVNQaszx/cd/nmYoJokTa0mtUzuGdYTHrp77OA==",
         "dependencies": {
-          "Fido2": "4.1.0",
-          "Fido2.Models": "4.1.0"
+          "Fido2": "4.1.1",
+          "Fido2.Models": "4.1.1"
         }
       },
       "Fido2.Models": {
         "type": "Transitive",
-        "resolved": "4.1.0",
-        "contentHash": "Dm7mGBJOCHdortPnnqFYnT6Ruf27CglnelrLTQ0Www9BNL9OmRknd0Y/UFb4ntEKbBK5sZgdzT39W0WIKQJ9+g==",
+        "resolved": "4.1.1",
+        "contentHash": "YrLyFT5azr2OnfAezjTmYqdp8T2cYcs8+f8e4hTO9NrBWotjopE5fFKCj00lFPBAFx24jqgfWyDHa/MtLkgLyg==",
         "dependencies": {
           "Microsoft.Bcl.Memory": "9.0.14"
         }
@@ -1041,7 +1041,7 @@
       "studylife.server": {
         "type": "Project",
         "dependencies": {
-          "Fido2.AspNet": "[4.1.0, )",
+          "Fido2.AspNet": "[4.1.1, )",
           "Microsoft.AspNetCore.Components.WebAssembly.Server": "[10.0.12, )",
           "Microsoft.AspNetCore.DataProtection.StackExchangeRedis": "[10.0.12, )",
           "Microsoft.AspNetCore.OpenApi": "[10.0.12, )",
