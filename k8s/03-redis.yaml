@@ -92,6 +92,11 @@ metadata:
   namespace: studylife-scale
 spec:
   clusterIP: None
+  # Also publish pods that are not Ready yet: the cluster-mender sidecar below resolves its
+  # peers through this service, and right after a full restart every pod is up but the cluster
+  # is still `fail` - the readiness probe (a PING) already passes then, but this keeps DNS
+  # complete even in the seconds before it does.
+  publishNotReadyAddresses: true
   selector: { app: redis-cluster }
   ports:
     - name: client
@@ -292,6 +297,51 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
+        # cluster-mender: self-healing after a full restart. Redis Cluster nodes find each
+        # other only by the IPs stored in nodes.conf - the cluster bus connects with
+        # connConnect(node->ip, ...) (cluster_legacy.c), never by hostname, and
+        # cluster-announce-hostname only changes what CLIENTS are told. So when all six pods
+        # get new IPs at once (scale to 0 and back, a node outage taking every Redis pod, the
+        # Longhorn maintenance windows of 2026-09-29 and 2026-09-30) every node keeps knocking
+        # on six dead addresses forever: cluster_state:fail, and studylife answers HTTP 500 with
+        # "CLUSTERDOWN" although every pod is Running and Ready (the probes only PING). The fix
+        # was the same by hand both times: CLUSTER MEET every peer's current IP, ok within
+        # seconds. This sidecar does exactly that, only when cluster_state is not ok, resolving
+        # the peers through the headless service (stable names, current IPs). MEET is idempotent
+        # and cheap, so a false positive costs nothing; a rolling restart never triggers it
+        # (five nodes stay up and gossip the new address). Peer count must match .spec.replicas.
+        - name: cluster-mender
+          image: redis:8.10.2-alpine@sha256:3811787313eba226a2ef38658c6ccb91cd5e110edc89c37767de373120a0e5a0
+          command:
+            - sh
+            - -c
+            - |
+              cli() { redis-cli -h 127.0.0.1 -p 6379 -a "$REDIS_PASSWORD" --no-auth-warning "$@" 2>/dev/null; }
+              while true; do
+                state=$(cli cluster info | tr -d '\r' | sed -n 's/^cluster_state://p')
+                if [ -n "$state" ] && [ "$state" != "ok" ]; then
+                  echo "$(date -u +%FT%TZ) cluster_state=$state - re-introducing peers"
+                  for i in 0 1 2 3 4 5; do
+                    ip=$(getent hosts "redis-cluster-$i.redis-cluster.studylife-scale.svc.cluster.local" | awk '{print $1}')
+                    [ -n "$ip" ] && cli cluster meet "$ip" 6379 >/dev/null && echo "  meet redis-cluster-$i $ip"
+                  done
+                fi
+                sleep 15
+              done
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: redis-auth, key: password }
+          resources:
+            requests: { cpu: 5m, memory: 16Mi }
+            limits: { cpu: 50m, memory: 32Mi }
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+            seccompProfile: { type: RuntimeDefault }
       volumes:
         - name: config
           configMap: { name: redis-cluster-config }

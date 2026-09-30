@@ -513,6 +513,26 @@ without cross-slot operations. `StackExchange.Redis` detects the cluster topolog
 connection setup (`CLUSTER SLOTS`); `Cache__ConnectionString` only lists all node addresses for
 the initial connection (`k8s/01-config-and-secret.yaml`).
 
+### Self-healing after a full restart (cluster-mender sidecar, 2026-09-30)
+
+Redis Cluster nodes only ever reach each other through the IPs stored in `nodes.conf`: the
+cluster bus connects with `connConnect(node->ip, ...)` (`cluster_legacy.c`), and
+`cluster-announce-hostname` merely changes what clients are told. So whenever all six pods get
+new IPs at the same time - scale to 0 and back, a node outage that takes every Redis pod, the
+Longhorn maintenance windows of 2026-09-29 and 2026-09-30 - every node keeps trying six dead
+addresses: `cluster_state:fail`, and studylife answers HTTP 500 with `CLUSTERDOWN` although
+every pod is Running and Ready (the probes only `PING`). A rolling restart never has this
+problem, five nodes stay up and gossip the new address of the sixth.
+
+The manual fix was identical both times: `CLUSTER MEET` every peer's current IP, `ok` within
+five seconds. `k8s/03-redis.yaml` now carries a `cluster-mender` sidecar in every pod that does
+exactly that on its own: every 15 s it reads `cluster_state` on its local node and, only when it
+is not `ok`, resolves `redis-cluster-0..5.redis-cluster.studylife-scale.svc.cluster.local`
+through the headless service (which now has `publishNotReadyAddresses: true`) and issues one
+`CLUSTER MEET` per peer. `MEET` is idempotent, so a false positive costs nothing. The sidecar
+logs each intervention; `kubectl -n studylife-scale logs redis-cluster-0 -c cluster-mender`
+shows whether it ever had to act.
+
 ### Client TLS (App↔Redis) - Cluster Bus Deliberately Still Plaintext
 
 The App↔Redis hop (where real cache/session/shard-claim data flows) is TLS-encrypted: a new
