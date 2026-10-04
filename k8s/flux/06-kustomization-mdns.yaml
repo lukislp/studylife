@@ -1,0 +1,24 @@
+# OPTIONAL and applied by hand (kubectl apply -f k8s/flux/06-kustomization-mdns.yaml, once): it
+# is NOT part of k8s/flux/deploy and nothing in the cluster applies it for you. Where
+# 05-kustomization.yaml keeps web and worker on the latest image tag, this one keeps the mDNS
+# announcer (k8s/optional/studylife-mdns.yaml, docs/MDNS.md) on it - without it the announcer
+# stays on whatever image it was last applied with, because Flux deliberately reconciles only
+# k8s/flux/deploy.
+#
+# It owns the studylife-mdns namespace and everything in it (prune: true), so removing this
+# Kustomization removes the announcer again. The namespace is Pod Security "privileged" because the
+# pod needs hostNetwork - see the manifest header for why and for the nodeSelector option.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: studylife-mdns
+  namespace: flux-system
+spec:
+  interval: 5m
+  sourceRef:
+    kind: GitRepository
+    name: studylife
+  path: ./k8s/flux/mdns
+  prune: true
+  wait: true
+  timeout: 3m

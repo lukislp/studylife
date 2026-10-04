@@ -1,0 +1,34 @@
+# What the studylife-mdns Flux Kustomization (k8s/flux/06-kustomization-mdns.yaml) applies: the
+# optional announcer manifest, with the advertised URL set for THIS installation. The file in
+# k8s/optional/ keeps its placeholder on purpose (other installations copy it); the real name lives
+# here, in git, like the hostnames of k8s/07d-httproutes.yaml.
+#
+# The image tag needs no patch: the deploy-bump job of ci-cd.yml bumps every
+# ghcr.io/lukislp/studylife-server pin below k8s/ on each release, k8s/optional/ included, so this
+# Kustomization rolls the announcer forward together with web and worker.
+#
+# --load-restrictor LoadRestrictionsNone is needed for a standalone `kubectl kustomize` (the
+# resource lives outside this directory); Flux's kustomize-controller roots at the whole checkout
+# and never hits it - same situation as k8s/flux/deploy/kustomization.yaml.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../optional/studylife-mdns.yaml
+patches:
+  # Strategic merge: a container's env entries merge by name, so only this one value changes.
+  - target:
+      kind: Deployment
+      name: studylife-mdns
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: studylife-mdns
+      spec:
+        template:
+          spec:
+            containers:
+              - name: studylife-mdns
+                env:
+                  - name: Discovery__Mdns__Url
+                    value: "https://studylife.lukas2311-homelab.com"

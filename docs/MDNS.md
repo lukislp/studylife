@@ -132,6 +132,21 @@ What it needs from you:
    The pod fetches the instance id from the server (`GET <Url>/api/instance`), so it must be able to reach that URL; if the public URL is not reachable from the node, set `Discovery__Mdns__InstanceUrl` to an address that is (see the commented example in the manifest).
 2. Optionally a `nodeSelector`, so the pod lands on a node in the same LAN/VLAN as Home Assistant.
 
+**Keeping it current with Flux (optional).** Applied by hand, the announcer stays on the image it
+was last applied with: Flux reconciles only `k8s/flux/deploy` (web and worker). To let Flux roll the
+announcer forward on every release as well, apply the second Flux Kustomization once:
+
+```bash
+# set the advertised URL for your installation in k8s/flux/mdns/kustomization.yaml first
+kubectl apply -f k8s/flux/06-kustomization-mdns.yaml
+```
+
+It applies `k8s/flux/mdns`, which includes `k8s/optional/studylife-mdns.yaml` and patches only
+`Discovery__Mdns__Url`; the image tag is bumped in the manifest by the release pipeline like the
+web and worker pins. It owns the `studylife-mdns` namespace (`prune: true`), so deleting that
+Kustomization removes the announcer again. If you already applied the manifest by hand, Flux adopts
+the objects.
+
 The manifest creates its own namespace `studylife-mdns` because the Pod Security level `baseline`
 of `studylife-scale` forbids `hostNetwork`. The pod runs the same image as the web pods in
 `Only` mode, as a non-root user, with a read-only root filesystem, no capabilities, no service
