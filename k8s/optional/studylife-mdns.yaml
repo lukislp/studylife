@@ -1,0 +1,108 @@
+# OPTIONAL - not applied by bootstrap-cluster.ps1 (it only globs k8s/*.yaml, not subfolders), not
+# part of the Flux Kustomization (k8s/flux/deploy/kustomization.yaml lists its resources
+# explicitly). Apply by hand when you want Home Assistant to discover the server automatically:
+#
+#   kubectl apply -f k8s/optional/studylife-mdns.yaml
+#
+# What it is: ONE pod that announces the StudyLife service on the LAN via mDNS / DNS-SD
+# (_studylife._tcp, see docs/MDNS.md) on behalf of the ingress/gateway URL. The web pods cannot do
+# it themselves: they run N replicas on the pod network, where multicast never reaches the LAN.
+# This pod therefore uses hostNetwork, and runs the same image in announcer-only mode
+# (Discovery__Mdns__Only=true): no database, no migrations, no Redis, no HTTP endpoints - hence
+# no probes (the Dockerfile HEALTHCHECK is ignored by kubelet) and no Secret/ConfigMap at all.
+#
+# Needs from the operator:
+#   1. Discovery__Mdns__Url below: the address Home Assistant connects to (your ingress/gateway
+#      name, e.g. https://studylife.example.org) - REPLACE the placeholder. The pod refuses to
+#      start while it is invalid.
+#   2. Optionally a nodeSelector: the pod must run on a node that sits in the LAN/VLAN where Home
+#      Assistant lives (mDNS does not cross VLANs without a reflector, docs/MDNS.md).
+#
+# Own namespace on purpose: k8s/00-namespace.yaml enforces Pod Security "baseline" on
+# studylife-scale, which forbids hostNetwork. Only this namespace is "privileged" (the one thing
+# the pod needs is the host network namespace; it has no hostPath, no hostPort, no extra
+# capability and runs as non-root).
+#
+# NetworkPolicy: hostNetwork pods are not selected by pod-level NetworkPolicies on the CNIs used
+# here (k3s/kube-router, flannel), and this pod needs no cluster-internal traffic at all, so no
+# policy from k8s/12-network-policies.yaml applies or is needed. The announcer only uses UDP 5353
+# multicast on the node's own interfaces.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: studylife-mdns
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/warn: baseline
+    pod-security.kubernetes.io/audit: baseline
+---
+# Same CIS backstop as the "default" service account of k8s/00-namespace.yaml.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: default
+  namespace: studylife-mdns
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: studylife-mdns
+  namespace: studylife-mdns
+spec:
+  # Exactly one announcer: two would announce the same instance twice (harmless, but pointless).
+  replicas: 1
+  selector:
+    matchLabels: {app: studylife-mdns}
+  # Recreate: the old pod leaves (goodbye packet) before the new one announces.
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels: {app: studylife-mdns}
+    spec:
+      terminationGracePeriodSeconds: 10
+      # The point of this Deployment: share the node's network namespace so multicast reaches the
+      # LAN. ClusterFirstWithHostNet keeps cluster DNS working for a hostNetwork pod.
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      # OPTIONAL - pin the pod to a node in the right LAN/VLAN, e.g. uncomment and adjust:
+      # nodeSelector:
+      #   kubernetes.io/hostname: my-node
+      # no Kubernetes API access whatsoever - token automount explicitly off.
+      automountServiceAccountToken: false
+      # see the k8s/04-web.yaml comment: runAsUser MUST be numeric, otherwise CreateContainerConfigError.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1654
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: studylife-mdns
+          image: ghcr.io/lukislp/studylife-server:3.20.0 # set by the deploy-bump job (ci-cd.yml) on every release
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: ["ALL"]}
+            # Announcer-only mode writes nothing; the emptyDir below covers .NET's diagnostic
+            # IPC socket in /tmp.
+            readOnlyRootFilesystem: true
+          env:
+            - name: Discovery__Mdns__Enabled
+              value: "true"
+            # Announcer ONLY: the process runs nothing else (Program.cs, MdnsOnlyHost).
+            - name: Discovery__Mdns__Only
+              value: "true"
+            # REPLACE: what Home Assistant should connect to - the ingress/gateway URL, NOT this pod.
+            - name: Discovery__Mdns__Url
+              value: "https://studylife.example.org"
+            - name: Discovery__Mdns__Name
+              value: "StudyLife"
+          resources:
+            requests: {cpu: 10m, memory: 48Mi}
+            limits: {cpu: 100m, memory: 128Mi}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {sizeLimit: 16Mi}
