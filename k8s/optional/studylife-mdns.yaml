@@ -36,14 +36,10 @@ metadata:
     pod-security.kubernetes.io/warn: baseline
     pod-security.kubernetes.io/audit: baseline
 ---
-# Same CIS backstop as the "default" service account of k8s/00-namespace.yaml.
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: default
-  namespace: studylife-mdns
-automountServiceAccountToken: false
----
+# No ServiceAccount document on purpose: Kubernetes creates the namespace's "default" account
+# itself, and declaring it here made the very first `kubectl apply` fail with AlreadyExists (the
+# controller wins the race). The pod does not need it anyway - it sets
+# automountServiceAccountToken: false below, so no token is mounted.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
