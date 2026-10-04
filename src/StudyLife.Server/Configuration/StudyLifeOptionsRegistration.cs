@@ -60,6 +60,13 @@ public static class StudyLifeOptionsRegistration
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        // Opt-in mDNS announcement (docs/MDNS.md). Validated at startup, but only while the feature
+        // is switched on (see MdnsOptionsValidator).
+        services.AddSingleton<Microsoft.Extensions.Options.IValidateOptions<MdnsOptions>, MdnsOptionsValidator>();
+        services.AddOptions<MdnsOptions>()
+            .BindConfiguration(MdnsOptions.SectionName)
+            .ValidateOnStart();
+
         return services;
     }
 
