@@ -19,6 +19,9 @@ public class MdnsTests
     {
         public int Starts;
         public int Stops;
+        public List<string> Ids { get; } = [];
+
+        public void SetId(string id) => Ids.Add(id);
 
         public Task<bool> StartAsync(CancellationToken cancellationToken)
         {
@@ -265,7 +268,7 @@ public class MdnsTests
         var fake = new FakeAnnouncer();
         using var host = MdnsOnlyHost.Create(
             ["--Discovery:Mdns:Only=true", "--Discovery:Mdns:Url=https://studylife.example.org"],
-            s => s.AddSingleton<IMdnsAnnouncer>(fake));
+            s => { s.AddSingleton<IMdnsAnnouncer>(fake); s.AddSingleton<IMdnsIdSource>(new ScriptedIdSource()); });
 
         Assert.Null(host.Services.GetService<StudyLifeDb>());
         Assert.Null(host.Services.GetService<Microsoft.AspNetCore.Hosting.Server.IServer>());
@@ -280,7 +283,265 @@ public class MdnsTests
     [Fact]
     public async Task OnlyMode_WithoutUrl_FailsFast()
     {
-        using var host = MdnsOnlyHost.Create(["--Discovery:Mdns:Only=true"], s => s.AddSingleton<IMdnsAnnouncer>(new FakeAnnouncer()));
+        using var host = MdnsOnlyHost.Create(["--Discovery:Mdns:Only=true"], s => { s.AddSingleton<IMdnsAnnouncer>(new FakeAnnouncer()); s.AddSingleton<IMdnsIdSource>(new ScriptedIdSource()); });
         await Assert.ThrowsAsync<OptionsValidationException>(() => host.StartAsync());
+    }
+
+    // ---- instance id: options -------------------------------------------------------------
+
+    private const string SampleId = "0123456789abcdef0123456789abcdef";
+
+    [Fact]
+    public void InstanceUrlAndId_BindAndDefaultToUrlAndNull()
+    {
+        var defaults = Options(("Discovery:Mdns:Only", "true"), ("Discovery:Mdns:Url", "https://studylife.example.org")).Value;
+        Assert.Null(defaults.InstanceUrl);
+        Assert.Null(defaults.Id);
+        Assert.Equal("https://studylife.example.org/", defaults.ParsedInstanceUrl!.AbsoluteUri);
+
+        var o = Options(
+            ("Discovery:Mdns:Only", "true"),
+            ("Discovery:Mdns:Url", "https://studylife.example.org"),
+            ("Discovery:Mdns:InstanceUrl", "http://studylife-web.studylife.svc:8080"),
+            ("Discovery:Mdns:Id", SampleId.ToUpperInvariant())).Value;
+        Assert.Equal("http://studylife-web.studylife.svc:8080/", o.ParsedInstanceUrl!.AbsoluteUri);
+        Assert.Equal(SampleId, o.ParsedId); // normalised to lowercase
+    }
+
+    [Theory]
+    [InlineData("studylife-web")]
+    [InlineData("ftp://studylife-web")]
+    public void BadInstanceUrl_IsRejected(string url)
+    {
+        var ex = Assert.Throws<OptionsValidationException>(() => Options(
+            ("Discovery:Mdns:Only", "true"), ("Discovery:Mdns:Url", "https://a.example"), ("Discovery:Mdns:InstanceUrl", url)).Value);
+        Assert.Contains("Discovery:Mdns:InstanceUrl", ex.Message);
+    }
+
+    [Theory]
+    [InlineData("abc")]
+    [InlineData("0123456789abcdef0123456789abcdeg")]
+    [InlineData("0123456789abcdef0123456789abcdef0")]
+    public void BadId_IsRejected(string id)
+    {
+        var ex = Assert.Throws<OptionsValidationException>(() => Options(
+            ("Discovery:Mdns:Only", "true"), ("Discovery:Mdns:Url", "https://a.example"), ("Discovery:Mdns:Id", id)).Value);
+        Assert.Contains("Discovery:Mdns:Id", ex.Message);
+    }
+
+    [Fact]
+    public void InstanceUrlAndId_AreNotValidatedWhileTheFeatureIsOff() =>
+        Assert.Null(Options(("Discovery:Mdns:InstanceUrl", "nonsense"), ("Discovery:Mdns:Id", "x")).Value.ParsedId);
+
+    // ---- instance id: TXT ---------------------------------------------------------------
+
+    [Fact]
+    public void Txt_IncludesTheIdWhenGiven_AndOmitsItWhenNull()
+    {
+        var options = Options(("Discovery:Mdns:Enabled", "true"), ("Discovery:Mdns:Url", "https://studylife.example.org")).Value;
+
+        var withId = MdnsServiceDescription.From(options, "1.2.3", SampleId);
+        Assert.Equal(["version=1.2.3", "url=https://studylife.example.org", "https=true", "path=/", $"id={SampleId}"], withId.TxtRecords);
+        Assert.Equal(SampleId, withId.Id);
+
+        var without = MdnsServiceDescription.From(options, "1.2.3", null);
+        Assert.DoesNotContain(without.TxtRecords, t => t.StartsWith("id=", StringComparison.Ordinal));
+        Assert.Null(without.Id);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("short")]
+    [InlineData("0123456789ABCDEF0123456789abcdef")]
+    [InlineData("0123456789abcdef0123456789abcdez")]
+    public void Txt_IgnoresAMalformedId(string id)
+    {
+        var options = Options(("Discovery:Mdns:Enabled", "true"), ("Discovery:Mdns:Url", "https://studylife.example.org")).Value;
+        var d = MdnsServiceDescription.From(options, "1.2.3", id);
+        Assert.Equal(4, d.TxtRecords.Count);
+        Assert.Same(d, d.WithId(id));
+    }
+
+    [Fact]
+    public void WithId_AddsOrReplacesTheIdRecord()
+    {
+        var d = Describe("https://studylife.example.org");
+        var first = d.WithId(SampleId);
+        var second = first.WithId("fedcba9876543210fedcba9876543210");
+        Assert.Single(second.TxtRecords, t => t.StartsWith("id=", StringComparison.Ordinal));
+        Assert.Equal("fedcba9876543210fedcba9876543210", second.Id);
+        Assert.Null(d.Id); // the original is untouched
+    }
+
+    [Fact]
+    public void Announcement_ContainsTheIdRecord()
+    {
+        var packet = MdnsPacket.BuildResponse(Describe("https://studylife.example.org").WithId(SampleId), [IPAddress.Parse("192.168.1.10")], ttlZero: false);
+        Assert.Contains($"id={SampleId}", System.Text.Encoding.UTF8.GetString(packet));
+    }
+
+    // ---- instance id: HTTP source (announcer-only mode) ------------------------------------
+
+    private sealed class FakeHandler(Func<HttpRequestMessage, HttpResponseMessage> respond) : HttpMessageHandler
+    {
+        public List<Uri> Requests { get; } = [];
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            Requests.Add(request.RequestUri!);
+            return Task.FromResult(respond(request));
+        }
+    }
+
+    private static HttpResponseMessage Json(string body, HttpStatusCode status = HttpStatusCode.OK) =>
+        new(status) { Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json") };
+
+    private static HttpMdnsIdSource HttpSource(FakeHandler handler, string url = "https://studylife.example.org/some/path") =>
+        new(new HttpClient(handler), new Uri(url), NullLogger<HttpMdnsIdSource>.Instance);
+
+    [Fact]
+    public async Task HttpSource_FetchesTheIdFromApiInstance()
+    {
+        var handler = new FakeHandler(_ => Json($"{{\"id\":\"{SampleId}\",\"version\":\"1.2.3\"}}"));
+
+        var id = await HttpSource(handler).TryGetIdAsync(CancellationToken.None);
+
+        Assert.Equal(SampleId, id);
+        Assert.Equal("https://studylife.example.org/api/instance", Assert.Single(handler.Requests).AbsoluteUri);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.NotFound, "{}")]
+    [InlineData(HttpStatusCode.InternalServerError, "oops")]
+    [InlineData(HttpStatusCode.OK, "not json")]
+    [InlineData(HttpStatusCode.OK, "{\"id\":\"nope\"}")]
+    [InlineData(HttpStatusCode.OK, "{\"version\":\"1\"}")]
+    public async Task HttpSource_BadResponses_YieldNullWithoutThrowing(HttpStatusCode status, string body)
+    {
+        var id = await HttpSource(new FakeHandler(_ => Json(body, status))).TryGetIdAsync(CancellationToken.None);
+        Assert.Null(id);
+    }
+
+    [Fact]
+    public async Task HttpSource_ConnectionFailure_YieldsNull()
+    {
+        var id = await HttpSource(new FakeHandler(_ => throw new HttpRequestException("connection refused"))).TryGetIdAsync(CancellationToken.None);
+        Assert.Null(id);
+    }
+
+    [Fact]
+    public async Task HttpSource_ExplicitCancellation_Propagates() =>
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            HttpSource(new FakeHandler(_ => throw new TaskCanceledException()))
+                .TryGetIdAsync(new CancellationToken(canceled: true)));
+
+    // ---- instance id: hosted service ------------------------------------------------------
+
+    private sealed class ScriptedIdSource(params string?[] results) : IMdnsIdSource
+    {
+        private int _calls;
+        public int Calls => _calls;
+
+        public Task<string?> TryGetIdAsync(CancellationToken cancellationToken)
+        {
+            var i = Interlocked.Increment(ref _calls) - 1;
+            return Task.FromResult(results.Length == 0 ? null : results[Math.Min(i, results.Length - 1)]);
+        }
+    }
+
+    private static async Task WaitUntilAsync(Func<bool> condition)
+    {
+        for (var i = 0; i < 200 && !condition(); i++) await Task.Delay(10);
+        Assert.True(condition(), "condition not reached in time");
+    }
+
+    [Fact]
+    public async Task HostedService_WithAnAvailableId_AnnouncesItBeforeStarting()
+    {
+        var fake = new FakeAnnouncer();
+        var source = new ScriptedIdSource(SampleId);
+        var service = new MdnsHostedService(fake, NullLogger<MdnsHostedService>.Instance, source, TimeSpan.FromMilliseconds(10));
+
+        await service.StartAsync(CancellationToken.None);
+        await WaitUntilAsync(() => fake.Starts == 1);
+
+        Assert.Equal([SampleId], fake.Ids);
+        await Task.Delay(60);
+        Assert.Equal(1, source.Calls); // no retry once the id is known
+        await service.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task HostedService_FailedFetch_AnnouncesWithoutId_ThenRetriesAndAnnouncesWithIt()
+    {
+        var fake = new FakeAnnouncer();
+        var source = new ScriptedIdSource(null, null, SampleId);
+        var service = new MdnsHostedService(fake, NullLogger<MdnsHostedService>.Instance, source, TimeSpan.FromMilliseconds(10));
+
+        await service.StartAsync(CancellationToken.None);
+        await WaitUntilAsync(() => fake.Starts == 1);
+
+        await WaitUntilAsync(() => fake.Ids.Count == 1);
+        Assert.Equal([SampleId], fake.Ids);
+        Assert.Equal(1, fake.Starts); // announced once, then re-announced via SetId - never restarted
+        await service.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task HostedService_ThrowingSource_DoesNotCrashAndStillAnnounces()
+    {
+        var fake = new FakeAnnouncer();
+        var service = new MdnsHostedService(fake, NullLogger<MdnsHostedService>.Instance, new ThrowingIdSource(), TimeSpan.FromMilliseconds(10));
+
+        await service.StartAsync(CancellationToken.None);
+        await WaitUntilAsync(() => fake.Starts == 1);
+
+        Assert.Empty(fake.Ids);
+        await service.StopAsync(CancellationToken.None);
+    }
+
+    private sealed class ThrowingIdSource : IMdnsIdSource
+    {
+        public Task<string?> TryGetIdAsync(CancellationToken cancellationToken) => throw new InvalidOperationException("boom");
+    }
+
+    [Fact]
+    public async Task Registration_OnlyModeWithExplicitId_SkipsTheHttpFetch()
+    {
+        var fake = new FakeAnnouncer();
+        using var host = MdnsOnlyHost.Create(
+            ["--Discovery:Mdns:Only=true", "--Discovery:Mdns:Url=https://studylife.example.org", $"--Discovery:Mdns:Id={SampleId}"],
+            s => s.AddSingleton<IMdnsAnnouncer>(fake));
+
+        Assert.IsType<FixedMdnsIdSource>(host.Services.GetRequiredService<IMdnsIdSource>());
+        await host.StartAsync();
+        await WaitUntilAsync(() => fake.Starts == 1);
+        Assert.Equal([SampleId], fake.Ids);
+        await host.StopAsync();
+    }
+
+    [Fact]
+    public void Registration_OnlyModeWithoutId_UsesTheHttpSourceOnInstanceUrl()
+    {
+        using var host = MdnsOnlyHost.Create(
+            ["--Discovery:Mdns:Only=true", "--Discovery:Mdns:Url=https://studylife.example.org", "--Discovery:Mdns:InstanceUrl=http://web.svc:8080"],
+            s => s.AddSingleton<IMdnsAnnouncer>(new FakeAnnouncer()));
+
+        Assert.IsType<HttpMdnsIdSource>(host.Services.GetRequiredService<IMdnsIdSource>());
+    }
+
+    private sealed class FakeProvider(Func<Task<string>> get) : StudyLife.Server.Services.IInstanceIdProvider
+    {
+        public Task<string> GetAsync(CancellationToken cancellationToken = default) => get();
+    }
+
+    [Fact]
+    public async Task ProviderSource_ReturnsThePersistedId_AndNullWhenTheDatabaseIsNotReadable()
+    {
+        var ok = new ProviderMdnsIdSource(new FakeProvider(() => Task.FromResult(SampleId)), NullLogger<ProviderMdnsIdSource>.Instance);
+        var broken = new ProviderMdnsIdSource(new FakeProvider(() => throw new InvalidOperationException("db down")), NullLogger<ProviderMdnsIdSource>.Instance);
+
+        Assert.Equal(SampleId, await ok.TryGetIdAsync(CancellationToken.None));
+        Assert.Null(await broken.TryGetIdAsync(CancellationToken.None));
     }
 }
