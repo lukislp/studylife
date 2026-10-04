@@ -12,8 +12,18 @@ using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Auth;
 using StudyLife.Server.Configuration;
 using StudyLife.Server.Data;
+using StudyLife.Server.Discovery;
 using StudyLife.Server.OpenApi;
 using StudyLife.Server.Services;
+
+// Discovery:Mdns:Only=true (docs/MDNS.md): this process is the dedicated mDNS announcer - no
+// database, migrations, Redis or web endpoints, only a minimal host. Must stay ahead of all the
+// heavy setup below.
+if (MdnsOnlyHost.IsRequested(args))
+{
+    await MdnsOnlyHost.Create(args).RunAsync();
+    return;
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -590,6 +600,9 @@ if (isRedisCache)
 }
 if (workerEnabled)
     builder.Services.AddHostedService<BackgroundTaskService>();
+// Opt-in mDNS / DNS-SD announcement (docs/MDNS.md). Nothing is registered unless enabled.
+if (builder.Configuration.Bind<MdnsOptions>(MdnsOptions.SectionName).Enabled)
+    builder.Services.AddMdnsAnnouncement();
 
 var app = builder.Build();
 
