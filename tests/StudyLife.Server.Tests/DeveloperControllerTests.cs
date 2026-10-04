@@ -129,6 +129,23 @@ public class DeveloperControllerTests : IClassFixture<CustomWebApplicationFactor
     }
 
     [Fact]
+    public async Task Create_MetricsGetAchievementsScope_IsAccepted()
+    {
+        // The second metrics endpoint exposed to dynamic clients (studylife-display's
+        // achievements layout); read-only like GetSummary, see ApiKeyScopes.PubliclyGrantable.
+        var request = ValidRequest("epaper-display");
+        request.RequestedScopes = new List<string> { "Metrics.GetSummary", "Metrics.GetAchievements" };
+
+        var response = await _client.PostAsJsonAsync("/api/developer/clients", request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var created = await response.Content.ReadFromJsonAsync<DeveloperClientDto>();
+        Assert.Contains("Metrics.GetAchievements", created!.RequestedScopes);
+
+        await _client.DeleteAsync("/api/developer/clients/epaper-display");
+    }
+
+    [Fact]
     public async Task Update_AddsAScope_PersistsOnTheRegistrationOnly()
     {
         await _client.PostAsJsonAsync("/api/developer/clients", ValidRequest("expandable-client"));
