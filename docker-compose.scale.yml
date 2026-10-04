@@ -110,6 +110,19 @@ services:
     networks:
       - studylife-scale-net
 
+  # OPTIONAL, off by default: announce the stack to Home Assistant via mDNS (docs/MDNS.md).
+  # Multicast cannot leave a bridge network, so the announcer needs host networking:
+  #
+  # mdns:
+  #   image: studylife-server:scale-local
+  #   network_mode: host
+  #   environment:
+  #     Discovery__Mdns__Only: "true"
+  #     Discovery__Mdns__Url: "http://studylife.lan:${SCALE_PORT:-8090}"
+  #   healthcheck:
+  #     disable: true
+  #   restart: unless-stopped
+
   # Load balancer in front of the server replicas - see nginx-scale/nginx.conf for the dynamic
   # DNS resolution that actually lets --scale server=N reach all N replicas.
   lb:

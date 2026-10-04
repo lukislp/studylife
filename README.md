@@ -482,6 +482,10 @@ Beyond the first-party integrations above, StudyLife has a generic, data-driven 
 
 [StudyLife for Home Assistant](https://github.com/lukislp/studylife-hacs) is a separate HACS custom integration that maps dashboard and evaluation data (active/next session, weekly/monthly statistics, streak including the longest ever achieved series, quotas, grade average, ECTS progress, ECTS forecast, month comparison, achievements, topic progress, course tags, course catalog, live timer phase, weekly review as an event) as sensors, binary sensors (including inactivity warning), and calendars (sessions plus course goals) in Home Assistant - one device per study program - plus a dropdown of active courses (`select.studylife_active_course`) and six services for creating/editing/deleting sessions and course goals, generating an exam plan, and switching the active program. All numbers come pre-computed from `GET /api/metrics/summary` and `GET /api/metrics/achievements`, the same shared metrics code the dashboard uses. The pairing runs via a per-user API key generated once on the Setup page (see [Security](#security)). Installation and details are in that repo's README.
 
+### Automatic discovery (optional)
+
+The server can announce itself via mDNS / DNS-SD (`_studylife._tcp`) so Home Assistant finds it without a typed address. It is off by default; enable it with `Discovery__Mdns__Enabled=true` and `Discovery__Mdns__Url=https://studylife.example.org` (the address Home Assistant should connect to, usually your reverse proxy). It needs the host's network (`network_mode: host`, or the optional dedicated pod `k8s/optional/studylife-mdns.yaml` on Kubernetes). Only the version, the URL, `https` and the path are announced - never a key or user data. Setups, the VLAN note and troubleshooting are in [docs/MDNS.md](docs/MDNS.md).
+
 ## Contributing
 
 Pull requests are welcome - [CONTRIBUTING.md](CONTRIBUTING.md) describes the process (issue first for bigger changes, Conventional Commits, tests for new functionality, the required checks) and how to run everything locally.
