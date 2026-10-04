@@ -15,6 +15,28 @@ configuration the server opens no multicast socket and sends nothing.
 | TXT `url` | the advertised base URL, scheme + host[:port], no trailing slash |
 | TXT `https` | `true` or `false` |
 | TXT `path` | `/` |
+| TXT `id` | the stable instance id (32 lowercase hex characters), see below. Omitted while it is not known yet |
+
+### Instance id: recognising the same installation
+
+One installation can be reachable under several URLs - for example `https://studylife.heim.lan` on
+the LAN and `https://studylife.example.org` publicly - while the announcement can only offer one of
+them. A client that stored the other one can therefore not tell by URL that it is the same server.
+So every installation has a **stable instance id**: a random GUID (32 lowercase hex characters, for
+example `0123456789abcdef0123456789abcdef`), generated once on first use, stored in the database
+(table `InstanceInfo`) and never changed. Several replicas share it because they share the database.
+
+It is announced as the TXT record `id` and served by an anonymous endpoint, so a client can read it
+under whatever URL it was configured with:
+
+```
+GET /api/instance
+200 {"id": "0123456789abcdef0123456789abcdef", "version": "3.21.0"}
+```
+
+No session or API key is needed (it carries nothing secret; the normal rate limiter applies). The
+response may be cached privately for a minute, the value itself never changes. `version` is the
+server version without build metadata.
 
 Nothing else goes on the wire: never an API key, token, user data or database detail. Anyone on the
 same network segment can read the announcement - it contains only what the TXT table above lists.
@@ -31,6 +53,16 @@ and that is the address Home Assistant has to connect to - not the address of th
 | `Discovery:Mdns:Url` | `Discovery__Mdns__Url` | none | Advertised base URL. Required when `Enabled` or `Only`; must be an absolute `http`/`https` URL, otherwise the server refuses to start with a clear message |
 | `Discovery:Mdns:Name` | `Discovery__Mdns__Name` | `StudyLife` | Instance name (max. 63 bytes) |
 | `Discovery:Mdns:Only` | `Discovery__Mdns__Only` | `false` | Run **only** the announcer: no database, no migrations, no Redis, no web endpoints |
+| `Discovery:Mdns:InstanceUrl` | `Discovery__Mdns__InstanceUrl` | `Url` | Announcer-only mode: where to fetch the instance id (`GET <InstanceUrl>/api/instance`). Set it when the announcer pod reaches the server under another address than the advertised one, e.g. a LAN name |
+| `Discovery:Mdns:Id` | `Discovery__Mdns__Id` | none | Announcer-only mode: announce this instance id (32 hex characters) and skip the fetch. Ignored when the process serves the database itself |
+
+**Where the id comes from.** A server announcing itself (`Enabled`) reads its own id from the
+database before the first announcement. The announcer-only process has no database, so it asks the
+running server: `GET <InstanceUrl>/api/instance` with a 5 second timeout (`InstanceUrl` defaults to
+`Url`). On Kubernetes use an ingress-routed URL: the web pods' NetworkPolicy only admits the ingress controller, not a hostNetwork pod. If that fails - the server is still starting, the address is not reachable from the pod - it
+announces immediately **without** `id`, logs one warning, and retries on every re-announcement tick
+(every 5 minutes); once the fetch succeeds it announces again with the id. A failure never stops the
+announcer. Setting `Discovery:Mdns:Id` skips the fetch entirely.
 
 Binding is best effort. Without multicast (for example a container on a bridge network) the server
 logs a warning, keeps running and simply is not discoverable - discovery is a nicety, never a reason
@@ -97,6 +129,7 @@ kubectl apply -f k8s/optional/studylife-mdns.yaml
 What it needs from you:
 
 1. `Discovery__Mdns__Url` - the ingress/gateway URL Home Assistant connects to (the file ships with the placeholder `https://studylife.example.org`).
+   The pod fetches the instance id from the server (`GET <Url>/api/instance`), so it must be able to reach that URL; if the public URL is not reachable from the node, set `Discovery__Mdns__InstanceUrl` to an address that is (see the commented example in the manifest).
 2. Optionally a `nodeSelector`, so the pod lands on a node in the same LAN/VLAN as Home Assistant.
 
 The manifest creates its own namespace `studylife-mdns` because the Pod Security level `baseline`
