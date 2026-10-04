@@ -277,6 +277,10 @@ public static class ApiKeyScopes
         // average grade, forecast, month comparison), not just ECTS - accepted tradeoff,
         // see the same reasoning already applied to the Ha slot above.
         new("Metrics", "GetSummary"),
+        // Same risk class as GetSummary: read-only, derived figures (the 44 achievement tiers'
+        // unlock state), no study data beyond what the summary already implies. Needed by
+        // studylife-display's achievements layout, which connects as a dynamic client.
+        new("Metrics", "GetAchievements"),
         new("WebhooksProxy", "List"),
         new("WebhooksProxy", "Create"),
         new("WebhooksProxy", "Delete"),
