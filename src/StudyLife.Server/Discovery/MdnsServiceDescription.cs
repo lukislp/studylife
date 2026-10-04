@@ -40,7 +40,7 @@ public sealed record MdnsServiceDescription(string InstanceName, int Port, IRead
     /// <summary>The running server version without the "+commit" build metadata.</summary>
     public static string CurrentVersion()
     {
-        var informational = System.Reflection.Assembly.GetEntryAssembly()
+        var informational = typeof(MdnsServiceDescription).Assembly
             ?.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
             .OfType<System.Reflection.AssemblyInformationalVersionAttribute>()
             .FirstOrDefault()?.InformationalVersion;

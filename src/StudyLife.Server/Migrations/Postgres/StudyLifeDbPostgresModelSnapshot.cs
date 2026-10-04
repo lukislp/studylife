@@ -423,6 +423,22 @@ namespace StudyLife.Server.Migrations.Postgres
                     b.ToTable("CustomCourses");
                 });
 
+            modelBuilder.Entity("StudyLife.Server.Data.InstanceInfoEntity", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.HasKey("Key");
+
+                    b.ToTable("InstanceInfo");
+                });
+
             modelBuilder.Entity("StudyLife.Server.Data.NoteEntity", b =>
                 {
                     b.Property<int>("Id")

@@ -704,6 +704,15 @@ public class VersionResponseDto
     public string Version { get; set; } = "";
 }
 
+/// <summary>Response of GET /api/instance (anonymous): the stable random id of this installation
+/// (32 lowercase hex characters, generated once per database, never changes) plus the server version
+/// without build metadata. Lets Home Assistant recognise the same installation under different URLs.</summary>
+public class InstanceInfoDto
+{
+    public string Id { get; set; } = "";
+    public string Version { get; set; } = "";
+}
+
 /// <summary>Body of POST /api/auth/register/begin (phase 2, passkey login).</summary>
 public class PasskeyRegisterBeginRequestDto
 {

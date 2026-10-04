@@ -2416,6 +2416,35 @@
         }
       }
     },
+    "/api/instance": {
+      "get": {
+        "tags": [
+          "Instance"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstanceInfoDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstanceInfoDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstanceInfoDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/metrics/summary": {
       "get": {
         "tags": [
@@ -7689,6 +7718,21 @@
         "type": "string",
         "format": "binary"
       },
+      "InstanceInfoDto": {
+        "required": [
+          "id",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        }
+      },
       "InviteListItemDto": {
         "required": [
           "id",
@@ -12203,6 +12247,9 @@
     },
     {
       "name": "Health"
+    },
+    {
+      "name": "Instance"
     },
     {
       "name": "Metrics"
