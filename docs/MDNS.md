@@ -137,15 +137,17 @@ was last applied with: Flux reconciles only `k8s/flux/deploy` (web and worker). 
 announcer forward on every release as well, apply the second Flux Kustomization once:
 
 ```bash
-# set the advertised URL for your installation in k8s/flux/mdns/kustomization.yaml first
+# 1. the namespace must exist (Flux's least-privilege role cannot create namespaces); applying
+#    the manifest by hand as above creates it, together with the announcer
+# 2. set the advertised URL for your installation in k8s/flux/mdns/kustomization.yaml
 kubectl apply -f k8s/flux/06-kustomization-mdns.yaml
 ```
 
 It applies `k8s/flux/mdns`, which includes `k8s/optional/studylife-mdns.yaml` and patches only
 `Discovery__Mdns__Url`; the image tag is bumped in the manifest by the release pipeline like the
-web and worker pins. It owns the `studylife-mdns` namespace (`prune: true`), so deleting that
-Kustomization removes the announcer again. If you already applied the manifest by hand, Flux adopts
-the objects.
+web and worker pins. It owns the announcer's Deployment (`prune: true`), so deleting that
+Kustomization removes the announcer again; the namespace stays, it is yours. If you already applied
+the manifest by hand, Flux adopts the Deployment.
 
 The manifest creates its own namespace `studylife-mdns` because the Pod Security level `baseline`
 of `studylife-scale` forbids `hostNetwork`. The pod runs the same image as the web pods in

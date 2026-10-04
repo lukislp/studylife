@@ -15,6 +15,16 @@ kind: Kustomization
 resources:
   - ../../optional/studylife-mdns.yaml
 patches:
+  # The Namespace stays OUT of Flux's hands: kustomize-controller runs with a least-privilege role
+  # (homelab-infra flux/01-reconciler-rbac.yaml) that deliberately has no namespaces permission -
+  # namespaces are applied by the operator. Create it once by hand (see docs/MDNS.md); Flux then
+  # manages only what lives in it. The dry-run of a Namespace here failed with "forbidden".
+  - patch: |-
+      $patch: delete
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: studylife-mdns
   # Strategic merge: a container's env entries merge by name, so only this one value changes.
   - target:
       kind: Deployment
