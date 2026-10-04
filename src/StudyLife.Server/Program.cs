@@ -517,6 +517,7 @@ if (!isPostgres)
     builder.Services.AddSingleton(new DatabaseRestoreService(dbPath));
 }
 builder.Services.AddScoped<SystemSecretsService>();
+builder.Services.AddSingleton<IInstanceIdProvider, InstanceIdProvider>();
 builder.Services.AddSingleton<VapidKeysHolder>();
 // Speech:Enabled gates TTS (PiperVoiceRegistry/EspeakPhonemizer) and STT (WhisperTranscriber)
 // registration entirely - default true, unchanged behavior for the single-container Pi,

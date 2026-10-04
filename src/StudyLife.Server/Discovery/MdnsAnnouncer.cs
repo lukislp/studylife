@@ -21,8 +21,11 @@ namespace StudyLife.Server.Discovery;
 /// not implemented; the instance name is operator-configured and a second announcer under the same
 /// name is a misconfiguration.
 /// </summary>
-public sealed class MdnsAnnouncer(MdnsServiceDescription service, ILogger<MdnsAnnouncer> logger) : IMdnsAnnouncer, IDisposable
+public sealed class MdnsAnnouncer(MdnsServiceDescription initialService, ILogger<MdnsAnnouncer> logger) : IMdnsAnnouncer, IDisposable
 {
+    // Replaced (never mutated) when the instance id becomes known after start - see SetId.
+    private volatile MdnsServiceDescription service = initialService;
+
     private const int Port = 5353;
     private static readonly IPAddress GroupV4 = IPAddress.Parse("224.0.0.251");
     private static readonly IPAddress GroupV6 = IPAddress.Parse("ff02::fb");
@@ -80,6 +83,17 @@ public sealed class MdnsAnnouncer(MdnsServiceDescription service, ILogger<MdnsAn
             CloseSockets();
             return false;
         }
+    }
+
+    public void SetId(string id)
+    {
+        var updated = service.WithId(id);
+        if (ReferenceEquals(updated, service) || updated.Id == service.Id) return;
+        service = updated;
+        logger.LogInformation("mDNS-Ankündigung enthält jetzt die Instanz-ID; sende erneut.");
+        if (_cts is null) return;
+        try { SendAll(ttlZero: false); }
+        catch (Exception ex) { logger.LogDebug(ex, "mDNS: erneute Ankündigung mit ID fehlgeschlagen."); }
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)

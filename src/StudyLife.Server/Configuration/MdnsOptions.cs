@@ -6,7 +6,8 @@ namespace StudyLife.Server.Configuration;
 /// Opt-in mDNS / DNS-SD announcement (docs/MDNS.md): lets Home Assistant (zeroconf) discover the
 /// server as <c>_studylife._tcp</c> on the LAN. Off by default - nothing is announced and no socket
 /// is opened unless <see cref="Enabled"/> or <see cref="Only"/> is set. Env mapping as everywhere:
-/// Discovery__Mdns__Enabled, Discovery__Mdns__Url, Discovery__Mdns__Name, Discovery__Mdns__Only.
+/// Discovery__Mdns__Enabled, Discovery__Mdns__Url, Discovery__Mdns__Name, Discovery__Mdns__Only,
+/// Discovery__Mdns__InstanceUrl, Discovery__Mdns__Id.
 /// </summary>
 public sealed class MdnsOptions
 {
@@ -27,6 +28,17 @@ public sealed class MdnsOptions
     /// pod of k8s/optional/studylife-mdns.yaml, announcing on behalf of the ingress URL.</summary>
     public bool Only { get; set; }
 
+    /// <summary>Announcer-only mode: where to ask the running server for its instance id
+    /// (<c>GET {InstanceUrl}/api/instance</c>). Optional, defaults to <see cref="Url"/>; set it when
+    /// the announcer pod reaches the server under a different (e.g. in-cluster) address than the
+    /// one that is advertised.</summary>
+    public string? InstanceUrl { get; set; }
+
+    /// <summary>Announcer-only mode: explicit instance id (32 hex characters) announced as the TXT
+    /// record <c>id</c>; skips the HTTP fetch. Ignored when this process serves the database itself
+    /// (it then announces its own persisted id).</summary>
+    public string? Id { get; set; }
+
     /// <summary>True when the announcer has to run at all.</summary>
     public bool Active => Enabled || Only;
 
@@ -34,6 +46,28 @@ public sealed class MdnsOptions
     /// http/https URL.</summary>
     public Uri? ParsedUrl =>
         Uri.TryCreate(Url?.Trim(), UriKind.Absolute, out var uri)
+        && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps)
+        && !string.IsNullOrEmpty(uri.Host)
+            ? uri
+            : null;
+
+    /// <summary>The URL the instance id is fetched from: <see cref="InstanceUrl"/> when set, else
+    /// <see cref="ParsedUrl"/>. Null when neither is a valid absolute http(s) URL.</summary>
+    public Uri? ParsedInstanceUrl =>
+        string.IsNullOrWhiteSpace(InstanceUrl) ? ParsedUrl : AsHttpUrl(InstanceUrl);
+
+    /// <summary>The explicit <see cref="Id"/>, normalised to lowercase, or null when unset or malformed.</summary>
+    public string? ParsedId
+    {
+        get
+        {
+            var id = Id?.Trim().ToLowerInvariant();
+            return Services.InstanceIdProvider.IsValidId(id) ? id : null;
+        }
+    }
+
+    private static Uri? AsHttpUrl(string? value) =>
+        Uri.TryCreate(value?.Trim(), UriKind.Absolute, out var uri)
         && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps)
         && !string.IsNullOrEmpty(uri.Host)
             ? uri
@@ -63,6 +97,11 @@ public sealed class MdnsOptionsValidator : IValidateOptions<MdnsOptions>
         // A DNS label is limited to 63 octets.
         if (System.Text.Encoding.UTF8.GetByteCount(options.Name.Trim()) > 63)
             return ValidateOptionsResult.Fail("Discovery:Mdns:Name darf höchstens 63 Bytes lang sein (DNS-Label-Limit).");
+        if (!string.IsNullOrWhiteSpace(options.InstanceUrl) && options.ParsedInstanceUrl is null)
+            return ValidateOptionsResult.Fail(
+                $"Discovery:Mdns:InstanceUrl '{options.InstanceUrl}' ist keine absolute http(s)-URL (erwartet z. B. http://studylife-web.studylife.svc.cluster.local).");
+        if (!string.IsNullOrWhiteSpace(options.Id) && options.ParsedId is null)
+            return ValidateOptionsResult.Fail("Discovery:Mdns:Id muss aus genau 32 Hex-Zeichen bestehen (die Instanz-ID aus GET /api/instance).");
         return ValidateOptionsResult.Success;
     }
 }

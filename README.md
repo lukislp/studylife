@@ -484,7 +484,7 @@ Beyond the first-party integrations above, StudyLife has a generic, data-driven 
 
 ### Automatic discovery (optional)
 
-The server can announce itself via mDNS / DNS-SD (`_studylife._tcp`) so Home Assistant finds it without a typed address. It is off by default; enable it with `Discovery__Mdns__Enabled=true` and `Discovery__Mdns__Url=https://studylife.example.org` (the address Home Assistant should connect to, usually your reverse proxy). It needs the host's network (`network_mode: host`, or the optional dedicated pod `k8s/optional/studylife-mdns.yaml` on Kubernetes). Only the version, the URL, `https` and the path are announced - never a key or user data. Setups, the VLAN note and troubleshooting are in [docs/MDNS.md](docs/MDNS.md).
+The server can announce itself via mDNS / DNS-SD (`_studylife._tcp`) so Home Assistant finds it without a typed address. It is off by default; enable it with `Discovery__Mdns__Enabled=true` and `Discovery__Mdns__Url=https://studylife.example.org` (the address Home Assistant should connect to, usually your reverse proxy). It needs the host's network (`network_mode: host`, or the optional dedicated pod `k8s/optional/studylife-mdns.yaml` on Kubernetes). Only the version, the URL, `https`, the path and a random instance id (`GET /api/instance`, so Home Assistant can recognise the same installation under different URLs) are announced - never a key or user data. Setups, the VLAN note and troubleshooting are in [docs/MDNS.md](docs/MDNS.md).
 
 ## Contributing
 

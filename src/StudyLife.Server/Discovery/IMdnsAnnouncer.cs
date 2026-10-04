@@ -10,6 +10,11 @@ public interface IMdnsAnnouncer
     /// <summary>Starts announcing and answering queries. Returns false when nothing could be bound.</summary>
     Task<bool> StartAsync(CancellationToken cancellationToken);
 
+    /// <summary>Adds (or replaces) the <c>id</c> TXT record and announces again immediately when the
+    /// announcer is running. Called by the hosted service once the instance id is known; a no-op
+    /// for implementations that do not support it.</summary>
+    void SetId(string id) { }
+
     /// <summary>Withdraws the announcement (goodbye packet, TTL 0) and releases the sockets.</summary>
     Task StopAsync(CancellationToken cancellationToken);
 }

@@ -30,6 +30,7 @@ public class StudyLifeDb : DbContext
     public DbSet<RecoveryCodeEntity> RecoveryCodes => Set<RecoveryCodeEntity>();
     public DbSet<AuthInviteEntity> AuthInvites => Set<AuthInviteEntity>();
     public DbSet<SystemSecretsEntity> SystemSecrets => Set<SystemSecretsEntity>();
+    public DbSet<InstanceInfoEntity> InstanceInfo => Set<InstanceInfoEntity>();
     public DbSet<StudySessionEntity> Sessions => Set<StudySessionEntity>();
     public DbSet<UserSettingsEntity> Settings => Set<UserSettingsEntity>();
     public DbSet<PushSubscriptionEntity> PushSubscriptions => Set<PushSubscriptionEntity>();
@@ -206,6 +207,13 @@ public class StudyLifeDb : DbContext
         // SystemSecretsEntity likewise without a filter (and without AuthUserId) - it is not a
         // user-data table but instance-wide configuration (VAPID keys, setup code,
         // see SystemSecretsService), exactly one row for the entire installation.
+        // InstanceInfoEntity is the same kind of table: instance-wide, no filter, string primary key.
+        modelBuilder.Entity<InstanceInfoEntity>(e =>
+        {
+            e.HasKey(i => i.Key);
+            e.Property(i => i.Key).HasMaxLength(64);
+            e.Property(i => i.Value).HasMaxLength(256);
+        });
 
         // WebhookApiKeyEntity: unlike every other API-key slot (one key per user, a column on
         // AuthUserEntity), Webhooks supports multiple NAMED keys per user - see
@@ -568,6 +576,22 @@ public class SystemSecretsEntity
     public string? VapidPrivateKey { get; set; }
     public string? VapidSubject { get; set; }
     public string? SetupSecretCode { get; set; }
+}
+
+/// <summary>
+/// Tiny instance-wide key/value store, no AuthUserId and no query filter (like SystemSecretsEntity).
+/// Today it holds exactly one row, <see cref="InstanceIdKey"/>: the random id of this installation
+/// (= this database), generated once by InstanceIdProvider and never changed - what Home Assistant
+/// uses to recognise "the same StudyLife" regardless of which URL it was configured with. The
+/// primary key doubles as the race lock: several pods starting at once all try to insert the row,
+/// exactly one wins and the others re-read the winner's value.
+/// </summary>
+public class InstanceInfoEntity
+{
+    public const string InstanceIdKey = "instance-id";
+
+    public string Key { get; set; } = "";
+    public string Value { get; set; } = "";
 }
 
 public class StudySessionEntity

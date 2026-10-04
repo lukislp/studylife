@@ -15,6 +15,10 @@
 #   1. Discovery__Mdns__Url below: the address Home Assistant connects to (your ingress/gateway
 #      name, e.g. https://studylife.example.org) - REPLACE the placeholder. The pod refuses to
 #      start while it is invalid.
+#      The pod also fetches the stable instance id from the running server (GET <Url>/api/instance)
+#      and announces it as TXT "id" (docs/MDNS.md), so it must be able to reach that URL. If the
+#      public URL is not reachable from the node, set Discovery__Mdns__InstanceUrl (commented
+#      example below). Without the id the pod still announces, just without "id", and retries.
 #   2. Optionally a nodeSelector: the pod must run on a node that sits in the LAN/VLAN where Home
 #      Assistant lives (mDNS does not cross VLANs without a reflector, docs/MDNS.md).
 #
@@ -36,14 +40,10 @@ metadata:
     pod-security.kubernetes.io/warn: baseline
     pod-security.kubernetes.io/audit: baseline
 ---
-# Same CIS backstop as the "default" service account of k8s/00-namespace.yaml.
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: default
-  namespace: studylife-mdns
-automountServiceAccountToken: false
----
+# No ServiceAccount document on purpose: Kubernetes creates the namespace's "default" account
+# itself, and declaring it here made the very first `kubectl apply` fail with AlreadyExists (the
+# controller wins the race). The pod does not need it anyway - it sets
+# automountServiceAccountToken: false below, so no token is mounted.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -95,6 +95,13 @@ spec:
             # REPLACE: what Home Assistant should connect to - the ingress/gateway URL, NOT this pod.
             - name: Discovery__Mdns__Url
               value: "https://studylife.example.org"
+            # OPTIONAL: where this pod fetches the instance id from (GET <InstanceUrl>/api/instance).
+            # Defaults to Discovery__Mdns__Url. Uncomment when the advertised URL is not reachable
+            # from the node, e.g. a LAN name. Note: k8s/12-network-policies.yaml only admits the
+            # ingress controller to the web pods, so the in-cluster Service is NOT reachable from
+            # this hostNetwork pod without an extra policy - use an ingress-routed URL.
+            # - name: Discovery__Mdns__InstanceUrl
+            #   value: "https://studylife.heim.lan"
             - name: Discovery__Mdns__Name
               value: "StudyLife"
           resources:

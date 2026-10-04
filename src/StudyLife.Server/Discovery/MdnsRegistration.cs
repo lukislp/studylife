@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using StudyLife.Server.Configuration;
+using StudyLife.Server.Services;
 
 namespace StudyLife.Server.Discovery;
 
@@ -12,7 +13,26 @@ public static class MdnsRegistration
         services.AddSingleton<IMdnsAnnouncer>(sp => new MdnsAnnouncer(
             MdnsServiceDescription.From(sp.GetRequiredService<IOptions<MdnsOptions>>().Value, MdnsServiceDescription.CurrentVersion()),
             sp.GetRequiredService<ILogger<MdnsAnnouncer>>()));
-        services.AddHostedService<MdnsHostedService>();
+        // Where the id comes from: Only mode (no database) uses the explicit Discovery:Mdns:Id or asks
+        // the running server over HTTP; otherwise this process announces its own persisted id.
+        services.AddHttpClient(nameof(HttpMdnsIdSource), client => client.MaxResponseContentBufferSize = 16 * 1024);
+        services.AddSingleton<IMdnsIdSource>(sp =>
+        {
+            var options = sp.GetRequiredService<IOptions<MdnsOptions>>().Value;
+            if (!options.Only)
+                return new ProviderMdnsIdSource(sp.GetRequiredService<IInstanceIdProvider>(), sp.GetRequiredService<ILogger<ProviderMdnsIdSource>>());
+            if (options.ParsedId is { } fixedId)
+                return new FixedMdnsIdSource(fixedId);
+            var instanceUrl = options.ParsedInstanceUrl
+                ?? throw new InvalidOperationException("Discovery:Mdns:Url ist keine absolute http(s)-URL.");
+            return new HttpMdnsIdSource(
+                sp.GetRequiredService<IHttpClientFactory>().CreateClient(nameof(HttpMdnsIdSource)),
+                instanceUrl, sp.GetRequiredService<ILogger<HttpMdnsIdSource>>());
+        });
+        services.AddHostedService(sp => new MdnsHostedService(
+            sp.GetRequiredService<IMdnsAnnouncer>(),
+            sp.GetRequiredService<ILogger<MdnsHostedService>>(),
+            sp.GetRequiredService<IMdnsIdSource>()));
         return services;
     }
 }
