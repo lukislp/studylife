@@ -273,7 +273,7 @@ jobs:
       - run: dotnet workload restore StudyLife.sln
       - run: dotnet restore StudyLife.sln --locked-mode
       - name: Known-vulnerable NuGet packages (High/Critical fail the build)
-        uses: lukislp/ci-workflows/.github/actions/nuget-severity-gate@4375bd6888bc28572ea26fdc50eb98c5ffa820f8 # v1.7.21
+        uses: lukislp/ci-workflows/.github/actions/nuget-severity-gate@3cb50cac3c032216abc230580f1f6dcafeaec113 # v1.7.25
         with:
           solution: StudyLife.sln
 
@@ -770,6 +770,8 @@ jobs:
           # The server image's apt-get (Ubuntu noble base) and the pinned piper/whisper model
           # downloads from Hugging Face (LFS redirects to *.hf.co) run inside the build. They were
           # served from the buildx layer cache until the 2026-09-23 base-image digest bump.
+          # The arm64 leg's apt mirror is ports.ubuntu.com (archive/security.ubuntu.com only
+          # serve amd64); its cached apt layer hid that until the 2026-10-14 digest bump (#339).
           allowed-endpoints: >
             aka.ms:443
             api.github.com:443
@@ -792,6 +794,7 @@ jobs:
             *.huggingface.co:443
             mcr.microsoft.com:443
             pkg-containers.githubusercontent.com:443
+            ports.ubuntu.com:80
             production.cloudfront.docker.com:443
             raw.githubusercontent.com:443
             registry-1.docker.io:443
