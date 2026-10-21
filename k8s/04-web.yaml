@@ -164,16 +164,16 @@ spec:
             - name: Apns__KeyPath
               value: /secrets/apns/apns-key.p8
             - name: Apns__KeyId
-              value: "9L4T424GJM"
+              value: "97652S754C"
             - name: Apns__TeamId
               value: "GAP8W46W8A"
             - name: Apns__BundleId
               value: app.studylife.mobile
-            # true as long as installation only happens via devicectl/development profile (aps-
-            # environment: development) - only switch to false once a real distribution profile
-            # (TestFlight/App Store) is used (otherwise Apple rejects the tokens).
+            # false: the app ships via TestFlight/App Store (aps-environment: production), whose
+            # device tokens only work against api.push.apple.com. Set true only for builds
+            # installed directly with a development profile (aps-environment: development).
             - name: Apns__UseSandbox
-              value: "true"
+              value: "false"
             # For the AASA endpoint (GET /.well-known/apple-app-site-association, Program.cs) -
             # enables the app's native in-app passkey dialog once it carries the Associated
             # Domains entitlement.

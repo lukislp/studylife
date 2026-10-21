@@ -107,13 +107,14 @@ spec:
             - name: Apns__KeyPath
               value: /secrets/apns/apns-key.p8
             - name: Apns__KeyId
-              value: "9L4T424GJM"
+              value: "97652S754C"
             - name: Apns__TeamId
               value: "GAP8W46W8A"
             - name: Apns__BundleId
               value: app.studylife.mobile
+            # Same as studylife-web (k8s/04-web.yaml): production APNs for TestFlight/App Store.
             - name: Apns__UseSandbox
-              value: "true"
+              value: "false"
             # Redis AUTH password, read from the SAME Secret the Redis StatefulSet uses
             # (k8s/03-redis.yaml, secret "redis-auth", key "password") and merged into the
             # connection options by Program.cs (Cache:Password). optional: the Secret may not
