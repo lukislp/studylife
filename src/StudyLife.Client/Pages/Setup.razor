@@ -4,6 +4,7 @@
 @using StudyLife.Shared
 @inherits LocalizedComponentBase<I18nText.SetupText>
 @implements IDisposable
+@inject INativeAppAuth NativeAuth
 @inject AppStateService State
 @inject NotificationService NotificationSvc
 @inject HttpClient Http
@@ -549,6 +550,10 @@
 
     private void DetectClientVersion()
     {
+        // The native app shell embeds this client without the CI's -p:Version stamp, so its
+        // assembly always reports 1.0.0 and would always show as a mismatch. Same reason as
+        // MainLayout.CheckForClientUpdateAsync: the hint is meaningless there.
+        if (NativeAuth.IsAvailable) return;
         try
         {
             _clientVersion = typeof(Setup).Assembly
