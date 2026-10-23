@@ -32,7 +32,12 @@ public partial class BackgroundTaskService
         // Local server time as everywhere else in the timer context (TimerStateService.GetAsync/
         // PushStateAsync in the client) - PhaseEndsAt was written in the same time base.
         var now = LocalNow;
-        if (now < phaseEndsAt) return;
+        // Short head start for the app: while it is open it advances the phase itself and PUTs
+        // the new PhaseEndsAt right at the transition (TimerService), together with its own
+        // in-app chime. Acting on the very first tick after phaseEndsAt raced that PUT and could
+        // add a second, alerting push on top. A few seconds stay well inside the card's 12s
+        // stale grace (ApnsSender.LiveActivityStaleGrace).
+        if (now < phaseEndsAt + LiveActivityAppHeadStart) return;
 
         var settings = await db.Settings.FirstOrDefaultAsync();
         var mode = ServerTimerModes.Resolve(state.TimerModeId, settings?.CustomTimerModes);
@@ -74,8 +79,11 @@ public partial class BackgroundTaskService
 
         var secondsLeft = Math.Max(0, (int)(endsAt - now).TotalSeconds);
         var phaseTotalSeconds = (isBreak ? mode.BreakMinutes : mode.FocusMinutes) * 60;
+        // Every push from here is a phase change the user did not see happen in the app (it is
+        // closed or suspended, see the head start above), so make it audible.
         var updateOutcome = await _apnsSender.SendLiveActivityUpdateAsync(token,
-            new DateTimeOffset(endsAt), isBreak, secondsLeft, phaseTotalSeconds, round, mode.Rounds);
+            new DateTimeOffset(endsAt), isBreak, secondsLeft, phaseTotalSeconds, round, mode.Rounds,
+            BuildPhaseChangeAlert(mode.Name, isBreak, round, mode.Rounds, isBreak ? mode.BreakMinutes : mode.FocusMinutes));
 
         // Same principle as above: only adopt the new phase state on a definitive outcome
         // (delivered OR token permanently invalid). A plain "Failed" leaves PhaseEndsAt in the
@@ -90,6 +98,19 @@ public partial class BackgroundTaskService
         if (updateOutcome == ApnsSendOutcome.ExpiredToken) state.LiveActivityPushToken = null;
         await TrySaveTimerStateAsync(db, state);
     }
+
+    /// <summary>How long after a phase end the worker leaves the transition to a running app
+    /// before pushing it itself - see RunLiveActivityPushAsync.</summary>
+    internal static readonly TimeSpan LiveActivityAppHeadStart = TimeSpan.FromSeconds(3);
+
+    /// <summary>Lock-screen alert for the phase that just began (German, like the other push
+    /// texts of the worker).</summary>
+    internal static LiveActivityAlert BuildPhaseChangeAlert(string modeName, bool isBreak, int round, int totalRounds, int phaseMinutes)
+        => isBreak
+            ? new LiveActivityAlert("Zeit für eine Pause",
+                $"{modeName}: Runde {round} von {totalRounds} geschafft - {phaseMinutes} Minuten Pause.")
+            : new LiveActivityAlert("Weiter geht's",
+                $"{modeName}: Runde {round} von {totalRounds} - {phaseMinutes} Minuten Fokus.");
 
     /// <summary>
     /// Persists this tick's phase transition, treating an optimistic-concurrency conflict as

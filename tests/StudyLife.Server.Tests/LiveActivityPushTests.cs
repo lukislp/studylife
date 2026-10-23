@@ -159,6 +159,39 @@ public class LiveActivityPushWorkerTests : IClassFixture<CustomWebApplicationFac
     }
 
     [Fact]
+    public async Task RunLiveActivityPushAsync_PhaseJustEnded_LeavesTheTransitionToTheOpenApp()
+    {
+        // Within the head start the open app PUTs the next phase itself (with its own chime) -
+        // pushing now as well would announce the same phase change twice.
+        await SeedTimerStateAsync(e =>
+        {
+            e.IsRunning = true;
+            e.IsBreak = false;
+            e.CurrentRound = 1;
+            e.TimerModeId = 1;
+            e.PhaseEndsAt = DateTime.Now.AddSeconds(-1);
+            e.LiveActivityPushToken = "tok-head-start";
+        });
+        var (service, handler) = CreateService();
+
+        await _factory.WithDbAsync(db => service.RunLiveActivityPushAsync(db));
+
+        Assert.Empty(handler.Requests);
+    }
+
+    [Fact]
+    public void BuildPhaseChangeAlert_NamesThePhaseThatBegins()
+    {
+        var breakAlert = BackgroundTaskService.BuildPhaseChangeAlert("Pomodoro", isBreak: true, round: 2, totalRounds: 4, phaseMinutes: 5);
+        Assert.Equal("Zeit für eine Pause", breakAlert.Title);
+        Assert.Equal("Pomodoro: Runde 2 von 4 geschafft - 5 Minuten Pause.", breakAlert.Body);
+
+        var focusAlert = BackgroundTaskService.BuildPhaseChangeAlert("Pomodoro", isBreak: false, round: 3, totalRounds: 4, phaseMinutes: 25);
+        Assert.Equal("Weiter geht's", focusAlert.Title);
+        Assert.Equal("Pomodoro: Runde 3 von 4 - 25 Minuten Fokus.", focusAlert.Body);
+    }
+
+    [Fact]
     public async Task RunLiveActivityPushAsync_NotRunning_SendsNothing()
     {
         await SeedTimerStateAsync(e =>
@@ -185,7 +218,7 @@ public class LiveActivityPushWorkerTests : IClassFixture<CustomWebApplicationFac
             e.IsBreak = false;
             e.CurrentRound = 1;
             e.TimerModeId = 1;
-            e.PhaseEndsAt = DateTime.Now.AddSeconds(-2);
+            e.PhaseEndsAt = DateTime.Now.AddSeconds(-10);
             e.LiveActivityPushToken = "tok-focus-to-break";
         });
         var (service, handler) = CreateService();
@@ -194,9 +227,14 @@ public class LiveActivityPushWorkerTests : IClassFixture<CustomWebApplicationFac
 
         var request = Assert.Single(handler.Requests);
         Assert.Equal("app.studylife.mobile.push-type.liveactivity", request.Headers["apns-topic"]);
+        Assert.Equal("10", request.Headers["apns-priority"]);
         Assert.Contains("\"event\":\"update\"", request.Body);
         Assert.Contains("\"isBreak\":true", request.Body);
         Assert.Contains("\"round\":1", request.Body);
+        // The phase change is announced on the lock screen, not just silently applied.
+        Assert.Contains("\"alert\":{\"title\":\"Zeit für eine Pause\"", request.Body);
+        Assert.Contains("5 Minuten Pause", request.Body);
+        Assert.Contains("\"stale-date\"", request.Body);
 
         var stored = await _factory.WithDbAsync(async db => await db.TimerState.AsNoTracking().FirstOrDefaultAsync());
         Assert.NotNull(stored);
@@ -221,7 +259,7 @@ public class LiveActivityPushWorkerTests : IClassFixture<CustomWebApplicationFac
             e.IsBreak = false;
             e.CurrentRound = 1;
             e.TimerModeId = 1;
-            e.PhaseEndsAt = DateTime.Now.AddSeconds(-2);
+            e.PhaseEndsAt = DateTime.Now.AddSeconds(-10);
             e.LiveActivityPushToken = "tok-transient-fail";
         });
         var config = new Dictionary<string, string?>
@@ -259,7 +297,7 @@ public class LiveActivityPushWorkerTests : IClassFixture<CustomWebApplicationFac
             e.IsBreak = true;
             e.CurrentRound = 1;
             e.TimerModeId = 1;
-            e.PhaseEndsAt = DateTime.Now.AddSeconds(-2);
+            e.PhaseEndsAt = DateTime.Now.AddSeconds(-10);
             e.LiveActivityPushToken = "tok-break-to-focus";
         });
         var (service, handler) = CreateService();
@@ -289,7 +327,7 @@ public class LiveActivityPushWorkerTests : IClassFixture<CustomWebApplicationFac
             e.IsBreak = true;
             e.CurrentRound = 4;
             e.TimerModeId = 1;
-            e.PhaseEndsAt = DateTime.Now.AddSeconds(-2);
+            e.PhaseEndsAt = DateTime.Now.AddSeconds(-10);
             e.LiveActivityPushToken = "tok-session-complete";
         });
         var (service, handler) = CreateService();
@@ -312,7 +350,7 @@ public class LiveActivityPushWorkerTests : IClassFixture<CustomWebApplicationFac
             e.IsBreak = false;
             e.CurrentRound = 1;
             e.TimerModeId = 1;
-            e.PhaseEndsAt = DateTime.Now.AddSeconds(-2);
+            e.PhaseEndsAt = DateTime.Now.AddSeconds(-10);
             e.LiveActivityPushToken = "tok-now-invalid";
         });
         var config = new Dictionary<string, string?>
