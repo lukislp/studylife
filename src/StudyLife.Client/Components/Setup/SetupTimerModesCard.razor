@@ -1,4 +1,5 @@
 @using StudyLife.Client.Models
+@using StudyLife.Shared
 
 <div class="setup-section">
     <div class="ss-label">@Label</div>
@@ -25,20 +26,20 @@
         <div style="color:var(--danger,#e74c3c);font-size:0.8rem;margin-bottom:0.5rem">⚠️ @_error</div>
     }
     <div class="field" style="margin-bottom:0.75rem">
-        <input class="input input-sm" maxlength="24" placeholder="@NamePlaceholder" @bind="_name" @bind:event="oninput" @bind:after="() => _error = null" />
+        <input class="input input-sm" maxlength="24" placeholder="@NamePlaceholder" @bind="_name" @bind:event="oninput" @bind:after="ClearError" />
     </div>
     <div class="field-row" style="margin-bottom:0.75rem">
         <div class="field">
             <label>@FocusLabel</label>
-            <input class="input input-sm" type="number" min="5" max="180" @bind="_focusMinutes" />
+            <input class="input input-sm" type="number" min="@TimerModeCatalog.MinFocusMinutes" max="@TimerModeCatalog.MaxFocusMinutes" @bind="_focusMinutes" @bind:after="ClearError" />
         </div>
         <div class="field">
             <label>@BreakLabel</label>
-            <input class="input input-sm" type="number" min="0" max="60" @bind="_breakMinutes" />
+            <input class="input input-sm" type="number" min="@TimerModeCatalog.MinBreakMinutes" max="@TimerModeCatalog.MaxBreakMinutes" @bind="_breakMinutes" @bind:after="ClearError" />
         </div>
         <div class="field">
             <label>@RoundsLabel</label>
-            <input class="input input-sm" type="number" min="1" max="10" @bind="_rounds" />
+            <input class="input input-sm" type="number" min="@TimerModeCatalog.MinRounds" max="@TimerModeCatalog.MaxRounds" @bind="_rounds" @bind:after="ClearError" />
         </div>
     </div>
     <button type="button" class="btn-secondary" disabled="@string.IsNullOrWhiteSpace(_name)" @onclick="Add">@AddButtonText</button>
@@ -57,6 +58,11 @@
     /// belongs to another custom mode - two modes with the same name would be indistinguishable
     /// wherever modes are picked by name (Focus page, session dialogs).</summary>
     [Parameter] public string? DuplicateNameError { get; set; }
+    /// <summary>Format string shown instead of adding when focus/break/rounds is outside the
+    /// TimerModeCatalog bounds; {0}-{5} = focus min/max, break min/max, rounds min/max. Out-of-range
+    /// input is refused visibly rather than clamped, so the saved mode always matches what was
+    /// typed.</summary>
+    [Parameter] public string? RangeError { get; set; }
     [Parameter] public List<TimerMode> Modes { get; set; } = new();
     /// <summary>New mode without an ID - the parent assigns the ID and serializes (deferred save-button flow).</summary>
     [Parameter] public EventCallback<TimerMode> OnAdd { get; set; }
@@ -78,15 +84,32 @@
             _error = DuplicateNameError;
             return;
         }
+        if (!IsInRange(_focusMinutes, _breakMinutes, _rounds))
+        {
+            _error = string.Format(RangeError ?? "",
+                TimerModeCatalog.MinFocusMinutes, TimerModeCatalog.MaxFocusMinutes,
+                TimerModeCatalog.MinBreakMinutes, TimerModeCatalog.MaxBreakMinutes,
+                TimerModeCatalog.MinRounds, TimerModeCatalog.MaxRounds);
+            return;
+        }
         var mode = new TimerMode
         {
             Name = name,
-            FocusMinutes = Math.Clamp(_focusMinutes, 5, 180),
-            BreakMinutes = Math.Clamp(_breakMinutes, 0, 60),
-            Rounds = Math.Clamp(_rounds, 1, 10),
+            FocusMinutes = _focusMinutes,
+            BreakMinutes = _breakMinutes,
+            Rounds = _rounds,
         };
         _name = "";
         _error = null;
         await OnAdd.InvokeAsync(mode);
     }
+
+    private void ClearError() => _error = null;
+
+    /// <summary>Same bounds TimerModeCatalog.ParseCustom clamps to on read - anything accepted
+    /// here round-trips unchanged to the Focus page, the native app and the Live Activity push.</summary>
+    public static bool IsInRange(int focusMinutes, int breakMinutes, int rounds) =>
+        focusMinutes is >= TimerModeCatalog.MinFocusMinutes and <= TimerModeCatalog.MaxFocusMinutes
+        && breakMinutes is >= TimerModeCatalog.MinBreakMinutes and <= TimerModeCatalog.MaxBreakMinutes
+        && rounds is >= TimerModeCatalog.MinRounds and <= TimerModeCatalog.MaxRounds;
 }

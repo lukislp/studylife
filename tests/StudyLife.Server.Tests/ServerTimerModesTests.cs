@@ -51,15 +51,15 @@ public class ServerTimerModesTests
     [Fact]
     public void Resolve_CustomModeOutOfRangeValues_AreClampedToClientRules()
     {
-        // Same clamps as CustomTimerModes.Parse: focus 5..180, break 0..60, rounds 1..10.
+        // Same clamps as CustomTimerModes.Parse: focus 1..180, break 0..60, rounds 1..10.
         var json = """[{"id":100,"name":"Extreme","focusMinutes":999,"breakMinutes":-5,"rounds":0},"""
-            + """{"id":101,"name":"Tiny","focusMinutes":1,"breakMinutes":90,"rounds":99}]""";
+            + """{"id":101,"name":"Tiny","focusMinutes":0,"breakMinutes":90,"rounds":99}]""";
 
         var extreme = ServerTimerModes.Resolve(100, json);
         var tiny = ServerTimerModes.Resolve(101, json);
 
         Assert.Equal((180, 0, 1), (extreme!.FocusMinutes, extreme.BreakMinutes, extreme.Rounds));
-        Assert.Equal((5, 60, 10), (tiny!.FocusMinutes, tiny.BreakMinutes, tiny.Rounds));
+        Assert.Equal((1, 60, 10), (tiny!.FocusMinutes, tiny.BreakMinutes, tiny.Rounds));
     }
 
     [Fact]

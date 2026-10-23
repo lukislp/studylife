@@ -83,6 +83,7 @@
   "TimerModesDesc": "Susikurk savo fokusavimo ritmus — jie rodomi Fokuso puslapyje šalia įtaisytųjų režimų.",
   "TimerModeNamePlaceholder": "Pavadinimas (pvz., Deep Work)",
   "TimerModeDuplicateNameError": "Toks režimo pavadinimas jau naudojamas.",
+  "TimerModeRangeError": "Leidžiama: susikaupimas {0}–{1} min., pertrauka {2}–{3} min., ratai {4}–{5}.",
   "TimerModeFocusLabel": "Fokusas (min.)",
   "TimerModeBreakLabel": "Pertrauka (min.)",
   "TimerModeRoundsLabel": "Raundai",

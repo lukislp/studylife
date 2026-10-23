@@ -83,6 +83,7 @@
   "TimerModesDesc": "Cruthaigh do rithimí fócais féin — feicfear iad ar an leathanach Fócas in aice leis na móid ionsuite.",
   "TimerModeNamePlaceholder": "Ainm (m.sh. Deep Work)",
   "TimerModeDuplicateNameError": "Tá mód leis an ainm seo ann cheana.",
+  "TimerModeRangeError": "Ceadaithe: fócas {0}–{1} nóim, sos {2}–{3} nóim, babhtaí {4}–{5}.",
   "TimerModeFocusLabel": "Fócas (nóim)",
   "TimerModeBreakLabel": "Sos (nóim)",
   "TimerModeRoundsLabel": "Babhtaí",

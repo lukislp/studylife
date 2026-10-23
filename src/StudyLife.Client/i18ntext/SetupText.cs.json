@@ -83,6 +83,7 @@
   "TimerModesDesc": "Vytvoř si vlastní rytmy soustředění — zobrazí se na stránce Fokus vedle vestavěných režimů.",
   "TimerModeNamePlaceholder": "Název (např. Deep Work)",
   "TimerModeDuplicateNameError": "Režim s tímto názvem už existuje.",
+  "TimerModeRangeError": "Povoleno: soustředění {0}–{1} min, pauza {2}–{3} min, kola {4}–{5}.",
   "TimerModeFocusLabel": "Soustředění (min)",
   "TimerModeBreakLabel": "Přestávka (min)",
   "TimerModeRoundsLabel": "Kola",

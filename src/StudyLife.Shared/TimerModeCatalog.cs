@@ -20,7 +20,10 @@ public static class TimerModeCatalog
     /// <summary>Custom mode ids start here - never collides with the built-in range (1-9).</summary>
     public const int FirstCustomId = 100;
 
-    public const int MinFocusMinutes = 5;
+    /// <summary>Lower focus bound for custom modes. 1, not the built-ins' shortest (Micro Focus,
+    /// 5): a user who deliberately enters a 1-minute focus phase gets exactly that - the old 5
+    /// bound silently turned a saved 1 into 5 on the Focus page.</summary>
+    public const int MinFocusMinutes = 1;
     public const int MaxFocusMinutes = 180;
     public const int MinBreakMinutes = 0;
     public const int MaxBreakMinutes = 60;

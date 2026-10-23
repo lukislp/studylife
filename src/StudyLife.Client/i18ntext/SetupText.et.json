@@ -83,6 +83,7 @@
   "TimerModesDesc": "Loo oma fookusrütmid — need ilmuvad Fookuse lehel sisseehitatud režiimide kõrvale.",
   "TimerModeNamePlaceholder": "Nimi (nt Deep Work)",
   "TimerModeDuplicateNameError": "Selle nimega režiim on juba olemas.",
+  "TimerModeRangeError": "Lubatud: fookus {0}–{1} min, paus {2}–{3} min, ringid {4}–{5}.",
   "TimerModeFocusLabel": "Fookus (min)",
   "TimerModeBreakLabel": "Paus (min)",
   "TimerModeRoundsLabel": "Ringid",

@@ -83,6 +83,7 @@
   "TimerModesDesc": "Δημιούργησε τους δικούς σου ρυθμούς συγκέντρωσης — εμφανίζονται στη σελίδα Συγκέντρωση δίπλα στις ενσωματωμένες λειτουργίες.",
   "TimerModeNamePlaceholder": "Όνομα (π.χ. Deep Work)",
   "TimerModeDuplicateNameError": "Υπάρχει ήδη μια λειτουργία με αυτό το όνομα.",
+  "TimerModeRangeError": "Επιτρέπεται: εστίαση {0}–{1} λεπ., διάλειμμα {2}–{3} λεπ., γύροι {4}–{5}.",
   "TimerModeFocusLabel": "Συγκέντρωση (λεπτά)",
   "TimerModeBreakLabel": "Διάλειμμα (λεπτά)",
   "TimerModeRoundsLabel": "Γύροι",

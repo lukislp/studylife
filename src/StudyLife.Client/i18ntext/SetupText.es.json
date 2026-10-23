@@ -83,6 +83,7 @@
   "TimerModesDesc": "Crea tus propios ritmos de enfoque: aparecen en la página de Enfoque junto a los modos integrados.",
   "TimerModeNamePlaceholder": "Nombre (p. ej. Deep Work)",
   "TimerModeDuplicateNameError": "Ya existe un modo con este nombre.",
+  "TimerModeRangeError": "Permitido: enfoque {0}–{1} min, descanso {2}–{3} min, rondas {4}–{5}.",
   "TimerModeFocusLabel": "Enfoque (min)",
   "TimerModeBreakLabel": "Descanso (min)",
   "TimerModeRoundsLabel": "Rondas",

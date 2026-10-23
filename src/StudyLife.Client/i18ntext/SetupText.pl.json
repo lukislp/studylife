@@ -83,6 +83,7 @@
   "TimerModesDesc": "Stwórz własne rytmy skupienia — pojawią się na stronie Fokus obok wbudowanych trybów.",
   "TimerModeNamePlaceholder": "Nazwa (np. Deep Work)",
   "TimerModeDuplicateNameError": "Tryb o tej nazwie już istnieje.",
+  "TimerModeRangeError": "Dozwolone: skupienie {0}–{1} min, przerwa {2}–{3} min, rundy {4}–{5}.",
   "TimerModeFocusLabel": "Skupienie (min)",
   "TimerModeBreakLabel": "Przerwa (min)",
   "TimerModeRoundsLabel": "Rundy",

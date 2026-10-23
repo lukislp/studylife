@@ -83,6 +83,7 @@
   "TimerModesDesc": "Skapa dina egna fokusrytmer — de visas på Fokus-sidan bredvid de inbyggda lägena.",
   "TimerModeNamePlaceholder": "Namn (t.ex. Deep Work)",
   "TimerModeDuplicateNameError": "Ett läge med detta namn finns redan.",
+  "TimerModeRangeError": "Tillåtet: fokus {0}–{1} min, paus {2}–{3} min, omgångar {4}–{5}.",
   "TimerModeFocusLabel": "Fokus (min)",
   "TimerModeBreakLabel": "Paus (min)",
   "TimerModeRoundsLabel": "Rundor",

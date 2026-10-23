@@ -83,6 +83,7 @@
   "TimerModesDesc": "Crée tes propres rythmes de focus — ils apparaissent sur la page Focus à côté des modes intégrés.",
   "TimerModeNamePlaceholder": "Nom (p. ex. Deep Work)",
   "TimerModeDuplicateNameError": "Un mode portant ce nom existe déjà.",
+  "TimerModeRangeError": "Autorisé : concentration {0}–{1} min, pause {2}–{3} min, cycles {4}–{5}.",
   "TimerModeFocusLabel": "Focus (min)",
   "TimerModeBreakLabel": "Pause (min)",
   "TimerModeRoundsLabel": "Tours",

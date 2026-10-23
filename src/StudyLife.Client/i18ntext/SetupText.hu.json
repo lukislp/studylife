@@ -83,6 +83,7 @@
   "TimerModesDesc": "Hozd létre a saját fókuszritmusaidat — a Fókusz oldalon jelennek meg a beépített módok mellett.",
   "TimerModeNamePlaceholder": "Név (pl. Deep Work)",
   "TimerModeDuplicateNameError": "Már létezik ilyen nevű mód.",
+  "TimerModeRangeError": "Megengedett: fókusz {0}–{1} perc, szünet {2}–{3} perc, körök {4}–{5}.",
   "TimerModeFocusLabel": "Fókusz (perc)",
   "TimerModeBreakLabel": "Szünet (perc)",
   "TimerModeRoundsLabel": "Körök",
