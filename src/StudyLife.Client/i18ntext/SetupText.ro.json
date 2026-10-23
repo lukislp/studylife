@@ -83,6 +83,7 @@
   "TimerModesDesc": "Creează-ți propriile ritmuri de focus — apar pe pagina Focus lângă modurile integrate.",
   "TimerModeNamePlaceholder": "Nume (de ex. Deep Work)",
   "TimerModeDuplicateNameError": "Există deja un mod cu acest nume.",
+  "TimerModeRangeError": "Permis: concentrare {0}–{1} min, pauză {2}–{3} min, runde {4}–{5}.",
   "TimerModeFocusLabel": "Focus (min)",
   "TimerModeBreakLabel": "Pauză (min)",
   "TimerModeRoundsLabel": "Runde",

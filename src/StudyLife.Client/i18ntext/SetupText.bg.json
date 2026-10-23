@@ -83,6 +83,7 @@
   "TimerModesDesc": "Създай свои собствени ритми на фокус — те се появяват на страницата Фокус до вградените режими.",
   "TimerModeNamePlaceholder": "Име (напр. Deep Work)",
   "TimerModeDuplicateNameError": "Вече има режим с това име.",
+  "TimerModeRangeError": "Допустимо: фокус {0}–{1} мин, почивка {2}–{3} мин, рундове {4}–{5}.",
   "TimerModeFocusLabel": "Фокус (мин)",
   "TimerModeBreakLabel": "Почивка (мин)",
   "TimerModeRoundsLabel": "Рундове",

@@ -71,14 +71,43 @@ public class TimerModeCatalogTests
     public void ParseCustom_OutOfRangeValues_AreClampedToBounds()
     {
         var json = """[{"id":100,"name":"Extreme","focusMinutes":999,"breakMinutes":-5,"rounds":0},"""
-            + """{"id":101,"name":"Tiny","focusMinutes":1,"breakMinutes":90,"rounds":99}]""";
+            + """{"id":101,"name":"Tiny","focusMinutes":0,"breakMinutes":90,"rounds":99}]""";
 
         var modes = TimerModeCatalog.ParseCustom(json);
 
         var extreme = modes.Single(m => m.Id == 100);
         var tiny = modes.Single(m => m.Id == 101);
         Assert.Equal((180, 0, 1), (extreme.FocusMinutes, extreme.BreakMinutes, extreme.Rounds));
-        Assert.Equal((5, 60, 10), (tiny.FocusMinutes, tiny.BreakMinutes, tiny.Rounds));
+        Assert.Equal((1, 60, 10), (tiny.FocusMinutes, tiny.BreakMinutes, tiny.Rounds));
+    }
+
+    [Fact]
+    public void ParseCustom_OneMinuteFocus_IsKeptAsSaved()
+    {
+        // Regression: a custom mode saved with 1 min focus / 2 min break / 5 rounds showed up on
+        // the Focus page as 5 minutes because the lower focus bound was 5.
+        var json = """[{"id":100,"name":"Quick test","focusMinutes":1,"breakMinutes":2,"rounds":5}]""";
+
+        var mode = Assert.Single(TimerModeCatalog.ParseCustom(json));
+
+        Assert.Equal((1, 2, 5), (mode.FocusMinutes, mode.BreakMinutes, mode.Rounds));
+    }
+
+    [Fact]
+    public void AdvancePhase_OneMinuteCustomMode_UsesSavedFocusAndBreakLengths()
+    {
+        var mode = Assert.Single(TimerModeCatalog.ParseCustom(
+            """[{"id":100,"name":"Quick test","focusMinutes":1,"breakMinutes":2,"rounds":5}]"""));
+        var start = new DateTime(2026, 10, 23, 12, 0, 0, DateTimeKind.Utc);
+
+        var toBreak = TimerModeCatalog.AdvancePhase(mode, isBreak: false, round: 1, start.AddMinutes(1));
+        var toFocus = TimerModeCatalog.AdvancePhase(mode, toBreak.IsBreak, toBreak.Round, toBreak.PhaseEndsAt);
+
+        Assert.True(toBreak.IsBreak);
+        Assert.Equal(start.AddMinutes(3), toBreak.PhaseEndsAt);
+        Assert.False(toFocus.IsBreak);
+        Assert.Equal(2, toFocus.Round);
+        Assert.Equal(start.AddMinutes(4), toFocus.PhaseEndsAt);
     }
 
     [Fact]

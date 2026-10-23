@@ -83,6 +83,7 @@
   "TimerModesDesc": "Oħloq ir-ritmi ta' fokus tiegħek — jidhru fil-paġna Fokus ħdejn il-modi inkorporati.",
   "TimerModeNamePlaceholder": "Isem (eż. Deep Work)",
   "TimerModeDuplicateNameError": "Diġà jeżisti mod b'dan l-isem.",
+  "TimerModeRangeError": "Permess: fokus {0}–{1} min, waqfa {2}–{3} min, rawnds {4}–{5}.",
   "TimerModeFocusLabel": "Fokus (min)",
   "TimerModeBreakLabel": "Pawża (min)",
   "TimerModeRoundsLabel": "Rawnds",

@@ -83,6 +83,7 @@
   "TimerModesDesc": "Stvori vlastite ritmove fokusa — prikazuju se na stranici Fokus uz ugrađene načine.",
   "TimerModeNamePlaceholder": "Naziv (npr. Deep Work)",
   "TimerModeDuplicateNameError": "Način s ovim nazivom već postoji.",
+  "TimerModeRangeError": "Dopušteno: fokus {0}–{1} min, pauza {2}–{3} min, runde {4}–{5}.",
   "TimerModeFocusLabel": "Fokus (min)",
   "TimerModeBreakLabel": "Pauza (min)",
   "TimerModeRoundsLabel": "Runde",

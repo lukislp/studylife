@@ -83,6 +83,7 @@
   "TimerModesDesc": "Erstelle deine eigenen Fokus-Rhythmen — sie erscheinen auf der Fokus-Seite neben den eingebauten Modi.",
   "TimerModeNamePlaceholder": "Name (z. B. Deep Work)",
   "TimerModeDuplicateNameError": "Ein Modus mit diesem Namen existiert bereits.",
+  "TimerModeRangeError": "Erlaubt: Fokus {0}–{1} Min., Pause {2}–{3} Min., Runden {4}–{5}.",
   "TimerModeFocusLabel": "Fokus (Min.)",
   "TimerModeBreakLabel": "Pause (Min.)",
   "TimerModeRoundsLabel": "Runden",
