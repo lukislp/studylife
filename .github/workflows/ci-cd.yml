@@ -15,6 +15,14 @@ concurrency:
 
 env:
   DOTNET_VERSION: "10.0.x"
+  # NuGet restores keep failing with NU1301 "Network is unreachable (api.nuget.org:443)" while
+  # other projects of the same restore succeed (2026-10-23). Retry transient network errors
+  # more and longer than NuGet's default, and keep .NET on IPv4: "unreachable" is what a
+  # connect to an unrouted IPv6 address returns, and the egress allow-list resolves for IPv4.
+  NUGET_ENABLE_ENHANCED_HTTP_RETRY: "true"
+  NUGET_ENHANCED_MAX_NETWORK_TRY_COUNT: "8"
+  NUGET_ENHANCED_NETWORK_RETRY_DELAY_MILLISECONDS: "2000"
+  DOTNET_SYSTEM_NET_DISABLEIPV6: "1"
   CONFIGURATION: Release
   IMAGE: ghcr.io/lukislp/studylife-server
 
