@@ -84,7 +84,7 @@ jobs:
       - run: dotnet test tests/StudyLife.Tts.Tests/StudyLife.Tts.Tests.csproj --no-restore --configuration ${{ env.CONFIGURATION }} --logger "junit;LogFilePath=TestResults/tts-tests-junit.xml" --collect:"XPlat Code Coverage" --settings coverlet.runsettings
       - run: dotnet test tests/StudyLife.Client.Tests/StudyLife.Client.Tests.csproj --no-restore --configuration ${{ env.CONFIGURATION }} --logger "junit;LogFilePath=TestResults/client-tests-junit.xml" --collect:"XPlat Code Coverage" --settings coverlet.runsettings
       - if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: test-results
           path: |
@@ -117,7 +117,7 @@ jobs:
           -assemblyfilters:"-StudyLife.Client"
           -classfilters:"-StudyLife.Server.Migrations.*"
       - run: python3 scripts/generate_coverage_badge.py coverage-summary/Summary.json coverage-badge.json
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-badge
           path: coverage-badge.json
@@ -721,7 +721,7 @@ jobs:
       - run: dotnet publish src/StudyLife.Server/StudyLife.Server.csproj --configuration ${{ env.CONFIGURATION }} --runtime linux-x64 --no-self-contained -p:Version=${{ env.NEXT_VERSION }} --output publish/amd64
       - run: dotnet publish src/StudyLife.Server/StudyLife.Server.csproj --configuration ${{ env.CONFIGURATION }} --runtime linux-arm64 --no-self-contained -p:Version=${{ env.NEXT_VERSION }} --output publish/arm64
       - run: cd publish/amd64 && zip -r ../server.zip . && cd ../..
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: publish-output
           path: |
@@ -843,7 +843,7 @@ jobs:
           mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
           touch "/tmp/digests/${digest#sha256:}"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: digests-${{ matrix.arch }}
           path: /tmp/digests/*
