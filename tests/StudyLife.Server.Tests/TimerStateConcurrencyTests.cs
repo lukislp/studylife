@@ -202,7 +202,7 @@ public class LiveActivityPushConcurrencyTests : IClassFixture<CustomWebApplicati
     [Fact]
     public async Task RunLiveActivityPushAsync_RowChangedWhilePushInFlight_KeepsTheClientsState()
     {
-        var phaseEndsAt = DateTime.Now.AddSeconds(-2);
+        var phaseEndsAt = DateTime.Now.AddSeconds(-10);
         await SeedAsync(e =>
         {
             e.IsRunning = true;
@@ -244,7 +244,7 @@ public class LiveActivityPushConcurrencyTests : IClassFixture<CustomWebApplicati
             e.IsBreak = false;
             e.CurrentRound = 1;
             e.TimerModeId = 1;
-            e.PhaseEndsAt = DateTime.Now.AddSeconds(-2);
+            e.PhaseEndsAt = DateTime.Now.AddSeconds(-10);
             e.LiveActivityPushToken = "tok-shared-context";
         });
 

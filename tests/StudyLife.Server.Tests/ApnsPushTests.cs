@@ -313,6 +313,88 @@ public class ApnsPushTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task ApnsSender_LiveActivityUpdate_SetsStaleDateExpirationAndPriority10()
+    {
+        var keyPath = WriteTempP8Key();
+        try
+        {
+            var handler = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
+            var sender = CreateSender(handler, keyPath: keyPath);
+            var endsAt = new DateTimeOffset(2026, 8, 1, 12, 30, 0, TimeSpan.Zero);
+
+            await sender.SendLiveActivityUpdateAsync("activity-tok-stale", endsAt,
+                isBreak: true, secondsLeft: 300, phaseTotalSeconds: 300, round: 1, totalRounds: 4);
+
+            var request = Assert.Single(handler.Requests);
+            var staleDate = (endsAt + TimeSpan.FromSeconds(12)).ToUnixTimeSeconds();
+            Assert.Contains($"\"stale-date\":{staleDate}", request.Body);
+            Assert.Equal(staleDate.ToString(System.Globalization.CultureInfo.InvariantCulture), request.Headers["apns-expiration"]);
+            Assert.Equal("10", request.Headers["apns-priority"]);
+            Assert.Contains("\"timestamp\":", request.Body);
+            Assert.DoesNotContain("\"alert\"", request.Body); // silent unless the caller asks for an alert
+        }
+        finally
+        {
+            File.Delete(keyPath);
+        }
+    }
+
+    [Fact]
+    public async Task ApnsSender_LiveActivityUpdate_WithAlert_SendsAlertWithSoundInside()
+    {
+        var keyPath = WriteTempP8Key();
+        try
+        {
+            var handler = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
+            var sender = CreateSender(handler, keyPath: keyPath);
+
+            await sender.SendLiveActivityUpdateAsync("activity-tok-alert", DateTimeOffset.UtcNow.AddMinutes(5),
+                isBreak: true, secondsLeft: 300, phaseTotalSeconds: 300, round: 1, totalRounds: 4,
+                new LiveActivityAlert("Zeit für eine Pause", "Runde 1 geschafft"));
+
+            var body = Assert.Single(handler.Requests).Body;
+            Assert.Contains("\"alert\":{\"title\":\"Zeit für eine Pause\",\"body\":\"Runde 1 geschafft\",\"sound\":\"default\"}", body);
+        }
+        finally
+        {
+            File.Delete(keyPath);
+        }
+    }
+
+    [Fact]
+    public async Task ApnsSender_Alert_IsImmediateVisiblePushWithinPayloadLimit()
+    {
+        var keyPath = WriteTempP8Key();
+        try
+        {
+            var handler = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
+            var sender = CreateSender(handler, keyPath: keyPath);
+            // Worst case for the byte budget: emoji are still written as two \uXXXX escapes each.
+            var longBody = "Übung " + string.Concat(Enumerable.Repeat("📚", 2000));
+
+            await sender.SendPayloadAsync("tok", System.Text.Json.JsonSerializer.Serialize(new { title = "Lernphase", body = longBody }));
+
+            var request = Assert.Single(handler.Requests);
+            // Priority 5 would let iOS hold the banner back until the app is opened.
+            Assert.Equal("10", request.Headers["apns-priority"]);
+            Assert.DoesNotContain("content-available", request.Body);
+            Assert.Contains("Übung", request.Body); // raw UTF-8, no \u escape eating the budget
+            Assert.True(Encoding.UTF8.GetByteCount(request.Body) <= 4096);
+        }
+        finally
+        {
+            File.Delete(keyPath);
+        }
+    }
+
+    [Theory]
+    [InlineData("kurz", 10, "kurz")]
+    [InlineData("abcdefghij", 5, "abcd…")]
+    [InlineData("abc📚def", 5, "abc…")] // the emoji would be cut in half - dropped whole
+    public void ApnsSender_Truncate_KeepsSurrogatePairsIntact(string value, int maxLength, string expected)
+        => Assert.Equal(expected, ApnsSender.Truncate(value, maxLength));
+
+    [Fact]
     public async Task ApnsSender_LiveActivityEnd_SendsEndEventWithDismissalDate()
     {
         var keyPath = WriteTempP8Key();
