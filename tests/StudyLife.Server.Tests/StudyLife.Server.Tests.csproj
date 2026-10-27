@@ -20,7 +20,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="JunitXml.TestLogger" Version="8.0.0" />
+    <PackageReference Include="JunitXml.TestLogger" Version="8.1.0" />
     <!-- CBOR encoding for the passkey test vectors (FakePasskey builds attestation objects and
          COSE keys by hand instead of relying on Fido2NetLib internals). -->
     <PackageReference Include="System.Formats.Cbor" Version="10.0.14" />
