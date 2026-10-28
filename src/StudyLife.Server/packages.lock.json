@@ -215,8 +215,8 @@
       },
       "Markdig": {
         "type": "Transitive",
-        "resolved": "1.4.2",
-        "contentHash": "C5jl2hFLK5KHxWWWO6JxfuQCRirW5DGnCn9IEhJ7xgBMVnd+PjRNdAKO2C6YHpkOtVvZMJ8Zbma7B+CDi+hl+g=="
+        "resolved": "1.5.0",
+        "contentHash": "oEm6N4PYFPUZiJ5e89993AE6hfC8EWRGD5M8nyoSJbwD4GgW818mjlQCk++SdTV4godaN50Ybcmm4j2Dp76oIQ=="
       },
       "Microsoft.AspNetCore.Components.WebAssembly": {
         "type": "Transitive",
@@ -591,7 +591,7 @@
       "studylife.client": {
         "type": "Project",
         "dependencies": {
-          "Markdig": "[1.4.2, )",
+          "Markdig": "[1.5.0, )",
           "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.14, )",
           "StudyLife.Shared": "[1.0.0, )",
           "Toolbelt.Blazor.I18nText": "[14.1.1, )"
@@ -610,7 +610,7 @@
       "studylife.tts": {
         "type": "Project",
         "dependencies": {
-          "Markdig": "[1.4.2, )",
+          "Markdig": "[1.5.0, )",
           "Microsoft.ML.OnnxRuntime": "[1.31.0, )"
         }
       }
