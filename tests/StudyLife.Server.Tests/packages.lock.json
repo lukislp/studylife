@@ -868,10 +868,10 @@
       },
       "OpenTelemetry.Instrumentation.Runtime": {
         "type": "Transitive",
-        "resolved": "1.19.0",
-        "contentHash": "VIH2tQ2h31j4wQyZ9Utk8ZXIyj7Z1j0xIiyPRGjYu1MmZjJtpxRh0Y/NnB6fEBimNg/WrX0jDyfMeEjPQqmaMA==",
+        "resolved": "1.20.1",
+        "contentHash": "1ngVOV2ZYqFy38g2g+vZ50poeF66GJtinITBDB7TNRP4fmrDxYYyPfs1uGrPHkhJJRV5I7mElPFOctvlatu41w==",
         "dependencies": {
-          "OpenTelemetry.Api": "[1.19.0, 2.0.0)"
+          "OpenTelemetry.Api": "[1.20.1, 2.0.0)"
         }
       },
       "Pipelines.Sockets.Unofficial": {
@@ -1056,7 +1056,7 @@
           "OpenTelemetry.Extensions.Hosting": "[1.20.1, )",
           "OpenTelemetry.Instrumentation.AspNetCore": "[1.20.1, )",
           "OpenTelemetry.Instrumentation.Http": "[1.20.1, )",
-          "OpenTelemetry.Instrumentation.Runtime": "[1.19.0, )",
+          "OpenTelemetry.Instrumentation.Runtime": "[1.20.1, )",
           "SQLitePCLRaw.lib.e_sqlite3": "[3.53.3, )",
           "StudyLife.Client": "[1.0.0, )",
           "StudyLife.Shared": "[1.0.0, )",
