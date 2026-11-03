@@ -16,5 +16,19 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\StudyLife.Shared\StudyLife.Shared.csproj" />
+    <!-- Deterministic replacement for the I18nText source generator (see the target below). -->
+    <ProjectReference Include="..\StudyLife.I18nTextGenerator\StudyLife.I18nTextGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
   </ItemGroup>
+  <!--
+    Reproducible builds (docs/REPRODUCIBLE-BUILDS.md): Toolbelt.Blazor.I18nText's own source
+    generator adds the typed text classes in a random order, so this assembly differed between
+    two clean builds. Its analyzer is taken out of the compilation here and
+    StudyLife.I18nTextGenerator, which runs the same package code but adds the classes sorted,
+    takes its place. The generated code itself is unchanged.
+  -->
+  <Target Name="_StudyLifeReplaceI18nTextGenerator" AfterTargets="ResolveLockFileAnalyzers">
+    <ItemGroup>
+      <Analyzer Remove="@(Analyzer)" Condition="'%(Filename)' == 'Toolbelt.Blazor.I18nText.SourceGenerator'" />
+    </ItemGroup>
+  </Target>
 </Project>
