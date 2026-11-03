@@ -47,6 +47,19 @@ jobs:
       # Official ZAP image at a fixed release (not the moving "stable" tag), so a scan result
       # can be tied to a scanner version; bump deliberately.
       ZAP_IMAGE: ghcr.io/zaproxy/zaproxy:2.16.1
+      # Kestrel only speaks plain HTTP and redirects anything that did not come through a
+      # TLS-terminating proxy to https://:443 (Program.cs, UseHttpsRedirection) - exactly what
+      # production does. ZAP therefore plays the proxy: a replacer rule adds
+      # X-Forwarded-Proto: https to every request (the container sees ZAP from the Docker
+      # bridge, an RFC1918 address the default ForwardedHeaders trust list accepts), so the
+      # scan reaches the real application instead of the redirect.
+      ZAP_OPTIONS: >-
+        -config replacer.full_list(0).description=forwarded-proto
+        -config replacer.full_list(0).enabled=true
+        -config replacer.full_list(0).matchtype=REQ_HEADER
+        -config replacer.full_list(0).matchstr=X-Forwarded-Proto
+        -config replacer.full_list(0).regex=false
+        -config replacer.full_list(0).replacement=https
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
@@ -79,12 +92,12 @@ jobs:
         run: |
           docker run --rm --network host -v "$PWD/zap:/zap/wrk:rw" "$ZAP_IMAGE" \
             zap-baseline.py -t http://localhost:8080 -I \
-            -r baseline.html -J baseline.json -m 3
+            -r baseline.html -J baseline.json -m 3 -z "$ZAP_OPTIONS"
       - name: ZAP API scan (active, OpenAPI)
         run: |
           docker run --rm --network host -v "$PWD/zap:/zap/wrk:rw" "$ZAP_IMAGE" \
             zap-api-scan.py -t /zap/wrk/openapi.json -f openapi -O http://localhost:8080 -I \
-            -r api.html -J api.json
+            -r api.html -J api.json -z "$ZAP_OPTIONS"
       - name: Summarise findings
         if: always()
         run: |
