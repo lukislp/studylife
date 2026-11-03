@@ -29,8 +29,9 @@ links to the place that explains it.
 
 ## Project continuity
 
-- A GitHub account successor for the maintainer account, and moving the repository into an
-  organisation with a second trusted owner ([GOVERNANCE.md](GOVERNANCE.md#continuity-what-happens-if-the-maintainer-is-unavailable)).
+- Keep the continuity mitigations in [GOVERNANCE.md](GOVERNANCE.md#continuity-what-happens-if-the-maintainer-is-unavailable)
+  true: a public build anyone can repeat, keyless signing, and no secret that only the maintainer
+  holds that a fork would need.
 - Labelled starter issues (`good first issue`) so new contributors have a way in.
 
 ## Product

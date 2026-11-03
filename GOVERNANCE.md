@@ -60,14 +60,14 @@ pretend otherwise. What exists instead:
 - **Self-hosted instances keep running.** Each installation is independent of the maintainer: no
   licence server, no phone-home, no central account service. Updates stop, but nothing breaks
   at a deadline.
-- **Planned, not yet in place:** a GitHub account successor for @lukislp (GitHub's
-  "deceased user" / successor setting), and moving the repository to a GitHub organisation with a
-  second trusted owner. Both are open items, and neither exists today. Until one of them is in
-  place, nobody else can take over the repository, the `ghcr.io` namespace or the deployments
-  within a week.
+- **No successor arrangement exists.** There is no GitHub account successor, no second owner and
+  no organisation account, and none is planned at the moment. Nobody else can take over the
+  repository, the `ghcr.io` namespace or the deployments. Continuity therefore rests entirely on
+  the points above: the public code, a build anyone can repeat, and keyless signing that a fork
+  can set up for its own identity.
 - **If the maintainer stops responding** (no reaction to issues, PRs or security reports for
   more than 30 days, with no announcement), users should treat the project as unmaintained. In
-  that case: fork it, rebuild from source, and keep the AGPL obligations. If a successor fork
+  that case: fork it, rebuild from source, and keep the AGPL obligations. If a community fork
   emerges, the maintainer, once reachable again, will link it from the README.
 
 ## Becoming a maintainer

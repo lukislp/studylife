@@ -228,7 +228,7 @@ keyless. Verification steps are in [SECURITY.md](../SECURITY.md#verifying-releas
 | Redis password visible in the Redis process command line | Redis reads it as CLI flags from a Secret | Visible only to someone who can exec into the Redis pod, which is already past the boundary |
 | DNS rebinding for push/webhook URLs | Host names are not resolved on the request path | Literal private IPs and internal suffixes are rejected |
 | `X-Forwarded-For` trust on a flat pod network | No CIDR can single out the gateway | IP-independent global bucket for recovery login, configurable `KnownNetworks` |
-| PostgreSQL transport security | The connection string (including `SSL Mode`) is supplied out of band through a Secret and is not visible in this repository | Operators should use `SSL Mode=VerifyFull` with the CNPG CA. NetworkPolicy limits access to web/worker. |
+| PostgreSQL server certificate not verified (**known gap, fix in progress**) | The production connection string sets no `SSL Mode`, so Npgsql uses its default `Prefer`: the connection is encrypted when the server offers TLS (CNPG does), but the server certificate is not verified | NetworkPolicy limits access to web/worker. `SSL Mode=VerifyFull` with the cluster CA is being implemented as a separate change. |
 | Single maintainer (bus factor 1) | No second person available | [GOVERNANCE.md](../GOVERNANCE.md) continuity section, fully public build |
 
 ## 10. Review record

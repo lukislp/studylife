@@ -5,6 +5,9 @@
 Please report vulnerabilities privately through GitHub's private vulnerability reporting:
 https://github.com/lukislp/studylife/security/advisories/new
 
+If you cannot use GitHub, email the maintainer at koerber.lukas@t-online.de with "SECURITY" in
+the subject line instead.
+
 Do not open a public issue, discussion or pull request for a security problem. If you are not
 sure whether something is a vulnerability, report it privately anyway.
 
@@ -42,7 +45,7 @@ The process:
    be.
 
 If a target slips, the reporter is told why and gets a new date. If you get no acknowledgement
-within 7 days, comment on the advisory again. It is the only channel.
+within 7 days, comment on the advisory again or send an email.
 
 ## Scope
 
