@@ -1,0 +1,124 @@
+name: Dynamic analysis (OWASP ZAP)
+
+# Dynamic application security testing against a running StudyLife container: the latest
+# released image is started as a single container (SQLite, in-memory cache - the documented
+# `docker run` deployment) and OWASP ZAP runs
+#   1. a baseline scan (passive: headers, cookies, information leaks) of the web app, and
+#   2. an API scan driven by the committed OpenAPI contract (docs/api/openapi.json), which also
+#      sends active attack payloads (injection, path traversal, ...) to every documented
+#      endpoint.
+# Most endpoints need a passkey session, so the API scan mostly exercises the
+# unauthenticated surface and the authentication layer's rejection paths - that is the
+# boundary an anonymous attacker sees (docs/SECURITY-ASSURANCE.md, TB1/TB3).
+#
+# Weekly and on demand, plus on changes to this file; never against the public demo
+# (SECURITY.md asks reporters not to scan it either). Non-blocking: ZAP's reports are
+# uploaded as an artifact and summarised in the job summary, and findings are triaged like
+# any other report. Only GitHub-owned actions and the already allow-listed harden-runner are
+# used; ZAP itself runs from its official container image, so no new third-party action is
+# needed.
+on:
+  schedule:
+    - cron: "41 3 * * 2"
+  workflow_dispatch:
+    inputs:
+      image:
+        description: "Image to scan"
+        required: false
+        default: "ghcr.io/lukislp/studylife-server:latest"
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/dast.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dast-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  zap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      IMAGE: ${{ github.event.inputs.image || 'ghcr.io/lukislp/studylife-server:latest' }}
+      # Official ZAP image at a fixed release (not the moving "stable" tag), so a scan result
+      # can be tied to a scanner version; bump deliberately.
+      ZAP_IMAGE: ghcr.io/zaproxy/zaproxy:2.16.1
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          # Audit, not block: ZAP fetches its add-on index at startup, and a scanner that
+          # silently loses rules to a blocked endpoint is worse than one that is observed.
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Start StudyLife (single container)
+        run: |
+          docker run -d --name studylife -p 8080:8080 \
+            -e ASPNETCORE_URLS=http://+:8080 \
+            "$IMAGE"
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8080/healthz/ready >/dev/null; then
+              echo "ready after ${i}s"; break
+            fi
+            sleep 1
+          done
+          curl -fsS http://localhost:8080/healthz/ready
+          echo "Scanning $(curl -fsS http://localhost:8080/api/system/version)" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Prepare ZAP work directory
+        run: |
+          mkdir -p zap
+          cp docs/api/openapi.json zap/openapi.json
+          chmod -R 777 zap
+      - name: ZAP baseline scan (passive)
+        run: |
+          docker run --rm --network host -v "$PWD/zap:/zap/wrk:rw" "$ZAP_IMAGE" \
+            zap-baseline.py -t http://localhost:8080 -I \
+            -r baseline.html -J baseline.json -m 3
+      - name: ZAP API scan (active, OpenAPI)
+        run: |
+          docker run --rm --network host -v "$PWD/zap:/zap/wrk:rw" "$ZAP_IMAGE" \
+            zap-api-scan.py -t /zap/wrk/openapi.json -f openapi -O http://localhost:8080 -I \
+            -r api.html -J api.json
+      - name: Summarise findings
+        if: always()
+        run: |
+          python3 - <<'EOF'
+          import json, os, pathlib
+          out = ["### OWASP ZAP findings", "", "| Scan | High | Medium | Low | Informational |", "|---|---|---|---|---|"]
+          names = {"3": "High", "2": "Medium", "1": "Low", "0": "Informational"}
+          details = []
+          for scan in ("baseline", "api"):
+              path = pathlib.Path("zap") / f"{scan}.json"
+              if not path.exists():
+                  out.append(f"| {scan} | - | - | - | - (no report) |")
+                  continue
+              counts = {k: 0 for k in names}
+              for site in json.loads(path.read_text(encoding="utf-8")).get("site", []):
+                  for alert in site.get("alerts", []):
+                      risk = str(alert.get("riskcode", "0"))
+                      counts[risk] = counts.get(risk, 0) + 1
+                      if risk in ("3", "2"):
+                          details.append(f"- {scan}: [{names[risk]}] {alert.get('name')} ({alert.get('count', '?')} instances)")
+              out.append(f"| {scan} | {counts['3']} | {counts['2']} | {counts['1']} | {counts['0']} |")
+          if details:
+              out += ["", "High and medium alerts:", ""] + details
+          text = "\n".join(out) + "\n"
+          print(text)
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
+              f.write(text)
+          EOF
+      - name: Container log
+        if: always()
+        run: docker logs studylife 2>&1 | tail -n 200
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: zap-reports
+          path: zap/*.html
+          retention-days: 30

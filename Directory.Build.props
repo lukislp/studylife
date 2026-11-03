@@ -35,4 +35,17 @@
   <PropertyGroup>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
+  <!--
+    Repeatable builds (docs/REPRODUCIBLE-BUILDS.md): the compiler is deterministic by default
+    (Deterministic=true, no timestamps or GUIDs in the assemblies), and ContinuousIntegrationBuild
+    additionally normalises the source paths embedded in PDBs and assemblies to /_/, so the
+    output no longer depends on the directory the repository was checked out into. Only on CI
+    (GitHub Actions sets CI=true): locally the real paths stay, so debuggers and stack traces
+    point at the files on disk. Pass -p:ContinuousIntegrationBuild=true to reproduce a release
+    build by hand.
+  -->
+  <PropertyGroup Condition="'$(CI)' == 'true'">
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
 </Project>
