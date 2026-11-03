@@ -4,12 +4,15 @@
     (docs/REPRODUCIBLE-BUILDS.md). The package's own generator adds the typed text classes to the
     compilation in thread-completion order, which made StudyLife.Client.dll/.pdb differ between
     two clean builds. This generator runs the same package code (I18nTextCompiler) and only adds
-    the results in a fixed, ordinal order. StudyLife.Client.csproj swaps the package's analyzer
-    for this one.
+    the results in a fixed, ordinal order. StudyLife.Client.csproj switches the package's
+    generator off and runs this one instead.
 
-    Analyzer assemblies must target netstandard2.0. The package's generator and its two
-    dependencies are copied next to this assembly: the compiler loads an analyzer's dependencies
-    from the analyzer's own directory.
+    Analyzer assemblies must target netstandard2.0. The package's assemblies are referenced but
+    not copied: the compiler resolves an analyzer's dependencies among the analyzer assemblies
+    it was given, and the package's own analyzer items (generator, Newtonsoft.Json,
+    TinyCsvParser) stay in the client's compilation for exactly that reason.
+    After changing this project, run `dotnet build-server shutdown` so a running compiler server
+    does not keep the previous build of the generator loaded.
   -->
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -27,12 +30,14 @@
          older than every compiler in a .NET 10 SDK, so it loads in all of them. -->
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" PrivateAssets="all" />
     <!-- Only for its files: the generator assembly is referenced directly below, and the
-         package's own analyzer must not run inside this project. -->
+         package's own analyzer must not run inside this project. Keep the version equal to
+         Toolbelt.Blazor.I18nText in StudyLife.Client.csproj (the build fails with SLI18N002
+         otherwise; Dependabot bumps both in one PR). -->
     <PackageReference Include="Toolbelt.Blazor.I18nText.SourceGenerator" Version="14.1.1" GeneratePathProperty="true" ExcludeAssets="all" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Toolbelt.Blazor.I18nText.SourceGenerator" HintPath="$(PkgToolbelt_Blazor_I18nText_SourceGenerator)\analyzers\dotnet\cs\Toolbelt.Blazor.I18nText.SourceGenerator.dll" Private="true" />
-    <Reference Include="Newtonsoft.Json" HintPath="$(PkgToolbelt_Blazor_I18nText_SourceGenerator)\analyzers\dotnet\cs\Newtonsoft.Json.dll" Private="true" />
-    <Reference Include="TinyCsvParser" HintPath="$(PkgToolbelt_Blazor_I18nText_SourceGenerator)\analyzers\dotnet\cs\TinyCsvParser.dll" Private="true" />
+    <Reference Include="Toolbelt.Blazor.I18nText.SourceGenerator" HintPath="$(PkgToolbelt_Blazor_I18nText_SourceGenerator)\analyzers\dotnet\cs\Toolbelt.Blazor.I18nText.SourceGenerator.dll" Private="false" />
+    <Reference Include="Newtonsoft.Json" HintPath="$(PkgToolbelt_Blazor_I18nText_SourceGenerator)\analyzers\dotnet\cs\Newtonsoft.Json.dll" Private="false" />
+    <Reference Include="TinyCsvParser" HintPath="$(PkgToolbelt_Blazor_I18nText_SourceGenerator)\analyzers\dotnet\cs\TinyCsvParser.dll" Private="false" />
   </ItemGroup>
 </Project>

@@ -22,13 +22,21 @@
   <!--
     Reproducible builds (docs/REPRODUCIBLE-BUILDS.md): Toolbelt.Blazor.I18nText's own source
     generator adds the typed text classes in a random order, so this assembly differed between
-    two clean builds. Its analyzer is taken out of the compilation here and
-    StudyLife.I18nTextGenerator, which runs the same package code but adds the classes sorted,
-    takes its place. The generated code itself is unchanged.
+    two clean builds. StudyLife.I18nTextGenerator runs the same package code but adds the
+    classes sorted; the generated code itself is unchanged.
+    The package's generator only runs when the compiler can see I18nTextUseSourceGenerator, so
+    that property is hidden from the compiler here (its analyzer assembly stays loaded: the
+    replacement generator calls into it). StudyLifeI18nTextGenerator switches the replacement on.
   -->
-  <Target Name="_StudyLifeReplaceI18nTextGenerator" AfterTargets="ResolveLockFileAnalyzers">
+  <PropertyGroup>
+    <StudyLifeI18nTextGenerator>true</StudyLifeI18nTextGenerator>
+  </PropertyGroup>
+  <ItemGroup>
+    <CompilerVisibleProperty Include="StudyLifeI18nTextGenerator" />
+  </ItemGroup>
+  <Target Name="_StudyLifeDisablePackageI18nTextGenerator" BeforeTargets="GenerateMSBuildEditorConfigFileShouldRun">
     <ItemGroup>
-      <Analyzer Remove="@(Analyzer)" Condition="'%(Filename)' == 'Toolbelt.Blazor.I18nText.SourceGenerator'" />
+      <CompilerVisibleProperty Remove="I18nTextUseSourceGenerator" />
     </ItemGroup>
   </Target>
 </Project>

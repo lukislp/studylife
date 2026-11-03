@@ -43,7 +43,8 @@ public sealed class DeterministicI18nTextGenerator : ISourceGenerator
     public void Execute(GeneratorExecutionContext context)
     {
         var options = context.AnalyzerConfigOptions.GlobalOptions;
-        if (!options.TryGetValue("build_property.I18nTextUseSourceGenerator", out _))
+        if (!options.TryGetValue("build_property.StudyLifeI18nTextGenerator", out var enabled)
+            || !string.Equals(enabled, "true", StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
