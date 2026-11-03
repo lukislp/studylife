@@ -1,3 +1,7 @@
+# Changelog
+
+**From 3.17.7 on, release notes are published only as [GitHub Releases](https://github.com/lukislp/studylife/releases).** semantic-release generates them from the Conventional Commit messages of each release, one release per merge that warrants one. This file is no longer updated. It keeps the history up to 3.17.6 (2026-09-20), the last version written into this file (`.releaserc.json` no longer runs a changelog plugin).
+
 ## [3.17.6](https://github.com/lukislp/studylife/compare/v3.17.5...v3.17.6) (2026-09-20)
 
 

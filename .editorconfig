@@ -1,0 +1,45 @@
+# Editor and formatter settings - the machine-checked part of the coding style described in
+# CONTRIBUTING.md ("Coding style"). `dotnet format --verify-no-changes` (required check
+# test-lint) reads the C# settings below; everything else is for editors.
+#
+# Deliberately close to the .NET defaults the codebase was written with: this file writes down
+# the existing style, it does not introduce a new one. Rules marked :suggestion are guidance
+# shown in the IDE and are not enforced by CI. Line endings are left to git (.gitattributes).
+root = true
+
+[*]
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{yml,yaml,json,props,targets,csproj,runsettings,xml}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.{cs,razor}]
+# Layout (enforced: dotnet format whitespace).
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true
+csharp_space_after_keywords_in_control_flow_statements = true
+
+# Naming and language preferences the codebase follows (guidance, not enforced).
+csharp_style_namespace_declarations = file_scoped:suggestion
+csharp_style_var_for_built_in_types = true:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_prefer_braces = when_multiline:suggestion
+dotnet_style_prefer_collection_expression = when_types_loosely_match:suggestion
+
+dotnet_naming_rule.private_fields_underscore.symbols = private_fields
+dotnet_naming_rule.private_fields_underscore.style = underscore_camel_case
+dotnet_naming_rule.private_fields_underscore.severity = suggestion
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+dotnet_naming_style.underscore_camel_case.required_prefix = _
+dotnet_naming_style.underscore_camel_case.capitalization = camel_case
