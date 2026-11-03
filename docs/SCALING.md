@@ -19,6 +19,7 @@ behavior:
 |---|---|---|---|
 | `Database:Provider` | `Sqlite` \| `Postgres` | `Sqlite` | single SQLite file vs. Postgres |
 | `Database:ConnectionString` | Npgsql connection string | - | only required when `Provider=Postgres` |
+| `Database:TlsCaCertificatePath` | path to a PEM CA file | - | set = the app forces `SSL Mode=VerifyFull` against this CA, see "Client TLS (App to Postgres)" |
 | `Cache:Provider` | `Memory` \| `Redis` | `Memory` | process-local vs. distributed |
 | `Cache:ConnectionString` | `host:port` | - | only required when `Provider=Redis` |
 | `Worker:Enabled` | `true` \| `false` | `true` | is `BackgroundTaskService` (30s tick: push reminders, reports, maintenance) active in this process? |
@@ -1315,6 +1316,88 @@ errors as soon as PgBouncer moves the same client to a different server connecti
 empirically with the complete `ApiVerify` script (registration, read/write, cache consistency,
 full-text search) - all green, no prepared-statement errors. Rollback path if problems arise:
 point the `Database__ConnectionString` host back at `studylife-pg-rw`.
+
+### Client TLS (App to Postgres)
+
+**What runs (checked live 2026-11-03, read-only).** Postgres is the CNPG `Cluster`
+`studylife-pg` (operator 1.30.1) with operator-managed certificates: the operator's own CA
+(Secret `studylife-pg-ca`, `CN=studylife-pg, OU=studylife-scale`, not the cert-manager
+`studylife-internal-ca-issuer`) signs the server certificate (Secret `studylife-pg-server`,
+`CN=studylife-pg-rw`, SANs: the `-rw`/`-r`/`-ro` service names in all four forms). Postgres is
+pinned to TLS 1.3. The app does not talk to Postgres directly but to the PgBouncer `Pooler`
+(`Host=studylife-pg-pooler`), and the pooler serves that same `studylife-pg-server` certificate
+to its clients (TLS 1.3 offered on 5432) and itself verifies Postgres against `studylife-pg-ca`.
+
+Before this change the app's connection string carried no TLS parameter, so Npgsql used its
+default: TLS when the server offers it (it does), but no certificate check - encryption without
+authentication, the same gap Redis had. Simply appending `SSL Mode=VerifyFull` would not have
+worked either: the certificate does not contain `studylife-pg-pooler`.
+
+**The change.**
+
+- `k8s/02-postgres.yaml`: `spec.certificates.serverAltDNSNames` adds the four pooler names. The
+  operator re-issues `studylife-pg-server` (same CA, same key type) with the extra SANs; Postgres
+  and the pooler pick it up from their Secrets. Certificates are not part of the instance pod
+  spec, so this is not a rolling update.
+- `Database:TlsCaCertificatePath` (env `Database__TlsCaCertificatePath`, default unset): when set,
+  `PostgresTlsConfiguration` (called from `Program.cs`) checks the file once at startup (missing
+  or empty = the process stops) and forces `SSL Mode=VerifyFull` plus `Root Certificate=<path>`
+  onto the connection string. TLS becomes mandatory (no plaintext fallback), the chain must end
+  at that CA, and the certificate must name the host from the connection string. The Secret's
+  connection string needs no edit. A `Trust Server Certificate=true` or a different
+  `Root Certificate` in the connection string is a startup error - there is no switch that turns
+  validation off. Unset keeps the connection string as it is (docker-compose, whose Postgres has
+  no TLS).
+- Why Npgsql's own `VerifyFull` + `Root Certificate` and not the `PrivateCaCertificateValidator`
+  callback Redis uses: Npgsql rejects a user validation callback together with
+  `VerifyFull`, and it re-reads the `Root Certificate` file for every new physical connection.
+  The CNPG CA is rotated by the operator (current expiry 2027-01-06) and kubelet updates the
+  mounted file; a CA copy loaded once at startup would go stale in a long-running pod. The rules
+  are the same as for Redis (name always checked, only the configured CA as anchor, revocation
+  not checked - CNPG's CA publishes no CRL/OCSP either), and the startup check reuses
+  `PrivateCaCertificateValidator.LoadTrustedRoots`.
+- `k8s/04-web.yaml`, `05-worker.yaml`: `Database__TlsCaCertificatePath=/etc/studylife-pg-ca/ca.crt`
+  and a `studylife-pg-ca` Secret volume with `items: [ca.crt]` - the CA private key in the same
+  Secret is never projected into the app pods. Not a `subPath` mount, so rotation reaches the
+  file.
+- The NetworkPolicies need no change (same port, same peers).
+
+**Rollout order (prod).** Flux applies only `04-web.yaml`/`05-worker.yaml`; `02-postgres.yaml`
+is applied by hand. The certificate must carry the pooler names BEFORE an image that honours
+`Database__TlsCaCertificatePath` starts. In the wrong order the new web pods fail the DB-aware
+`/healthz/ready` and their rollout stalls (`maxUnavailable: 0` keeps the old web pods serving),
+but the worker's probes are `/healthz/live` only - new worker pods would become Ready and every
+background tick would fail its database work until the certificate is fixed. Hence step 1-3
+before the merge.
+
+```sh
+export KUBECONFIG=~/.kube/studylife-config
+# 1. Add the SANs (targeted patch - do not re-apply unrelated files, see the
+#    "near-incident" note at the end of the Redis client TLS section above).
+kubectl -n studylife-scale patch cluster studylife-pg --type merge -p \
+  '{"spec":{"certificates":{"serverAltDNSNames":["studylife-pg-pooler","studylife-pg-pooler.studylife-scale","studylife-pg-pooler.studylife-scale.svc","studylife-pg-pooler.studylife-scale.svc.cluster.local"]}}}'
+# 2. The operator re-issued the certificate (expect the four pooler names, and no pod restarts):
+kubectl -n studylife-scale get cluster studylife-pg -o jsonpath='{.status.certificates.serverAltDNSNames}'
+kubectl -n studylife-scale get secret studylife-pg-server -o jsonpath='{.data.tls\.crt}' \
+  | base64 -d | openssl x509 -noout -ext subjectAltName
+kubectl -n studylife-scale get pods -l cnpg.io/cluster=studylife-pg
+# 3. The POOLER serves the new certificate (kubelet syncs the mounted Secret within ~1-2 min):
+kubectl -n studylife-scale port-forward svc/studylife-pg-pooler 15432:5432 &
+openssl s_client -starttls postgres -connect 127.0.0.1:15432 </dev/null 2>/dev/null \
+  | openssl x509 -noout -ext subjectAltName
+kill %1
+#    Still the old SAN list after a few minutes? Then PgBouncer has not reloaded its TLS
+#    files: delete the two pooler pods ONE AT A TIME (PDB minAvailable 1; wait for Ready in
+#    between). Postgres itself is never restarted.
+# 4. Merge the PR. Flux rolls the deployments (the old image ignores the new env var), then
+#    the next image enforces VerifyFull. Check:
+kubectl -n studylife-scale logs deploy/studylife-web --since=10m \
+  | grep -iE 'certificate|SSL|NpgsqlException' || echo clean
+```
+
+**Rollback.** Revert the PR (or remove `Database__TlsCaCertificatePath` from both deployments):
+the app falls back to the connection string as it is. The extra SANs can stay - they only add
+names. There is deliberately no switch that keeps the key but skips validation.
 
 Implementation detail: since the current Postgres password can't/shouldn't be read out (see the
 security guardrail below), it was rotated for this change - via a temporary pod that uses the
