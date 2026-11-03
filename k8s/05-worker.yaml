@@ -135,6 +135,10 @@ spec:
               value: /etc/studylife-dataprotection-tls/ca.crt
             - name: Cache__TlsHost
               value: redis-cluster.studylife-scale.svc.cluster.local
+            # PostgreSQL TLS certificate validation - identical to k8s/04-web.yaml (see the
+            # comment there): VerifyFull against the CNPG cluster CA, ca.crt only.
+            - name: Database__TlsCaCertificatePath
+              value: /etc/studylife-pg-ca/ca.crt
             # DataProtection key-ring-at-rest encryption (Program.cs, ProtectKeysWithCertificate)
             # - identical to k8s/04-web.yaml, required whenever Cache__Provider=Redis. The
             # worker runs the same AddDataProtection() setup as web (shared Program.cs), so it
@@ -220,6 +224,9 @@ spec:
             - name: dataprotection-tls
               mountPath: /etc/studylife-dataprotection-tls
               readOnly: true
+            - name: pg-ca
+              mountPath: /etc/studylife-pg-ca
+              readOnly: true
             # .NET creates its diagnostic IPC socket and debug pipes here on every start.
             - name: tmp
               mountPath: /tmp
@@ -238,6 +245,12 @@ spec:
           secret: {secretName: studylife-apns}
         - name: dataprotection-tls
           secret: {secretName: studylife-dataprotection-tls}
+        # CNPG cluster CA, ca.crt only - see k8s/04-web.yaml.
+        - name: pg-ca
+          secret:
+            secretName: studylife-pg-ca
+            items:
+              - {key: ca.crt, path: ca.crt}
         - name: tmp
           emptyDir: {sizeLimit: 256Mi}
         - name: home

@@ -436,6 +436,11 @@ if (isPostgres)
     var postgresConnectionString = databaseOptions.ConnectionString
         ?? throw new InvalidOperationException(
             "Database:ConnectionString (bzw. ENV Database__ConnectionString) muss gesetzt sein, wenn Database:Provider=Postgres.");
+    // Database:TlsCaCertificatePath (env Database__TlsCaCertificatePath) turns on server
+    // certificate verification (SSL Mode=VerifyFull against that CA) without touching the
+    // connection string in the Secret. See PostgresTlsConfiguration and docs/SCALING.md
+    // "Client TLS (App to Postgres)".
+    postgresConnectionString = PostgresTlsConfiguration.Apply(postgresConnectionString, databaseOptions);
     builder.Services.AddDbContext<StudyLifeDb, StudyLifeDbPostgres>(opt => opt.UseNpgsql(postgresConnectionString));
     builder.Services.AddScoped<INoteSearchStrategy, PostgresTsvectorSearchStrategy>();
 }
