@@ -538,10 +538,47 @@ shows whether it ever had to act.
 The App↔Redis hop (where real cache/session/shard-claim data flows) is TLS-encrypted: a new
 `Certificate redis-tls` (one certificate for all 6 pods, DNS names + wildcard SAN, from the
 in-cluster CA), `tls-port 6380` in addition to the existing plaintext port 6379 (dual-stack, NOT
-TLS-only). `Program.cs`: `ConfigurationOptions.Parse` + a `CertificateValidation` callback
-(accepts any certificate as long as `ssl=true` is set) - the same tradeoff as with
-ingress-nginx→backend pods: the goal is encryption against eavesdropping on the cluster network,
-not protection against a compromised pod. The `NetworkPolicy` was extended to cover port 6380.
+TLS-only). The `NetworkPolicy` was extended to cover port 6380.
+
+**Certificate validation (since 2026-11).** The client validates the Redis certificate; there is
+no "accept anything" mode any more (the first version of this hop accepted any certificate,
+which made it encryption without authentication: the Redis password went to whoever answered on
+6380). `RedisTlsConfiguration` (called from `Program.cs`) reads two optional keys, both only
+used when the connection string has `ssl=true`:
+
+| Key (env) | Default | Effect |
+|---|---|---|
+| `Cache:TlsCaCertificatePath` (`Cache__TlsCaCertificatePath`) | unset | PEM file with the CA certificate(s) the Redis certificate must chain to. Loaded once at startup; a missing or empty file stops the process. Unset = the OS trust store decides (right for a Redis with a publicly trusted certificate). |
+| `Cache:TlsHost` (`Cache__TlsHost`) | unset | Host name the certificate is checked against (StackExchange.Redis `SslHost`). Unset = the host of each endpoint. |
+
+The host name is always checked, and the chain is rebuilt with only the configured CA as trust
+anchor (`PrivateCaCertificateValidator`; revocation is not checked because a cert-manager CA
+issuer publishes no CRL/OCSP endpoint - the 90-day certificate lifetime stands in for it).
+
+The k8s manifests (`04-web.yaml`, `05-worker.yaml`) set:
+
+- `Cache__TlsCaCertificatePath=/etc/studylife-dataprotection-tls/ca.crt` - `redis-tls` and
+  `studylife-dataprotection-tls` come from the same `studylife-internal-ca-issuer`, so the
+  `ca.crt` cert-manager writes into the already mounted dataprotection secret is the Redis trust
+  root. No extra volume, and the Redis private key never reaches the app pods.
+- `Cache__TlsHost=redis-cluster.studylife-scale.svc.cluster.local` - the first `dnsName` of
+  `redis-tls`. It is needed because the cluster announces pod IPs (`--cluster-announce-ip`), so
+  every connection StackExchange.Redis opens after `CLUSTER NODES` targets an IP address the
+  certificate does not contain. With a fixed `SslHost` every connection is checked against the
+  one name the certificate does carry.
+
+Checking a live cluster before and after rolling this out (nothing secret is printed):
+
+```sh
+# before: the trust root is where the manifests expect it
+kubectl -n studylife-scale exec deploy/studylife-web -- sh -c \
+  'test -s /etc/studylife-dataprotection-tls/ca.crt && echo ca.crt present'
+# after: no TLS or Redis connection errors in the new pods
+kubectl -n studylife-scale logs deploy/studylife-web --since=10m | grep -iE 'certificate|RedisConnectionException' || echo clean
+```
+
+Rollback is a revert of the change - there is deliberately no switch that turns validation off
+again.
 
 **The cluster bus (Redis↔Redis gossip/replication) deliberately remains plaintext** - tested live
 locally and then discarded: `tls-cluster yes` via a rolling update across all 6 pods reliably

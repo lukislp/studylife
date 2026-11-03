@@ -81,19 +81,25 @@ public sealed class KubernetesWorkerReplicaCountProvider : IWorkerReplicaCountPr
     private static HttpClient BuildHttpClient()
     {
         var caCertPath = Path.Combine(ServiceAccountDir, "ca.crt");
-        var caCert = X509CertificateLoader.LoadCertificateFromFile(caCertPath);
-        var handler = new HttpClientHandler
-        {
-            ServerCertificateCustomValidationCallback = (_, cert, chain, _) =>
-            {
-                if (cert is null || chain is null) return false;
-                chain.ChainPolicy.ExtraStore.Add(caCert);
-                chain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
-                chain.ChainPolicy.CustomTrustStore.Add(caCert);
-                return chain.Build(cert);
-            },
-        };
+        var handler = CreateHandler(PrivateCaCertificateValidator.LoadTrustedRoots(caCertPath));
         return new HttpClient(handler) { BaseAddress = new Uri("https://kubernetes.default.svc") };
+    }
+
+    /// <summary>
+    /// Handler that trusts the cluster CA (the ServiceAccount ca.crt) AND keeps the host name
+    /// check: the API server certificate must be valid for kubernetes.default.svc. The earlier
+    /// callback only rebuilt the chain and ignored the SslPolicyErrors argument, so a certificate
+    /// from the cluster CA issued for any other name would have been accepted. Internal so the
+    /// tests can drive a real TLS handshake through it.
+    /// </summary>
+    internal static HttpClientHandler CreateHandler(X509Certificate2Collection clusterCa)
+    {
+        var callback = PrivateCaCertificateValidator.CreateCallback(clusterCa);
+        return new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = (request, cert, chain, errors) =>
+                callback(request, cert, chain, errors),
+        };
     }
 
     public void Dispose() => _httpClient?.Dispose();

@@ -203,8 +203,8 @@ spec:
           # so the plaintext password becomes visible to anything that can already exec into this
           # pod (e.g. "ps aux", /proc/1/cmdline) - same trust boundary as every other
           # "encryption against network eavesdropping, not against a compromised pod" tradeoff
-          # already made throughout this file (TLS certificate validation, the ingress-nginx ->
-          # backend hop). It is NOT visible in the pod spec/"kubectl get pod -o yaml" itself
+          # (the app side validates the Redis certificate since 2026-11, see docs/SCALING.md
+          # "Client TLS", but a pod that can exec here is past that boundary anyway). It is NOT visible in the pod spec/"kubectl get pod -o yaml" itself
           # (only the secretKeyRef reference is), and not in this ConfigMap.
           # 999 is the image's own redis user - starting as it directly instead
           # of relying on an entrypoint drop the explicit command bypasses.

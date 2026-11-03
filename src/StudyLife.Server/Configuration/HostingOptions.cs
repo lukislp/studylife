@@ -75,6 +75,27 @@ public sealed class CacheOptions
     /// zero-downtime change (see docs/SCALING.md "Redis AUTH").</summary>
     public string? User { get; set; }
 
+    /// <summary>
+    /// PEM file with the CA certificate(s) that signed the Redis server certificate (env
+    /// Cache__TlsCaCertificatePath). Only used when the connection string enables TLS
+    /// (ssl=true). When set, the Redis certificate must chain to one of these CAs; when not set,
+    /// the operating system trust store decides. Either way the host name is checked and an
+    /// invalid certificate fails the connection - there is no "accept anything" mode. In
+    /// Kubernetes this points at the ca.crt of a cert-manager secret issued by the same internal
+    /// CA as redis-tls (k8s/04-web.yaml, 05-worker.yaml).
+    /// </summary>
+    public string? TlsCaCertificatePath { get; set; }
+
+    /// <summary>
+    /// Host name the Redis server certificate is checked against (env Cache__TlsHost), mapped to
+    /// StackExchange.Redis' SslHost. Needed for Redis Cluster: the nodes announce pod IPs
+    /// (CLUSTER NODES), so without a fixed name every discovered connection would be checked
+    /// against an IP address the certificate does not contain. Leave empty to check against the
+    /// host of each endpoint (single-instance Redis addressed by its DNS name). An sslHost=
+    /// inside the connection string works too; this key wins when both are set.
+    /// </summary>
+    public string? TlsHost { get; set; }
+
     public bool IsRedis => string.Equals(Provider, RedisProvider, StringComparison.OrdinalIgnoreCase);
 }
 
