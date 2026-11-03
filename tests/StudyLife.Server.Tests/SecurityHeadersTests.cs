@@ -66,6 +66,78 @@ public class SecurityHeadersTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal("DENY", response.Headers.GetValues("X-Frame-Options").Single());
     }
 
+    // DAST triage 2026-11 (ZAP "CSP: style-src unsafe-inline"): only style ATTRIBUTES may be
+    // inline (Blazor binds dynamic values into them); <style> elements must stay blocked, so
+    // neither the style-src fallback nor style-src-elem may allow 'unsafe-inline'.
+    [Fact]
+    public async Task StyleSrc_AllowsInlineStyleAttributesOnly()
+    {
+        var client = _factory.CreateClient();
+
+        var response = await client.GetAsync("/");
+
+        Assert.Equal("'self'", GetDirective(response, "style-src"));
+        Assert.Equal("'self'", GetDirective(response, "style-src-elem"));
+        Assert.Equal("'unsafe-inline'", GetDirective(response, "style-src-attr"));
+    }
+
+    [Theory]
+    [InlineData("/")]
+    [InlineData("/api/system/version")]
+    [InlineData("/healthz/live")]
+    public async Task Response_HasCrossOriginIsolationHeaders(string path)
+    {
+        var client = _factory.CreateClient();
+
+        var response = await client.GetAsync(path);
+
+        Assert.Equal("same-origin", response.Headers.GetValues("Cross-Origin-Resource-Policy").Single());
+        Assert.Equal("same-origin", response.Headers.GetValues("Cross-Origin-Opener-Policy").Single());
+        Assert.Equal("require-corp", response.Headers.GetValues("Cross-Origin-Embedder-Policy").Single());
+    }
+
+    // DAST triage 2026-11 (ZAP "Unexpected Content-Type"): an unknown well-known URI used to get
+    // the SPA shell with 200 text/html, which reads as "resource present" to the client probing it.
+    [Theory]
+    [InlineData("/.well-known/security.txt")]
+    [InlineData("/.well-known/change-password")]
+    [InlineData("/.well-known/4225416388552176079")]
+    [InlineData("/healthz")]
+    [InlineData("/healthz/")]
+    [InlineData("/healthz/804498389191859093")]
+    public async Task UnknownMachineOnlyPath_Returns404_NotTheSpaShell(string path)
+    {
+        var client = _factory.CreateClient();
+
+        var response = await client.GetAsync(path);
+
+        Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
+        Assert.NotEqual("text/html", response.Content.Headers.ContentType?.MediaType);
+    }
+
+    [Theory]
+    [InlineData("/healthz/live")]
+    [InlineData("/healthz/ready")]
+    public async Task RealHealthProbes_StillWin_OverTheFallback(string path)
+    {
+        var client = _factory.CreateClient();
+
+        var response = await client.GetAsync(path);
+
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UnknownSpaRoute_StillServesTheShell()
+    {
+        var client = _factory.CreateClient();
+
+        var response = await client.GetAsync("/some/client/route");
+
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("text/html", response.Content.Headers.ContentType?.MediaType);
+    }
+
     private static string? GetDirective(HttpResponseMessage response, string directiveName)
     {
         var csp = response.Headers.GetValues("Content-Security-Policy").Single();
