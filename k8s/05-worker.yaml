@@ -128,6 +128,13 @@ spec:
             - name: Cache__User
               valueFrom:
                 secretKeyRef: {name: redis-auth, key: username, optional: true}
+            # Redis TLS certificate validation - identical to k8s/04-web.yaml (see the comment
+            # there): trust root is the internal CA's ca.crt from the mounted dataprotection
+            # secret, host name is the redis-cluster service name from the certificate.
+            - name: Cache__TlsCaCertificatePath
+              value: /etc/studylife-dataprotection-tls/ca.crt
+            - name: Cache__TlsHost
+              value: redis-cluster.studylife-scale.svc.cluster.local
             # DataProtection key-ring-at-rest encryption (Program.cs, ProtectKeysWithCertificate)
             # - identical to k8s/04-web.yaml, required whenever Cache__Provider=Redis. The
             # worker runs the same AddDataProtection() setup as web (shared Program.cs), so it
