@@ -132,6 +132,17 @@ public sealed class DatabaseOptions
     /// <see cref="CacheOptions.ConnectionString"/>.</summary>
     public string? ConnectionString { get; set; }
 
+    /// <summary>
+    /// PEM file with the CA certificate(s) that signed the PostgreSQL server certificate (env
+    /// Database__TlsCaCertificatePath). When set, the app forces SSL Mode=VerifyFull with this
+    /// file as Root Certificate: TLS is mandatory, the chain must end at this CA and the
+    /// certificate must name the host in the connection string - the connection string in the
+    /// Secret needs no TLS parameter. When unset, the connection string is used as it is. In
+    /// Kubernetes this is the ca.crt of the CloudNativePG cluster CA (Secret studylife-pg-ca,
+    /// only that key mounted, see k8s/04-web.yaml). See <see cref="Services.PostgresTlsConfiguration"/>.
+    /// </summary>
+    public string? TlsCaCertificatePath { get; set; }
+
     public bool Migrate { get; set; } = true;
 
     public bool IsPostgres => string.Equals(Provider, PostgresProvider, StringComparison.OrdinalIgnoreCase);

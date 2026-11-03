@@ -160,6 +160,14 @@ spec:
               value: /etc/studylife-dataprotection-tls/ca.crt
             - name: Cache__TlsHost
               value: redis-cluster.studylife-scale.svc.cluster.local
+            # PostgreSQL TLS certificate validation (Program.cs -> PostgresTlsConfiguration):
+            # forces SSL Mode=VerifyFull with this CA, so Database__ConnectionString in the
+            # Secret needs no TLS parameter. The pooler serves the CNPG server certificate, which
+            # is signed by the CNPG cluster CA (Secret studylife-pg-ca), NOT by the cert-manager
+            # CA behind Redis - hence its own mount below, with only ca.crt projected. Requires
+            # the pooler names in that certificate (k8s/02-postgres.yaml serverAltDNSNames).
+            - name: Database__TlsCaCertificatePath
+              value: /etc/studylife-pg-ca/ca.crt
             # DataProtection key-ring-at-rest encryption (Program.cs, ProtectKeysWithCertificate)
             # - required whenever Cache__Provider=Redis is set below, same as
             # Cache__ConnectionString.
@@ -286,6 +294,9 @@ spec:
             - name: dataprotection-tls
               mountPath: /etc/studylife-dataprotection-tls
               readOnly: true
+            - name: pg-ca
+              mountPath: /etc/studylife-pg-ca
+              readOnly: true
             # This secret is NOT managed by Flux (deliberately kept out of k8s/flux/deploy/
             # resources:, see the comment there) - created manually once, see
             # docs/PLAN-paid-umschaltung.md step C for the kubectl-create-secret command.
@@ -313,6 +324,15 @@ spec:
           secret: {secretName: studylife-web-backend-tls}
         - name: dataprotection-tls
           secret: {secretName: studylife-dataprotection-tls}
+        # CNPG cluster CA, created and rotated by the operator. The Secret also holds ca.key;
+        # `items` projects ONLY ca.crt, so the CA private key never lands in this pod. Not a
+        # subPath mount, so kubelet keeps the file current when the operator rotates the CA
+        # (Npgsql re-reads it for every new physical connection).
+        - name: pg-ca
+          secret:
+            secretName: studylife-pg-ca
+            items:
+              - {key: ca.crt, path: ca.crt}
         - name: apns-key
           secret: {secretName: studylife-apns}
         - name: tmp
