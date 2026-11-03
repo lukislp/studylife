@@ -25,10 +25,13 @@ small - but it is the same for every change, including the maintainer's own.
   `StudyLife.Tts.Tests`, `StudyLife.Client.Tests`). A PR that adds behaviour without a test is
   asked to add one. The coverage badge in the README is regenerated from the merged coverage
   report on every release and is expected not to drop.
-- **Every bug fix comes with a regression test.** A `fix:` PR that changes code under `src/`
-  adds a test that fails without the fix and passes with it. If a test is genuinely
-  impractical (pure CSS/layout, a platform quirk only reproducible on a device), the PR says so
-  and describes the manual verification instead. Security fixes always get a regression test.
+- **Every defect fix comes with a regression test.** A fix of a defect in the product's
+  behaviour (code under `src/`) adds a test that fails without the fix and passes with it.
+  Security fixes always get one. Exempt:
+  - dependency updates (`fix(deps)`, Dependabot/Renovate PRs, lock-file refreshes) - they are
+    covered by the existing test suite and the required CI checks instead;
+  - fixes without testable behaviour (docs, CI, build configuration, pure styling/layout) -
+    the PR states why no test was added and how the fix was verified.
 - **Formatting and warnings.** `dotnet format StudyLife.sln --verify-no-changes` runs as a required
   check (`test-lint`); run `dotnet format StudyLife.sln` before pushing. The build runs with the
   .NET analyzers on and `TreatWarningsAsErrors=true` (`Directory.Build.props`); do not silence
@@ -40,6 +43,7 @@ small - but it is the same for every change, including the maintainer's own.
   [Developer Certificate of Origin 1.1](https://developercertificate.org/): you wrote the change
   or otherwise have the right to submit it under the project's licence (AGPL-3.0). Sign off
   every commit with `git commit -s`, which adds a `Signed-off-by: Your Name <email>` line.
+  Automated dependency PRs (Dependabot, Renovate) are exempt; no check enforces the sign-off.
 - **All 26 languages.** UI strings live in the resource tables checked by `tools/check-i18n.py`
   (required check `test-i18n`); a new string needs an entry in every language, machine-translated
   is fine, mark it as such.
@@ -87,7 +91,8 @@ Every change, including the maintainer's own, goes through a pull request and th
 checks. A reviewer (today: the maintainer, see [GOVERNANCE.md](GOVERNANCE.md)) looks at:
 
 1. **Correctness and tests** - does the change do what the PR says, is there a test for the new
-   behaviour, and for a bug fix a regression test that fails without the fix?
+   behaviour, and for a defect fix a regression test that fails without the fix (or a stated
+   reason why it is exempt, see above)?
 2. **Security** - authentication/authorization on new endpoints (`ApiAccess` fallback,
    `ApiKeyScopes` entries), input validation and size limits, no secrets in code or logs, user
    data scoped by `AuthUserId`, outbound URLs through `OutboundUrlPolicy`. Changes to a trust
