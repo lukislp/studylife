@@ -305,3 +305,30 @@ input::-webkit-date-and-time-value {
 .field, .field-row, .field-row > * {
     min-width: 0;
 }
+
+/* Accessibility baseline (CONTRIBUTING.md "Accessibility").
+   Keyboard focus is always visible: :focus-visible only matches keyboard (and programmatic
+   keyboard-like) focus, so mouse and touch users see no change. The form controls above set
+   outline: none and only change their border colour on focus; the rules below restore a real
+   focus ring for keyboard users there too. :where() keeps the generic rule at zero specificity,
+   so a component that draws its own focus style still wins. */
+:where(a, button, summary, [role="button"], [role="tab"], [role="switch"], [tabindex]:not([tabindex="-1"])):focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+.input:focus-visible, .select:focus-visible, .gs-input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+/* Users who ask the OS for reduced motion get no animations or transitions anywhere, not only
+   in the skeleton loaders that already had their own rule. Durations are shortened instead of
+   removed so transitionend/animationend handlers still fire. */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

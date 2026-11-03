@@ -47,6 +47,17 @@ small - but it is the same for every change, including the maintainer's own.
 - **All 26 languages.** UI strings live in the resource tables checked by `tools/check-i18n.py`
   (required check `test-i18n`); a new string needs an entry in every language, machine-translated
   is fine, mark it as such.
+- **Accessibility.** UI changes follow [WCAG 2.2](https://www.w3.org/TR/WCAG22/) level AA as far
+  as the change reaches: semantic elements first (`button`, `a`, `label`, headings) and ARIA only
+  where HTML has nothing; every icon-only control has an `aria-label`; everything works with the
+  keyboard, and keyboard focus stays visible (the global `:focus-visible` ring in `shared.css`;
+  do not remove an outline without replacing it); text and controls keep a contrast of at least
+  4.5:1 and 3:1 against their background in light and dark mode; colour is never the only signal;
+  animations respect `prefers-reduced-motion` (a global rule in `shared.css` covers CSS, and
+  JavaScript animations check the media query); the page `lang` follows the UI language (set in
+  `interop.js`). Check new screens with the keyboard and a browser accessibility checker (for
+  example Lighthouse or axe DevTools) before opening the PR. No automated accessibility check runs
+  in CI yet.
 - **API contract.** A change to controllers or DTOs regenerates `docs/api/openapi.json`; commit
   the regenerated file (`test-openapi-contract` fails otherwise) - add-ons and the CLI build
   against it.
