@@ -205,14 +205,10 @@ if (isRedisCache)
     var redisUser = cacheOptions.User;
     if (!string.IsNullOrEmpty(redisUser))
         redisOptions.User = redisUser;
-    if (redisOptions.Ssl)
-    {
-        // The Redis certificate comes from our own internal CA (k8s/07b-cert-manager-issuers.yaml),
-        // which would otherwise be unknown to the process - the goal is encryption against eavesdropping
-        // on the cluster network, not protection against an already-compromised pod (same trade-off as
-        // with ingress-nginx -> backend pods, proxy-ssl-verify deliberately not set to "on").
-        redisOptions.CertificateValidation += (_, _, _, _) => true;
-    }
+    // TLS to Redis validates the server certificate: chain to the configured CA (the cluster's
+    // internal cert-manager CA in k8s) or to the system trust store, plus the host name. See
+    // RedisTlsConfiguration for the rules and docs/SCALING.md "Client TLS" for the k8s wiring.
+    RedisTlsConfiguration.Apply(redisOptions, cacheOptions);
     builder.Services.AddStackExchangeRedisCache(opt => opt.ConfigurationOptions = redisOptions);
 
     // Separate IConnectionMultiplexer singleton registration ONLY in the Redis branch: AddStackExchangeRedisCache

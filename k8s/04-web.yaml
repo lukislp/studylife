@@ -149,6 +149,17 @@ spec:
             - name: Cache__User
               valueFrom:
                 secretKeyRef: {name: redis-auth, key: username, optional: true}
+            # Redis TLS certificate validation (Program.cs -> RedisTlsConfiguration). The Redis
+            # certificate (redis-tls, k8s/03-redis.yaml) and studylife-dataprotection-tls below
+            # are issued by the same cert-manager CA issuer, so the ca.crt that cert-manager
+            # writes into the already mounted dataprotection secret IS the Redis trust root - no
+            # extra volume, and the Redis private key never reaches this pod. TlsHost is the name
+            # every Redis connection is checked against: the cluster announces pod IPs, which the
+            # certificate does not contain, while this name is one of its dnsNames.
+            - name: Cache__TlsCaCertificatePath
+              value: /etc/studylife-dataprotection-tls/ca.crt
+            - name: Cache__TlsHost
+              value: redis-cluster.studylife-scale.svc.cluster.local
             # DataProtection key-ring-at-rest encryption (Program.cs, ProtectKeysWithCertificate)
             # - required whenever Cache__Provider=Redis is set below, same as
             # Cache__ConnectionString.
