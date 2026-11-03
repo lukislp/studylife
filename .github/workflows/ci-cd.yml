@@ -125,7 +125,27 @@ jobs:
           -reporttypes:JsonSummary
           -assemblyfilters:"-StudyLife.Client"
           -classfilters:"-StudyLife.Server.Migrations.*"
+      # Line AND branch coverage go into the job summary on every run (branch coverage was
+      # only ever measured by hand before); the badge itself stays line coverage.
       - run: python3 scripts/generate_coverage_badge.py coverage-summary/Summary.json coverage-badge.json
+      # Report-only second view WITH StudyLife.Client, so the number the badge leaves out is
+      # visible too instead of only being described as excluded. Never gates anything.
+      - run: >
+          dotnet tool run reportgenerator
+          -reports:"tests/**/TestResults/**/coverage.cobertura.xml"
+          -targetdir:coverage-summary-all
+          -reporttypes:JsonSummary
+          -classfilters:"-StudyLife.Server.Migrations.*"
+      - name: Coverage including StudyLife.Client (report only)
+        run: |
+          python3 - <<'EOF'
+          import json, os
+          s = json.load(open("coverage-summary-all/Summary.json", encoding="utf-8"))["summary"]
+          line = f"Including StudyLife.Client: line {s['linecoverage']:.1f}%, branch {s.get('branchcoverage') or 0:.1f}%"
+          print(line)
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
+              f.write(f"\n{line}\n")
+          EOF
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-badge
