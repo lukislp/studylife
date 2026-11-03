@@ -488,7 +488,7 @@ The server can announce itself via mDNS / DNS-SD (`_studylife._tcp`) so Home Ass
 
 ## Contributing
 
-Pull requests are welcome - [CONTRIBUTING.md](CONTRIBUTING.md) describes the process (issue first for bigger changes, Conventional Commits, tests for new functionality, the required checks) and how to run everything locally.
+Pull requests are welcome - [CONTRIBUTING.md](CONTRIBUTING.md) describes the process (issue first for bigger changes, Conventional Commits, tests for new functionality, the required checks) and how to run everything locally. [GOVERNANCE.md](GOVERNANCE.md) explains who decides what (a single maintainer, and what happens if they are unavailable), and [ROADMAP.md](ROADMAP.md) lists the planned work for the next year.
 
 ## Security
 
@@ -498,7 +498,7 @@ For non-interactive integrations like Home Assistant, which cannot maintain a pa
 
 Around that: per-IP rate limiting on `/api` (shared across replicas via Redis in the scaled deployment, plus an edge limit on the gateway), a per-user concurrency cap on the CPU-heavy endpoints (transcription, synthesis, AI proxy, export, exam planner), bounded request bodies and inputs everywhere, an outbound-URL policy that refuses private/loopback/cluster-internal targets for push subscriptions and webhooks, a strict Content-Security-Policy, HSTS, `X-Frame-Options: DENY`, and a `Permissions-Policy` that allows only the microphone (for dictation). The demo instance blocks every mutating request in middleware and only arms itself when `DEMO_MODE_CONFIRM_DATA_LOSS` is set explicitly, so a stray `DEMO_MODE=true` can never wipe a real database. Details on the complete security model (including the audits that shaped it): [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#security).
 
-Vulnerabilities: please report them privately via [GitHub's private vulnerability reporting](https://github.com/lukislp/studylife/security/advisories/new), see [SECURITY.md](SECURITY.md). Supply chain: NuGet restores run in locked mode against committed `packages.lock.json` files, GitHub Actions are SHA-pinned and kept current by Dependabot, every pull request runs a dependency review, CodeQL scans the code, the OpenSSF Scorecard runs weekly, the published image is scanned by Trivy and signed keyless with Sigstore cosign (with SBOM and SLSA provenance attached), and the release ZIP carries a cosign bundle plus GitHub build provenance.
+Vulnerabilities: please report them privately via [GitHub's private vulnerability reporting](https://github.com/lukislp/studylife/security/advisories/new), see [SECURITY.md](SECURITY.md) (response targets, CVE process, and [how to verify a release with cosign](SECURITY.md#verifying-releases)). The threat model, trust boundaries and accepted residual risks are written down in the assurance case, [docs/SECURITY-ASSURANCE.md](docs/SECURITY-ASSURANCE.md). Supply chain: NuGet restores run in locked mode against committed `packages.lock.json` files, GitHub Actions are SHA-pinned and kept current by Dependabot, every pull request runs a dependency review, CodeQL scans the code, the OpenSSF Scorecard runs weekly, the published image is scanned by Trivy and signed keyless with Sigstore cosign (with SBOM and SLSA provenance attached), and the release ZIP carries a cosign bundle plus GitHub build provenance.
 
 ---
 
