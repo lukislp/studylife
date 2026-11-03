@@ -80,6 +80,20 @@ spec:
   monitoring:
     tls:
       enabled: true
+  # Extra names for the operator-generated server certificate (Secret studylife-pg-server,
+  # signed by the operator's own CA in Secret studylife-pg-ca). The app connects to the PgBouncer
+  # pooler (k8s/11-pooler.yaml), and the pooler serves THIS certificate to its clients - but
+  # CNPG only puts the -rw/-r/-ro service names into it, so a client that checks the host name
+  # (the app since Database__TlsCaCertificatePath, k8s/04-web.yaml) rejects
+  # "studylife-pg-pooler". The operator re-issues the leaf certificate (same CA) when this list
+  # changes; certificates are not part of the instance pod spec. See docs/SCALING.md
+  # "Client TLS (App to Postgres)" for the rollout order and how to check the result.
+  certificates:
+    serverAltDNSNames:
+      - studylife-pg-pooler
+      - studylife-pg-pooler.studylife-scale
+      - studylife-pg-pooler.studylife-scale.svc
+      - studylife-pg-pooler.studylife-scale.svc.cluster.local
   bootstrap:
     initdb:
       database: studylife
