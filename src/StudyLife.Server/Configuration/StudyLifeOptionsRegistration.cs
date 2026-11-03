@@ -46,6 +46,12 @@ public static class StudyLifeOptionsRegistration
         services.AddOptions<StudyLifeAiOptions>().BindConfiguration(StudyLifeAiOptions.SectionName);
         services.AddOptions<StudyLifeWebhooksOptions>().BindConfiguration(StudyLifeWebhooksOptions.SectionName);
         services.AddOptions<StudyLifeDevelopersOptions>().BindConfiguration(StudyLifeDevelopersOptions.SectionName);
+        // Add-on TLS (docs/SECURITY-ASSURANCE.md 8.3): a configured CA file must load, and with
+        // RequireHttps every configured add-on URL must be https:// - checked at startup.
+        services.AddSingleton<Microsoft.Extensions.Options.IValidateOptions<AddonTlsOptions>, Services.AddonTlsOptionsValidator>();
+        services.AddOptions<AddonTlsOptions>()
+            .BindConfiguration(AddonTlsOptions.SectionName)
+            .ValidateOnStart();
         services.AddOptions<ApnsOptions>().BindConfiguration(ApnsOptions.SectionName);
         services.AddOptions<AppleOptions>().BindConfiguration(AppleOptions.SectionName);
 

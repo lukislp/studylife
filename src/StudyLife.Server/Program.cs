@@ -500,12 +500,25 @@ builder.Services.AddScoped<IRegistrationGateService, RegistrationGateService>();
 builder.Services.AddSingleton<ApnsSender>();
 // studylife-ai integration - permanently inactive without StudyLifeAi:* configuration
 // (see the AiProxyClient comment).
-builder.Services.AddSingleton<AiProxyClient>();
+// All three add-on clients get their HttpClient from AddonTlsTrust: a plain HttpClient by
+// default (unchanged behaviour), or one that validates https:// add-ons against
+// AddonTls:CaCertificatePath (docs/SECURITY-ASSURANCE.md 8.3).
+builder.Services.AddSingleton<AddonTlsTrust>();
+builder.Services.AddSingleton(sp => new AiProxyClient(
+    sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<StudyLifeAiOptions>>(),
+    sp.GetRequiredService<ILogger<AiProxyClient>>(),
+    sp.GetRequiredService<AddonTlsTrust>().CreateHttpClient()));
 // studylife-webhooks integration - permanently inactive without StudyLifeWebhooks:*
 // configuration (see the WebhooksProxyClient comment).
-builder.Services.AddSingleton<WebhooksProxyClient>();
+builder.Services.AddSingleton(sp => new WebhooksProxyClient(
+    sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<StudyLifeWebhooksOptions>>(),
+    sp.GetRequiredService<ILogger<WebhooksProxyClient>>(),
+    sp.GetRequiredService<AddonTlsTrust>().CreateHttpClient(WebhooksProxyClient.RequestTimeout)));
 // Same pattern (see the WebhooksProxyClient comment) - for the studylife-developers portal.
-builder.Services.AddSingleton<DeveloperProxyClient>();
+builder.Services.AddSingleton(sp => new DeveloperProxyClient(
+    sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<StudyLifeDevelopersOptions>>(),
+    sp.GetRequiredService<ILogger<DeveloperProxyClient>>(),
+    sp.GetRequiredService<AddonTlsTrust>().CreateHttpClient()));
 // Raw DB backup/restore + the former file-based VAPID/setup-secret storage are bound to a
 // local single SQLite file (online backup API, PRAGMA integrity_check, file swap) -
 // deliberately NOT registered in Postgres mode (multiple pods, no guaranteed shared volume);

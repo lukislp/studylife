@@ -204,12 +204,36 @@ compromised pod on a CNI without encryption) can read those secrets and replay t
 their lifetime. NetworkPolicies already limit who can *connect*, but they do not provide
 confidentiality. The traffic stays inside the cluster network.
 
-**Plan** (on the [roadmap](../ROADMAP.md)): each add-on serves TLS with a certificate from
-`studylife-internal-ca-issuer`. StudyLife's HTTP clients for the three add-ons then get an optional
-`TlsCaCertificatePath` validated through the same `PrivateCaCertificateValidator`, and the base
-URLs switch to `https://`. This needs coordinated releases of the add-on repositories, so it is
-deliberately not part of a single change here. A cluster-wide alternative is a CNI with
-transparent encryption (WireGuard) or a service mesh with mTLS.
+**StudyLife side (done, opt-in).** The three proxy clients get their `HttpClient` from
+`AddonTlsConfiguration` (`src/StudyLife.Server/Services/AddonTlsConfiguration.cs`), controlled by
+two settings that are off by default, so today's behaviour does not change:
+
+| Setting (env) | Default | Effect |
+|---|---|---|
+| `AddonTls:CaCertificatePath` (`AddonTls__CaCertificatePath`) | unset | PEM file with the CA that issues the add-on certificates (in the cluster the `ca.crt` of `studylife-internal-ca-issuer`, already mounted at `/etc/studylife-dataprotection-tls/ca.crt` in web and worker). `https://` add-on URLs are then validated against this CA only, host name included, through the same `PrivateCaCertificateValidator` as Redis and the Kubernetes API. `http://` URLs are not affected, so the setting can be switched on before any add-on serves TLS. A missing or empty file stops the start. |
+| `AddonTls:RequireHttps` (`AddonTls__RequireHttps`) | `false` | Every configured add-on URL (`StudyLifeAi:BaseUrl`, `StudyLifeAi:InternalBaseUrl`, `StudyLifeWebhooks:BaseUrl`, `StudyLifeDevelopers:BaseUrl`) must be `https://`, otherwise the start fails. Switch it on once all three add-ons serve TLS, so a stale `http://` URL can never send the secrets in plain text again. |
+
+There is no setting that turns certificate validation off. Without a CA path, an `https://`
+add-on URL is validated against the system trust store. Regression tests with real TLS
+handshakes are in `PrivateCaCertificateValidatorTests` (trusted CA, wrong host name, other CA,
+no CA, startup validation).
+
+**What each add-on repository needs** (not changed from here). The `studylife-internal-ca-issuer`
+ClusterIssuer is available cluster-wide, and the pattern is the one `studylife-web` already uses
+(`k8s/04-web.yaml`, Certificate `studylife-web-backend-tls`, Kestrel serving it):
+
+| Add-on | Server | Needed |
+|---|---|---|
+| studylife-ai | FastAPI on uvicorn, `:8000` (public paths) and `:8001` (`/internal`, second `uvicorn.Server` in the same process) | A cert-manager `Certificate` in its namespace with `issuerRef` `studylife-internal-ca-issuer` (kind `ClusterIssuer`) and the SANs `studylife-ai.studylife-ai.svc.cluster.local` and `studylife-ai`, mounted into the pod. Both uvicorn servers started with `ssl_certfile`/`ssl_keyfile` (configurable, plain HTTP stays the default for local runs). Liveness/readiness probes switched to `scheme: HTTPS`. Whatever else calls those ports (gateway route, metrics scraping) moves to HTTPS too, for the gateway with a `BackendTLSPolicy` like `k8s/07d-httproutes.yaml`. uvicorn reloads no certificates, so it needs a restart on renewal (e.g. a reloader annotation, or the pod's natural restarts well within the 30-day renewal window). |
+| studylife-webhooks | FastAPI on uvicorn, `:8000` | Same as studylife-ai with the SANs `studylife-webhooks.studylife-webhooks.svc.cluster.local` and `studylife-webhooks`, one uvicorn server, probes on HTTPS. |
+| studylife-developers | ASP.NET Core (Kestrel), `:8080` | Same Certificate pattern with the SANs `studylife-developers.studylife-developers.svc.cluster.local` and `studylife-developers`, Kestrel configured with the mounted `tls.crt`/`tls.key` (e.g. `Kestrel__Endpoints__Https__Certificate__Path`/`KeyPath`, which can pick up renewed certificate files without a code change), probes on HTTPS. Its public HTTPRoute currently has no `BackendTLSPolicy` and would need one. |
+
+**Rollout once an add-on serves TLS:** set `AddonTls__CaCertificatePath` in
+`k8s/01-config-and-secret.yaml`, switch that add-on's URL in the same ConfigMap to `https://`
+(keeping the service host name, which is the certificate SAN), and after the last of the three
+set `AddonTls__RequireHttps: "true"`. The NetworkPolicies stay as they are when the ports do not
+change. A cluster-wide alternative remains a CNI with transparent encryption (WireGuard) or a
+service mesh with mTLS.
 
 ### 8.4 Supply chain
 
@@ -223,7 +247,7 @@ keyless. Verification steps are in [SECURITY.md](../SECURITY.md#verifying-releas
 
 | Risk | Why accepted | Mitigation |
 |---|---|---|
-| Plain HTTP for the three add-on hops (8.3) | Needs changes in other repositories | NetworkPolicies, short-lived HMAC tokens, planned TLS |
+| Plain HTTP for the three add-on hops (8.3) | The add-ons do not serve TLS yet; StudyLife's side is ready (`AddonTls:*`) | NetworkPolicies, short-lived HMAC tokens; switch to `https://` per add-on, then `AddonTls:RequireHttps` |
 | Redis cluster bus (gossip) in plaintext | `tls-cluster yes` broke the pod-IP-based cluster during a rolling update ([SCALING.md](SCALING.md)) | Bus port reachable only between Redis pods (NetworkPolicy). No user payload on the bus beyond replication. |
 | Redis password visible in the Redis process command line | Redis reads it as CLI flags from a Secret | Visible only to someone who can exec into the Redis pod, which is already past the boundary |
 | DNS rebinding for push/webhook URLs | Host names are not resolved on the request path | Literal private IPs and internal suffixes are rejected |
