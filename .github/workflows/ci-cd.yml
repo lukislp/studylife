@@ -1294,7 +1294,8 @@ jobs:
       # ref: main for the same reason as get-version's checkout (see there): the real release
       # must be cut from the branch tip get-version analyzed, or the "behind the remote" guard
       # trips on the event SHA whenever a Flux [skip ci] bump raced in. The retry below still
-      # covers pushes landing DURING this job.
+      # covers pushes landing DURING this job, but only as far as the drift guard allows: the
+      # tip may differ from the built commit by deploy bumps, never by code.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
