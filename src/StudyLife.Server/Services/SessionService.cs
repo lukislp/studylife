@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Lukas Körber
 // SPDX-License-Identifier: AGPL-3.0-only
 
+using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
 using StudyLife.Shared;
@@ -93,8 +94,12 @@ public class SessionService : ISessionService
     /// scan per request. Static so the controller can clamp BEFORE building the cache key, which
     /// must be derived from the effective window, not the raw query string.
     /// </summary>
-    public static int ClampHistoryDays(int days) =>
-        Math.Clamp(days == int.MinValue ? MaxHistoryDays : Math.Abs(days), 1, MaxHistoryDays);
+    public static int ClampHistoryDays(int days)
+    {
+        var clamped = Math.Clamp(days == int.MinValue ? MaxHistoryDays : Math.Abs(days), 1, MaxHistoryDays);
+        Debug.Assert(clamped is >= 1 and <= MaxHistoryDays, "history window must stay within 1..MaxHistoryDays");
+        return clamped;
+    }
 
     public async Task<string> AllCacheKeyAsync() =>
         $"sessions:all:{_currentUser.AuthUserId}:{await _historyCacheVersion.GetAsync(_currentUser.AuthUserId)}";
@@ -178,6 +183,7 @@ public class SessionService : ISessionService
     {
         var error = Validate(dto);
         if (error != null) return ServiceResult<StudySessionDto>.Invalid(error);
+        AssertValidWindow(dto.StartTime, dto.EndTime);
 
         // Audit finding M2: CourseId must resolve against the user's full course universe
         // (built-in catalog + all their custom courses, see CourseResolver), and
@@ -197,6 +203,11 @@ public class SessionService : ISessionService
         entity.CourseColor = course.Color;
         _db.Sessions.Add(entity);
         await _db.SaveChangesAsync();
+        Debug.Assert(entity.Id > 0, "a saved session must carry its database-generated id");
+        // Tenant isolation: StudyLifeDb stamps the current user onto every insert and the global
+        // query filters rely on that stamp - a session saved under another user id would be
+        // invisible to its author and visible to someone else.
+        Debug.Assert(entity.AuthUserId == _currentUser.AuthUserId, "a new session must belong to the current user");
         await _historyCacheVersion.BumpAsync(_currentUser.AuthUserId);
         await CheckNewRecordAsync(entity);
         PublishSessionWebhookEvents(entity, isNewSession: true, wasCompletedBefore: false);
@@ -233,6 +244,8 @@ public class SessionService : ISessionService
         var oldStartTime = entity.StartTime;
         var wasCompletedBefore = entity.IsCompleted;
         Apply(dto, entity);
+        AssertValidWindow(entity.StartTime, entity.EndTime);
+        Debug.Assert(entity.AuthUserId == _currentUser.AuthUserId, "the query filter only hands out the current user's sessions");
 
         // If the session start shifts, this invalidates the already-sent session reminders
         // (key "{id}:reminderN", see BackgroundTaskService.RunPushNotificationsAsync) -
@@ -261,6 +274,7 @@ public class SessionService : ISessionService
     {
         var entity = await _db.Sessions.FindAsync(id);
         if (entity == null) return ServiceResult.NotFound();
+        Debug.Assert(entity.AuthUserId == _currentUser.AuthUserId, "the query filter only hands out the current user's sessions");
         _db.Sessions.Remove(entity);
         await _db.SaveChangesAsync();
         await _historyCacheVersion.BumpAsync(_currentUser.AuthUserId);
@@ -344,6 +358,8 @@ public class SessionService : ISessionService
 
         var previousMaxHours = others.Max(s => (s.EndTime - s.StartTime).TotalHours);
         if (duration.TotalHours <= previousMaxHours) return;
+        Debug.Assert(duration > TimeSpan.Zero && duration <= TimeSpan.FromHours(24),
+            "only validated session windows can set a record");
 
         // Claim BEFORE sending: the unique index on SentReminders (AuthUserId, Key) is the
         // arbiter between concurrent writes of the same session, so exactly one request sends
@@ -443,10 +459,19 @@ public class SessionService : ISessionService
     /// one. Touching boundaries (one session's EndTime equal to another's StartTime) are NOT an
     /// overlap, so back-to-back sessions remain possible.
     /// </summary>
-    private Task<StudySessionEntity?> FindOverlapAsync(DateTime start, DateTime end, int? excludeId) =>
-        _db.Sessions
+    private Task<StudySessionEntity?> FindOverlapAsync(DateTime start, DateTime end, int? excludeId)
+    {
+        AssertValidWindow(start, end);
+        return _db.Sessions
             .Where(s => excludeId == null || s.Id != excludeId)
             .FirstOrDefaultAsync(s => s.StartTime < end && s.EndTime > start);
+    }
+
+    /// <summary>Post-condition of <see cref="Validate"/>: every write path works on a window that
+    /// is non-empty and at most 24 hours long.</summary>
+    private static void AssertValidWindow(DateTime start, DateTime end) =>
+        Debug.Assert(end > start && end - start <= TimeSpan.FromHours(24),
+            "a session window must be non-empty and at most 24 hours long");
 
     // internal instead of private: reused by BackupController (JSON export), MetricsController
     // and SummaryInputLoader, so none of them has to duplicate the same mapping again.

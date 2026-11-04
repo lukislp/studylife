@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Lukas Körber
 // SPDX-License-Identifier: AGPL-3.0-only
 
+using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
 
@@ -42,6 +43,8 @@ public class OwnershipService(StudyLifeDb db, IConfiguration config, ILogger<Own
 
         var lowestId = await db.AuthUsers.OrderBy(u => u.Id).Select(u => u.Id).FirstOrDefaultAsync();
         if (lowestId == 0) return false; // no AuthUsers at all - should never happen past setup
+        // The caller itself is an existing user (checked above), so the lowest id cannot be larger.
+        Debug.Assert(lowestId > 0 && lowestId <= authUserId, "the lowest user id cannot exceed an existing user's id");
 
         // Demo instances answer with the derived result but never PERSIST it: this method runs
         // on plain GETs (account-info/invites), which the write-block middleware in Program.cs

@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Lukas Körber
 // SPDX-License-Identifier: AGPL-3.0-only
 
+using System.Diagnostics;
+
 namespace StudyLife.Server.Services;
 
 /// <summary>
@@ -54,7 +56,11 @@ public class CurrentUserAccessor : ICurrentUserAccessor
             if (Ambient.Value is int ambient) return ambient;
             var items = _httpContextAccessor.HttpContext?.Items;
             if (items != null && items.TryGetValue(HttpContextItemKey, out var value) && value is int fromHttp)
+            {
+                // Only the authentication handler writes this item, and only with a real user id.
+                Debug.Assert(fromHttp > 0, "the request's user id must be a real AuthUser id");
                 return fromHttp;
+            }
             return AmbientFallbackAuthUserId ?? 0;
         }
     }
@@ -70,6 +76,9 @@ public class CurrentUserAccessor : ICurrentUserAccessor
         private readonly int? _previous;
         public AmbientScope(int authUserId)
         {
+            // 0 is the documented "no user" value (every filtered query returns nothing);
+            // anything below it can only be a bug.
+            Debug.Assert(authUserId >= 0, "a background scope must name an AuthUser id or 0");
             _previous = Ambient.Value;
             Ambient.Value = authUserId;
         }

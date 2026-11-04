@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Lukas Körber
 // SPDX-License-Identifier: AGPL-3.0-only
 
+using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
 using StudyLife.Shared;
@@ -112,6 +113,10 @@ public class TimerStateService(StudyLifeDb db, WebhooksProxyClient webhooks, ICu
             : dto.PhaseEndsAt;
         entity.UpdatedAt = now;
         if (dto.ClientSequence is { } newSeq) entity.LastClientSequence = newSeq;
+        // The out-of-order check above must have left the stored sequence monotonic.
+        Debug.Assert(dto.ClientSequence is null || entity.LastClientSequence == dto.ClientSequence,
+            "an accepted push must become the latest client sequence");
+        Debug.Assert(entity.SessionId is null || entity.SessionId == dto.SessionId, "only the pushed session id can be stored");
         if (!await SaveWithReloadAsync(attempt)) return null;
 
         // Fire-and-forget with CancellationToken.None, deliberately NOT the request's own `ct`:
@@ -164,6 +169,8 @@ public class TimerStateService(StudyLifeDb db, WebhooksProxyClient webhooks, ICu
     /// </summary>
     private async Task<bool> SaveWithReloadAsync(int attempt)
     {
+        // The final attempt rethrows instead of returning false, so the retry loops are bounded.
+        Debug.Assert(attempt is >= 0 and <= MaxConcurrencyRetries, "concurrency retries must stay bounded");
         try
         {
             await db.SaveChangesAsync();

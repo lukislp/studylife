@@ -15,9 +15,14 @@ using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Auth;
 using StudyLife.Server.Configuration;
 using StudyLife.Server.Data;
+using StudyLife.Server.Diagnostics;
 using StudyLife.Server.Discovery;
 using StudyLife.Server.OpenApi;
 using StudyLife.Server.Services;
+
+// Run-time assertions (docs/SECURITY-ASSURANCE.md 8.5): in a Debug build, failed Debug.Assert
+// calls are reported on stderr instead of killing the process; compiled away in Release.
+AssertionTraceListener.Install();
 
 // Discovery:Mdns:Only=true (docs/MDNS.md): this process is the dedicated mDNS announcer - no
 // database, migrations, Redis or web endpoints, only a minimal host. Must stay ahead of all the
