@@ -30,10 +30,12 @@
 </head>
 <body>
     <div id="app">
-        <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;background:#0e0e0f;color:#e8e6e0">
-            <div style="text-align:center">
-                <div style="font-size:2rem;margin-bottom:1rem;color:#CC785C">✦</div>
-                <div id="boot-loading-text" style="font-size:0.875rem;color:#6b6965;letter-spacing:0.05em">Loading StudyLife</div>
+        <!-- Boot screen styles live in css/base.css (.boot-screen*), not in style attributes, so
+             the static shell needs no inline styles at all (CSP comment in Program.cs). -->
+        <div class="boot-screen">
+            <div class="boot-screen-inner">
+                <div class="boot-screen-mark">✦</div>
+                <div id="boot-loading-text" class="boot-screen-text">Loading StudyLife</div>
             </div>
         </div>
     </div>
