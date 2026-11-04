@@ -30,7 +30,16 @@ updates:
     groups:
       dotnet:
         patterns: ["Microsoft.*", "System.*", "Npgsql.*"]
+      # The client's runtime library and the source generator wrapped by
+      # src/StudyLife.I18nTextGenerator must stay on the same release (the build fails with
+      # SLI18N002 otherwise), so they are bumped in one PR.
+      i18ntext:
+        patterns: ["Toolbelt.Blazor.I18nText*"]
     ignore:
+      # Microsoft.CodeAnalysis.CSharp is the compile-time API of src/StudyLife.I18nTextGenerator.
+      # It must not be newer than the compiler in the oldest supported .NET SDK (CS9057), so it
+      # stays on a deliberately old version and is only raised by hand.
+      - dependency-name: "Microsoft.CodeAnalysis.CSharp"
       # Microsoft.OpenApi is only pinned to lift a vulnerable transitive 2.0.0; ASP.NET Core
       # OpenApi 10.x requires < 3.0.0 and its source generator does not compile against 3.x.
       # Revisit with the .NET 11 upgrade.

@@ -758,6 +758,11 @@ jobs:
           restore-keys: |
             nuget-${{ runner.os }}-
       - run: dotnet workload restore StudyLife.sln
+      # Reproducible release output (docs/REPRODUCIBLE-BUILDS.md): the commit time becomes the
+      # Last-Modified of every static web asset instead of the build time, so a rebuild of the
+      # release tag reproduces server.zip's contents bit for bit.
+      - name: Use the commit time as SOURCE_DATE_EPOCH
+        run: echo "SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)" >> "$GITHUB_ENV"
       # Published per-architecture (amd64/arm64 folder names match Docker's TARGETARCH, not the
       # .NET RID) so the multi-arch Docker build can COPY the matching one instead of sharing a
       # single RID-specific build across both platforms - see src/StudyLife.Server/Dockerfile.
