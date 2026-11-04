@@ -101,6 +101,20 @@ GitHub CLI can check it too:
 gh attestation verify server.zip --repo lukislp/studylife
 ```
 
+**Version tags** (`vX.Y.Z`; tags before this was introduced are lightweight and unsigned): the
+release job creates every tag as an annotated tag signed with the project's SSH signing key, and
+GitHub shows it as "Verified" on the tag and release pages. To check a tag in a clone, trust the
+signing keys published for the account and verify:
+
+```sh
+git fetch --tags
+curl -s https://api.github.com/users/lukislp/ssh_signing_keys \
+  | jq -r '.[].key | "155678024+lukislp@users.noreply.github.com namespaces=\"git\" " + .' > allowed_signers
+git -c gpg.ssh.allowedSignersFile=allowed_signers verify-tag v<version>
+```
+
+The tag pins the source commit; the Sigstore signatures above pin what was built from it.
+
 If a verification fails, the file was not produced by this repository's pipeline. Do not run
 it, and please report it as described above.
 

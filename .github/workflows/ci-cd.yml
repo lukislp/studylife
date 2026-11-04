@@ -1293,6 +1293,37 @@ jobs:
         uses: lukislp/ci-workflows/.github/actions/deploy-key-push@0476ea5ecc543deade233e4dd940ea87db9f5df8 # v1.8.23
         with:
           deploy-key: ${{ secrets.SEMANTIC_RELEASE_DEPLOY_KEY }}
+      # Signed version tags (OpenSSF version_tags_signed): semantic-release creates the release
+      # tag with a plain `git tag <name> <ref>`. With tag.gpgSign=true git turns exactly that
+      # command into an annotated, SSH-signed tag object, so no plugin change is needed. The key
+      # is DEPLOY_SIGNING_KEY, the signing-only key deploy-bump already signs its commits with
+      # (registered as a signing key on the account, so GitHub shows the tag as "Verified").
+      # core.editor writes the tag message, because git asks for one for every annotated tag
+      # and there is no terminal here. The tagger identity has to be the account's own noreply
+      # address for GitHub's verification (same reason as in deploy-bump). Skipped, with a
+      # warning, while the secret is unset: the tag then stays lightweight as before.
+      - name: Sign the release tag with the deploy signing key (if configured)
+        env:
+          DEPLOY_SIGNING_KEY: ${{ secrets.DEPLOY_SIGNING_KEY }}
+          TAG: v${{ needs.get-version.outputs.next_version }}
+        run: |
+          set -eu
+          if [ -z "${DEPLOY_SIGNING_KEY}" ]; then
+            echo "::warning::DEPLOY_SIGNING_KEY is not set - the release tag stays a lightweight, unsigned tag"
+            exit 0
+          fi
+          signing_key="$RUNNER_TEMP/tag_signing_key"
+          printf '%s\n' "$DEPLOY_SIGNING_KEY" > "$signing_key"
+          chmod 600 "$signing_key"
+          ssh-keygen -y -f "$signing_key" > "$signing_key.pub"
+          git config gpg.format ssh
+          git config user.signingkey "$signing_key.pub"
+          git config tag.gpgSign true
+          git config core.editor "f() { printf 'StudyLife %s\n' '${TAG}' > \"\$1\"; }; f"
+          {
+            echo "GIT_COMMITTER_NAME=studylife-release"
+            echo "GIT_COMMITTER_EMAIL=155678024+lukislp@users.noreply.github.com"
+          } >> "$GITHUB_ENV"
       - id: semrel
         uses: lukislp/ci-workflows/.github/actions/semantic-release@0476ea5ecc543deade233e4dd940ea87db9f5df8 # v1.8.23
         with:
@@ -1349,3 +1380,27 @@ jobs:
         run: |
           cp "${{ steps.provenance.outputs.bundle-path }}" publish/server.zip.intoto.jsonl
           gh release upload "$TAG" publish/server.zip.intoto.jsonl --clobber
+      # Live proof of the tag signature, the same check SECURITY.md#verifying-releases describes
+      # for users. Report-only: the release is already public at this point, and a failure here
+      # must not hold back the image of a correctly built release.
+      - name: Verify the release tag signature
+        env:
+          DEPLOY_SIGNING_KEY: ${{ secrets.DEPLOY_SIGNING_KEY }}
+          TAG: v${{ needs.get-version.outputs.next_version }}
+        run: |
+          set -u
+          if [ -z "${DEPLOY_SIGNING_KEY}" ]; then
+            exit 0
+          fi
+          git fetch --force origin "refs/tags/${TAG}:refs/tags/${TAG}"
+          if [ "$(git cat-file -t "refs/tags/${TAG}")" != "tag" ]; then
+            echo "::warning::${TAG} is a lightweight tag, not a signed tag object"
+            exit 0
+          fi
+          allowed="$RUNNER_TEMP/allowed_signers"
+          echo "155678024+lukislp@users.noreply.github.com namespaces=\"git\" $(cat "$RUNNER_TEMP/tag_signing_key.pub")" > "$allowed"
+          if git -c gpg.ssh.allowedSignersFile="$allowed" verify-tag "${TAG}"; then
+            echo "${TAG} is SSH-signed and verified" | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::the signature of ${TAG} did not verify"
+          fi
