@@ -45,9 +45,8 @@ generated notes, signed container images and a signed `server.zip` (see
 
 ## Continuity: what happens if the maintainer is unavailable
 
-Being honest about the bus factor: it is **1**. There is no second person with admin access to
-the repository, the container registry namespace or the deployments, and this file does not
-pretend otherwise. What exists instead:
+Being honest about the bus factor: it is **1**. No second person works on the project or has
+admin access day to day, and this file does not pretend otherwise. What exists instead:
 
 - **The code and the history are public.** The repository is AGPL-3.0. Anyone can fork it, and
   the fork keeps the full history, issues stay readable, and every release artifact stays
@@ -60,11 +59,18 @@ pretend otherwise. What exists instead:
 - **Self-hosted instances keep running.** Each installation is independent of the maintainer: no
   licence server, no phone-home, no central account service. Updates stop, but nothing breaks
   at a deadline.
-- **No successor arrangement exists.** There is no GitHub account successor, no second owner and
-  no organisation account, and none is planned at the moment. Nobody else can take over the
-  repository, the `ghcr.io` namespace or the deployments. Continuity therefore rests entirely on
-  the points above: the public code, a build anyone can repeat, and keyless signing that a fork
-  can set up for its own identity.
+- **A trusted person can take over the accounts.** The maintainer keeps every credential the
+  project needs in a password manager: the GitHub account with its recovery codes, the domains
+  and DNS, the deployments, the Apple signing material and the bestpractices.dev entry. A trusted
+  person, who already knows the project, has emergency access to it with a waiting period of a
+  few days, together with written instructions. If the maintainer cannot continue, that person
+  gets access well within a week and can then close or answer issues, transfer the repository
+  and the `ghcr.io` namespace to a new maintainer, publish a release with the existing release
+  workflow, or archive the project. The trusted person's name and the credentials themselves are
+  deliberately not published. The arrangement is reviewed once a year.
+- **No GitHub account successor or second owner yet.** There is no organisation account and no
+  second person with admin rights. A GitHub account successor will be added once a suitable
+  person with a GitHub account is found.
 - **If the maintainer stops responding** (no reaction to issues, PRs or security reports for
   more than 30 days, with no announcement), users should treat the project as unmaintained. In
   that case: fork it, rebuild from source, and keep the AGPL obligations. If a community fork
