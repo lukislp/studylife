@@ -4,12 +4,15 @@
 Usage: generate_coverage_badge.py <summary.json> <out.json>
            [--min-line PCT] [--min-branch PCT]
 
-Reads the top-level summary.linecoverage percentage (already scoped to the
-StudyLife.Server/StudyLife.Shared assemblies via the caller's -assemblyfilters -
-StudyLife.Client is deliberately excluded, since it's Blazor UI markup with no
-unit-test practice here, not a lack of testing on the projects that ARE covered)
-and writes it in the schema shields.io/endpoint expects, so the README badge
-can point at the raw GitHub URL of the committed file with no external service.
+Reads the top-level summary.linecoverage and summary.branchcoverage percentages
+(already scoped by the caller's reportgenerator filters: StudyLife.Client and the
+EF migrations are excluded, see "How the coverage badge is derived" in
+CONTRIBUTING.md) and writes them in the schema shields.io/endpoint expects, e.g.
+"line 92.7% | branch 78.6%". The README badge points at the raw GitHub URL of the
+committed file, so no external coverage service is involved. CI refreshes that
+file with every release (deploy-bump job in ci-cd.yml), so the badge shows what
+the last release was measured with. Percentages are truncated, never rounded up,
+so the badge cannot overstate the measurement.
 
 Also reports branch coverage (summary.branchcoverage): printed, and appended to
 $GITHUB_STEP_SUMMARY when that is set, so every CI run shows both numbers.
@@ -17,6 +20,7 @@ $GITHUB_STEP_SUMMARY when that is set, so every CI run shows both numbers.
 non-zero exit code (a failing CI step); without them the script only reports.
 """
 import json
+import math
 import os
 import sys
 
@@ -28,6 +32,21 @@ def color_for(pct: float) -> str:
         if pct >= threshold:
             return color
     return "red"
+
+
+def floor1(pct: float) -> str:
+    """One decimal, truncated: 78.96 -> "78.9", so the badge never rounds up."""
+    return f"{math.floor(pct * 10 + 1e-9) / 10:.1f}"
+
+
+def badge_for(summary: dict) -> dict:
+    pct = summary["linecoverage"]
+    branch = summary.get("branchcoverage")
+    message = f"line {floor1(pct)}%"
+    if branch is not None:
+        message += f" | branch {floor1(branch)}%"
+    lowest = pct if branch is None else min(pct, branch)
+    return {"schemaVersion": 1, "label": "coverage", "message": message, "color": color_for(lowest)}
 
 
 def parse_args(argv: list[str]) -> tuple[str, str, float | None, float | None]:
@@ -50,14 +69,8 @@ def main(argv: list[str]) -> int:
     pct = summary["linecoverage"]
     branch = summary.get("branchcoverage")
 
-    badge = {
-        "schemaVersion": 1,
-        "label": "coverage",
-        "message": f"{pct:.0f}%",
-        "color": color_for(pct),
-    }
     with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(badge, f)
+        json.dump(badge_for(summary), f)
 
     branch_text = "n/a" if branch is None else f"{branch:.1f}%"
     report = (

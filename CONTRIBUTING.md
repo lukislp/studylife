@@ -24,7 +24,8 @@ small - but it is the same for every change, including the maintainer's own.
   project under `tests/` (`StudyLife.Shared.Tests`, `StudyLife.Server.Tests`,
   `StudyLife.Tts.Tests`, `StudyLife.Client.Tests`). A PR that adds behaviour without a test is
   asked to add one. The coverage badge in the README is regenerated from the merged coverage
-  report on every release and is expected not to drop.
+  report on every release and is expected not to drop (see
+  [How the coverage badge is derived](#how-the-coverage-badge-is-derived)).
 - **Every defect fix comes with a regression test.** A fix of a defect in the product's
   behaviour (code under `src/`) adds a test that fails without the fix and passes with it.
   Security fixes always get one. Exempt:
@@ -54,6 +55,37 @@ small - but it is the same for every change, including the maintainer's own.
   model and the migrations agree).
 - **No behaviour behind demo mode.** New endpoints and features must stay read-only in demo mode
   (see `docs/ARCHITECTURE.md`).
+
+### How the coverage badge is derived
+
+The badge shows **line and branch coverage** as measured by CI, with no external coverage
+service:
+
+1. The `test-unit` job of `.github/workflows/ci-cd.yml` runs the four test projects with
+   coverlet (`--collect:"XPlat Code Coverage"`, settings in `coverlet.runsettings`, which drops
+   `[GeneratedCode]` such as the JSON source-generation context).
+2. `reportgenerator` merges the Cobertura reports with two filters: the `StudyLife.Client`
+   assembly (Blazor UI markup) and the EF Core migrations (`StudyLife.Server.Migrations.*`,
+   machine-written) are excluded. Everything else - `StudyLife.Server`, `StudyLife.Shared`,
+   `StudyLife.Tts`, `StudyLife.Stt` - counts.
+3. `scripts/generate_coverage_badge.py` turns that summary into `coverage-badge.json`. Both
+   numbers are truncated to one decimal, never rounded up. The same step writes line and branch
+   coverage to the job summary of every run, and the coverage including `StudyLife.Client` is
+   printed there as well (report only).
+4. On a release the `deploy-bump` job commits that file as `.github/badges/coverage.json`
+   together with the image tag bump. The README badge reads it through shields.io's `endpoint`
+   badge from `raw.githubusercontent.com`, so it shows the numbers of the latest release.
+
+To get the same numbers locally:
+
+```bash
+dotnet test StudyLife.sln --collect:"XPlat Code Coverage" --settings coverlet.runsettings
+dotnet tool restore
+dotnet tool run reportgenerator -reports:"tests/**/TestResults/**/coverage.cobertura.xml" \
+  -targetdir:coverage-summary -reporttypes:JsonSummary \
+  -assemblyfilters:"-StudyLife.Client" -classfilters:"-StudyLife.Server.Migrations.*"
+python3 scripts/generate_coverage_badge.py coverage-summary/Summary.json coverage-badge.json
+```
 
 ## Running things locally
 
