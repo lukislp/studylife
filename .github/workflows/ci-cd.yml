@@ -106,9 +106,11 @@ jobs:
       # reports, scoped to StudyLife.Server/StudyLife.Shared - StudyLife.Client stays
       # excluded: StudyLife.Client.Tests covers its service lifetimes and dialog markup, but
       # the bulk of that assembly is Blazor UI markup verified manually, so including it
-      # would drag an otherwise well-tested number down into misleading territory. Uploaded as an artifact and downloaded by the
-      # semantic-release job below, which commits it to .github/badges/ on release - cheaper
+      # would drag an otherwise well-tested number down into misleading territory. Uploaded as
+      # an artifact and downloaded by the deploy-bump job below, which commits it to
+      # .github/badges/coverage.json together with the image bump of every release - cheaper
       # than re-running the whole test+coverage pipeline there just for one small JSON file.
+      # The badge shows line AND branch coverage, truncated to one decimal (never rounded up).
       # EF Core migrations (StudyLife.Server.Migrations.*) are excluded as generated code:
       # the Designer model snapshots alone are ~21k coverable lines of machine-written
       # boilerplate that dwarf the ~4.3k lines of hand-written code and would pin the
@@ -117,6 +119,8 @@ jobs:
       # lines) is already dropped at collection time by coverlet.runsettings.
       # The repo already pins reportgenerator in .config/dotnet-tools.json - restoring the
       # manifest hits the NuGet cache above instead of re-downloading a global tool per run.
+      - name: Unit tests for the coverage badge script
+        run: python3 -m unittest discover -s scripts/tests
       - run: dotnet tool restore
       - run: >
           dotnet tool run reportgenerator
@@ -127,7 +131,7 @@ jobs:
           -classfilters:"-StudyLife.Server.Migrations.*"
       # Line AND branch coverage go into the job summary on every run (branch coverage was
       # only ever measured by hand before); the badge itself stays line coverage.
-      - run: python3 scripts/generate_coverage_badge.py coverage-summary/Summary.json coverage-badge.json
+      - run: python3 scripts/generate_coverage_badge.py coverage-summary/Summary.json coverage-badge.json --min-line 92 --min-branch 80
       # Report-only second view WITH StudyLife.Client, so the number the badge leaves out is
       # visible too instead of only being described as excluded. Never gates anything.
       - run: >
@@ -305,7 +309,7 @@ jobs:
       - run: dotnet workload restore StudyLife.sln
       - run: dotnet restore StudyLife.sln --locked-mode
       - name: Known-vulnerable NuGet packages (High/Critical fail the build)
-        uses: lukislp/ci-workflows/.github/actions/nuget-severity-gate@1e08eeda9f5ded5011c26e0f49d4c71a7927a375 # v1.8.22
+        uses: lukislp/ci-workflows/.github/actions/nuget-severity-gate@0476ea5ecc543deade233e4dd940ea87db9f5df8 # v1.8.23
         with:
           solution: StudyLife.sln
 
@@ -677,14 +681,14 @@ jobs:
       # this: @semantic-release/git's verifyConditions runs `git push --dry-run` even in
       # get-version's dry-run mode. Setup: see enable-main-protection.sh next to the repo.
       - name: Push as the semantic-release deploy key (if configured)
-        uses: lukislp/ci-workflows/.github/actions/deploy-key-push@1e08eeda9f5ded5011c26e0f49d4c71a7927a375 # v1.8.22
+        uses: lukislp/ci-workflows/.github/actions/deploy-key-push@0476ea5ecc543deade233e4dd940ea87db9f5df8 # v1.8.23
         with:
           deploy-key: ${{ secrets.SEMANTIC_RELEASE_DEPLOY_KEY }}
       # The action derives new_release_version / new_release_published from semantic-release's
       # own dry-run log line and treats "no relevant changes" (which exits non-zero, observed
       # 2026-09-11 on a ci:-only push) as the expected no-release outcome, not a red job.
       - id: semrel
-        uses: lukislp/ci-workflows/.github/actions/semantic-release@1e08eeda9f5ded5011c26e0f49d4c71a7927a375 # v1.8.22
+        uses: lukislp/ci-workflows/.github/actions/semantic-release@0476ea5ecc543deade233e4dd940ea87db9f5df8 # v1.8.23
         with:
           dry-run: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -754,6 +758,11 @@ jobs:
           restore-keys: |
             nuget-${{ runner.os }}-
       - run: dotnet workload restore StudyLife.sln
+      # Reproducible release output (docs/REPRODUCIBLE-BUILDS.md): the commit time becomes the
+      # Last-Modified of every static web asset instead of the build time, so a rebuild of the
+      # release tag reproduces server.zip's contents bit for bit.
+      - name: Use the commit time as SOURCE_DATE_EPOCH
+        run: echo "SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)" >> "$GITHUB_ENV"
       # Published per-architecture (amd64/arm64 folder names match Docker's TARGETARCH, not the
       # .NET RID) so the multi-arch Docker build can COPY the matching one instead of sharing a
       # single RID-specific build across both platforms - see src/StudyLife.Server/Dockerfile.
@@ -1059,11 +1068,20 @@ jobs:
       # Same deploy-key push as the release jobs - the default branch only takes direct pushes
       # from that key, so this job cannot fall back to GITHUB_TOKEN.
       - name: Push as the semantic-release deploy key
-        uses: lukislp/ci-workflows/.github/actions/deploy-key-push@1e08eeda9f5ded5011c26e0f49d4c71a7927a375 # v1.8.22
+        uses: lukislp/ci-workflows/.github/actions/deploy-key-push@0476ea5ecc543deade233e4dd940ea87db9f5df8 # v1.8.23
         with:
           deploy-key: ${{ secrets.SEMANTIC_RELEASE_DEPLOY_KEY }}
           required: "true"
-      - name: Point the manifests at the released image and push
+      # Coverage badge of the released commit (test-unit's artifact from this same run). It
+      # rides along in the image bump commit, the only commit CI pushes to main per release, so
+      # the README badge always shows what the current release was measured with. Before
+      # this, the badge was written in the semantic-release job but never committed after the
+      # changelog commit was dropped (#263), and it stayed at the 3.17.6 value for months.
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: coverage-badge
+          path: coverage-artifact
+      - name: Point the manifests at the released image, refresh the coverage badge and push
         env:
           DEPLOY_SIGNING_KEY: ${{ secrets.DEPLOY_SIGNING_KEY }}
         run: |
@@ -1071,6 +1089,9 @@ jobs:
           for f in $(grep -rlE 'ghcr\.io/lukislp/studylife-server:' k8s --include='*.yaml' | grep -v '/flux/'); do
             sed -i -E "s#(ghcr\.io/lukislp/studylife-server):[0-9A-Za-z._-]+#\\1:${NEXT_VERSION}#g" "$f"
           done
+          mkdir -p .github/badges
+          mv coverage-artifact/coverage-badge.json .github/badges/coverage.json
+          rm -rf coverage-artifact
           if git diff --quiet; then
             echo "manifests already reference ${NEXT_VERSION}"
             exit 0
@@ -1259,11 +1280,6 @@ jobs:
         with:
           name: publish-output
           path: publish
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: coverage-badge
-          path: coverage-artifact
-      - run: mkdir -p .github/badges && mv coverage-artifact/coverage-badge.json .github/badges/coverage.json
       # semantic-release runs from lukislp/ci-workflows' pinned toolchain (lock file in the action,
       # Dependabot bumps it there) instead of a registry install per run or a package.json here.
       # Ruleset bypass for the release commit (2026-09-11 audit, finding 2): main is protected by
@@ -1274,7 +1290,7 @@ jobs:
       # this: @semantic-release/git's verifyConditions runs `git push --dry-run` even in
       # get-version's dry-run mode. Setup: see enable-main-protection.sh next to the repo.
       - name: Push as the semantic-release deploy key (if configured)
-        uses: lukislp/ci-workflows/.github/actions/deploy-key-push@1e08eeda9f5ded5011c26e0f49d4c71a7927a375 # v1.8.22
+        uses: lukislp/ci-workflows/.github/actions/deploy-key-push@0476ea5ecc543deade233e4dd940ea87db9f5df8 # v1.8.23
         with:
           deploy-key: ${{ secrets.SEMANTIC_RELEASE_DEPLOY_KEY }}
       # Signed version tags (OpenSSF version_tags_signed): semantic-release creates the release
@@ -1309,7 +1325,7 @@ jobs:
             echo "GIT_COMMITTER_EMAIL=155678024+lukislp@users.noreply.github.com"
           } >> "$GITHUB_ENV"
       - id: semrel
-        uses: lukislp/ci-workflows/.github/actions/semantic-release@1e08eeda9f5ded5011c26e0f49d4c71a7927a375 # v1.8.22
+        uses: lukislp/ci-workflows/.github/actions/semantic-release@0476ea5ecc543deade233e4dd940ea87db9f5df8 # v1.8.23
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -1329,7 +1345,7 @@ jobs:
           fi
           git checkout -B main origin/main
       - if: steps.semrel.outcome == 'failure'
-        uses: lukislp/ci-workflows/.github/actions/semantic-release@1e08eeda9f5ded5011c26e0f49d4c71a7927a375 # v1.8.22
+        uses: lukislp/ci-workflows/.github/actions/semantic-release@0476ea5ecc543deade233e4dd940ea87db9f5df8 # v1.8.23
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       # Signed release asset (OpenSSF Scorecard "Signed-Releases"): the same keyless Sigstore

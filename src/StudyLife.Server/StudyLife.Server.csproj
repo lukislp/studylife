@@ -112,4 +112,25 @@
          (see BackgroundTaskService.cs) - purely additive, no runtime effect. -->
     <InternalsVisibleTo Include="StudyLife.Server.Tests" />
   </ItemGroup>
+  <!--
+    Reproducible builds (docs/REPRODUCIBLE-BUILDS.md): the static web asset endpoints manifest
+    (StudyLife.Server.staticwebassets.endpoints.json) gives every asset a Last-Modified header
+    taken from the file's modification time, which is the build time for every generated or
+    compressed file and the checkout time for the rest. When SOURCE_DATE_EPOCH is set (the
+    reproducible-builds.org convention; CI sets it to the commit time), all of them get that
+    timestamp instead, so two builds of the same commit write the same manifest. Without it
+    nothing changes. ETag and integrity are content hashes and stay untouched.
+  -->
+  <Target Name="_StudyLifeNormalizeStaticWebAssetLastModified"
+          BeforeTargets="GenerateStaticWebAssetsPublishManifest"
+          Condition="'$(SOURCE_DATE_EPOCH)' != ''">
+    <PropertyGroup>
+      <_StudyLifeSourceDateHttp>$([System.DateTime]::Parse('1970-01-01T00:00:00Z').ToUniversalTime().AddSeconds($(SOURCE_DATE_EPOCH)).ToString('R'))</_StudyLifeSourceDateHttp>
+    </PropertyGroup>
+    <ItemGroup>
+      <StaticWebAssetEndpoint>
+        <ResponseHeaders>$([System.Text.RegularExpressions.Regex]::Replace('%(ResponseHeaders)', '(&quot;Name&quot;\s*:\s*&quot;Last-Modified&quot;\s*,\s*&quot;Value&quot;\s*:\s*&quot;)[^&quot;]*', '${1}$(_StudyLifeSourceDateHttp)'))</ResponseHeaders>
+      </StaticWebAssetEndpoint>
+    </ItemGroup>
+  </Target>
 </Project>
