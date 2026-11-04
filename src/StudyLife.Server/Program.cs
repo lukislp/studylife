@@ -771,14 +771,19 @@ app.UseWhen(
 // - script-src 'wasm-unsafe-eval': without this the browser won't compile the Blazor .wasm modules.
 //   NOT 'unsafe-eval' - the WASM-specific token is narrower (only allows compiling WebAssembly,
 //   not arbitrary eval()/Function()) and is what .NET's WASM runtime actually needs.
-// - style-src 'unsafe-inline' + fonts.googleapis.com: inline style attributes (index.html loader,
-//   dynamic chart styles) plus the Google Fonts @import in base.css; font-src analogous for the
-//   actual font files from fonts.gstatic.com. Both font hosts additionally in connect-src,
-//   because the service worker proxies these requests via fetch() and is thereby bound to the CSP
-//   of its own script (= this one here). Out of scope for A11a (style-src, not script-src) - Blazor
-//   itself sets inline style="" attributes at runtime (e.g. @bind, dynamic chart colors), so
-//   removing this would need per-element nonce/hash plumbing through Blazor's own rendering, a
-//   separate, larger refactor.
+// - style-src-attr 'unsafe-inline' (2026-11 DAST triage, docs/SECURITY-ASSURANCE.md §9): the one
+//   remaining style relaxation, and only for style="" ATTRIBUTES. The Razor components bind
+//   dynamic values into style attributes (progress widths, course colours, chart bars - about 250
+//   of them), and Blazor's renderer applies every attribute with setAttribute(), which CSP treats
+//   like markup; nonces and hashes cannot cover attribute values that change at runtime.
+//   <style> elements and inline stylesheets stay blocked: style-src and style-src-elem are 'self'
+//   only, so injected markup cannot bring its own stylesheet (the CSS-injection vector that can
+//   read attribute values through selectors). The app has no <style> elements; every stylesheet
+//   is a file under wwwroot/css or the scoped-CSS bundle. Styles set through the CSSOM
+//   (element.style.x = ..., as interop.js and the Blazor runtime do) are not restricted by CSP.
+//   Browsers without CSP Level 3 style-src-attr support (Firefox < 108, Safari < 15.4) fall back
+//   to style-src and drop the inline attributes - degraded layout, no security loss - and are
+//   older than what .NET 10 WebAssembly supports anyway.
 // Referrer-Policy same-origin: a pure same-origin SPA, the only cross-origin requests (Google Fonts)
 // don't need a referrer. frame-ancestors 'none' + X-Frame-Options DENY: no embedding use case.
 // media-src 'self' data:: the "read note aloud" feature (TtsController) hands the client a WAV
@@ -798,7 +803,9 @@ app.UseWhen(
 // connect-src alike; 'self' covers the woff2 files and the service worker fetching them.
 var csp = "default-src 'self'; "
     + "script-src 'self' 'wasm-unsafe-eval'; "
-    + "style-src 'self' 'unsafe-inline'; "
+    + "style-src 'self'; "
+    + "style-src-elem 'self'; "
+    + "style-src-attr 'unsafe-inline'; "
     + "font-src 'self'; "
     + "img-src 'self' data:; "
     + "media-src 'self' data:; "
@@ -815,6 +822,17 @@ app.Use(async (context, next) =>
     // everything else this app never asks for is denied outright, including for embedded frames.
     headers["Permissions-Policy"] = "camera=(), microphone=(self), geolocation=(), payment=(), usb=(), interest-cohort=()";
     headers["Content-Security-Policy"] = csp;
+    // Cross-origin isolation (Spectre-class side channels, 2026-11 DAST triage): no other origin
+    // may embed our responses (CORP), our documents get their own browsing-context group (COOP)
+    // and load nothing cross-origin that has not opted in (COEP). Safe here because the app is a
+    // same-origin SPA: img-src/media-src are 'self' + data:, the only cross-origin requests are
+    // CORS fetches to the GitHub API (allowed under require-corp), there are no iframes, popups
+    // or window.opener use, and every external link uses rel="noopener". CORP only applies to
+    // no-cors loads (<img>, <script>, ...), so fetch() clients such as browser extensions and the
+    // native app's HttpClient are unaffected.
+    headers["Cross-Origin-Resource-Policy"] = "same-origin";
+    headers["Cross-Origin-Opener-Policy"] = "same-origin";
+    headers["Cross-Origin-Embedder-Policy"] = "require-corp";
     await next();
 });
 
@@ -1041,6 +1059,23 @@ app.MapFallback("api/{**rest}", (HttpResponse response) =>
     response.Headers.CacheControl = "no-store";
     return Results.NotFound();
 });
+// Unknown /.well-known/* paths are machine lookups (RFC 8615: security.txt, change-password,
+// assetlinks.json, ...) and must get an honest 404, not the SPA's index.html with a 200 - a
+// client probing for a well-known resource would otherwise read the HTML shell as "present"
+// (DAST triage 2026-11, ZAP "Unexpected Content-Type"). The real well-known endpoints above
+// (apple-app-site-association) are more specific and still win. The same holds for /healthz:
+// it is the probe namespace (HealthController's /healthz/live and /healthz/ready win), never a
+// client route, so a typo in a probe path must fail loudly instead of "passing" on the HTML
+// shell. Anonymous like the SPA shell: there is nothing to protect in a 404, and a 401 would
+// equally claim the path exists.
+foreach (var machineOnlyPrefix in new[] { ".well-known", "healthz" })
+{
+    app.MapFallback(machineOnlyPrefix + "/{**rest}", (HttpResponse response) =>
+    {
+        response.Headers.CacheControl = "no-store";
+        return Results.NotFound();
+    }).AllowAnonymous();
+}
 // .AllowAnonymous(): the SPA shell itself (index.html) must stay reachable by anyone, including
 // a browser with no session yet - it's what LOADS the login screen in the first place. Without
 // this it would fall under FallbackPolicy (ApiAccess) like every other bare endpoint above.

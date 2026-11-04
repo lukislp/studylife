@@ -256,6 +256,22 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
     top: 0.5rem;
 }
 
+/* Boot screen (index.html, shown until Blazor renders the first page). Fixed colours on
+   purpose: the theme variables are only applied by the app once it runs. Kept here instead of
+   style attributes in index.html so the static shell carries no inline styles (CSP). */
+.boot-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Sans', sans-serif;
+    background: #0e0e0f;
+    color: #e8e6e0;
+}
+.boot-screen-inner { text-align: center; }
+.boot-screen-mark { font-size: 2rem; margin-bottom: 1rem; color: #CC785C; }
+.boot-screen-text { font-size: 0.875rem; color: #6b6965; letter-spacing: 0.05em; }
+
 /* === App Shell === */
 .app-shell {
     display: flex;
