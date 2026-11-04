@@ -2,9 +2,9 @@ name: Reproducible build check
 
 # Publishes the server (linux-x64, the same command the release job uses for server.zip) twice
 # from clean trees of the same commit and compares every output file byte for byte
-# (scripts/compare_builds.py). Known, documented exceptions are listed with --known below and
-# explained in docs/REPRODUCIBLE-BUILDS.md; ANY other difference fails the run, so a new source
-# of non-determinism shows up the first time it is introduced.
+# (scripts/compare_builds.py). Every file must be identical - there are no known exceptions any
+# more (docs/REPRODUCIBLE-BUILDS.md) - so a new source of non-determinism fails the run the first
+# time it is introduced.
 #
 # Weekly, on demand, and on pull requests that touch the build inputs. Not a required check.
 on:
@@ -17,6 +17,7 @@ on:
       - .github/workflows/reproducibility.yml
       - scripts/compare_builds.py
       - Directory.Build.props
+      - src/StudyLife.I18nTextGenerator/**
       - "**/*.csproj"
       - "**/packages.lock.json"
       - global.json
@@ -82,29 +83,25 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
       - run: dotnet workload restore StudyLife.sln
+      # The commit time instead of the build time for the Last-Modified headers in the static web
+      # asset manifest, exactly as the release job does (src/StudyLife.Server/StudyLife.Server.csproj).
+      - name: Use the commit time as SOURCE_DATE_EPOCH
+        run: echo "SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)" >> "$GITHUB_ENV"
       - name: First build
         run: |
           dotnet restore StudyLife.sln --locked-mode
           dotnet publish src/StudyLife.Server/StudyLife.Server.csproj --configuration Release \
             --runtime linux-x64 --no-self-contained -p:Version="$VERSION" --output "$RUNNER_TEMP/build-a"
+      # Also stops the compiler and MSBuild servers, so the second build starts as cold as a
+      # fresh checkout and cannot reuse anything the first one loaded.
       - name: Clean the tree
-        run: git clean -xdfq && git status --short
+        run: dotnet build-server shutdown && git clean -xdfq && git status --short
       - name: Second build
         run: |
           dotnet restore StudyLife.sln --locked-mode
           dotnet publish src/StudyLife.Server/StudyLife.Server.csproj --configuration Release \
             --runtime linux-x64 --no-self-contained -p:Version="$VERSION" --output "$RUNNER_TEMP/build-b"
-      # Known exception (docs/REPRODUCIBLE-BUILDS.md, "Known gap"): the Blazor client assembly
-      # differs between clean builds although all of its generated sources are identical; the
-      # files below are that assembly, the server assembly/PDB that record its MVID, and the
-      # static-web-asset manifests that carry its content hash.
       - name: Compare
         run: |
           python3 scripts/compare_builds.py "$RUNNER_TEMP/build-a" "$RUNNER_TEMP/build-b" \
-            --summary "$GITHUB_STEP_SUMMARY" \
-            --known 'StudyLife.Client.dll' --known 'StudyLife.Client.pdb' \
-            --known 'StudyLife.Server.dll' --known 'StudyLife.Server.pdb' \
-            --known 'StudyLife.Server.staticwebassets.endpoints.json' \
-            --known 'wwwroot/_framework/StudyLife.Client.*' \
-            --known 'wwwroot/_framework/dotnet.js*' \
-            --known 'wwwroot/service-worker*'
+            --summary "$GITHUB_STEP_SUMMARY"
