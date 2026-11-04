@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Lukas Körber
+// SPDX-License-Identifier: AGPL-3.0-only
+
 // Collocated JS isolation module for the passkey pages (same pattern as Focus.razor.js -
 // index.html must not be touched). navigator.credentials.create()/get() are pure
 // browser APIs with no C# equivalent; this module translates between the Base64url JSON from

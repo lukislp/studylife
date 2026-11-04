@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Lukas Körber
+# SPDX-License-Identifier: AGPL-3.0-only
+
 # By default, every pod in Kubernetes can reach every other pod in the same cluster - these
 # policies restrict that to the actually necessary minimum for the studylife-scale namespace.
 # The monitoring-namespace policies that used to live in this file moved to

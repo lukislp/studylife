@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Lukas Körber
+# SPDX-License-Identifier: AGPL-3.0-only
+
 # Dedicated namespace for the scalability learning setup, isolated from everything else in the
 # cluster. Pod Security Standards: "baseline" hard-enforced (no hostPath/hostNetwork/privileged
 # needed - all workloads here use PVCs/secrets/ConfigMaps), "restricted" only as warn/audit

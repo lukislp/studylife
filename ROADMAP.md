@@ -23,7 +23,6 @@ links to the place that explains it.
   parsers that take uploads (ICS import, backup import) should run before releases.
 - **Signed release tags.** Tags are lightweight today. Releases are signed through Sigstore
   artifacts, but the tags themselves are not.
-- **SPDX licence headers** in source files, checked in CI.
 - **Redis cluster bus TLS.** This needs a cluster rebuild or `cluster-announce-hostname`, see
   [`docs/SCALING.md`](docs/SCALING.md) "Client TLS".
 

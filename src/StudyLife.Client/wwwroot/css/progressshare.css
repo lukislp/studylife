@@ -1,3 +1,8 @@
+/*
+  SPDX-FileCopyrightText: 2026 Lukas Körber
+  SPDX-License-Identifier: AGPL-3.0-only
+*/
+
 /* Public progress page (Pages/SharedProgress.razor, Shared/PublicLayout.razor) -
    its own lean stylesheet file instead of reusing setup.css/dashboard.css: the page runs
    under its own layout without a sidebar and should stay independent of changes to the

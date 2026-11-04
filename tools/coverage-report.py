@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Lukas Körber
+# SPDX-License-Identifier: AGPL-3.0-only
+
 # Usage: python tools/coverage-report.py
 # Runs the full test suite with coverlet coverage collection, merges the Cobertura files via
 # reportgenerator (local dotnet tool, see .config/dotnet-tools.json) into an HTML report under

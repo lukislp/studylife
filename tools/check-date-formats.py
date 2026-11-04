@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Lukas Körber
+# SPDX-License-Identifier: AGPL-3.0-only
+
 # Usage: python tools/check-date-formats.py
 #
 # Guards against a regression of the "every date renders US-English" bug: the client is built

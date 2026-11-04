@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Lukas Körber
+// SPDX-License-Identifier: AGPL-3.0-only
+
 // Account-scoped offline cache purge (audit S7) - its own JS module instead of global in
 // index.html, because index.html is intentionally left untouched (same reasoning as accent.js).
 // Dynamic import() from AppStateService (IJSObjectReference).

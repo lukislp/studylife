@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Lukas Körber
+# SPDX-License-Identifier: AGPL-3.0-only
+
 """Turn a reportgenerator JsonSummary into a shields.io "endpoint" badge JSON.
 
 Usage: generate_coverage_badge.py <summary.json> <out.json>

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Lukas Körber
+# SPDX-License-Identifier: AGPL-3.0-only
+
 # HTTPRoutes for the NGF gateway (k8s/07c-gateway.yaml) - the Gateway API equivalent of the
 # previous ingress objects (k8s/07-ingress.yaml, k8s/09-uptime-kuma.yaml, k8s/17-grafana.yaml;
 # piwatch lives in the piwatch repo). Unlike there, the REAL hostnames live in Git here:

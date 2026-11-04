@@ -1,3 +1,8 @@
+/*
+  SPDX-FileCopyrightText: 2026 Lukas Körber
+  SPDX-License-Identifier: AGPL-3.0-only
+*/
+
 /* === Planner Page === */
 /* The root element carries BOTH "setup-page" (setup.css: max-width: 800px - shared with the
    actual Setup page, which does want a centered narrow form) and "planner-page". Overridden

@@ -1,3 +1,8 @@
+/*
+  SPDX-FileCopyrightText: 2026 Lukas Körber
+  SPDX-License-Identifier: AGPL-3.0-only
+*/
+
 /* === Dashboard === */
 /* No cap, matching Calendar/Focus/Planner/Stats/Setup - .dashboard is exclusive to Index.razor,
    so this can be changed directly rather than needing an override class like the pages that

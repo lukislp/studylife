@@ -1,3 +1,7 @@
+@*
+  SPDX-FileCopyrightText: 2026 Lukas Körber
+  SPDX-License-Identifier: AGPL-3.0-only
+*@
 <div class="ambient-control">
     <button class="btn-timer ambient-toggle @(SoundType != "off" ? "active" : "")" aria-label="@AmbientSoundTitle" @onclick="() => OnTogglePopover.InvokeAsync()" title="@AmbientSoundTitle">
         @(SoundType == "off" ? "🔈" : "🔊")

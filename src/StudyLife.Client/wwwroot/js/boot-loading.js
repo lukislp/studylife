@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Lukas Körber
+// SPDX-License-Identifier: AGPL-3.0-only
+
 // Telemetry boot timeline (docs/ARCHITECTURE.md "Telemetry", phase 2): this script is the
 // earliest point any of our own JS runs, right after the initial HTML parse - a reasonable proxy
 // for "html ready" until boot-start.js's manual Blazor.start() picks up the wasm/runtime phases

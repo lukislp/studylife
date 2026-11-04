@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Lukas Körber
+# SPDX-License-Identifier: AGPL-3.0-only
+
 # Deliberately ONLY these two files (not the rest of k8s/, which contains placeholders, see
 # docs/SCALING.md "GitLab integration"). Closes the last gap in image automation: Flux
 # does commit the new image tag directly into k8s/04-web.yaml/05-worker.yaml, but without this

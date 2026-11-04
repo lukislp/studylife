@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Lukas Körber
+# SPDX-License-Identifier: AGPL-3.0-only
+
 # Real Redis cluster (3 masters + 3 replicas) instead of a single instance - all Redis usage in
 # the code (IDistributedCache Get/Set per key in CacheHelper.cs, RedisVersionCounter.cs as a
 # pure INCR/GET per key) is single-key, so it's 1:1 compatible with cluster slots, with no code

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Lukas Körber
+// SPDX-License-Identifier: AGPL-3.0-only
+
 // Collocated JS isolation module for Focus.razor - index.html is intentionally left
 // untouched, hence here instead of the global <script> block.
 //

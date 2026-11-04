@@ -1,3 +1,8 @@
+/*
+  SPDX-FileCopyrightText: 2026 Lukas Körber
+  SPDX-License-Identifier: AGPL-3.0-only
+*/
+
 /* === Stats Page === */
 /* The root element carries "setup-page" (setup.css: max-width: 800px, shared with the actual
    Setup page) - overridden here for stats-page specifically rather than removed from the

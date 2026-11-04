@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  SPDX-FileCopyrightText: 2026 Lukas Körber
+  SPDX-License-Identifier: AGPL-3.0-only
+-->
 <!-- Coverage collection settings for dotnet test with the XPlat Code Coverage collector (coverlet).
      Source-generated code (the System.Text.Json context in StudyLife.Shared, the OpenAPI
      document generator output) is machine-written and carries [GeneratedCode]; it is

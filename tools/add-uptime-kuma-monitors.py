@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Lukas Körber
+# SPDX-License-Identifier: AGPL-3.0-only
+
 """Creates missing internal reachability monitors in Uptime Kuma.
 
 Uptime Kuma has no official REST API for writing (only Socket.IO, which the

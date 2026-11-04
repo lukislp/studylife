@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Lukas Körber
+// SPDX-License-Identifier: AGPL-3.0-only
+
 // Curated accent color (setup page) - its own JS module instead of global in index.html, because
 // index.html is intentionally left untouched. Dynamic
 // import() from AppStateService (IJSObjectReference) instead of a <script> tag, so it works

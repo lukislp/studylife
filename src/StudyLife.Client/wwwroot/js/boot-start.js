@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Lukas Körber
+// SPDX-License-Identifier: AGPL-3.0-only
+
 // Manual Blazor start (index.html sets autostart="false" on the blazor.webassembly.js tag) -
 // the ONLY reason for this file: loadBootResource is the sole hook into the WASM download/
 // runtime-init phase, needed for the boot timeline telemetry (docs/ARCHITECTURE.md "Telemetry",

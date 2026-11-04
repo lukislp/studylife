@@ -1,3 +1,7 @@
+@*
+  SPDX-FileCopyrightText: 2026 Lukas Körber
+  SPDX-License-Identifier: AGPL-3.0-only
+*@
 <div class="focus-reflection">
     <div class="focus-reflection__title">@Label</div>
     <textarea class="input focus-reflection__textarea" placeholder="@Label" value="@ReflectionText" @oninput='e => ReflectionTextChanged.InvokeAsync(e.Value?.ToString() ?? "")'></textarea>

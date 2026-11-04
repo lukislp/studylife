@@ -45,6 +45,8 @@ small - but it is the same for every change, including the maintainer's own.
   or otherwise have the right to submit it under the project's licence (AGPL-3.0). Sign off
   every commit with `git commit -s`, which adds a `Signed-off-by: Your Name <email>` line.
   Automated dependency PRs (Dependabot, Renovate) are exempt; no check enforces the sign-off.
+- **Licence headers.** Every new file states its licence and copyright, see
+  [Licence headers](#licence-headers) (checked by `reuse lint` in `test-lint`).
 - **All 26 languages.** UI strings live in the resource tables checked by `tools/check-i18n.py`
   (required check `test-i18n`); a new string needs an entry in every language, machine-translated
   is fine, mark it as such.
@@ -66,6 +68,37 @@ small - but it is the same for every change, including the maintainer's own.
   model and the migrations agree).
 - **No behaviour behind demo mode.** New endpoints and features must stay read-only in demo mode
   (see `docs/ARCHITECTURE.md`).
+
+### Licence headers
+
+The repository follows the [REUSE Specification](https://reuse.software/): every file states its
+licence and copyright in machine-readable form. StudyLife is `AGPL-3.0-only` (licence texts in
+[`LICENSES/`](LICENSES/)); the only third-party files are the self-hosted DM Sans and DM Mono
+fonts under `src/StudyLife.Client/wwwroot/fonts/` (`OFL-1.1`). A source file starts with two SPDX
+tags in its own comment syntax (after a shebang, an `<?xml ...?>` declaration or `<!DOCTYPE html>`):
+
+<!-- REUSE-IgnoreStart -->
+```csharp
+// SPDX-FileCopyrightText: 2026 Your Name
+// SPDX-License-Identifier: AGPL-3.0-only
+```
+
+In `.razor` files the tags go into a Razor comment (`@* ... *@`), in CSS into `/* ... */`, in
+YAML, Python and shell into `#` lines, in `.csproj` and HTML into `<!-- ... -->`.
+<!-- REUSE-IgnoreEnd -->
+
+Visual Studio and Rider add the C# header to new files on their own (`file_header_template` in
+[`.editorconfig`](.editorconfig)). Files without comment syntax (Markdown, JSON, images, fonts,
+the solution file) and generated files (the EF Core migrations) are covered by
+[`REUSE.toml`](REUSE.toml) instead, so a generator's output stays as it writes it. `test-lint`
+runs `reuse lint` and fails for a file without either. Locally, with the same pinned version as
+CI:
+
+```bash
+python3 -m pip install --require-hashes --no-deps -r tools/reuse-requirements.txt
+reuse lint
+reuse annotate --copyright "Your Name" --license AGPL-3.0-only <file>   # adds a header
+```
 
 ### How the coverage badge is derived
 

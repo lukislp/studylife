@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Lukas Körber
+// SPDX-License-Identifier: AGPL-3.0-only
+
 // Diagnostic banner for unhandled JS/.NET errors: Blazor's own blazor-error-ui shows
 // only the generic text "An unhandled error has occurred." without any detail -
 // in the native app's WKWebView there is additionally no access to the JS console

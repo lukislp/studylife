@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Lukas Körber
+# SPDX-License-Identifier: AGPL-3.0-only
+
 # Real work partitioning across multiple replicas instead of just a redundant sweep: each replica
 # now only sweeps its own user partition (AuthUserId % ReplicaCount == Shard). The shard is
 # claimed dynamically at runtime via Redis (IWorkerShardClaim/RedisWorkerShardClaim in

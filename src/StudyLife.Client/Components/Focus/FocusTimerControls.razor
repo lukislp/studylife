@@ -1,3 +1,7 @@
+@*
+  SPDX-FileCopyrightText: 2026 Lukas Körber
+  SPDX-License-Identifier: AGPL-3.0-only
+*@
 <div class="timer-controls">
     <button class="btn-timer btn-reset" aria-label="@ResetTitle" @onclick="() => OnReset.InvokeAsync()" title="@ResetTitle">↺</button>
     <button class="btn-timer btn-playpause @(IsRunning ? "running" : "")" aria-label="@(IsRunning ? PauseLabel : PlayLabel)" @onclick="() => OnToggle.InvokeAsync()">
