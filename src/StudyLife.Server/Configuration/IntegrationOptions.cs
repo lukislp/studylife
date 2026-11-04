@@ -43,6 +43,27 @@ public sealed class StudyLifeDevelopersOptions
 }
 
 /// <summary>
+/// TLS for the in-cluster hops to the add-ons (studylife-ai, studylife-webhooks,
+/// studylife-developers), see <see cref="Services.AddonTlsConfiguration"/>. Both settings are off
+/// by default, which keeps today's behaviour: the scheme of each add-on BaseUrl decides, and an
+/// https:// URL is validated against the system trust store.
+/// </summary>
+public sealed class AddonTlsOptions
+{
+    public const string SectionName = "AddonTls";
+
+    /// <summary>PEM file with the CA certificate(s) that issue the add-ons' server certificates
+    /// (in the cluster: the ca.crt of studylife-internal-ca-issuer). When set, https:// add-on
+    /// URLs are validated against this CA only (host name included); a missing or empty file is a
+    /// startup error.</summary>
+    public string? CaCertificatePath { get; set; }
+
+    /// <summary>When true, a configured add-on BaseUrl/InternalBaseUrl that is not https:// stops
+    /// the process at startup instead of sending the shared secrets in plain text.</summary>
+    public bool RequireHttps { get; set; }
+}
+
+/// <summary>
 /// APNs delivery channel for the native iOS shell (see <see cref="Services.ApnsSender"/>). The
 /// channel stays inert until KeyPath/KeyId/TeamId/BundleId are all set - that "power switch"
 /// stays a runtime check rather than a DataAnnotation, because "none of them set" is the

@@ -246,6 +246,123 @@ public sealed class PrivateCaCertificateValidatorTests : IDisposable
         Assert.Throws<FileNotFoundException>(() => RedisTlsConfiguration.Apply(redis, cache));
     }
 
+    // ---- Add-on clients (AddonTlsConfiguration) -----------------------------------------------
+
+    [Fact]
+    public void AddonTls_Default_KeepsPlainHttpClient()
+    {
+        // Nothing configured = the behaviour before AddonTls existed: no custom validation.
+        var trust = new AddonTlsTrust(TestOptions.For<AddonTlsOptions>());
+
+        Assert.Null(trust.ValidationCallback);
+        using var client = trust.CreateHttpClient(TimeSpan.FromSeconds(7));
+        Assert.Equal(TimeSpan.FromSeconds(7), client.Timeout);
+    }
+
+    [Fact]
+    public void AddonTls_Registration_BindsKeysAndValidatesOnAccess()
+    {
+        var options = TestOptions.For<AddonTlsOptions>(
+            ("AddonTls:CaCertificatePath", WritePem("addon-ca.crt", _ca)), ("AddonTls:RequireHttps", "true"));
+        Assert.True(options.Value.RequireHttps);
+
+        var broken = TestOptions.For<AddonTlsOptions>(
+            ("AddonTls:RequireHttps", "true"), ("StudyLifeWebhooks:BaseUrl", "http://studylife-webhooks:8000"));
+        var ex = Assert.Throws<Microsoft.Extensions.Options.OptionsValidationException>(() => broken.Value);
+        Assert.Contains("StudyLifeWebhooks:BaseUrl", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AddonTls_WithCa_TrustedCaAndMatchingName_Succeeds()
+    {
+        var callback = AddonTlsConfiguration.CreateValidationCallback(new AddonTlsOptions { CaCertificatePath = WritePem("addon-ca.crt", _ca) });
+        using var client = AddonTlsConfiguration.CreateHttpClient(callback);
+
+        Assert.Equal("ok", await HttpsGetAsync(client, _leafWithIp));
+    }
+
+    [Fact]
+    public async Task AddonTls_WithCa_NameMismatch_Fails()
+    {
+        var callback = AddonTlsConfiguration.CreateValidationCallback(new AddonTlsOptions { CaCertificatePath = WritePem("addon-ca.crt", _ca) });
+        using var client = AddonTlsConfiguration.CreateHttpClient(callback);
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => HttpsGetAsync(client, _leaf));
+    }
+
+    [Fact]
+    public async Task AddonTls_WithCa_CertificateFromOtherCa_Fails()
+    {
+        var callback = AddonTlsConfiguration.CreateValidationCallback(new AddonTlsOptions { CaCertificatePath = WritePem("addon-ca.crt", _ca) });
+        using var client = AddonTlsConfiguration.CreateHttpClient(callback);
+        using var otherLeaf = CreateLeaf(_otherCa, "localhost", IPAddress.Loopback, DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(30));
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => HttpsGetAsync(client, otherLeaf));
+    }
+
+    [Fact]
+    public async Task AddonTls_WithoutCa_PrivateCaCertificate_FailsWithDefaultValidation()
+    {
+        using var client = AddonTlsConfiguration.CreateHttpClient(validationCallback: null);
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => HttpsGetAsync(client, _leafWithIp));
+    }
+
+    [Fact]
+    public void AddonTlsValidator_DefaultsWithHttpUrls_Succeeds()
+    {
+        var validator = Validator(ai: "http://studylife-ai:8000", webhooks: "http://studylife-webhooks:8000", developers: "http://studylife-developers:8080");
+
+        Assert.True(validator.Validate(null, new AddonTlsOptions()).Succeeded);
+    }
+
+    [Fact]
+    public void AddonTlsValidator_MissingCaFile_FailsAtStartup()
+    {
+        var validator = Validator(ai: null, webhooks: null, developers: null);
+
+        var result = validator.Validate(null, new AddonTlsOptions { CaCertificatePath = Path.Combine(_tempDir, "missing.crt") });
+
+        Assert.True(result.Failed);
+        Assert.Contains("AddonTls:CaCertificatePath", result.FailureMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AddonTlsValidator_RequireHttps_RejectsEveryPlainHttpUrl()
+    {
+        var validator = Validator(ai: "https://studylife-ai:8443", aiInternal: "http://studylife-ai:8001",
+            webhooks: "http://studylife-webhooks:8000", developers: "https://studylife-developers:8443");
+
+        var result = validator.Validate(null, new AddonTlsOptions { RequireHttps = true });
+
+        Assert.True(result.Failed);
+        Assert.Contains("StudyLifeAi:InternalBaseUrl", result.FailureMessage, StringComparison.Ordinal);
+        Assert.Contains("StudyLifeWebhooks:BaseUrl", result.FailureMessage, StringComparison.Ordinal);
+        Assert.DoesNotContain("StudyLifeAi:BaseUrl", result.FailureMessage, StringComparison.Ordinal);
+        Assert.DoesNotContain("StudyLifeDevelopers:BaseUrl", result.FailureMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AddonTlsValidator_RequireHttps_AllHttpsOrUnset_Succeeds()
+    {
+        var validator = Validator(ai: "https://studylife-ai:8443", aiInternal: "https://studylife-ai:8444", webhooks: null, developers: "");
+
+        Assert.True(validator.Validate(null, new AddonTlsOptions { RequireHttps = true, CaCertificatePath = WritePem("addon-ca.crt", _ca) }).Succeeded);
+    }
+
+    [Fact]
+    public void AddonTlsValidator_RequireHttps_RejectsRelativeOrMalformedUrl()
+    {
+        var validator = Validator(ai: "studylife-ai:8000", webhooks: null, developers: null);
+
+        Assert.True(validator.Validate(null, new AddonTlsOptions { RequireHttps = true }).Failed);
+    }
+
+    private static AddonTlsOptionsValidator Validator(string? ai, string? webhooks, string? developers, string? aiInternal = null) =>
+        new(Microsoft.Extensions.Options.Options.Create(new StudyLifeAiOptions { BaseUrl = ai, InternalBaseUrl = aiInternal }),
+            Microsoft.Extensions.Options.Options.Create(new StudyLifeWebhooksOptions { BaseUrl = webhooks }),
+            Microsoft.Extensions.Options.Options.Create(new StudyLifeDevelopersOptions { BaseUrl = developers }));
+
     // ---- helpers ------------------------------------------------------------------------------
 
     private static X509Certificate2Collection Roots(params X509Certificate2[] certs)
