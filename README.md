@@ -393,6 +393,7 @@ src/
 |   |-- Services/               # Domain services, BackgroundTaskService subtasks, proxies to the add-on services
 |   |-- Data/ + Migrations/     # EF Core DbContexts, twin migrations for SQLite and PostgreSQL
 |   `-- Dockerfile              # Multi-arch runtime image; pulls the Piper voices + Whisper model
+|-- StudyLife.I18nTextGenerator/ # Build-time only: sorted wrapper around the I18nText source generator (reproducible builds)
 |-- StudyLife.Shared/           # DTOs, course catalog, shared metrics + summary builders, planner, JSON context
 |-- StudyLife.Tts/              # Piper text-to-speech: voice registry, espeak-ng phonemizer, Markdown-to-speech
 `-- StudyLife.Stt/              # Whisper speech-to-text (Whisper.net)
