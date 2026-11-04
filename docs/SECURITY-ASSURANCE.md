@@ -243,6 +243,20 @@ CodeQL. Commits must be signed. Dependencies are pinned (NuGet lock files, actio
 digests) and updated by bots through the same gate. Releases are produced only by CI and signed
 keyless. Verification steps are in [SECURITY.md](../SECURITY.md#verifying-releases).
 
+### 8.5 Dynamic analysis (OWASP ZAP)
+
+[`.github/workflows/dast.yml`](../.github/workflows/dast.yml) runs a ZAP baseline scan and an
+OpenAPI-driven active API scan against the released container every week. The first scan
+(2026-11-03, v3.23.44, ZAP 2.16.1) found no High alerts. Triage of the Medium and Low alerts:
+
+| Alert (risk) | Outcome |
+|---|---|
+| CSP: `style-src unsafe-inline` (Medium) | **Narrowed.** `style-src` and `style-src-elem` are now `'self'` only, so `<style>` elements and inline stylesheets are blocked. Only inline style *attributes* remain allowed, through `style-src-attr 'unsafe-inline'`, because the Razor components bind runtime values into them (about 250 places: progress widths, course colours, chart bars) and Blazor applies attributes with `setAttribute()`, which CSP treats like markup. Nonces and hashes cannot cover attribute values that change at runtime. The static shell (`index.html`) no longer has any style attributes. See residual risks (9). |
+| Insufficient Site Isolation Against Spectre (Low, both scans) | **Fixed.** Every response carries `Cross-Origin-Resource-Policy: same-origin`, `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp`. |
+| Unexpected Content-Type (Low, API scan) | **Fixed for the machine-only namespaces:** unknown `/.well-known/*` and `/healthz*` paths now return 404 instead of the SPA shell (unknown `/api/*` paths already did). **Accepted for the rest:** `/` and other unknown paths return `index.html` as `text/html` on purpose, because they are client-side routes of the single-page app. ZAP's API scan expects JSON or XML from every URL under the API's base, which does not fit an app that serves its UI and API from one origin. |
+| ZAP is Out of Date (Low, both scans) | **Fixed.** The scanner image was 2.16.1; the workflow now uses ZAP 2.17.0. This alert is about the scanner, not the application. |
+| Informational alerts | Reviewed, no action: the "suspicious comments" are keyword matches ("select", "later", "from") in the Blazor runtime and in our own boot-script comments, with nothing sensitive in them; "Modern Web Application" is expected for a SPA; the cacheability notes match the intended `Cache-Control` headers (`no-cache` revalidation for the shell and static files, `no-store` for the API). |
+
 ## 9. Residual risks (accepted)
 
 | Risk | Why accepted | Mitigation |
@@ -252,7 +266,7 @@ keyless. Verification steps are in [SECURITY.md](../SECURITY.md#verifying-releas
 | Redis password visible in the Redis process command line | Redis reads it as CLI flags from a Secret | Visible only to someone who can exec into the Redis pod, which is already past the boundary |
 | DNS rebinding for push/webhook URLs | Host names are not resolved on the request path | Literal private IPs and internal suffixes are rejected |
 | `X-Forwarded-For` trust on a flat pod network | No CIDR can single out the gateway | IP-independent global bucket for recovery login, configurable `KnownNetworks` |
-| PostgreSQL server certificate not verified (**known gap, fix in progress**) | The production connection string sets no `SSL Mode`, so Npgsql uses its default `Prefer`: the connection is encrypted when the server offers TLS (CNPG does), but the server certificate is not verified | NetworkPolicy limits access to web/worker. `SSL Mode=VerifyFull` with the cluster CA is being implemented as a separate change. |
+| Inline style attributes allowed (`style-src-attr 'unsafe-inline'`, 8.5) | Blazor binds dynamic values into `style=""` attributes; moving about 250 of them to classes or CSSOM interop is a large UI refactor | Scripts stay strict (`script-src 'self' 'wasm-unsafe-eval'`, no inline script). `<style>` elements are blocked, so injected markup cannot add selector-based CSS that reads attribute values. A style attribute can only restyle its own element, and `url()` loads are limited by `img-src`/`font-src` `'self'`. Razor output encoding prevents markup injection in the first place. |
 | Single maintainer (bus factor 1) | No second person available | [GOVERNANCE.md](../GOVERNANCE.md) continuity section, fully public build |
 
 ## 10. Review record

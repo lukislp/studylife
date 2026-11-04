@@ -45,8 +45,9 @@ jobs:
     env:
       IMAGE: ${{ github.event.inputs.image || 'ghcr.io/lukislp/studylife-server:latest' }}
       # Official ZAP image at a fixed release (not the moving "stable" tag), so a scan result
-      # can be tied to a scanner version; bump deliberately.
-      ZAP_IMAGE: ghcr.io/zaproxy/zaproxy:2.16.1
+      # can be tied to a scanner version; bump deliberately. An outdated scanner shows up as
+      # its own Low alert ("ZAP is Out of Date") in both reports.
+      ZAP_IMAGE: ghcr.io/zaproxy/zaproxy:2.17.0
       # Kestrel only speaks plain HTTP and redirects anything that did not come through a
       # TLS-terminating proxy to https://:443 (Program.cs, UseHttpsRedirection) - exactly what
       # production does. ZAP therefore plays the proxy: a replacer rule adds
