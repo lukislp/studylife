@@ -1,7 +1,7 @@
 
 # StudyLife
 
-[![CI/CD](https://github.com/lukislp/studylife/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/lukislp/studylife/actions/workflows/ci-cd.yml) [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/lukislp/studylife/badge)](https://scorecard.dev/viewer/?uri=github.com/lukislp/studylife) [![CodeQL](https://github.com/lukislp/studylife/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/lukislp/studylife/security/code-scanning)
+[![CI/CD](https://github.com/lukislp/studylife/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/lukislp/studylife/actions/workflows/ci-cd.yml) [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/lukislp/studylife/badge)](https://scorecard.dev/viewer/?uri=github.com/lukislp/studylife) [![CodeQL](https://github.com/lukislp/studylife/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/lukislp/studylife/security/code-scanning) [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/16303/badge)](https://www.bestpractices.dev/projects/16303)
 [![Release](https://img.shields.io/github/v/release/lukislp/studylife)](https://github.com/lukislp/studylife/releases)
 [![License: AGPL-3.0](https://img.shields.io/github/license/lukislp/studylife)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/)
@@ -509,7 +509,7 @@ Runs as GitHub Actions (`.github/workflows/ci-cd.yml`) on every push to `main`, 
 
 | Stage | Job | Description |
 |---|---|---|
-| test | `test-unit` | `dotnet test` for all four test projects (Shared, Server, Tts, Client), plus a self-hosted coverage badge (`.github/badges/coverage.json`) generated from the merged coverage report |
+| test | `test-unit` | `dotnet test` for all four test projects (Shared, Server, Tts, Client), plus a self-hosted line + branch coverage badge generated from the merged coverage report ([how it is derived](CONTRIBUTING.md#how-the-coverage-badge-is-derived)) |
 | test | `test-i18n` | `check-i18n.py` (all 26 languages, every table) and `check-date-formats.py` |
 | test | `test-lint` | `dotnet format --verify-no-changes` |
 | test | `test-security` | NuGet vulnerability scan; High/Critical findings fail the build |
@@ -520,11 +520,11 @@ Runs as GitHub Actions (`.github/workflows/ci-cd.yml`) on every push to `main`, 
 | build | `build` | Restore (`--locked-mode` against the committed `packages.lock.json` files, like every restore in CI) and build all projects (needs all test jobs to pass) |
 | version | `get-version` | Semantic Release dry run against Conventional Commits; the rest of the chain skips itself when no release is due. Push events only |
 | publish | `publish-server` | `dotnet publish` (linux-x64 + linux-arm64) + ZIP artifact |
-| release | `semantic-release` | Real semantic-release run: publishes the GitHub release + changelog, commits the coverage badge, then signs `server.zip` (keyless Sigstore bundle + GitHub build provenance uploaded next to it) |
+| release | `semantic-release` | Real semantic-release run: publishes the GitHub release + changelog, then signs `server.zip` (keyless Sigstore bundle + GitHub build provenance uploaded next to it) |
 | docker | `docker-server` | Per-architecture (amd64/arm64) image builds pushed by digest to the public `ghcr.io/lukislp/studylife-server` registry, with SBOM and SLSA provenance attestations |
 | docker | `trivy-server` | Container vulnerability scan of the freshly built image; reports HIGH+CRITICAL informationally, blocks the manifest merge (and thereby the deploy) on any fixable CRITICAL finding |
 | docker | `docker-manifest-merge` | Creates the multi-arch manifest, signs it keyless with cosign, and verifies the signature |
-| deploy | `deploy-bump` | Writes the released version into the `k8s/` manifests and pushes it over the deploy key, so Flux (read-only) rolls the new image out |
+| deploy | `deploy-bump` | Writes the released version into the `k8s/` manifests and the release's coverage numbers into `.github/badges/coverage.json`, and pushes both over the deploy key, so Flux (read-only) rolls the new image out |
 
 `get-version` through `deploy-bump` form a serialized release chain (`concurrency: studylife-release-chain`) and only run on pushes to `main`, never on pull requests. Pull requests merge through GitHub's merge queue: every queued PR is rebuilt on top of the current `main` (the `merge_group` trigger runs the test stage again) before it lands, so a merge can never be tested against a stale base. Alongside: `dependency-review.yml` (advisory check on every PR's dependency changes), `scorecard.yml` (weekly OpenSSF Scorecard), `dependabot-lockfiles.yml`/`dependabot-auto-merge.yml` (lock-file regeneration and auto-merge of patch/minor Dependabot updates), and CodeQL via GitHub's default setup. The shared actions and reusable workflows come from [lukislp/ci-workflows](https://github.com/lukislp/ci-workflows), pinned by SHA.
 
