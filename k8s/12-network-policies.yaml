@@ -344,10 +344,15 @@ spec:
 #     is http://otel-collector.monitoring.svc.cluster.local:4317, and every web and worker pod
 #     holds an open connection to it right now. 4318 (OTLP/HTTP) is allowed as well so switching
 #     the exporter protocol does not silently stop traces at the network layer.
-#   - The three sibling services this app proxies to: studylife-ai on 8000 and 8001
-#     (StudyLifeAi__BaseUrl / __InternalBaseUrl, see AiProxyClient), studylife-developers on 8080
-#     (DeveloperProxyClient) and studylife-webhooks on 8000 (WebhooksProxyClient). Each of those
-#     namespaces already has the matching ingress allowance for exactly these ports.
+#   - The three sibling services this app proxies to, over TLS (docs/SECURITY-ASSURANCE.md
+#     section 8.3): studylife-ai on 8443 and 8444 (StudyLifeAi__BaseUrl / __InternalBaseUrl, see
+#     AiProxyClient), studylife-developers on 8443 (DeveloperProxyClient) and studylife-webhooks
+#     on 8443 (WebhooksProxyClient). Each of those namespaces has the matching ingress allowance
+#     in its own policy file. The previous plain-HTTP ports (8000/8001, 8080, 8000) stay listed
+#     only for the switch-over: this file is applied by hand before the Flux-reconciled https://
+#     URLs in k8s/04-web.yaml/05-worker.yaml go live, and pods still running the old URLs need
+#     them until then. With AddonTls__RequireHttps on, the app never uses them; they can be
+#     dropped here once the switch is live.
 #   - Outbound HTTPS to anywhere. Three things need it and none of them can be pinned to an
 #     address: APNs (api.push.apple.com / api.sandbox.push.apple.com, HTTP/2 on 443, see
 #     ApnsSender), Web Push (the WebPush package posts to whatever endpoint each browser push
@@ -385,17 +390,21 @@ spec:
         - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: studylife-ai } }
           podSelector: { matchLabels: { app: studylife-ai } }
       ports:
+        - { protocol: TCP, port: 8443 }
+        - { protocol: TCP, port: 8444 }
         - { protocol: TCP, port: 8000 }
         - { protocol: TCP, port: 8001 }
     - to:
         - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: studylife-developers } }
           podSelector: { matchLabels: { app: studylife-developers } }
       ports:
+        - { protocol: TCP, port: 8443 }
         - { protocol: TCP, port: 8080 }
     - to:
         - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: studylife-webhooks } }
           podSelector: { matchLabels: { app: studylife-webhooks } }
       ports:
+        - { protocol: TCP, port: 8443 }
         - { protocol: TCP, port: 8000 }
     - to:
         - ipBlock: { cidr: 0.0.0.0/0 }

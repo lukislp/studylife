@@ -142,6 +142,21 @@ spec:
             # comment there): VerifyFull against the CNPG cluster CA, ca.crt only.
             - name: Database__TlsCaCertificatePath
               value: /etc/studylife-pg-ca/ca.crt
+            # TLS to the add-ons - identical to k8s/04-web.yaml (see the comment there). The
+            # worker calls studylife-ai's /internal/* (enrich-capture), and RequireHttps checks
+            # every configured add-on URL at startup, so all four are overridden here too.
+            - name: AddonTls__CaCertificatePath
+              value: /etc/studylife-dataprotection-tls/ca.crt
+            - name: AddonTls__RequireHttps
+              value: "true"
+            - name: StudyLifeAi__BaseUrl
+              value: https://studylife-ai.studylife-ai.svc.cluster.local:8443
+            - name: StudyLifeAi__InternalBaseUrl
+              value: https://studylife-ai.studylife-ai.svc.cluster.local:8444
+            - name: StudyLifeWebhooks__BaseUrl
+              value: https://studylife-webhooks.studylife-webhooks.svc.cluster.local:8443
+            - name: StudyLifeDevelopers__BaseUrl
+              value: https://studylife-developers.studylife-developers.svc.cluster.local:8443
             # DataProtection key-ring-at-rest encryption (Program.cs, ProtectKeysWithCertificate)
             # - identical to k8s/04-web.yaml, required whenever Cache__Provider=Redis. The
             # worker runs the same AddDataProtection() setup as web (shared Program.cs), so it

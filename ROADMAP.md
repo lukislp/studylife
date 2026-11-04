@@ -10,12 +10,12 @@ links to the place that explains it.
 
 ## Security and supply chain
 
-- **TLS for the in-cluster add-on calls.** StudyLife still calls studylife-ai, studylife-webhooks
-  and studylife-developers over plain HTTP inside the cluster. A shared secret or HMAC token
-  authenticates each call, and NetworkPolicies restrict who can talk to whom. The goal is HTTPS
-  with certificates from the internal CA, validated the same way as Redis already is
-  ([`docs/SECURITY-ASSURANCE.md`](docs/SECURITY-ASSURANCE.md#83-in-cluster-plain-http-calls)). The
-  add-on repositories have to serve TLS first.
+- **Remaining in-cluster plain HTTP.** The calls to studylife-ai, studylife-webhooks and
+  studylife-developers use HTTPS with certificates from the internal CA
+  ([`docs/SECURITY-ASSURANCE.md`](docs/SECURITY-ASSURANCE.md#83-in-cluster-calls-to-the-add-ons)).
+  Still plain: the add-ons' old ports for probes and Prometheus scraping, the gateway → pod hop of
+  the developer portal (needs a `BackendTLSPolicy`), and the OTLP export to the collector. Once
+  the switch is live, the NetworkPolicies can stop admitting StudyLife on the old add-on ports.
 - **Image signature verification at deploy time.** Images are already signed with cosign. Flux
   should refuse unsigned images (see the comment at the signing step in
   `.github/workflows/ci-cd.yml`).
