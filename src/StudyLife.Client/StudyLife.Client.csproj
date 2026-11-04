@@ -16,5 +16,27 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\StudyLife.Shared\StudyLife.Shared.csproj" />
+    <!-- Deterministic replacement for the I18nText source generator (see the target below). -->
+    <ProjectReference Include="..\StudyLife.I18nTextGenerator\StudyLife.I18nTextGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
   </ItemGroup>
+  <!--
+    Reproducible builds (docs/REPRODUCIBLE-BUILDS.md): Toolbelt.Blazor.I18nText's own source
+    generator adds the typed text classes in a random order, so this assembly differed between
+    two clean builds. StudyLife.I18nTextGenerator runs the same package code but adds the
+    classes sorted; the generated code itself is unchanged.
+    The package's generator only runs when the compiler can see I18nTextUseSourceGenerator, so
+    that property is hidden from the compiler here (its analyzer assembly stays loaded: the
+    replacement generator calls into it). StudyLifeI18nTextGenerator switches the replacement on.
+  -->
+  <PropertyGroup>
+    <StudyLifeI18nTextGenerator>true</StudyLifeI18nTextGenerator>
+  </PropertyGroup>
+  <ItemGroup>
+    <CompilerVisibleProperty Include="StudyLifeI18nTextGenerator" />
+  </ItemGroup>
+  <Target Name="_StudyLifeDisablePackageI18nTextGenerator" BeforeTargets="GenerateMSBuildEditorConfigFileShouldRun">
+    <ItemGroup>
+      <CompilerVisibleProperty Remove="I18nTextUseSourceGenerator" />
+    </ItemGroup>
+  </Target>
 </Project>
