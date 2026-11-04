@@ -1,3 +1,8 @@
+/*
+  SPDX-FileCopyrightText: 2026 Lukas Körber
+  SPDX-License-Identifier: AGPL-3.0-only
+*/
+
 /* === Setup Page === */
 .setup-page { padding: 2.5rem 2rem; max-width: 800px; }
 /* Setup page specifically (not the other 5 pages sharing .setup-page: Notes/Report/WeekPlan keep

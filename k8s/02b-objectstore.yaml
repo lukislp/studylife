@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Lukas Körber
+# SPDX-License-Identifier: AGPL-3.0-only
+
 # Object store for the CNPG Barman Cloud Plugin - the near-verbatim lift of the former
 # spec.backup.barmanObjectStore block of k8s/02-postgres.yaml, with the retention policy moved
 # here (the plugin keeps retention on the ObjectStore, not on the Cluster). Same R2 bucket,

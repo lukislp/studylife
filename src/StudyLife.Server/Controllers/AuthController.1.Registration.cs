@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Lukas Körber
+// SPDX-License-Identifier: AGPL-3.0-only
+
 using Fido2NetLib;
 using Fido2NetLib.Objects;
 using Microsoft.AspNetCore.Authorization;

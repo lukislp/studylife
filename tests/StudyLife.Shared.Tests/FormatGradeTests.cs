@@ -1,4 +1,7 @@
-﻿using StudyLife.Shared;
+﻿// SPDX-FileCopyrightText: 2026 Lukas Körber
+// SPDX-License-Identifier: AGPL-3.0-only
+
+using StudyLife.Shared;
 using Xunit;
 
 namespace StudyLife.Shared.Tests;

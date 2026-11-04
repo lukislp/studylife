@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Lukas Körber
+// SPDX-License-Identifier: AGPL-3.0-only
+
 // Service worker for StudyLife PWA (dev build - dotnet run, not dotnet publish).
 // Network-first for anything that isn't a hash-versioned build asset, so local code
 // changes to index.html/routed pages are always picked up on reload; only falls back

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Lukas Körber
+# SPDX-License-Identifier: AGPL-3.0-only
+
 # HPA for the worker (CPU-based, the only metric type without an additional metrics adapter
 # - no custom-metrics setup for this learning project). Prerequisite: the worker no longer
 # determines its user partition from the Worker__ReplicaCount value frozen at pod startup,

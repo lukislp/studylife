@@ -543,6 +543,11 @@ Copyright (C) 2026 Lukas Koerber
 must make your modified source available to its users. The Home Assistant integration is
 maintained as a separate, MIT-licensed repository: see [Home Assistant Integration](#home-assistant-integration).
 
+Every file states its licence and copyright following the [REUSE Specification](https://reuse.software/)
+(SPDX headers in source files, [`REUSE.toml`](REUSE.toml) for the rest, licence texts in
+[`LICENSES/`](LICENSES/)), checked by `reuse lint` in CI. The self-hosted DM Sans and DM Mono
+fonts are third-party files under the SIL Open Font License 1.1.
+
 The English text-to-speech voice (`en_US-amy-low`, used by the "read note aloud" feature) is
 built on the [Mimic 3 voices](https://github.com/MycroftAI/mimic3-voices) dataset, licensed
 [CC-BY-SA-4.0](https://creativecommons.org/licenses/by-sa/4.0/) - attribution required. The

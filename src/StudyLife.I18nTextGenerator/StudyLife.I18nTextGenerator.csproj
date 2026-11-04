@@ -1,3 +1,7 @@
+<!--
+  SPDX-FileCopyrightText: 2026 Lukas Körber
+  SPDX-License-Identifier: AGPL-3.0-only
+-->
 <Project Sdk="Microsoft.NET.Sdk">
   <!--
     Deterministic wrapper around the Toolbelt.Blazor.I18nText source generator

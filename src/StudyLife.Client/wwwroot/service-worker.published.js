@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Lukas Körber
+// SPDX-License-Identifier: AGPL-3.0-only
+
 // Published service worker
 // CACHE_NAME is versioned so that a stale cache entry (served once as a fallback after a
 // failed network fetch - common on flaky mobile connections) can't persist indefinitely:

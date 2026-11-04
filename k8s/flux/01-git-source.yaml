@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Lukas Körber
+# SPDX-License-Identifier: AGPL-3.0-only
+
 # Points Flux at the StudyLife repo itself (public GitHub repo, see git remote -v). Read access
 # only: since 2026-09-12 the released image tag is written into the manifests by the CI pipeline
 # (deploy-bump job in .github/workflows/ci-cd.yml, pushing over the semantic-release deploy key),

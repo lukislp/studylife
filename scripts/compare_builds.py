@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Lukas Körber
+# SPDX-License-Identifier: AGPL-3.0-only
+
 """Compare two build output directories file by file (SHA-256).
 
 Usage: compare_builds.py <dir-a> <dir-b> [--summary <file>] [--known <glob>]...

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Lukas Körber
+# SPDX-License-Identifier: AGPL-3.0-only
+
 # Connection pooler in front of Postgres - relevant because otherwise, as the web replica count
 # grows, every pod would open its own Npgsql connection pool against CNPG's max_connections.
 # CNPG automatically creates a Service with the same name as this Pooler object (NO "-rw"

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Lukas Körber
+# SPDX-License-Identifier: AGPL-3.0-only
+
 # Horizontally scalable test setup (Postgres + Redis + multiple server replicas + load balancer +
 # a standalone worker) - a local, disposable stand-in for the real production topology (a K3s
 # cluster, see k8s/ + docs/SCALING.md), not a separate single-instance setup of its own (that one

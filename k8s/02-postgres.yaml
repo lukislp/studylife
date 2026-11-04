@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Lukas Körber
+# SPDX-License-Identifier: AGPL-3.0-only
+
 # A real HA cluster via the CloudNativePG operator (1 primary + 2 replicas, streaming
 # replication, automatic failover) instead of a single pod - this is the standard approach for
 # Postgres HA in Kubernetes, comparable to what RDS Multi-AZ does internally. For this data

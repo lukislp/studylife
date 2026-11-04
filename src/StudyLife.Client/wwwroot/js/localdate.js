@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Lukas Körber
+// SPDX-License-Identifier: AGPL-3.0-only
+
 // Localized weekday/month names via the browser's own Intl data - its own JS module instead of
 // a global in index.html, because index.html is intentionally left untouched (same reasoning as
 // accent.js/cachepurge.js). Dynamic import() from LocalDateNames (IJSObjectReference).

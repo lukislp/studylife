@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Lukas Körber
+# SPDX-License-Identifier: AGPL-3.0-only
+
 # Usage: python tools/check-i18n.py
 # Verifies i18n file consistency: all language files for each table must have identical key sets.
 

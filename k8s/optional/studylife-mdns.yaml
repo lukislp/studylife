@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Lukas Körber
+# SPDX-License-Identifier: AGPL-3.0-only
+
 # OPTIONAL - not applied by bootstrap-cluster.ps1 (it only globs k8s/*.yaml, not subfolders), not
 # part of the Flux Kustomization (k8s/flux/deploy/kustomization.yaml lists its resources
 # explicitly). Apply by hand when you want Home Assistant to discover the server automatically:

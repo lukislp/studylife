@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Lukas Körber
+# SPDX-License-Identifier: AGPL-3.0-only
+
 <#
 .SYNOPSIS
   Bootstraps StudyLife's own app stack on an already cluster-wide-provisioned K3s cluster.

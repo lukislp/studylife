@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Lukas Körber
+# SPDX-License-Identifier: AGPL-3.0-only
+
 # Backend TLS for the ingress-nginx -> studylife-web (Kestrel) hop: leaf certificate from the
 # same cluster-internal CA as the external ingress certificate (k8s/07b-cert-manager-issuers.yaml),
 # so ingress-nginx no longer talks to the pod over plaintext HTTP. The DNS name is the internal

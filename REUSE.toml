@@ -1,0 +1,50 @@
+# Licence and copyright of the files that cannot carry an SPDX header themselves (REUSE
+# Specification 3.3, https://reuse.software). Every other file names its licence and copyright in
+# its first lines; `reuse lint` (required check test-lint) fails for a new file without either.
+# See CONTRIBUTING.md "Licence headers". When several annotations match a file, the last one wins.
+version = 1
+
+# Data, documentation, images, lock files and the solution file: no comment syntax (or none their
+# tools keep). Includes the i18n tables, docs/api/openapi.json (generated, compared byte for byte
+# by test-openapi-contract), the NuGet lock files, the coverage badge written by deploy-bump and
+# the CHANGELOG written by semantic-release.
+[[annotations]]
+path = [
+  "**.md",
+  "**.json",
+  "**.png",
+  "StudyLife.sln",
+]
+SPDX-FileCopyrightText = "2026 Lukas Körber"
+SPDX-License-Identifier = "AGPL-3.0-only"
+
+# EF Core migrations and model snapshots: written by `dotnet ef migrations add`, kept as generated
+# (test-ef-migrations compares them with the model), so they get no header.
+[[annotations]]
+path = "src/StudyLife.Server/Migrations/**"
+SPDX-FileCopyrightText = "2026 Lukas Körber"
+SPDX-License-Identifier = "AGPL-3.0-only"
+
+# Self-hosted web fonts (third-party, SIL Open Font License 1.1, licence text next to them in
+# OFL.txt and in LICENSES/OFL-1.1.txt).
+[[annotations]]
+path = [
+  "src/StudyLife.Client/wwwroot/fonts/dmsans-*.woff2",
+]
+SPDX-FileCopyrightText = "2014 The DM Sans Project Authors (https://github.com/googlefonts/dm-fonts)"
+SPDX-License-Identifier = "OFL-1.1"
+
+[[annotations]]
+path = [
+  "src/StudyLife.Client/wwwroot/fonts/dmmono-*.woff2",
+]
+SPDX-FileCopyrightText = "2020 The DM Mono Project Authors (https://www.github.com/googlefonts/dm-mono)"
+SPDX-License-Identifier = "OFL-1.1"
+
+[[annotations]]
+path = "src/StudyLife.Client/wwwroot/fonts/OFL.txt"
+SPDX-FileCopyrightText = [
+  "2014 The DM Sans Project Authors (https://github.com/googlefonts/dm-fonts)",
+  "2020 The DM Mono Project Authors (https://www.github.com/googlefonts/dm-mono)",
+]
+SPDX-License-Identifier = "OFL-1.1"

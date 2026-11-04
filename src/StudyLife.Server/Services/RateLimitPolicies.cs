@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Lukas Körber
+// SPDX-License-Identifier: AGPL-3.0-only
+
 namespace StudyLife.Server.Services;
 
 /// <summary>Named rate-limit policies registered in Program.cs (AddRateLimiter) and applied per

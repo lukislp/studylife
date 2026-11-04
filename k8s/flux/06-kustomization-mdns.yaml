@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Lukas Körber
+# SPDX-License-Identifier: AGPL-3.0-only
+
 # OPTIONAL and applied by hand (kubectl apply -f k8s/flux/06-kustomization-mdns.yaml, once): it
 # is NOT part of k8s/flux/deploy and nothing in the cluster applies it for you. Where
 # 05-kustomization.yaml keeps web and worker on the latest image tag, this one keeps the mDNS

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Lukas Körber
+# SPDX-License-Identifier: AGPL-3.0-only
+
 """Tests for scripts/generate_coverage_badge.py (run: python3 -m unittest discover -s scripts/tests)."""
 import importlib.util
 import json

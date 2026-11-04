@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Lukas Körber
+# SPDX-License-Identifier: AGPL-3.0-only
+
 # Daily base backup in addition to the continuous WAL archiving configured on the Cluster
 # (k8s/02-postgres.yaml, plugins block) - both through the CNPG Barman Cloud Plugin since
 # 2026-09-29. Without a periodic base backup the WAL archive grows forever and recovery would

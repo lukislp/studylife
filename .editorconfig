@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Lukas Körber
+# SPDX-License-Identifier: AGPL-3.0-only
+
 # Editor and formatter settings - the machine-checked part of the coding style described in
 # CONTRIBUTING.md ("Coding style"). `dotnet format --verify-no-changes` (required check
 # test-lint) reads the C# settings below; everything else is for editors.
@@ -43,3 +46,12 @@ dotnet_naming_symbols.private_fields.applicable_kinds = field
 dotnet_naming_symbols.private_fields.applicable_accessibilities = private
 dotnet_naming_style.underscore_camel_case.required_prefix = _
 dotnet_naming_style.underscore_camel_case.capitalization = camel_case
+
+[*.cs]
+# Licence header (REUSE, see CONTRIBUTING.md "Licence headers"): the IDE writes it into new C#
+# files. `reuse lint` in test-lint is the check; IDE0073 stays a suggestion so the generated EF
+# migrations, which REUSE.toml covers, do not need one.
+# REUSE-IgnoreStart
+file_header_template = SPDX-FileCopyrightText: 2026 Lukas Körber\nSPDX-License-Identifier: AGPL-3.0-only
+# REUSE-IgnoreEnd
+dotnet_diagnostic.IDE0073.severity = suggestion

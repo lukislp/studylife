@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Lukas Körber
+# SPDX-License-Identifier: AGPL-3.0-only
+
 # Applies EXCLUSIVELY k8s/flux/deploy/ (see there) to the cluster - explicitly NOT the
 # rest of k8s/, which continues to contain placeholders and is only resolved via
 # bootstrap-cluster.ps1 (see docs/SCALING.md, scoping decision). prune: true is unproblematic here,
