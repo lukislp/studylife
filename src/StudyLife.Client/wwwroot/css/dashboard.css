@@ -59,7 +59,10 @@
 }
 
 .session-row.active .sr-dot { box-shadow: 0 0 8px var(--c); }
-.session-row.done { opacity: 0.5; }
+/* Done rows are muted through colour, not opacity: opacity 0.5 pushed the time and topic text
+   below 2:1 contrast. */
+.session-row.done .sr-name { color: var(--text2); }
+.session-row.done .sr-dot { opacity: 0.5; }
 
 .sr-time { font-size: 0.75rem; font-family: var(--font-mono); color: var(--text3); }
 .sr-name { font-size: 0.875rem; font-weight: 500; }
@@ -372,7 +375,7 @@
     border-radius: 0 6px 6px 0;
 }
 
-.quota-hint a { color: var(--accent); }
+.quota-hint a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
 
 .card-quota.quota-warn,
 .card-quota-week.quota-warn {

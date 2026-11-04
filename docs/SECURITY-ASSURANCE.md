@@ -192,6 +192,18 @@ versions and cipher suites come from the OS and OpenSSL defaults, which means TL
 with no downgrade configured anywhere. Credentials (keys, secrets, certificates) are never
 compiled in: they come from configuration and files and can be rotated without a rebuild.
 
+Where each algorithm is fixed and what replacing it would take:
+
+| Use | Algorithm | How it can be replaced |
+|---|---|---|
+| Passkey sign-in (WebAuthn) | Negotiated per credential (COSE algorithm list of Fido2NetLib, e.g. ES256, RS256, EdDSA) | Already agile: the authenticator picks from the server's list, and the stored credential records its algorithm. |
+| TLS (Kestrel, Redis, PostgreSQL, Kubernetes API, add-ons) | Negotiated by the OS TLS stack, TLS 1.2+ | Already agile: protocol versions and cipher suites follow the OS/OpenSSL configuration. |
+| DataProtection (antiforgery, auth cookies, key ring at rest) | ASP.NET Core defaults (AES-256-CBC + HMAC-SHA256), key ring encrypted with an X.509 certificate | Already agile: every payload carries its key id, and the key descriptor records the algorithms, so a changed configuration applies to new keys while old payloads stay readable. |
+| Encrypted backups | PBKDF2-SHA256 (210 000 iterations) + AES-256-GCM | Versioned format: the magic `SLBKENC1` names the version. A new KDF or cipher gets `SLBKENC2` and the reader dispatches on the magic. Old readers refuse unknown versions instead of misreading them. |
+| AI proxy tokens | HMAC-SHA256 | Keys are agile: `kid:secret` lists, the first entry signs, and all entries verify, so keys roll without downtime. The algorithm is implied by the token format (the legacy 3-part and the current 4-part format are already told apart by their segment count), so a new MAC means a new format, accepted by studylife-ai next to the old one for the token lifetime (5 minutes). |
+| Session tokens, API keys, recovery codes | Random 32 bytes, stored as SHA-256 | A different hash means new tokens. Sessions expire on their own, and API keys and recovery codes would have to be re-issued. That is acceptable because SHA-256 over 256-bit random values has no realistic attack. |
+| Release signatures | Sigstore (ECDSA P-256, Fulcio/Rekor), SSH-signed tags (Ed25519) | Defined by the tools: cosign and git follow their upstream defaults. |
+
 ### 8.3 In-cluster plain-HTTP calls
 
 Three hops still use plain HTTP inside the cluster: web → studylife-ai (`:8000` public proxy
