@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Lukas Körber
 // SPDX-License-Identifier: AGPL-3.0-only
 
+using System.Diagnostics;
 using System.Globalization;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
@@ -226,6 +227,9 @@ public class StudyLifeAuthenticationHandler : AuthenticationHandler<StudyLifeAut
 
     private AuthenticationTicket BuildTicket(int userId, string authType, string? apiKeySlot = null)
     {
+        AssertTicketMatchesQueryFilterUser(userId);
+        Debug.Assert(authType is AuthTypeSession or AuthTypeApiKey or AuthTypeCalendarToken, "unknown authentication type");
+        Debug.Assert((apiKeySlot is not null) == (authType == AuthTypeApiKey), "exactly the API-key branch names a key slot");
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, userId.ToString(CultureInfo.InvariantCulture)),
@@ -243,6 +247,8 @@ public class StudyLifeAuthenticationHandler : AuthenticationHandler<StudyLifeAut
     /// only this one credential kind ever carries it.</summary>
     private AuthenticationTicket BuildClientTicket(int userId, string apiKeySlot, string grantedScopes)
     {
+        AssertTicketMatchesQueryFilterUser(userId);
+        Debug.Assert(apiKeySlot.StartsWith("client:", StringComparison.Ordinal), "dynamic client slots are prefixed with client:");
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, userId.ToString(CultureInfo.InvariantCulture)),
@@ -253,6 +259,20 @@ public class StudyLifeAuthenticationHandler : AuthenticationHandler<StudyLifeAut
         var identity = new ClaimsIdentity(claims, Scheme.Name);
         var principal = new ClaimsPrincipal(identity);
         return new AuthenticationTicket(principal, Scheme.Name);
+    }
+
+    /// <summary>
+    /// Tenant-isolation invariant: the user named in the ticket (what the authorization policies
+    /// see) must be the user the EF global query filters scope every query to (what
+    /// <see cref="CurrentUserAccessor"/> reads from HttpContext.Items). Every success branch above
+    /// sets both; if they ever diverged, a request would be authorized as one user while reading
+    /// and writing another user's rows.
+    /// </summary>
+    private void AssertTicketMatchesQueryFilterUser(int userId)
+    {
+        Debug.Assert(userId > 0, "an authenticated request must resolve to a real user id");
+        Debug.Assert(Context.Items[CurrentUserAccessor.HttpContextItemKey] is int filterUserId && filterUserId == userId,
+            "ticket user and query-filter user must be the same");
     }
 
     /// <summary>

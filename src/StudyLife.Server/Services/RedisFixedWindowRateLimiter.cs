@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Lukas Körber
 // SPDX-License-Identifier: AGPL-3.0-only
 
+using System.Diagnostics;
 using System.Threading.RateLimiting;
 using StackExchange.Redis;
 
@@ -32,6 +33,7 @@ public sealed class RedisFixedWindowRateLimiter : RateLimiter
 
     public RedisFixedWindowRateLimiter(IConnectionMultiplexer connection, string partitionKey, int permitLimit, TimeSpan window)
     {
+        Debug.Assert(permitLimit > 0 && window > TimeSpan.Zero, "a fixed window needs a positive limit and length");
         _db = connection.GetDatabase();
         _key = $"ratelimit:{partitionKey}";
         _permitLimit = permitLimit;
@@ -52,6 +54,8 @@ public sealed class RedisFixedWindowRateLimiter : RateLimiter
         try
         {
             var count = await _db.StringIncrementAsync(_key, permitCount);
+            // INCR by a positive amount can never yield less than that amount.
+            Debug.Assert(count >= permitCount, "the window counter can only grow within a window");
             if (count == permitCount)
             {
                 await _db.KeyExpireAsync(_key, _window, CommandFlags.None);
@@ -65,6 +69,8 @@ public sealed class RedisFixedWindowRateLimiter : RateLimiter
                 await _db.KeyExpireAsync(_key, _window, CommandFlags.None);
                 ttl = _window;
             }
+            // Retry-After must point into the current window, never past it.
+            Debug.Assert(ttl.Value <= _window, "a rejected request cannot be told to wait longer than one window");
             return new Lease(false, ttl.Value);
         }
         catch (RedisException)

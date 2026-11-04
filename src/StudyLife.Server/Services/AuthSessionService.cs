@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Lukas Körber
 // SPDX-License-Identifier: AGPL-3.0-only
 
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
@@ -47,19 +48,31 @@ public static class AuthSessionService
 
     // 32 bytes CSPRNG as base64url - exactly the same format as ApiKeyProvider.GenerateKey,
     // so tokens are header-safe without escaping.
-    public static string GenerateToken() =>
-        Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
+    public static string GenerateToken()
+    {
+        var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
             .Replace('+', '-').Replace('/', '_').TrimEnd('=');
+        // 32 bytes are 43 base64url characters without padding; anything else means the token
+        // lost entropy or carries characters a header cannot hold unescaped.
+        Debug.Assert(token.Length == 43 && !token.AsSpan().ContainsAny('+', '/', '='), "session token must be 43 base64url characters");
+        return token;
+    }
 
     /// <summary>SHA-256 of the plaintext token as lowercase hex - only this hash sits in the DB,
     /// so a DB leak doesn't expose usable tokens.</summary>
-    public static string HashToken(string token) =>
-        Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
+    public static string HashToken(string token)
+    {
+        var hash = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
+        Debug.Assert(hash.Length == 64, "a SHA-256 hex digest has 64 characters");
+        return hash;
+    }
 
     /// <summary>Creates a new session for the user and returns the PLAINTEXT token -
     /// the only moment it exists. The caller must call SaveChanges themselves.</summary>
     public static string IssueSession(StudyLifeDb db, int authUserId, DateTime utcNow)
     {
+        Debug.Assert(authUserId > 0, "sessions are only issued to an existing user");
+        Debug.Assert(SlidingWindow < MaxLifetime, "the sliding window must end before the hard lifetime");
         var token = GenerateToken();
         db.AuthSessions.Add(new AuthSessionEntity
         {
@@ -103,6 +116,9 @@ public static class AuthSessionService
             session.LastUsedAt = utcNow;
             await db.SaveChangesAsync();
         }
+        // Only a live session may leave this method: the caller authenticates the request with it.
+        Debug.Assert(session.ExpiresAt > utcNow && session.HardExpiresAt > utcNow, "a validated session must not be expired");
+        Debug.Assert(session.TokenHash == hash, "the session must match the presented token");
         return session;
     }
 }

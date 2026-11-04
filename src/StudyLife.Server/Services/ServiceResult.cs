@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Lukas Körber
 // SPDX-License-Identifier: AGPL-3.0-only
 
+using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
 namespace StudyLife.Server.Services;
@@ -41,7 +42,14 @@ public readonly record struct ServiceResult(ServiceOutcome Outcome, string? Erro
 {
     public static ServiceResult Success() => new(ServiceOutcome.Success, null);
     public static ServiceResult NotFound() => new(ServiceOutcome.NotFound, null);
-    public static ServiceResult Invalid(string error) => new(ServiceOutcome.Invalid, error);
+
+    public static ServiceResult Invalid(string error)
+    {
+        // The message IS the 400 body; an empty one would leave the client without a reason.
+        Debug.Assert(!string.IsNullOrWhiteSpace(error), "an Invalid outcome must carry its error message");
+        return new(ServiceOutcome.Invalid, error);
+    }
+
     public static ServiceResult Unauthorized() => new(ServiceOutcome.Unauthorized, null);
 }
 
@@ -50,11 +58,19 @@ public readonly record struct ServiceResult<T>(ServiceOutcome Outcome, T? Value,
 {
     public static ServiceResult<T> Success(T value) => new(ServiceOutcome.Success, value, null);
     public static ServiceResult<T> NotFound() => new(ServiceOutcome.NotFound, default, null);
-    public static ServiceResult<T> Invalid(string error) => new(ServiceOutcome.Invalid, default, error);
+    public static ServiceResult<T> Invalid(string error)
+    {
+        Debug.Assert(!string.IsNullOrWhiteSpace(error), "an Invalid outcome must carry its error message");
+        return new(ServiceOutcome.Invalid, default, error);
+    }
 
     /// <summary>Carries the CURRENT state, not the rejected input - that is the whole point of
     /// the 409 body.</summary>
-    public static ServiceResult<T> Conflict(T current) => new(ServiceOutcome.Conflict, current, null);
+    public static ServiceResult<T> Conflict(T current)
+    {
+        Debug.Assert(current is not null, "a Conflict outcome must carry the current state");
+        return new(ServiceOutcome.Conflict, current, null);
+    }
 
     public static ServiceResult<T> Unauthorized() => new(ServiceOutcome.Unauthorized, default, null);
 }
