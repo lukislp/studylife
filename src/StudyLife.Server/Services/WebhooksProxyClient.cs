@@ -37,7 +37,7 @@ public sealed class WebhooksProxyClient
     /// notifications, never the source of truth.</summary>
     private const int MaxInFlight = 8;
     private static readonly TimeSpan SlotWait = TimeSpan.FromSeconds(5);
-    private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
+    internal static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
     private readonly SemaphoreSlim _inFlight = new(MaxInFlight, MaxInFlight);
 
     public WebhooksProxyClient(IOptions<StudyLifeWebhooksOptions> options, ILogger<WebhooksProxyClient> logger, HttpClient? httpClient = null)
