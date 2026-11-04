@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Lukas Körber
 // SPDX-License-Identifier: AGPL-3.0-only
 
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -87,7 +88,11 @@ public static class BackupEncryptionService
         salt.CopyTo(output, offset); offset += SaltSize;
         nonce.CopyTo(output, offset); offset += NonceSize;
         tag.CopyTo(output, offset); offset += TagSize;
+        Debug.Assert(offset == HeaderSize, "header layout must match HeaderSize");
         ciphertext.CopyTo(output, offset);
+        // The restore path recognises encrypted uploads only by this header.
+        Debug.Assert(IsEncrypted(output) && output.Length == HeaderSize + plaintext.Length,
+            "an encrypted backup must start with the magic header and add exactly HeaderSize bytes");
         return output;
     }
 
@@ -106,6 +111,7 @@ public static class BackupEncryptionService
         var salt = data.AsSpan(offset, SaltSize).ToArray(); offset += SaltSize;
         var nonce = data.AsSpan(offset, NonceSize).ToArray(); offset += NonceSize;
         var tag = data.AsSpan(offset, TagSize).ToArray(); offset += TagSize;
+        Debug.Assert(offset == HeaderSize, "header layout must match HeaderSize");
         var ciphertext = data.AsSpan(offset).ToArray();
 
         var key = Rfc2898DeriveBytes.Pbkdf2(password, salt, Pbkdf2Iterations, Pbkdf2Hash, KeySize);

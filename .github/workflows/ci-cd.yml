@@ -639,6 +639,10 @@ jobs:
     outputs:
       next_version: ${{ steps.semrel.outputs.new_release_version }}
       published: ${{ steps.semrel.outputs.new_release_published }}
+      # The exact commit the version was computed for. publish-server builds server.zip from
+      # it and semantic-release refuses to cut the release from a tree that differs from it
+      # (scripts/release_guard.py drift) - see the v3.24.0 note in the semantic-release job.
+      release_sha: ${{ steps.release-sha.outputs.sha }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
@@ -686,6 +690,8 @@ jobs:
         with:
           fetch-depth: 0
           ref: main
+      - id: release-sha
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       # semantic-release runs from lukislp/ci-workflows' pinned toolchain (lock file in the action,
       # Dependabot bumps it there) instead of a registry install per run or a package.json here.
       # Ruleset bypass for the release commit (2026-09-11 audit, finding 2): main is protected by
@@ -757,12 +763,14 @@ jobs:
             tuf-repo-cdn.sigstore.dev:443
             uploads.github.com:443
             *.data.mcr.microsoft.com:443
-      # ref: main to match get-version's analysis target (see its checkout comment) - the
-      # binaries stamped with NEXT_VERSION must be built from the same tree that version was
-      # computed for, not from an event SHA that may be a [skip ci] Flux bump behind it.
+      # The commit get-version analyzed (see its checkout comment) - the binaries stamped with
+      # NEXT_VERSION must be built from the same tree that version was computed for: not from
+      # an event SHA that may be a [skip ci] bump behind it, and not from a later tip of main
+      # either (a push between get-version and this job would otherwise end up in a build
+      # stamped with a version computed without it).
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: main
+          ref: ${{ needs.get-version.outputs.release_sha }}
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
@@ -1286,7 +1294,8 @@ jobs:
       # ref: main for the same reason as get-version's checkout (see there): the real release
       # must be cut from the branch tip get-version analyzed, or the "behind the remote" guard
       # trips on the event SHA whenever a Flux [skip ci] bump raced in. The retry below still
-      # covers pushes landing DURING this job.
+      # covers pushes landing DURING this job, but only as far as the drift guard allows: the
+      # tip may differ from the built commit by deploy bumps, never by code.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
@@ -1339,6 +1348,18 @@ jobs:
             echo "GIT_COMMITTER_NAME=studylife-release"
             echo "GIT_COMMITTER_EMAIL=155678024+lukislp@users.noreply.github.com"
           } >> "$GITHUB_ENV"
+      # Release only the tree server.zip was built from. v3.24.0 (2026-11-04, run 41784615467)
+      # is why: publish-server built 3.23.49 from 1a877c7f, #422 (a feat) landed on main before
+      # this job's push, the retry below re-checked out the new tip and semantic-release cut
+      # v3.24.0 there - with the 3.23.49 server.zip attached. The signing step then looked for
+      # v3.23.49, found nothing and stopped, so the release went out unsigned and without
+      # provenance. Only [skip ci] deploy bumps may sit between the build and the release; for
+      # anything else the job fails BEFORE a release exists, and the workflow run of the newer
+      # commit releases it.
+      - name: Refuse to release a tree that differs from the build
+        env:
+          RELEASE_SHA: ${{ needs.get-version.outputs.release_sha }}
+        run: python3 scripts/release_guard.py drift --built "$RELEASE_SHA"
       - id: semrel
         uses: lukislp/ci-workflows/.github/actions/semantic-release@0476ea5ecc543deade233e4dd940ea87db9f5df8 # v1.8.23
         with:
@@ -1360,9 +1381,27 @@ jobs:
           fi
           git checkout -B main origin/main
       - if: steps.semrel.outcome == 'failure'
+        name: Refuse to release a tree that differs from the build (after the retry checkout)
+        env:
+          RELEASE_SHA: ${{ needs.get-version.outputs.release_sha }}
+        run: python3 scripts/release_guard.py drift --built "$RELEASE_SHA"
+      - if: steps.semrel.outcome == 'failure'
+        id: semrel-retry
         uses: lukislp/ci-workflows/.github/actions/semantic-release@0476ea5ecc543deade233e4dd940ea87db9f5df8 # v1.8.23
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+      # The tag semantic-release actually created must be the version server.zip was built
+      # (and stamped) as. The drift guard above makes a mismatch impossible in practice; this
+      # names it loudly instead of failing later on a missing release.
+      - name: Check the released version against the built one
+        env:
+          RELEASED_TAG: ${{ steps.semrel.outputs.new_release_git_tag || steps.semrel-retry.outputs.new_release_git_tag }}
+          TAG: v${{ needs.get-version.outputs.next_version }}
+        run: |
+          if [ "$RELEASED_TAG" != "$TAG" ]; then
+            echo "::error::semantic-release published '${RELEASED_TAG}', but server.zip was built as ${TAG} - not signing a mismatched asset. That release has no signature or provenance; see SECURITY.md (Verifying releases)."
+            exit 1
+          fi
       # Signed release asset (OpenSSF Scorecard "Signed-Releases"): the same keyless Sigstore
       # signing the container images get, applied to server.zip, plus GitHub build provenance.
       # Both bundles are uploaded next to the asset so a download can be verified offline:
@@ -1419,3 +1458,33 @@ jobs:
           else
             echo "::warning::the signature of ${TAG} did not verify"
           fi
+
+  # Every release must carry server.zip together with its Sigstore bundle and its build
+  # provenance (OpenSSF Scorecard "Signed-Releases" checks the last five). Runs even when the
+  # semantic-release job failed, because a release can already be public by then - v3.24.0
+  # went out that way with nothing but server.zip, and only a lower Scorecard noticed. Known,
+  # explained exceptions live in scripts/release_guard.py (KNOWN_UNSIGNED) and SECURITY.md.
+  verify-release-assets:
+    needs: [get-version, semantic-release]
+    if: always() && github.event_name == 'push' && needs.get-version.outputs.published == 'true' && needs.semantic-release.result != 'skipped'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            api.github.com:443
+            github.com:443
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: The latest five releases carry the signature and the provenance
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=10" > "$RUNNER_TEMP/releases.json"
+          python3 scripts/release_guard.py assets --releases-json "$RUNNER_TEMP/releases.json" --window 5

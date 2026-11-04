@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Lukas Körber
 // SPDX-License-Identifier: AGPL-3.0-only
 
+using System.Diagnostics;
 using System.Net;
 
 namespace StudyLife.Server.Services;
@@ -27,7 +28,11 @@ public static class OutboundUrlPolicy
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return false;
         if (uri.Scheme != Uri.UriSchemeHttps) return false;
         if (!string.IsNullOrEmpty(uri.UserInfo)) return false;
-        return IsPublicHost(uri);
+        var isPublic = IsPublicHost(uri);
+        // SSRF guard (audit S4): an accepted push endpoint is always a credential-free https URL.
+        Debug.Assert(!isPublic || (uri.Scheme == Uri.UriSchemeHttps && uri.IsAbsoluteUri && string.IsNullOrEmpty(uri.UserInfo)),
+            "an accepted push endpoint must be absolute, https and credential-free");
+        return isPublic;
     }
 
     /// <summary>
@@ -68,6 +73,9 @@ public static class OutboundUrlPolicy
     public static bool IsPublicAddress(IPAddress ip)
     {
         if (ip.IsIPv4MappedToIPv6) ip = ip.MapToIPv4();
+        // After unmapping only plain IPv4 or IPv6 can remain; the byte checks below assume it.
+        Debug.Assert(ip.AddressFamily is System.Net.Sockets.AddressFamily.InterNetwork or System.Net.Sockets.AddressFamily.InterNetworkV6,
+            "only IPv4/IPv6 addresses can be classified");
         if (IPAddress.IsLoopback(ip) || ip.Equals(IPAddress.Any) || ip.Equals(IPAddress.IPv6Any)) return false;
         if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
         {
@@ -79,6 +87,7 @@ public static class OutboundUrlPolicy
             return true;
         }
         var o = ip.GetAddressBytes();
+        Debug.Assert(o.Length == 4, "an IPv4 address has four octets");
         return o[0] switch
         {
             0 => false,                                    // 0.0.0.0/8

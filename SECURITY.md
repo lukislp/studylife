@@ -101,6 +101,15 @@ GitHub CLI can check it too:
 gh attestation verify server.zip --repo lukislp/studylife
 ```
 
+Recent releases carry both files, with one exception: **v3.24.0** has only
+`server.zip`, and that file is not a build of the v3.24.0 tag. A release race on 2026-11-04 (run
+41784615467) built `server.zip` as version 3.23.49 from commit `1a877c7f`, then cut the tag at
+`8c3a5405` after another change had landed, and the signing step stopped on the version
+mismatch. The file was left as published (release assets are never replaced) and was not signed
+afterwards, because a signature would vouch for a file that the tag does not reproduce. Use
+v3.25.0 or later. The release job now refuses to release a tree that differs from the build,
+and CI checks that the latest releases carry both files (`scripts/release_guard.py`).
+
 **Version tags** (`vX.Y.Z`; tags before this was introduced are lightweight and unsigned): the
 release job creates every tag as an annotated tag signed with the project's SSH signing key, and
 GitHub shows it as "Verified" on the tag and release pages. To check a tag in a clone, trust the

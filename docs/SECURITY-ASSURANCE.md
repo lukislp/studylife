@@ -280,7 +280,30 @@ keyless. Verification steps are in [SECURITY.md](../SECURITY.md#verifying-releas
 ### 8.5 Dynamic analysis (OWASP ZAP)
 
 [`.github/workflows/dast.yml`](../.github/workflows/dast.yml) runs a ZAP baseline scan and an
-OpenAPI-driven active API scan against the released container every week. The first scan
+OpenAPI-driven active API scan every week, on demand and on changes to the workflow. It has two
+legs that run the same scans:
+
+- **release** scans the released container image, which is what users deploy.
+- **assertions** scans an image built from the same commit with the same Dockerfile, but from a
+  `Debug` publish. In that build the server's run-time assertions (`Debug.Assert`) are compiled
+  in. They check invariants in the core server code: the authentication ticket names the same
+  user that the EF query filters scope every query to; a session write only touches rows of the
+  current user, with a non-empty window of at most 24 hours; a validated login session is not
+  expired and matches the presented token hash; tokens and hashes have their expected length;
+  the encrypted-backup header layout is consistent; the SSRF guard only accepts credential-free
+  `https` push endpoints; rate-limit counters and `Retry-After` stay inside one window; the
+  timer's client sequence only grows; service results carry the value or message their HTTP
+  mapping relies on. [`AssertionTraceListener`](../src/StudyLife.Server/Diagnostics/AssertionTraceListener.cs)
+  reports each failed assertion on stderr as a `STUDYLIFE-ASSERTION-FAILED` line and keeps the
+  process running, so one scan finds every violation. The leg fails if the container log has
+  such a line, if the container stopped during the scan, or if the startup line that proves an
+  assertion-enabled build is missing.
+
+`Release` builds compile the assertions away, so production behaviour and performance do not
+change. The server test suite passes with assertions enabled as well (`dotnet test -c Debug`,
+the default for local runs).
+
+ZAP findings themselves do not fail the workflow; they are triaged here. The first scan
 (2026-11-03, v3.23.44, ZAP 2.16.1) found no High alerts. Triage of the Medium and Low alerts:
 
 | Alert (risk) | Outcome |
