@@ -3,7 +3,7 @@
 
 # Points Flux at the StudyLife repo itself (public GitHub repo, see git remote -v). Read access
 # only: since 2026-09-12 the released image tag is written into the manifests by the CI pipeline
-# (deploy-bump job in .github/workflows/ci-cd.yml, pushing over the semantic-release deploy key),
+# (deploy-bump job in .github/workflows/ci-cd.yml, pushing over a write-enabled deploy key),
 # so nothing in the cluster needs to push to this repo any more and no token is referenced here.
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: GitRepository

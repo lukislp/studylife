@@ -107,13 +107,16 @@ Recent releases carry both files, with one exception: **v3.24.0** has only
 `8c3a5405` after another change had landed, and the signing step stopped on the version
 mismatch. The file was left as published (release assets are never replaced) and was not signed
 afterwards, because a signature would vouch for a file that the tag does not reproduce. Use
-v3.25.0 or later. The release job now refuses to release a tree that differs from the build,
+v3.25.0 or later. The release job refuses to release a tree that differs from the build,
 and CI checks that the latest releases carry both files (`scripts/release_guard.py`).
 
-**Version tags** (`vX.Y.Z`; tags before this was introduced are lightweight and unsigned): the
-release job creates every tag as an annotated tag signed with the project's SSH signing key, and
-GitHub shows it as "Verified" on the tag and release pages. To check a tag in a clone, trust the
-signing keys published for the account and verify:
+**Version tags** (`vX.Y.Z`): from the release that follows the switch to the lktec-bot release
+module on, the tag is created by the lktec-bot GitHub App through the GitHub API together with the
+release. It is a lightweight tag and carries no signature; what to verify are the signatures and
+the provenance of the release assets above. Older tags (up to the last release made before that
+switch) are annotated tags signed with the project's SSH signing key, and GitHub shows them as
+"Verified" on the tag and release pages. To check such a tag in a clone, trust the signing keys
+published for the account and verify:
 
 ```sh
 git fetch --tags

@@ -203,7 +203,7 @@ Where each algorithm is fixed and what replacing it would take:
 | Encrypted backups | PBKDF2-SHA256 (210 000 iterations) + AES-256-GCM | Versioned format: the magic `SLBKENC1` names the version. A new KDF or cipher gets `SLBKENC2` and the reader dispatches on the magic. Old readers refuse unknown versions instead of misreading them. |
 | AI proxy tokens | HMAC-SHA256 | Keys are agile: `kid:secret` lists, the first entry signs, and all entries verify, so keys roll without downtime. The algorithm is implied by the token format (the legacy 3-part and the current 4-part format are already told apart by their segment count), so a new MAC means a new format, accepted by studylife-ai next to the old one for the token lifetime (5 minutes). |
 | Session tokens, API keys, recovery codes | Random 32 bytes, stored as SHA-256 | A different hash means new tokens. Sessions expire on their own, and API keys and recovery codes would have to be re-issued. That is acceptable because SHA-256 over 256-bit random values has no realistic attack. |
-| Release signatures | Sigstore (ECDSA P-256, Fulcio/Rekor), SSH-signed tags (Ed25519) | Defined by the tools: cosign and git follow their upstream defaults. |
+| Release signatures | Sigstore (ECDSA P-256, Fulcio/Rekor); older tags are SSH-signed (Ed25519), newer ones are created unsigned by the lktec-bot App | Defined by the tools: cosign and git follow their upstream defaults. |
 
 ### 8.3 In-cluster calls to the add-ons
 

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 # Weekly dependency PRs for the three ecosystems this repo builds from (2026-09 audit M10). The
-# semantic-release toolchain lives in lukislp/ci-workflows and is bumped there.
+# release chain lives in the lktec-bot App (lukislp/lktec-bot), which is pinned in ci-cd.yml.
 # Actions are SHA-pinned in ci-cd.yml; Dependabot keeps the pins moving instead of them rotting.
 version: 2
 updates:

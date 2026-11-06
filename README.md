@@ -518,9 +518,10 @@ Runs as GitHub Actions (`.github/workflows/ci-cd.yml`) on every push to `main`, 
 | test | `test-k8s-manifests` | `kubeconform` schema validation of `k8s/` and of the kustomize output Flux actually applies |
 | test | `test-compose-scale` | Syntax/interpolation check of `docker-compose.scale.yml` |
 | build | `build` | Restore (`--locked-mode` against the committed `packages.lock.json` files, like every restore in CI) and build all projects (needs all test jobs to pass) |
-| version | `get-version` | Semantic Release dry run against Conventional Commits; the rest of the chain skips itself when no release is due. Push events only |
+| version | `get-version` | Dry run of the lktec-bot release module against Conventional Commits; the rest of the chain skips itself when no release is due. Push events only |
 | publish | `publish-server` | `dotnet publish` (linux-x64 + linux-arm64) + ZIP artifact |
-| release | `semantic-release` | Real semantic-release run: publishes the GitHub release + changelog, then signs `server.zip` (keyless Sigstore bundle + GitHub build provenance uploaded next to it) |
+| release | `release` | Real run of the lktec-bot release module: the App creates the tag and the GitHub release with generated notes (rules in `.github/lktec-bot.yml`, credentials `LKTEC_BOT_APP_ID` / `LKTEC_BOT_PRIVATE_KEY`); skipped when `main` has moved on since the push |
+| release | `release-assets` | Attaches `server.zip` to the release and signs it (keyless Sigstore bundle + GitHub build provenance uploaded next to it) |
 | docker | `docker-server` | Per-architecture (amd64/arm64) image builds pushed by digest to the public `ghcr.io/lukislp/studylife-server` registry, with SBOM and SLSA provenance attestations |
 | docker | `trivy-server` | Container vulnerability scan of the freshly built image; reports HIGH+CRITICAL informationally, blocks the manifest merge (and thereby the deploy) on any fixable CRITICAL finding |
 | docker | `docker-manifest-merge` | Creates the multi-arch manifest, signs it keyless with cosign, and verifies the signature |
