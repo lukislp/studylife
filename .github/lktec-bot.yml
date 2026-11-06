@@ -34,7 +34,7 @@ modules:
   # docs/modules/sync.md in lukislp/lktec-bot). The App is a bypass actor of the branch ruleset for it.
   sync:
     enabled: true
-    paths: [k8s]
+    paths: [k8s, .github/badges]
     branch: main
     commit-message: "chore(deploy): image {version} [skip ci]"
 
