@@ -7,7 +7,7 @@ version = 1
 # Data, documentation, images, lock files and the solution file: no comment syntax (or none their
 # tools keep). Includes the i18n tables, docs/api/openapi.json (generated, compared byte for byte
 # by test-openapi-contract), the NuGet lock files, the coverage badge written by deploy-bump and
-# the CHANGELOG written by semantic-release.
+# the CHANGELOG kept from the earlier release tooling.
 [[annotations]]
 path = [
   "**.md",

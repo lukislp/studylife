@@ -6,9 +6,10 @@
 Two checks, both of which exist because v3.24.0 went out unsigned (2026-11-04):
 
 ``drift``
-    Run by the semantic-release job before it creates a release. server.zip is built by
-    publish-server from the commit get-version analyzed; semantic-release has to cut the
-    release from the current tip of main. If a releasable commit landed in between, the
+    Formerly run by the release job before it created a release; the lktec-bot release module
+    now skips a release whose commit is no longer the tip of main. server.zip is built by
+    publish-server from the commit of the run, and the release has to be cut from that same
+    commit. If a releasable commit landed in between, the
     release would carry a server.zip built from an older tree under a newer version (that is
     what happened to v3.24.0: built as 3.23.49 from 1a877c7f, released as 3.24.0 at 8c3a5405,
     and the signing step then found no v3.23.49 release and stopped). The release may only be

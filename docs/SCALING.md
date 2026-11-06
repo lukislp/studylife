@@ -1997,8 +1997,8 @@ resource limits were reduced by hand to the ~2-3× request ratio usual here (Flu
   `main` itself with a personal access token; that automation (`ImageRepository`/`ImagePolicy`/
   `ImageUpdateAutomation`) is gone. The released tag is now written into `04-web.yaml` /
   `05-worker.yaml` by the `deploy-bump` job of `.github/workflows/ci-cd.yml`, right after the
-  multi-arch image exists and passed the Trivy gate, pushing over the same deploy key
-  semantic-release uses - so nothing in the cluster holds a write credential for the repo.
+  multi-arch image exists and passed the Trivy gate, pushing over a write-enabled deploy
+  key - so nothing in the cluster holds a write credential for the repo.
 - `05-kustomization.yaml` (`Kustomization`, `kustomize.toolkit.fluxcd.io`) - closes the last gap:
   the `deploy-bump` CI job commits the new tag to the Git repo, but nothing applies it to
   the cluster by itself. Points at `k8s/flux/deploy/` (NOT the rest of `k8s/`, which still contains

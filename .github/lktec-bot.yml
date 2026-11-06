@@ -18,3 +18,20 @@ modules:
     method: squash
     # Dependency names (exact, case-insensitive) that are never approved or armed.
     exclude: []
+
+  # Tags and publishes a release from the Conventional Commits on the default branch (see
+  # docs/modules/release.md in lukislp/lktec-bot).
+  release:
+    enabled: true
+    mode: tag
+    tag-format: "v{version}"
+    branch: main
+    # Only used while no tag matches tag-format.
+    first-version: "1.0.0"
+    # The rules .releaserc.json carried: a refactor is a patch release. The breaking rule comes
+    # first so that a breaking refactor stays a major release (the old setup took the highest
+    # match; here the first matching rule wins). Defaults after these: feat minor, fix/perf/revert
+    # patch, everything else nothing.
+    rules:
+      - { breaking: true, release: major }
+      - { type: refactor, release: patch }

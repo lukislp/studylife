@@ -10,7 +10,7 @@ today. It does not describe a larger team that does not exist.
 |---|---|---|
 | **Maintainer** | [@lukislp](https://github.com/lukislp) (Lukas Körber), the only person with write and admin access | Sets the direction and the [roadmap](ROADMAP.md). Reviews and merges pull requests. Cuts releases (automated, see below). Triages issues and security reports ([SECURITY.md](SECURITY.md)). Enforces the [Code of Conduct](CODE_OF_CONDUCT.md). Administers the repository, its secrets and the production/demo deployments. |
 | **Contributor** | Anyone who opens an issue, a discussion or a pull request | Follows [CONTRIBUTING.md](CONTRIBUTING.md) and the Code of Conduct. Contributors do not need write access, since every change arrives as a pull request from a fork. |
-| **Automation** (no human authority) | Dependabot, Renovate, semantic-release (`semantic-release-bot`), the `studylife-deploy` key | Propose dependency updates as pull requests, tag releases and publish release notes from Conventional Commits, and write the released image tag into the deployment manifests. None of them can merge to `main` past the required checks. Bot PRs are subject to the same CI gate as human ones. |
+| **Automation** (no human authority) | Dependabot, Renovate, the lktec-bot App (releases), the `studylife-deploy` key | Propose dependency updates as pull requests, tag releases and publish release notes from Conventional Commits, and write the released image tag into the deployment manifests. None of them can merge to `main` past the required checks. Bot PRs are subject to the same CI gate as human ones. |
 
 There are no other roles today: no co-maintainers, no committee, no release managers. A
 contributor who has made sustained, high-quality contributions can be offered co-maintainer
@@ -33,13 +33,13 @@ happens.
   [`docs/SECURITY-ASSURANCE.md`](docs/SECURITY-ASSURANCE.md). Accepted residual risks are listed
   there explicitly.
 - **Breaking changes** for self-hosters or add-ons are called out in the PR title (`feat!:` /
-  `BREAKING CHANGE:` footer), which makes semantic-release cut a major version and puts them at
+  `BREAKING CHANGE:` footer), which makes the release module cut a major version and puts them at
   the top of the release notes.
 
 ## Releases
 
 Releases are fully automated: every merge to `main` whose commits warrant a release
-(`feat:`/`fix:`/`refactor:`) gets a version from semantic-release, a GitHub Release with
+(`feat:`/`fix:`/`refactor:`) gets a version from the lktec-bot release module, a GitHub Release with
 generated notes, signed container images and a signed `server.zip` (see
 [SECURITY.md](SECURITY.md#verifying-releases)). Only the latest release is supported.
 
