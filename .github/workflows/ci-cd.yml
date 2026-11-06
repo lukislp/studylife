@@ -945,127 +945,24 @@ jobs:
             "${{ env.IMAGE }}@${DIGEST}" --output text >/dev/null
           echo "signed and verified ${{ env.IMAGE }}@${DIGEST}" | tee -a "$GITHUB_STEP_SUMMARY"
 
-  # Image tag bump (2026-09-12): the deployment manifests pin the image by version, and this
-  # job - no longer Flux's image-automation-controller - writes the released version into them
-  # once the image exists, pushing over a write-enabled deploy key. Flux then only
-  # reads this repo (its GitRepository carries no write token any more) and applies whatever the
-  # default branch says.
-  # The bump waits for the release job, so the tag lands first and the release is never
-  # skipped because the bump's own commit moved the default branch.
+  # The image tag bump of the deploy manifests, committed onto the default branch by the lktec-bot App
+  # (module sync: docs/modules/sync.md in lukislp/lktec-bot; the App is a bypass actor of the branch ruleset
+  # for this one commit, which GitHub signs itself). Flux picks the new tag up from the branch.
   deploy-bump:
     needs: [get-version, release, docker-manifest-merge]
     if: github.event_name == 'push' && needs.release.outputs.released == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
     concurrency:
       group: studylife-release-chain
       cancel-in-progress: false
-    permissions:
-      contents: read
-    env:
-      NEXT_VERSION: ${{ needs.release.outputs.version }}
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
-        with:
-          egress-policy: block
-          allowed-endpoints: >
-            aka.ms:443
-            api.github.com:443
-            api.nuget.org:443
-            auth.docker.io:443
-            builds.dotnet.microsoft.com:443
-            check.trivy.dev:443
-            crl3.digicert.com:80
-            dc.services.visualstudio.com:443
-            fulcio.sigstore.dev:443
-            ghcr.io:443
-            github.com:22
-            github.com:443
-            *.githubapp.com:443
-            mcr.microsoft.com:443
-            pkg-containers.githubusercontent.com:443
-            production.cloudfront.docker.com:443
-            docker-images-prod.s3.dualstack.us-east-1.amazonaws.com:443
-            *.blob.core.windows.net:443
-            raw.githubusercontent.com:443
-            registry-1.docker.io:443
-            rekor.sigstore.dev:443
-            release-assets.githubusercontent.com:443
-            results-receiver.actions.githubusercontent.com:443
-            run-actions-*.actions.githubusercontent.com:443
-            timestamp.sigstore.dev:443
-            token.actions.githubusercontent.com:443
-            tuf-repo-cdn.sigstore.dev:443
-            uploads.github.com:443
-            *.data.mcr.microsoft.com:443
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: main
-          fetch-depth: 0
-      # Same deploy-key push as the release jobs - the default branch only takes direct pushes
-      # from that key, so this job cannot fall back to GITHUB_TOKEN.
-      - name: Push as the deploy key
-        uses: lukislp/ci-workflows/.github/actions/deploy-key-push@ea532e9b173cf0e512c9d54c18886eebd0b0d1ab # v1.8.24
-        with:
-          deploy-key: ${{ secrets.SEMANTIC_RELEASE_DEPLOY_KEY }}
-          required: "true"
-      # Coverage badge of the released commit (test-unit's artifact from this same run). It
-      # rides along in the image bump commit, the only commit CI pushes to main per release, so
-      # the README badge always shows what the current release was measured with. Before
-      # this, the badge was written in the release job but never committed after the
-      # changelog commit was dropped (#263), and it stayed at the 3.17.6 value for months.
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: coverage-badge
-          path: coverage-artifact
-      - name: Point the manifests at the released image, refresh the coverage badge and push
-        env:
-          DEPLOY_SIGNING_KEY: ${{ secrets.DEPLOY_SIGNING_KEY }}
-        run: |
-          set -eu
-          for f in $(grep -rlE 'ghcr\.io/lukislp/studylife-server:' k8s --include='*.yaml' | grep -v '/flux/'); do
-            sed -i -E "s#(ghcr\.io/lukislp/studylife-server):[0-9A-Za-z._-]+#\\1:${NEXT_VERSION}#g" "$f"
-          done
-          mkdir -p .github/badges
-          mv coverage-artifact/coverage-badge.json .github/badges/coverage.json
-          rm -rf coverage-artifact
-          if git diff --quiet; then
-            echo "manifests already reference ${NEXT_VERSION}"
-            exit 0
-          fi
-          git diff --stat
-          git config user.name "studylife-deploy"
-          # GitHub's SSH signature verification also checks the committer email against the
-          # signing key's owning account (like GPG) - a synthetic "@studylife.local" address
-          # verifies the signature bytes fine but comes back "reason: no_user" (hit live
-          # 2026-09-20, v3.17.3), since no account owns that address. Use the account's own
-          # noreply email instead, matching what shows up as "verified" on every other commit here.
-          git config user.email "155678024+lukislp@users.noreply.github.com"
-          # SSH-sign this bot commit so it shows "Verified" (2026-09-20 audit): the deploy key
-          # above only authenticates the push, it can't sign - GitHub auto-signs commits only when
-          # it creates them itself via the API (as the lktec-bot App's commits are), never a raw
-          # `git commit`. This is a separate signing-only key registered on the account
-          # (github.com/settings/keys), not the push-authorizing deploy key.
-          signing_key="$RUNNER_TEMP/deploy_signing_key"
-          printf '%s\n' "$DEPLOY_SIGNING_KEY" > "$signing_key"
-          chmod 600 "$signing_key"
-          # git's ssh signing backend loads the *public* key from user.signingkey (not the
-          # private key path directly) - without this .pub file alongside it, signing fails with
-          # "Couldn't load public key ...: No such file or directory" (hit live 2026-09-20, v3.17.2).
-          ssh-keygen -y -f "$signing_key" > "$signing_key.pub"
-          git config gpg.format ssh
-          git config user.signingkey "$signing_key.pub"
-          git config commit.gpgsign true
-          git commit -S -am "chore(deploy): image ${NEXT_VERSION} [skip ci]"
-          # The branch may have moved (an out-of-band push) between checkout and now - rebase, retry.
-          for attempt in 1 2 3; do
-            git push origin HEAD:main && exit 0
-            git fetch origin main
-            git rebase origin/main
-          done
-          echo "::error::could not push the image tag bump"
-          exit 1
+    uses: lukislp/lktec-bot/.github/workflows/deploy-bump.yml@38079b17498fcfda986f427fd6258bd32185e7c3 # v0.2.0
+    with:
+      version: ${{ needs.release.outputs.version }}
+      images: 'ghcr\.io/lukislp/studylife-server'
+      paths: k8s
+      branch: main
+    secrets:
+      app-id: ${{ secrets.LKTEC_BOT_APP_ID }}
+      private-key: ${{ secrets.LKTEC_BOT_PRIVATE_KEY }}
 
   trivy-server:
     # Scans the amd64 image BY DIGEST (pushed untagged by docker-server) and blocks
