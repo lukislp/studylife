@@ -116,8 +116,8 @@ service:
    numbers are truncated to one decimal, never rounded up. The same step writes line and branch
    coverage to the job summary of every run, and the coverage including `StudyLife.Client` is
    printed there as well (report only).
-4. On a release the `deploy-bump` job commits that file as `.github/badges/coverage.json`
-   together with the image tag bump. The README badge reads it through shields.io's `endpoint`
+4. On a release the lktec-bot App commits that file as `.github/badges/coverage.json`
+   together with the image tag bump (the `deploy-bump` job hands it over as an artifact). The README badge reads it through shields.io's `endpoint`
    badge from `raw.githubusercontent.com`, so it shows the numbers of the latest release.
 
 To get the same numbers locally:
