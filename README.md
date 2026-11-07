@@ -378,7 +378,7 @@ The app is then reachable at `https://localhost:53963`. The SQLite database is a
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/lukislp/studylife?quickstart=1)
 
-The repository ships a dev container (`.devcontainer/`) that gives a contributor a working environment without installing anything locally: the .NET 10 SDK, Python 3 (for the i18n/date-format checks), the GitHub CLI and Docker-in-Docker, with the C# Dev Kit preinstalled. The machine needs 4 CPUs and 8 GB RAM. Creating the Codespace restores the NuGet packages; nothing else is downloaded.
+The repository ships a dev container (`.devcontainer/`) that gives a contributor a working environment without installing anything locally: the .NET 10 SDK, Python 3 (for the i18n/date-format checks), the GitHub CLI and Docker-in-Docker, with the C# Dev Kit preinstalled. The machine needs 4 CPUs and 8 GB RAM. Building the container restores the NuGet packages and creates the development certificate (as `updateContentCommand`, so a Codespaces prebuild ships both and a Codespace opened from an older prebuild refreshes the packages); nothing else is downloaded.
 
 ```bash
 dotnet run --project src/StudyLife.Server   # app on the forwarded port 53964

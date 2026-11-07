@@ -23,7 +23,7 @@
       "onAutoForward": "ignore"
     }
   },
-  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "updateContentCommand": "bash .devcontainer/update-content.sh",
   "postAttachCommand": "bash .devcontainer/post-attach.sh",
   "customizations": {
     "vscode": {
