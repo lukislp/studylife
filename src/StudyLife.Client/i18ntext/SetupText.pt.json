@@ -292,5 +292,7 @@
   "AriaCloseDialog": "Fechar caixa de diálogo",
   "AriaRemoveGroup": "Remover grupo",
   "AriaRemoveCourse": "Remover disciplina",
-  "AriaDeleteTimerMode": "Eliminar modo de temporizador"
+  "AriaDeleteTimerMode": "Eliminar modo de temporizador",
+  "ReportProblemLink": "Comunicar um problema",
+  "ReportProblemHint": "Abre um relatório de erro no GitHub com a versão da app e a plataforma já preenchidas. Não são enviados dados da conta nem registos."
 }

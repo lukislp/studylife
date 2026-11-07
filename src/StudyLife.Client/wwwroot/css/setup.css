@@ -540,4 +540,16 @@
     opacity: 0.6;
     padding: 0.5rem 0 1rem;
 }
+.setup-report-link {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 3px;
+    transition: text-decoration-color 0.15s ease;
+}
+
+.setup-report-link:hover,
+.setup-report-link:focus-visible {
+    text-decoration-color: currentColor;
+}
 

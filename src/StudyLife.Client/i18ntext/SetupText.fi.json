@@ -292,5 +292,7 @@
   "AriaCloseDialog": "Sulje valintaikkuna",
   "AriaRemoveGroup": "Poista ryhmä",
   "AriaRemoveCourse": "Poista kurssi",
-  "AriaDeleteTimerMode": "Poista ajastintila"
+  "AriaDeleteTimerMode": "Poista ajastintila",
+  "ReportProblemLink": "Ilmoita ongelmasta",
+  "ReportProblemHint": "Avaa GitHubissa virheilmoituksen, johon sovelluksen versio ja alusta on täytetty valmiiksi. Tilitietoja tai lokeja ei lähetetä."
 }

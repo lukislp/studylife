@@ -292,5 +292,7 @@
   "AriaCloseDialog": "Закрыть диалог",
   "AriaRemoveGroup": "Удалить группу",
   "AriaRemoveCourse": "Удалить курс",
-  "AriaDeleteTimerMode": "Удалить режим таймера"
+  "AriaDeleteTimerMode": "Удалить режим таймера",
+  "ReportProblemLink": "Сообщить о проблеме",
+  "ReportProblemHint": "Открывает отчёт об ошибке на GitHub с заранее заполненными версией приложения и платформой. Данные учётной записи и журналы не отправляются."
 }

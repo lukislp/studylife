@@ -292,5 +292,7 @@
   "AriaCloseDialog": "Dún an dialóg",
   "AriaRemoveGroup": "Bain an grúpa",
   "AriaRemoveCourse": "Bain an cúrsa",
-  "AriaDeleteTimerMode": "Scrios modh an amadóra"
+  "AriaDeleteTimerMode": "Scrios modh an amadóra",
+  "ReportProblemLink": "Tuairiscigh fadhb",
+  "ReportProblemHint": "Osclaíonn sé tuarascáil fabht ar GitHub le leagan na haipe agus an ardán réamhlíonta. Ní sheoltar aon sonraí cuntais ná logaí."
 }

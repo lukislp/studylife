@@ -20,6 +20,11 @@ body:
     validations:
       required: true
   - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Filled in by the app's Report a problem button; edit if needed.
+  - type: textarea
     id: logs
     attributes:
       label: Logs or screenshots

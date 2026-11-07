@@ -292,5 +292,7 @@
   "AriaCloseDialog": "Aizvērt dialoglodziņu",
   "AriaRemoveGroup": "Noņemt grupu",
   "AriaRemoveCourse": "Noņemt kursu",
-  "AriaDeleteTimerMode": "Dzēst taimera režīmu"
+  "AriaDeleteTimerMode": "Dzēst taimera režīmu",
+  "ReportProblemLink": "Ziņot par problēmu",
+  "ReportProblemHint": "Atver kļūdas ziņojumu GitHub ar iepriekš aizpildītu lietotnes versiju un platformu. Konta dati un žurnāli netiek sūtīti."
 }

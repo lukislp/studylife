@@ -292,5 +292,7 @@
   "AriaCloseDialog": "Zamknij okno dialogowe",
   "AriaRemoveGroup": "Usuń grupę",
   "AriaRemoveCourse": "Usuń kurs",
-  "AriaDeleteTimerMode": "Usuń tryb minutnika"
+  "AriaDeleteTimerMode": "Usuń tryb minutnika",
+  "ReportProblemLink": "Zgłoś problem",
+  "ReportProblemHint": "Otwiera zgłoszenie błędu na GitHubie z wstępnie wypełnioną wersją aplikacji i platformą. Nie są wysyłane żadne dane konta ani logi."
 }

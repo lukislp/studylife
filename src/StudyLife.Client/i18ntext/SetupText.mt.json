@@ -292,5 +292,7 @@
   "AriaCloseDialog": "Agħlaq id-djalogu",
   "AriaRemoveGroup": "Neħħi l-grupp",
   "AriaRemoveCourse": "Neħħi l-kors",
-  "AriaDeleteTimerMode": "Ħassar il-modalità tat-timer"
+  "AriaDeleteTimerMode": "Ħassar il-modalità tat-timer",
+  "ReportProblemLink": "Irrapporta problema",
+  "ReportProblemHint": "Jiftaħ rapport tal-bug fuq GitHub bil-verżjoni tal-app u l-pjattaforma mimlija minn qabel. L-ebda dejta tal-kont jew logs ma tintbagħat."
 }

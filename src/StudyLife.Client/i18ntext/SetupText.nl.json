@@ -292,5 +292,7 @@
   "AriaCloseDialog": "Dialoogvenster sluiten",
   "AriaRemoveGroup": "Groep verwijderen",
   "AriaRemoveCourse": "Vak verwijderen",
-  "AriaDeleteTimerMode": "Timermodus verwijderen"
+  "AriaDeleteTimerMode": "Timermodus verwijderen",
+  "ReportProblemLink": "Een probleem melden",
+  "ReportProblemHint": "Opent een bugmelding op GitHub met de appversie en het platform al ingevuld. Er worden geen accountgegevens of logs verzonden."
 }
