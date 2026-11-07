@@ -9,8 +9,8 @@ namespace StudyLife.Server.Services;
 
 /// <summary>
 /// Builds the ForwardedHeadersOptions Program.cs hands to UseForwardedHeaders - i.e. WHICH
-/// upstream addresses are trusted to tell Kestrel the real client IP (X-Forwarded-For) and
-/// scheme (X-Forwarded-Proto). The IP-partitioned rate limiter (and the strict recovery-code
+/// upstream addresses are trusted to tell Kestrel the real client IP (X-Forwarded-For), scheme
+/// (X-Forwarded-Proto) and host (X-Forwarded-Host). The IP-partitioned rate limiter (and the strict recovery-code
 /// limiter in particular) is only as good as this trust decision: anything on the trusted list
 /// can forge a fresh client IP per request and get a fresh limiter bucket every time.
 ///
@@ -49,7 +49,12 @@ public static class ForwardedHeadersConfig
     {
         var options = new ForwardedHeadersOptions
         {
-            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+            // X-Forwarded-Host as well: a proxy that rewrites the Host header on the way in (GitHub
+            // Codespaces' port forwarder sends Host: localhost:<port>) would otherwise make the
+            // passkey relying-party id and origin, both derived from Request.Host in
+            // AuthController.CreateFido2, come out as "localhost", and the browser refuses the
+            // credential. Honoured only from the same trusted upstreams as the other two headers.
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost,
         };
         options.KnownIPNetworks.Clear();
         options.KnownProxies.Clear();

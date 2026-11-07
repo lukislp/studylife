@@ -6,6 +6,7 @@
 [![License: AGPL-3.0](https://img.shields.io/github/license/lukislp/studylife)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/)
 [![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/lukislp/studylife/main/.github/badges/coverage.json)](https://github.com/lukislp/studylife/actions/workflows/ci-cd.yml)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/lukislp/studylife?quickstart=1)
 
 > Personal study organization - calendar, focus timer, notes, and learning goals in one Blazor
 > WebAssembly app. Multi-user with passkey login, designed to run on your own hardware, and the
@@ -376,16 +377,14 @@ The app is then reachable at `https://localhost:53963`. The SQLite database is a
 
 ### GitHub Codespaces
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/lukislp/studylife?quickstart=1)
-
-The repository ships a dev container (`.devcontainer/`) that gives a contributor a working environment without installing anything locally: the .NET 10 SDK, Python 3 (for the i18n/date-format checks), the GitHub CLI and Docker-in-Docker, with the C# Dev Kit preinstalled. The machine needs 4 CPUs and 8 GB RAM. Building the container restores the NuGet packages and creates the development certificate (as `updateContentCommand`, so a Codespaces prebuild ships both and a Codespace opened from an older prebuild refreshes the packages); nothing else is downloaded.
+The "Open in GitHub Codespaces" badge at the top of this page opens one. The repository ships a dev container (`.devcontainer/`) that gives a contributor a working environment without installing anything locally: the .NET 10 SDK, Python 3 (for the i18n/date-format checks), the GitHub CLI and Docker-in-Docker, with the C# Dev Kit preinstalled. The machine needs 4 CPUs and 8 GB RAM. Building the container restores the NuGet packages and creates the development certificate (as `updateContentCommand`, so a Codespaces prebuild ships both and a Codespace opened from an older prebuild refreshes the packages); nothing else is downloaded.
 
 ```bash
 dotnet run --project src/StudyLife.Server   # app on the forwarded port 53964
 dotnet test StudyLife.sln                   # build + tests
 ```
 
-Open the forwarded port 53964 from the Ports tab (the terminal also prints the URL on attach). GitHub terminates TLS and sets the `X-Forwarded-*` headers, which the server already trusts from loopback; the WebAuthn relying party and origin are derived from the request, so passkey registration and login work on the `*.app.github.dev` URL without extra configuration. On the very first start the server log prints a one-time setup code - enter it on `/register` to become the owner. The port is private by default; keep it that way, since the instance is yours alone. As in a local run, the speech endpoints answer 404 because the Piper voices and the Whisper model are not downloaded.
+Open the forwarded port 53964 from the Ports tab (the terminal also prints the URL on attach). GitHub terminates TLS, rewrites `Host` to `localhost:53964` and sets the `X-Forwarded-Proto` and `X-Forwarded-Host` headers, which the server trusts from loopback; the WebAuthn relying party and origin are derived from the forwarded host and scheme, so passkey registration and login work on the `*.app.github.dev` URL without extra configuration. On the very first start the server log prints a one-time setup code - enter it on `/register` to become the owner. The port is private by default; keep it that way, since the instance is yours alone. As in a local run, the speech endpoints answer 404 because the Piper voices and the Whisper model are not downloaded.
 
 The optional scale stack (Postgres + Redis + replicas, see [docs/SCALING.md](docs/SCALING.md)) is not started automatically. Docker is available inside the Codespace, so it takes two steps:
 

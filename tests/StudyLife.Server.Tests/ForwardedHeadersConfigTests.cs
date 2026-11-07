@@ -41,6 +41,21 @@ public class ForwardedHeadersConfigTests
     }
 
     [Fact]
+    public void HonoursForwardedFor_Proto_AndHost()
+    {
+        // X-Forwarded-Host matters for passkeys: AuthController.CreateFido2 derives the relying-party
+        // id and origin from Request.Host, and a proxy that rewrites Host (GitHub Codespaces' port
+        // forwarder sends localhost:<port>) would otherwise make both come out as "localhost".
+        var options = ForwardedHeadersConfig.Build(Config());
+
+        Assert.Equal(
+            Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor
+            | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+            | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedHost,
+            options.ForwardedHeaders);
+    }
+
+    [Fact]
     public void ConfiguredNetworks_ReplaceTheDefaults_InsteadOfExtendingThem()
     {
         var options = ForwardedHeadersConfig.Build(Config(("ForwardedHeaders:KnownNetworks:0", "10.42.3.0/24")));
