@@ -1,0 +1,38 @@
+{
+  "name": "StudyLife",
+  "image": "mcr.microsoft.com/devcontainers/dotnet:10.0",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/python:1": { "version": "3.12" },
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "hostRequirements": {
+    "cpus": 4,
+    "memory": "8gb"
+  },
+  "forwardPorts": [53964],
+  "portsAttributes": {
+    "53964": {
+      "label": "StudyLife (dotnet run)",
+      "protocol": "http",
+      "onAutoForward": "notify",
+      "visibility": "private"
+    },
+    "53963": {
+      "label": "StudyLife HTTPS (not needed in Codespaces)",
+      "onAutoForward": "ignore"
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "postAttachCommand": "bash .devcontainer/post-attach.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-dotnettools.csdevkit",
+        "ms-dotnettools.csharp",
+        "editorconfig.editorconfig",
+        "ms-azuretools.vscode-docker"
+      ]
+    }
+  }
+}

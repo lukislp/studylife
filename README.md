@@ -374,6 +374,26 @@ dotnet run
 
 The app is then reachable at `https://localhost:53963`. The SQLite database is automatically created under `app_data/studylife.db`. The speech features need the Piper voices (`tts-voices/`) and the Whisper model (`stt-model/`) next to the server, which the Dockerfile downloads at image build time; without them the TTS/dictation endpoints answer 404 and everything else works. Run `dotnet format StudyLife.sln` before pushing (CI verifies it), and commit the regenerated `docs/api/openapi.json` after any controller/DTO change.
 
+### GitHub Codespaces
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/lukislp/studylife?quickstart=1)
+
+The repository ships a dev container (`.devcontainer/`) that gives a contributor a working environment without installing anything locally: the .NET 10 SDK, Python 3 (for the i18n/date-format checks), the GitHub CLI and Docker-in-Docker, with the C# Dev Kit preinstalled. The machine needs 4 CPUs and 8 GB RAM. Creating the Codespace restores the NuGet packages; nothing else is downloaded.
+
+```bash
+dotnet run --project src/StudyLife.Server   # app on the forwarded port 53964
+dotnet test StudyLife.sln                   # build + tests
+```
+
+Open the forwarded port 53964 from the Ports tab (the terminal also prints the URL on attach). GitHub terminates TLS and sets the `X-Forwarded-*` headers, which the server already trusts from loopback; the WebAuthn relying party and origin are derived from the request, so passkey registration and login work on the `*.app.github.dev` URL without extra configuration. On the very first start the server log prints a one-time setup code - enter it on `/register` to become the owner. The port is private by default; keep it that way, since the instance is yours alone. As in a local run, the speech endpoints answer 404 because the Piper voices and the Whisper model are not downloaded.
+
+The optional scale stack (Postgres + Redis + replicas, see [docs/SCALING.md](docs/SCALING.md)) is not started automatically. Docker is available inside the Codespace, so it takes two steps:
+
+```bash
+dotnet publish src/StudyLife.Server/StudyLife.Server.csproj -c Release --runtime linux-x64 --no-self-contained -o publish/amd64
+docker build -f src/StudyLife.Server/Dockerfile -t studylife-server:scale-local . && docker compose -f docker-compose.scale.yml up -d --scale server=5
+```
+
 ### Project Structure
 
 ```
