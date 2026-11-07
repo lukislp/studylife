@@ -292,5 +292,7 @@
   "AriaCloseDialog": "Uždaryti dialogo langą",
   "AriaRemoveGroup": "Pašalinti grupę",
   "AriaRemoveCourse": "Pašalinti kursą",
-  "AriaDeleteTimerMode": "Ištrinti laikmačio režimą"
+  "AriaDeleteTimerMode": "Ištrinti laikmačio režimą",
+  "ReportProblemLink": "Pranešti apie problemą",
+  "ReportProblemHint": "Atidaro pranešimą apie klaidą GitHub su iš anksto užpildyta programos versija ir platforma. Paskyros duomenys ir žurnalai nesiunčiami."
 }

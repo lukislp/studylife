@@ -292,5 +292,7 @@
   "AriaCloseDialog": "Dialog schließen",
   "AriaRemoveGroup": "Gruppe entfernen",
   "AriaRemoveCourse": "Kurs entfernen",
-  "AriaDeleteTimerMode": "Timer-Modus löschen"
+  "AriaDeleteTimerMode": "Timer-Modus löschen",
+  "ReportProblemLink": "Problem melden",
+  "ReportProblemHint": "Öffnet auf GitHub eine Fehlermeldung mit vorausgefüllter App-Version und Plattform. Es werden keine Kontodaten oder Logs gesendet."
 }

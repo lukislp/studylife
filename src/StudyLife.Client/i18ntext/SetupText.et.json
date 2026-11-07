@@ -292,5 +292,7 @@
   "AriaCloseDialog": "Sulge dialoog",
   "AriaRemoveGroup": "Eemalda rühm",
   "AriaRemoveCourse": "Eemalda aine",
-  "AriaDeleteTimerMode": "Kustuta taimeri režiim"
+  "AriaDeleteTimerMode": "Kustuta taimeri režiim",
+  "ReportProblemLink": "Teata probleemist",
+  "ReportProblemHint": "Avab GitHubis veateate, kus rakenduse versioon ja platvorm on eeltäidetud. Konto andmeid ega logisid ei saadeta."
 }

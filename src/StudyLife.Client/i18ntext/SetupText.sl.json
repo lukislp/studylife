@@ -292,5 +292,7 @@
   "AriaCloseDialog": "Zapri pogovorno okno",
   "AriaRemoveGroup": "Odstrani skupino",
   "AriaRemoveCourse": "Odstrani predmet",
-  "AriaDeleteTimerMode": "Izbriši način časovnika"
+  "AriaDeleteTimerMode": "Izbriši način časovnika",
+  "ReportProblemLink": "Prijavi težavo",
+  "ReportProblemHint": "Odpre prijavo napake na GitHubu z vnaprej izpolnjeno različico aplikacije in platformo. Podatki računa in dnevniki se ne pošiljajo."
 }

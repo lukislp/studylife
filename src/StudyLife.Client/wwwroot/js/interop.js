@@ -272,6 +272,12 @@ async function requestNotificationPermission() {
     return result;
 }
 
+// Read by the Setup page's "Report a problem" link (ProblemReportLink reduces it to browser
+// family, major version and OS - the raw string is never sent anywhere).
+function getUserAgent() {
+    return navigator.userAgent;
+}
+
 function getNotificationPermissionStatus() {
     // On iOS the Notification API only runs in installed PWA mode (standalone).
     // In a normal browser tab, 'Notification' is not defined.

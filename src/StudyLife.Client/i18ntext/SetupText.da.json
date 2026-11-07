@@ -292,5 +292,7 @@
   "AriaCloseDialog": "Luk dialog",
   "AriaRemoveGroup": "Fjern gruppe",
   "AriaRemoveCourse": "Fjern fag",
-  "AriaDeleteTimerMode": "Slet timertilstand"
+  "AriaDeleteTimerMode": "Slet timertilstand",
+  "ReportProblemLink": "Rapportér et problem",
+  "ReportProblemHint": "Åbner en fejlrapport på GitHub med appversion og platform udfyldt på forhånd. Der sendes ingen kontodata eller logs."
 }

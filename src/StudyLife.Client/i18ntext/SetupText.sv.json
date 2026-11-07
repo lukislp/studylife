@@ -292,5 +292,7 @@
   "AriaCloseDialog": "Stäng dialogruta",
   "AriaRemoveGroup": "Ta bort grupp",
   "AriaRemoveCourse": "Ta bort kurs",
-  "AriaDeleteTimerMode": "Ta bort timerläge"
+  "AriaDeleteTimerMode": "Ta bort timerläge",
+  "ReportProblemLink": "Rapportera ett problem",
+  "ReportProblemHint": "Öppnar en felrapport på GitHub med appversion och plattform förifyllda. Inga kontouppgifter eller loggar skickas."
 }

@@ -292,5 +292,7 @@
   "AriaCloseDialog": "Párbeszédpanel bezárása",
   "AriaRemoveGroup": "Csoport eltávolítása",
   "AriaRemoveCourse": "Kurzus eltávolítása",
-  "AriaDeleteTimerMode": "Időzítő mód törlése"
+  "AriaDeleteTimerMode": "Időzítő mód törlése",
+  "ReportProblemLink": "Hiba jelentése",
+  "ReportProblemHint": "Hibajelentést nyit a GitHubon az alkalmazásverzióval és a platformmal előre kitöltve. Fiókadatok és naplók nem kerülnek elküldésre."
 }

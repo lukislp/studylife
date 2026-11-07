@@ -432,19 +432,28 @@
     </CascadingValue>
     </div>
 
-    @if (!string.IsNullOrEmpty(_appVersion))
-    {
-        <!-- If the client version RUNNING in the browser (cached WASM bundle, service
-             worker) differs from the server version, it becomes visible here - this is the
-             diagnostic tool for "feature is deployed but still behaves like the old one". -->
-        <div class="setup-version">
-            v@_appVersion
+    <!-- If the client version RUNNING in the browser (cached WASM bundle, service
+         worker) differs from the server version, it becomes visible in the line below - this
+         is the diagnostic tool for "feature is deployed but still behaves like the old one". -->
+    <!-- "Report a problem": opens the repository's bug-report form with the environment
+         fields pre-filled (ProblemReportLink). Environment data only - app version, platform,
+         language, demo flag - never account data or logs. -->
+    <div class="setup-version">
+        @if (!string.IsNullOrEmpty(_appVersion))
+        {
+            <span>v@_appVersion</span>
             @if (_clientVersionMismatch)
             {
                 <span style="color:var(--warning, #e6a23c)"> · UI v@_clientVersion</span>
             }
-        </div>
-    }
+            <span aria-hidden="true"> · </span>
+        }
+        @if (_reportUrl != null)
+        {
+            <a class="setup-report-link" href="@_reportUrl" target="_blank" rel="noopener noreferrer"
+               title="@T.ReportProblemHint">@T.ReportProblemLink</a>
+        }
+    </div>
 
     <!-- Add study programme modal -->
     @if (_showAddProgramModal)
@@ -550,6 +559,30 @@
     // Version of the client bundle actually RUNNING (CI sets -p:Version globally, including
     // for StudyLife.Client) - if it differs from the server version, the browser is still
     // running an old build cached by the service worker. Compared without the "+sha" suffix.
+    private string? _reportUrl;
+
+    // Pre-fills the GitHub bug-report form (ProblemReportLink). Environment data only - see
+    // ProblemReportContext; nothing from the user's account or data goes into the link.
+    private async Task BuildReportUrlAsync()
+    {
+        try
+        {
+            var version = new[] { _clientVersion, _appVersion?.Split('+')[0] }
+                .FirstOrDefault(ProblemReportLink.IsReleaseVersion);
+            string userAgent = "";
+            try { userAgent = await JS.InvokeAsync<string>("getUserAgent"); }
+            catch { /* prerender/old cached interop.js: the line simply has no browser */ }
+            var locale = await I18nText.GetCurrentLanguageAsync();
+            var demo = await State.GetIsDemoAsync();
+            _reportUrl = ProblemReportLink.Build(new ProblemReportContext(
+                version,
+                NativeAuth.IsAvailable ? "app" : "web",
+                ProblemReportLink.DescribeUserAgent(userAgent),
+                locale,
+                demo));
+        }
+        catch { /* the link is a convenience: hide it rather than break the page */ }
+    }
     private string? _clientVersion;
     private bool _clientVersionMismatch;
 
@@ -823,6 +856,7 @@
             catch { /* offline/network error: version line simply stays empty */ }
         }
         DetectClientVersion();
+        await BuildReportUrlAsync();
 
         List<CourseGoalDto> goals;
         if (overview?.CourseGoals is { } bundledGoals)

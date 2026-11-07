@@ -292,5 +292,7 @@
   "AriaCloseDialog": "Zavřít dialog",
   "AriaRemoveGroup": "Odebrat skupinu",
   "AriaRemoveCourse": "Odebrat předmět",
-  "AriaDeleteTimerMode": "Smazat režim časovače"
+  "AriaDeleteTimerMode": "Smazat režim časovače",
+  "ReportProblemLink": "Nahlásit problém",
+  "ReportProblemHint": "Otevře hlášení chyby na GitHubu s předvyplněnou verzí aplikace a platformou. Neodesílají se žádná data účtu ani protokoly."
 }
