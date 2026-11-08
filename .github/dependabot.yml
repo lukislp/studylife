@@ -71,3 +71,20 @@ updates:
     reviewers:
       - "lukislp"
     open-pull-requests-limit: 5
+  # The Codespaces dev container: the features in .devcontainer/devcontainer.json, pinned by
+  # .devcontainer/devcontainer-lock.json. The "image" (mcr.microsoft.com/devcontainers/dotnet:10.0)
+  # stays on its major.minor tag by design. All feature bumps share one PR. Dev tooling only, so
+  # the ci prefix releases nothing.
+  - package-ecosystem: devcontainers
+    directory: /
+    schedule:
+      interval: daily
+    commit-message:
+      prefix: "ci"
+    reviewers:
+      - "lukislp"
+    open-pull-requests-limit: 5
+    groups:
+      devcontainer-features:
+        patterns:
+          - "*"
