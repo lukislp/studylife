@@ -14,5 +14,6 @@ set -u
 
 cd "$(dirname "$0")/.."
 
-dotnet restore StudyLife.sln || echo "dotnet restore failed - run it again manually."
+# --locked-mode like every restore in CI: the packages.lock.json files pin each package by hash.
+dotnet restore StudyLife.sln --locked-mode || echo "dotnet restore failed - run it again manually."
 dotnet dev-certs https || echo "dotnet dev-certs failed - run it again before dotnet run."
