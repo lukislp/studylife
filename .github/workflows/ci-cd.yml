@@ -334,7 +334,7 @@ jobs:
       - run: dotnet workload restore StudyLife.sln
       - run: dotnet restore StudyLife.sln --locked-mode
       - name: Known-vulnerable NuGet packages (High/Critical fail the build)
-        uses: lukislp/ci-workflows/.github/actions/nuget-severity-gate@ea532e9b173cf0e512c9d54c18886eebd0b0d1ab # v1.8.24
+        uses: lukislp/ci-workflows/.github/actions/nuget-severity-gate@392aca4dd897dddfbb25ced027804ad406b6703e # v1.8.30
         with:
           solution: StudyLife.sln
 
