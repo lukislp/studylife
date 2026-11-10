@@ -20,7 +20,7 @@
   "OwnedAppsText": "Jako vývojář jste zaregistrovali {0} aplikací. Budou smazány také a integrace ostatních lidí s nimi přestanou fungovat.",
   "LastUserText": "Jste jediný účet v této instalaci. Smazáním se instalace vrátí do stavu prvního spuštění a v protokolu serveru se objeví nový instalační kód.",
   "NotDeletedHeading": "Toto nesmaže:",
-  "NotDeletedBackups": "Dříve pořízené zálohy serveru, které obsahují kopii, dokud nejsou přepsány (týdenní kopie: čtyři týdny, spravované zálohy databáze: 30 dní).",
+  "NotDeletedBackups": "Zálohy pořízené před smazáním stále obsahují kopii, dokud nejsou přepsány: vestavěné týdenní kopie se uchovávají čtyři týdny, ostatní zálohy tak dlouho, jak nastavil provozovatel tohoto serveru (30 dní v dodávaném nastavení Kubernetes).",
   "NotDeletedPasskeys": "Přístupové klíče uložené ve správci hesel nebo na vašich zařízeních. Odstraňte je tam sami.",
   "NotDeletedCalendar": "Události, které si jiné kalendářové aplikace už stáhly přes váš odkaz na kalendář.",
   "ExportButton": "Nejprve stáhnout moje data",

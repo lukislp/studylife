@@ -20,7 +20,7 @@
   "OwnedAppsText": "Ako vývojár ste zaregistrovali {0} aplikácií. Budú odstránené tiež a integrácie ostatných ľudí s nimi prestanú fungovať.",
   "LastUserText": "Ste jediný účet v tejto inštalácii. Odstránením sa inštalácia vráti do stavu prvého spustenia a v protokole servera sa objaví nový inštalačný kód.",
   "NotDeletedHeading": "Toto neodstráni:",
-  "NotDeletedBackups": "Skôr vytvorené zálohy servera, ktoré obsahujú kópiu, kým sa neprepíšu (týždenné kópie: štyri týždne, spravované zálohy databázy: 30 dní).",
+  "NotDeletedBackups": "Zálohy vytvorené pred odstránením stále obsahujú kópiu, kým sa neprepíšu: vstavané týždenné kópie sa uchovávajú štyri týždne, ostatné zálohy tak dlho, ako nastavil prevádzkovateľ tohto servera (30 dní v dodávanom nastavení Kubernetes).",
   "NotDeletedPasskeys": "Prístupové kľúče uložené vo vašom správcovi hesiel alebo na vašich zariadeniach. Odstráňte ich tam sami.",
   "NotDeletedCalendar": "Udalosti, ktoré si iné kalendárové aplikácie už stiahli cez váš odkaz na kalendár.",
   "ExportButton": "Najprv stiahnuť moje údaje",

@@ -270,6 +270,11 @@ public class AccountDeletionServiceTests : IClassFixture<CustomWebApplicationFac
 
         Assert.Equal(AccountDeletionOutcome.NotFound, (await service.DeleteAsync(987654, 1, CancellationToken.None)).Outcome);
 
+        // A non-owner learns nothing about which ids exist: existing and unknown ids answer alike.
+        Assert.Equal(AccountDeletionOutcome.InitiatorNotOwner, (await service.DeleteAsync(bystander, guest, CancellationToken.None)).Outcome);
+        Assert.Equal(AccountDeletionOutcome.InitiatorNotOwner, (await service.DeleteAsync(987654, guest, CancellationToken.None)).Outcome);
+        Assert.Equal(AccountDeletionOutcome.InitiatorNotOwner, await service.CheckPolicyAsync(987654, bystander));
+
         Assert.Equal(AccountDeletionOutcome.Deleted, (await service.DeleteAsync(guest, 1, CancellationToken.None)).Outcome);
         Assert.False(await _factory.WithDbAsync(db => db.AuthUsers.AnyAsync(u => u.Id == guest)));
 

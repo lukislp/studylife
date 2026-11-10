@@ -20,7 +20,7 @@
   "OwnedAppsText": "Ai înregistrat {0} aplicație/aplicații ca dezvoltator. Acestea sunt șterse și ele, iar integrările altor persoane cu ele nu vor mai funcționa.",
   "LastUserText": "Este singurul cont din această instalare. Ștergerea lui readuce instalarea în starea de prim start, iar în jurnalul serverului apare un nou cod de configurare.",
   "NotDeletedHeading": "Aceasta nu șterge:",
-  "NotDeletedBackups": "Copiile de rezervă ale serverului făcute anterior conțin în continuare o copie până când sunt înlocuite (copii săptămânale: patru săptămâni, copii de rezervă ale bazei de date gestionate: 30 de zile).",
+  "NotDeletedBackups": "Copiile de rezervă făcute înainte de ștergere conțin în continuare o copie până când sunt înlocuite: copiile săptămânale încorporate se păstrează patru săptămâni, celelalte atât cât a configurat operatorul acestui server (30 de zile în configurarea Kubernetes furnizată).",
   "NotDeletedPasskeys": "Cheile de acces salvate în managerul tău de parole sau pe dispozitivele tale. Elimină-le singur de acolo.",
   "NotDeletedCalendar": "Evenimentele pe care alte aplicații de calendar le-au preluat deja prin linkul tău de calendar.",
   "ExportButton": "Descarcă mai întâi datele mele",

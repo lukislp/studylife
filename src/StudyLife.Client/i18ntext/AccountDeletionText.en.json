@@ -20,7 +20,7 @@
   "OwnedAppsText": "You registered {0} app(s) as a developer. They are deleted as well, and other people's integrations with them stop working.",
   "LastUserText": "You are the only account on this installation. Deleting it returns the installation to its first-run state, and a new setup code appears in the server log.",
   "NotDeletedHeading": "This does not delete:",
-  "NotDeletedBackups": "Server backups made earlier still contain a copy until they rotate out (weekly copies: four weeks, managed database backups: 30 days).",
+  "NotDeletedBackups": "Backups made before the deletion still contain a copy until they are rotated out: the built-in weekly copies are kept for four weeks; any further backups are kept as long as the operator of this server has configured (30 days in the supplied Kubernetes setup).",
   "NotDeletedPasskeys": "Passkeys saved in your password manager or on your devices. Remove those there yourself.",
   "NotDeletedCalendar": "Events that other calendar apps already fetched through your calendar link.",
   "ExportButton": "Download my data first",

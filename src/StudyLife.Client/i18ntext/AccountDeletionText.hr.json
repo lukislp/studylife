@@ -20,7 +20,7 @@
   "OwnedAppsText": "Kao razvojni programer registrirali ste aplikacija: {0}. Bit će izbrisane i one, a integracije drugih osoba s njima prestat će raditi.",
   "LastUserText": "Ovo je jedini račun na ovoj instalaciji. Brisanjem se instalacija vraća u stanje prvog pokretanja, a u zapisniku poslužitelja pojavljuje se novi kod za postavljanje.",
   "NotDeletedHeading": "Ovo ne briše:",
-  "NotDeletedBackups": "Ranije izrađene sigurnosne kopije poslužitelja i dalje sadrže kopiju dok se ne zamijene (tjedne kopije: četiri tjedna, upravljane sigurnosne kopije baze: 30 dana).",
+  "NotDeletedBackups": "Sigurnosne kopije izrađene prije brisanja i dalje sadrže kopiju dok se ne zamijene: ugrađene tjedne kopije čuvaju se četiri tjedna, ostale sigurnosne kopije onoliko dugo koliko je postavio operator ovog poslužitelja (30 dana u isporučenoj Kubernetes postavci).",
   "NotDeletedPasskeys": "Pristupne ključeve spremljene u vašem upravitelju zaporki ili na vašim uređajima. Uklonite ih tamo sami.",
   "NotDeletedCalendar": "Događaje koje su druge aplikacije kalendara već preuzele putem vaše poveznice na kalendar.",
   "ExportButton": "Prvo preuzmi moje podatke",

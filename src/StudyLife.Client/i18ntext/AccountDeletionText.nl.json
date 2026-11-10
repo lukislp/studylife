@@ -20,7 +20,7 @@
   "OwnedAppsText": "Je hebt {0} app(s) als ontwikkelaar geregistreerd. Die worden ook verwijderd, en de integraties van anderen met deze apps werken niet meer.",
   "LastUserText": "Je bent het enige account van deze installatie. Als je het verwijdert, keert de installatie terug naar de eerste-gebruikstoestand en verschijnt er een nieuwe setupcode in het serverlogboek.",
   "NotDeletedHeading": "Dit wordt niet verwijderd:",
-  "NotDeletedBackups": "Serverback-ups die eerder zijn gemaakt, bevatten nog een kopie totdat ze worden vervangen (wekelijkse kopieën: vier weken, beheerde databaseback-ups: 30 dagen).",
+  "NotDeletedBackups": "Back-ups die vóór de verwijdering zijn gemaakt, bevatten nog een kopie totdat ze worden vervangen: de ingebouwde wekelijkse kopieën worden vier weken bewaard; andere back-ups zolang de beheerder van deze server heeft ingesteld (30 dagen in de meegeleverde Kubernetes-opzet).",
   "NotDeletedPasskeys": "Passkeys die zijn opgeslagen in je wachtwoordmanager of op je apparaten. Verwijder die daar zelf.",
   "NotDeletedCalendar": "Afspraken die andere agenda-apps al via je agendalink hebben opgehaald.",
   "ExportButton": "Eerst mijn gegevens downloaden",

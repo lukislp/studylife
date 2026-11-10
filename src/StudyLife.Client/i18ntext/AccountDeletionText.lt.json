@@ -20,7 +20,7 @@
   "OwnedAppsText": "Kaip kūrėjas užregistravote programų: {0}. Jos taip pat bus ištrintos, o kitų žmonių integracijos su jomis nustos veikti.",
   "LastUserText": "Tai vienintelė šio diegimo paskyra. Ją ištrynus diegimas grįžta į pirmojo paleidimo būseną, o serverio žurnale atsiranda naujas sąrankos kodas.",
   "NotDeletedHeading": "Tai neištrina:",
-  "NotDeletedBackups": "Anksčiau sukurtų serverio atsarginių kopijų, kuriose yra kopija, kol jos bus pakeistos (savaitinės kopijos: keturios savaitės, valdomos duomenų bazės atsarginės kopijos: 30 dienų).",
+  "NotDeletedBackups": "Prieš ištrynimą sukurtose atsarginėse kopijose vis dar yra kopija, kol jos bus pakeistos: įtaisytos savaitinės kopijos saugomos keturias savaites, kitos atsarginės kopijos tiek, kiek nustatė šio serverio operatorius (30 dienų pateiktoje Kubernetes sąrankoje).",
   "NotDeletedPasskeys": "Prieigos raktų, išsaugotų jūsų slaptažodžių tvarkyklėje arba įrenginiuose. Pašalinkite juos ten patys.",
   "NotDeletedCalendar": "Įvykių, kuriuos kitos kalendoriaus programos jau gavo per jūsų kalendoriaus nuorodą.",
   "ExportButton": "Pirmiausia atsisiųsti mano duomenis",

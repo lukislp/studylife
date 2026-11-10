@@ -20,7 +20,7 @@
   "OwnedAppsText": "Registou {0} aplicação(ões) como programador. Também são eliminadas e as integrações de outras pessoas com elas deixam de funcionar.",
   "LastUserText": "É a única conta desta instalação. Ao eliminá-la, a instalação volta ao estado inicial e surge um novo código de configuração no registo do servidor.",
   "NotDeletedHeading": "Isto não elimina:",
-  "NotDeletedBackups": "As cópias de segurança do servidor feitas antes continuam a conter uma cópia até serem substituídas (cópias semanais: quatro semanas; cópias de segurança da base de dados gerida: 30 dias).",
+  "NotDeletedBackups": "As cópias de segurança feitas antes da eliminação continuam a conter uma cópia até serem substituídas: as cópias semanais integradas são mantidas durante quatro semanas; as restantes, durante o tempo que o operador deste servidor tiver configurado (30 dias na configuração Kubernetes fornecida).",
   "NotDeletedPasskeys": "As chaves de acesso guardadas no seu gestor de palavras-passe ou nos seus dispositivos. Remova-as aí por si.",
   "NotDeletedCalendar": "Os eventos que outras aplicações de calendário já obtiveram através da sua ligação de calendário.",
   "ExportButton": "Transferir primeiro os meus dados",

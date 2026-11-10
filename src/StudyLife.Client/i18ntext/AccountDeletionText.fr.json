@@ -20,7 +20,7 @@
   "OwnedAppsText": "Vous avez enregistré {0} application(s) en tant que développeur. Elles sont également supprimées et les intégrations d'autres personnes avec ces applications cessent de fonctionner.",
   "LastUserText": "Vous êtes le seul compte de cette installation. La supprimer ramène l'installation à son état de première utilisation, et un nouveau code de configuration apparaît dans le journal du serveur.",
   "NotDeletedHeading": "Ce qui n'est pas supprimé :",
-  "NotDeletedBackups": "Les sauvegardes du serveur faites auparavant contiennent encore une copie jusqu'à leur rotation (copies hebdomadaires : quatre semaines, sauvegardes de base de données gérées : 30 jours).",
+  "NotDeletedBackups": "Les sauvegardes faites avant la suppression contiennent encore une copie jusqu'à leur rotation : les copies hebdomadaires intégrées sont conservées quatre semaines ; les autres sauvegardes le sont aussi longtemps que l'opérateur de ce serveur l'a configuré (30 jours dans la configuration Kubernetes fournie).",
   "NotDeletedPasskeys": "Les clés d'accès enregistrées dans votre gestionnaire de mots de passe ou sur vos appareils. Supprimez-les vous-même à cet endroit.",
   "NotDeletedCalendar": "Les événements que d'autres applications de calendrier ont déjà récupérés via votre lien de calendrier.",
   "ExportButton": "Télécharger d'abord mes données",

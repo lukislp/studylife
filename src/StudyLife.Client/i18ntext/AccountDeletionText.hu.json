@@ -20,7 +20,7 @@
   "OwnedAppsText": "{0} alkalmazást regisztráltál fejlesztőként. Ezek is törlődnek, és mások integrációi velük megszűnnek működni.",
   "LastUserText": "Ez a telepítés egyetlen fiókja. A törlésével a telepítés visszatér az első indítás állapotába, és a kiszolgálónaplóban új beállítási kód jelenik meg.",
   "NotDeletedHeading": "Ez nem törli:",
-  "NotDeletedBackups": "A korábban készült kiszolgáló-biztonsági mentéseket, amelyek addig tartalmaznak egy másolatot, amíg le nem cserélődnek (heti másolatok: négy hét, felügyelt adatbázis-mentések: 30 nap).",
+  "NotDeletedBackups": "A törlés előtt készült biztonsági mentések addig tartalmaznak egy másolatot, amíg le nem cserélődnek: a beépített heti másolatokat négy hétig őrzi a rendszer, a többi mentést annyi ideig, amennyit a kiszolgáló üzemeltetője beállított (30 nap a mellékelt Kubernetes-beállításban).",
   "NotDeletedPasskeys": "A jelszókezelődben vagy az eszközeiden mentett hozzáférési kulcsokat. Ezeket ott magad távolíthatod el.",
   "NotDeletedCalendar": "Azokat az eseményeket, amelyeket más naptáralkalmazások már lekértek a naptárlinkeden keresztül.",
   "ExportButton": "Előbb letöltöm az adataimat",

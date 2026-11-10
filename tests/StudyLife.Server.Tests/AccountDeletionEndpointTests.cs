@@ -352,6 +352,8 @@ public class AccountDeletionOwnerPolicyTests : IClassFixture<CustomWebApplicatio
         var info = await (await _http.SendAsync(HttpMethod.Get, "/api/auth/account-info", ownerToken)).Content.ReadFromJsonAsync<AccountInfoDto>();
         Assert.Equal(HttpStatusCode.BadRequest, (await _http.SendAsync(HttpMethod.Delete, $"/api/auth/users/{info!.UserId}", ownerToken)).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await _http.SendAsync(HttpMethod.Delete, "/api/auth/users/987654", ownerToken)).StatusCode);
+        // A non-owner gets 403 for an unknown id too, so ids cannot be probed.
+        Assert.Equal(HttpStatusCode.Forbidden, (await _http.SendAsync(HttpMethod.Delete, "/api/auth/users/987654", guestToken)).StatusCode);
         Assert.True(await _http.UserExistsAsync(guestId));
     }
 }

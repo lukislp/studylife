@@ -20,7 +20,7 @@
   "OwnedAppsText": "Du hast {0} App(s) als Entwickler registriert. Sie werden ebenfalls gelöscht, und die Integrationen anderer Personen mit diesen Apps funktionieren nicht mehr.",
   "LastUserText": "Du bist das einzige Konto auf dieser Installation. Mit dem Löschen kehrt die Installation in den Zustand der Ersteinrichtung zurück, und im Server-Log erscheint ein neuer Setup-Code.",
   "NotDeletedHeading": "Das wird nicht gelöscht:",
-  "NotDeletedBackups": "Server-Backups, die vorher erstellt wurden, enthalten weiterhin eine Kopie, bis sie rotiert werden (wöchentliche Kopien: vier Wochen, verwaltete Datenbank-Backups: 30 Tage).",
+  "NotDeletedBackups": "Vor der Löschung erstellte Backups enthalten weiterhin eine Kopie, bis sie rotiert werden: Die eingebauten wöchentlichen Kopien werden vier Wochen aufbewahrt; weitere Backups so lange, wie der Betreiber dieses Servers es eingestellt hat (30 Tage im mitgelieferten Kubernetes-Setup).",
   "NotDeletedPasskeys": "Passkeys, die in deinem Passwortmanager oder auf deinen Geräten gespeichert sind. Entferne sie dort selbst.",
   "NotDeletedCalendar": "Termine, die andere Kalender-Apps über deinen Kalenderlink bereits abgerufen haben.",
   "ExportButton": "Zuerst meine Daten herunterladen",

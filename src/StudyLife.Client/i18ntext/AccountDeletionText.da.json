@@ -20,7 +20,7 @@
   "OwnedAppsText": "Du har registreret {0} app(s) som udvikler. De slettes også, og andres integrationer med dem holder op med at virke.",
   "LastUserText": "Du er den eneste konto i denne installation. Når den slettes, vender installationen tilbage til sin første tilstand, og en ny opsætningskode vises i serverloggen.",
   "NotDeletedHeading": "Dette sletter ikke:",
-  "NotDeletedBackups": "Tidligere sikkerhedskopier af serveren indeholder stadig en kopi, indtil de udskiftes (ugentlige kopier: fire uger, administrerede databasesikkerhedskopier: 30 dage).",
+  "NotDeletedBackups": "Sikkerhedskopier lavet før sletningen indeholder stadig en kopi, indtil de udskiftes: de indbyggede ugentlige kopier gemmes i fire uger, andre sikkerhedskopier så længe, som operatøren af denne server har indstillet (30 dage i den medfølgende Kubernetes-opsætning).",
   "NotDeletedPasskeys": "Adgangsnøgler gemt i din adgangskodeadministrator eller på dine enheder. Fjern dem selv dér.",
   "NotDeletedCalendar": "Begivenheder, som andre kalenderapps allerede har hentet via dit kalenderlink.",
   "ExportButton": "Download først mine data",

@@ -20,7 +20,7 @@
   "OwnedAppsText": "Chláraigh tú {0} aip mar fhorbróir. Scriostar iad sin freisin, agus stopfaidh comhtháthaithe daoine eile leo ag obair.",
   "LastUserText": "Is é seo an t-aon chuntas ar an suiteáil seo. Ag scriosadh é, filleann an tsuiteáil ar a staid céad-úsáide, agus feictear cód nua socraithe i log an fhreastalaí.",
   "NotDeletedHeading": "Ní scriosann sé seo:",
-  "NotDeletedBackups": "Cúltacaí freastalaí a rinneadh roimhe seo ina bhfuil cóip fós go dtí go gcuirtear ceann eile ina n-áit (cóipeanna seachtainiúla: ceithre seachtaine, cúltacaí bunachair sonraí bainistithe: 30 lá).",
+  "NotDeletedBackups": "Tá cóip fós i gcúltacaí a rinneadh roimh an scriosadh go dtí go gcuirtear ceann eile ina n-áit: coinnítear na cóipeanna seachtainiúla ionsuite ar feadh ceithre seachtaine; coinnítear cúltacaí eile chomh fada agus a shocraigh oibreoir an fhreastalaí seo (30 lá sa socrú Kubernetes a sholáthraítear).",
   "NotDeletedPasskeys": "Saicearraí rochtana atá sábháilte i do bhainisteoir pasfhocal nó ar do ghairis. Bain iad sin ansin tú féin.",
   "NotDeletedCalendar": "Imeachtaí a fuair feidhmchláir fhéilire eile cheana trí nasc do fhéilire.",
   "ExportButton": "Íoslódáil mo shonraí ar dtús",

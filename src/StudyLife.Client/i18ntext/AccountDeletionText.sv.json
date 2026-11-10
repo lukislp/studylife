@@ -20,7 +20,7 @@
   "OwnedAppsText": "Du har registrerat {0} app(ar) som utvecklare. De raderas också, och andras integrationer med dem slutar fungera.",
   "LastUserText": "Du är det enda kontot i den här installationen. När det raderas återgår installationen till sitt första tillstånd, och en ny installationskod visas i serverloggen.",
   "NotDeletedHeading": "Det här raderar inte:",
-  "NotDeletedBackups": "Tidigare säkerhetskopior av servern innehåller fortfarande en kopia tills de ersätts (veckokopior: fyra veckor, hanterade databassäkerhetskopior: 30 dagar).",
+  "NotDeletedBackups": "Säkerhetskopior som gjordes före raderingen innehåller fortfarande en kopia tills de ersätts: de inbyggda veckokopiorna sparas i fyra veckor, andra säkerhetskopior så länge som operatören av den här servern har ställt in (30 dagar i den medföljande Kubernetes-konfigurationen).",
   "NotDeletedPasskeys": "Nycklar för åtkomst som sparats i din lösenordshanterare eller på dina enheter. Ta bort dem där själv.",
   "NotDeletedCalendar": "Händelser som andra kalenderappar redan har hämtat via din kalenderlänk.",
   "ExportButton": "Ladda ner mina data först",

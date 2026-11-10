@@ -20,7 +20,7 @@
   "OwnedAppsText": "Zarejestrowano {0} aplikacji jako deweloper. Zostaną one również usunięte, a integracje innych osób z nimi przestaną działać.",
   "LastUserText": "To jedyne konto w tej instalacji. Jego usunięcie przywraca instalację do stanu pierwszego uruchomienia, a w dzienniku serwera pojawia się nowy kod konfiguracyjny.",
   "NotDeletedHeading": "To nie usuwa:",
-  "NotDeletedBackups": "Wcześniejszych kopii zapasowych serwera, które zawierają kopię danych do czasu ich rotacji (kopie tygodniowe: cztery tygodnie, zarządzane kopie bazy danych: 30 dni).",
+  "NotDeletedBackups": "Kopie zapasowe wykonane przed usunięciem nadal zawierają kopię danych do czasu ich rotacji: wbudowane kopie tygodniowe są przechowywane cztery tygodnie, pozostałe tak długo, jak ustawił operator tego serwera (30 dni w dostarczonej konfiguracji Kubernetes).",
   "NotDeletedPasskeys": "Kluczy dostępu zapisanych w menedżerze haseł lub na Twoich urządzeniach. Usuń je tam samodzielnie.",
   "NotDeletedCalendar": "Wydarzeń, które inne aplikacje kalendarza już pobrały przez Twój link do kalendarza.",
   "ExportButton": "Najpierw pobierz moje dane",

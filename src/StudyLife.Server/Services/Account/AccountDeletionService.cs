@@ -107,10 +107,12 @@ public sealed class AccountDeletionService(
     public async Task<AccountDeletionOutcome> CheckPolicyAsync(int userId, int initiatedByUserId)
     {
         if (DemoModeGuard.IsEnabled(config)) return AccountDeletionOutcome.DemoMode;
-        if (!await db.AuthUsers.AsNoTracking().AnyAsync(u => u.Id == userId)) return AccountDeletionOutcome.NotFound;
-
+        // Authorization first: a non-owner must get the same answer for an existing and an unknown
+        // id, otherwise DELETE api/auth/users/{id} would tell them which user ids exist.
         if (initiatedByUserId != userId && !await ownership.IsOwnerAsync(initiatedByUserId))
             return AccountDeletionOutcome.InitiatorNotOwner;
+
+        if (!await db.AuthUsers.AsNoTracking().AnyAsync(u => u.Id == userId)) return AccountDeletionOutcome.NotFound;
 
         if (await db.AuthUsers.AsNoTracking().AnyAsync(u => u.Id != userId)
             && await ownership.IsOwnerAsync(userId))

@@ -20,7 +20,7 @@
   "OwnedAppsText": "Kā izstrādātājs esat reģistrējis lietotnes: {0}. Tās arī tiks dzēstas, un citu cilvēku integrācijas ar tām pārstās darboties.",
   "LastUserText": "Šis ir vienīgais konts šajā instalācijā. Dzēšot to, instalācija atgriežas pirmās palaišanas stāvoklī, un servera žurnālā parādās jauns iestatīšanas kods.",
   "NotDeletedHeading": "Tas nedzēš:",
-  "NotDeletedBackups": "Iepriekš izveidotas servera rezerves kopijas, kas satur kopiju, līdz tās tiek aizstātas (iknedēļas kopijas: četras nedēļas, pārvaldītas datubāzes rezerves kopijas: 30 dienas).",
+  "NotDeletedBackups": "Pirms dzēšanas izveidotās rezerves kopijas joprojām satur kopiju, līdz tās tiek aizstātas: iebūvētās iknedēļas kopijas tiek glabātas četras nedēļas, citas rezerves kopijas tik ilgi, cik iestatījis šī servera operators (30 dienas piegādātajā Kubernetes iestatījumā).",
   "NotDeletedPasskeys": "Piekļuves atslēgas, kas saglabātas jūsu paroļu pārvaldniekā vai ierīcēs. Noņemiet tās tur pats.",
   "NotDeletedCalendar": "Notikumus, ko citas kalendāra lietotnes jau ir ieguvušas, izmantojot jūsu kalendāra saiti.",
   "ExportButton": "Vispirms lejupielādēt manus datus",

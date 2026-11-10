@@ -20,7 +20,7 @@
   "OwnedAppsText": "Oled arendajana registreerinud {0} rakendust. Needki kustutatakse ning teiste inimeste integratsioonid nendega lakkavad töötamast.",
   "LastUserText": "See on selle paigalduse ainus konto. Kustutamisel läheb paigaldus tagasi esmakäivituse olekusse ja serveri logisse ilmub uus seadistuskood.",
   "NotDeletedHeading": "See ei kustuta:",
-  "NotDeletedBackups": "Varem tehtud serveri varukoopiaid, mis sisaldavad koopiat, kuni need välja vahetatakse (iganädalased koopiad: neli nädalat, hallatavad andmebaasi varukoopiad: 30 päeva).",
+  "NotDeletedBackups": "Enne kustutamist tehtud varukoopiad sisaldavad koopiat, kuni need välja vahetatakse: sisseehitatud iganädalaseid koopiaid hoitakse neli nädalat, muid varukoopiaid nii kaua, kui selle serveri haldaja on seadistanud (30 päeva kaasasolevas Kubernetese seadistuses).",
   "NotDeletedPasskeys": "Paroolihaldurisse või sinu seadmetesse salvestatud pääsuvõtmeid. Eemalda need seal ise.",
   "NotDeletedCalendar": "Sündmusi, mille teised kalendrirakendused on sinu kalendrilingi kaudu juba kätte saanud.",
   "ExportButton": "Laadi esmalt alla minu andmed",

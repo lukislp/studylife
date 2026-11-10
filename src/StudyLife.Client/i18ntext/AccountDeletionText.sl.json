@@ -20,7 +20,7 @@
   "OwnedAppsText": "Kot razvijalec ste registrirali toliko aplikacij: {0}. Tudi te bodo izbrisane, integracije drugih oseb z njimi pa prenehajo delovati.",
   "LastUserText": "To je edini račun v tej namestitvi. Z izbrisom se namestitev vrne v stanje prvega zagona, v dnevniku strežnika pa se prikaže nova nastavitvena koda.",
   "NotDeletedHeading": "Tega ne izbriše:",
-  "NotDeletedBackups": "Prej ustvarjenih varnostnih kopij strežnika, ki vsebujejo kopijo, dokler se ne zamenjajo (tedenske kopije: štirje tedni, upravljane varnostne kopije zbirke: 30 dni).",
+  "NotDeletedBackups": "Varnostne kopije, narejene pred izbrisom, še vedno vsebujejo kopijo, dokler se ne zamenjajo: vgrajene tedenske kopije se hranijo štiri tedne, druge varnostne kopije toliko časa, kot je nastavil upravljavec tega strežnika (30 dni v priloženi nastavitvi Kubernetes).",
   "NotDeletedPasskeys": "Ključev za dostop, shranjenih v upravitelju gesel ali na vaših napravah. Odstranite jih tam sami.",
   "NotDeletedCalendar": "Dogodkov, ki so jih drugi koledarski programi že prenesli prek vaše povezave do koledarja.",
   "ExportButton": "Najprej prenesi moje podatke",

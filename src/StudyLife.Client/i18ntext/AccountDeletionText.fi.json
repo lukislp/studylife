@@ -20,7 +20,7 @@
   "OwnedAppsText": "Olet rekisteröinyt kehittäjänä {0} sovellusta. Myös ne poistetaan, ja muiden käyttäjien integraatiot niihin lakkaavat toimimasta.",
   "LastUserText": "Tämä on asennuksen ainoa tili. Sen poistaminen palauttaa asennuksen ensikäynnistyksen tilaan, ja palvelimen lokiin ilmestyy uusi asetuskoodi.",
   "NotDeletedHeading": "Tämä ei poista:",
-  "NotDeletedBackups": "Aiemmin tehtyjä palvelimen varmuuskopioita, jotka sisältävät kopion, kunnes ne korvataan (viikoittaiset kopiot: neljä viikkoa, hallinnoidut tietokannan varmuuskopiot: 30 päivää).",
+  "NotDeletedBackups": "Ennen poistoa tehdyt varmuuskopiot sisältävät kopion, kunnes ne korvataan: sisäänrakennetut viikkokopiot säilytetään neljä viikkoa, muut varmuuskopiot niin kauan kuin tämän palvelimen ylläpitäjä on määrittänyt (30 päivää mukana tulevassa Kubernetes-asetuksessa).",
   "NotDeletedPasskeys": "Salasanahallintaan tai laitteillesi tallennettuja pääsyavaimia. Poista ne itse sieltä.",
   "NotDeletedCalendar": "Tapahtumia, jotka muut kalenterisovellukset ovat jo hakeneet kalenterilinkkisi kautta.",
   "ExportButton": "Lataa ensin omat tietoni",

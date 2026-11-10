@@ -20,7 +20,7 @@
   "OwnedAppsText": "Irreġistrajt {0} applikazzjoni/jiet bħala żviluppatur. Dawn jitħassru wkoll, u l-integrazzjonijiet ta' persuni oħra magħhom jieqfu jaħdmu.",
   "LastUserText": "Dan huwa l-unika kont f'din l-installazzjoni. It-tħassir tiegħu jrodd l-installazzjoni fl-istat tal-ewwel użu, u jidher kodiċi ġdid tas-setup fil-log tas-server.",
   "NotDeletedHeading": "Dan ma jħassarx:",
-  "NotDeletedBackups": "Backups tas-server magħmula qabel li għad fihom kopja sakemm jiġu sostitwiti (kopji ta' kull ġimgħa: erba' ġimgħat, backups tad-database ġestiti: 30 jum).",
+  "NotDeletedBackups": "Il-backups magħmula qabel it-tħassir għad fihom kopja sakemm jiġu sostitwiti: il-kopji ta' kull ġimgħa mibnija fihom jinżammu għal erba' ġimgħat; backups oħra jinżammu sakemm kien ikkonfigura l-operatur ta' dan is-server (30 jum fis-setup ta' Kubernetes ipprovdut).",
   "NotDeletedPasskeys": "Ċwievet tal-aċċess salvati fil-maniġer tal-passwords jew fuq l-apparati tiegħek. Neħħiehom hemmhekk int stess.",
   "NotDeletedCalendar": "Avvenimenti li applikazzjonijiet oħra tal-kalendarju diġà ġabu permezz tar-rabta tal-kalendarju tiegħek.",
   "ExportButton": "Niżżel id-dejta tiegħi l-ewwel",
