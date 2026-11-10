@@ -1,0 +1,22 @@
+{
+  "Heading": "Maidir le StudyLife",
+  "Desc": "Leagan, ceadúnas agus cód foinseach na bogearraí atá á rith agat.",
+  "ServerLabel": "Freastalaí",
+  "BrowserLabel": "Comhéadan sa bhrabhsálaí seo",
+  "AppLabel": "Aip",
+  "Unknown": "anaithnid",
+  "SourceLink": "Cód foinseach",
+  "SourceExact": "Cód foinseach an leagain seo go beacht",
+  "SourceRepo": "Stór an chóid fhoinseach (níl clib eisiúna ag an tógáil seo)",
+  "NewTab": "osclaíonn i gcluaisín nua",
+  "LicenceLabel": "Ceadúnas",
+  "LicenceMeaning": "Féadfaidh tú StudyLife a úsáid, a staidéar, a athrú agus a roinnt; má ritheann tú leagan athraithe do dhaoine eile, caithfidh tú a chód foinseach a thairiscint dóibh freisin.",
+  "NoticesHeading": "Fógraí maidir le bogearraí tríú páirtí",
+  "NoticesDesc": "Comhpháirteanna foinse oscailte an tógála seo, lena gceadúnais agus lena sealbhóirí cóipchirt.",
+  "ShowNotices": "Taispeáin fógraí",
+  "HideNotices": "Folaigh fógraí",
+  "Loading": "Á luchtú…",
+  "NoticesFailed": "Níorbh fhéidir na fógraí a luchtú. Gheobhaidh tú iad sa chomhad THIRD-PARTY-NOTICES.md i stór an chóid fhoinseach.",
+  "FromApp": "Fógraí an tógála aipe seo",
+  "FromServer": "Fógraí an fhreastalaí"
+}

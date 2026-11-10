@@ -19,6 +19,9 @@
     <ServiceWorker Include="wwwroot\service-worker.js" PublishedContent="wwwroot\service-worker.published.js" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="..\..\THIRD-PARTY-NOTICES.md" Link="wwwroot\THIRD-PARTY-NOTICES.md" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\StudyLife.Shared\StudyLife.Shared.csproj" />
     <!-- Deterministic replacement for the I18nText source generator (see the target below). -->
     <ProjectReference Include="..\StudyLife.I18nTextGenerator\StudyLife.I18nTextGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />

@@ -1,0 +1,22 @@
+{
+  "Heading": "Informazioni su StudyLife",
+  "Desc": "Versione, licenza e codice sorgente del software che stai usando.",
+  "ServerLabel": "Server",
+  "BrowserLabel": "Interfaccia in questo browser",
+  "AppLabel": "App",
+  "Unknown": "sconosciuta",
+  "SourceLink": "Codice sorgente",
+  "SourceExact": "Codice sorgente di questa esatta versione",
+  "SourceRepo": "Repository del codice sorgente (questa build non ha un tag di rilascio)",
+  "NewTab": "si apre in una nuova scheda",
+  "LicenceLabel": "Licenza",
+  "LicenceMeaning": "Puoi usare, studiare, modificare e condividere StudyLife; se esegui una versione modificata per altre persone, devi offrire loro anche il relativo codice sorgente.",
+  "NoticesHeading": "Avvisi sul software di terze parti",
+  "NoticesDesc": "I componenti open source di questa build, con le relative licenze e i titolari del copyright.",
+  "ShowNotices": "Mostra avvisi",
+  "HideNotices": "Nascondi avvisi",
+  "Loading": "Caricamento…",
+  "NoticesFailed": "Non è stato possibile caricare gli avvisi. Li trovi nel file THIRD-PARTY-NOTICES.md nel repository del codice sorgente.",
+  "FromApp": "Avvisi di questa build dell'app",
+  "FromServer": "Avvisi del server"
+}

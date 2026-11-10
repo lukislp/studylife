@@ -1,0 +1,127 @@
+# SPDX-FileCopyrightText: 2026 Lukas Körber
+# SPDX-License-Identifier: AGPL-3.0-only
+
+# Licence policy of what the StudyLife server runs and sends to the browser - the single source of
+# truth for tools/check-licences.py. The script reads the resolved NuGet graph from the build system
+# (dotnet restore -> obj/project.assets.json) and each package's licence from its .nuspec; nothing
+# about individual packages is hard-coded in the script. THIRD-PARTY-NOTICES.md is generated from
+# this file plus that data, and CI (test-lint) fails when it is stale or a rule below is violated.
+# The notices name packages and licences only, never versions, so a dependency version bump (a
+# Dependabot PR) does not make them stale; the licence is still read from the version actually
+# resolved, so a licence change in a new version is caught.
+#
+# A licence that cannot be read from the package ("UNKNOWN": no SPDX expression, only a licenseUrl
+# or nothing at all) always fails, unless an [[exception]] below names that package and the exact
+# licence that was verified by hand.
+
+[bundle]
+# Projects whose resolved NuGet graph is covered: the server (which references Shared, Tts, Stt and
+# the browser client, so its graph is the superset) and the browser client on its own.
+projects = [
+  "src/StudyLife.Server/StudyLife.Server.csproj",
+  "src/StudyLife.Client/StudyLife.Client.csproj",
+]
+notices = "THIRD-PARTY-NOTICES.md"
+# This csproj must publish the notices file as wwwroot/<notices>, so the server serves it as a
+# static asset next to the app (the About section in Setup reads it from there).
+ship_csproj = "src/StudyLife.Client/StudyLife.Client.csproj"
+# Printed at the end of the notices: what the NuGet graph cannot see, so nobody reads the list as
+# more complete than it is.
+not_covered = """
+The operating-system packages of the Docker image are not NuGet packages and are not listed here.
+This includes the espeak-ng phonemizer library (GPL-3.0-or-later) that the text-to-speech feature
+loads at run time as a separate library, and the Piper voice and Whisper model files that are
+downloaded when the image is built; the licences of the voices are in docs/TTS-VOICES.md of the
+source repository. They are part of the container image only, not of the web build sent to the
+browser and not of the native apps.
+"""
+
+[licenses]
+# SPDX ids that may appear on a third-party NuGet package without further ado. Each needs the
+# licence text under tools/licences/texts/<id>.txt (the notices file embeds it).
+allowed = ["MIT", "BSD-2-Clause", "ISC", "Apache-2.0", "PostgreSQL"]
+# Third-party code under these families must never be in the build (the project is AGPL-3.0-only;
+# an App Store build must not carry them either). Matched case-insensitively against every id in a
+# licence expression. Exceptions cannot lift a denied id.
+denied = ["GPL-*", "AGPL-*", "LGPL-*"]
+
+# The copyright holder of each package is read from its nuspec (copyright, else authors, else owners)
+# with years, "(c)" and "All rights reserved" removed. A package that yields no holder fails the gate
+# unless it is named here with the holder and the reason it is certain:
+#
+# [[holder]]
+# package = "Some.Package"
+# holder = "Some Authors"
+# reason = "nuspec has no copyright/authors; holder taken from the repository's LICENSE file"
+
+# Packages whose nuspec states no licence at all (only a licenseUrl) and whose licence was read by
+# hand from the project's own LICENSE file. Applies only while the nuspec stays without a licence;
+# once a package declares one itself, that one wins and this entry changes nothing.
+[[verified]]
+package = "Portable.BouncyCastle"
+license = "MIT"
+reason = "nuspec has only a licenseUrl; the Bouncy Castle C# licence (https://www.bouncycastle.org/licence.html) is the MIT/X11 licence, copyright The Legion of the Bouncy Castle Inc."
+
+[[verified]]
+package = "WebPush"
+license = "MIT"
+reason = "nuspec has only a licenseUrl; LICENSE in https://github.com/web-push-libs/web-push-csharp is the MIT licence"
+
+# Licences that are not an SPDX expression in the nuspec: the package ships its own licence file,
+# which the notices embed verbatim ("Licence file shipped with ..."). Each is checked by hand; the
+# exception matches the package AND the licence kind, so a package that switches to something else
+# fails again.
+[[exception]]
+package = "Microsoft.ML.OnnxRuntime"
+license = "LicenseRef-package-file"
+source = "https://github.com/microsoft/onnxruntime"
+reason = "The package's LICENSE file is the MIT licence (copyright Microsoft Corporation). Native ONNX Runtime library used by the text-to-speech phonemizer and the dictation feature."
+
+[[exception]]
+package = "Microsoft.ML.OnnxRuntime.Managed"
+license = "LicenseRef-package-file"
+source = "https://github.com/microsoft/onnxruntime"
+reason = "The package's LICENSE.txt is the MIT licence (copyright Microsoft Corporation). Managed bindings of ONNX Runtime."
+
+[[exception]]
+package = "Whisper.net"
+license = "LicenseRef-package-file"
+source = "https://github.com/sandrohanea/whisper.net"
+reason = "The package's LICENSE file is the MIT licence (copyright 2024 sandrohanea). Speech-to-text bindings for whisper.cpp."
+
+[[exception]]
+package = "SQLitePCLRaw.lib.e_sqlite3"
+license = "LicenseRef-package-file"
+source = "https://sqlite.org/copyright.html"
+reason = "The package's LICENSE.txt states that SQLite is in the public domain (https://sqlite.org/copyright.html); the wrapper code is Apache-2.0 (SQLitePCLRaw, listed above)."
+
+[[exception]]
+package = "Toolbelt.Blazor.I18nText"
+license = "MPL-2.0"
+source = "https://github.com/jsakamoto/Toolbelt.Blazor.I18nText/"
+reason = "MPL-2.0 is file-level copyleft: it only covers the package's own files (its assembly and the shipped helper.min.js / *.lib.module.js), not StudyLife. Used unmodified; this notice and the source location below satisfy MPL-2.0 section 3.2 for the executable form."
+
+[[exception]]
+package = "Toolbelt.Blazor.I18nText.SourceGenerator"
+license = "MPL-2.0"
+source = "https://github.com/jsakamoto/Toolbelt.Blazor.I18nText/"
+reason = "Same project and licence as Toolbelt.Blazor.I18nText. A compile-time analyzer (StudyLife.I18nTextGenerator calls into it), not shipped to the browser; listed for completeness. MPL-2.0 is file-level copyleft, used unmodified."
+
+# Components that are shipped but are not in the NuGet graph. Each one is listed in the notices
+# with its licence; "text" names a file under tools/licences/texts/ that is embedded.
+[[component]]
+name = "DM Sans and DM Mono (web fonts, src/StudyLife.Client/wwwroot/fonts)"
+license = "OFL-1.1"
+url = "https://github.com/lukislp/studylife/tree/main/src/StudyLife.Client/wwwroot/fonts"
+copyright = [
+  "Copyright 2014 The DM Sans Project Authors (https://github.com/googlefonts/dm-fonts)",
+  "Copyright 2020 The DM Mono Project Authors (https://www.github.com/googlefonts/dm-mono)",
+]
+text = "OFL-1.1"
+
+[[component]]
+name = ".NET runtime and ASP.NET Core (the server's runtime and the Blazor WebAssembly runtime sent to the browser)"
+license = "MIT"
+url = "https://github.com/dotnet/runtime"
+copyright = ["Copyright (c) .NET Foundation and Contributors"]
+text = "MIT"

@@ -69,6 +69,26 @@ small - but it is the same for every change, including the maintainer's own.
 - **No behaviour behind demo mode.** New endpoints and features must stay read-only in demo mode
   (see `docs/ARCHITECTURE.md`).
 
+### Third-party notices
+
+`THIRD-PARTY-NOTICES.md` lists the third-party software the server runs and sends to the browser, and
+the **About** section in Setup shows it to the user. It is generated, never edited by hand. When a
+dependency is added, removed or changes its licence or copyright holder:
+
+```bash
+python3 tools/check-licences.py --update   # restores the server and the client, rewrites the file
+python3 tools/check-licences.py            # what CI runs (test-lint): policy satisfied and file current
+```
+
+Commit the regenerated file with the change. A plain version bump of an existing package changes
+nothing (the file names packages, licences and holders, not versions). The check fails for a package
+whose licence cannot be read (add a `[[verified]]` entry to [`tools/licences/policy.toml`](tools/licences/policy.toml)
+only after reading the project's own licence file), for a licence that is not in the policy's
+allowed list (add it with its text under `tools/licences/texts/`, or an `[[exception]]` with the
+reason), and for any GPL, AGPL or LGPL package - those are not allowed in the build at all. A new
+bundled file that is not a NuGet package (a font, a script, a stylesheet) is added as a
+`[[component]]` in the policy with its licence text.
+
 ### Licence headers
 
 The repository follows the [REUSE Specification](https://reuse.software/): every file states its

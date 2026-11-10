@@ -1,0 +1,22 @@
+{
+  "Heading": "Acerca de StudyLife",
+  "Desc": "Versión, licencia y código fuente del software que estás usando.",
+  "ServerLabel": "Servidor",
+  "BrowserLabel": "Interfaz en este navegador",
+  "AppLabel": "Aplicación",
+  "Unknown": "desconocida",
+  "SourceLink": "Código fuente",
+  "SourceExact": "Código fuente de esta versión exacta",
+  "SourceRepo": "Repositorio del código fuente (esta compilación no tiene etiqueta de versión)",
+  "NewTab": "se abre en una pestaña nueva",
+  "LicenceLabel": "Licencia",
+  "LicenceMeaning": "Puedes usar, estudiar, modificar y compartir StudyLife; si ejecutas una versión modificada para otras personas, también debes ofrecerles su código fuente.",
+  "NoticesHeading": "Avisos de software de terceros",
+  "NoticesDesc": "Los componentes de código abierto de esta compilación, con sus licencias y titulares de derechos de autor.",
+  "ShowNotices": "Mostrar avisos",
+  "HideNotices": "Ocultar avisos",
+  "Loading": "Cargando…",
+  "NoticesFailed": "No se pudieron cargar los avisos. Los encontrarás en el archivo THIRD-PARTY-NOTICES.md del repositorio del código fuente.",
+  "FromApp": "Avisos de esta compilación de la aplicación",
+  "FromServer": "Avisos del servidor"
+}

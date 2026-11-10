@@ -1,0 +1,22 @@
+{
+  "Heading": "Dwar StudyLife",
+  "Desc": "Il-verżjoni, il-liċenzja u l-kodiċi sors tas-softwer li qed tħaddem.",
+  "ServerLabel": "Server",
+  "BrowserLabel": "Interface f'dan il-browser",
+  "AppLabel": "App",
+  "Unknown": "mhux magħrufa",
+  "SourceLink": "Kodiċi sors",
+  "SourceExact": "Il-kodiċi sors ta' eżattament din il-verżjoni",
+  "SourceRepo": "Repożitorju tal-kodiċi sors (dan il-build m'għandux tag ta' rilaxx)",
+  "NewTab": "jinfetaħ fi tab ġdid",
+  "LicenceLabel": "Liċenzja",
+  "LicenceMeaning": "Tista' tuża, tstudja, tbiddel u taqsam StudyLife; jekk iddaħħal verżjoni mibdula għal oħrajn, għandek toffrilhom ukoll il-kodiċi sors tagħha.",
+  "NoticesHeading": "Avviżi dwar softwer ta' partijiet terzi",
+  "NoticesDesc": "Il-komponenti open source ta' dan il-build, bil-liċenzji tagħhom u d-detenturi tad-drittijiet tal-awtur.",
+  "ShowNotices": "Uri l-avviżi",
+  "HideNotices": "Aħbi l-avviżi",
+  "Loading": "Qed jitgħabba…",
+  "NoticesFailed": "L-avviżi ma setgħux jitgħabbew. Tista' ssibhom fil-fajl THIRD-PARTY-NOTICES.md fir-repożitorju tal-kodiċi sors.",
+  "FromApp": "Avviżi ta' dan il-build tal-app",
+  "FromServer": "Avviżi tas-server"
+}
