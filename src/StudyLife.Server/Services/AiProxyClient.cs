@@ -75,6 +75,13 @@ public sealed class AiProxyClient
     private static readonly TimeSpan ProviderInfoTtl = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan ProviderInfoRetryAfter = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan ProviderInfoRequestTimeout = TimeSpan.FromSeconds(5);
+    // How long the last good description may be served while studylife-ai cannot be reached at
+    // all. Bounded on purpose: an unbounded stale description would let a consent keep covering a
+    // provider that was changed during a long outage. When studylife-ai ANSWERS without a usable
+    // description (404 from a rolled-back version, an error, an empty list) the cache is dropped
+    // at once instead - an answering service that cannot describe itself is "unknown".
+    private static readonly TimeSpan ProviderInfoMaxStale = TimeSpan.FromMinutes(30);
+    private DateTimeOffset _providerInfoGoodAt = DateTimeOffset.MinValue;
     private readonly SemaphoreSlim _providerInfoLock = new(1, 1);
     private AiProviderInfo? _providerInfo;
     private DateTimeOffset _providerInfoNextFetch = DateTimeOffset.MinValue;
@@ -233,25 +240,29 @@ public sealed class AiProxyClient
     public async Task<AiProviderInfo?> GetProviderInfoAsync(CancellationToken ct)
     {
         if (!Enabled) return null;
-        if (_time.GetUtcNow() < _providerInfoNextFetch) return _providerInfo;
+        if (_time.GetUtcNow() < _providerInfoNextFetch) return CurrentProviderInfo();
 
         await _providerInfoLock.WaitAsync(ct);
         try
         {
             // Re-check: another caller may have refreshed while this one waited for the lock.
-            if (_time.GetUtcNow() < _providerInfoNextFetch) return _providerInfo;
+            if (_time.GetUtcNow() < _providerInfoNextFetch) return CurrentProviderInfo();
 
-            var fetched = await FetchProviderInfoAsync(ct);
+            var (fetched, answered) = await FetchProviderInfoAsync(ct);
+            var now = _time.GetUtcNow();
             if (fetched is not null)
             {
                 _providerInfo = fetched;
-                _providerInfoNextFetch = _time.GetUtcNow() + ProviderInfoTtl;
+                _providerInfoGoodAt = now;
+                _providerInfoNextFetch = now + ProviderInfoTtl;
             }
             else
             {
-                _providerInfoNextFetch = _time.GetUtcNow() + ProviderInfoRetryAfter;
+                // The service answered but could not describe itself: unknown, right now.
+                if (answered) _providerInfo = null;
+                _providerInfoNextFetch = now + ProviderInfoRetryAfter;
             }
-            return _providerInfo;
+            return CurrentProviderInfo();
         }
         finally
         {
@@ -259,7 +270,14 @@ public sealed class AiProxyClient
         }
     }
 
-    private async Task<AiProviderInfo?> FetchProviderInfoAsync(CancellationToken ct)
+    // The cached description, unless it is older than ProviderInfoMaxStale.
+    private AiProviderInfo? CurrentProviderInfo() =>
+        _providerInfo is not null && _time.GetUtcNow() - _providerInfoGoodAt <= ProviderInfoMaxStale
+            ? _providerInfo
+            : null;
+
+    // Answered = studylife-ai replied (whatever the status); false = no reply at all.
+    private async Task<(AiProviderInfo? Info, bool Answered)> FetchProviderInfoAsync(CancellationToken ct)
     {
         try
         {
@@ -274,13 +292,13 @@ public sealed class AiProxyClient
             {
                 // 404 is the expected answer from a studylife-ai that predates the endpoint.
                 _logger.LogWarning("studylife-ai /internal/provider-info returned {Status} - provider treated as unknown", response.StatusCode);
-                return null;
+                return (null, true);
             }
             var json = await response.Content.ReadFromJsonAsync<ProviderInfoResponseJson>(cancellationToken: timeout.Token);
-            if (json?.Roles is not { Count: > 0 } roles) return null;
-            return new AiProviderInfo(
+            if (json?.Roles is not { Count: > 0 } roles) return (null, true);
+            return (new AiProviderInfo(
                 roles.Select(r => new AiProviderRole(r.Role ?? "", r.Provider ?? "", r.Model ?? "", r.Local)).ToList(),
-                json.AnyExternal);
+                json.AnyExternal), true);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -289,7 +307,7 @@ public sealed class AiProxyClient
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "studylife-ai /internal/provider-info call failed - provider treated as unknown");
-            return null;
+            return (null, false);
         }
     }
 

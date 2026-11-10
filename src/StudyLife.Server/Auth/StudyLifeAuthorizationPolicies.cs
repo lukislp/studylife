@@ -4,6 +4,7 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Policy;
+using StudyLife.Server.Services;
 
 namespace StudyLife.Server.Auth;
 
@@ -68,6 +69,10 @@ public static class StudyLifeAuthorizationPolicies
         // see ApiKeyScopes for the map and ApiKeyScopeAuthorizationHandler for the enforcement
         // (session/calendar-token credentials are untouched by it, only api-key auth is scoped).
         services.AddSingleton<IAuthorizationHandler, ApiKeyScopeAuthorizationHandler>();
+        // AI consent: requests made with a user's AI key (studylife-ai's ingestion) are refused
+        // while that user has no consent covering the current provider - see
+        // AiConsentAuthorizationHandler. Only the "ai" key slot is affected.
+        services.AddSingleton<IAuthorizationHandler, AiConsentAuthorizationHandler>();
         // Every automatic authorization failure (ApiAccess/SessionOnly/PublicUnlessInvalidSession)
         // challenges (401) instead of the ASP.NET Core default of forbidding (403) an already-
         // authenticated-but-not-permitted principal - see the handler's own comment for why:
@@ -86,6 +91,8 @@ public static class StudyLifeAuthorizationPolicies
                 // endpoints (ApiKeyScopes) - a no-op for session/calendar-token credentials,
                 // which ApiKeyScopeAuthorizationHandler always succeeds unconditionally.
                 .AddRequirements(new ApiKeyScopeRequirement())
+                // AI consent for the "ai" key slot (a no-op for every other credential).
+                .AddRequirements(new AiConsentRequirement())
                 .Build();
             options.AddPolicy(ApiAccess, apiAccessPolicy);
             // The default for every endpoint that states no requirement of its own - see the
@@ -148,6 +155,11 @@ public sealed class PublicUnlessInvalidSessionHandler(IHttpContextAccessor httpC
 /// own requirement already succeeded (a real credential was presented and matched) - does this
 /// count as a scope-only failure; a request that fails for some other reason too (e.g. no
 /// credential at all) keeps the blanket 401 below.
+///
+/// Second exception: an AI-key request refused only because the key's owner has no consent
+/// covering the current provider (AiConsentRequirement) answers the 403 problem
+/// <c>ai-consent-required</c> - the same one the proxy endpoints return - so studylife-ai can tell
+/// "pause this user" from "this key is dead" (401).
 /// </summary>
 public sealed class AlwaysChallengeAuthorizationMiddlewareResultHandler : IAuthorizationMiddlewareResultHandler
 {
@@ -159,9 +171,17 @@ public sealed class AlwaysChallengeAuthorizationMiddlewareResultHandler : IAutho
         if (authorizeResult.Forbidden)
         {
             var failedRequirements = authorizeResult.AuthorizationFailure?.FailedRequirements.ToList();
-            if (failedRequirements is { Count: > 0 } && failedRequirements.All(r => r is ApiKeyScopeRequirement))
+            if (failedRequirements is { Count: > 0 } && failedRequirements.All(r => r is ApiKeyScopeRequirement or AiConsentRequirement))
             {
-                await context.ForbidAsync();
+                // Out of scope wins (empty 403, as before). A consent-only failure is the 403
+                // problem studylife-ai and the clients recognise by its stable `type`.
+                if (failedRequirements.Any(r => r is ApiKeyScopeRequirement))
+                    await context.ForbidAsync();
+                else
+                    await Results.Problem(
+                        statusCode: StatusCodes.Status403Forbidden,
+                        type: AiConsentService.ConsentRequiredProblem,
+                        title: AiConsentService.ConsentRequiredProblem).ExecuteAsync(context);
                 return;
             }
 

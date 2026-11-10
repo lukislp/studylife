@@ -270,6 +270,85 @@ public class AiConsentServiceTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal(2, stub.Count("/internal/provider-info"));
     }
 
+
+    [Fact]
+    public async Task ProviderInfo_NeverServedStaleBeyondTheBound_WhileTheAddonStaysUnreachable()
+    {
+        // An unbounded stale description would let a consent keep covering a provider that was
+        // changed during a long outage.
+        var stub = new AiUpstreamStub();
+        var time = new ManualTimeProvider();
+        var client = AiConsentTestHost.CreateClient(stub, time);
+        Assert.NotNull(await client.GetProviderInfoAsync(default));
+
+        stub.Mode = ProviderInfoMode.Unreachable;
+        time.Advance(TimeSpan.FromMinutes(20));
+        Assert.NotNull(await client.GetProviderInfoAsync(default)); // within the bound
+        time.Advance(TimeSpan.FromMinutes(11));
+        Assert.Null(await client.GetProviderInfoAsync(default)); // 31 minutes without a fresh answer
+    }
+
+    [Fact]
+    public async Task ProviderInfo_WhenTheAddonAnswersWithoutADescription_IsUnknownAtOnce_NotStale()
+    {
+        // E.g. a rolled-back studylife-ai without the endpoint (404) that may run another model.
+        var stub = new AiUpstreamStub();
+        var time = new ManualTimeProvider();
+        var client = AiConsentTestHost.CreateClient(stub, time);
+        Assert.NotNull(await client.GetProviderInfoAsync(default));
+
+        stub.Mode = ProviderInfoMode.NotFound;
+        time.Advance(TimeSpan.FromMinutes(6)); // just past the 5 minute TTL
+
+        Assert.Null(await client.GetProviderInfoAsync(default));
+    }
+
+    [Fact]
+    public async Task ProviderInfo_ANewModelIsSeenWithinTheTtl()
+    {
+        var stub = new AiUpstreamStub();
+        var time = new ManualTimeProvider();
+        var client = AiConsentTestHost.CreateClient(stub, time);
+        var before = await client.GetProviderInfoAsync(default);
+
+        stub.ExternalJson = AiUpstreamStub.ExternalInfoJson.Replace("gpt-4o-mini", "gpt-5", StringComparison.Ordinal);
+        time.Advance(TimeSpan.FromMinutes(4));
+        Assert.Equal(before, await client.GetProviderInfoAsync(default)); // still the cached description
+        time.Advance(TimeSpan.FromMinutes(2));
+        var after = await client.GetProviderInfoAsync(default);
+
+        Assert.NotEqual(before, after);
+        Assert.Contains(after!.Roles, r => r.Model == "gpt-5");
+    }
+
+    // ── a context scoped to one user never answers for another ───────────────────────────────
+
+    [Fact]
+    public async Task ContextScopedToUserA_AskingAboutUserB_GetsNoConsent_NotUserAs()
+    {
+        // The test context is scoped to user 1; user 1 HAS a covering consent.
+        await AiConsentTestHost.SeedUserAsync(_factory, hasKey: true, AiConsentTestHost.ExternalFingerprint());
+        var stub = new AiUpstreamStub();
+
+        var (own, other, otherGate, otherMay, otherGrant) = await WithServiceAsync(stub, async s =>
+            (await s.GetStatusAsync(1, default),
+             await s.GetStatusAsync(2, default),
+             await s.EnsureGrantedAsync(2, default),
+             await s.MayProcessInBackgroundAsync(2, default),
+             await s.GrantAsync(2, AiConsentTestHost.ExternalFingerprint(), default)));
+
+        Assert.True(own.Granted);
+        Assert.False(other.Granted);
+        Assert.Null(other.GrantedAt);
+        Assert.False(other.NeedsDecision && other.HasKey);
+        Assert.Equal(ServiceOutcome.Forbidden, otherGate.Outcome);
+        Assert.False(otherMay);
+        // Granting for B must not write A's row (or anything else): the context cannot act for B.
+        Assert.Equal(ServiceOutcome.Unauthorized, otherGrant.Outcome);
+        var stored = await _factory.WithDbAsync(db => db.Settings.AsNoTracking().FirstAsync());
+        Assert.Equal(1, stored.AuthUserId);
+    }
+
     [Fact]
     public async Task ProviderInfo_AfterAFailure_IsRetriedOnlyAfterTheShortRetryWindow()
     {

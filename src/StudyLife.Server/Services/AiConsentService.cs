@@ -117,7 +117,7 @@ public sealed class AiConsentService : IAiConsentService
     public async Task<AiConsentStatusDto> GetStatusAsync(int userId, CancellationToken ct)
     {
         var decision = await DecideAsync(ct);
-        var settings = await _db.Settings.AsNoTracking().FirstOrDefaultAsync(ct);
+        var settings = await ReadSettingsAsync(userId, ct);
         var hasKey = await HasKeyAsync(userId, ct);
         return ToStatus(decision, settings, hasKey);
     }
@@ -149,7 +149,8 @@ public sealed class AiConsentService : IAiConsentService
             return ServiceResult<AiConsentStatusDto>.Invalid("AI is not available on this installation.");
 
         var hasKey = await HasKeyAsync(userId, ct);
-        var settings = await _db.Settings.GetOrCreateAsync(_db);
+        var settings = await GetOrCreateSettingsAsync(userId, ct);
+        if (settings is null) return ServiceResult<AiConsentStatusDto>.Unauthorized();
         if (!string.Equals(fingerprint, decision.Fingerprint, StringComparison.OrdinalIgnoreCase))
             // The provider changed after the user was shown the dialog: hand back the current
             // state so the client can show the new description instead of recording a consent
@@ -167,7 +168,7 @@ public sealed class AiConsentService : IAiConsentService
         if (_apiKeys is null)
             throw new InvalidOperationException("Withdrawing consent needs the API key service to revoke the AI key.");
 
-        var settings = await _db.Settings.FirstOrDefaultAsync(ct);
+        var settings = await _db.Settings.FirstOrDefaultAsync(s => s.AuthUserId == userId, ct);
         if (settings is { AiConsentGrantedAt: not null } or { AiConsentProviderFingerprint: not null })
         {
             settings.AiConsentGrantedAt = null;
@@ -189,7 +190,7 @@ public sealed class AiConsentService : IAiConsentService
         var decision = await DecideAsync(ct);
         if (!decision.Required) return ServiceResult.Success();
 
-        var settings = await _db.Settings.AsNoTracking().FirstOrDefaultAsync(ct);
+        var settings = await ReadSettingsAsync(userId, ct);
         return Covers(settings, decision)
             ? ServiceResult.Success()
             : ServiceResult.Forbidden(ConsentRequiredProblem);
@@ -206,6 +207,23 @@ public sealed class AiConsentService : IAiConsentService
     {
         var decision = await DecideAsync(ct);
         return new AiCapabilities(decision.Available, ToDto(decision.Info));
+    }
+
+    // Every Settings access names the user explicitly, on top of the context's own per-user query
+    // filter: a context scoped to a different user than the one asked about then finds no row, and
+    // "no row" means "no consent" - the answer is never somebody else's consent.
+    private Task<UserSettingsEntity?> ReadSettingsAsync(int userId, CancellationToken ct) =>
+        _db.Settings.AsNoTracking().FirstOrDefaultAsync(s => s.AuthUserId == userId, ct);
+
+    // Null when the row that exists (or gets created) belongs to a different user than asked
+    // about, i.e. the context is scoped to someone else: the caller fails closed instead of
+    // writing a consent onto the wrong person.
+    private async Task<UserSettingsEntity?> GetOrCreateSettingsAsync(int userId, CancellationToken ct)
+    {
+        var existing = await _db.Settings.FirstOrDefaultAsync(s => s.AuthUserId == userId, ct);
+        if (existing is not null) return existing;
+        var row = await _db.Settings.GetOrCreateAsync(_db);
+        return row.AuthUserId == userId ? row : null;
     }
 
     private Task<bool> HasKeyAsync(int userId, CancellationToken ct) =>
