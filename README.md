@@ -143,6 +143,7 @@ https://github.com/user-attachments/assets/0498d54b-f7e3-4854-b7cf-8eea538dd112
 - New devices/additional passkeys must first be approved from an already logged-in device before they can be used
 - Device management: rename passkeys, view the list, remove individually, and "sign out everywhere else" (removing a passkey or using a recovery code revokes every other session automatically)
 - Emergency access via recovery codes: generate 8 one-time codes in Setup (shown only once) to sign in if the only registered device/passkey is ever lost
+- Delete your own account from inside the app (Setup, also in the native apps): everything the account owns is removed, after a fresh passkey or recovery-code confirmation and an optional data export first; the owner administers the installation and can leave only as its last account (the installation then returns to first run), or remove other users. Backups made earlier keep a copy until they rotate out (built-in weekly copies: four weeks; further backups as long as the operator configured, 30 days in the supplied Kubernetes setup); restoring an older backup brings a deleted account back, so the operator re-applies the deletion first - see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) "Account deletion"
 - Native app sign-in through the system browser with a PKCE-style token handoff (the bearer token never travels in the app's redirect URL)
 
 ### Language
@@ -280,7 +281,7 @@ https://github.com/user-attachments/assets/0498d54b-f7e3-4854-b7cf-8eea538dd112
 - Opt-in anonymous usage & error reports (performance and crash data only, never notes/sessions/health data) - off by default, asked once via a consent modal, changeable anytime
 - Manage passkeys (rename, add more, remove, sign out everywhere else)
 - Generate recovery codes for emergency access (shown once, invalidates previous codes)
-- Invite links for new accounts (instance owner)
+- Invite links for new accounts (instance owner), removing other users (instance owner), deleting your own account
 - Integrations: the Home Assistant key, the AI assistant and developer-portal toggles, named webhooks keys and webhook subscriptions, the Marketplace browser, and an "External connections" card that disconnects any add-on (fixed slot or dynamic client) with one click
 - Manage backup/export/restore and the share-progress link
 

@@ -42,6 +42,15 @@ public interface INativeAppAuth
     /// Fido2NetLib; return value in the format of AuthenticatorAssertionRawResponse
     /// (like getPasskeyAssertion in Login.razor.js). null = cancelled/failed.</summary>
     Task<string?> GetPasskeyAssertionAsync(string optionsJson) => Task.FromResult<string?>(null);
+
+    /// <summary>
+    /// Called once after the user deleted their account (Setup, "Delete account"): the shell wipes what
+    /// it keeps outside the web view - home-screen widget snapshot, Spotlight index, Watch snapshot.
+    /// Logging out does not need this (those copies belong to the device, not the account), but a deleted
+    /// account must not keep showing its notes and courses on the lock screen. Default: nothing to wipe.
+    /// A default interface member on purpose: no new service registration for the native apps.
+    /// </summary>
+    Task AccountDeletedAsync() => Task.CompletedTask;
 }
 
 /// <summary>Default registration in the browser client: no native flow exists there.</summary>

@@ -1,0 +1,436 @@
+@*
+  SPDX-FileCopyrightText: 2026 Lukas Körber
+  SPDX-License-Identifier: AGPL-3.0-only
+*@
+@using StudyLife.Shared
+@using StudyLife.Client.Services
+@using Microsoft.Extensions.DependencyInjection
+@inject AppStateService State
+@inject SessionTokenStore TokenStore
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@inject INativeAppAuth NativeAuth
+@inject INativeFileExport NativeFiles
+@inject HttpClient Http
+@inject IServiceProvider Services
+
+@* The danger area of Setup: deleting your own account (App Store guideline 5.1.1(v)) and, for the
+   owner, removing other users. Everything that decides or deletes is on the server
+   (AccountDeletionService) and reached through State.AccountDeletion; this component only renders
+   the card and the dialog and runs the passkey prompt, which needs the page's JS module.
+   Setup.razor merely places it.
+
+   The flow is two steps in one dialog: (1) what is deleted and what is not, the existing JSON
+   export, an explicit "I understand" box; (2) re-authentication right before the deletion - a
+   passkey of this account, a recovery code, or (native shells that cannot run WebAuthn in the web
+   view) signing in again through the system browser. Nothing is deleted before step 2 succeeds.
+
+   WCAG 2.2: a labelled modal dialog, keyboard focus moves into it on every step and Escape closes
+   it, every control is a real button/input with a visible label, errors are announced
+   (role="alert"), nothing relies on colour alone. *@
+
+<div class="setup-section" id="delete-account">
+    <div class="ss-label">@T?.Heading</div>
+    @if (T is not null)
+    {
+        <p class="ss-desc">@T.Desc</p>
+
+        @if (_loadFailed)
+        {
+            <p class="ss-desc" role="alert" style="color:var(--danger, #e74c3c)">@T.LoadFailed</p>
+        }
+        else if (_preview is null)
+        {
+            <p class="ss-desc" aria-live="polite">@T.Working</p>
+        }
+        else if (_preview.UnavailableReason == "demo")
+        {
+            <p class="ss-desc">@T.DemoUnavailable</p>
+        }
+        else if (_preview.UnavailableReason == "owner-has-other-users")
+        {
+            <p class="ss-desc">@T.OwnerBlocked</p>
+        }
+        else
+        {
+            <button type="button" class="btn-danger" @onclick="OpenSelf">@T.OpenButton</button>
+        }
+
+        @if (_status is not null)
+        {
+            <p class="ss-desc" role="status">@_status</p>
+        }
+
+        @* The owner's only administrative action: removing another account. Runs the same
+           server-side deletion, confirmed with the owner's own fresh proof. *@
+        @if (_preview is { IsOwner: true } && _users.Count > 0)
+        {
+            <div class="ss-label" style="margin-top:0.75rem" id="delete-account-users">@T.UsersHeading</div>
+            <div class="pdm-list" role="list" aria-labelledby="delete-account-users">
+                @foreach (var user in _users)
+                {
+                    var u = user;
+                    <div class="pdm-row" role="listitem">
+                        <div class="pdm-row-main">
+                            <div class="pdm-row-label"><span>@u.DisplayName</span></div>
+                        </div>
+                        <div style="display:flex; gap:0.4rem; flex-shrink:0;">
+                            <button type="button" class="btn-danger" aria-label="@string.Format(T.RemoveUserAria ?? "", u.DisplayName)"
+                                    @onclick="() => OpenUser(u)">@T.RemoveUserButton</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>
+
+@if (T is not null && _step != Step.Closed)
+{
+    <div class="modal-overlay" @onclick="Close">
+        <div class="modal pdm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-account-title"
+             tabindex="-1" @ref="_dialog" @onclick:stopPropagation="true" @onkeydown="OnKeyDown">
+            <div class="modal-header">
+                <h3 id="delete-account-title">@Title</h3>
+                <button type="button" class="modal-close" aria-label="@T.CloseDialog" @onclick="Close" disabled="@_busy">✕</button>
+            </div>
+
+            @if (_step == Step.Confirm)
+            {
+                <div class="modal-body">
+                    @if (_target is null)
+                    {
+                        <p class="ss-desc"><strong>@T.DeletedHeading</strong></p>
+                        <ul class="ss-desc">
+                            <li>@T.ItemData</li>
+                            <li>@T.ItemAccess</li>
+                            <li>@T.ItemIntegrations</li>
+                            <li>@T.ItemAddons</li>
+                        </ul>
+                        @if (_preview is { OwnedClientCount: > 0 })
+                        {
+                            <p class="ss-desc">⚠️ @string.Format(T.OwnedAppsText ?? "", _preview.OwnedClientCount)</p>
+                        }
+                        @if (_preview is { InstallationWillReset: true })
+                        {
+                            <p class="ss-desc">⚠️ @T.LastUserText</p>
+                        }
+                        <p class="ss-desc"><strong>@T.NotDeletedHeading</strong></p>
+                        <ul class="ss-desc">
+                            <li>@T.NotDeletedBackups</li>
+                            <li>@T.NotDeletedPasskeys</li>
+                            <li>@T.NotDeletedCalendar</li>
+                        </ul>
+                        <button type="button" class="btn-secondary" @onclick="ExportAsync" disabled="@_busy">@T.ExportButton</button>
+                    }
+                    else
+                    {
+                        <p class="ss-desc">⚠️ @string.Format(T.RemoveUserWarning ?? "", _target.DisplayName)</p>
+                    }
+                    <p class="ss-desc"><strong>@T.IrreversibleText</strong></p>
+                    <label class="toggle-row" style="gap:0.5rem;align-items:flex-start">
+                        <input type="checkbox" @bind="_understood" disabled="@_busy" />
+                        <span>@T.ConfirmCheckbox</span>
+                    </label>
+                    @if (_error is not null)
+                    {
+                        <p class="ss-desc" role="alert" style="color:var(--danger, #e74c3c)">@_error</p>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" @onclick="Close" disabled="@_busy">@T.CancelButton</button>
+                    <button type="button" class="btn-danger" @onclick="GoToReauth" disabled="@(!_understood || _busy)">@T.ContinueButton</button>
+                </div>
+            }
+            else
+            {
+                <div class="modal-body">
+                    @if (_browserSignIn)
+                    {
+                        <p class="ss-desc">@T.BrowserSignInText</p>
+                    }
+                    else
+                    {
+                        <p class="ss-desc">@T.ReauthText</p>
+                    }
+                    @if (_recoveryOpen)
+                    {
+                        <label class="ss-desc" for="delete-account-recovery">@T.RecoveryLabel</label>
+                        <input id="delete-account-recovery" class="input" style="text-align:center;letter-spacing:0.08em"
+                               placeholder="XXXX-XXXX-XXXX" autocapitalize="characters" spellcheck="false" autocomplete="off"
+                               @bind="_recoveryCode" @bind:event="oninput" disabled="@_busy"
+                               @onkeyup="@(e => { if (e.Key == "Enter") _ = DeleteWithRecoveryAsync(); })" />
+                    }
+                    @if (_error is not null)
+                    {
+                        <p class="ss-desc" role="alert" style="color:var(--danger, #e74c3c)">@_error</p>
+                    }
+                </div>
+                <div class="modal-footer" style="flex-wrap:wrap">
+                    <button type="button" class="btn-secondary" @onclick="BackToConfirm" disabled="@_busy">@T.BackButton</button>
+                    @if (!_recoveryOpen)
+                    {
+                        <button type="button" class="btn-secondary" @onclick="() => _recoveryOpen = true" disabled="@_busy">@T.RecoveryToggle</button>
+                        @if (_browserSignIn)
+                        {
+                            <button type="button" class="btn-danger" @onclick="DeleteAfterBrowserSignInAsync" disabled="@_busy">
+                                @(_busy ? T.Working : T.BrowserSignInButton)
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn-danger" @onclick="DeleteWithPasskeyAsync" disabled="@_busy">
+                                @(_busy ? T.Working : T.PasskeyButton)
+                            </button>
+                        }
+                    }
+                    else
+                    {
+                        <button type="button" class="btn-danger" @onclick="DeleteWithRecoveryAsync"
+                                disabled="@(_busy || string.IsNullOrWhiteSpace(_recoveryCode))">
+                            @(_busy ? T.Working : T.RecoveryButton)
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    /// <summary>Texts to render with. Left null in the app (loaded from the i18n table for the
+    /// current language); component tests pass them in directly.</summary>
+    [Parameter] public StudyLife.Client.I18nText.AccountDeletionText? Text { get; set; }
+
+    private enum Step { Closed, Confirm, Reauth }
+
+    private StudyLife.Client.I18nText.AccountDeletionText? T;
+    private AccountDeletionPreviewDto? _preview;
+    private bool _loadFailed;
+    private readonly List<UserListItemDto> _users = new();
+    private string? _status;
+
+    private Step _step = Step.Closed;
+    private UserListItemDto? _target; // null = the signed-in account itself
+    private bool _understood;
+    private bool _recoveryOpen;
+    private string _recoveryCode = "";
+    private bool _browserSignIn;
+    private bool _busy;
+    private string? _error;
+    private ElementReference _dialog;
+    private bool _focusPending;
+    private IJSObjectReference? _passkeyModule;
+    private IJSObjectReference? _downloadModule;
+
+    private string Title => _step == Step.Reauth ? T!.ReauthTitle
+        : _target is null ? T!.DialogTitle : string.Format(T!.RemoveUserTitle ?? "", _target.DisplayName);
+
+    protected override async Task OnInitializedAsync()
+    {
+        T = Text ?? await Services.GetRequiredService<Toolbelt.Blazor.I18nText.I18nText>()
+            .GetTextTableAsync<StudyLife.Client.I18nText.AccountDeletionText>(this);
+        await LoadAsync();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (Text is not null) T = Text;
+    }
+
+    private async Task LoadAsync()
+    {
+        _preview = await State.AccountDeletion.GetPreviewAsync();
+        _loadFailed = _preview is null;
+        _users.Clear();
+        if (_preview is { IsOwner: true })
+            _users.AddRange(await State.AccountDeletion.ListUsersAsync() ?? []);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_focusPending) return;
+        _focusPending = false;
+        try { await _dialog.FocusAsync(); }
+        catch { /* the dialog may already be gone, best-effort */ }
+    }
+
+    private void OpenSelf() => Open(null);
+
+    private void OpenUser(UserListItemDto user) => Open(user);
+
+    private void Open(UserListItemDto? target)
+    {
+        _target = target;
+        _understood = false;
+        _error = null;
+        _status = null;
+        _recoveryOpen = false;
+        _recoveryCode = "";
+        // A native shell without in-app passkeys cannot run WebAuthn in its web view: it signs in
+        // again through the system browser instead (the server accepts a session that just signed in).
+        _browserSignIn = NativeAuth.IsAvailable && !NativeAuth.SupportsInAppPasskeys;
+        _step = Step.Confirm;
+        _focusPending = true;
+    }
+
+    private void Close()
+    {
+        if (_busy) return;
+        _step = Step.Closed;
+        _recoveryCode = "";
+    }
+
+    private void OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape") Close();
+    }
+
+    private void GoToReauth()
+    {
+        if (!_understood) return;
+        _error = null;
+        _step = Step.Reauth;
+        _focusPending = true;
+    }
+
+    private void BackToConfirm()
+    {
+        _error = null;
+        _recoveryOpen = false;
+        _step = Step.Confirm;
+        _focusPending = true;
+    }
+
+    // ── the existing JSON export, offered before anything is deleted ────────────────────────────
+    private async Task ExportAsync()
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            var response = await Http.GetAsync("api/backup/export");
+            if (!response.IsSuccessStatusCode) { _error = T!.ExportFailed; return; }
+            var fileName = $"studylife-export-{DateTime.UtcNow:yyyyMMdd}.json";
+            if (NativeFiles.IsAvailable)
+            {
+                await NativeFiles.SaveTextAsync(fileName, await response.Content.ReadAsStringAsync());
+                return;
+            }
+            // The same collocated module SetupBackupCard uses - no new interop function.
+            _downloadModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Setup/SetupBackupCard.razor.js");
+            await using var stream = await response.Content.ReadAsStreamAsync();
+            using var streamRef = new DotNetStreamReference(stream);
+            await _downloadModule.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+        }
+        catch
+        {
+            _error = T!.ExportFailed;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    // ── re-authentication, then deletion ─────────────────────────────────────────────────────────
+    private async Task DeleteWithPasskeyAsync()
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            var begin = await State.AccountDeletion.BeginPasskeyProofAsync();
+            if (begin is null) { _error = T!.ErrorPasskeyUnavailable; _recoveryOpen = true; return; }
+
+            string? assertion;
+            try
+            {
+                if (NativeAuth.IsAvailable && NativeAuth.SupportsInAppPasskeys)
+                    assertion = await NativeAuth.GetPasskeyAssertionAsync(begin.OptionsJson);
+                else
+                {
+                    _passkeyModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/Login.razor.js");
+                    assertion = await _passkeyModule.InvokeAsync<bool>("isPasskeySupported")
+                        ? await _passkeyModule.InvokeAsync<string>("getPasskeyAssertion", begin.OptionsJson)
+                        : null;
+                }
+            }
+            catch (JSException)
+            {
+                assertion = null; // cancelled in the browser's passkey dialog
+            }
+            if (assertion is null) { _error = T!.ErrorPasskeyUnavailable; return; }
+
+            await RunAsync(new AccountDeletionProof(begin.OptionsId, assertion, null));
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task DeleteWithRecoveryAsync()
+    {
+        if (_busy || string.IsNullOrWhiteSpace(_recoveryCode)) return;
+        _busy = true;
+        _error = null;
+        try { await RunAsync(new AccountDeletionProof(null, null, _recoveryCode)); }
+        finally { _busy = false; }
+    }
+
+    private async Task DeleteAfterBrowserSignInAsync()
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            var token = await NativeAuth.AuthenticateAsync("login");
+            if (string.IsNullOrEmpty(token)) { _error = T!.ErrorPasskeyUnavailable; return; }
+            // The fresh session is the proof: the server accepts one that signed in moments ago.
+            await TokenStore.SetTokenAsync(token);
+            await RunAsync(new AccountDeletionProof(null, null, null));
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task RunAsync(AccountDeletionProof proof)
+    {
+        var attempt = _target is null
+            ? await State.AccountDeletion.DeleteOwnAccountAsync(proof)
+            : await State.AccountDeletion.RemoveUserAsync(_target.Id, proof);
+
+        if (!attempt.Succeeded)
+        {
+            _error = attempt.Failure switch
+            {
+                AccountDeletionFailure.ProofRejected or AccountDeletionFailure.ProofMissing => T!.ErrorProofRejected,
+                AccountDeletionFailure.TooManyAttempts => T!.ErrorTooMany,
+                AccountDeletionFailure.Network => T!.ErrorNetwork,
+                AccountDeletionFailure.OwnerHasOtherUsers or AccountDeletionFailure.OwnerOnly => T!.ErrorOwner,
+                _ => T!.ErrorGeneric,
+            };
+            return;
+        }
+
+        if (_target is not null)
+        {
+            // The owner removed somebody else: stay here, say so, refresh the list.
+            var pending = attempt.Result?.AddonCleanupPending > 0 ? " " + T!.AddonPending : "";
+            _status = string.Format(T!.UserRemoved ?? "", _target.DisplayName) + pending;
+            _step = Step.Closed;
+            await LoadAsync();
+            return;
+        }
+
+        // Own account: the token and local caches are already gone (AccountDeletionState). Wipe what
+        // a native shell keeps outside the web view, then leave - to the set-up screen when this was
+        // the last account (the installation is back at first run), otherwise to the login.
+        try { await NativeAuth.AccountDeletedAsync(); }
+        catch { /* the account is deleted either way; a stale widget is not worth an error */ }
+        Nav.NavigateTo(attempt.Result?.InstallationReset == true ? "/register" : "/login", forceLoad: true);
+    }
+}

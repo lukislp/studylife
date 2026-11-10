@@ -353,10 +353,15 @@ public class AppStateService : IAsyncDisposable
     /// not a DI registration: see <see cref="AiConsentState"/> for why the native apps need it this way.</summary>
     public AiConsentState AiConsent { get; }
 
+    /// <summary>The API calls and local clean-up behind "Delete account" (Setup). Composition for the
+    /// same reason as <see cref="AiConsent"/>.</summary>
+    public AccountDeletionState AccountDeletion { get; }
+
     public AppStateService(HttpClient http, IJSRuntime jsRuntime, ILogger<AppStateService> logger, SessionTokenStore sessionTokenStore)
     {
         _http = http;
         AiConsent = new AiConsentState(http);
+        AccountDeletion = new AccountDeletionState(http, sessionTokenStore);
         _jsRuntime = jsRuntime;
         _logger = logger;
         _sessionTokenStore = sessionTokenStore;

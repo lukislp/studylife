@@ -3,6 +3,7 @@
 
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
+using StudyLife.Server.Services.Account;
 
 namespace StudyLife.Server.Services;
 
@@ -40,13 +41,21 @@ public partial class BackgroundTaskService
     /// </summary>
     internal async Task RunAiKeyOutboxAsync(StudyLifeDb db)
     {
-        if (_aiProxyClient is null) return;
+        // The other two add-ons (account deletion's webhooks purge / developers revoke) come from the
+        // service provider rather than the constructor: the constructor is called directly by many
+        // tests, and a missing client simply means "leave those rows for a process that has it".
+        var webhooksClient = _services.GetService<WebhooksProxyClient>();
+        var developersClient = _services.GetService<DeveloperProxyClient>();
+        if (_aiProxyClient is null && webhooksClient is null && developersClient is null) return;
 
         var now = DateTime.UtcNow;
         var pending = await db.AiKeyOutbox.OrderBy(o => o.AuthUserId).ThenBy(o => o.CreatedAt).ToListAsync();
         if (pending.Count == 0) return;
 
-        foreach (var group in pending.GroupBy(o => o.AuthUserId))
+        // One queue per (user, add-on): an unreachable studylife-webhooks must not hold back the
+        // studylife-ai revoke of the same user, while the ordering rule below still applies inside
+        // each add-on's own queue.
+        foreach (var group in pending.GroupBy(o => (o.AuthUserId, Target: AddonOutbox.TargetOf(o.Action))))
         {
             foreach (var row in group) // already CreatedAt-ordered by the query above
             {
@@ -66,12 +75,12 @@ public partial class BackgroundTaskService
                     if (now - lastAttempt <= TimeSpan.FromSeconds(backoffSeconds)) break;
                 }
 
+                var outcome = await AddonOutbox.TryDeliverAsync(row, _aiProxyClient, webhooksClient, developersClient, CancellationToken.None);
+                if (outcome is null) break; // no client for this add-on in this process - not an attempt
+                var delivered = outcome.Value;
+
                 row.Attempts++;
                 row.LastAttemptAt = now;
-
-                var delivered = row.Action == AiKeyOutboxEntity.ActionRegister
-                    ? await _aiProxyClient.RegisterKeyAsync(row.AuthUserId, row.AiApiKeyPlaintext ?? "", CancellationToken.None)
-                    : await _aiProxyClient.RevokeKeyAsync(row.AuthUserId, CancellationToken.None);
 
                 if (delivered)
                 {

@@ -120,6 +120,29 @@ public sealed class WebhooksProxyClient
     public Task<HttpResponseMessage> DeleteWebhookAsync(int userId, string webhookId, CancellationToken ct) =>
         SendAsync(HttpMethod.Delete, $"/internal/webhooks/{Uri.EscapeDataString(webhookId)}?user_id={userId}", null, ct);
 
+    /// <summary>Asks studylife-webhooks to delete everything it holds for this user (account
+    /// deletion). True = confirmed (also when nothing was registered, and also when the integration
+    /// is not configured: nothing to purge). False on any failure - including the 404 an older
+    /// studylife-webhooks answers because it does not have the route yet - so the caller keeps the
+    /// purge queued and retries it (AiKeyOutboxEntity.ActionPurgeWebhooks) instead of blocking the
+    /// deletion. Never throws.</summary>
+    public async Task<bool> PurgeUserAsync(int userId, CancellationToken ct)
+    {
+        if (!Enabled) return true;
+        try
+        {
+            var response = await SendAsync(HttpMethod.Delete, $"/internal/users/{userId}", null, ct);
+            if (!response.IsSuccessStatusCode)
+                _logger.LogWarning("studylife-webhooks purge of user {UserId} returned {Status} - kept for retry", userId, response.StatusCode);
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "studylife-webhooks purge of user {UserId} failed - kept for retry", userId);
+            return false;
+        }
+    }
+
     private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string path, object? body, CancellationToken ct)
     {
         var request = new HttpRequestMessage(method, $"{_baseUrl}{path}");
