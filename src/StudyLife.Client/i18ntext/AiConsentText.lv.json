@@ -1,0 +1,19 @@
+{
+  "Heading": "Vai atļaut MI funkcijām izmantot tavus mācību datus?",
+  "WhatText": "Lai atbildētu uz jautājumiem par tavām piezīmēm, MI asistents nolasa visas tavas piezīmes, kursus, mācību sesijas un mērķus, tostarp atzīmes, un tās indeksē. Tavi jautājumi un atbilstošie fragmenti tiek nosūtīti ar katru pieprasījumu.",
+  "WhomHeading": "Kas saņem šos datus:",
+  "WhomUnknown": "MI sniedzējs, ko konfigurējis šī servera operators.",
+  "LeavesServerText": "Šie dati atstāj šo serveri, un tos apstrādā iepriekš minētais sniedzējs.",
+  "OptionalText": "Tas ir neobligāti. StudyLife pilnībā darbojas arī bez MI.",
+  "WithdrawText": "Savu piekrišanu vari atsaukt jebkurā laikā sadaļā Iestatījumi → MI. Tavi MI dati tiek izdzēsti.",
+  "ExistingUserText": "Tu jau izmanto MI asistentu. Tagad mums ir vajadzīga tava skaidra piekrišana. Ja izvēlēsies Ne tagad, MI tiks izslēgts un tavi MI dati tiks izdzēsti.",
+  "AgreeButton": "Piekrītu",
+  "DeclineButton": "Ne tagad",
+  "ProviderChangedNotice": "MI sniedzējs mainījās, kamēr šis dialoglodziņš bija atvērts. Pārskati to vēlreiz.",
+  "ErrorGeneric": "Kaut kas nogāja greizi. Mēģini vēlreiz.",
+  "ConsentRequiredError": "Lai turpinātu, nepieciešama piekrišana MI izmantošanai.",
+  "LocalRunsHere": "MI darbojas uz šī servera paša aparatūras. Tavi dati netiek sūtīti ārējam MI sniedzējam.",
+  "ConsentGivenOn": "MI piekrišana sniegta {0}.",
+  "WithdrawButton": "Atsaukt piekrišanu un izslēgt MI",
+  "WithdrawConfirmWarning": "Atsaukšana izslēdz MI un izdzēš tavas indeksētās piezīmes un tērzēšanas datus no MI pakalpojuma. To nevar atsaukt."
+}

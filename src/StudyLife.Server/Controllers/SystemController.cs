@@ -29,17 +29,20 @@ public class SystemController : ControllerBase
     private readonly ICalendarTokenService _calendarTokens;
     private readonly bool _rawBackupSupported;
     private readonly IOptionsMonitor<TelemetryOptions> _telemetryOptions;
+    private readonly IAiConsentService _aiConsent;
 
     // IConfiguration stays only for DemoModeGuard (two top-level env vars, not a section - see
     // AuthController's field comment).
     public SystemController(ICalendarTokenService calendarTokens,
         IConfiguration config,
         IOptionsMonitor<TelemetryOptions> telemetryOptions,
+        IAiConsentService aiConsent,
         Services.DatabaseBackupService? backupService = null,
         Services.DatabaseRestoreService? restoreService = null)
     {
         _calendarTokens = calendarTokens;
         _telemetryOptions = telemetryOptions;
+        _aiConsent = aiConsent;
         // Same derivation as BackupController.IsRawBackupAvailable: both services are
         // only registered in SQLite mode (Program.cs) - on Postgres the external backup
         // path (e.g. R2) takes over, and the raw endpoints report 501.
@@ -61,24 +64,28 @@ public class SystemController : ControllerBase
     /// backup runs externally there).
     /// </summary>
     [HttpGet("capabilities")]
-    public ActionResult<SystemCapabilitiesResponseDto> GetCapabilities()
+    public async Task<ActionResult<SystemCapabilitiesResponseDto>> GetCapabilities(CancellationToken ct)
     {
         // no-store: this response must never end up in an HTTP cache - a client with
         // stale capability info would otherwise show/hide UI incorrectly (see the
         // /api fallback comment in Program.cs about NSURLCache poisoning).
         Response.Headers.CacheControl = "no-store";
-        return Ok(BuildCapabilities(_telemetryOptions.CurrentValue, _rawBackupSupported));
+        return Ok(BuildCapabilities(_telemetryOptions.CurrentValue, _rawBackupSupported,
+            await _aiConsent.GetCapabilitiesAsync(ct)));
     }
 
     // internal instead of private: reused by SetupController (bundle endpoint) so both call
     // sites compute the exact same DTO for the same rawBackupSupported input.
-    internal static SystemCapabilitiesResponseDto BuildCapabilities(TelemetryOptions telemetry, bool rawBackupSupported)
+    internal static SystemCapabilitiesResponseDto BuildCapabilities(
+        TelemetryOptions telemetry, bool rawBackupSupported, AiCapabilities ai)
     {
         var sampleRatio = telemetry.ClientSampleRatio ?? TelemetryOptions.DefaultSampleRatio;
         return new SystemCapabilitiesResponseDto
         {
             RawBackupSupported = rawBackupSupported,
             TelemetryClientSampleRatio = Math.Clamp(sampleRatio, 0, 1),
+            AiAvailable = ai.Available,
+            AiProvider = ai.Provider,
         };
     }
 

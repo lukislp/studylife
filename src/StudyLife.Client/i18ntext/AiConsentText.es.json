@@ -1,0 +1,19 @@
+{
+  "Heading": "¿Permitir que las funciones de IA usen tus datos de estudio?",
+  "WhatText": "Para responder preguntas sobre tus notas, el asistente de IA lee todas tus notas, cursos, sesiones de estudio y objetivos, incluidas las calificaciones, y los indexa. Tus preguntas y los fragmentos correspondientes se envían con cada solicitud.",
+  "WhomHeading": "Quién recibe estos datos:",
+  "WhomUnknown": "El proveedor de IA configurado por el operador de este servidor.",
+  "LeavesServerText": "Estos datos salen de este servidor y los procesa el proveedor indicado arriba.",
+  "OptionalText": "Es opcional. StudyLife funciona por completo sin IA.",
+  "WithdrawText": "Puedes retirar tu consentimiento en cualquier momento en Configuración → IA. Tus datos de IA se eliminan entonces.",
+  "ExistingUserText": "Ya usas el asistente de IA. Ahora necesitamos tu consentimiento explícito. Si eliges Ahora no, la IA se desactiva y se eliminan tus datos de IA.",
+  "AgreeButton": "Aceptar",
+  "DeclineButton": "Ahora no",
+  "ProviderChangedNotice": "El proveedor de IA cambió mientras este diálogo estaba abierto. Revísalo de nuevo.",
+  "ErrorGeneric": "Algo salió mal. Inténtalo de nuevo.",
+  "ConsentRequiredError": "Se necesita el consentimiento para la IA para continuar.",
+  "LocalRunsHere": "La IA se ejecuta en el propio hardware de este servidor. Tus datos no se envían a un proveedor de IA externo.",
+  "ConsentGivenOn": "Consentimiento de IA otorgado el {0}.",
+  "WithdrawButton": "Retirar el consentimiento y desactivar la IA",
+  "WithdrawConfirmWarning": "Al retirarlo se desactiva la IA y se eliminan del servicio de IA tus notas indexadas y tus datos de chat. No se puede deshacer."
+}

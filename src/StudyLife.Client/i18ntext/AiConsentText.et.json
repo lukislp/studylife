@@ -1,0 +1,19 @@
+{
+  "Heading": "Kas lubad tehisintellekti funktsioonidel kasutada sinu õppeandmeid?",
+  "WhatText": "Et sinu märkmeid puudutavatele küsimustele vastata, loeb tehisintellekti assistent kõiki sinu märkmeid, kursusi, õppesessioone ja eesmärke koos hinnetega ning indekseerib need. Sinu küsimused ja sobivad katkendid saadetakse iga päringuga kaasa.",
+  "WhomHeading": "Kes need andmed saab:",
+  "WhomUnknown": "Tehisintellekti pakkuja, kelle selle serveri haldaja on seadistanud.",
+  "LeavesServerText": "Need andmed lahkuvad sellelt serverilt ning neid töötleb ülal nimetatud pakkuja.",
+  "OptionalText": "See on vabatahtlik. StudyLife töötab täielikult ka ilma tehisintellektita.",
+  "WithdrawText": "Võid oma nõusoleku igal ajal tagasi võtta asukohas Seaded → Tehisintellekt. Seejärel kustutatakse sinu tehisintellekti andmed.",
+  "ExistingUserText": "Kasutad tehisintellekti assistenti juba. Nüüd vajame sinu selgesõnalist nõusolekut. Kui valid Mitte praegu, lülitatakse tehisintellekt välja ja sinu tehisintellekti andmed kustutatakse.",
+  "AgreeButton": "Nõustun",
+  "DeclineButton": "Mitte praegu",
+  "ProviderChangedNotice": "Tehisintellekti pakkuja muutus, kui see dialoog oli avatud. Vaata see uuesti üle.",
+  "ErrorGeneric": "Midagi läks valesti. Proovi uuesti.",
+  "ConsentRequiredError": "Jätkamiseks on vaja nõusolekut tehisintellekti kasutamiseks.",
+  "LocalRunsHere": "Tehisintellekt töötab selle serveri enda riistvaral. Sinu andmeid ei saadeta välisele tehisintellekti pakkujale.",
+  "ConsentGivenOn": "Tehisintellekti nõusolek antud {0}.",
+  "WithdrawButton": "Võta nõusolek tagasi ja lülita tehisintellekt välja",
+  "WithdrawConfirmWarning": "Tagasivõtmine lülitab tehisintellekti välja ning kustutab sinu indekseeritud märkmed ja vestlusandmed tehisintellekti teenusest. Seda ei saa tagasi võtta."
+}

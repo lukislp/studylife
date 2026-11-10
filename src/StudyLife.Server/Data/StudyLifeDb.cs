@@ -782,6 +782,22 @@ public class UserSettingsEntity
     /// declined" and never show itself again after either answer.
     /// </summary>
     public bool? TelemetryConsent { get; set; }
+    /// <summary>
+    /// When the user explicitly agreed to let this installation send their notes, courses,
+    /// sessions and goals to an AI provider (AiConsentService.GrantAsync). Null = no consent
+    /// recorded: a new user who has not been asked, a user who declined or withdrew, or an
+    /// existing AI user from before consent existed (asked at the next app start). Never written
+    /// through the settings PUT - only AiConsentService changes it, so a client cannot claim a
+    /// consent the user never gave.
+    /// </summary>
+    public DateTime? AiConsentGrantedAt { get; set; }
+    /// <summary>
+    /// SHA-256 (hex) of the provider description the consent was given for
+    /// (AiConsentService.Fingerprint: every role's provider label, model and locality). A
+    /// consent only covers that exact description - when the operator switches provider or
+    /// model, the stored value no longer matches and the user is asked again.
+    /// </summary>
+    public string? AiConsentProviderFingerprint { get; set; }
 }
 
 public class PushSubscriptionEntity

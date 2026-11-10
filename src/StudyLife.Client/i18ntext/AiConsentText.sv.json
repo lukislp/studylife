@@ -1,0 +1,19 @@
+{
+  "Heading": "Får AI-funktioner använda dina studiedata?",
+  "WhatText": "För att svara på frågor om dina anteckningar läser AI-assistenten alla dina anteckningar, kurser, studiepass och mål inklusive betyg och indexerar dem. Dina frågor och de matchande utdragen skickas med varje förfrågan.",
+  "WhomHeading": "Vem som får dessa data:",
+  "WhomUnknown": "AI-leverantören som operatören av den här servern har konfigurerat.",
+  "LeavesServerText": "Dessa data lämnar den här servern och behandlas av leverantören som nämns ovan.",
+  "OptionalText": "Det är frivilligt. StudyLife fungerar fullt ut utan AI.",
+  "WithdrawText": "Du kan när som helst återkalla ditt samtycke under Inställningar → AI. Dina AI-data raderas då.",
+  "ExistingUserText": "Du använder redan AI-assistenten. Nu behöver vi ditt uttryckliga samtycke. Väljer du Inte nu stängs AI av och dina AI-data raderas.",
+  "AgreeButton": "Godkänn",
+  "DeclineButton": "Inte nu",
+  "ProviderChangedNotice": "AI-leverantören ändrades medan den här dialogen var öppen. Granska den igen.",
+  "ErrorGeneric": "Något gick fel. Försök igen.",
+  "ConsentRequiredError": "Samtycke till AI krävs för att fortsätta.",
+  "LocalRunsHere": "AI:n körs på serverns egen hårdvara. Dina data skickas inte till en extern AI-leverantör.",
+  "ConsentGivenOn": "AI-samtycke givet den {0}.",
+  "WithdrawButton": "Återkalla samtycket och stäng av AI",
+  "WithdrawConfirmWarning": "Återkallandet stänger av AI och raderar dina indexerade anteckningar och chattdata från AI-tjänsten. Det går inte att ångra."
+}

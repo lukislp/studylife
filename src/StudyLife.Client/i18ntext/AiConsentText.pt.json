@@ -1,0 +1,19 @@
+{
+  "Heading": "Permitir que as funções de IA usem os teus dados de estudo?",
+  "WhatText": "Para responder a perguntas sobre as tuas notas, o assistente de IA lê todas as tuas notas, disciplinas, sessões de estudo e objetivos, incluindo as classificações, e indexa-os. As tuas perguntas e os excertos correspondentes são enviados com cada pedido.",
+  "WhomHeading": "Quem recebe estes dados:",
+  "WhomUnknown": "O fornecedor de IA configurado pelo operador deste servidor.",
+  "LeavesServerText": "Estes dados saem deste servidor e são processados pelo fornecedor indicado acima.",
+  "OptionalText": "É opcional. O StudyLife funciona totalmente sem IA.",
+  "WithdrawText": "Podes retirar o consentimento a qualquer momento em Configurações → IA. Os teus dados de IA são então eliminados.",
+  "ExistingUserText": "Já usas o assistente de IA. Precisamos agora do teu consentimento explícito. Se escolheres Agora não, a IA é desativada e os teus dados de IA são eliminados.",
+  "AgreeButton": "Aceitar",
+  "DeclineButton": "Agora não",
+  "ProviderChangedNotice": "O fornecedor de IA mudou enquanto esta janela estava aberta. Revê-a novamente.",
+  "ErrorGeneric": "Algo correu mal. Tenta novamente.",
+  "ConsentRequiredError": "É necessário o consentimento para a IA para continuar.",
+  "LocalRunsHere": "A IA corre no hardware deste servidor. Os teus dados não são enviados para um fornecedor de IA externo.",
+  "ConsentGivenOn": "Consentimento para a IA dado em {0}.",
+  "WithdrawButton": "Retirar o consentimento e desativar a IA",
+  "WithdrawConfirmWarning": "Ao retirar, a IA é desativada e as tuas notas indexadas e dados de conversa são eliminados do serviço de IA. Esta ação não pode ser anulada."
+}

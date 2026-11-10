@@ -224,7 +224,7 @@ https://github.com/user-attachments/assets/0498d54b-f7e3-4854-b7cf-8eea538dd112
 - Delete confirmation (two clicks instead of immediate deletion)
 - Link to the triggering focus session visible (🔗), if created from the reflection prompt
 - Web capture (via the [studylife-capture](https://github.com/lukislp/studylife-capture) browser extension): save a selection or a whole article from any page as a note, auto-enriched in the background with a course match, tags, a one-sentence summary, and related-notes links
-- AI study assistant (via [studylife-ai](https://github.com/lukislp/studylife-ai), opened from the speed dial): questions over your own notes/courses/sessions with source citations, and an agent that can create sessions or summarize-and-save notes after an explicit confirmation step
+- AI study assistant (via [studylife-ai](https://github.com/lukislp/studylife-ai), opened from the speed dial): questions over your own notes/courses/sessions with source citations, and an agent that can create sessions or summarize-and-save notes after an explicit confirmation step. Before anything is sent to an external AI provider the user has to agree explicitly (a dialog names the provider and models and what is shared; it can be withdrawn under Setup, which also deletes the indexed data) - see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) "AI consent"
 
 ### Evaluation
 - Hours studied and sessions per course

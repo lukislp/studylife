@@ -65,10 +65,24 @@ public sealed class AiProxyClient
     private readonly IReadOnlyList<AiProxyTokenService.SigningKey>? _signingKeys;
     private readonly string? _legacySharedSecret;
     private readonly string? _internalApiSecret;
+    private readonly TimeProvider _time;
 
-    public AiProxyClient(IOptions<StudyLifeAiOptions> options, ILogger<AiProxyClient> logger, HttpClient? httpClient = null)
+    // Provider description cache (GetProviderInfoAsync). It describes the whole installation,
+    // not one user, so a single process-wide entry is right. A successful fetch is kept for
+    // ProviderInfoTtl; a failed one is retried after ProviderInfoRetryAfter, and the last good
+    // description keeps being served meanwhile: studylife-ai being briefly unreachable must not
+    // turn every stored consent into "does not cover the provider" and ask everyone again.
+    private static readonly TimeSpan ProviderInfoTtl = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan ProviderInfoRetryAfter = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan ProviderInfoRequestTimeout = TimeSpan.FromSeconds(5);
+    private readonly SemaphoreSlim _providerInfoLock = new(1, 1);
+    private AiProviderInfo? _providerInfo;
+    private DateTimeOffset _providerInfoNextFetch = DateTimeOffset.MinValue;
+
+    public AiProxyClient(IOptions<StudyLifeAiOptions> options, ILogger<AiProxyClient> logger, HttpClient? httpClient = null, TimeProvider? timeProvider = null)
     {
         _logger = logger;
+        _time = timeProvider ?? TimeProvider.System;
         _http = httpClient ?? new HttpClient();
         var ai = options.Value;
         _baseUrl = ai.BaseUrl?.TrimEnd('/');
@@ -209,6 +223,89 @@ public sealed class AiProxyClient
             _logger.LogWarning(ex, "studylife-ai /internal/enrich-capture call failed for note {NoteId}", noteId);
             return null;
         }
+    }
+
+    /// <summary>Which providers and models studylife-ai sends user data to (its
+    /// GET /internal/provider-info), cached - see the field comment. Null = unknown: not Enabled,
+    /// studylife-ai unreachable and never described, or an older studylife-ai without the
+    /// endpoint (404). Callers must treat null as "unknown external provider", never as "no
+    /// provider". Never throws.</summary>
+    public async Task<AiProviderInfo?> GetProviderInfoAsync(CancellationToken ct)
+    {
+        if (!Enabled) return null;
+        if (_time.GetUtcNow() < _providerInfoNextFetch) return _providerInfo;
+
+        await _providerInfoLock.WaitAsync(ct);
+        try
+        {
+            // Re-check: another caller may have refreshed while this one waited for the lock.
+            if (_time.GetUtcNow() < _providerInfoNextFetch) return _providerInfo;
+
+            var fetched = await FetchProviderInfoAsync(ct);
+            if (fetched is not null)
+            {
+                _providerInfo = fetched;
+                _providerInfoNextFetch = _time.GetUtcNow() + ProviderInfoTtl;
+            }
+            else
+            {
+                _providerInfoNextFetch = _time.GetUtcNow() + ProviderInfoRetryAfter;
+            }
+            return _providerInfo;
+        }
+        finally
+        {
+            _providerInfoLock.Release();
+        }
+    }
+
+    private async Task<AiProviderInfo?> FetchProviderInfoAsync(CancellationToken ct)
+    {
+        try
+        {
+            // Short deadline of its own: this runs inside user requests (capabilities, consent
+            // status), so a hanging studylife-ai must degrade to "unknown", not stall the page.
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            timeout.CancelAfter(ProviderInfoRequestTimeout);
+            var request = new HttpRequestMessage(HttpMethod.Get, $"{_internalBaseUrl}/internal/provider-info");
+            request.Headers.Add("X-StudyLife-Shared-Secret", _internalApiSecret);
+            using var response = await _http.SendAsync(request, timeout.Token);
+            if (!response.IsSuccessStatusCode)
+            {
+                // 404 is the expected answer from a studylife-ai that predates the endpoint.
+                _logger.LogWarning("studylife-ai /internal/provider-info returned {Status} - provider treated as unknown", response.StatusCode);
+                return null;
+            }
+            var json = await response.Content.ReadFromJsonAsync<ProviderInfoResponseJson>(cancellationToken: timeout.Token);
+            if (json?.Roles is not { Count: > 0 } roles) return null;
+            return new AiProviderInfo(
+                roles.Select(r => new AiProviderRole(r.Role ?? "", r.Provider ?? "", r.Model ?? "", r.Local)).ToList(),
+                json.AnyExternal);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "studylife-ai /internal/provider-info call failed - provider treated as unknown");
+            return null;
+        }
+    }
+
+    // snake_case, matching studylife-ai's schemas/internal.py ProviderInfoResponse.
+    private sealed class ProviderInfoResponseJson
+    {
+        [JsonPropertyName("roles")] public List<ProviderRoleJson>? Roles { get; set; }
+        [JsonPropertyName("any_external")] public bool AnyExternal { get; set; }
+    }
+
+    private sealed class ProviderRoleJson
+    {
+        [JsonPropertyName("role")] public string? Role { get; set; }
+        [JsonPropertyName("provider")] public string? Provider { get; set; }
+        [JsonPropertyName("model")] public string? Model { get; set; }
+        [JsonPropertyName("local")] public bool Local { get; set; }
     }
 
     // Field names match studylife-ai's schemas/internal.py EnrichCaptureRequest/Response

@@ -4,7 +4,9 @@
 *@
 @using System.Text.Json
 @using StudyLife.Shared
+@using StudyLife.Client.Services
 @inject HttpClient Http
+@inject AppStateService State
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
 @inject IJSRuntime JS
 
@@ -14,7 +16,12 @@
    sessions / save notes, gated behind an explicit approve/reject step per studylife-ai's
    confirm flow). If the user has never generated their studylife-ai key, shows an inline
    activate button instead (see studylife-ai's docs/decisions.md "Deferred frontend UX notes") -
-   the plaintext key is never displayed, matching the same decision. *@
+   the plaintext key is never displayed, matching the same decision.
+
+   AI consent: this modal does not decide anything about it. It asks State.AiConsent
+   ("ensure consent, then continue") when it opens and before activating, and reacts to the
+   server's 403 "ai-consent-required" by asking again - the rule and the dialog live in
+   AiConsentService / AiConsentModal. *@
 
 @if (Open)
 {
@@ -150,6 +157,7 @@
     [Parameter] public EventCallback OnClose { get; set; }
 
     private I18nText.AgentChatText T = new();
+    private I18nText.AiConsentText TC = new();
     private bool _wasOpen;
     private bool _checkingKey;
     private bool _notLoggedIn;
@@ -176,6 +184,7 @@
     protected override async Task OnInitializedAsync()
     {
         T = await I18nText.GetTextTableAsync<I18nText.AgentChatText>(this);
+        TC = await I18nText.GetTextTableAsync<I18nText.AiConsentText>(this);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -192,6 +201,16 @@
     {
         if (Open && !_wasOpen)
         {
+            _wasOpen = true;
+            _checkingKey = true;
+            // Consent first (the dialog appears on top while this one shows "loading"); "not now"
+            // simply closes the chat again - AI stays as it was, no error.
+            if (!await State.AiConsent.EnsureConsentAsync())
+            {
+                _checkingKey = false;
+                await OnClose.InvokeAsync();
+                return;
+            }
             await CheckKeyStatusAsync();
         }
         _wasOpen = Open;
@@ -234,7 +253,15 @@
         _activateError = null;
         try
         {
+            // Generating the key makes studylife-ai start reading all of the user's data, so the
+            // consent has to be settled first.
+            if (!await State.AiConsent.EnsureConsentAsync()) return;
             var response = await Http.PostAsync("api/settings/ai-api-key/generate", null);
+            if (await AiConsentState.IsConsentRequiredAsync(response))
+            {
+                _activateError = TC.ConsentRequiredError;
+                return;
+            }
             response.EnsureSuccessStatusCode();
             _hasKey = true;
         }
@@ -286,6 +313,15 @@
             {
                 _notLoggedIn = true;
                 _chatMessages.Remove(assistantMessage);
+                return;
+            }
+            if (await AiConsentState.IsConsentRequiredAsync(response))
+            {
+                // The consent no longer covers the provider (changed, or withdrawn elsewhere):
+                // ask again; the user can then send the message again.
+                _chatMessages.Remove(assistantMessage);
+                _chatError = TC.ConsentRequiredError;
+                if (await State.AiConsent.EnsureConsentAsync()) _chatError = null;
                 return;
             }
             if (!response.IsSuccessStatusCode)
@@ -390,6 +426,13 @@
         if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
         {
             _notLoggedIn = true;
+            return;
+        }
+        if (await AiConsentState.IsConsentRequiredAsync(response))
+        {
+            _agentError = TC.ConsentRequiredError;
+            turn.PendingActions.Clear();
+            if (await State.AiConsent.EnsureConsentAsync()) _agentError = null;
             return;
         }
         if (!response.IsSuccessStatusCode)

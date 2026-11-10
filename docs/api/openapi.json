@@ -17,6 +17,96 @@
         }
       }
     },
+    "/api/ai/consent": {
+      "get": {
+        "tags": [
+          "AiConsent"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiConsentStatusDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiConsentStatusDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiConsentStatusDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ai/consent/grant": {
+      "post": {
+        "tags": [
+          "AiConsent"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiConsentGrantRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiConsentGrantRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiConsentGrantRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiConsentStatusDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiConsentStatusDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiConsentStatusDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ai/consent/withdraw": {
+      "post": {
+        "tags": [
+          "AiConsent"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/ai/chat": {
       "post": {
         "tags": [
@@ -5076,6 +5166,110 @@
               "string"
             ],
             "format": "date-time"
+          }
+        }
+      },
+      "AiConsentGrantRequestDto": {
+        "required": [
+          "fingerprint"
+        ],
+        "type": "object",
+        "properties": {
+          "fingerprint": {
+            "type": "string"
+          }
+        }
+      },
+      "AiConsentStatusDto": {
+        "required": [
+          "aiAvailable",
+          "consentRequired",
+          "granted",
+          "hasKey",
+          "providerKnown",
+          "fingerprint",
+          "needsDecision"
+        ],
+        "type": "object",
+        "properties": {
+          "aiAvailable": {
+            "type": "boolean"
+          },
+          "consentRequired": {
+            "type": "boolean"
+          },
+          "granted": {
+            "type": "boolean"
+          },
+          "grantedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "hasKey": {
+            "type": "boolean"
+          },
+          "providerKnown": {
+            "type": "boolean"
+          },
+          "provider": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AiProviderInfoDto"
+              }
+            ]
+          },
+          "fingerprint": {
+            "type": "string"
+          },
+          "needsDecision": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AiProviderInfoDto": {
+        "required": [
+          "roles",
+          "anyExternal"
+        ],
+        "type": "object",
+        "properties": {
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AiProviderRoleDto"
+            }
+          },
+          "anyExternal": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AiProviderRoleDto": {
+        "required": [
+          "role",
+          "provider",
+          "model",
+          "local"
+        ],
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "local": {
+            "type": "boolean"
           }
         }
       },
@@ -11115,7 +11309,8 @@
       "SystemCapabilitiesResponseDto": {
         "required": [
           "rawBackupSupported",
-          "telemetryClientSampleRatio"
+          "telemetryClientSampleRatio",
+          "aiAvailable"
         ],
         "type": "object",
         "properties": {
@@ -11129,6 +11324,19 @@
               "string"
             ],
             "format": "double"
+          },
+          "aiAvailable": {
+            "type": "boolean"
+          },
+          "aiProvider": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AiProviderInfoDto"
+              }
+            ]
           }
         }
       },
@@ -12214,6 +12422,9 @@
   "tags": [
     {
       "name": "StudyLife.Server"
+    },
+    {
+      "name": "AiConsent"
     },
     {
       "name": "AiProxy"

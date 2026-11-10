@@ -1,0 +1,19 @@
+{
+  "Heading": "Dopustiti AI funkcijama korištenje tvojih podataka o učenju?",
+  "WhatText": "Kako bi odgovarao na pitanja o tvojim bilješkama, AI asistent čita sve tvoje bilješke, kolegije, sesije učenja i ciljeve, uključujući ocjene, i indeksira ih. Tvoja pitanja i odgovarajući isječci šalju se sa svakim zahtjevom.",
+  "WhomHeading": "Tko prima ove podatke:",
+  "WhomUnknown": "AI pružatelj koji je konfigurirao operater ovog poslužitelja.",
+  "LeavesServerText": "Ovi podaci napuštaju ovaj poslužitelj i obrađuje ih gore navedeni pružatelj.",
+  "OptionalText": "To je neobavezno. StudyLife u potpunosti radi i bez AI-ja.",
+  "WithdrawText": "Privolu možeš povući u bilo kojem trenutku u Postavke → AI. Tvoji AI podaci tada se brišu.",
+  "ExistingUserText": "Već koristiš AI asistenta. Sada nam je potrebna tvoja izričita privola. Ako odabereš Ne sada, AI se isključuje, a tvoji AI podaci se brišu.",
+  "AgreeButton": "Slažem se",
+  "DeclineButton": "Ne sada",
+  "ProviderChangedNotice": "AI pružatelj promijenio se dok je ovaj dijalog bio otvoren. Pregledaj ga ponovno.",
+  "ErrorGeneric": "Nešto je pošlo po zlu. Pokušaj ponovno.",
+  "ConsentRequiredError": "Za nastavak je potrebna privola za korištenje AI-ja.",
+  "LocalRunsHere": "AI radi na vlastitom hardveru ovog poslužitelja. Tvoji podaci ne šalju se vanjskom AI pružatelju.",
+  "ConsentGivenOn": "AI privola dana {0}.",
+  "WithdrawButton": "Povuci privolu i isključi AI",
+  "WithdrawConfirmWarning": "Povlačenjem se AI isključuje, a tvoje indeksirane bilješke i podaci razgovora brišu se iz AI usluge. To se ne može poništiti."
+}

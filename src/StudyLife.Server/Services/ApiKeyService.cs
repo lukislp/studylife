@@ -48,7 +48,8 @@ public interface IApiKeyService
 public class ApiKeyService(
     StudyLifeDb db,
     AiProxyClient aiProxyClient,
-    DeveloperProxyClient developerProxyClient) : IApiKeyService
+    DeveloperProxyClient developerProxyClient,
+    IAiConsentService aiConsent) : IApiKeyService
 {
     public async Task<ServiceResult<TDto>> GetStatusAsync<TDto>(int userId, Func<AuthUserEntity, TDto> toDto)
     {
@@ -91,6 +92,13 @@ public class ApiKeyService(
     {
         var user = await db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return ServiceResult<AiApiKeyGenerateResponseDto>.Unauthorized();
+
+        // Registering the key makes studylife-ai start ingesting ALL of the user's notes,
+        // courses, sessions and goals at once, so consent has to be settled before the key
+        // exists - not just before the first chat (AiConsentService).
+        var gate = await aiConsent.EnsureGrantedAsync(userId, ct);
+        if (gate.Outcome != ServiceOutcome.Success)
+            return ServiceResult<AiApiKeyGenerateResponseDto>.Forbidden(gate.Error!);
 
         var key = ApiKeySlots.Ai.Rotate(user, DateTime.UtcNow);
         var outboxRow = new AiKeyOutboxEntity

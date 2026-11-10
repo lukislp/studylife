@@ -1,0 +1,19 @@
+{
+  "Heading": "Saako tekoälyominaisuus käyttää opiskelutietojasi?",
+  "WhatText": "Vastatakseen muistiinpanojasi koskeviin kysymyksiin tekoälyavustaja lukee kaikki muistiinpanosi, kurssisi, opiskelujaksosi ja tavoitteesi arvosanoineen ja indeksoi ne. Kysymyksesi ja niihin sopivat otteet lähetetään jokaisen pyynnön mukana.",
+  "WhomHeading": "Kuka saa nämä tiedot:",
+  "WhomUnknown": "Tekoälypalveluntarjoaja, jonka tämän palvelimen ylläpitäjä on määrittänyt.",
+  "LeavesServerText": "Nämä tiedot poistuvat tältä palvelimelta, ja yllä mainittu palveluntarjoaja käsittelee ne.",
+  "OptionalText": "Tämä on vapaaehtoista. StudyLife toimii täysin ilman tekoälyä.",
+  "WithdrawText": "Voit peruuttaa suostumuksesi milloin tahansa kohdassa Asetukset → Tekoäly. Tekoälytietosi poistetaan tällöin.",
+  "ExistingUserText": "Käytät jo tekoälyavustajaa. Tarvitsemme nyt nimenomaisen suostumuksesi. Jos valitset Ei nyt, tekoäly kytketään pois ja tekoälytietosi poistetaan.",
+  "AgreeButton": "Hyväksy",
+  "DeclineButton": "Ei nyt",
+  "ProviderChangedNotice": "Tekoälypalveluntarjoaja vaihtui tämän ikkunan ollessa auki. Tarkista se uudelleen.",
+  "ErrorGeneric": "Jokin meni pieleen. Yritä uudelleen.",
+  "ConsentRequiredError": "Suostumus tekoälyn käyttöön tarvitaan jatkamiseen.",
+  "LocalRunsHere": "Tekoäly toimii tämän palvelimen omalla laitteistolla. Tietojasi ei lähetetä ulkoiselle tekoälypalveluntarjoajalle.",
+  "ConsentGivenOn": "Tekoälysuostumus annettu {0}.",
+  "WithdrawButton": "Peru suostumus ja kytke tekoäly pois",
+  "WithdrawConfirmWarning": "Peruutus kytkee tekoälyn pois ja poistaa indeksoidut muistiinpanosi ja keskustelutietosi tekoälypalvelusta. Sitä ei voi perua."
+}

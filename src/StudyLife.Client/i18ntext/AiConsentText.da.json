@@ -1,0 +1,19 @@
+{
+  "Heading": "Må AI-funktioner bruge dine studiedata?",
+  "WhatText": "For at besvare spørgsmål om dine noter læser AI-assistenten alle dine noter, kurser, studiesessioner og mål inklusive karakterer og indekserer dem. Dine spørgsmål og de tilhørende uddrag sendes med hver forespørgsel.",
+  "WhomHeading": "Hvem modtager disse data:",
+  "WhomUnknown": "Den AI-udbyder, som operatøren af denne server har konfigureret.",
+  "LeavesServerText": "Disse data forlader denne server og behandles af udbyderen nævnt ovenfor.",
+  "OptionalText": "Det er valgfrit. StudyLife fungerer fuldt ud uden AI.",
+  "WithdrawText": "Du kan til enhver tid trække dit samtykke tilbage under Opsætning → AI. Dine AI-data bliver derefter slettet.",
+  "ExistingUserText": "Du bruger allerede AI-assistenten. Nu har vi brug for dit udtrykkelige samtykke. Vælger du Ikke nu, slukkes AI, og dine AI-data slettes.",
+  "AgreeButton": "Acceptér",
+  "DeclineButton": "Ikke nu",
+  "ProviderChangedNotice": "AI-udbyderen ændrede sig, mens denne dialog var åben. Gennemgå den igen.",
+  "ErrorGeneric": "Noget gik galt. Prøv igen.",
+  "ConsentRequiredError": "Samtykke til AI er nødvendigt for at fortsætte.",
+  "LocalRunsHere": "AI'en kører på denne servers egen hardware. Dine data sendes ikke til en ekstern AI-udbyder.",
+  "ConsentGivenOn": "AI-samtykke givet den {0}.",
+  "WithdrawButton": "Træk samtykket tilbage og sluk AI",
+  "WithdrawConfirmWarning": "Tilbagetrækning slår AI fra og sletter dine indekserede noter og chatdata fra AI-tjenesten. Det kan ikke fortrydes."
+}

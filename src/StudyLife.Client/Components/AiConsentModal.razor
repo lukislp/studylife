@@ -1,0 +1,147 @@
+@*
+  SPDX-FileCopyrightText: 2026 Lukas Körber
+  SPDX-License-Identifier: AGPL-3.0-only
+*@
+@using StudyLife.Client.Services
+@using StudyLife.Shared
+@using Microsoft.Extensions.DependencyInjection
+@implements IDisposable
+@inject AppStateService State
+@inject IServiceProvider Services
+
+@* The single consent dialog for sending notes and study data to an AI provider (Apple App
+   Review guideline 5.1.2(i)). It only renders what AiConsentState asks it to show - the question
+   comes from the server's rule (AiConsentService), the callers (AgentChatModal,
+   SetupAiIntegrationCard, MainLayout's app-start check) just call State.AiConsent.EnsureConsentAsync
+   or CheckAtStartupAsync. Mounted once, in MainLayout.
+
+   Same shape as TelemetryConsentModal: no backdrop-click-to-dismiss and no close button, because a
+   consent needs an explicit answer ("agree" or "not now"), not an implicit dismiss. WCAG 2.2: a
+   labelled modal dialog (aria-labelledby/-describedby), keyboard focus moves to the dialog when it
+   opens, both choices are real buttons with the global :focus-visible ring. *@
+
+@if (Pending is { } request && T is { } t)
+{
+    <div class="modal-overlay">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ai-consent-title"
+             aria-describedby="ai-consent-body" tabindex="-1" @ref="_dialog" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3 id="ai-consent-title">@t.Heading</h3>
+            </div>
+            <div class="modal-body" id="ai-consent-body">
+                @if (request.ExistingUser)
+                {
+                    <p class="ss-desc">@t.ExistingUserText</p>
+                }
+                @if (request.ProviderChanged)
+                {
+                    <p class="ss-desc" role="status">@t.ProviderChangedNotice</p>
+                }
+                <p class="ss-desc">@t.WhatText</p>
+                <p class="ss-desc" id="ai-consent-whom">@t.WhomHeading</p>
+                @if (Recipients(request.Status) is { Count: > 0 } recipients)
+                {
+                    <ul class="ss-desc" aria-labelledby="ai-consent-whom">
+                        @foreach (var recipient in recipients)
+                        {
+                            <li>@recipient</li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p class="ss-desc"><strong>@t.WhomUnknown</strong></p>
+                }
+                <p class="ss-desc">@t.LeavesServerText</p>
+                <p class="ss-desc">@t.OptionalText</p>
+                <p class="ss-desc">@t.WithdrawText</p>
+                @if (_failed)
+                {
+                    <p class="ss-desc" role="alert" style="color:var(--danger, #e74c3c)">@t.ErrorGeneric</p>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" @onclick="DeclineAsync" disabled="@_busy">
+                    @t.DeclineButton
+                </button>
+                <button type="button" class="btn-primary" @onclick="AgreeAsync" disabled="@_busy">
+                    @t.AgreeButton
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    /// <summary>Texts to render with. Left null in the app (loaded from the i18n table for the
+    /// current language); component tests pass them in directly.</summary>
+    [Parameter] public StudyLife.Client.I18nText.AiConsentText? Text { get; set; }
+
+    private StudyLife.Client.I18nText.AiConsentText? T;
+    private ElementReference _dialog;
+    private bool _busy;
+    private bool _failed;
+    private bool _focusPending;
+    private AiConsentRequest? _shown;
+
+    private AiConsentRequest? Pending => State.AiConsent.Pending;
+
+    protected override async Task OnInitializedAsync()
+    {
+        State.AiConsent.PendingChanged += OnPendingChanged;
+        T = Text ?? await Services.GetRequiredService<Toolbelt.Blazor.I18nText.I18nText>()
+            .GetTextTableAsync<StudyLife.Client.I18nText.AiConsentText>(this);
+    }
+
+    private void OnPendingChanged() => _ = InvokeAsync(StateHasChanged);
+
+    protected override void OnParametersSet()
+    {
+        if (Text is not null) T = Text;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // A new question (or a re-ask after a provider change) starts clean and takes keyboard focus.
+        if (!ReferenceEquals(_shown, Pending))
+        {
+            _shown = Pending;
+            _failed = false;
+            _focusPending = _shown is not null;
+        }
+        if (_focusPending)
+        {
+            _focusPending = false;
+            try { await _dialog.FocusAsync(); }
+            catch { /* the dialog may already be gone, best-effort */ }
+        }
+    }
+
+    // "Provider (model)" per distinct pair, in the order the server listed them - one line per
+    // model that sees the data, without repeating a provider/model used for several roles.
+    // Empty = unknown description, the dialog then names "the AI provider configured by this
+    // server's operator".
+    private static List<string> Recipients(AiConsentStatusDto status) =>
+        status.Provider?.Roles
+            .Select(r => $"{r.Provider} ({r.Model})")
+            .Distinct()
+            .ToList() ?? new List<string>();
+
+    private async Task AgreeAsync()
+    {
+        _busy = true;
+        _failed = false;
+        try { _failed = !await State.AiConsent.AgreeAsync(); }
+        finally { _busy = false; }
+    }
+
+    private async Task DeclineAsync()
+    {
+        _busy = true;
+        _failed = false;
+        try { _failed = !await State.AiConsent.DeclineAsync(); }
+        finally { _busy = false; }
+    }
+
+    public void Dispose() => State.AiConsent.PendingChanged -= OnPendingChanged;
+}

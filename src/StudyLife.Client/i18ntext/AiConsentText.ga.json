@@ -1,0 +1,19 @@
+{
+  "Heading": "An gceadaíonn tú d'fheidhmeanna AI do shonraí staidéir a úsáid?",
+  "WhatText": "Chun ceisteanna faoi do nótaí a fhreagairt, léann an cúntóir AI do nótaí, do chúrsaí, do sheisiúin staidéir agus do spriocanna go léir, torthaí san áireamh, agus innéacsaíonn sé iad. Seoltar do cheisteanna agus na sleachta comhoiriúnacha le gach iarratas.",
+  "WhomHeading": "Cé a fhaigheann na sonraí seo:",
+  "WhomUnknown": "An soláthraí AI atá cumraithe ag oibreoir an fhreastalaí seo.",
+  "LeavesServerText": "Fágann na sonraí seo an freastalaí seo agus próiseálann an soláthraí a luaitear thuas iad.",
+  "OptionalText": "Is roghnach é seo. Oibríonn StudyLife go hiomlán gan AI.",
+  "WithdrawText": "Is féidir leat do thoiliú a tharraingt siar am ar bith faoi Socrú → AI. Scriostar do shonraí AI ansin.",
+  "ExistingUserText": "Úsáideann tú an cúntóir AI cheana féin. Teastaíonn do thoiliú sainráite uainn anois. Má roghnaíonn tú Ní anois, cuirtear AI as agus scriostar do shonraí AI.",
+  "AgreeButton": "Aontaím",
+  "DeclineButton": "Ní anois",
+  "ProviderChangedNotice": "D'athraigh an soláthraí AI nuair a bhí an dialóg seo oscailte. Athbhreithnigh arís é.",
+  "ErrorGeneric": "Chuaigh rud éigin amú. Bain triail eile as.",
+  "ConsentRequiredError": "Teastaíonn toiliú le haghaidh AI chun leanúint ar aghaidh.",
+  "LocalRunsHere": "Ritheann an AI ar crua-earraí an fhreastalaí seo féin. Ní sheoltar do shonraí chuig soláthraí AI seachtrach.",
+  "ConsentGivenOn": "Toiliú AI tugtha ar {0}.",
+  "WithdrawButton": "Tarraing siar an toiliú agus cuir AI as",
+  "WithdrawConfirmWarning": "Cuireann tarraingt siar AI as agus scriosann sé do nótaí innéacsaithe agus do shonraí comhrá ón tseirbhís AI. Ní féidir é seo a chealú."
+}

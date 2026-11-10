@@ -15,7 +15,7 @@ namespace StudyLife.Server.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.14");
 
             modelBuilder.Entity("StudyLife.Server.Data.AiKeyOutboxEntity", b =>
                 {
@@ -859,6 +859,12 @@ namespace StudyLife.Server.Migrations
 
                     b.Property<int?>("ActiveStudyProgramId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("AiConsentGrantedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AiConsentProviderFingerprint")
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("AuthUserId")
                         .HasColumnType("INTEGER");

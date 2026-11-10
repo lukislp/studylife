@@ -1,0 +1,19 @@
+{
+  "Heading": "Tħalli lill-funzjonijiet tal-IA jużaw id-dejta tal-istudju tiegħek?",
+  "WhatText": "Biex twieġeb mistoqsijiet dwar in-noti tiegħek, l-assistent tal-IA jaqra n-noti kollha, il-korsijiet, is-sessjonijiet tal-istudju u l-għanijiet tiegħek, inklużi l-gradi, u jindiċjahom. Il-mistoqsijiet tiegħek u l-estratti li jaqblu jintbagħtu ma' kull talba.",
+  "WhomHeading": "Min jirċievi din id-dejta:",
+  "WhomUnknown": "Il-fornitur tal-IA ikkonfigurat mill-operatur ta' dan is-server.",
+  "LeavesServerText": "Din id-dejta titlaq minn dan is-server u tiġi pproċessata mill-fornitur imsemmi hawn fuq.",
+  "OptionalText": "Dan huwa fakultattiv. StudyLife jaħdem għalkollox mingħajr l-IA.",
+  "WithdrawText": "Tista' tirtira l-kunsens tiegħek fi kwalunkwe ħin f'Setup → IA. Id-dejta tal-IA tiegħek tiġi mbagħad imħassra.",
+  "ExistingUserText": "Diġà tuża l-assistent tal-IA. Issa neħtieġu l-kunsens espliċitu tiegħek. Jekk tagħżel Mhux issa, l-IA tintefa u d-dejta tal-IA tiegħek tiġi mħassra.",
+  "AgreeButton": "Naqbel",
+  "DeclineButton": "Mhux issa",
+  "ProviderChangedNotice": "Il-fornitur tal-IA nbidel waqt li din id-dijalogu kienet miftuħa. Irrevedi mill-ġdid.",
+  "ErrorGeneric": "Xi ħaġa marret ħażin. Erġa' pprova.",
+  "ConsentRequiredError": "Meħtieġ il-kunsens għall-IA biex tkompli.",
+  "LocalRunsHere": "L-IA taħdem fuq il-hardware proprju ta' dan is-server. Id-dejta tiegħek ma tintbagħtx lil fornitur estern tal-IA.",
+  "ConsentGivenOn": "Kunsens għall-IA mogħti fi {0}.",
+  "WithdrawButton": "Irtira l-kunsens u itfi l-IA",
+  "WithdrawConfirmWarning": "Meta tirtira, l-IA tintefa u n-noti indiċjati u d-dejta taċ-chat tiegħek jitħassru mis-servizz tal-IA. Dan ma jistax jitreġġa' lura."
+}

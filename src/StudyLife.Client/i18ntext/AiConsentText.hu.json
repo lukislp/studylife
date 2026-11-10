@@ -1,0 +1,19 @@
+{
+  "Heading": "Engedélyezed, hogy az MI-funkciók használják a tanulmányi adataidat?",
+  "WhatText": "Hogy válaszolni tudjon a jegyzeteidre vonatkozó kérdésekre, az MI-asszisztens elolvassa az összes jegyzetedet, kurzusodat, tanulási munkamenetedet és célodat az érdemjegyekkel együtt, és indexeli őket. A kérdéseid és a hozzájuk illő részletek minden kéréssel együtt elküldésre kerülnek.",
+  "WhomHeading": "Ki kapja meg ezeket az adatokat:",
+  "WhomUnknown": "Az az MI-szolgáltató, amelyet a szerver üzemeltetője beállított.",
+  "LeavesServerText": "Ezek az adatok elhagyják ezt a szervert, és a fent megnevezett szolgáltató dolgozza fel őket.",
+  "OptionalText": "Ez nem kötelező. A StudyLife MI nélkül is teljes értékűen működik.",
+  "WithdrawText": "A hozzájárulásodat bármikor visszavonhatod itt: Beállítások → MI. Ekkor az MI-adataid törlődnek.",
+  "ExistingUserText": "Már használod az MI-asszisztenst. Most szükségünk van a kifejezett hozzájárulásodra. Ha a Most nem lehetőséget választod, az MI kikapcsol, és az MI-adataid törlődnek.",
+  "AgreeButton": "Elfogadom",
+  "DeclineButton": "Most nem",
+  "ProviderChangedNotice": "Az MI-szolgáltató megváltozott, amíg ez az ablak nyitva volt. Nézd át újra.",
+  "ErrorGeneric": "Valami hiba történt. Próbáld újra.",
+  "ConsentRequiredError": "A folytatáshoz az MI használatához való hozzájárulás szükséges.",
+  "LocalRunsHere": "Az MI a szerver saját hardverén fut. Az adataid nem kerülnek külső MI-szolgáltatóhoz.",
+  "ConsentGivenOn": "MI-hozzájárulás megadva: {0}.",
+  "WithdrawButton": "Hozzájárulás visszavonása és az MI kikapcsolása",
+  "WithdrawConfirmWarning": "A visszavonás kikapcsolja az MI-t, és törli az indexelt jegyzeteidet és csevegési adataidat az MI-szolgáltatásból. Ez nem vonható vissza."
+}
