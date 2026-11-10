@@ -13,7 +13,7 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-// i18n: DE/EN UI text via Toolbelt.Blazor.I18nText - JSON tables live in i18ntext/,
+// i18n: UI text in 26 languages via Toolbelt.Blazor.I18nText - JSON tables live in i18ntext/,
 // typed Text Table classes are source-generated from them at build time.
 builder.Services.AddI18nText(options => options.PersistenceLevel = PersistanceLevel.SessionAndLocal);
 
@@ -71,28 +71,22 @@ var host = builder.Build();
 // In Blazor WASM, JS interop is already available at this point (everything runs in-process).
 await host.Services.GetRequiredService<SessionTokenStore>().InitializeAsync();
 
-// Language default: if the user has NEVER actively chosen a language yet (no
-// "Toolbelt.Blazor.I18nText.CurrentLanguage" entry in localStorage, the library's own
-// persistence key), German is forced and thereby persisted permanently - without this,
-// the library's browser-side language auto-detection often falls back to English/GB even though
-// the app is primarily intended for German-speaking users. Runs BEFORE RunAsync so no
-// English UI text flashes briefly before switching. A value the user already explicitly
-// chose (even "en") is left untouched - this is only a first-launch default.
+// Language of this start (one rule, UiLanguage.Resolve): the stored choice, else the best match of
+// the browser's languages, else English. A first start therefore follows the browser instead of
+// being forced to one language; whatever is decided is persisted like a manual choice. Runs BEFORE
+// RunAsync so no text in another language flashes briefly. Users who already have a session but
+// never stored a choice keep German, which is what they have been seeing (see UiLanguage.Resolve).
 var js = host.Services.GetRequiredService<IJSRuntime>();
 var i18nText = host.Services.GetRequiredService<I18nText>();
 try
 {
-    var storedLanguage = await js.InvokeAsync<string?>("localStorage.getItem", "Toolbelt.Blazor.I18nText.CurrentLanguage");
-    if (string.IsNullOrEmpty(storedLanguage))
-    {
-        await i18nText.SetCurrentLanguageAsync("de");
-    }
+    var hasPriorUse = !string.IsNullOrEmpty(host.Services.GetRequiredService<SessionTokenStore>().Token);
+    var currentLanguage = await UiLanguageStartup.ApplyAsync(js, i18nText.SetCurrentLanguageAsync, hasPriorUse);
 
-    // Keep <html lang> in sync with the actually active language - it used to be hardwired
-    // to "en" (index.html), which caused Chromium browsers to always render native form
-    // controls (especially the calendar time picker, <input type="datetime-local">) in
-    // English format (AM/PM) instead of 24h, regardless of the selected UI language.
-    var currentLanguage = await i18nText.GetCurrentLanguageAsync();
+    // Keep <html lang> in sync with the actually active language - index.html only carries a
+    // neutral default, and Chromium browsers render native form controls (especially the
+    // calendar time picker, <input type="datetime-local">, 24h vs AM/PM) from this attribute
+    // instead of from navigator.language.
     // Localized weekday/month names, awaited BEFORE the first render: no component has rendered
     // yet at this point, so every date is formatted in the right language from the very first
     // frame and nothing has to be re-rendered afterwards (see LocalDateNames).

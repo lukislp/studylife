@@ -115,7 +115,7 @@
         @if (_langPopupOpen)
         {
             <div class="lang-popup fab-lang-popup" @onclick:stopPropagation="true">
-                @foreach (var lang in Languages)
+                @foreach (var lang in UiLanguage.All)
                 {
                     var l = lang;
                     <button class="lang-option @(l.Code == _lang ? "active" : "")" @onclick="() => SetLanguageAsync(l.Code)">
@@ -217,39 +217,7 @@
     private bool _aiAvailable;
     private long? _navigationStartedAtTimestamp;
 
-    private record Language(string Code, string Flag, string Name);
-
-    private static readonly List<Language> Languages = new()
-    {
-        new("en", "🇬🇧", "English"),
-        new("de", "🇩🇪", "Deutsch"),
-        new("fr", "🇫🇷", "Français"),
-        new("es", "🇪🇸", "Español"),
-        new("it", "🇮🇹", "Italiano"),
-        new("pt", "🇵🇹", "Português"),
-        new("nl", "🇳🇱", "Nederlands"),
-        new("da", "🇩🇰", "Dansk"),
-        new("sv", "🇸🇪", "Svenska"),
-        new("fi", "🇫🇮", "Suomi"),
-        new("el", "🇬🇷", "Ελληνικά"),
-        new("pl", "🇵🇱", "Polski"),
-        new("cs", "🇨🇿", "Čeština"),
-        new("sk", "🇸🇰", "Slovenčina"),
-        new("hu", "🇭🇺", "Magyar"),
-        new("ro", "🇷🇴", "Română"),
-        new("bg", "🇧🇬", "Български"),
-        new("hr", "🇭🇷", "Hrvatski"),
-        new("sl", "🇸🇮", "Slovenščina"),
-        new("et", "🇪🇪", "Eesti"),
-        new("lv", "🇱🇻", "Latviešu"),
-        new("lt", "🇱🇹", "Lietuvių"),
-        new("mt", "🇲🇹", "Malti"),
-        new("ga", "🇮🇪", "Gaeilge"),
-        new("uk", "🇺🇦", "Українська"),
-        new("ru", "🇷🇺", "Русский"),
-    };
-
-    private Language CurrentLanguage => Languages.FirstOrDefault(l => l.Code == _lang) ?? Languages[0];
+    private UiLanguageInfo CurrentLanguage => UiLanguage.All.FirstOrDefault(l => l.Code == _lang) ?? UiLanguage.All[0];
 
     protected override async Task OnInitializedAsync()
     {
