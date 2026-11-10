@@ -349,6 +349,14 @@ builder.Services.AddRateLimiter(options =>
         if (context.Request.Path.StartsWithSegments("/api/auth/recovery/login"))
             return FixedWindow(context, $"recovery|{clientIp}", permitLimit: 5, TimeSpan.FromMinutes(15));
 
+        // Account deletion accepts a one-time recovery code as its proof, so it gets its own
+        // strict partition like the recovery login (a stolen session must not be able to
+        // brute-force the 12-character code at the generic 300/min).
+        if (HttpMethods.IsDelete(context.Request.Method)
+            && (context.Request.Path.StartsWithSegments("/api/auth/account")
+                || context.Request.Path.StartsWithSegments("/api/auth/users")))
+            return FixedWindow(context, $"account-deletion|{clientIp}", permitLimit: 10, TimeSpan.FromMinutes(15));
+
         return FixedWindow(context, $"api|{clientIp}", permitLimit: 300, TimeSpan.FromSeconds(60));
     });
 
@@ -371,7 +379,11 @@ builder.Services.AddRateLimiter(options =>
     var globalRecoveryLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
         context.Request.Path.StartsWithSegments("/api/auth/recovery/login")
             ? FixedWindow(context, "recovery|global", permitLimit: 30, TimeSpan.FromMinutes(15))
-            : RateLimitPartition.GetNoLimiter("no-limit"));
+            : HttpMethods.IsDelete(context.Request.Method)
+              && (context.Request.Path.StartsWithSegments("/api/auth/account")
+                  || context.Request.Path.StartsWithSegments("/api/auth/users"))
+                ? FixedWindow(context, "account-deletion|global", permitLimit: 30, TimeSpan.FromMinutes(15))
+                : RateLimitPartition.GetNoLimiter("no-limit"));
     options.GlobalLimiter = PartitionedRateLimiter.CreateChained(perClientLimiter, globalRecoveryLimiter);
 
     // CPU-heavy endpoints (Whisper transcription, Piper synthesis, the AI proxy, the JSON export,
@@ -499,6 +511,8 @@ builder.Services.AddScoped<IDeveloperClientService, DeveloperClientService>();
 builder.Services.AddScoped<IAuthInviteService, AuthInviteService>();
 builder.Services.AddScoped<IAuthRecoveryService, AuthRecoveryService>();
 builder.Services.AddScoped<IAuthAccountService, AuthAccountService>();
+// The one account-deletion use case (self-service and the owner's "remove user"), see its doc.
+builder.Services.AddScoped<StudyLife.Server.Services.Account.IAccountDeletionService, StudyLife.Server.Services.Account.AccountDeletionService>();
 // Per-audience redirect_uri allow-list for the consent connect flow (2026-09 audit S1) - see
 // ConsentRedirectPolicy for the built-in shapes and the Consent:AllowedRedirectUris config.
 builder.Services.AddSingleton<ConsentRedirectPolicy>();
@@ -706,13 +720,7 @@ if (!EF.IsDesignTime)
     else
     {
         var code = await systemSecrets.EnsureSetupSecretAsync();
-        Console.WriteLine("========================================================");
-        Console.WriteLine("  StudyLife setup code (for the very first registration only):");
-        Console.WriteLine();
-        Console.WriteLine($"      {code}");
-        Console.WriteLine();
-        Console.WriteLine("  Enter it on /register to become the owner of this installation.");
-        Console.WriteLine("========================================================");
+        SystemSecretsService.WriteSetupBanner(Console.Out, code);
     }
 }
 

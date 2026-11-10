@@ -91,6 +91,47 @@ public class WebhooksProxyClientTests
     }
 
     [Fact]
+    public async Task PurgeUserAsync_DeletesTheUsersDataWithTheSharedSecret()
+    {
+        var handler = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
+        var client = CreateClient(handler);
+
+        Assert.True(await client.PurgeUserAsync(7, CancellationToken.None));
+
+        var request = Assert.Single(handler.Requests);
+        Assert.Equal("https://webhooks.test/internal/users/7", request.Uri);
+        Assert.Equal("shared-secret", request.Headers["x-studylife-shared-secret"]);
+    }
+
+    [Fact]
+    public async Task PurgeUserAsync_WhenDisabled_IsANoOpSuccess()
+    {
+        var handler = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
+        var client = CreateClient(handler, baseUrl: null, sharedSecret: null);
+
+        Assert.True(await client.PurgeUserAsync(7, CancellationToken.None));
+        Assert.Empty(handler.Requests);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.NotFound)] // an older studylife-webhooks without the route
+    [InlineData(HttpStatusCode.InternalServerError)]
+    public async Task PurgeUserAsync_WhenNotConfirmed_ReturnsFalseSoTheCallerRetries(HttpStatusCode status)
+    {
+        var client = CreateClient(new StubHttpHandler(_ => new HttpResponseMessage(status)));
+
+        Assert.False(await client.PurgeUserAsync(7, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task PurgeUserAsync_NetworkFailure_ReturnsFalseWithoutThrowing()
+    {
+        var client = CreateClient(new StubHttpHandler(_ => throw new HttpRequestException("connection refused")));
+
+        Assert.False(await client.PurgeUserAsync(7, CancellationToken.None));
+    }
+
+    [Fact]
     public async Task PublishEventAsync_NetworkFailure_DoesNotThrow()
     {
         var handler = new StubHttpHandler(_ => throw new HttpRequestException("connection refused"));

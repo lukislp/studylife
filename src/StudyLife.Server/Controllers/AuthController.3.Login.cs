@@ -61,39 +61,9 @@ public partial class AuthController
             return Unauthorized();
         await _cache.RemoveAsync(LoginCacheKey(request.OptionsId));
 
-        var credentialId = request.Response.RawId;
-        if (credentialId is null || credentialId.Length == 0) return Unauthorized();
-        var credential = await _db.PasskeyCredentials.FirstOrDefaultAsync(c => c.CredentialId == credentialId);
-        if (credential is null) return Unauthorized();
-
-        VerifyAssertionResult result;
-        try
-        {
-            result = await CreateFido2().MakeAssertionAsync(new MakeAssertionParams
-            {
-                AssertionResponse = request.Response,
-                OriginalOptions = pending.Options,
-                StoredPublicKey = credential.PublicKey,
-                StoredSignatureCounter = credential.SignCount,
-                // Account resolution relies exclusively on the unique CredentialId (lookup
-                // above) - the user handle from registration is an opaque random handle
-                // without a persisted binding (see BeginRegistration) and carries no
-                // additional authorization information here. Signature/challenge/origin
-                // verification is handled entirely by Fido2NetLib beforehand.
-                IsUserHandleOwnerOfCredentialIdCallback = (_, _) => Task.FromResult(true),
-            });
-        }
-        catch (Fido2VerificationException)
-        {
-            return Unauthorized();
-        }
-
-        // Replay protection explicitly here, in addition to Fido2NetLib's own check: if the
-        // authenticator uses a counter (either value > 0), the new value must be STRICTLY
-        // greater - a counter that went backward suggests a cloned key. Apple authenticators
-        // always report 0, so the 0/0 case remains allowed.
-        if ((result.SignCount != 0 || credential.SignCount != 0) && result.SignCount <= credential.SignCount)
-            return Unauthorized();
+        var verified = await VerifyAssertionAsync(pending.Options, request.Response, onlyUserId: null);
+        if (verified is null) return Unauthorized();
+        var credential = verified.Credential;
 
         // An additional passkey not yet approved via the device list of an already logged-in
         // device: the signature is cryptographically valid (the requester genuinely possesses
@@ -106,7 +76,7 @@ public partial class AuthController
             return Unauthorized(new { error = "pending_approval" });
 
         var now = DateTime.UtcNow;
-        credential.SignCount = result.SignCount;
+        credential.SignCount = verified.SignCount;
         credential.LastUsedAt = now;
 
         // Opportunistic cleanup instead of a dedicated background job: expired sessions are
@@ -118,6 +88,56 @@ public partial class AuthController
         await _db.SaveChangesAsync();
 
         return new PasskeyCompleteResponseDto { Token = token, DisplayName = user?.DisplayName ?? "" };
+    }
+
+    private sealed record VerifiedAssertion(PasskeyCredentialEntity Credential, uint SignCount);
+
+    /// <summary>
+    /// The assertion check shared by login and by the re-authentication that guards account
+    /// deletion: finds the credential, lets Fido2NetLib verify challenge/origin/signature, and
+    /// applies the explicit sign-counter replay rule. Null for every failure, so callers can answer
+    /// uniformly. <paramref name="onlyUserId"/> restricts the credential to one account (re-auth:
+    /// a passkey of somebody else proves nothing). The caller persists the new counter.
+    /// </summary>
+    private async Task<VerifiedAssertion?> VerifyAssertionAsync(
+        AssertionOptions options, AuthenticatorAssertionRawResponse response, int? onlyUserId)
+    {
+        var credentialId = response.RawId;
+        if (credentialId is null || credentialId.Length == 0) return null;
+        var credential = await _db.PasskeyCredentials.FirstOrDefaultAsync(c =>
+            c.CredentialId == credentialId && (onlyUserId == null || c.AuthUserId == onlyUserId));
+        if (credential is null) return null;
+
+        VerifyAssertionResult result;
+        try
+        {
+            result = await CreateFido2().MakeAssertionAsync(new MakeAssertionParams
+            {
+                AssertionResponse = response,
+                OriginalOptions = options,
+                StoredPublicKey = credential.PublicKey,
+                StoredSignatureCounter = credential.SignCount,
+                // Account resolution relies exclusively on the unique CredentialId (lookup
+                // above) - the user handle from registration is an opaque random handle
+                // without a persisted binding (see BeginRegistration) and carries no
+                // additional authorization information here. Signature/challenge/origin
+                // verification is handled entirely by Fido2NetLib beforehand.
+                IsUserHandleOwnerOfCredentialIdCallback = (_, _) => Task.FromResult(true),
+            });
+        }
+        catch (Fido2VerificationException)
+        {
+            return null;
+        }
+
+        // Replay protection explicitly here, in addition to Fido2NetLib's own check: if the
+        // authenticator uses a counter (either value > 0), the new value must be STRICTLY
+        // greater - a counter that went backward suggests a cloned key. Apple authenticators
+        // always report 0, so the 0/0 case remains allowed.
+        if ((result.SignCount != 0 || credential.SignCount != 0) && result.SignCount <= credential.SignCount)
+            return null;
+
+        return new VerifiedAssertion(credential, result.SignCount);
     }
 
     private static string LoginCacheKey(string optionsId) => $"passkey-login:{optionsId}";

@@ -61,6 +61,8 @@ public partial class AuthController : ControllerBase
     private readonly IAuthInviteService _invites;
     private readonly IAuthRecoveryService _recovery;
     private readonly IAuthAccountService _account;
+    // The one account-deletion use case (AuthController.11.AccountDeletion.cs only maps it).
+    private readonly Services.Account.IAccountDeletionService _accountDeletion;
     // Monitors, not IOptions: both sections used to be re-read from IConfiguration on every
     // request, so a configuration reload has to keep taking effect the same way.
     private readonly IOptionsMonitor<Fido2Options> _fido2Options;
@@ -69,8 +71,8 @@ public partial class AuthController : ControllerBase
     public AuthController(StudyLifeDb db, IDistributedCache cache, IConfiguration config,
         SystemSecretsService systemSecrets, IOwnershipService ownership, IRegistrationGateService registrationGate,
         ConsentRedirectPolicy consentRedirects, IAuthInviteService invites, IAuthRecoveryService recovery,
-        IAuthAccountService account, IOptionsMonitor<Fido2Options> fido2Options,
-        IOptionsMonitor<ConsentOptions> consentOptions)
+        IAuthAccountService account, Services.Account.IAccountDeletionService accountDeletion,
+        IOptionsMonitor<Fido2Options> fido2Options, IOptionsMonitor<ConsentOptions> consentOptions)
     {
         _db = db;
         _cache = cache;
@@ -82,6 +84,7 @@ public partial class AuthController : ControllerBase
         _invites = invites;
         _recovery = recovery;
         _account = account;
+        _accountDeletion = accountDeletion;
         _fido2Options = fido2Options;
         _consentOptions = consentOptions;
     }

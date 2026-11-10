@@ -428,6 +428,13 @@
                 <SetupRestoreCard />
             }
         }
+
+        <!-- Danger area (App Store guideline 5.1.1(v)): delete your own account with all its data
+             and, for the owner, remove other users. Self-contained (own text table, talks to
+             State.AccountDeletion); every decision is made server-side by AccountDeletionService.
+             Deliberately outside the backup block above: it must exist on Postgres installations
+             too, and for every user, not only the owner. -->
+        <SetupDeleteAccountCard />
     </CascadingValue>
     </CascadingValue>
     </div>

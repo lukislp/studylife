@@ -204,6 +204,25 @@ public sealed class SystemSecretsService
         return row;
     }
 
+    /// <summary>The setup-code banner the operator finds in the container log - one wording for the
+    /// startup path (Program.cs) and for an installation that returned to first run after its last
+    /// account was deleted (AccountDeletionService). <paramref name="note"/> is an optional first line.</summary>
+    public static void WriteSetupBanner(TextWriter writer, string code, string? note = null)
+    {
+        writer.WriteLine("========================================================");
+        if (note is not null)
+        {
+            writer.WriteLine($"  {note}");
+            writer.WriteLine();
+        }
+        writer.WriteLine("  StudyLife setup code (for the very first registration only):");
+        writer.WriteLine();
+        writer.WriteLine($"      {code}");
+        writer.WriteLine();
+        writer.WriteLine("  Enter it on /register to become the owner of this installation.");
+        writer.WriteLine("========================================================");
+    }
+
     private static string NormalizeSetupSecretCode(string code) =>
         new(code.ToUpperInvariant().Where(SetupSecretAlphabet.Contains).ToArray());
 

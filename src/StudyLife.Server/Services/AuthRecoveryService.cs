@@ -32,6 +32,12 @@ public interface IAuthRecoveryService
     /// shape, so "unknown code", "already used" and "lost the concurrent claim" are
     /// indistinguishable to the caller, exactly as before.</summary>
     Task<PasskeyCompleteResponseDto?> RecoveryLoginAsync(string? code);
+
+    /// <summary>Spends one of THIS user's unused codes as a proof of presence for a sensitive action
+    /// (account deletion) without signing anybody in: the same atomic single-use claim as the login,
+    /// restricted to the caller's own codes, and no session is issued or revoked. False for an
+    /// unknown, foreign or already used code.</summary>
+    Task<bool> TryConsumeForUserAsync(int userId, string? code);
 }
 
 public class AuthRecoveryService(StudyLifeDb db, AuthSessionCache sessionCache) : IAuthRecoveryService
@@ -72,6 +78,19 @@ public class AuthRecoveryService(StudyLifeDb db, AuthSessionCache sessionCache) 
             UnusedCount = codes.Count(c => c.UsedAt == null),
             CreatedAt = codes.Count > 0 ? codes.Max(c => c.CreatedAt) : null,
         };
+    }
+
+    public async Task<bool> TryConsumeForUserAsync(int userId, string? code)
+    {
+        var normalized = new string((code ?? "")
+            .ToUpperInvariant().Where(char.IsLetterOrDigit).ToArray());
+        if (normalized.Length == 0) return false;
+
+        var hash = AuthSessionService.HashToken(normalized);
+        var claimed = await db.RecoveryCodes
+            .Where(c => c.CodeHash == hash && c.AuthUserId == userId && c.UsedAt == null)
+            .ExecuteUpdateAsync(s => s.SetProperty(c => c.UsedAt, DateTime.UtcNow));
+        return claimed > 0;
     }
 
     public async Task<PasskeyCompleteResponseDto?> RecoveryLoginAsync(string? code)

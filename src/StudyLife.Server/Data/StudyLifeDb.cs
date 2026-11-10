@@ -853,6 +853,12 @@ public class AiKeyOutboxEntity
 {
     public const string ActionRegister = "register";
     public const string ActionRevoke = "revoke";
+    // Account deletion (AccountDeletionService) reuses this table as the retry queue for the other
+    // two add-ons, so a studylife-webhooks/-developers outage never leaves a deleted account's data
+    // behind. The table name is historical; Action decides which add-on a row is for (see
+    // BackgroundTaskService.RunAiKeyOutboxAsync). No schema change: these are just new values.
+    public const string ActionPurgeWebhooks = "purge-webhooks";
+    public const string ActionRevokeDeveloper = "revoke-developer";
 
     public int Id { get; set; }
     /// <summary>No FK - same loose pattern as everywhere else in this file.</summary>
