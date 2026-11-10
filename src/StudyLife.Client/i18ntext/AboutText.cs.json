@@ -1,0 +1,22 @@
+{
+  "Heading": "O aplikaci StudyLife",
+  "Desc": "Verze, licence a zdrojový kód softwaru, který právě běží.",
+  "ServerLabel": "Server",
+  "BrowserLabel": "Rozhraní v tomto prohlížeči",
+  "AppLabel": "Aplikace",
+  "Unknown": "neznámá",
+  "SourceLink": "Zdrojový kód",
+  "SourceExact": "Zdrojový kód přesně této verze",
+  "SourceRepo": "Repozitář se zdrojovým kódem (tento build nemá značku vydání)",
+  "NewTab": "otevře se na nové kartě",
+  "LicenceLabel": "Licence",
+  "LicenceMeaning": "StudyLife smíte používat, zkoumat, upravovat a sdílet; provozujete-li upravenou verzi pro další lidi, musíte jim nabídnout i její zdrojový kód.",
+  "NoticesHeading": "Upozornění na software třetích stran",
+  "NoticesDesc": "Open-source komponenty v tomto buildu s jejich licencemi a držiteli autorských práv.",
+  "ShowNotices": "Zobrazit upozornění",
+  "HideNotices": "Skrýt upozornění",
+  "Loading": "Načítání…",
+  "NoticesFailed": "Upozornění se nepodařilo načíst. Najdete je v souboru THIRD-PARTY-NOTICES.md v repozitáři se zdrojovým kódem.",
+  "FromApp": "Upozornění tohoto buildu aplikace",
+  "FromServer": "Upozornění serveru"
+}

@@ -1,0 +1,22 @@
+{
+  "Heading": "Over StudyLife",
+  "Desc": "Versie, licentie en broncode van de software die je gebruikt.",
+  "ServerLabel": "Server",
+  "BrowserLabel": "Interface in deze browser",
+  "AppLabel": "App",
+  "Unknown": "onbekend",
+  "SourceLink": "Broncode",
+  "SourceExact": "Broncode van precies deze versie",
+  "SourceRepo": "Broncoderepository (deze build heeft geen releasetag)",
+  "NewTab": "opent in een nieuw tabblad",
+  "LicenceLabel": "Licentie",
+  "LicenceMeaning": "Je mag StudyLife gebruiken, bestuderen, aanpassen en delen; als je een aangepaste versie voor anderen draait, moet je hun ook de broncode ervan aanbieden.",
+  "NoticesHeading": "Mededelingen over software van derden",
+  "NoticesDesc": "De opensourcecomponenten in deze build, met hun licenties en houders van het auteursrecht.",
+  "ShowNotices": "Mededelingen tonen",
+  "HideNotices": "Mededelingen verbergen",
+  "Loading": "Laden…",
+  "NoticesFailed": "De mededelingen konden niet worden geladen. Je vindt ze in het bestand THIRD-PARTY-NOTICES.md in de broncoderepository.",
+  "FromApp": "Mededelingen van deze app-build",
+  "FromServer": "Mededelingen van de server"
+}

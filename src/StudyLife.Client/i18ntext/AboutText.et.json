@@ -1,0 +1,22 @@
+{
+  "Heading": "Teave StudyLife'i kohta",
+  "Desc": "Sinu kasutatava tarkvara versioon, litsents ja lähtekood.",
+  "ServerLabel": "Server",
+  "BrowserLabel": "Liides selles brauseris",
+  "AppLabel": "Rakendus",
+  "Unknown": "teadmata",
+  "SourceLink": "Lähtekood",
+  "SourceExact": "Täpselt selle versiooni lähtekood",
+  "SourceRepo": "Lähtekoodi hoidla (sellel järgul pole väljalaskesilti)",
+  "NewTab": "avaneb uues vahekaardis",
+  "LicenceLabel": "Litsents",
+  "LicenceMeaning": "Sa tohid StudyLife'i kasutada, uurida, muuta ja jagada; kui käitad muudetud versiooni teiste jaoks, pead pakkuma neile ka selle lähtekoodi.",
+  "NoticesHeading": "Kolmanda osapoole tarkvara teated",
+  "NoticesDesc": "Selle järgu avatud lähtekoodiga komponendid koos nende litsentside ja autoriõiguste omajatega.",
+  "ShowNotices": "Näita teateid",
+  "HideNotices": "Peida teated",
+  "Loading": "Laadimine…",
+  "NoticesFailed": "Teateid ei õnnestunud laadida. Leiad need lähtekoodi hoidlast failist THIRD-PARTY-NOTICES.md.",
+  "FromApp": "Selle rakenduse järgu teated",
+  "FromServer": "Serveri teated"
+}

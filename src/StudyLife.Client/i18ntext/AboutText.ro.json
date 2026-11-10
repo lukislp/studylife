@@ -1,0 +1,22 @@
+{
+  "Heading": "Despre StudyLife",
+  "Desc": "Versiunea, licența și codul sursă ale software-ului pe care îl folosești.",
+  "ServerLabel": "Server",
+  "BrowserLabel": "Interfața din acest browser",
+  "AppLabel": "Aplicație",
+  "Unknown": "necunoscută",
+  "SourceLink": "Cod sursă",
+  "SourceExact": "Codul sursă al exact acestei versiuni",
+  "SourceRepo": "Depozitul codului sursă (această versiune nu are etichetă de lansare)",
+  "NewTab": "se deschide într-o filă nouă",
+  "LicenceLabel": "Licență",
+  "LicenceMeaning": "Poți folosi, studia, modifica și distribui StudyLife; dacă rulezi o versiune modificată pentru alte persoane, trebuie să le oferi și codul ei sursă.",
+  "NoticesHeading": "Note despre software-ul terților",
+  "NoticesDesc": "Componentele open source din această versiune, cu licențele și deținătorii drepturilor de autor.",
+  "ShowNotices": "Afișează notele",
+  "HideNotices": "Ascunde notele",
+  "Loading": "Se încarcă…",
+  "NoticesFailed": "Notele nu au putut fi încărcate. Le găsești în fișierul THIRD-PARTY-NOTICES.md din depozitul codului sursă.",
+  "FromApp": "Notele acestei versiuni a aplicației",
+  "FromServer": "Notele serverului"
+}

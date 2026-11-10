@@ -1,0 +1,22 @@
+{
+  "Heading": "A StudyLife névjegye",
+  "Desc": "A futtatott szoftver verziója, licence és forráskódja.",
+  "ServerLabel": "Szerver",
+  "BrowserLabel": "Felület ebben a böngészőben",
+  "AppLabel": "Alkalmazás",
+  "Unknown": "ismeretlen",
+  "SourceLink": "Forráskód",
+  "SourceExact": "Pontosan ennek a verziónak a forráskódja",
+  "SourceRepo": "Forráskód-tárhely (ehhez a buildhez nincs kiadási címke)",
+  "NewTab": "új lapon nyílik meg",
+  "LicenceLabel": "Licenc",
+  "LicenceMeaning": "A StudyLife-ot használhatod, tanulmányozhatod, módosíthatod és megoszthatod; ha módosított változatot futtatsz másoknak, annak forráskódját is fel kell kínálnod nekik.",
+  "NoticesHeading": "Harmadik féltől származó szoftverek közleményei",
+  "NoticesDesc": "A build nyílt forráskódú összetevői licencükkel és szerzői jogi tulajdonosaikkal.",
+  "ShowNotices": "Közlemények megjelenítése",
+  "HideNotices": "Közlemények elrejtése",
+  "Loading": "Betöltés…",
+  "NoticesFailed": "A közleményeket nem sikerült betölteni. Megtalálod őket a forráskód-tárhely THIRD-PARTY-NOTICES.md fájljában.",
+  "FromApp": "Az alkalmazás ezen buildjének közleményei",
+  "FromServer": "A szerver közleményei"
+}

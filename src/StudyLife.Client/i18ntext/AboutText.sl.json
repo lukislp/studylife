@@ -1,0 +1,22 @@
+{
+  "Heading": "O aplikaciji StudyLife",
+  "Desc": "Različica, licenca in izvorna koda programske opreme, ki jo uporabljate.",
+  "ServerLabel": "Strežnik",
+  "BrowserLabel": "Vmesnik v tem brskalniku",
+  "AppLabel": "Aplikacija",
+  "Unknown": "neznana",
+  "SourceLink": "Izvorna koda",
+  "SourceExact": "Izvorna koda točno te različice",
+  "SourceRepo": "Repozitorij izvorne kode (ta gradnja nima oznake izdaje)",
+  "NewTab": "se odpre v novem zavihku",
+  "LicenceLabel": "Licenca",
+  "LicenceMeaning": "StudyLife smete uporabljati, proučevati, spreminjati in deliti; če spremenjeno različico poganjate za druge, jim morate ponuditi tudi njeno izvorno kodo.",
+  "NoticesHeading": "Obvestila o programski opremi tretjih oseb",
+  "NoticesDesc": "Odprtokodne komponente te gradnje z njihovimi licencami in nosilci avtorskih pravic.",
+  "ShowNotices": "Pokaži obvestila",
+  "HideNotices": "Skrij obvestila",
+  "Loading": "Nalaganje …",
+  "NoticesFailed": "Obvestil ni bilo mogoče naložiti. Najdete jih v datoteki THIRD-PARTY-NOTICES.md v repozitoriju izvorne kode.",
+  "FromApp": "Obvestila te gradnje aplikacije",
+  "FromServer": "Obvestila strežnika"
+}
