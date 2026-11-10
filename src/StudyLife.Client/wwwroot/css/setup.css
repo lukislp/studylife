@@ -553,3 +553,37 @@
     text-decoration-color: currentColor;
 }
 
+/* About card: versions, licence, source links and the collapsible third-party notices. */
+.about-list { margin: 0 0 0.75rem; }
+.about-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.875rem;
+}
+.about-row dt { flex: 0 0 11rem; color: var(--text2); }
+.about-row dd { margin: 0; flex: 1 1 12rem; color: var(--text); }
+.about-version { font-family: 'DM Mono', monospace; margin-right: 0.75rem; }
+.about-row a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.about-sub { font-size: 0.95rem; font-weight: 500; margin: 1.25rem 0 0.25rem; }
+.about-notices { margin-top: 0.75rem; }
+.about-origin { font-size: 0.75rem; color: var(--text2); margin-bottom: 0.4rem; }
+.about-notices-text {
+    max-height: 24rem;
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg3);
+    padding: 0.75rem 1rem;
+}
+.about-notices-text pre {
+    margin: 0;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    color: var(--text);
+}

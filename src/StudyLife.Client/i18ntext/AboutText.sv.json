@@ -1,0 +1,22 @@
+{
+  "Heading": "Om StudyLife",
+  "Desc": "Version, licens och källkod för programvaran du använder.",
+  "ServerLabel": "Server",
+  "BrowserLabel": "Gränssnitt i den här webbläsaren",
+  "AppLabel": "App",
+  "Unknown": "okänd",
+  "SourceLink": "Källkod",
+  "SourceExact": "Källkod för exakt den här versionen",
+  "SourceRepo": "Källkodsarkiv (den här bygget har ingen releasetagg)",
+  "NewTab": "öppnas i en ny flik",
+  "LicenceLabel": "Licens",
+  "LicenceMeaning": "Du får använda, studera, ändra och dela StudyLife; om du kör en ändrad version åt andra måste du också erbjuda dem dess källkod.",
+  "NoticesHeading": "Meddelanden om tredjepartsprogramvara",
+  "NoticesDesc": "Komponenterna med öppen källkod i det här bygget, med deras licenser och upphovsrättsinnehavare.",
+  "ShowNotices": "Visa meddelanden",
+  "HideNotices": "Dölj meddelanden",
+  "Loading": "Läser in …",
+  "NoticesFailed": "Meddelandena kunde inte läsas in. Du hittar dem i filen THIRD-PARTY-NOTICES.md i källkodsarkivet.",
+  "FromApp": "Meddelanden för det här appbygget",
+  "FromServer": "Meddelanden för servern"
+}

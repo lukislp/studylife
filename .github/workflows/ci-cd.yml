@@ -282,6 +282,13 @@ jobs:
       # Planner.razor / StudyPlanner.cs / PlannerController.cs are off-limits for reformatting
       # per project convention, so they're excluded rather than left to accumulate drift silently.
       - run: dotnet format StudyLife.sln --verify-no-changes --verbosity diagnostic --exclude src/StudyLife.Client/Pages/Planner.razor src/StudyLife.Shared/StudyPlanner.cs src/StudyLife.Server/Controllers/PlannerController.cs
+      # Third-party notices: the licence of every NuGet package the server and the browser client
+      # resolve is read from the restored graph and checked against tools/licences/policy.toml
+      # (unknown licence, missing copyright holder or GPL/AGPL/LGPL fails), and the committed
+      # THIRD-PARTY-NOTICES.md must match what the graph generates. The About section in Setup
+      # shows that file. Fix a failure with: python3 tools/check-licences.py --update
+      - name: Third-party notices and licence policy
+        run: python3 tools/check-licences.py
 
   test-security:
     runs-on: ubuntu-latest
