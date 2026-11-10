@@ -27,11 +27,13 @@ public class AiProxyController : ControllerBase
 {
     private readonly AiProxyClient _client;
     private readonly ICurrentUserAccessor _currentUser;
+    private readonly IAiConsentService _consent;
 
-    public AiProxyController(AiProxyClient client, ICurrentUserAccessor currentUser)
+    public AiProxyController(AiProxyClient client, ICurrentUserAccessor currentUser, IAiConsentService consent)
     {
         _client = client;
         _currentUser = currentUser;
+        _consent = consent;
     }
 
     [HttpPost("chat")]
@@ -51,6 +53,16 @@ public class AiProxyController : ControllerBase
         if (!_client.Enabled)
         {
             Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+            return;
+        }
+
+        // Nothing of the user's reaches studylife-ai (or the AI provider behind it) without a
+        // consent that covers the current provider - the rule is AiConsentService's, this only
+        // maps its answer to the 403 problem the client reacts to by showing the dialog.
+        var gate = await _consent.EnsureGrantedAsync(userId, ct);
+        if (gate.Outcome != ServiceOutcome.Success)
+        {
+            await ServiceResultExtensions.ProblemResult(this, gate.Error).ExecuteResultAsync(ControllerContext);
             return;
         }
 

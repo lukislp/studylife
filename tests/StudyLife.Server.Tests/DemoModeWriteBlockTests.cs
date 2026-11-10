@@ -63,12 +63,33 @@ public class DemoModeWriteBlockTests : IClassFixture<AuthControllerDemoModeTests
     [InlineData("POST", "/api/settings/developer-api-key/generate")]
     [InlineData("POST", "/api/settings/builtin-program/dismiss")]
     [InlineData("DELETE", "/api/notes/1")]
+    // AI consent (AiConsentController): granting or withdrawing is a write like any other, so a
+    // demo visitor cannot record a consent or revoke the demo user's AI key.
+    [InlineData("POST", "/api/ai/consent/grant")]
+    [InlineData("POST", "/api/ai/consent/withdraw")]
+    [InlineData("POST", "/api/settings/ai-api-key/generate")]
     public async Task MutatingEndpoints_AreBlockedOnDemoInstance(string method, string path)
     {
         var token = await DemoLoginAsync();
         var response = await SendWithTokenAsync(new HttpMethod(method), path, token);
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         Assert.Contains("read-only demo instance", await response.Content.ReadAsStringAsync());
+    }
+
+    /// <summary>The consent status is a read, so it stays available on a demo - and reports the AI
+    /// as unavailable (the client then hides the floating AI entry and the setup card), as it did
+    /// before consent existed.</summary>
+    [Fact]
+    public async Task AiConsentStatus_OnDemoInstance_ReportsAiUnavailable()
+    {
+        var token = await DemoLoginAsync();
+
+        var response = await SendWithTokenAsync(HttpMethod.Get, "/api/ai/consent", token);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var status = await response.Content.ReadFromJsonAsync<AiConsentStatusDto>();
+        Assert.False(status!.AiAvailable);
+        Assert.False(status.NeedsDecision);
     }
 
     /// <summary>

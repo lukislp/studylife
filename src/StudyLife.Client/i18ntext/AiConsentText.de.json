@@ -1,0 +1,19 @@
+{
+  "Heading": "Dürfen die KI-Funktionen deine Lerndaten nutzen?",
+  "WhatText": "Um Fragen zu deinen Notizen zu beantworten, liest der KI-Assistent alle deine Notizen, Kurse, Lernsitzungen und Ziele einschließlich der Noten und indiziert sie. Deine Fragen und die passenden Auszüge werden bei jeder Anfrage mitgesendet.",
+  "WhomHeading": "Wer diese Daten erhält:",
+  "WhomUnknown": "Der KI-Anbieter, den der Betreiber dieses Servers eingerichtet hat.",
+  "LeavesServerText": "Diese Daten verlassen diesen Server und werden vom oben genannten Anbieter verarbeitet.",
+  "OptionalText": "Das ist freiwillig. StudyLife funktioniert vollständig auch ohne KI.",
+  "WithdrawText": "Du kannst deine Einwilligung jederzeit unter Setup → KI widerrufen. Deine KI-Daten werden dann gelöscht.",
+  "ExistingUserText": "Du nutzt den KI-Assistenten bereits. Dafür ist ab jetzt deine ausdrückliche Einwilligung nötig. Wenn du „Nicht jetzt“ wählst, wird die KI ausgeschaltet und deine KI-Daten werden gelöscht.",
+  "AgreeButton": "Zustimmen",
+  "DeclineButton": "Nicht jetzt",
+  "ProviderChangedNotice": "Der KI-Anbieter hat sich geändert, während dieser Dialog offen war. Bitte prüfe ihn erneut.",
+  "ErrorGeneric": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
+  "ConsentRequiredError": "Vor dem Fortfahren ist die Einwilligung in die KI-Nutzung erforderlich.",
+  "LocalRunsHere": "Die KI läuft auf der eigenen Hardware dieses Servers. Deine Daten werden nicht an einen externen KI-Anbieter gesendet.",
+  "ConsentGivenOn": "KI-Einwilligung erteilt am {0}.",
+  "WithdrawButton": "Einwilligung widerrufen und KI ausschalten",
+  "WithdrawConfirmWarning": "Beim Widerruf wird die KI ausgeschaltet und deine indizierten Notizen und Chatdaten werden aus dem KI-Dienst gelöscht. Das lässt sich nicht rückgängig machen."
+}

@@ -62,6 +62,9 @@ public class AiKeyOutboxHttpTests : IClassFixture<CustomWebApplicationFactory>
     public async Task GenerateAiApiKey_WhenAiProxyUnreachable_LeavesOutboxRowWithThePlaintext()
     {
         using var client = CreateClientWithFailingAiProxy(out var handler);
+        // The failing add-on gives no provider description, i.e. an unknown provider, for which
+        // key generation needs a consent (AiConsentService) - recorded here for exactly that.
+        await AiConsentTestHost.SeedUserAsync(_factory, hasKey: false, AiConsentTestHost.UnknownFingerprint());
 
         var response = await client.PostAsync("/api/settings/ai-api-key/generate", null);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode); // key generation itself never fails because of this
@@ -86,6 +89,7 @@ public class AiKeyOutboxHttpTests : IClassFixture<CustomWebApplicationFactory>
             user.AiApiKeyCreatedAt = null;
             await db.SaveChangesAsync();
         });
+        await AiConsentTestHost.SeedUserAsync(_factory, hasKey: false, consentFingerprint: null);
     }
 
     [Fact]

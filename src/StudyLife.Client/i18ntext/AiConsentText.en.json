@@ -1,0 +1,19 @@
+{
+  "Heading": "Allow AI features to use your study data?",
+  "WhatText": "To answer questions about your notes, the AI assistant reads all your notes, courses, study sessions and goals including grades, and indexes them. Your questions and the matching excerpts are sent along with every request.",
+  "WhomHeading": "Who receives this data:",
+  "WhomUnknown": "The AI provider configured by this server's operator.",
+  "LeavesServerText": "This data leaves this server and is processed by the provider named above.",
+  "OptionalText": "This is optional. StudyLife works fully without AI.",
+  "WithdrawText": "You can withdraw your consent at any time under Setup → AI. Your AI data is then deleted.",
+  "ExistingUserText": "You already use the AI assistant. We now need your explicit consent. If you choose Not now, AI is switched off and your AI data is deleted.",
+  "AgreeButton": "Agree",
+  "DeclineButton": "Not now",
+  "ProviderChangedNotice": "The AI provider changed while this dialog was open. Please review it again.",
+  "ErrorGeneric": "Something went wrong. Please try again.",
+  "ConsentRequiredError": "AI consent is required before this can continue.",
+  "LocalRunsHere": "The AI runs on this server's own hardware. Your data is not sent to an external AI provider.",
+  "ConsentGivenOn": "AI consent given on {0}.",
+  "WithdrawButton": "Withdraw consent and switch AI off",
+  "WithdrawConfirmWarning": "Withdrawing switches AI off and deletes your indexed notes and chat data from the AI service. This cannot be undone."
+}

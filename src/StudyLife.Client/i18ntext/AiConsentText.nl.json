@@ -1,0 +1,19 @@
+{
+  "Heading": "Mogen AI-functies je studiegegevens gebruiken?",
+  "WhatText": "Om vragen over je notities te beantwoorden, leest de AI-assistent al je notities, vakken, studiesessies en doelen, inclusief cijfers, en indexeert ze. Je vragen en de bijbehorende fragmenten worden bij elk verzoek meegestuurd.",
+  "WhomHeading": "Wie deze gegevens ontvangt:",
+  "WhomUnknown": "De AI-aanbieder die de beheerder van deze server heeft ingesteld.",
+  "LeavesServerText": "Deze gegevens verlaten deze server en worden verwerkt door de hierboven genoemde aanbieder.",
+  "OptionalText": "Dit is optioneel. StudyLife werkt volledig zonder AI.",
+  "WithdrawText": "Je kunt je toestemming op elk moment intrekken via Instellingen → AI. Je AI-gegevens worden dan verwijderd.",
+  "ExistingUserText": "Je gebruikt de AI-assistent al. We hebben nu je uitdrukkelijke toestemming nodig. Kies je Niet nu, dan wordt AI uitgezet en worden je AI-gegevens verwijderd.",
+  "AgreeButton": "Akkoord",
+  "DeclineButton": "Niet nu",
+  "ProviderChangedNotice": "De AI-aanbieder is gewijzigd terwijl dit venster openstond. Bekijk het opnieuw.",
+  "ErrorGeneric": "Er ging iets mis. Probeer het opnieuw.",
+  "ConsentRequiredError": "Toestemming voor AI is nodig om door te gaan.",
+  "LocalRunsHere": "De AI draait op de eigen hardware van deze server. Je gegevens worden niet naar een externe AI-aanbieder gestuurd.",
+  "ConsentGivenOn": "Toestemming voor AI gegeven op {0}.",
+  "WithdrawButton": "Toestemming intrekken en AI uitzetten",
+  "WithdrawConfirmWarning": "Intrekken zet AI uit en verwijdert je geïndexeerde notities en chatgegevens uit de AI-dienst. Dit kan niet ongedaan worden gemaakt."
+}

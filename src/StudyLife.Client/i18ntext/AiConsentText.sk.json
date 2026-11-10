@@ -1,0 +1,19 @@
+{
+  "Heading": "Povoliť funkciám AI používať vaše študijné údaje?",
+  "WhatText": "Aby mohol odpovedať na otázky k vašim poznámkam, AI asistent číta všetky vaše poznámky, kurzy, študijné relácie a ciele vrátane známok a indexuje ich. Vaše otázky a zodpovedajúce úryvky sa odosielajú s každou požiadavkou.",
+  "WhomHeading": "Kto tieto údaje dostane:",
+  "WhomUnknown": "Poskytovateľ AI nastavený prevádzkovateľom tohto servera.",
+  "LeavesServerText": "Tieto údaje opúšťajú tento server a spracúva ich poskytovateľ uvedený vyššie.",
+  "OptionalText": "Je to dobrovoľné. StudyLife plnohodnotne funguje aj bez AI.",
+  "WithdrawText": "Súhlas môžete kedykoľvek odvolať v Nastavenia → AI. Vaše údaje AI sa potom odstránia.",
+  "ExistingUserText": "AI asistenta už používate. Teraz potrebujeme váš výslovný súhlas. Ak zvolíte Teraz nie, AI sa vypne a vaše údaje AI sa odstránia.",
+  "AgreeButton": "Súhlasím",
+  "DeclineButton": "Teraz nie",
+  "ProviderChangedNotice": "Poskytovateľ AI sa zmenil, kým bolo toto okno otvorené. Skontrolujte ho znova.",
+  "ErrorGeneric": "Niečo sa nepodarilo. Skúste to znova.",
+  "ConsentRequiredError": "Na pokračovanie je potrebný súhlas s používaním AI.",
+  "LocalRunsHere": "AI beží na vlastnom hardvéri tohto servera. Vaše údaje sa neodosielajú externému poskytovateľovi AI.",
+  "ConsentGivenOn": "Súhlas s AI udelený {0}.",
+  "WithdrawButton": "Odvolať súhlas a vypnúť AI",
+  "WithdrawConfirmWarning": "Odvolaním sa AI vypne a vaše indexované poznámky a údaje chatu sa zo služby AI odstránia. Nedá sa to vrátiť späť."
+}

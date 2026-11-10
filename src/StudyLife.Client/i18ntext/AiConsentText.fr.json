@@ -1,0 +1,19 @@
+{
+  "Heading": "Autoriser les fonctions IA à utiliser vos données d'étude ?",
+  "WhatText": "Pour répondre à des questions sur vos notes, l'assistant IA lit toutes vos notes, vos cours, vos sessions d'étude et vos objectifs, y compris les notes obtenues, et les indexe. Vos questions et les extraits correspondants sont envoyés avec chaque requête.",
+  "WhomHeading": "Qui reçoit ces données :",
+  "WhomUnknown": "Le fournisseur d'IA configuré par l'opérateur de ce serveur.",
+  "LeavesServerText": "Ces données quittent ce serveur et sont traitées par le fournisseur indiqué ci-dessus.",
+  "OptionalText": "C'est facultatif. StudyLife fonctionne entièrement sans IA.",
+  "WithdrawText": "Vous pouvez retirer votre consentement à tout moment dans Configuration → IA. Vos données IA sont alors supprimées.",
+  "ExistingUserText": "Vous utilisez déjà l'assistant IA. Nous avons maintenant besoin de votre consentement explicite. Si vous choisissez Pas maintenant, l'IA est désactivée et vos données IA sont supprimées.",
+  "AgreeButton": "Accepter",
+  "DeclineButton": "Pas maintenant",
+  "ProviderChangedNotice": "Le fournisseur d'IA a changé pendant que cette fenêtre était ouverte. Veuillez la relire.",
+  "ErrorGeneric": "Une erreur s'est produite. Veuillez réessayer.",
+  "ConsentRequiredError": "Le consentement à l'IA est nécessaire pour continuer.",
+  "LocalRunsHere": "L'IA s'exécute sur le matériel de ce serveur. Vos données ne sont pas envoyées à un fournisseur d'IA externe.",
+  "ConsentGivenOn": "Consentement à l'IA donné le {0}.",
+  "WithdrawButton": "Retirer le consentement et désactiver l'IA",
+  "WithdrawConfirmWarning": "Le retrait désactive l'IA et supprime vos notes indexées et vos données de discussion du service d'IA. Cette action est irréversible."
+}

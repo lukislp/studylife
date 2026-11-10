@@ -33,10 +33,17 @@ public class BackgroundTaskServiceCaptureEnrichmentTests : IClassFixture<CustomW
             ["StudyLifeAi:SharedSecret"] = "shared-secret",
         };
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(config).Build();
-        var handler = new StubHttpHandler(responder ?? (_ => new HttpResponseMessage(HttpStatusCode.OK)
+        var enrichResponder = responder ?? (_ => new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent("{\"course_id\":null,\"course_confidence\":null,\"tags\":[],\"summary\":null}"),
-        }));
+        });
+        // Enrichment is gated by the AI consent (AiConsentService): these tests are about the
+        // enrichment itself, so the stubbed studylife-ai reports a local-only provider (no
+        // consent needed) and the test user has switched AI on. The gate has its own tests below.
+        var handler = new StubHttpHandler(request => request.RequestUri!.AbsolutePath == "/internal/provider-info"
+            ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(AiUpstreamStub.LocalInfoJson) }
+            : enrichResponder(request));
+        AiConsentTestHost.SeedUserAsync(_factory, hasKey: true, consentFingerprint: null).GetAwaiter().GetResult();
         var aiProxyClient = new AiProxyClient(TestOptions.For<StudyLifeAiOptions>(configuration), NullLogger<AiProxyClient>.Instance, new HttpClient(handler));
         return (BackgroundTaskServiceTestFactory.Create(_factory, aiProxyClient: aiProxyClient), handler);
     }
@@ -90,7 +97,7 @@ public class BackgroundTaskServiceCaptureEnrichmentTests : IClassFixture<CustomW
 
         await _factory.WithDbAsync(db => service.RunCaptureEnrichmentAsync(db));
 
-        Assert.Empty(handler.Requests);
+        Assert.Empty(handler.EnrichRequests);
         var note = await ReloadNoteAsync(noteId);
         Assert.Null(note.EnrichedAt);
     }
@@ -104,7 +111,7 @@ public class BackgroundTaskServiceCaptureEnrichmentTests : IClassFixture<CustomW
 
         await _factory.WithDbAsync(db => service.RunCaptureEnrichmentAsync(db));
 
-        Assert.Empty(handler.Requests);
+        Assert.Empty(handler.EnrichRequests);
         var note = await ReloadNoteAsync(noteId);
         Assert.Equal(enrichedAt, note.EnrichedAt);
     }
@@ -237,7 +244,7 @@ public class BackgroundTaskServiceCaptureEnrichmentTests : IClassFixture<CustomW
 
         await _factory.WithDbAsync(db => service.RunCaptureEnrichmentAsync(db));
 
-        Assert.Empty(handler.Requests);
+        Assert.Empty(handler.EnrichRequests);
         var note = await ReloadNoteAsync(noteId);
         Assert.Equal(1, note.EnrichmentAttempts);
     }
@@ -284,7 +291,7 @@ public class BackgroundTaskServiceCaptureEnrichmentTests : IClassFixture<CustomW
 
         await _factory.WithDbAsync(db => service.RunCaptureEnrichmentAsync(db));
 
-        var request = Assert.Single(handler.Requests);
+        var request = Assert.Single(handler.EnrichRequests);
         Assert.Contains("\"active_course_ids\":[5,9]", request.Body);
     }
 
@@ -303,6 +310,78 @@ public class BackgroundTaskServiceCaptureEnrichmentTests : IClassFixture<CustomW
         Assert.Null(note.Tags);
     }
 
+    // ── consent gate (AiConsentService) ─────────────────────────────────────────────────────
+
+    // The gate tests deliberately leave their note unprocessed; remove it so it cannot show up as
+    // an extra pending note in the other tests of this class (they share one database).
+    private Task DeleteNoteAsync(int id) =>
+        _factory.WithDbAsync(async db => await db.Notes.Where(n => n.Id == id).ExecuteDeleteAsync());
+
+    private (BackgroundTaskService Service, AiUpstreamStub Upstream) CreateGatedService(ProviderInfoMode mode)
+    {
+        var upstream = new AiUpstreamStub { Mode = mode };
+        return (BackgroundTaskServiceTestFactory.Create(_factory, aiProxyClient: AiConsentTestHost.CreateClient(upstream)), upstream);
+    }
+
+    [Theory]
+    [InlineData(ProviderInfoMode.Local)]
+    [InlineData(ProviderInfoMode.External)]
+    public async Task RunCaptureEnrichmentAsync_UserWhoNeverEnabledAi_NeverSendsTheNote(ProviderInfoMode mode)
+    {
+        // Regression: enrichment used to be gated only by the installation-level Enabled flag, so
+        // the notes of users who never switched AI on were sent to studylife-ai anyway.
+        await AiConsentTestHost.SeedUserAsync(_factory, hasKey: false, consentFingerprint: AiConsentTestHost.ExternalFingerprint());
+        var noteId = await SeedNoteAsync("https://example.com/article");
+        var (service, upstream) = CreateGatedService(mode);
+
+        await _factory.WithDbAsync(db => service.RunCaptureEnrichmentAsync(db));
+
+        Assert.Equal(0, upstream.Count("/internal/enrich-capture"));
+        Assert.Null((await ReloadNoteAsync(noteId)).EnrichedAt);
+        Assert.Equal(0, (await ReloadNoteAsync(noteId)).EnrichmentAttempts); // stays pending for when AI is enabled
+        await DeleteNoteAsync(noteId);
+    }
+
+    [Fact]
+    public async Task RunCaptureEnrichmentAsync_AiUserWithoutCoveringConsent_NeverSendsTheNote()
+    {
+        await AiConsentTestHost.SeedUserAsync(_factory, hasKey: true, consentFingerprint: null);
+        var noteId = await SeedNoteAsync("https://example.com/article");
+        var (service, upstream) = CreateGatedService(ProviderInfoMode.External);
+
+        await _factory.WithDbAsync(db => service.RunCaptureEnrichmentAsync(db));
+
+        Assert.Equal(0, upstream.Count("/internal/enrich-capture"));
+        Assert.Null((await ReloadNoteAsync(noteId)).EnrichedAt);
+        await DeleteNoteAsync(noteId);
+    }
+
+    [Fact]
+    public async Task RunCaptureEnrichmentAsync_UnknownProviderWithoutConsent_NeverSendsTheNote()
+    {
+        await AiConsentTestHost.SeedUserAsync(_factory, hasKey: true, consentFingerprint: null);
+        var noteId = await SeedNoteAsync("https://example.com/article");
+        var (service, upstream) = CreateGatedService(ProviderInfoMode.NotFound);
+
+        await _factory.WithDbAsync(db => service.RunCaptureEnrichmentAsync(db));
+
+        Assert.Equal(0, upstream.Count("/internal/enrich-capture"));
+        await DeleteNoteAsync(noteId);
+    }
+
+    [Fact]
+    public async Task RunCaptureEnrichmentAsync_AiUserWithCoveringConsent_SendsTheNote()
+    {
+        await AiConsentTestHost.SeedUserAsync(_factory, hasKey: true, AiConsentTestHost.ExternalFingerprint());
+        var noteId = await SeedNoteAsync("https://example.com/article");
+        var (service, upstream) = CreateGatedService(ProviderInfoMode.External);
+
+        await _factory.WithDbAsync(db => service.RunCaptureEnrichmentAsync(db));
+
+        Assert.Equal(1, upstream.Count("/internal/enrich-capture"));
+        Assert.NotNull((await ReloadNoteAsync(noteId)).EnrichedAt);
+    }
+
     /// <summary>Records all requests (including headers/body) and returns predefined responses -
     /// same deliberately plainly-built stub as AiProxyClientTests/ApnsPushTests/LiveActivityPushTests.</summary>
     private sealed class StubHttpHandler : HttpMessageHandler
@@ -311,6 +390,11 @@ public class BackgroundTaskServiceCaptureEnrichmentTests : IClassFixture<CustomW
 
         private readonly Func<HttpRequestMessage, HttpResponseMessage> _responder;
         public List<RecordedRequest> Requests { get; } = [];
+
+        /// <summary>The calls that actually carry a note out (the provider-description lookup of
+        /// the consent gate is not one of them).</summary>
+        public List<RecordedRequest> EnrichRequests =>
+            Requests.Where(r => r.Uri.EndsWith("/internal/enrich-capture", StringComparison.Ordinal)).ToList();
 
         public StubHttpHandler(Func<HttpRequestMessage, HttpResponseMessage> responder) => _responder = responder;
 

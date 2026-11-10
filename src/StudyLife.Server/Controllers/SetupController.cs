@@ -52,23 +52,25 @@ public class SetupController : ControllerBase
     private readonly IConfiguration _config;
     private readonly IOwnershipService _ownership;
     private readonly IOptionsMonitor<TelemetryOptions> _telemetryOptions;
+    private readonly IAiConsentService _aiConsent;
     private readonly DatabaseBackupService? _backupService;
     private readonly DatabaseRestoreService? _restoreService;
 
     public SetupController(StudyLifeDb db, IConfiguration config, IOwnershipService ownership,
-        IOptionsMonitor<TelemetryOptions> telemetryOptions,
+        IOptionsMonitor<TelemetryOptions> telemetryOptions, IAiConsentService aiConsent,
         DatabaseBackupService? backupService = null, DatabaseRestoreService? restoreService = null)
     {
         _db = db;
         _config = config;
         _ownership = ownership;
         _telemetryOptions = telemetryOptions;
+        _aiConsent = aiConsent;
         _backupService = backupService;
         _restoreService = restoreService;
     }
 
     [HttpGet("overview")]
-    public async Task<ActionResult<SetupOverviewDto>> GetOverview()
+    public async Task<ActionResult<SetupOverviewDto>> GetOverview(CancellationToken ct)
     {
         // Never cached (see class summary) - a stale response here could show "no key" right
         // after generating one.
@@ -90,7 +92,8 @@ public class SetupController : ControllerBase
         return new SetupOverviewDto
         {
             Settings = SettingsService.ToDto(settingsEntity),
-            Capabilities = SystemController.BuildCapabilities(_telemetryOptions.CurrentValue, rawBackupSupported),
+            Capabilities = SystemController.BuildCapabilities(
+                _telemetryOptions.CurrentValue, rawBackupSupported, await _aiConsent.GetCapabilitiesAsync(ct)),
             Version = new VersionResponseDto
             {
                 Version = Assembly.GetExecutingAssembly()

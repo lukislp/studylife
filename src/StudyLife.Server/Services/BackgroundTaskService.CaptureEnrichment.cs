@@ -62,6 +62,15 @@ public partial class BackgroundTaskService
             .ToListAsync();
         if (pending.Count == 0) return;
 
+        // Consent gate (AiConsentService): enrichment sends a note's title, content, source URL
+        // and course ids to studylife-ai. It used to be gated only by the installation-level
+        // Enabled flag, so it also sent notes of users who never switched AI on. Now only a user
+        // who has AI enabled AND a consent covering the current provider is processed; everyone
+        // else's notes stay pending (not marked as attempted), so enabling AI later enriches
+        // them retroactively. Every note in `pending` belongs to the same user (see below).
+        var consent = new AiConsentService(db, _aiProxyClient, _demoReadOnly);
+        if (!await consent.MayProcessInBackgroundAsync(pending[0].AuthUserId, CancellationToken.None)) return;
+
         // Every note in `pending` belongs to the SAME user (the outer per-user tick loop already
         // scopes `db`'s query filters, see CurrentUserAccessor) - one shared settings fetch per
         // tick, not one per note.

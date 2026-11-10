@@ -1,0 +1,19 @@
+{
+  "Heading": "Zezwolić funkcjom AI na korzystanie z Twoich danych do nauki?",
+  "WhatText": "Aby odpowiadać na pytania o Twoje notatki, asystent AI odczytuje wszystkie Twoje notatki, kursy, sesje nauki i cele, w tym oceny, i je indeksuje. Twoje pytania i pasujące fragmenty są wysyłane z każdym zapytaniem.",
+  "WhomHeading": "Kto otrzymuje te dane:",
+  "WhomUnknown": "Dostawca AI skonfigurowany przez operatora tego serwera.",
+  "LeavesServerText": "Te dane opuszczają ten serwer i są przetwarzane przez dostawcę wskazanego powyżej.",
+  "OptionalText": "To jest dobrowolne. StudyLife działa w pełni bez AI.",
+  "WithdrawText": "Zgodę możesz wycofać w każdej chwili w Ustawienia → AI. Twoje dane AI zostaną wtedy usunięte.",
+  "ExistingUserText": "Korzystasz już z asystenta AI. Potrzebujemy teraz Twojej wyraźnej zgody. Jeśli wybierzesz Nie teraz, AI zostanie wyłączone, a Twoje dane AI usunięte.",
+  "AgreeButton": "Zgadzam się",
+  "DeclineButton": "Nie teraz",
+  "ProviderChangedNotice": "Dostawca AI zmienił się, gdy to okno było otwarte. Sprawdź je ponownie.",
+  "ErrorGeneric": "Coś poszło nie tak. Spróbuj ponownie.",
+  "ConsentRequiredError": "Aby kontynuować, potrzebna jest zgoda na korzystanie z AI.",
+  "LocalRunsHere": "AI działa na własnym sprzęcie tego serwera. Twoje dane nie są wysyłane do zewnętrznego dostawcy AI.",
+  "ConsentGivenOn": "Zgoda na AI udzielona {0}.",
+  "WithdrawButton": "Wycofaj zgodę i wyłącz AI",
+  "WithdrawConfirmWarning": "Wycofanie wyłącza AI i usuwa z usługi AI Twoje zindeksowane notatki oraz dane czatu. Nie można tego cofnąć."
+}

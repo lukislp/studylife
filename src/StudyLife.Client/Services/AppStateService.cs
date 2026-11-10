@@ -349,9 +349,14 @@ public class AppStateService : IAsyncDisposable
         return _writeQueue.Count;
     }
 
+    /// <summary>The "may the AI features send data?" question and its dialog state. Composition,
+    /// not a DI registration: see <see cref="AiConsentState"/> for why the native apps need it this way.</summary>
+    public AiConsentState AiConsent { get; }
+
     public AppStateService(HttpClient http, IJSRuntime jsRuntime, ILogger<AppStateService> logger, SessionTokenStore sessionTokenStore)
     {
         _http = http;
+        AiConsent = new AiConsentState(http);
         _jsRuntime = jsRuntime;
         _logger = logger;
         _sessionTokenStore = sessionTokenStore;

@@ -1339,6 +1339,71 @@ public class SystemCapabilitiesResponseDto
     /// 10 % would wait days for a single boot sample) and down again when volume grows, without
     /// a client release. Telemetry:ClientSampleRatio, default 0.10.</summary>
     public double TelemetryClientSampleRatio { get; set; } = 0.10;
+
+    /// <summary>True when this installation has the studylife-ai add-on configured and is not a
+    /// demo instance. The floating AI entry and the setup card are hidden when false.</summary>
+    public bool AiAvailable { get; set; }
+
+    /// <summary>Which providers and models see a user's data once AI is enabled, as reported by
+    /// studylife-ai (cached server-side). Null = unknown: studylife-ai unreachable, older than
+    /// the provider-info endpoint, or AI unavailable - consent is then required and the dialog
+    /// names "the AI provider configured by this server's operator".</summary>
+    public AiProviderInfoDto? AiProvider { get; set; }
+}
+
+/// <summary>One model of the studylife-ai add-on and who runs it (GET /api/system/capabilities).</summary>
+public class AiProviderRoleDto
+{
+    /// <summary>What it is used for: "chat", "embeddings", "rerank" or "date_parse".</summary>
+    public string Role { get; set; } = "";
+    /// <summary>Provider label, e.g. "OpenAI" or "Ollama (local)".</summary>
+    public string Provider { get; set; } = "";
+    public string Model { get; set; } = "";
+    /// <summary>True only when the model runs on a host the operator controls.</summary>
+    public bool Local { get; set; }
+}
+
+/// <summary>The providers and models behind the studylife-ai add-on.</summary>
+public class AiProviderInfoDto
+{
+    public List<AiProviderRoleDto> Roles { get; set; } = new();
+    /// <summary>True when at least one role sends data to an external provider.</summary>
+    public bool AnyExternal { get; set; }
+}
+
+/// <summary>Response of GET /api/ai/consent: everything the client needs to decide whether and
+/// what to ask. The consent rule itself lives in AiConsentService, not on the client.</summary>
+public class AiConsentStatusDto
+{
+    /// <summary>AI add-on configured and not a demo instance.</summary>
+    public bool AiAvailable { get; set; }
+    /// <summary>The user must agree before any data goes to the add-on: some provider is
+    /// external or unknown. False for a local-only setup.</summary>
+    public bool ConsentRequired { get; set; }
+    /// <summary>A stored consent covers the CURRENT provider description.</summary>
+    public bool Granted { get; set; }
+    public DateTime? GrantedAt { get; set; }
+    /// <summary>The user currently has an AI key (AI is switched on for them).</summary>
+    public bool HasKey { get; set; }
+    /// <summary>False = the provider description is unknown and the dialog must say "the AI
+    /// provider configured by this server's operator".</summary>
+    public bool ProviderKnown { get; set; }
+    public AiProviderInfoDto? Provider { get; set; }
+    /// <summary>Identifies the provider description shown; send it back when granting so the
+    /// consent binds to exactly what the user saw.</summary>
+    public string Fingerprint { get; set; } = "";
+    /// <summary>The user must be asked now because they use (or are about to use) AI without a
+    /// covering consent.</summary>
+    public bool NeedsDecision { get; set; }
+}
+
+/// <summary>Body of POST /api/ai/consent/grant.</summary>
+public class AiConsentGrantRequestDto
+{
+    /// <summary>The <see cref="AiConsentStatusDto.Fingerprint"/> the user was shown (64 hex
+    /// characters). Rejected with 400 when malformed and 409 when the description changed in the
+    /// meantime.</summary>
+    public string Fingerprint { get; set; } = "";
 }
 
 // Audit finding M4: JSON export/import ("v2") - BackupController.Export/ImportJson. Unlike the

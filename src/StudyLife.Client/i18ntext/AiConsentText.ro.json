@@ -1,0 +1,19 @@
+{
+  "Heading": "Permiți funcțiilor AI să folosească datele tale de studiu?",
+  "WhatText": "Pentru a răspunde la întrebări despre notițele tale, asistentul AI citește toate notițele, cursurile, sesiunile de studiu și obiectivele tale, inclusiv notele, și le indexează. Întrebările tale și fragmentele potrivite sunt trimise cu fiecare cerere.",
+  "WhomHeading": "Cine primește aceste date:",
+  "WhomUnknown": "Furnizorul de AI configurat de operatorul acestui server.",
+  "LeavesServerText": "Aceste date părăsesc acest server și sunt prelucrate de furnizorul menționat mai sus.",
+  "OptionalText": "Este opțional. StudyLife funcționează complet și fără AI.",
+  "WithdrawText": "Îți poți retrage consimțământul oricând din Configurare → AI. Datele tale AI sunt apoi șterse.",
+  "ExistingUserText": "Folosești deja asistentul AI. Acum avem nevoie de consimțământul tău explicit. Dacă alegi Nu acum, AI este dezactivat și datele tale AI sunt șterse.",
+  "AgreeButton": "Sunt de acord",
+  "DeclineButton": "Nu acum",
+  "ProviderChangedNotice": "Furnizorul de AI s-a schimbat cât timp această fereastră a fost deschisă. Verific-o din nou.",
+  "ErrorGeneric": "Ceva nu a mers bine. Încearcă din nou.",
+  "ConsentRequiredError": "Pentru a continua este necesar consimțământul pentru AI.",
+  "LocalRunsHere": "AI rulează pe hardware-ul propriu al acestui server. Datele tale nu sunt trimise unui furnizor de AI extern.",
+  "ConsentGivenOn": "Consimțământ AI acordat la {0}.",
+  "WithdrawButton": "Retrage consimțământul și dezactivează AI",
+  "WithdrawConfirmWarning": "Retragerea dezactivează AI și șterge din serviciul AI notițele tale indexate și datele de chat. Nu poate fi anulată."
+}

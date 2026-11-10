@@ -1,0 +1,19 @@
+{
+  "Heading": "Dovolite funkcijam UI uporabo vaših študijskih podatkov?",
+  "WhatText": "Da bi odgovarjal na vprašanja o vaših zapiskih, UI-pomočnik prebere vse vaše zapiske, predmete, učne seje in cilje, vključno z ocenami, in jih indeksira. Vaša vprašanja in ustrezni izseki se pošljejo z vsako zahtevo.",
+  "WhomHeading": "Kdo prejme te podatke:",
+  "WhomUnknown": "Ponudnik UI, ki ga je nastavil upravljavec tega strežnika.",
+  "LeavesServerText": "Ti podatki zapustijo ta strežnik, obdeluje pa jih zgoraj navedeni ponudnik.",
+  "OptionalText": "To je neobvezno. StudyLife v celoti deluje tudi brez UI.",
+  "WithdrawText": "Soglasje lahko kadar koli prekličete v Nastavitve → UI. Vaši podatki UI se nato izbrišejo.",
+  "ExistingUserText": "UI-pomočnika že uporabljate. Zdaj potrebujemo vaše izrecno soglasje. Če izberete Ne zdaj, se UI izklopi in vaši podatki UI se izbrišejo.",
+  "AgreeButton": "Se strinjam",
+  "DeclineButton": "Ne zdaj",
+  "ProviderChangedNotice": "Ponudnik UI se je spremenil, medtem ko je bilo to okno odprto. Preglejte ga znova.",
+  "ErrorGeneric": "Nekaj je šlo narobe. Poskusite znova.",
+  "ConsentRequiredError": "Za nadaljevanje je potrebno soglasje za uporabo UI.",
+  "LocalRunsHere": "UI deluje na lastni strojni opremi tega strežnika. Vaši podatki se ne pošiljajo zunanjemu ponudniku UI.",
+  "ConsentGivenOn": "Soglasje za UI podano {0}.",
+  "WithdrawButton": "Prekliči soglasje in izklopi UI",
+  "WithdrawConfirmWarning": "S preklicem se UI izklopi, vaši indeksirani zapiski in podatki klepeta pa se izbrišejo iz storitve UI. Tega ni mogoče razveljaviti."
+}

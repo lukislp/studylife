@@ -1,0 +1,19 @@
+{
+  "Heading": "Leisti DI funkcijoms naudoti tavo mokymosi duomenis?",
+  "WhatText": "Kad galėtų atsakyti į klausimus apie tavo užrašus, DI asistentas perskaito visus tavo užrašus, kursus, mokymosi sesijas ir tikslus, įskaitant pažymius, ir juos indeksuoja. Tavo klausimai ir atitinkamos ištraukos siunčiami su kiekviena užklausa.",
+  "WhomHeading": "Kas gauna šiuos duomenis:",
+  "WhomUnknown": "DI paslaugų teikėjas, kurį sukonfigūravo šio serverio operatorius.",
+  "LeavesServerText": "Šie duomenys palieka šį serverį, o juos apdoroja aukščiau nurodytas teikėjas.",
+  "OptionalText": "Tai neprivaloma. StudyLife visiškai veikia ir be DI.",
+  "WithdrawText": "Sutikimą gali bet kada atšaukti skiltyje Nustatymai → DI. Tada tavo DI duomenys ištrinami.",
+  "ExistingUserText": "DI asistentą jau naudoji. Dabar mums reikia tavo aiškaus sutikimo. Jei pasirinksi Ne dabar, DI bus išjungtas, o tavo DI duomenys ištrinti.",
+  "AgreeButton": "Sutinku",
+  "DeclineButton": "Ne dabar",
+  "ProviderChangedNotice": "DI teikėjas pasikeitė, kol šis langas buvo atidarytas. Peržiūrėk jį dar kartą.",
+  "ErrorGeneric": "Kažkas nepavyko. Bandyk dar kartą.",
+  "ConsentRequiredError": "Norint tęsti, reikalingas sutikimas naudoti DI.",
+  "LocalRunsHere": "DI veikia pačiame šio serverio aparatinėje įrangoje. Tavo duomenys nesiunčiami išoriniam DI teikėjui.",
+  "ConsentGivenOn": "DI sutikimas duotas {0}.",
+  "WithdrawButton": "Atšaukti sutikimą ir išjungti DI",
+  "WithdrawConfirmWarning": "Atšaukus DI išjungiamas, o tavo indeksuoti užrašai ir pokalbių duomenys ištrinami iš DI paslaugos. Šio veiksmo atšaukti negalima."
+}

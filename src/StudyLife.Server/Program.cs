@@ -484,6 +484,14 @@ builder.Services.AddScoped<IExamPlanService, ExamPlanService>();
 builder.Services.AddScoped<ITimerStateService, TimerStateService>();
 builder.Services.AddScoped<ISettingsService, SettingsService>();
 builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
+// The consent rule for sending user data to studylife-ai (see AiConsentService). Registered
+// through a factory because ApiKeyService depends on it and it needs ApiKeyService back only to
+// revoke the key on withdrawal - the factory delegate defers that lookup, so there is no cycle.
+builder.Services.AddScoped<IAiConsentService>(sp => new AiConsentService(
+    sp.GetRequiredService<StudyLifeDb>(),
+    sp.GetRequiredService<AiProxyClient>(),
+    DemoModeGuard.IsEnabled(sp.GetRequiredService<IConfiguration>()),
+    () => sp.GetRequiredService<IApiKeyService>()));
 builder.Services.AddScoped<IPushService, PushService>();
 builder.Services.AddScoped<IBackupDataService, BackupDataService>();
 builder.Services.AddScoped<ICalendarTokenService, CalendarTokenService>();

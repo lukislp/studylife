@@ -1,0 +1,19 @@
+{
+  "Heading": "Consentire alle funzioni IA di usare i tuoi dati di studio?",
+  "WhatText": "Per rispondere a domande sui tuoi appunti, l'assistente IA legge tutti i tuoi appunti, corsi, sessioni di studio e obiettivi, voti compresi, e li indicizza. Le tue domande e gli estratti pertinenti vengono inviati a ogni richiesta.",
+  "WhomHeading": "Chi riceve questi dati:",
+  "WhomUnknown": "Il fornitore di IA configurato dall'operatore di questo server.",
+  "LeavesServerText": "Questi dati lasciano il server e vengono elaborati dal fornitore indicato sopra.",
+  "OptionalText": "È facoltativo. StudyLife funziona completamente anche senza IA.",
+  "WithdrawText": "Puoi revocare il consenso in qualsiasi momento in Impostazioni → IA. I tuoi dati IA vengono allora eliminati.",
+  "ExistingUserText": "Usi già l'assistente IA. Ora serve il tuo consenso esplicito. Se scegli Non ora, l'IA viene disattivata e i tuoi dati IA vengono eliminati.",
+  "AgreeButton": "Accetto",
+  "DeclineButton": "Non ora",
+  "ProviderChangedNotice": "Il fornitore di IA è cambiato mentre questa finestra era aperta. Controllala di nuovo.",
+  "ErrorGeneric": "Qualcosa è andato storto. Riprova.",
+  "ConsentRequiredError": "Per continuare serve il consenso all'uso dell'IA.",
+  "LocalRunsHere": "L'IA funziona sull'hardware di questo server. I tuoi dati non vengono inviati a un fornitore di IA esterno.",
+  "ConsentGivenOn": "Consenso all'IA dato il {0}.",
+  "WithdrawButton": "Revoca il consenso e disattiva l'IA",
+  "WithdrawConfirmWarning": "La revoca disattiva l'IA ed elimina dal servizio IA i tuoi appunti indicizzati e i dati delle chat. L'operazione non può essere annullata."
+}

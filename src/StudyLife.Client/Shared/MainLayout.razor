@@ -145,9 +145,14 @@
                     <button class="fab-action" aria-label="@T.PasskeysLabel" title="@T.PasskeysLabel" @onclick="OpenPasskeyManagerFromFab">
                         <span>🔑</span>
                     </button>
-                    <button class="fab-action" aria-label="@T.AgentChatLabel" title="@T.AgentChatLabel" @onclick="OpenAgentChatFromFab">
-                        <span>💬</span>
-                    </button>
+                    @* Only where the installation has the AI add-on at all (the server says so, and
+                       reports false on demo instances). *@
+                    @if (_aiAvailable)
+                    {
+                        <button class="fab-action" aria-label="@T.AgentChatLabel" title="@T.AgentChatLabel" @onclick="OpenAgentChatFromFab">
+                            <span>💬</span>
+                        </button>
+                    }
                 }
             </div>
         }
@@ -165,7 +170,8 @@
     <PushDeviceManager Open="_deviceManagerOpen" OnClose="CloseDeviceManager" />
     <PasskeyDeviceManager Open="_passkeyManagerOpen" OnClose="ClosePasskeyManager" />
     <AgentChatModal Open="_agentChatOpen" OnClose="CloseAgentChat" />
-    <TelemetryConsentModal Show="_showTelemetryConsentModal" OnAnswered="() => _showTelemetryConsentModal = false" />
+    <TelemetryConsentModal Show="_showTelemetryConsentModal" OnAnswered="OnTelemetryConsentAnswered" />
+    <AiConsentModal />
 
     <main class="main-content" id="main-scroll">
         @* Catches rendering exceptions of individual pages instead of crashing the whole WASM app
@@ -208,6 +214,7 @@
     private bool _authenticated;
     private bool _demoMode;
     private bool _showTelemetryConsentModal;
+    private bool _aiAvailable;
     private long? _navigationStartedAtTimestamp;
 
     private record Language(string Code, string Flag, string Name);
@@ -368,6 +375,19 @@
             // TelemetryController drops everything from a demo instance regardless).
             _showTelemetryConsentModal = !_demoMode && settings.TelemetryConsent is null;
             await InvokeAsync(StateHasChanged);
+
+            // AI add-on: whether the floating AI entry exists at all, and - for an existing AI
+            // user without a consent covering the current provider - the one-time question
+            // (AiConsentState.CheckAtStartupAsync; the rule is the server's). Demo instances skip it:
+            // AI is hidden there and everything is read-only. When the telemetry question is on
+            // screen the AI question waits for its answer (OnTelemetryConsentAnswered) instead of
+            // stacking a second dialog on top.
+            if (!_demoMode)
+            {
+                _aiAvailable = (await State.AiConsent.GetStatusAsync())?.AiAvailable ?? false;
+                await InvokeAsync(StateHasChanged);
+                if (!_showTelemetryConsentModal) await CheckAiConsentAsync();
+            }
 
             await updateCheckTask;
             if (_updateAvailable) await InvokeAsync(StateHasChanged);
@@ -647,6 +667,18 @@
     }
 
     private void CloseAgentChat() => _agentChatOpen = false;
+
+    private async Task OnTelemetryConsentAnswered()
+    {
+        _showTelemetryConsentModal = false;
+        if (!_demoMode) await CheckAiConsentAsync();
+    }
+
+    private async Task CheckAiConsentAsync()
+    {
+        _aiAvailable = await State.AiConsent.CheckAtStartupAsync();
+        await InvokeAsync(StateHasChanged);
+    }
 
     private void CloseFab()
     {

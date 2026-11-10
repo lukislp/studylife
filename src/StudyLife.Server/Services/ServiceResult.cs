@@ -35,6 +35,11 @@ public enum ServiceOutcome
     /// when the request was authenticated - a deleted account mid-request, not a missing
     /// credential (the gate has already run by then).</summary>
     Unauthorized,
+    /// <summary>The caller is authenticated but a precondition of the operation is not met;
+    /// <c>Error</c> carries the stable problem code (e.g. <c>ai-consent-required</c>) and
+    /// controllers answer 403 with an RFC 9457 problem whose <c>type</c> is that code, so a
+    /// client can react to it without parsing prose.</summary>
+    Forbidden,
 }
 
 /// <summary>Outcome of a domain operation that produces no payload (deletes, revokes).</summary>
@@ -51,6 +56,12 @@ public readonly record struct ServiceResult(ServiceOutcome Outcome, string? Erro
     }
 
     public static ServiceResult Unauthorized() => new(ServiceOutcome.Unauthorized, null);
+
+    public static ServiceResult Forbidden(string problemCode)
+    {
+        Debug.Assert(!string.IsNullOrWhiteSpace(problemCode), "a Forbidden outcome must carry its problem code");
+        return new(ServiceOutcome.Forbidden, problemCode);
+    }
 }
 
 /// <summary>Outcome of a domain operation that produces a DTO on success.</summary>
@@ -73,6 +84,12 @@ public readonly record struct ServiceResult<T>(ServiceOutcome Outcome, T? Value,
     }
 
     public static ServiceResult<T> Unauthorized() => new(ServiceOutcome.Unauthorized, default, null);
+
+    public static ServiceResult<T> Forbidden(string problemCode)
+    {
+        Debug.Assert(!string.IsNullOrWhiteSpace(problemCode), "a Forbidden outcome must carry its problem code");
+        return new(ServiceOutcome.Forbidden, default, problemCode);
+    }
 }
 
 /// <summary>
@@ -93,6 +110,7 @@ public static class ServiceResultExtensions
             ServiceOutcome.Invalid => controller.BadRequest(result.Error),
             ServiceOutcome.Conflict => controller.Conflict(result.Value),
             ServiceOutcome.Unauthorized => controller.Unauthorized(),
+            ServiceOutcome.Forbidden => ProblemResult(controller, result.Error),
             _ => result.Value!,
         };
 
@@ -104,6 +122,7 @@ public static class ServiceResultExtensions
             ServiceOutcome.Invalid => controller.BadRequest(result.Error),
             ServiceOutcome.Conflict => controller.Conflict(result.Value),
             ServiceOutcome.Unauthorized => controller.Unauthorized(),
+            ServiceOutcome.Forbidden => ProblemResult(controller, result.Error),
             _ => controller.Ok(result.Value),
         };
 
@@ -114,6 +133,12 @@ public static class ServiceResultExtensions
             ServiceOutcome.NotFound => controller.NotFound(),
             ServiceOutcome.Invalid => controller.BadRequest(result.Error),
             ServiceOutcome.Unauthorized => controller.Unauthorized(),
+            ServiceOutcome.Forbidden => ProblemResult(controller, result.Error),
             _ => controller.NoContent(),
         };
+
+    /// <summary>403 with an RFC 9457 problem body whose <c>type</c> is the stable code (see
+    /// <see cref="ServiceOutcome.Forbidden"/>).</summary>
+    public static ObjectResult ProblemResult(ControllerBase controller, string? problemCode) =>
+        controller.Problem(statusCode: StatusCodes.Status403Forbidden, type: problemCode, title: problemCode);
 }

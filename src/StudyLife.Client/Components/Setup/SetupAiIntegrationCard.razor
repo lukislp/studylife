@@ -20,11 +20,33 @@
    break anything the user configured by hand, it just asks the server to mint+register a
    fresh key, so it's framed as a lightweight recovery action, not a destructive one. Self-
    contained component (own SetupText instance + own HTTP calls), modeled after
-   SetupProgressShareCard's enable/disable/regenerate-with-success-flash shape. *@
+   SetupProgressShareCard's enable/disable/regenerate-with-success-flash shape.
 
+   AI consent (Apple App Review guideline 5.1.2(i)): the card decides nothing. Enable/Reconnect
+   first ask State.AiConsent ("ensure consent, then continue"); the card is hidden when the
+   installation has no AI add-on (AiAvailable false, which the server also reports on demo
+   instances); it says once that a local-only add-on runs on the operator's own server, and shows
+   when consent was given with a "withdraw" action that also switches AI off and deletes the
+   user's indexed data. The rule lives in AiConsentService, the dialog in AiConsentModal. *@
+
+@if (_consent is { AiAvailable: true })
+{
 <div class="setup-section">
     <div class="ss-label">@T.AiIntegrationHeading</div>
     <p class="ss-desc">@T.AiIntegrationDesc</p>
+    @if (_consent is { ConsentRequired: false, ProviderKnown: true })
+    {
+        <p class="ss-desc">@TC.LocalRunsHere</p>
+    }
+    @if (_consent is { ConsentRequired: true, Granted: true, GrantedAt: { } grantedAt })
+    {
+        <p class="ss-desc">
+            @string.Format(TC.ConsentGivenOn ?? "{0}", LocalDate.DateAndTime(grantedAt.ToLocalTime()))
+        </p>
+        <button type="button" class="btn-danger" @onclick="() => _confirmingWithdraw = true" disabled="@_busy">
+            @TC.WithdrawButton
+        </button>
+    }
 
     @if (_hasKey)
     {
@@ -48,6 +70,30 @@
         </button>
     }
 </div>
+}
+
+@if (_confirmingWithdraw)
+{
+    <div class="modal-overlay" @onclick="() => _confirmingWithdraw = false">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ai-consent-withdraw-title" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3 id="ai-consent-withdraw-title">@TC.WithdrawButton</h3>
+                <button type="button" class="modal-close" aria-label="@T.AriaCloseDialog" @onclick="() => _confirmingWithdraw = false">✕</button>
+            </div>
+            <div class="modal-body">
+                <p>⚠️ @TC.WithdrawConfirmWarning</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" @onclick="() => _confirmingWithdraw = false" disabled="@_busy">
+                    @T.AiKeyConfirmCancel
+                </button>
+                <button type="button" class="btn-danger" @onclick="ConfirmWithdraw" disabled="@_busy">
+                    @(_busy ? "…" : TC.WithdrawButton)
+                </button>
+            </div>
+        </div>
+    </div>
+}
 
 @if (_confirmingDisable)
 {
@@ -74,6 +120,9 @@
 
 @code {
     private I18nText.SetupText T = new();
+    private I18nText.AiConsentText TC = new();
+    private AiConsentStatusDto? _consent;
+    private bool _confirmingWithdraw;
 
     [CascadingParameter]
     public SetupOverviewDto? Overview { get; set; }
@@ -99,6 +148,8 @@
     {
         if (OverviewTask is not null) Overview = await OverviewTask;
         T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
+        TC = await I18nText.GetTextTableAsync<I18nText.AiConsentText>(this);
+        _consent = await State.AiConsent.GetStatusAsync(refresh: true);
         if (Overview?.AiApiKey is { } bundled)
         {
             ApplyOverview(bundled);
@@ -138,6 +189,9 @@
         _busy = true;
         try
         {
+            // The consent dialog (if one is needed) comes before anything is generated or
+            // registered; "not now" leaves AI off without an error.
+            if (!await State.AiConsent.EnsureConsentAsync()) return;
             State.NoteOwnWrite("settings");
             var response = await Http.PostAsync("api/settings/ai-api-key/generate", null);
             if (response.IsSuccessStatusCode)
@@ -146,6 +200,7 @@
                 _hasKey = true;
                 _createdAt = dto?.CreatedAt;
             }
+            _consent = await State.AiConsent.GetStatusAsync(refresh: true);
         }
         finally { _busy = false; }
     }
@@ -160,6 +215,7 @@
         StateHasChanged();
         try
         {
+            if (!await State.AiConsent.EnsureConsentAsync()) return;
             State.NoteOwnWrite("settings");
             var response = await Http.PostAsync("api/settings/ai-api-key/generate", null);
             if (response.IsSuccessStatusCode)
@@ -179,6 +235,26 @@
             _busy = false;
             StateHasChanged();
         }
+    }
+
+    // Withdraw: the server clears the consent AND revokes the AI key through the existing revoke
+    // path (which makes studylife-ai purge the user's indexed data) - one call, no client-side
+    // sequencing.
+    private async Task ConfirmWithdraw()
+    {
+        _confirmingWithdraw = false;
+        _busy = true;
+        try
+        {
+            State.NoteOwnWrite("settings");
+            if (await State.AiConsent.WithdrawAsync())
+            {
+                _hasKey = false;
+                _createdAt = null;
+                _consent = await State.AiConsent.GetStatusAsync();
+            }
+        }
+        finally { _busy = false; }
     }
 
     private async Task ConfirmDisable()
