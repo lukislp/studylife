@@ -148,6 +148,7 @@ https://github.com/user-attachments/assets/0498d54b-f7e3-4854-b7cf-8eea538dd112
 
 ### Language
 - Fully usable in 26 languages: all 24 official EU languages (English, German, French, Spanish, Italian, Portuguese, Dutch, Danish, Swedish, Finnish, Greek, Polish, Czech, Slovak, Hungarian, Romanian, Bulgarian, Croatian, Slovenian, Estonian, Latvian, Lithuanian, Maltese, Irish) plus Ukrainian and Russian
+- First start: the app opens in the language of your browser or device (the best match of your preferred languages, `pt-BR` counts as Portuguese), English when none of them is one of the 26; no choice is ever forced. A language you choose yourself always wins and is remembered. Users who already had a session but never stored a choice keep German, which is what they had been shown
 - Switcher in the top right (positioned the same way on desktop and mobile): click the current flag, choose a language from the popup; the selection persists across restarts/browser sessions
 - Localized weekday and month names everywhere, 12-hour clock for English and 24-hour clock for every other language
 
