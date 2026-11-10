@@ -475,6 +475,10 @@ public class BackupDataService(StudyLifeDb db, SettingsCacheVersion settingsCach
             // SettingsService.SaveAsync (see UserSettingsEntity): a fresh import shouldn't
             // silently re-activate a public progress-share link or backdate the reminder.
             ActiveStudyProgramId = newActiveStudyProgramId,
+            // Round-trips like any other setting, but only a code the server knows: a hand-edited
+            // or newer-version file must not park an unsupported value in the column that
+            // decides the language of every push text (the client reports its own on next start).
+            Language = SupportedLanguages.IsSupported(import.Settings.Language) ? import.Settings.Language : null,
         });
         await db.SaveChangesAsync();
         imported["settings"] = 1;

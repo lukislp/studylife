@@ -782,19 +782,19 @@ public class BackgroundTaskServiceSessionReminderResourceLinkTests
     }
 
     [Fact]
-    public void OneResource_AppendsSingularSuffix()
+    public void OneResource_AppendsCountSuffix()
     {
         var body = BackgroundTaskService.BuildSessionReminderBody("Analysis 1", null, new DateTime(2026, 7, 15, 14, 30, 0), resourceCount: 1);
 
-        Assert.Equal("Analysis 1 um 14:30 Uhr — 1 Ressource für diesen Kurs hinterlegt", body);
+        Assert.Equal("Analysis 1 um 14:30 Uhr — Ressourcen für diesen Kurs hinterlegt: 1", body);
     }
 
     [Fact]
-    public void MultipleResources_AppendsPluralSuffix()
+    public void MultipleResources_AppendsCountSuffix()
     {
         var body = BackgroundTaskService.BuildSessionReminderBody("Analysis 1", "Integrale", new DateTime(2026, 7, 15, 14, 30, 0), resourceCount: 3);
 
-        Assert.Equal("Analysis 1: Integrale um 14:30 Uhr — 3 Ressourcen für diesen Kurs hinterlegt", body);
+        Assert.Equal("Analysis 1: Integrale um 14:30 Uhr — Ressourcen für diesen Kurs hinterlegt: 3", body);
     }
 }
 

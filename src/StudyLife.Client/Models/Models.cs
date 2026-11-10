@@ -69,6 +69,7 @@ public class UserSettings
     public bool NewRecordNotificationsEnabled { get; set; } // Instant feedback on a new personal record, default false (opt-in, new category)
     public bool MonthlyReportEnabled { get; set; } = true; // Monthly recap push, analogous to WeeklyReportEnabled, default true
     public bool? TelemetryConsent { get; set; } // Client telemetry opt-in, null = undecided (consent modal not yet answered)
+    public string? Language { get; set; } // UI language the server knows (it sends its push texts in it), null = not reported yet. NOT set via SaveSettingsAsync, see AppStateService.ReportLanguageAsync
 }
 
 public class TimerMode

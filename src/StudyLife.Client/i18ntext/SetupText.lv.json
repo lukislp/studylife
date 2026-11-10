@@ -294,5 +294,6 @@
   "AriaRemoveCourse": "Noņemt kursu",
   "AriaDeleteTimerMode": "Dzēst taimera režīmu",
   "ReportProblemLink": "Ziņot par problēmu",
-  "ReportProblemHint": "Atver kļūdas ziņojumu GitHub ar iepriekš aizpildītu lietotnes versiju un platformu. Konta dati un žurnāli netiek sūtīti."
+  "ReportProblemHint": "Atver kļūdas ziņojumu GitHub ar iepriekš aizpildītu lietotnes versiju un platformu. Konta dati un žurnāli netiek sūtīti.",
+  "TestNotificationBody": "Paziņojumi darbojas!"
 }

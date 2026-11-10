@@ -36,6 +36,10 @@ public interface ISettingsService
     Task<ServiceResult<UserSettingsDto>> DisableProgressShareAsync();
     Task<ServiceResult<UserSettingsDto>> RegenerateProgressShareTokenAsync();
     Task<ServiceResult<UserSettingsDto>> DismissBuiltInProgramAsync();
+
+    /// <summary>Stores the UI language the client reports (the language of the server's own
+    /// push texts). Invalid for anything outside <see cref="SupportedLanguages.Codes"/>.</summary>
+    Task<ServiceResult> SetLanguageAsync(string? language);
 }
 
 public class SettingsService(
@@ -235,6 +239,28 @@ public class SettingsService(
         return ServiceResult<UserSettingsDto>.Success(ToDto(entity));
     }
 
+    /// <summary>
+    /// The one write path of <c>UserSettingsEntity.Language</c>. Deliberately not part of
+    /// <see cref="SaveAsync"/>: the generic PUT replaces the whole row from whatever the caller
+    /// last read, so a device that read the settings before another device switched language
+    /// would silently switch it back - and the Version precondition would answer a plain language
+    /// report with 409 whenever any other setting moved in between. No Version bump for the same
+    /// reason; the settings cache is bumped so GET shows the new value. Idempotent: a report
+    /// of the value already stored writes nothing.
+    /// </summary>
+    public async Task<ServiceResult> SetLanguageAsync(string? language)
+    {
+        if (!SupportedLanguages.IsSupported(language))
+            return ServiceResult.Invalid("Language must be one of the supported language codes.");
+
+        var entity = await db.Settings.GetOrCreateAsync(db);
+        if (entity.Language == language) return ServiceResult.Success();
+        entity.Language = language;
+        await db.SaveChangesAsync();
+        await settingsCacheVersion.BumpAsync(currentUser.AuthUserId);
+        return ServiceResult.Success();
+    }
+
     // Same CSPRNG technique as the calendar token (AuthSessionService.GenerateToken): 32 bytes,
     // base64url without padding - already URL-safe, because the token travels as part of the
     // client route path (/shared/{token}) and the API path (/api/progress/shared/{token}).
@@ -286,6 +312,7 @@ public class SettingsService(
         LastBackupDownloadAt = e.LastBackupDownloadAt,
         ActiveStudyProgramId = e.ActiveStudyProgramId,
         BuiltInProgramDismissed = e.BuiltInProgramDismissed,
+        Language = e.Language,
         ProgressShareEnabled = e.ProgressShareEnabled,
         ProgressShareToken = e.ProgressShareToken,
     };

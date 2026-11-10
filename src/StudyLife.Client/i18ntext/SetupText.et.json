@@ -294,5 +294,6 @@
   "AriaRemoveCourse": "Eemalda aine",
   "AriaDeleteTimerMode": "Kustuta taimeri režiim",
   "ReportProblemLink": "Teata probleemist",
-  "ReportProblemHint": "Avab GitHubis veateate, kus rakenduse versioon ja platvorm on eeltäidetud. Konto andmeid ega logisid ei saadeta."
+  "ReportProblemHint": "Avab GitHubis veateate, kus rakenduse versioon ja platvorm on eeltäidetud. Konto andmeid ega logisid ei saadeta.",
+  "TestNotificationBody": "Teavitused toimivad!"
 }

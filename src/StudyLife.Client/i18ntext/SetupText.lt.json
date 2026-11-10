@@ -294,5 +294,6 @@
   "AriaRemoveCourse": "Pašalinti kursą",
   "AriaDeleteTimerMode": "Ištrinti laikmačio režimą",
   "ReportProblemLink": "Pranešti apie problemą",
-  "ReportProblemHint": "Atidaro pranešimą apie klaidą GitHub su iš anksto užpildyta programos versija ir platforma. Paskyros duomenys ir žurnalai nesiunčiami."
+  "ReportProblemHint": "Atidaro pranešimą apie klaidą GitHub su iš anksto užpildyta programos versija ir platforma. Paskyros duomenys ir žurnalai nesiunčiami.",
+  "TestNotificationBody": "Pranešimai veikia!"
 }

@@ -4,6 +4,7 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
+using StudyLife.Server.Texts;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Services;
@@ -61,8 +62,9 @@ public partial class BackgroundTaskService
 
         if (!await TryClaimReminderAsync(db, key, now)) return;
 
-        var title = "Willkommen zurück 👋";
-        var body = "Kleine Pause gestern - alles gut, mach weiter wo du warst!";
+        var t = ServerText.For(settings.Language);
+        var title = t.T("comeback.title");
+        var body = t.T("comeback.body");
         var payload = System.Text.Json.JsonSerializer.Serialize(new { title, body });
 
         _logger.LogInformation("Sende Comeback-Nudge '{Key}': {Body}", key, body);
@@ -158,19 +160,20 @@ public partial class BackgroundTaskService
         var ectsTotal = CourseCatalog.CalcTotalEcts(catalog, groupQuotas);
         var ectsEarned = CourseCatalog.CalcEctsEarned(catalog, completedIds, groupQuotas);
 
-        var monthName = reportMonthStart.ToString("MMMM", new CultureInfo("de-DE"));
+        var t = ServerText.For(settings?.Language);
+        var monthName = reportMonthStart.ToString("MMMM", t.Culture);
 
         string body;
         if (reportMonth.Count == 0)
         {
-            body = $"Im {monthName} 0h gelernt - neuer Monat, neue Chance! 💪";
+            body = t.T("monthly.empty", monthName);
         }
         else
         {
             var delta = reportMonthHours - priorMonthHours;
-            body = $"{reportMonthHours:0.#}h im {monthName} ({(delta >= 0 ? "+" : "-")}{Math.Abs(delta):0.#}h vs. Vormonat) · {reportMonth.Count} Sessions · {ectsEarned}/{ectsTotal} ECTS";
+            body = t.T("monthly.body", monthName, reportMonthHours, delta, reportMonth.Count, ectsEarned, ectsTotal);
         }
-        var payload = System.Text.Json.JsonSerializer.Serialize(new { title = "Dein Monatsrückblick 🗓", body });
+        var payload = System.Text.Json.JsonSerializer.Serialize(new { title = t.T("monthly.title"), body });
 
         _logger.LogInformation("Sende Monatsrückblick '{Key}': {Body}", key, body);
 

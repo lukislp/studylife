@@ -294,5 +294,6 @@
   "AriaRemoveCourse": "Kurs entfernen",
   "AriaDeleteTimerMode": "Timer-Modus löschen",
   "ReportProblemLink": "Problem melden",
-  "ReportProblemHint": "Öffnet auf GitHub eine Fehlermeldung mit vorausgefüllter App-Version und Plattform. Es werden keine Kontodaten oder Logs gesendet."
+  "ReportProblemHint": "Öffnet auf GitHub eine Fehlermeldung mit vorausgefüllter App-Version und Plattform. Es werden keine Kontodaten oder Logs gesendet.",
+  "TestNotificationBody": "Benachrichtigungen funktionieren!"
 }

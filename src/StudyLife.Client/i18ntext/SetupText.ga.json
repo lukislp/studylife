@@ -294,5 +294,6 @@
   "AriaRemoveCourse": "Bain an cúrsa",
   "AriaDeleteTimerMode": "Scrios modh an amadóra",
   "ReportProblemLink": "Tuairiscigh fadhb",
-  "ReportProblemHint": "Osclaíonn sé tuarascáil fabht ar GitHub le leagan na haipe agus an ardán réamhlíonta. Ní sheoltar aon sonraí cuntais ná logaí."
+  "ReportProblemHint": "Osclaíonn sé tuarascáil fabht ar GitHub le leagan na haipe agus an ardán réamhlíonta. Ní sheoltar aon sonraí cuntais ná logaí.",
+  "TestNotificationBody": "Tá na fógraí ag obair!"
 }

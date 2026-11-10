@@ -3,6 +3,7 @@
 
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
+using StudyLife.Server.Texts;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Services;
@@ -86,16 +87,17 @@ public partial class BackgroundTaskService
         // Key format ("achievement:{key}:{threshold}") is unchanged for previously-existing tiers,
         // so already-sent reminders don't re-fire; newly reachable tiers (e.g. 1000h, 365-day streak)
         // firing once for already-crossed milestones is expected.
+        var t = ServerText.For(settings?.Language);
         var earned = new List<(string Key, string Body)>();
-        foreach (var t in AchievementCatalog.HoursTiers)
-            if (inputs.TotalHours >= t) earned.Add(($"achievement:{AchievementCatalog.HoursKey}:{t}", $"{t} Stunden gelernt ⏱"));
-        foreach (var t in AchievementCatalog.StreakTiers)
-            if (inputs.LongestStreak >= t) earned.Add(($"achievement:{AchievementCatalog.StreakKey}:{t}", $"{t}-Tage-Streak erreicht 🔥"));
-        foreach (var t in AchievementCatalog.SessionsTiers)
-            if (inputs.TotalSessions >= t) earned.Add(($"achievement:{AchievementCatalog.SessionsKey}:{t}", $"{t} Sessions abgeschlossen ✅"));
-        foreach (var t in AchievementCatalog.CoursesTiers)
-            if (inputs.CoursesCompleted >= t) earned.Add(($"achievement:{AchievementCatalog.CoursesKey}:{t}", t == 1 ? "Ersten Kurs abgeschlossen 🎓" : $"{t} Kurse abgeschlossen 🎓"));
-        if (inputs.AllCoursesDone) earned.Add(($"achievement:{AchievementCatalog.AllCoursesKey}", "Alle Kurse abgeschlossen 🏆"));
+        foreach (var tier in AchievementCatalog.HoursTiers)
+            if (inputs.TotalHours >= tier) earned.Add(($"achievement:{AchievementCatalog.HoursKey}:{tier}", t.T("achievement.hours", tier)));
+        foreach (var tier in AchievementCatalog.StreakTiers)
+            if (inputs.LongestStreak >= tier) earned.Add(($"achievement:{AchievementCatalog.StreakKey}:{tier}", t.T("achievement.streak", tier)));
+        foreach (var tier in AchievementCatalog.SessionsTiers)
+            if (inputs.TotalSessions >= tier) earned.Add(($"achievement:{AchievementCatalog.SessionsKey}:{tier}", t.T("achievement.sessions", tier)));
+        foreach (var tier in AchievementCatalog.CoursesTiers)
+            if (inputs.CoursesCompleted >= tier) earned.Add(($"achievement:{AchievementCatalog.CoursesKey}:{tier}", tier == 1 ? t.T("achievement.firstCourse") : t.T("achievement.courses", tier)));
+        if (inputs.AllCoursesDone) earned.Add(($"achievement:{AchievementCatalog.AllCoursesKey}", t.T("achievement.allCourses")));
 
         if (earned.Count == 0) return;
 
@@ -114,7 +116,7 @@ public partial class BackgroundTaskService
         {
             if (!await TryClaimReminderAsync(db, key, now)) continue;
 
-            var payload = System.Text.Json.JsonSerializer.Serialize(new { title = "Achievement freigeschaltet! 🏆", body });
+            var payload = System.Text.Json.JsonSerializer.Serialize(new { title = t.T("achievement.title"), body });
 
             _logger.LogInformation("Sende Achievement-Push '{Key}': {Body}", key, body);
 
@@ -189,11 +191,12 @@ public partial class BackgroundTaskService
             .Where(s => s.StartTime.Date >= lastWeekStart && s.StartTime.Date < weekStart)
             .Sum(s => (s.EndTime - s.StartTime).TotalHours);
 
+        var t = ServerText.For(settings?.Language);
         string body;
         if (!thisWeek.Any())
         {
             // Deliberately don't hide an empty week, but give a gentle nudge instead.
-            body = "Diese Woche 0h gelernt - nächste Woche wird besser! 💪";
+            body = t.T("weekly.empty");
         }
         else
         {
@@ -203,9 +206,9 @@ public partial class BackgroundTaskService
                 .OrderByDescending(g => g.Sum(s => (s.EndTime - s.StartTime).TotalHours))
                 .First().Key;
             var delta = thisWeekHours - lastWeekHours;
-            body = $"{thisWeekHours:0.#}h gelernt ({(delta >= 0 ? "+" : "-")}{Math.Abs(delta):0.#}h vs. Vorwoche) · Streak: {streak} Tage · Top-Kurs: {topCourse}";
+            body = t.T("weekly.body", thisWeekHours, delta, streak, topCourse);
         }
-        var payload = System.Text.Json.JsonSerializer.Serialize(new { title = "Dein Wochenrückblick 📊", body });
+        var payload = System.Text.Json.JsonSerializer.Serialize(new { title = t.T("weekly.title"), body });
 
         _logger.LogInformation("Sende Wochenrückblick '{Key}': {Body}", key, body);
 

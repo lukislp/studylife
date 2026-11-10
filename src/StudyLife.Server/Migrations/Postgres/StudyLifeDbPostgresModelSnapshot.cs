@@ -958,6 +958,9 @@ namespace StudyLife.Server.Migrations.Postgres
                     b.Property<int>("InactivityThresholdDays")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Language")
+                        .HasColumnType("text");
+
                     b.Property<DateTime?>("LastBackupDownloadAt")
                         .HasColumnType("timestamp without time zone");
 

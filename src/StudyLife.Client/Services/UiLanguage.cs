@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Lukas Körber
 // SPDX-License-Identifier: AGPL-3.0-only
 
+using StudyLife.Shared;
+
 namespace StudyLife.Client.Services;
 
 /// <summary>One UI language of the app: the i18ntext table suffix, the flag and the native name
@@ -8,8 +10,10 @@ namespace StudyLife.Client.Services;
 public sealed record UiLanguageInfo(string Code, string Flag, string Name);
 
 /// <summary>
-/// The single registry of the UI languages and the single rule that decides which one a start
-/// uses. Pure on purpose (no JS, no DI, no I/O): <see cref="UiLanguageStartup"/> gathers the
+/// The display data of the UI languages (flag, native name) and the single rule that decides
+/// which one a start uses. The language codes and the tag matching themselves live once in
+/// <see cref="SupportedLanguages"/> (shared with the server, which validates and stores the
+/// user's language); a test keeps <see cref="All"/> in step with it. Pure on purpose (no JS, no DI, no I/O): <see cref="UiLanguageStartup"/> gathers the
 /// inputs, the web client and the native app shell both call it, and everything that wants the
 /// list of languages (the popup in MainLayout, the matching below) reads <see cref="All"/>.
 /// A test keeps <see cref="All"/> in step with the language files under i18ntext/.
@@ -18,11 +22,11 @@ public static class UiLanguage
 {
     /// <summary>The language of a start that has no stored choice and no usable device language:
     /// the neutral one, not the maintainer's own.</summary>
-    public const string Fallback = "en";
+    public const string Fallback = SupportedLanguages.Fallback;
 
     /// <summary>What an existing user who never stored a choice has been seeing: before the
     /// device language was honoured, the first start forced German. See <see cref="Resolve"/>.</summary>
-    public const string LegacyDefault = "de";
+    public const string LegacyDefault = SupportedLanguages.LegacyDefault;
 
     /// <summary>The supported languages in popup order (English first).</summary>
     public static IReadOnlyList<UiLanguageInfo> All { get; } = new UiLanguageInfo[]
@@ -55,21 +59,9 @@ public static class UiLanguage
         new("ru", "🇷🇺", "Русский"),
     };
 
-    /// <summary>
-    /// Matches one BCP 47 language tag against the supported languages: the whole tag first, then
-    /// its primary language subtag (<c>pt-BR</c> and <c>pt_PT</c> give <c>pt</c>, <c>de-AT</c> gives
-    /// <c>de</c>). Returns null when the language is not supported (Norwegian, Chinese, ...), so a
-    /// caller can go on with the next preference. None of the tables distinguishes regions or
-    /// scripts, so there is nothing finer to match on.
-    /// </summary>
-    public static string? Match(string? tag)
-    {
-        if (string.IsNullOrWhiteSpace(tag)) return null;
-        var normalized = tag.Trim().Replace('_', '-').ToLowerInvariant();
-        if (Find(normalized) is { } exact) return exact;
-        var dash = normalized.IndexOf('-');
-        return dash > 0 ? Find(normalized[..dash]) : null;
-    }
+    /// <summary>Matches one BCP 47 language tag against the supported languages, see
+    /// <see cref="SupportedLanguages.Match"/>.</summary>
+    public static string? Match(string? tag) => SupportedLanguages.Match(tag);
 
     /// <summary>
     /// The language a start uses:
@@ -95,14 +87,5 @@ public static class UiLanguage
             }
         }
         return Fallback;
-    }
-
-    private static string? Find(string code)
-    {
-        foreach (var language in All)
-        {
-            if (language.Code == code) return language.Code;
-        }
-        return null;
     }
 }

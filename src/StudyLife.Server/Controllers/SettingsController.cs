@@ -55,6 +55,16 @@ public class SettingsController : ControllerBase
         (await _settings.SaveAsync(dto)).ToActionResult(this);
 
     /// <summary>
+    /// The client reports the UI language it now shows (on start and when the user switches), so
+    /// the server can send its own texts in it - see SettingsService.SetLanguageAsync for why
+    /// this is not part of the generic PUT. Session only: an API key has no UI language to report.
+    /// </summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpPut("language")]
+    public async Task<IActionResult> SetLanguage(SetLanguageRequest request) =>
+        (await _settings.SetLanguageAsync(request.Language)).ToNoContentResult(this);
+
+    /// <summary>
     /// Activates the read-only progress link (ProgressController.GetShared) and always
     /// generates a new token while doing so - Disable now also deletes the token (see there),
     /// so there's never an "old" token left that could be reused.

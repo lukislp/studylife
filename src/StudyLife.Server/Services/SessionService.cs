@@ -4,6 +4,7 @@
 using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
+using StudyLife.Server.Texts;
 using StudyLife.Shared;
 using WebPush;
 
@@ -395,8 +396,10 @@ public class SessionService : ISessionService
         var subscriptions = await _db.PushSubscriptions.ToListAsync();
         if (subscriptions.Count == 0) return;
 
-        var title = "Neuer Rekord! 🏆";
-        var body = $"Neuer Rekord: {duration.TotalHours:0.#} Stunden am Stück!";
+        var language = await _db.Settings.AsNoTracking().Select(s => s.Language).FirstOrDefaultAsync();
+        var t = ServerText.For(language);
+        var title = t.T("record.title");
+        var body = t.T("record.body", duration.TotalHours);
         var payload = System.Text.Json.JsonSerializer.Serialize(new { title, body });
 
         var client = new WebPushClient();

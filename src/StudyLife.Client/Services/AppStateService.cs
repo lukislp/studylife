@@ -1328,6 +1328,32 @@ public class AppStateService : IAsyncDisposable
     }
 
     /// <summary>
+    /// Tells the server which language this client shows, so the texts the server sends on its own
+    /// (push notifications, Live Activity) come in that language. Called on start after sign-in and
+    /// whenever the user picks a language; does nothing when the server already has this language,
+    /// so a normal start costs no request beyond the settings the app reads anyway. Its own
+    /// endpoint instead of a field of the full-row settings PUT (see SettingsService.SetLanguageAsync).
+    /// Best effort and silent: offline, an older server (404/405), the demo instance's write block
+    /// (403) or a signed-out state just mean "not reported" - the next start tries again.
+    /// </summary>
+    public async Task ReportLanguageAsync(string language)
+    {
+        if (!SupportedLanguages.IsSupported(language)) return;
+        try
+        {
+            var settings = await GetSettingsAsync();
+            if (string.Equals(settings.Language, language, StringComparison.Ordinal)) return;
+            var response = await _http.PutAsJsonAsync("api/settings/language", new SetLanguageRequest { Language = language }, StudyLifeJson.Options);
+            if (!response.IsSuccessStatusCode) return;
+            // Mirror the server state locally (and in the poll's comparison hash, which includes
+            // the field) so the next poll does not report a settings change nobody made.
+            settings.Language = language;
+            _settingsHash = ComputeSettingsHash(ToDto(settings));
+        }
+        catch { /* best effort, see above */ }
+    }
+
+    /// <summary>
     /// 409 handling for SaveSettingsAsync (audit S4/S5 concurrency semantics): our Version was
     /// stale, meaning another device/tab saved settings after this client last fetched. Chosen
     /// semantics: refetch the server's current state (this also updates the local cache/hash and
@@ -1697,6 +1723,7 @@ public class AppStateService : IAsyncDisposable
         TelemetryConsent = d.TelemetryConsent,
         LastBackupDownloadAt = d.LastBackupDownloadAt,
         ActiveStudyProgramId = d.ActiveStudyProgramId,
+        Language = d.Language,
         ProgressShareEnabled = d.ProgressShareEnabled,
         ProgressShareToken = d.ProgressShareToken,
     };
@@ -1741,6 +1768,7 @@ public class AppStateService : IAsyncDisposable
         TelemetryConsent = s.TelemetryConsent,
         LastBackupDownloadAt = s.LastBackupDownloadAt,
         ActiveStudyProgramId = s.ActiveStudyProgramId,
+        Language = s.Language,
         ProgressShareEnabled = s.ProgressShareEnabled,
         ProgressShareToken = s.ProgressShareToken,
     };
