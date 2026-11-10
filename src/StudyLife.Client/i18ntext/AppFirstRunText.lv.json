@@ -6,5 +6,9 @@
   "Connect": "Savienot",
   "InvalidUrl": "Tas nav derīgs URL.",
   "UnexpectedResponse": "Serveris atbildēja, bet negaidīti (HTTP {0}). Pieskarieties vēlreiz, lai to tomēr izmantotu.",
-  "ServerUnreachable": "Serveris nav pieejams. Pieskarieties vēlreiz, lai tomēr izmantotu šo URL."
+  "ServerUnreachable": "Serveris nav pieejams. Pieskarieties vēlreiz, lai tomēr izmantotu šo URL.",
+  "Intro": "StudyLife tiek mitināts pašrocīgi: centrāla pakalpojuma nav. Lietotnei vajadzīga tava paša StudyLife servera adrese vai tā servera adrese, ko uztur tava skola, universitāte vai organizācija.",
+  "SetupGuideLink": "Kā iestatīt savu serveri",
+  "EmptyUrl": "Vispirms ievadi sava StudyLife servera adresi.",
+  "NotStudyLifeServer": "Šajā adresē kaut kas atbild, bet tas neizskatās pēc StudyLife servera. Pārbaudi adresi vai pieskaries vēlreiz, lai to tomēr izmantotu."
 }

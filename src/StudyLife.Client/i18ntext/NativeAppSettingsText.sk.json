@@ -1,0 +1,15 @@
+{
+  "ServerHeading": "Server",
+  "ServerConnectedTo": "Pripojené k {0}",
+  "ChangeServerButton": "Zmeniť server",
+  "ChangeServerConfirmTitle": "Zmeniť server?",
+  "ChangeServerConfirmBody": "Budeš odhlásený z {0} a kópie, ktoré StudyLife uchováva v tomto zariadení (widgety, Apple Watch, vyhľadávanie), sa odstránia. Tvoj účet a dáta na serveri zostanú bez zmeny.",
+  "ChangeServerConfirmButton": "Odhlásiť a zmeniť",
+  "Cancel": "Zrušiť",
+  "ChangeServerWorking": "Odhlasujem …",
+  "HealthHeading": "Apple Health",
+  "HealthDesc": "StudyLife môže ukladať dokončené sústredené kolá ako minúty všímavosti a zobrazovať spánok, variabilitu srdcovej frekvencie a kroky vedľa tvojho času učenia. Dáta zostávajú v tomto zariadení.",
+  "HealthConnectButton": "Pripojiť Apple Health",
+  "HealthConnected": "Pripojené. Čo smie StudyLife v aplikácii Zdravie čítať a zapisovať, môžeš zmeniť tam.",
+  "HealthDeclined": "Prístup k Apple Health je vypnutý. Zapneš ho tak, že otvoríš aplikáciu Zdravie, klepneš na profilový obrázok, vyberieš Aplikácie a potom StudyLife."
+}

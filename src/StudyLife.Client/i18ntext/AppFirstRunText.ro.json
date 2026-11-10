@@ -6,5 +6,9 @@
   "Connect": "Conectează",
   "InvalidUrl": "Acesta nu este un URL valid.",
   "UnexpectedResponse": "Serverul a răspuns, dar în mod neașteptat (HTTP {0}). Atinge din nou pentru a-l folosi oricum.",
-  "ServerUnreachable": "Serverul nu poate fi contactat. Atinge din nou pentru a folosi oricum acest URL."
+  "ServerUnreachable": "Serverul nu poate fi contactat. Atinge din nou pentru a folosi oricum acest URL.",
+  "Intro": "StudyLife se găzduiește singur: nu există un serviciu central. Pentru aplicație ai nevoie de adresa propriului tău server StudyLife sau a celui pe care îl administrează școala, universitatea sau organizația ta.",
+  "SetupGuideLink": "Cum îți configurezi propriul server",
+  "EmptyUrl": "Introdu mai întâi adresa serverului tău StudyLife.",
+  "NotStudyLifeServer": "La această adresă răspunde ceva, dar nu pare un server StudyLife. Verific-o sau atinge din nou pentru a o folosi oricum."
 }

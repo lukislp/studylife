@@ -1,0 +1,15 @@
+{
+  "ServerHeading": "Server",
+  "ServerConnectedTo": "Verbonden met {0}",
+  "ChangeServerButton": "Server wijzigen",
+  "ChangeServerConfirmTitle": "Server wijzigen?",
+  "ChangeServerConfirmBody": "Je wordt afgemeld bij {0} en de kopieën die StudyLife op dit apparaat bewaart (widgets, Apple Watch, zoeken) worden verwijderd. Je account en je gegevens op de server blijven ongewijzigd.",
+  "ChangeServerConfirmButton": "Afmelden en wijzigen",
+  "Cancel": "Annuleren",
+  "ChangeServerWorking": "Afmelden …",
+  "HealthHeading": "Apple Gezondheid",
+  "HealthDesc": "StudyLife kan voltooide focusrondes opslaan als mindfulminuten en slaap, hartslagvariabiliteit en stappen naast je studietijd tonen. De gegevens blijven op dit apparaat.",
+  "HealthConnectButton": "Apple Gezondheid koppelen",
+  "HealthConnected": "Gekoppeld. Wat StudyLife mag lezen en schrijven, wijzig je in de Gezondheid-app.",
+  "HealthDeclined": "Toegang tot Apple Gezondheid staat uit. Zet het aan door de Gezondheid-app te openen, op je profielfoto te tikken, Apps te kiezen en dan StudyLife."
+}

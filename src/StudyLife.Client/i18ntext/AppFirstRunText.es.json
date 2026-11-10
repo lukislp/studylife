@@ -6,5 +6,9 @@
   "Connect": "Conectar",
   "InvalidUrl": "Esa no es una URL válida.",
   "UnexpectedResponse": "El servidor respondió, pero de forma inesperada (HTTP {0}). Toca de nuevo para usarlo de todos modos.",
-  "ServerUnreachable": "No se puede acceder al servidor. Toca de nuevo para usar la URL de todos modos."
+  "ServerUnreachable": "No se puede acceder al servidor. Toca de nuevo para usar la URL de todos modos.",
+  "Intro": "StudyLife se aloja por cuenta propia: no existe un servicio central. Para usar la app necesitas la dirección de tu propio servidor de StudyLife o del que gestiona tu centro, universidad u organización.",
+  "SetupGuideLink": "Cómo configurar tu propio servidor",
+  "EmptyUrl": "Primero escribe la dirección de tu servidor de StudyLife.",
+  "NotStudyLifeServer": "Algo responde en esa dirección, pero no parece un servidor de StudyLife. Compruébala o toca de nuevo para usarla de todos modos."
 }

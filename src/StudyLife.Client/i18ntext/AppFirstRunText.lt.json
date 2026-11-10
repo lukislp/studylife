@@ -6,5 +6,9 @@
   "Connect": "Prijungti",
   "InvalidUrl": "Tai nėra galiojantis URL.",
   "UnexpectedResponse": "Serveris atsakė, bet netikėtai (HTTP {0}). Palieskite dar kartą, kad vis tiek jį naudotumėte.",
-  "ServerUnreachable": "Serveris nepasiekiamas. Palieskite dar kartą, kad vis tiek naudotumėte šį URL."
+  "ServerUnreachable": "Serveris nepasiekiamas. Palieskite dar kartą, kad vis tiek naudotumėte šį URL.",
+  "Intro": "„StudyLife“ veikia tavo paties talpinamas: centrinės paslaugos nėra. Programėlei reikia tavo paties „StudyLife“ serverio adreso arba serverio, kurį prižiūri tavo mokykla, universitetas ar organizacija.",
+  "SetupGuideLink": "Kaip įsidiegti savo serverį",
+  "EmptyUrl": "Pirmiausia įvesk savo „StudyLife“ serverio adresą.",
+  "NotStudyLifeServer": "Šiuo adresu kažkas atsako, bet tai neatrodo kaip „StudyLife“ serveris. Patikrink adresą arba bakstelėk dar kartą, kad vis tiek jį naudotum."
 }

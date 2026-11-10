@@ -1,0 +1,15 @@
+{
+  "ServerHeading": "Palvelin",
+  "ServerConnectedTo": "Yhdistetty: {0}",
+  "ChangeServerButton": "Vaihda palvelinta",
+  "ChangeServerConfirmTitle": "Vaihdetaanko palvelinta?",
+  "ChangeServerConfirmBody": "Sinut kirjataan ulos palvelimelta {0}, ja kopiot, joita StudyLife säilyttää tällä laitteella (widgetit, Apple Watch, haku), poistetaan. Tilisi ja tietosi palvelimella säilyvät ennallaan.",
+  "ChangeServerConfirmButton": "Kirjaudu ulos ja vaihda",
+  "Cancel": "Peruuta",
+  "ChangeServerWorking": "Kirjaudutaan ulos …",
+  "HealthHeading": "Apple Health",
+  "HealthDesc": "StudyLife voi tallentaa päättyneet keskittymiskierrokset tietoisuusminuutteina ja näyttää unen, sydämen sykevälin vaihtelun ja askeleet opiskeluaikasi rinnalla. Tiedot pysyvät tällä laitteella.",
+  "HealthConnectButton": "Yhdistä Apple Health",
+  "HealthConnected": "Yhdistetty. Sen, mitä StudyLife saa lukea ja kirjoittaa, voit muuttaa Terveys-sovelluksessa.",
+  "HealthDeclined": "Pääsy Apple Healthiin on pois päältä. Ota se käyttöön avaamalla Terveys-sovellus, napauttamalla profiilikuvaasi, valitsemalla Sovellukset ja sitten StudyLife."
+}

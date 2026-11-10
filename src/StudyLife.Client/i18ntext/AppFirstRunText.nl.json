@@ -6,5 +6,9 @@
   "Connect": "Verbinden",
   "InvalidUrl": "Dat is geen geldige URL.",
   "UnexpectedResponse": "De server heeft gereageerd, maar onverwacht (HTTP {0}). Tik nogmaals om hem toch te gebruiken.",
-  "ServerUnreachable": "Server niet bereikbaar. Tik nogmaals om de URL toch te gebruiken."
+  "ServerUnreachable": "Server niet bereikbaar. Tik nogmaals om de URL toch te gebruiken.",
+  "Intro": "StudyLife draai je zelf: er is geen centrale dienst. Voor de app heb je het adres nodig van je eigen StudyLife-server, of van de server die je school, universiteit of organisatie beheert.",
+  "SetupGuideLink": "Zo zet je je eigen server op",
+  "EmptyUrl": "Vul eerst het adres van je StudyLife-server in.",
+  "NotStudyLifeServer": "Op dit adres antwoordt iets, maar het lijkt geen StudyLife-server. Controleer het adres of tik nogmaals om het toch te gebruiken."
 }

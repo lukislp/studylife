@@ -1,0 +1,15 @@
+{
+  "ServerHeading": "Serveris",
+  "ServerConnectedTo": "Prisijungta prie {0}",
+  "ChangeServerButton": "Keisti serverį",
+  "ChangeServerConfirmTitle": "Keisti serverį?",
+  "ChangeServerConfirmBody": "Būsi atjungtas nuo {0}, o kopijos, kurias „StudyLife“ laiko šiame įrenginyje (valdikliai, „Apple Watch“, paieška), bus pašalintos. Tavo paskyra ir duomenys serveryje nesikeis.",
+  "ChangeServerConfirmButton": "Atsijungti ir pakeisti",
+  "Cancel": "Atšaukti",
+  "ChangeServerWorking": "Atsijungiama …",
+  "HealthHeading": "Apple Health",
+  "HealthDesc": "„StudyLife“ gali įrašyti baigtus susitelkimo ciklus kaip dėmesingumo minutes ir rodyti miegą, širdies ritmo kintamumą bei žingsnius šalia tavo mokymosi laiko. Duomenys lieka šiame įrenginyje.",
+  "HealthConnectButton": "Prijungti „Apple Health“",
+  "HealthConnected": "Prijungta. Ką „StudyLife“ gali skaityti ir rašyti, gali pakeisti programėlėje „Health“.",
+  "HealthDeclined": "Prieiga prie „Apple Health“ išjungta. Norėdamas ją įjungti, atidaryk programėlę „Health“, bakstelėk savo profilio nuotrauką, pasirink „Apps“, tada „StudyLife“."
+}

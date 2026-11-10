@@ -1,0 +1,15 @@
+{
+  "ServerHeading": "Сервер",
+  "ServerConnectedTo": "Підключено до {0}",
+  "ChangeServerButton": "Змінити сервер",
+  "ChangeServerConfirmTitle": "Змінити сервер?",
+  "ChangeServerConfirmBody": "Ти вийдеш із {0}, а копії, які StudyLife зберігає на цьому пристрої (віджети, Apple Watch, пошук), буде видалено. Твій обліковий запис і дані на сервері залишаться без змін.",
+  "ChangeServerConfirmButton": "Вийти й змінити",
+  "Cancel": "Скасувати",
+  "ChangeServerWorking": "Вихід …",
+  "HealthHeading": "Apple Health",
+  "HealthDesc": "StudyLife може зберігати завершені раунди фокусу як хвилини усвідомленості та показувати сон, варіабельність пульсу й кроки поруч із часом навчання. Дані залишаються на цьому пристрої.",
+  "HealthConnectButton": "Підключити Apple Health",
+  "HealthConnected": "Підключено. Що StudyLife може читати й записувати, можна змінити в застосунку «Здоров'я».",
+  "HealthDeclined": "Доступ до Apple Health вимкнено. Щоб увімкнути його, відкрий застосунок «Здоров'я», торкнися фото профілю, обери «Застосунки», потім StudyLife."
+}

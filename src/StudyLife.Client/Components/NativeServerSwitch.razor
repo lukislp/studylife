@@ -1,0 +1,98 @@
+@*
+  SPDX-FileCopyrightText: 2026 Lukas Körber
+  SPDX-License-Identifier: AGPL-3.0-only
+*@
+@using StudyLife.Client.Services
+@using StudyLife.Client.I18nText
+@inject INativeAppAuth NativeAuth
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+@* "Connected to <host> - Change server" with its confirmation, for native app shells only (renders
+   nothing in the browser). Used by the Setup card and by the native shell next to its sign-in screen,
+   so the way out of a wrong server exists signed in and signed out. The confirmation is a labelled
+   modal dialog: focus moves into it, Escape cancels, every control is a real button. What happens
+   after the confirmation is the shell's business (INativeAppAuth.ChangeServerAsync). *@
+
+@if (NativeAuth.ServerHost is { } host && T is not null)
+{
+    <div class="@(Compact ? "native-server-switch native-server-switch-compact" : "native-server-switch")">
+        <span class="ss-desc">@string.Format(T.ServerConnectedTo ?? "", host)</span>
+        <button type="button" class="btn-secondary" style="@(Compact ? "padding:0.25rem 0.6rem;font-size:0.85rem" : null)" @onclick="Open">@T.ChangeServerButton</button>
+    </div>
+
+    @if (_open)
+    {
+        <div class="modal-overlay" @onclick="Cancel">
+            <div class="modal" role="dialog" aria-modal="true" aria-labelledby="native-server-switch-title"
+                 tabindex="-1" @ref="_dialog" @onclick:stopPropagation="true" @onkeydown="OnKeyDown">
+                <div class="modal-header">
+                    <h3 id="native-server-switch-title">@T.ChangeServerConfirmTitle</h3>
+                </div>
+                <div class="modal-body">
+                    <p class="ss-desc">@string.Format(T.ChangeServerConfirmBody ?? "", host)</p>
+                    @if (_working)
+                    {
+                        <p class="ss-desc" role="status">@T.ChangeServerWorking</p>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" @onclick="Cancel" disabled="@_working">@T.Cancel</button>
+                    <button type="button" class="btn-danger" @onclick="ConfirmAsync" disabled="@_working">@T.ChangeServerConfirmButton</button>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    /// <summary>Smaller, link-style rendering for the shell's sign-in footer.</summary>
+    [Parameter] public bool Compact { get; set; }
+
+    private NativeAppSettingsText? T;
+    private bool _open;
+    private bool _working;
+    private bool _focusDialog;
+    private ElementReference _dialog;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (NativeAuth.ServerHost is null) return;
+        T = await I18nText.GetTextTableAsync<NativeAppSettingsText>(this);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_focusDialog) return;
+        _focusDialog = false;
+        try { await _dialog.FocusAsync(); }
+        catch { /* dialog already gone */ }
+    }
+
+    private void Open()
+    {
+        _open = true;
+        _focusDialog = true;
+    }
+
+    private void Cancel()
+    {
+        if (!_working) _open = false;
+    }
+
+    private void OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape") Cancel();
+    }
+
+    private async Task ConfirmAsync()
+    {
+        _working = true;
+        try { await NativeAuth.ChangeServerAsync(); }
+        finally
+        {
+            // The shell normally reloads the whole page; if it did not (a failure), the dialog is usable again.
+            _working = false;
+            _open = false;
+        }
+    }
+}
