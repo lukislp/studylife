@@ -565,6 +565,15 @@ Copyright (C) 2026 Lukas Koerber
 must make your modified source available to its users. The Home Assistant integration is
 maintained as a separate, MIT-licensed repository: see [Home Assistant Integration](#home-assistant-integration).
 
+Setup has an **About** section (web and native apps) with the version of the server and of the app
+you are running, the licence, a link to the source code of exactly that build (the commit or release
+tag it was made from - AGPL-3.0 section 13) and the third-party notices of the build. The notices
+are [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md) in this repository: the NuGet packages the
+server and the browser client use, with licence, copyright holder and licence text, the self-hosted
+fonts and the .NET runtime. The file is generated from the build's resolved package graph by
+`tools/check-licences.py` and CI fails when it is stale or a package carries an unknown or
+GPL/AGPL/LGPL licence (see [CONTRIBUTING.md](CONTRIBUTING.md#third-party-notices)).
+
 Every file states its licence and copyright following the [REUSE Specification](https://reuse.software/)
 (SPDX headers in source files, [`REUSE.toml`](REUSE.toml) for the rest, licence texts in
 [`LICENSES/`](LICENSES/)), checked by `reuse lint` in CI. The self-hosted DM Sans and DM Mono

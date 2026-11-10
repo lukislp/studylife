@@ -1,0 +1,22 @@
+{
+  "Heading": "Tietoja StudyLifestä",
+  "Desc": "Käyttämäsi ohjelmiston versio, lisenssi ja lähdekoodi.",
+  "ServerLabel": "Palvelin",
+  "BrowserLabel": "Käyttöliittymä tässä selaimessa",
+  "AppLabel": "Sovellus",
+  "Unknown": "tuntematon",
+  "SourceLink": "Lähdekoodi",
+  "SourceExact": "Täsmälleen tämän version lähdekoodi",
+  "SourceRepo": "Lähdekoodivarasto (tällä koontiversiolla ei ole julkaisutunnistetta)",
+  "NewTab": "avautuu uuteen välilehteen",
+  "LicenceLabel": "Lisenssi",
+  "LicenceMeaning": "Saat käyttää, tutkia, muokata ja jakaa StudyLifeä; jos ajat muokattua versiota muille, sinun on tarjottava heille myös sen lähdekoodi.",
+  "NoticesHeading": "Kolmannen osapuolen ohjelmistoja koskevat ilmoitukset",
+  "NoticesDesc": "Tämän koontiversion avoimen lähdekoodin osat lisensseineen ja tekijänoikeuksien haltijoineen.",
+  "ShowNotices": "Näytä ilmoitukset",
+  "HideNotices": "Piilota ilmoitukset",
+  "Loading": "Ladataan…",
+  "NoticesFailed": "Ilmoituksia ei voitu ladata. Löydät ne tiedostosta THIRD-PARTY-NOTICES.md lähdekoodivarastosta.",
+  "FromApp": "Tämän sovelluskoontiversion ilmoitukset",
+  "FromServer": "Palvelimen ilmoitukset"
+}

@@ -48,3 +48,11 @@ SPDX-FileCopyrightText = [
   "2020 The DM Mono Project Authors (https://www.github.com/googlefonts/dm-mono)",
 ]
 SPDX-License-Identifier = "OFL-1.1"
+
+# Licence texts that THIRD-PARTY-NOTICES.md embeds (tools/licences/texts/): the standard texts of
+# the SPDX licences of third-party packages, copied verbatim and without a copyright line of their
+# own; the project only vouches for the collection.
+[[annotations]]
+path = "tools/licences/texts/*.txt"
+SPDX-FileCopyrightText = "2026 Lukas Körber"
+SPDX-License-Identifier = "AGPL-3.0-only"

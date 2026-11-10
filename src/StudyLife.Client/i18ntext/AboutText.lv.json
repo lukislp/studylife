@@ -1,0 +1,22 @@
+{
+  "Heading": "Par StudyLife",
+  "Desc": "Jūsu izmantotās programmatūras versija, licence un pirmkods.",
+  "ServerLabel": "Serveris",
+  "BrowserLabel": "Saskarne šajā pārlūkprogrammā",
+  "AppLabel": "Lietotne",
+  "Unknown": "nezināma",
+  "SourceLink": "Pirmkods",
+  "SourceExact": "Tieši šīs versijas pirmkods",
+  "SourceRepo": "Pirmkoda repozitorijs (šim būvējumam nav izlaides atzīmes)",
+  "NewTab": "atveras jaunā cilnē",
+  "LicenceLabel": "Licence",
+  "LicenceMeaning": "StudyLife drīkst izmantot, pētīt, mainīt un izplatīt; ja citiem darbinātu pārveidotu versiju, jums jāpiedāvā arī tās pirmkods.",
+  "NoticesHeading": "Paziņojumi par trešo pušu programmatūru",
+  "NoticesDesc": "Šī būvējuma atvērtā pirmkoda komponenti ar to licencēm un autortiesību īpašniekiem.",
+  "ShowNotices": "Rādīt paziņojumus",
+  "HideNotices": "Slēpt paziņojumus",
+  "Loading": "Notiek ielāde…",
+  "NoticesFailed": "Paziņojumus neizdevās ielādēt. Tos var atrast pirmkoda repozitorija failā THIRD-PARTY-NOTICES.md.",
+  "FromApp": "Šī lietotnes būvējuma paziņojumi",
+  "FromServer": "Servera paziņojumi"
+}

@@ -1,0 +1,22 @@
+{
+  "Heading": "O aplikacji StudyLife",
+  "Desc": "Wersja, licencja i kod źródłowy oprogramowania, z którego korzystasz.",
+  "ServerLabel": "Serwer",
+  "BrowserLabel": "Interfejs w tej przeglądarce",
+  "AppLabel": "Aplikacja",
+  "Unknown": "nieznana",
+  "SourceLink": "Kod źródłowy",
+  "SourceExact": "Kod źródłowy dokładnie tej wersji",
+  "SourceRepo": "Repozytorium kodu źródłowego (ta kompilacja nie ma znacznika wydania)",
+  "NewTab": "otwiera się w nowej karcie",
+  "LicenceLabel": "Licencja",
+  "LicenceMeaning": "Możesz używać, badać, zmieniać i udostępniać StudyLife; jeśli uruchamiasz zmienioną wersję dla innych osób, musisz zaoferować im również jej kod źródłowy.",
+  "NoticesHeading": "Informacje o oprogramowaniu osób trzecich",
+  "NoticesDesc": "Komponenty open source w tej kompilacji wraz z ich licencjami i posiadaczami praw autorskich.",
+  "ShowNotices": "Pokaż informacje",
+  "HideNotices": "Ukryj informacje",
+  "Loading": "Ładowanie…",
+  "NoticesFailed": "Nie udało się wczytać informacji. Znajdziesz je w pliku THIRD-PARTY-NOTICES.md w repozytorium kodu źródłowego.",
+  "FromApp": "Informacje o tej kompilacji aplikacji",
+  "FromServer": "Informacje o serwerze"
+}

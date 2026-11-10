@@ -1,0 +1,70 @@
+@*
+  SPDX-FileCopyrightText: 2026 Lukas Körber
+  SPDX-License-Identifier: AGPL-3.0-only
+*@
+@* "About" section of Setup: what is running (versions), under which licence, where the source code
+   of exactly that build is (AGPL-3.0 section 13), and the third-party notices of the build in front
+   of the user. Setup.razor merely places it; the data comes from AboutState / AboutSource and all
+   decisions are in SetupAboutCard.razor.cs - this file only renders.
+
+   The notices are shown as preformatted TEXT (never as Markdown or HTML): Razor escapes them, so a
+   file that is not ours cannot inject anything. Collapsed by default behind a real button
+   (aria-expanded), the text sits in a focusable, labelled region so it can be scrolled with the
+   keyboard (WCAG 2.2: 2.1.1, 4.1.2). Read-only, so it works unchanged in demo mode. *@
+
+<div class="setup-section about-card" id="about">
+    <div class="ss-label">@T?.Heading</div>
+    @if (T is not null)
+    {
+        <p class="ss-desc">@T.Desc</p>
+
+        <dl class="about-list">
+            @foreach (var build in _builds)
+            {
+                <div class="about-row">
+                    <dt>@BuildLabel(build)</dt>
+                    <dd>
+                        <span class="about-version">@VersionText(build)</span>
+                        <a href="@build.Source.Url" target="_blank" rel="noopener noreferrer"
+                           title="@SourceTitle(build)" aria-label="@SourceAriaLabel(build)">@T.SourceLink</a>
+                    </dd>
+                </div>
+            }
+            <div class="about-row">
+                <dt>@T.LicenceLabel</dt>
+                <dd>
+                    <a href="@LicenceUrl" target="_blank" rel="noopener noreferrer"
+                       aria-label="@LicenceAriaLabel">@LicenceName</a>
+                </dd>
+            </div>
+        </dl>
+        <p class="ss-desc">@T.LicenceMeaning</p>
+
+        <h3 class="about-sub" id="about-notices-title">@T.NoticesHeading</h3>
+        <p class="ss-desc">@T.NoticesDesc</p>
+        <button type="button" class="btn-secondary" aria-expanded="@ExpandedValue"
+                aria-controls="about-notices" @onclick="ToggleNoticesAsync">
+            @ToggleLabel
+        </button>
+
+        <div id="about-notices" class="about-notices" hidden="@Collapsed">
+            @if (_open)
+            {
+                @if (_loading)
+                {
+                    <p class="ss-desc" role="status">@T.Loading</p>
+                }
+                else if (_notices is null)
+                {
+                    <p class="ss-desc" role="alert">@T.NoticesFailed</p>
+                }
+                else
+                {
+                    <p class="about-origin">@OriginText</p>
+                    <div class="about-notices-text" role="region" tabindex="0"
+                         aria-labelledby="about-notices-title"><pre>@_notices.Text</pre></div>
+                }
+            }
+        </div>
+    }
+</div>
