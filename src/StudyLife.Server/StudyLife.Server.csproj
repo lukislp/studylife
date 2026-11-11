@@ -93,14 +93,14 @@
          in Prometheus format on a dedicated non-public listener (Telemetry:MetricsPort). The
          Prometheus exporter has been "beta" for years while being the de-facto standard; a
          switch to OTLP/another backend is a package + one-line change here, not a code change. -->
-    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.20.1" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.21.0" />
     <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.20.2" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.20.2" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.20.1" />
     <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.18.0-beta.1" />
     <!-- Traces (phase 4): OTLP export to the collector in the monitoring namespace, Npgsql spans
          for the Postgres round trips. Only active when Telemetry:OtlpEndpoint is set. -->
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.20.1" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.21.0" />
     <PackageReference Include="Npgsql.OpenTelemetry" Version="10.0.3" />
     <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.53.3" />
     <PackageReference Include="WebPush" Version="1.0.13" />
