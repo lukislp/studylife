@@ -1,0 +1,15 @@
+{
+  "ServerHeading": "Serveris",
+  "ServerConnectedTo": "Savienots ar {0}",
+  "ChangeServerButton": "Mainīt serveri",
+  "ChangeServerConfirmTitle": "Mainīt serveri?",
+  "ChangeServerConfirmBody": "Tu tiksi izrakstīts no {0}, un kopijas, ko StudyLife glabā šajā ierīcē (logrīki, Apple Watch, meklēšana), tiks dzēstas. Tavs konts un dati serverī paliek nemainīti.",
+  "ChangeServerConfirmButton": "Izrakstīties un mainīt",
+  "Cancel": "Atcelt",
+  "ChangeServerWorking": "Izrakstās …",
+  "HealthHeading": "Apple Health",
+  "HealthDesc": "StudyLife var saglabāt pabeigtos fokusa raundus kā apzinātības minūtes un rādīt miegu, sirdsdarbības mainīgumu un soļus līdzās tavam mācību laikam. Dati paliek šajā ierīcē.",
+  "HealthConnectButton": "Savienot Apple Health",
+  "HealthConnected": "Savienots. Ko StudyLife drīkst lasīt un rakstīt, vari mainīt lietotnē Health.",
+  "HealthDeclined": "Piekļuve Apple Health ir izslēgta. Lai to ieslēgtu, atver lietotni Health, pieskaries profila attēlam, izvēlies Apps un pēc tam StudyLife."
+}

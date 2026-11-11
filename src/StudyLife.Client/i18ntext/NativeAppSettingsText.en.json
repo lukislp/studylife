@@ -1,0 +1,15 @@
+{
+  "ServerHeading": "Server",
+  "ServerConnectedTo": "Connected to {0}",
+  "ChangeServerButton": "Change server",
+  "ChangeServerConfirmTitle": "Change the server?",
+  "ChangeServerConfirmBody": "You will be signed out of {0}, and the copies StudyLife keeps on this device (widgets, Apple Watch, search) are removed. Your account and data on the server stay as they are.",
+  "ChangeServerConfirmButton": "Sign out and change",
+  "Cancel": "Cancel",
+  "ChangeServerWorking": "Signing out …",
+  "HealthHeading": "Apple Health",
+  "HealthDesc": "StudyLife can save finished focus rounds as Mindful Minutes and show sleep, heart rate variability and steps next to your study time. The data stays on this device.",
+  "HealthConnectButton": "Connect Apple Health",
+  "HealthConnected": "Connected. You can change what StudyLife may read or write in the Health app.",
+  "HealthDeclined": "Access to Apple Health is turned off. To turn it on, open the Health app, tap your profile picture, choose Apps, then StudyLife."
+}

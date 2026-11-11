@@ -1,0 +1,15 @@
+{
+  "ServerHeading": "Server",
+  "ServerConnectedTo": "Conectat la {0}",
+  "ChangeServerButton": "Schimbă serverul",
+  "ChangeServerConfirmTitle": "Schimbi serverul?",
+  "ChangeServerConfirmBody": "Vei fi deconectat de la {0}, iar copiile pe care StudyLife le păstrează pe acest dispozitiv (widgeturi, Apple Watch, căutare) vor fi șterse. Contul și datele tale de pe server rămân neschimbate.",
+  "ChangeServerConfirmButton": "Deconectează-te și schimbă",
+  "Cancel": "Anulează",
+  "ChangeServerWorking": "Se deconectează …",
+  "HealthHeading": "Apple Health",
+  "HealthDesc": "StudyLife poate salva rundele de concentrare încheiate ca minute de atenție și poate afișa somnul, variabilitatea ritmului cardiac și pașii lângă timpul tău de studiu. Datele rămân pe acest dispozitiv.",
+  "HealthConnectButton": "Conectează Apple Health",
+  "HealthConnected": "Conectat. Ce poate citi și scrie StudyLife poți schimba în aplicația Health.",
+  "HealthDeclined": "Accesul la Apple Health este dezactivat. Pentru a-l activa, deschide aplicația Health, atinge fotografia de profil, alege Aplicații, apoi StudyLife."
+}

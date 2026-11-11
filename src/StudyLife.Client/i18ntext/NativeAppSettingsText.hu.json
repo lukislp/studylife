@@ -1,0 +1,15 @@
+{
+  "ServerHeading": "Szerver",
+  "ServerConnectedTo": "Kapcsolódva: {0}",
+  "ChangeServerButton": "Szerver váltása",
+  "ChangeServerConfirmTitle": "Szervert váltasz?",
+  "ChangeServerConfirmBody": "Kijelentkeztetünk innen: {0}, és a StudyLife által ezen az eszközön tárolt másolatok (widgetek, Apple Watch, keresés) törlődnek. A fiókod és az adataid a szerveren változatlanok maradnak.",
+  "ChangeServerConfirmButton": "Kijelentkezés és váltás",
+  "Cancel": "Mégse",
+  "ChangeServerWorking": "Kijelentkezés …",
+  "HealthHeading": "Apple Health",
+  "HealthDesc": "A StudyLife a befejezett fókuszköröket tudatosságperceként mentheti, és a tanulási idő mellett megmutathatja az alvást, a pulzusvariabilitást és a lépéseket. Az adatok ezen az eszközön maradnak.",
+  "HealthConnectButton": "Apple Health összekapcsolása",
+  "HealthConnected": "Összekapcsolva. Hogy a StudyLife mit olvashat és írhat, azt az Egészség appban módosíthatod.",
+  "HealthDeclined": "Az Apple Health-hozzáférés ki van kapcsolva. A bekapcsoláshoz nyisd meg az Egészség appot, koppints a profilképedre, válaszd az Appok, majd a StudyLife lehetőséget."
+}

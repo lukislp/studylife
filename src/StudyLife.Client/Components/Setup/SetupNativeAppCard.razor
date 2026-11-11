@@ -1,0 +1,65 @@
+@*
+  SPDX-FileCopyrightText: 2026 Lukas Körber
+  SPDX-License-Identifier: AGPL-3.0-only
+*@
+@using StudyLife.Client.Services
+@using StudyLife.Client.I18nText
+@inject INativeAppAuth NativeAuth
+@inject INativeHealthData Health
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+@* Settings that exist only in the native apps: which server the app talks to (with the way to change
+   it) and the Apple Health connection. Renders nothing in the browser. Health access is asked for
+   here, in context, when the user taps the button - never at start-up; a declined state explains
+   where to turn it on in the system, instead of asking again. Setup.razor merely places it. *@
+
+@if (T is not null && (NativeAuth.ServerHost is not null || _access != NativeHealthAccess.Unavailable))
+{
+    @if (NativeAuth.ServerHost is not null)
+    {
+        <div class="setup-section" id="native-server">
+            <div class="ss-label">@T.ServerHeading</div>
+            <NativeServerSwitch />
+        </div>
+    }
+
+    @if (_access != NativeHealthAccess.Unavailable)
+    {
+        <div class="setup-section" id="native-health">
+            <div class="ss-label">@T.HealthHeading</div>
+            @switch (_access)
+            {
+                case NativeHealthAccess.Granted:
+                    <p class="ss-desc" role="status">@T.HealthConnected</p>
+                    break;
+                case NativeHealthAccess.Declined:
+                    <p class="ss-desc" role="status">@T.HealthDeclined</p>
+                    break;
+                default:
+                    <p class="ss-desc">@T.HealthDesc</p>
+                    <button type="button" class="btn-secondary" @onclick="ConnectAsync" disabled="@_busy">@T.HealthConnectButton</button>
+                    break;
+            }
+        </div>
+    }
+}
+
+@code {
+    private NativeAppSettingsText? T;
+    private NativeHealthAccess _access = NativeHealthAccess.Unavailable;
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (NativeAuth.ServerHost is null && !Health.IsAvailable) return;
+        T = await I18nText.GetTextTableAsync<NativeAppSettingsText>(this);
+        if (Health.IsAvailable) _access = await Health.GetAccessAsync();
+    }
+
+    private async Task ConnectAsync()
+    {
+        _busy = true;
+        try { _access = await Health.RequestAccessAsync(); }
+        finally { _busy = false; }
+    }
+}

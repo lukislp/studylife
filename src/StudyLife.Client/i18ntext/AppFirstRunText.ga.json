@@ -6,5 +6,9 @@
   "Connect": "Nasc",
   "InvalidUrl": "Ní URL bailí é sin.",
   "UnexpectedResponse": "D'fhreagair an freastalaí, ach gan choinne (HTTP {0}). Tapáil arís chun é a úsáid mar sin féin.",
-  "ServerUnreachable": "Ní féidir teacht ar an bhfreastalaí. Tapáil arís chun an URL a úsáid mar sin féin."
+  "ServerUnreachable": "Ní féidir teacht ar an bhfreastalaí. Tapáil arís chun an URL a úsáid mar sin féin.",
+  "Intro": "Óstálann tú StudyLife tú féin: níl seirbhís lárnach ar bith ann. Chun an aip a úsáid, teastaíonn seoladh do fhreastalaí StudyLife féin uait, nó seoladh an fhreastalaí a reáchtálann do scoil, d'ollscoil nó d'eagraíocht.",
+  "SetupGuideLink": "Conas do fhreastalaí féin a shocrú",
+  "EmptyUrl": "Cuir isteach seoladh do fhreastalaí StudyLife ar dtús.",
+  "NotStudyLifeServer": "Freagraíonn rud éigin ag an seoladh sin, ach ní cosúil le freastalaí StudyLife é. Seiceáil é, nó tapáil arís chun é a úsáid ar aon nós."
 }

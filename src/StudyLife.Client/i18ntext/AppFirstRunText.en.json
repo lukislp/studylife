@@ -6,5 +6,9 @@
   "Connect": "Connect",
   "InvalidUrl": "That's not a valid URL.",
   "UnexpectedResponse": "Server responded, but unexpectedly (HTTP {0}). Tap again to use it anyway.",
-  "ServerUnreachable": "Server unreachable. Tap again to use the URL anyway."
+  "ServerUnreachable": "Server unreachable. Tap again to use the URL anyway.",
+  "Intro": "StudyLife is self-hosted: there is no central service. To use the app you need the address of your own StudyLife server, or of the one your school, university or organisation runs.",
+  "SetupGuideLink": "How to set up your own server",
+  "EmptyUrl": "Enter the address of your StudyLife server first.",
+  "NotStudyLifeServer": "That address answers, but it does not look like a StudyLife server. Check it, or tap again to use it anyway."
 }

@@ -6,5 +6,9 @@
   "Connect": "Forbind",
   "InvalidUrl": "Det er ikke en gyldig URL.",
   "UnexpectedResponse": "Serveren svarede, men uventet (HTTP {0}). Tryk igen for at bruge den alligevel.",
-  "ServerUnreachable": "Serveren kan ikke nås. Tryk igen for at bruge URL'en alligevel."
+  "ServerUnreachable": "Serveren kan ikke nås. Tryk igen for at bruge URL'en alligevel.",
+  "Intro": "StudyLife driver du selv: der er ingen central tjeneste. Til appen skal du bruge adressen på din egen StudyLife-server eller på den, din skole, dit universitet eller din organisation driver.",
+  "SetupGuideLink": "Sådan opsætter du din egen server",
+  "EmptyUrl": "Indtast først adressen på din StudyLife-server.",
+  "NotStudyLifeServer": "Der svarer noget på adressen, men det ligner ikke en StudyLife-server. Tjek adressen, eller tryk igen for at bruge den alligevel."
 }

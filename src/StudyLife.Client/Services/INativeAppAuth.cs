@@ -51,6 +51,20 @@ public interface INativeAppAuth
     /// A default interface member on purpose: no new service registration for the native apps.
     /// </summary>
     Task AccountDeletedAsync() => Task.CompletedTask;
+
+    /// <summary>
+    /// Host (and port, if any) of the server this app shell is connected to, shown in Setup and next to the
+    /// sign-in screen; null in the browser, where the page itself is the server. Native shells let the user
+    /// move to another server (a mistyped address, a new school server) without reinstalling.
+    /// </summary>
+    string? ServerHost => null;
+
+    /// <summary>
+    /// Leaves the current server: the shell signs out, unregisters this device's push token (best effort),
+    /// wipes everything it keeps outside the web view and returns to its first-start screen to ask for a
+    /// new server address. The user has confirmed already (see NativeServerSwitch). Default: nothing to do.
+    /// </summary>
+    Task ChangeServerAsync() => Task.CompletedTask;
 }
 
 /// <summary>Default registration in the browser client: no native flow exists there.</summary>

@@ -6,5 +6,9 @@
   "Connect": "Kapcsolódás",
   "InvalidUrl": "Ez nem érvényes URL.",
   "UnexpectedResponse": "A szerver válaszolt, de váratlanul (HTTP {0}). Koppints újra, hogy mégis használd.",
-  "ServerUnreachable": "A szerver nem érhető el. Koppints újra, hogy mégis ezt az URL-t használd."
+  "ServerUnreachable": "A szerver nem érhető el. Koppints újra, hogy mégis ezt az URL-t használd.",
+  "Intro": "A StudyLife saját üzemeltetésű: nincs központi szolgáltatás. Az apphoz a saját StudyLife-szervered címére van szükséged, vagy arra a szerverre, amelyet az iskolád, egyetemed vagy szervezeted üzemeltet.",
+  "SetupGuideLink": "Így állíthatsz be saját szervert",
+  "EmptyUrl": "Először add meg a StudyLife-szervered címét.",
+  "NotStudyLifeServer": "Ezen a címen válaszol valami, de nem tűnik StudyLife-szervernek. Ellenőrizd, vagy koppints újra, hogy mégis használd."
 }

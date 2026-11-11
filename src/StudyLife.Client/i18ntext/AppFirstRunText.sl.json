@@ -6,5 +6,9 @@
   "Connect": "Poveži",
   "InvalidUrl": "To ni veljaven URL.",
   "UnexpectedResponse": "Strežnik je odgovoril, vendar nepričakovano (HTTP {0}). Dotaknite se znova, da ga vseeno uporabite.",
-  "ServerUnreachable": "Strežnik ni dosegljiv. Dotaknite se znova, da vseeno uporabite ta URL."
+  "ServerUnreachable": "Strežnik ni dosegljiv. Dotaknite se znova, da vseeno uporabite ta URL.",
+  "Intro": "StudyLife gostiš sam: osrednje storitve ni. Za aplikacijo potrebuješ naslov svojega strežnika StudyLife ali strežnika, ki ga upravlja tvoja šola, univerza ali organizacija.",
+  "SetupGuideLink": "Kako nastaviti lasten strežnik",
+  "EmptyUrl": "Najprej vnesi naslov svojega strežnika StudyLife.",
+  "NotStudyLifeServer": "Na tem naslovu nekaj odgovarja, vendar ne izgleda kot strežnik StudyLife. Preveri naslov ali se znova dotakni, da ga vseeno uporabiš."
 }

@@ -6,5 +6,9 @@
   "Connect": "Għaqqad",
   "InvalidUrl": "Dan mhux URL validu.",
   "UnexpectedResponse": "Is-server wieġeb, iżda b'mod mhux mistenni (HTTP {0}). Mess mill-ġdid biex tużah xorta waħda.",
-  "ServerUnreachable": "Ma jista' jintlaħaq is-server. Mess mill-ġdid biex tuża l-URL xorta waħda."
+  "ServerUnreachable": "Ma jista' jintlaħaq is-server. Mess mill-ġdid biex tuża l-URL xorta waħda.",
+  "Intro": "StudyLife huwa self-hosted: m'hemm l-ebda servizz ċentrali. Biex tuża l-app għandek bżonn l-indirizz tas-server StudyLife tiegħek, jew ta' dak li jmexxi l-iskola, l-università jew l-organizzazzjoni tiegħek.",
+  "SetupGuideLink": "Kif tqiegħed server tiegħek",
+  "EmptyUrl": "Daħħal l-ewwel l-indirizz tas-server StudyLife tiegħek.",
+  "NotStudyLifeServer": "Xi ħaġa twieġeb f'dan l-indirizz, imma ma tidhirx bħal server StudyLife. Iċċekkja l-indirizz jew tektek mill-ġdid biex tużah xorta waħda."
 }
