@@ -58,6 +58,21 @@ updates:
       # Revisit with the .NET 11 upgrade.
       - dependency-name: "Microsoft.OpenApi"
         update-types: ["version-update:semver-major"]
+      # Stay on the .NET 10 LTS line: .NET 10 and .NET 11 both end support on 2028-11-14, so 11 brings
+      # nothing. Only the 11.x line is skipped; the range ends below 12, so .NET 12 (next LTS, November
+      # 2027) is proposed normally and nothing has to be removed then.
+      - dependency-name: "Microsoft.AspNetCore.*"
+        versions: ["11.*"]
+      - dependency-name: "Microsoft.EntityFrameworkCore*"
+        versions: ["11.*"]
+      - dependency-name: "Microsoft.Extensions.*"
+        versions: ["11.*"]
+      - dependency-name: "System.*"
+        versions: ["11.*"]
+      - dependency-name: "dotnet-ef"
+        versions: ["11.*"]
+      - dependency-name: "Npgsql.EntityFrameworkCore.PostgreSQL"
+        versions: ["11.*"]
     commit-message:
       prefix: "fix(deps)"
     reviewers:
@@ -66,6 +81,18 @@ updates:
     directory: /src/StudyLife.Server
     schedule:
       interval: daily
+    ignore:
+      # Stay on the .NET 10 LTS line: .NET 10 and .NET 11 both end support on 2028-11-14, so 11 brings
+      # nothing. Only the 11.x line is skipped; the range ends below 12, so .NET 12 (next LTS, November
+      # 2027) is proposed normally and nothing has to be removed then.
+      - dependency-name: "dotnet/aspnet"
+        versions: [">= 11.0.0, < 12.0.0"]
+      - dependency-name: "dotnet/sdk"
+        versions: [">= 11.0.0, < 12.0.0"]
+      - dependency-name: "dotnet/runtime"
+        versions: [">= 11.0.0, < 12.0.0"]
+      - dependency-name: "dotnet/runtime-deps"
+        versions: [">= 11.0.0, < 12.0.0"]
     commit-message:
       prefix: "fix(docker)"
     reviewers:
