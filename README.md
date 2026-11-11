@@ -176,7 +176,7 @@ https://github.com/user-attachments/assets/0498d54b-f7e3-4854-b7cf-8eea538dd112
 - Both suggestions respect existing calendar appointments and the study windows set in Setup, and are only created as actual sessions after confirmation
 
 ### Focus Timer
-- Six built-in modes (Pomodoro Classic, Flow State, Ultradian Rhythm, Claude Mode, Sprint Bursts, Micro Focus) plus your own custom modes (focus/break length and rounds, defined in Setup)
+- Six built-in modes (Pomodoro Classic, Flow State, Ultradian Rhythm, Steady Focus, Sprint Bursts, Micro Focus) plus your own custom modes (focus/break length and rounds, defined in Setup)
 - Animated timer with progress ring
 - Keeps running in the background when switching pages (singleton service)
 - The timer state lives on the server: a session started in the browser, the native app, VS Code, or Telegram is the same session everywhere, and the worker keeps the iOS Live Activity in step with it while the app is closed

@@ -118,7 +118,7 @@ public class ServerTextCatalogueTests
     [Fact]
     public void Every_motivation_style_has_a_complete_quote_pool()
     {
-        foreach (var style in new[] { "claude", "zen", "intense", "hype" })
+        foreach (var style in MotivationalStyles.All)
             for (var n = 1; n <= BackgroundTaskService.QuotesPerStyle; n++)
                 Assert.NotNull(ServerText.Default.Template($"motivation.{style}.{n}", "en"));
     }
@@ -203,8 +203,8 @@ public class NotificationTextBuilderTests
         var german = BackgroundTaskService.PickDailyMotivationQuote("zen", date, "de");
         var english = BackgroundTaskService.PickDailyMotivationQuote("zen", date, "en");
         Assert.NotEqual(german, english);
-        // The unknown style still falls back to "claude", in the requested language.
-        Assert.Equal(BackgroundTaskService.PickDailyMotivationQuote("claude", date, "fr"),
+        // The unknown style still falls back to the default style, in the requested language.
+        Assert.Equal(BackgroundTaskService.PickDailyMotivationQuote(MotivationalStyles.Default, date, "fr"),
             BackgroundTaskService.PickDailyMotivationQuote("nope", date, "fr"));
     }
 }

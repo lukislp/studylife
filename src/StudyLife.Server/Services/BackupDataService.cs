@@ -443,7 +443,7 @@ public class BackupDataService(StudyLifeDb db, SettingsCacheVersion settingsCach
             AccentColor = import.Settings.AccentColor,
             AutoSwitchFocus = import.Settings.AutoSwitchFocus,
             AutoSwitchMinutesBefore = import.Settings.AutoSwitchMinutesBefore,
-            MotivationalStyle = import.Settings.MotivationalStyle,
+            MotivationalStyle = MotivationalStyles.Canonical(import.Settings.MotivationalStyle),
             SessionReminderMinutes = import.Settings.SessionReminderMinutes,
             CourseGoalReminderDays = import.Settings.CourseGoalReminderDays,
             InactivityThresholdDays = import.Settings.InactivityThresholdDays,

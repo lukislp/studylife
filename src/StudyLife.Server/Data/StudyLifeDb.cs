@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StudyLife.Server.Services;
+using StudyLife.Shared;
 
 namespace StudyLife.Server.Data;
 
@@ -648,7 +649,7 @@ public class UserSettingsEntity
     public string AccentColor { get; set; } = "coral";
     public bool AutoSwitchFocus { get; set; } = true;
     public int AutoSwitchMinutesBefore { get; set; } = 2;
-    public string MotivationalStyle { get; set; } = "claude";
+    public string MotivationalStyle { get; set; } = MotivationalStyles.Default;
     public string SessionReminderMinutes { get; set; } = "60,30,10,5,3,2,1";
     public string CourseGoalReminderDays { get; set; } = "14,7,3,1,0";
     public int InactivityThresholdDays { get; set; } = 5;

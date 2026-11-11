@@ -36,7 +36,7 @@ public class UserSettings
     public string AccentColor { get; set; } = "coral"; // preset key, see --accent presets in base.css
     public bool AutoSwitchFocus { get; set; } = true;
     public int AutoSwitchMinutesBefore { get; set; } = 2;
-    public string MotivationalStyle { get; set; } = "claude"; // claude, zen, intense, hype
+    public string MotivationalStyle { get; set; } = MotivationalStyles.Default; // thoughtful, zen, intense, hype
     public string SessionReminderMinutes { get; set; } = "60,30,10,5,3,2,1";
     public string CourseGoalReminderDays { get; set; } = "14,7,3,1,0";
     public int InactivityThresholdDays { get; set; } = 5;
@@ -80,7 +80,7 @@ public class TimerMode
     public int FocusMinutes { get; set; }
     public int BreakMinutes { get; set; }
     public int Rounds { get; set; }
-    public string Style { get; set; } = ""; // pomodoro, flow, ultradian, claude, sprint
+    public string Style { get; set; } = ""; // pomodoro, flow, ultradian, steady, sprint
     public string Emoji { get; set; } = "⏱";
     public string GradientFrom { get; set; } = "#6C5CE7";
     public string GradientTo { get; set; } = "#A29BFE";
@@ -152,7 +152,7 @@ public static class DefaultData
         new() { Id = 1, Name = "Pomodoro Classic", Description = "25 minutes focus, 5 minute break. The original. Builds rhythm through repetition.", FocusMinutes = 25, BreakMinutes = 5, Rounds = 4, Style = "pomodoro", Emoji = "🍅", GradientFrom = "#E17055", GradientTo = "#D63031" },
         new() { Id = 2, Name = "Flow State", Description = "52 minutes deep work, 17 minute recovery. Based on research into natural attention rhythms.", FocusMinutes = 52, BreakMinutes = 17, Rounds = 3, Style = "flow", Emoji = "🌊", GradientFrom = "#0984E3", GradientTo = "#74B9FF" },
         new() { Id = 3, Name = "Ultradian Rhythm", Description = "90 minute cycles matching your brain's natural peaks. One session, one deep dive.", FocusMinutes = 90, BreakMinutes = 20, Rounds = 2, Style = "ultradian", Emoji = "🌙", GradientFrom = "#6C5CE7", GradientTo = "#A29BFE" },
-        new() { Id = 4, Name = "Claude Mode", Description = "Adaptive focus blocks with AI-generated motivation. Your session, your energy.", FocusMinutes = 40, BreakMinutes = 10, Rounds = 3, Style = "claude", Emoji = "✦", GradientFrom = "#CC785C", GradientTo = "#E8A87C" },
+        new() { Id = 4, Name = "Steady Focus", Description = "Balanced 40-minute focus blocks with 10-minute breaks. Your session, your energy.", FocusMinutes = 40, BreakMinutes = 10, Rounds = 3, Style = "steady", Emoji = "✦", GradientFrom = "#CC785C", GradientTo = "#E8A87C" },
         new() { Id = 5, Name = "Sprint Bursts", Description = "10 minute intense micro-sprints with 3 minute resets. For when you need momentum fast.", FocusMinutes = 10, BreakMinutes = 3, Rounds = 6, Style = "sprint", Emoji = "⚡", GradientFrom = "#FDCB6E", GradientTo = "#E17055" },
         new() { Id = 6, Name = "Micro Focus", Description = "5 minutes focus, 1 minute break. Tiny steps for low-energy days or just getting unstuck.", FocusMinutes = 5, BreakMinutes = 1, Rounds = 8, Style = "micro", Emoji = "🌱", GradientFrom = "#00B894", GradientTo = "#55EFC4" },
         new() { Id = 7, Name = "Quick Burst", Description = "15 minutes focus, 3 minute break. More room than a sprint, still fast-paced.", FocusMinutes = 15, BreakMinutes = 3, Rounds = 5, Style = "burst", Emoji = "🔥", GradientFrom = "#FF7675", GradientTo = "#FAB1A0" },
