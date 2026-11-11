@@ -200,6 +200,8 @@ checks. A reviewer (today: the maintainer, see [GOVERNANCE.md](GOVERNANCE.md)) l
 
 Dependency updates from Dependabot/Renovate get the same CI gate; the reviewer checks the
 release notes of major-version bumps before merging.
+Dependabot skips the .NET 11 line (`.github/dependabot.yml`): the project stays on the .NET 10 LTS and
+takes .NET 12 when it ships.
 
 ## Governance and roadmap
 
