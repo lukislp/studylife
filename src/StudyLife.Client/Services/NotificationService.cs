@@ -81,11 +81,12 @@ public class NotificationService : IAsyncDisposable
     }
 
     /// <summary>
-    /// Sends a local test notification via the service worker.
+    /// Sends a local test notification via the service worker. The texts are passed in (the
+    /// caller holds the i18n table), so the notification is in the UI language.
     /// </summary>
-    public async Task SendTestNotificationAsync()
+    public async Task SendTestNotificationAsync(string title, string body)
     {
-        await _js.InvokeVoidAsync("sendTestNotification");
+        await _js.InvokeVoidAsync("sendTestNotification", title, body);
     }
 
     /// <summary>

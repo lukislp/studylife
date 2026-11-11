@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 using StudyLife.Client.Services;
+using StudyLife.Shared;
 
 namespace StudyLife.Client.Tests;
 
@@ -106,6 +107,16 @@ public class UiLanguageTests
         Assert.Equal(UiLanguage.Fallback, codes[0]);
         Assert.Contains(UiLanguage.LegacyDefault, codes);
         Assert.All(UiLanguage.All, l => Assert.False(string.IsNullOrWhiteSpace(l.Name) || string.IsNullOrWhiteSpace(l.Flag)));
+    }
+
+    [Fact]
+    public void Registry_is_the_shared_language_list_with_display_data_added()
+    {
+        // One list of language codes (StudyLife.Shared.SupportedLanguages, also what the server
+        // validates against); UiLanguage only adds flag and native name, same codes, same order.
+        Assert.Equal(SupportedLanguages.Codes, UiLanguage.All.Select(l => l.Code).ToList());
+        Assert.Equal(SupportedLanguages.Fallback, UiLanguage.Fallback);
+        Assert.Equal(SupportedLanguages.LegacyDefault, UiLanguage.LegacyDefault);
     }
 
     [Fact]

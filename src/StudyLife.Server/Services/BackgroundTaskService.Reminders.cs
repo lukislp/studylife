@@ -3,6 +3,7 @@
 
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
+using StudyLife.Server.Texts;
 
 namespace StudyLife.Server.Services;
 
@@ -13,12 +14,29 @@ public partial class BackgroundTaskService
     // link in the session reminder) directly - the actual push payload is otherwise never
     // visible in plaintext anywhere (WebPushClient encrypts before sending). Same pattern as
     // PickDailyMotivationQuote in BackgroundTaskService.Motivation.cs.
-    internal static string BuildSessionReminderBody(string courseName, string? topic, DateTime startTime, int resourceCount)
+    internal static string BuildSessionReminderBody(string courseName, string? topic, DateTime startTime, int resourceCount, string? language = null)
     {
-        var body = $"{courseName}{(topic != null ? $": {topic}" : "")} um {startTime:HH:mm} Uhr";
+        var t = ServerText.For(language);
+        var time = TimeOnly.FromDateTime(startTime);
+        var body = topic != null
+            ? t.T("reminder.session.bodyTopic", courseName, topic, time)
+            : t.T("reminder.session.body", courseName, time);
         if (resourceCount > 0)
-            body += $" — {resourceCount} Ressource{(resourceCount == 1 ? "" : "n")} für diesen Kurs hinterlegt";
+            body += " — " + t.T("reminder.session.resources", resourceCount);
         return body;
+    }
+
+    /// <summary>Title of the session reminder for the threshold that fired (60, 30, 1 or any custom
+    /// number of minutes) - a pure function so the wording choice is testable.</summary>
+    internal static string BuildSessionReminderTitle(int minutesBefore, string? language = null)
+    {
+        var t = ServerText.For(language);
+        return minutesBefore switch
+        {
+            60 => t.T("reminder.session.title.hour"),
+            1 => t.T("reminder.session.title.minute"),
+            _ => t.T("reminder.session.title.minutes", minutesBefore),
+        };
     }
 
     // internal instead of private: allows StudyLife.Server.Tests (InternalsVisibleTo in the csproj)
@@ -105,15 +123,9 @@ public partial class BackgroundTaskService
             if (!await TryClaimReminderAsync(db, key, now)) continue;
             sentKeys.Add(key);
 
-            var title = reminderAt switch
-            {
-                60 => "Lernphase in 1 Stunde 📚",
-                30 => "Lernphase in 30 Minuten ⏰",
-                1 => "Lernphase in 1 Minute! 🔔",
-                _ => $"Lernphase in {reminderAt} Minuten ⏰"
-            };
+            var title = BuildSessionReminderTitle(reminderAt, settings?.Language);
             resourceCountsByCourseId.TryGetValue(session.CourseId, out var resourceCount);
-            var body = BuildSessionReminderBody(session.CourseName, session.Topic, session.StartTime, resourceCount);
+            var body = BuildSessionReminderBody(session.CourseName, session.Topic, session.StartTime, resourceCount, settings?.Language);
             var payload = System.Text.Json.JsonSerializer.Serialize(new { title, body });
 
             _logger.LogInformation("Sende Reminder '{Key}': {Title}", key, title);
@@ -153,6 +165,7 @@ public partial class BackgroundTaskService
         var settings = await db.Settings.FirstOrDefaultAsync();
         if (settings != null && !settings.CourseGoalRemindersEnabled) return;
         var ReminderDays = ReminderSettings.ParseCourseGoalReminderDays(settings?.CourseGoalReminderDays);
+        var t = ServerText.For(settings?.Language);
 
         var today = LocalNow.Date;
 
@@ -191,11 +204,11 @@ public partial class BackgroundTaskService
 
                 var title = reminderAt switch
                 {
-                    0 => "Kursziel heute fällig 🎯",
-                    1 => "Kursziel morgen fällig ⏳",
-                    _ => $"Kursziel in {reminderAt} Tagen fällig 🎯"
+                    0 => t.T("goal.title.today"),
+                    1 => t.T("goal.title.tomorrow"),
+                    _ => t.T("goal.title.days", reminderAt)
                 };
-                var body = $"{goal.CourseName}: Ziel-Datum {goal.TargetDate:dd.MM.yyyy}";
+                var body = t.T("goal.body", goal.CourseName, goal.TargetDate);
                 var payload = System.Text.Json.JsonSerializer.Serialize(new { title, body });
 
                 var results = await Task.WhenAll(subscriptions.Select(sub => SendPushAsync(client, sub, payload, "Course goal push failed for {Endpoint}")));
@@ -249,8 +262,9 @@ public partial class BackgroundTaskService
         if (alreadySent) return;
         if (!await TryClaimReminderAsync(db, key, LocalNow)) return;
 
-        var title = "Lange nichts gelernt? 📚";
-        var body = $"Seit {daysSince} Tagen keine Lernsession - Zeit für eine neue Runde!";
+        var t = ServerText.For(settings?.Language);
+        var title = t.T("inactivity.title");
+        var body = t.T("inactivity.body", daysSince);
         var payload = System.Text.Json.JsonSerializer.Serialize(new { title, body });
 
         var client = GetPushClient();
@@ -279,6 +293,7 @@ public partial class BackgroundTaskService
         var settings = await db.Settings.FirstOrDefaultAsync();
         if (settings == null || !settings.PerCourseInactivityRemindersEnabled) return;
         var InactivityThresholdDays = ReminderSettings.GetInactivityThresholdDays(settings.InactivityThresholdDays);
+        var t = ServerText.For(settings.Language);
 
         var courseIds = (settings.SelectedCourseIds ?? "")
             .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
@@ -327,8 +342,8 @@ public partial class BackgroundTaskService
             if (alreadySent) continue;
             if (!await TryClaimReminderAsync(db, key, now)) continue;
 
-            var title = $"Kurs {lastCourseSession.CourseName} etwas vernachlässigt? 📚";
-            var body = $"Seit {daysSinceCourse} Tagen keine Session mehr in {lastCourseSession.CourseName}, obwohl du sonst weiterlernst.";
+            var title = t.T("courseInactivity.title", lastCourseSession.CourseName);
+            var body = t.T("courseInactivity.body", lastCourseSession.CourseName, daysSinceCourse);
             var payload = System.Text.Json.JsonSerializer.Serialize(new { title, body });
 
             var results = await Task.WhenAll(subscriptions.Select(sub => SendPushAsync(client, sub, payload, "Course inactivity push failed for {Endpoint}")));

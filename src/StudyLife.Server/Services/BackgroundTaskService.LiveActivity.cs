@@ -3,6 +3,7 @@
 
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
+using StudyLife.Server.Texts;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Services;
@@ -86,7 +87,7 @@ public partial class BackgroundTaskService
         // closed or suspended, see the head start above), so make it audible.
         var updateOutcome = await _apnsSender.SendLiveActivityUpdateAsync(token,
             new DateTimeOffset(endsAt), isBreak, secondsLeft, phaseTotalSeconds, round, mode.Rounds,
-            BuildPhaseChangeAlert(mode.Name, isBreak, round, mode.Rounds, isBreak ? mode.BreakMinutes : mode.FocusMinutes));
+            BuildPhaseChangeAlert(mode.Name, isBreak, round, mode.Rounds, isBreak ? mode.BreakMinutes : mode.FocusMinutes, settings?.Language));
 
         // Same principle as above: only adopt the new phase state on a definitive outcome
         // (delivered OR token permanently invalid). A plain "Failed" leaves PhaseEndsAt in the
@@ -106,14 +107,16 @@ public partial class BackgroundTaskService
     /// before pushing it itself - see RunLiveActivityPushAsync.</summary>
     internal static readonly TimeSpan LiveActivityAppHeadStart = TimeSpan.FromSeconds(3);
 
-    /// <summary>Lock-screen alert for the phase that just began (German, like the other push
-    /// texts of the worker).</summary>
-    internal static LiveActivityAlert BuildPhaseChangeAlert(string modeName, bool isBreak, int round, int totalRounds, int phaseMinutes)
-        => isBreak
-            ? new LiveActivityAlert("Zeit für eine Pause",
-                $"{modeName}: Runde {round} von {totalRounds} geschafft - {phaseMinutes} Minuten Pause.")
-            : new LiveActivityAlert("Weiter geht's",
-                $"{modeName}: Runde {round} von {totalRounds} - {phaseMinutes} Minuten Fokus.");
+    /// <summary>Lock-screen alert for the phase that just began, in the user's language.</summary>
+    internal static LiveActivityAlert BuildPhaseChangeAlert(string modeName, bool isBreak, int round, int totalRounds, int phaseMinutes, string? language = null)
+    {
+        var t = ServerText.For(language);
+        return isBreak
+            ? new LiveActivityAlert(t.T("liveActivity.break.title"),
+                t.T("liveActivity.break.body", modeName, round, totalRounds, phaseMinutes))
+            : new LiveActivityAlert(t.T("liveActivity.focus.title"),
+                t.T("liveActivity.focus.body", modeName, round, totalRounds, phaseMinutes));
+    }
 
     /// <summary>
     /// Persists this tick's phase transition, treating an optimistic-concurrency conflict as

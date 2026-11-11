@@ -798,6 +798,19 @@ public class UserSettingsEntity
     /// model, the stored value no longer matches and the user is asked again.
     /// </summary>
     public string? AiConsentProviderFingerprint { get; set; }
+
+    /// <summary>
+    /// The language the user's client shows (one of <see cref="StudyLife.Shared.SupportedLanguages.Codes"/>),
+    /// as the client last reported it - the one place the server learns it, and the language
+    /// of everything the server sends without a client in the loop (push, Live Activity, see
+    /// <c>ServerText</c>). Null = not reported yet (an existing user whose client has not started
+    /// since this column exists): the server then keeps sending
+    /// <see cref="StudyLife.Shared.SupportedLanguages.LegacyDefault"/>, as it always did. Written
+    /// only through SettingsService.SetLanguageAsync (and the backup import), never by the
+    /// generic settings PUT - a stale full-row PUT must not undo a language the user just picked
+    /// on another device.
+    /// </summary>
+    public string? Language { get; set; }
 }
 
 public class PushSubscriptionEntity

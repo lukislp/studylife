@@ -911,6 +911,9 @@ namespace StudyLife.Server.Migrations
                     b.Property<int>("InactivityThresholdDays")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Language")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("LastBackupDownloadAt")
                         .HasColumnType("TEXT");
 

@@ -3900,6 +3900,38 @@
         }
       }
     },
+    "/api/settings/language": {
+      "put": {
+        "tags": [
+          "Settings"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetLanguageRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetLanguageRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetLanguageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/settings/progress-share/enable": {
       "post": {
         "tags": [
@@ -9716,6 +9748,18 @@
           }
         }
       },
+      "SetLanguageRequest": {
+        "required": [
+          "language"
+        ],
+        "type": "object",
+        "properties": {
+          "language": {
+            "maxLength": 8,
+            "type": "string"
+          }
+        }
+      },
       "SetStudyProgramCompletedDto": {
         "required": [
           "isCompleted"
@@ -12491,6 +12535,13 @@
           },
           "builtInProgramDismissed": {
             "type": "boolean"
+          },
+          "language": {
+            "maxLength": 8,
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "progressShareEnabled": {
             "type": "boolean"

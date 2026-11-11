@@ -324,6 +324,10 @@
     {
         try
         {
+            // The server sends its own texts (push, Live Activity) in the language it was told last
+            // - tell it what this start shows. Not awaited: fire-and-forget, silent on failure.
+            _ = State.ReportLanguageAsync(_lang);
+
             await CheckActive();
             await InvokeAsync(StateHasChanged);
 
@@ -665,6 +669,8 @@
         // Keep <html lang> in sync - on Chromium browsers this controls the format of native
         // form controls (especially the calendar time picker, AM/PM vs. 24h), see Program.cs.
         try { await JS.InvokeVoidAsync("setDocumentLanguage", lang); } catch { /* best effort */ }
+        // The server's own texts (push, Live Activity) follow the picker, see ReportLanguageAsync.
+        _ = State.ReportLanguageAsync(lang);
     }
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)

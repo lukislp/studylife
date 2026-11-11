@@ -294,5 +294,6 @@
   "AriaRemoveCourse": "Remove course",
   "AriaDeleteTimerMode": "Delete timer mode",
   "ReportProblemLink": "Report a problem",
-  "ReportProblemHint": "Opens a bug report on GitHub with your app version and platform filled in. No account data or logs are sent."
+  "ReportProblemHint": "Opens a bug report on GitHub with your app version and platform filled in. No account data or logs are sent.",
+  "TestNotificationBody": "Notifications are working!"
 }

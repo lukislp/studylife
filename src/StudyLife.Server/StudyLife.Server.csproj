@@ -112,6 +112,13 @@
     <ProjectReference Include="..\StudyLife.Stt\StudyLife.Stt.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <!-- The server text catalogue (Texts/ServerText.cs): one JSON table per language, read at start
+         through the manifest, so no file has to be found on disk at run time. WithCulture=false: the
+         ".en"/".de" in the file name is a language code of OUR table, not a .NET resource culture
+         (MSBuild would otherwise route each file into a satellite assembly). -->
+    <EmbeddedResource Include="Texts\ServerText.*.json" LogicalName="StudyLife.Server.Texts.%(Filename)%(Extension)" WithCulture="false" />
+  </ItemGroup>
+  <ItemGroup>
     <!-- Exposes BackgroundTaskService's internal-marked Run*Async methods to tests
          (see BackgroundTaskService.cs) - purely additive, no runtime effect. -->
     <InternalsVisibleTo Include="StudyLife.Server.Tests" />

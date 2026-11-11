@@ -3,6 +3,7 @@
 
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
+using StudyLife.Server.Texts;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Services;
@@ -62,8 +63,9 @@ public partial class BackgroundTaskService
 
         if (!await TryClaimReminderAsync(db, key, now)) return;
 
-        var title = "Dein Streak reißt heute! 🔥";
-        var body = $"Dein {streak}-Tage-Streak reißt heute, wenn du jetzt nicht noch eine Session machst.";
+        var t = ServerText.For(settings.Language);
+        var title = t.T("streakRisk.title");
+        var body = t.T("streakRisk.body", streak);
         var payload = System.Text.Json.JsonSerializer.Serialize(new { title, body });
 
         _logger.LogInformation("Sende Streak-Risiko-Push '{Key}': {Body}", key, body);
@@ -122,8 +124,9 @@ public partial class BackgroundTaskService
 
         if (!await TryClaimReminderAsync(db, key, now)) return;
 
-        var title = "Wochenziel in Gefahr 📉";
-        var body = $"Bisher {studiedHours:0.#}h diese Woche von angestrebten {settings.WeeklyGoalMinHours}h - noch ist Zeit, aufzuholen!";
+        var t = ServerText.For(settings.Language);
+        var title = t.T("weeklyGoal.title");
+        var body = t.T("weeklyGoal.body", studiedHours, settings.WeeklyGoalMinHours);
         var payload = System.Text.Json.JsonSerializer.Serialize(new { title, body });
 
         _logger.LogInformation("Sende Wochenziel-Nudge '{Key}': {Body}", key, body);
@@ -183,6 +186,7 @@ public partial class BackgroundTaskService
 
         var client = GetPushClient();
         bool dbChanged = false;
+        var t = ServerText.For(settings.Language);
 
         foreach (var course in activeCourses)
         {
@@ -205,8 +209,8 @@ public partial class BackgroundTaskService
             if (await db.SentReminders.AnyAsync(r => r.Key == key)) continue;
             if (!await TryClaimReminderAsync(db, key, now)) continue;
 
-            var title = "Fast geschafft! 🎯";
-            var body = $"{course.Name} steht bei {(int)Math.Round(percent)}% - nur noch ein kleiner Rest bis zum Ziel!";
+            var title = t.T("almostDone.title");
+            var body = t.T("almostDone.body", course.Name, (int)Math.Round(percent));
             var payload = System.Text.Json.JsonSerializer.Serialize(new { title, body });
 
             _logger.LogInformation("Sende Fast-geschafft-Push '{Key}': {Body}", key, body);
@@ -274,8 +278,10 @@ public partial class BackgroundTaskService
 
         if (!await TryClaimReminderAsync(db, key, now)) return;
 
-        var title = "Beste Lernzeit steht an ⏰";
-        var body = $"Zwischen {bucketStartHour:00}:00 und {bucketStartHour + 2:00}:00 Uhr bist du meistens am produktivsten - jetzt ist ein guter Moment für eine Session!";
+        var t = ServerText.For(settings.Language);
+        var title = t.T("bestTime.title");
+        // % 24: the last bucket (22-23) ends at midnight, which a TimeOnly writes as 00:00.
+        var body = t.T("bestTime.body", new TimeOnly(bucketStartHour, 0), new TimeOnly((bucketStartHour + 2) % 24, 0));
         var payload = System.Text.Json.JsonSerializer.Serialize(new { title, body });
 
         _logger.LogInformation("Sende Beste-Lernzeit-Push '{Key}': {Body}", key, body);

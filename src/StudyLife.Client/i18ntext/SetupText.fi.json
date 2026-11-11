@@ -294,5 +294,6 @@
   "AriaRemoveCourse": "Poista kurssi",
   "AriaDeleteTimerMode": "Poista ajastintila",
   "ReportProblemLink": "Ilmoita ongelmasta",
-  "ReportProblemHint": "Avaa GitHubissa virheilmoituksen, johon sovelluksen versio ja alusta on täytetty valmiiksi. Tilitietoja tai lokeja ei lähetetä."
+  "ReportProblemHint": "Avaa GitHubissa virheilmoituksen, johon sovelluksen versio ja alusta on täytetty valmiiksi. Tilitietoja tai lokeja ei lähetetä.",
+  "TestNotificationBody": "Ilmoitukset toimivat!"
 }

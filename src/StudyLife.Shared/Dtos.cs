@@ -110,6 +110,15 @@ public class UserSettingsDto
     /// POST /api/settings/builtin-program/dismiss.</summary>
     public bool BuiltInProgramDismissed { get; set; }
     /// <summary>
+    /// The UI language the user's client last reported (a <see cref="SupportedLanguages.Codes"/>
+    /// entry), which is also the language of the push notifications and Live Activity texts the
+    /// server sends. Null = not reported yet (the server then sends German, as before). Read-only
+    /// here - set only via PUT /api/settings/language; a value in the generic PUT is ignored, so
+    /// a stale full-row save cannot undo a language chosen on another device.
+    /// </summary>
+    [MaxLength(8)]
+    public string? Language { get; set; }
+    /// <summary>
     /// Read-only progress link active? Kept separate from the token itself (see ProgressShareToken),
     /// so that disabling it doesn't discard the once-generated token - re-enabling
     /// returns the same URL again. NOT set via the normal PUT, but
@@ -1716,4 +1725,13 @@ public class WebhookRegistrationDto
     public List<string> Events { get; set; } = new();
     [System.Text.Json.Serialization.JsonPropertyName("created_at")]
     public DateTime CreatedAt { get; set; }
+}
+
+/// <summary>Body of PUT /api/settings/language: the UI language the client now shows.</summary>
+public class SetLanguageRequest
+{
+    /// <summary>One of <see cref="SupportedLanguages.Codes"/> (e.g. "de", "pt" - no region
+    /// tags); anything else is answered with 400.</summary>
+    [MaxLength(8)]
+    public string Language { get; set; } = "";
 }

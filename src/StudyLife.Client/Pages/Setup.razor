@@ -1200,7 +1200,7 @@
 
     private async Task SendTestNotification()
     {
-        await NotificationSvc.SendTestNotificationAsync();
+        await NotificationSvc.SendTestNotificationAsync("StudyLife ✦", T.TestNotificationBody);
         _testSent = true;
         StateHasChanged();
         await Task.Delay(2500);

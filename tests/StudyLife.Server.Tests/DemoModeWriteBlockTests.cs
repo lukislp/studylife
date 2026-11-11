@@ -62,6 +62,9 @@ public class DemoModeWriteBlockTests : IClassFixture<AuthControllerDemoModeTests
     [InlineData("DELETE", "/api/developer/clients/some-client")]
     [InlineData("POST", "/api/settings/developer-api-key/generate")]
     [InlineData("POST", "/api/settings/builtin-program/dismiss")]
+    // The client reports its language on every start; on a demo that must be answered 403 (the
+    // client swallows it) rather than change the shared demo user's row.
+    [InlineData("PUT", "/api/settings/language")]
     [InlineData("DELETE", "/api/notes/1")]
     // AI consent (AiConsentController): granting or withdrawing is a write like any other, so a
     // demo visitor cannot record a consent or revoke the demo user's AI key.

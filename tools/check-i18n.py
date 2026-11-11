@@ -4,8 +4,14 @@
 
 # Usage: python tools/check-i18n.py
 # Verifies i18n file consistency: all language files for each table must have identical key sets.
+# Two sets of tables are checked: the client's UI tables (src/StudyLife.Client/i18ntext) and the
+# server text catalogue (src/StudyLife.Server/Texts, the notification texts the server sends
+# itself). For the server catalogue every language additionally has to keep the placeholders
+# ({0}, {1:t}, ...) of the English template - a translation that drops or renames one would
+# only fail when that user's notification fires.
 
 import json
+import re
 import sys
 from pathlib import Path
 from collections import defaultdict
@@ -15,6 +21,8 @@ EXPECTED_LANGUAGES = {"bg", "cs", "da", "de", "el", "en", "es", "et", "fi", "fr"
                       "ga", "hr", "hu", "it", "lt", "lv", "mt", "nl", "pl", "pt",
                       "ro", "ru", "sk", "sl", "sv", "uk"}
 I18N_DIR = Path("src/StudyLife.Client/i18ntext")
+SERVER_TEXT_DIR = Path("src/StudyLife.Server/Texts")
+PLACEHOLDER = re.compile(r"\{[^{}]*\}")
 
 
 def discover_tables():
@@ -99,6 +107,59 @@ def check_table(table_name):
         return False
 
 
+def check_server_texts():
+    """The server text catalogue: ServerText.<lang>.json, one flat key -> template table per language."""
+    if not SERVER_TEXT_DIR.exists():
+        print(f"ERROR: server text directory not found: {SERVER_TEXT_DIR}")
+        return False
+
+    tables = {}
+    for lang in sorted(EXPECTED_LANGUAGES):
+        path = SERVER_TEXT_DIR / f"ServerText.{lang}.json"
+        if not path.exists():
+            print(f"MISMATCH ServerText - missing language file: {path}")
+            return False
+        try:
+            with open(path, "r", encoding="utf-8-sig") as f:
+                tables[lang] = json.load(f)
+        except Exception as e:
+            print(f"ERROR ServerText: Failed to read {path}: {e}")
+            return False
+    unexpected = {
+        p.stem.split(".")[1] for p in SERVER_TEXT_DIR.glob("ServerText.*.json")
+    } - EXPECTED_LANGUAGES
+    if unexpected:
+        print(f"MISMATCH ServerText - language file(s) for unsupported language(s): {sorted(unexpected)}")
+        return False
+
+    reference = tables["en"]
+    ok = True
+    for lang, table in sorted(tables.items()):
+        if lang == "en":
+            continue
+        missing = set(reference) - set(table)
+        extra = set(table) - set(reference)
+        if missing or extra:
+            ok = False
+            print(f"MISMATCH ServerText {lang}:")
+            if missing:
+                print(f"    Missing: {sorted(missing)}")
+            if extra:
+                print(f"    Extra: {sorted(extra)}")
+            continue
+        for key, template in table.items():
+            if not isinstance(template, str) or not template.strip():
+                ok = False
+                print(f"MISMATCH ServerText {lang}: empty or non-string value for '{key}'")
+            elif sorted(PLACEHOLDER.findall(template)) != sorted(PLACEHOLDER.findall(reference[key])):
+                ok = False
+                print(f"MISMATCH ServerText {lang}: placeholders of '{key}' differ from en "
+                      f"({sorted(PLACEHOLDER.findall(template))} vs {sorted(PLACEHOLDER.findall(reference[key]))})")
+    if ok:
+        print(f"OK ServerText - {len(tables)} files, {len(reference)} keys")
+    return ok
+
+
 def main():
     if not I18N_DIR.exists():
         print(f"ERROR: i18n directory not found: {I18N_DIR}")
@@ -113,6 +174,9 @@ def main():
     for table in tables:
         if not check_table(table):
             all_consistent = False
+
+    if not check_server_texts():
+        all_consistent = False
 
     sys.exit(0 if all_consistent else 1)
 

@@ -294,5 +294,6 @@
   "AriaRemoveCourse": "Elimină cursul",
   "AriaDeleteTimerMode": "Șterge modul cronometru",
   "ReportProblemLink": "Raportează o problemă",
-  "ReportProblemHint": "Deschide un raport de eroare pe GitHub cu versiunea aplicației și platforma completate în prealabil. Nu se trimit date de cont sau jurnale."
+  "ReportProblemHint": "Deschide un raport de eroare pe GitHub cu versiunea aplicației și platforma completate în prealabil. Nu se trimit date de cont sau jurnale.",
+  "TestNotificationBody": "Notificările funcționează!"
 }

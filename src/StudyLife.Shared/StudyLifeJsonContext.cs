@@ -25,6 +25,7 @@ namespace StudyLife.Shared;
 [JsonSerializable(typeof(StudySessionDto))]
 [JsonSerializable(typeof(List<StudySessionDto>))]
 [JsonSerializable(typeof(UserSettingsDto))]
+[JsonSerializable(typeof(SetLanguageRequest))]
 [JsonSerializable(typeof(CourseDto))]
 [JsonSerializable(typeof(List<CourseDto>))]
 [JsonSerializable(typeof(CourseGoalDto))]

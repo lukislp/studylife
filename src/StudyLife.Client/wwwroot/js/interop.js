@@ -290,11 +290,13 @@ function getNotificationPermissionStatus() {
     return Notification.permission; // 'default' | 'granted' | 'denied'
 }
 
-async function sendTestNotification() {
+// title/body come from the caller (Setup.razor passes the i18n table text): the notification is
+// shown locally, so the text must be in the language the UI is in.
+async function sendTestNotification(title, body) {
     if (!('serviceWorker' in navigator)) return;
     const reg = await navigator.serviceWorker.ready;
-    reg.showNotification('StudyLife ✦', {
-        body: 'Benachrichtigungen funktionieren!',
+    reg.showNotification(title, {
+        body: body,
         icon: '/icons/icon-192.png',
         badge: '/icons/icon-192.png',
         tag: 'studylife-test',

@@ -265,6 +265,7 @@ https://github.com/user-attachments/assets/0498d54b-f7e3-4854-b7cf-8eea538dd112
 - Opt-in nudges: streak at risk, weekly goal falling behind, a course that is almost done, your historically best study time, a gentle comeback nudge after one idle day, and a daily motivational quote
 - All reminder thresholds and every nudge individually configurable in Setup
 - Native app: local notifications, home screen widgets, and an iOS Live Activity kept up to date by the server via APNs
+- Notifications come in your language: the app tells the server which of the 26 languages it shows (on start and when you switch), and every push text - reminders, reports, nudges, achievements, Live Activity alerts - is sent in it, with dates, times and numbers in that language's format. Until the app has reported a language the server keeps sending German, as before
 
 ### Setup
 - Manually switch theme: System / Light / Dark, plus an accent color
