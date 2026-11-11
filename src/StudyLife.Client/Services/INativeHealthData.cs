@@ -23,6 +23,19 @@ public readonly record struct CardioFitnessPoint(DateTime Date, double Vo2Max);
 /// </summary>
 public readonly record struct SleepNight(double OnsetMinutesAfter6pm, double DurationMinutes);
 
+/// <summary>State of the Health permission as the native shell sees it.</summary>
+public enum NativeHealthAccess
+{
+    /// <summary>No Health on this device or platform (browser, Android, Windows).</summary>
+    Unavailable,
+    /// <summary>Never asked: the system prompt has not been shown yet.</summary>
+    NotAsked,
+    /// <summary>Allowed.</summary>
+    Granted,
+    /// <summary>The user said no; only system settings can change that.</summary>
+    Declined,
+}
+
 /// <summary>
 /// Additive hook for Apple Health data (same pattern as INativePush/INativeAppAuth/
 /// INativeFileExport): HealthKit is iOS-only and the data never leaves the device - the
@@ -32,6 +45,14 @@ public readonly record struct SleepNight(double OnsetMinutesAfter6pm, double Dur
 public interface INativeHealthData
 {
     bool IsAvailable => false;
+
+    /// <summary>Where the Health permission stands, without asking for it. The native shell never asks at
+    /// start-up: Setup shows a "Connect Apple Health" button and only that tap may show the system prompt.</summary>
+    Task<NativeHealthAccess> GetAccessAsync() => Task.FromResult(NativeHealthAccess.Unavailable);
+
+    /// <summary>Asks for Health access if it was never asked for (the system prompt) and returns the new
+    /// state. Declined stays declined: iOS shows the prompt once, after that only system settings help.</summary>
+    Task<NativeHealthAccess> RequestAccessAsync() => Task.FromResult(NativeHealthAccess.Unavailable);
 
     /// <summary>Daily HRV (SDNN, ms) for the last <paramref name="days"/> days, most recent
     /// last, one entry per day with a sample (gaps simply absent, not zero-filled). Null if

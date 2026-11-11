@@ -6,5 +6,9 @@
   "Connect": "Yhdistä",
   "InvalidUrl": "Tämä ei ole kelvollinen URL-osoite.",
   "UnexpectedResponse": "Palvelin vastasi, mutta odottamattomasti (HTTP {0}). Napauta uudelleen käyttääksesi sitä silti.",
-  "ServerUnreachable": "Palvelin ei ole tavoitettavissa. Napauta uudelleen käyttääksesi osoitetta silti."
+  "ServerUnreachable": "Palvelin ei ole tavoitettavissa. Napauta uudelleen käyttääksesi osoitetta silti.",
+  "Intro": "StudyLife on itse ylläpidettävä: keskitettyä palvelua ei ole. Sovellus tarvitsee oman StudyLife-palvelimesi osoitteen tai sen palvelimen osoitteen, jota koulusi, yliopistosi tai organisaatiosi ylläpitää.",
+  "SetupGuideLink": "Näin otat käyttöön oman palvelimen",
+  "EmptyUrl": "Kirjoita ensin StudyLife-palvelimesi osoite.",
+  "NotStudyLifeServer": "Osoitteessa vastaa jokin, mutta se ei näytä StudyLife-palvelimelta. Tarkista osoite tai napauta uudelleen käyttääksesi sitä silti."
 }

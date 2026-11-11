@@ -6,5 +6,9 @@
   "Connect": "Poveži",
   "InvalidUrl": "To nije valjani URL.",
   "UnexpectedResponse": "Poslužitelj je odgovorio, ali neočekivano (HTTP {0}). Dodirnite ponovno da biste ga ipak koristili.",
-  "ServerUnreachable": "Poslužitelj nije dostupan. Dodirnite ponovno da biste ipak koristili ovaj URL."
+  "ServerUnreachable": "Poslužitelj nije dostupan. Dodirnite ponovno da biste ipak koristili ovaj URL.",
+  "Intro": "StudyLife se hostira sam: ne postoji središnja usluga. Za aplikaciju trebaš adresu vlastitog StudyLife poslužitelja ili poslužitelja koji vodi tvoja škola, fakultet ili organizacija.",
+  "SetupGuideLink": "Kako postaviti vlastiti poslužitelj",
+  "EmptyUrl": "Prvo upiši adresu svojeg StudyLife poslužitelja.",
+  "NotStudyLifeServer": "Na toj adresi nešto odgovara, ali ne izgleda kao StudyLife poslužitelj. Provjeri je ili dodirni ponovno da je ipak upotrijebiš."
 }

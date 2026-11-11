@@ -1,0 +1,15 @@
+{
+  "ServerHeading": "Serveur",
+  "ServerConnectedTo": "Connecté à {0}",
+  "ChangeServerButton": "Changer de serveur",
+  "ChangeServerConfirmTitle": "Changer de serveur ?",
+  "ChangeServerConfirmBody": "Tu seras déconnecté de {0} et les copies que StudyLife garde sur cet appareil (widgets, Apple Watch, recherche) seront supprimées. Ton compte et tes données sur le serveur restent inchangés.",
+  "ChangeServerConfirmButton": "Se déconnecter et changer",
+  "Cancel": "Annuler",
+  "ChangeServerWorking": "Déconnexion …",
+  "HealthHeading": "Apple Santé",
+  "HealthDesc": "StudyLife peut enregistrer les sessions de concentration terminées comme minutes de pleine conscience et afficher le sommeil, la variabilité de la fréquence cardiaque et les pas à côté de ton temps d'étude. Les données restent sur cet appareil.",
+  "HealthConnectButton": "Connecter Apple Santé",
+  "HealthConnected": "Connecté. Ce que StudyLife peut lire ou écrire se règle dans l'app Santé.",
+  "HealthDeclined": "L'accès à Apple Santé est désactivé. Pour l'activer, ouvre l'app Santé, touche ta photo de profil, choisis Apps, puis StudyLife."
+}

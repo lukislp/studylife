@@ -6,5 +6,9 @@
   "Connect": "Pripojiť",
   "InvalidUrl": "Toto nie je platná URL adresa.",
   "UnexpectedResponse": "Server odpovedal, ale neočakávane (HTTP {0}). Ťuknite znova, aby ste ho napriek tomu použili.",
-  "ServerUnreachable": "Server je nedostupný. Ťuknite znova, aby ste túto URL napriek tomu použili."
+  "ServerUnreachable": "Server je nedostupný. Ťuknite znova, aby ste túto URL napriek tomu použili.",
+  "Intro": "StudyLife si prevádzkuješ sám: neexistuje žiadna centrálna služba. Pre aplikáciu potrebuješ adresu vlastného servera StudyLife alebo servera, ktorý prevádzkuje tvoja škola, univerzita či organizácia.",
+  "SetupGuideLink": "Ako nastaviť vlastný server",
+  "EmptyUrl": "Najprv zadaj adresu svojho servera StudyLife.",
+  "NotStudyLifeServer": "Na tejto adrese niečo odpovedá, ale nevyzerá to ako server StudyLife. Skontroluj ju, alebo klepni znova a použi ju napriek tomu."
 }

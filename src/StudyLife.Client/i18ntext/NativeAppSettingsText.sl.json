@@ -1,0 +1,15 @@
+{
+  "ServerHeading": "Strežnik",
+  "ServerConnectedTo": "Povezano z {0}",
+  "ChangeServerButton": "Zamenjaj strežnik",
+  "ChangeServerConfirmTitle": "Zamenjam strežnik?",
+  "ChangeServerConfirmBody": "Odjavljen boš iz {0}, kopije, ki jih StudyLife hrani v tej napravi (pripomočki, Apple Watch, iskanje), pa bodo odstranjene. Tvoj račun in podatki na strežniku ostanejo nespremenjeni.",
+  "ChangeServerConfirmButton": "Odjava in zamenjava",
+  "Cancel": "Prekliči",
+  "ChangeServerWorking": "Odjavljanje …",
+  "HealthHeading": "Apple Health",
+  "HealthDesc": "StudyLife lahko shrani dokončane kroge osredotočenosti kot minute čuječnosti ter ob tvojem učnem času prikaže spanec, variabilnost srčnega utripa in korake. Podatki ostanejo v tej napravi.",
+  "HealthConnectButton": "Poveži Apple Health",
+  "HealthConnected": "Povezano. Kaj sme StudyLife brati in zapisovati, lahko spremeniš v aplikaciji Zdravje.",
+  "HealthDeclined": "Dostop do Apple Health je izklopljen. Za vklop odpri aplikacijo Zdravje, tapni profilno sliko, izberi Aplikacije in nato StudyLife."
+}

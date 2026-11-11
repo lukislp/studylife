@@ -1,0 +1,15 @@
+{
+  "ServerHeading": "Server",
+  "ServerConnectedTo": "Ühendatud: {0}",
+  "ChangeServerButton": "Vaheta serverit",
+  "ChangeServerConfirmTitle": "Kas vahetada serverit?",
+  "ChangeServerConfirmBody": "Sind logitakse välja serverist {0} ja koopiad, mida StudyLife selles seadmes hoiab (vidinad, Apple Watch, otsing), eemaldatakse. Sinu konto ja andmed serveris jäävad samaks.",
+  "ChangeServerConfirmButton": "Logi välja ja vaheta",
+  "Cancel": "Loobu",
+  "ChangeServerWorking": "Väljalogimine …",
+  "HealthHeading": "Apple Health",
+  "HealthDesc": "StudyLife saab salvestada lõpetatud fookusringid teadveloleku minutitena ning näidata und, südamerütmi varieeruvust ja samme õppeaja kõrval. Andmed jäävad sellesse seadmesse.",
+  "HealthConnectButton": "Ühenda Apple Health",
+  "HealthConnected": "Ühendatud. Mida StudyLife võib rakenduses Health lugeda ja kirjutada, saad muuta seal.",
+  "HealthDeclined": "Juurdepääs Apple Healthile on välja lülitatud. Sisselülitamiseks ava rakendus Health, puuduta oma profiilipilti, vali Apps ja seejärel StudyLife."
+}

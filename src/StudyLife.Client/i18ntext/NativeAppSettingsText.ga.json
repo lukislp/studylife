@@ -1,0 +1,15 @@
+{
+  "ServerHeading": "Freastalaí",
+  "ServerConnectedTo": "Ceangailte le {0}",
+  "ChangeServerButton": "Athraigh freastalaí",
+  "ChangeServerConfirmTitle": "An bhfuil tú ag iarraidh an freastalaí a athrú?",
+  "ChangeServerConfirmBody": "Logálfar amach as {0} thú, agus bainfear na cóipeanna a choinníonn StudyLife ar an ngléas seo (giuirléidí, Apple Watch, cuardach). Fanann do chuntas agus do chuid sonraí ar an bhfreastalaí gan athrú.",
+  "ChangeServerConfirmButton": "Logáil amach agus athraigh",
+  "Cancel": "Cealaigh",
+  "ChangeServerWorking": "Ag logáil amach …",
+  "HealthHeading": "Apple Health",
+  "HealthDesc": "Is féidir le StudyLife babhtaí fócais críochnaithe a shábháil mar nóiméid aireachais agus codladh, athraitheacht ráta croí agus céimeanna a thaispeáint cois d'am staidéir. Fanann na sonraí ar an ngléas seo.",
+  "HealthConnectButton": "Ceangail Apple Health",
+  "HealthConnected": "Ceangailte. Is féidir leat an méid a fhéadfaidh StudyLife a léamh agus a scríobh san aip Health a athrú ansin.",
+  "HealthDeclined": "Tá rochtain ar Apple Health múchta. Chun é a chur ar siúl, oscail an aip Health, tapáil do phictiúr próifíle, roghnaigh Apps agus ansin StudyLife."
+}

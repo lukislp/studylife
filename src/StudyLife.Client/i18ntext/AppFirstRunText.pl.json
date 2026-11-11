@@ -6,5 +6,9 @@
   "Connect": "Połącz",
   "InvalidUrl": "To nie jest prawidłowy adres URL.",
   "UnexpectedResponse": "Serwer odpowiedział, ale nieoczekiwanie (HTTP {0}). Dotknij ponownie, aby mimo to go użyć.",
-  "ServerUnreachable": "Serwer jest niedostępny. Dotknij ponownie, aby mimo to użyć tego adresu URL."
+  "ServerUnreachable": "Serwer jest niedostępny. Dotknij ponownie, aby mimo to użyć tego adresu URL.",
+  "Intro": "StudyLife hostujesz sam: nie ma usługi centralnej. Do aplikacji potrzebujesz adresu własnego serwera StudyLife albo serwera prowadzonego przez twoją szkołę, uczelnię lub organizację.",
+  "SetupGuideLink": "Jak skonfigurować własny serwer",
+  "EmptyUrl": "Najpierw wpisz adres swojego serwera StudyLife.",
+  "NotStudyLifeServer": "Pod tym adresem coś odpowiada, ale nie wygląda to na serwer StudyLife. Sprawdź adres lub stuknij ponownie, aby mimo to go użyć."
 }

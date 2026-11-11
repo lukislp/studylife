@@ -1,0 +1,15 @@
+{
+  "ServerHeading": "Сървър",
+  "ServerConnectedTo": "Свързан с {0}",
+  "ChangeServerButton": "Смяна на сървъра",
+  "ChangeServerConfirmTitle": "Да смениш ли сървъра?",
+  "ChangeServerConfirmBody": "Ще бъдеш отписан от {0}, а копията, които StudyLife пази на това устройство (приспособления, Apple Watch, търсене), ще бъдат изтрити. Акаунтът и данните ти на сървъра остават непроменени.",
+  "ChangeServerConfirmButton": "Отписване и смяна",
+  "Cancel": "Отказ",
+  "ChangeServerWorking": "Отписване …",
+  "HealthHeading": "Apple Health",
+  "HealthDesc": "StudyLife може да записва приключените кръгове на фокус като минути на осъзнатост и да показва сън, вариабилност на сърдечния ритъм и стъпки до времето ти за учене. Данните остават на това устройство.",
+  "HealthConnectButton": "Свързване с Apple Health",
+  "HealthConnected": "Свързано. Какво може да чете и записва StudyLife, можеш да промениш в приложението Health.",
+  "HealthDeclined": "Достъпът до Apple Health е изключен. За да го включиш, отвори приложението Health, докосни профилната си снимка, избери Приложения и после StudyLife."
+}

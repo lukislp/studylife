@@ -1,0 +1,15 @@
+{
+  "ServerHeading": "Server",
+  "ServerConnectedTo": "Forbundet til {0}",
+  "ChangeServerButton": "Skift server",
+  "ChangeServerConfirmTitle": "Skift server?",
+  "ChangeServerConfirmBody": "Du bliver logget ud af {0}, og de kopier, StudyLife har på denne enhed (widgets, Apple Watch, søgning), fjernes. Din konto og dine data på serveren forbliver uændrede.",
+  "ChangeServerConfirmButton": "Log ud og skift",
+  "Cancel": "Annuller",
+  "ChangeServerWorking": "Logger ud …",
+  "HealthHeading": "Apple Health",
+  "HealthDesc": "StudyLife kan gemme afsluttede fokusrunder som mindful minutter og vise søvn, hjertefrekvensvariabilitet og skridt ved siden af din studietid. Dataene bliver på denne enhed.",
+  "HealthConnectButton": "Forbind Apple Health",
+  "HealthConnected": "Forbundet. Hvad StudyLife må læse og skrive i Sundhed-appen, kan du ændre dér.",
+  "HealthDeclined": "Adgang til Apple Health er slået fra. Slå den til ved at åbne Sundhed-appen, trykke på dit profilbillede, vælge Apps og derefter StudyLife."
+}
