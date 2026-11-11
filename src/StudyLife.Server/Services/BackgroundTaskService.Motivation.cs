@@ -4,6 +4,7 @@
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
 using StudyLife.Server.Texts;
+using StudyLife.Shared;
 
 namespace StudyLife.Server.Services;
 
@@ -12,7 +13,6 @@ public partial class BackgroundTaskService
     // The quotes live in the server text catalogue (Texts/ServerText.<lang>.json) as
     // "motivation.<style>.<1..QuotesPerStyle>": one pool per MotivationalStyle (Setup >
     // SetupMotivationalStyleCard) - ServerTextTests keeps every style complete in every language.
-    private static readonly string[] MotivationStyles = { "claude", "zen", "intense", "hype" };
     internal const int QuotesPerStyle = 9;
 
     // From this hour onward (local time, container runs with TZ=Europe/Berlin) the daily push is due.
@@ -21,11 +21,11 @@ public partial class BackgroundTaskService
     private const int DailyMotivationHour = 8;
 
     // internal + deterministic (date -> quote), so BackgroundTaskServiceTests can check the
-    // selection directly; unknown styles fall back to "claude" (default in UserSettings).
+    // selection directly; unknown styles fall back to the default style (MotivationalStyles.Default); the retired
+    // storage value is mapped there too, so rows written before the rename keep their pool.
     internal static string PickDailyMotivationQuote(string? style, DateTime date, string? language = null)
     {
-        if (style == null || Array.IndexOf(MotivationStyles, style) < 0)
-            style = "claude";
+        style = MotivationalStyles.ResolveOrDefault(style);
         // Mix in the year so the same calendar day doesn't deliver the same quote every year.
         var number = (date.Year + date.DayOfYear) % QuotesPerStyle + 1;
         return ServerText.Text($"motivation.{style}.{number}", language);

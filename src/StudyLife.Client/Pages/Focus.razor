@@ -286,7 +286,7 @@
         await RenderPhaseAsync();
     }
 
-    /// <summary>Localized replacement for the old hardcoded-English DefaultData.ClaudeMotivations
+    /// <summary>Localized replacement for the old hardcoded-English DefaultData's motivation list
     /// list - picks one of the 12 quotes from FocusText, translated per the active language.</summary>
     private string GetRandomMotivation()
     {
@@ -311,7 +311,7 @@
                 "pomodoro" => (T.TimerModeName_pomodoro, T.TimerModeDesc_pomodoro),
                 "flow" => (T.TimerModeName_flow, T.TimerModeDesc_flow),
                 "ultradian" => (T.TimerModeName_ultradian, T.TimerModeDesc_ultradian),
-                "claude" => (T.TimerModeName_claude, T.TimerModeDesc_claude),
+                "steady" => (T.TimerModeName_steady, T.TimerModeDesc_steady),
                 "sprint" => (T.TimerModeName_sprint, T.TimerModeDesc_sprint),
                 "micro" => (T.TimerModeName_micro, T.TimerModeDesc_micro),
                 "burst" => (T.TimerModeName_burst, T.TimerModeDesc_burst),
