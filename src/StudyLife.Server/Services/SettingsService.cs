@@ -113,7 +113,7 @@ public class SettingsService(
         entity.AccentColor = dto.AccentColor;
         entity.AutoSwitchFocus = dto.AutoSwitchFocus;
         entity.AutoSwitchMinutesBefore = dto.AutoSwitchMinutesBefore;
-        entity.MotivationalStyle = dto.MotivationalStyle;
+        entity.MotivationalStyle = MotivationalStyles.Canonical(dto.MotivationalStyle);
         entity.SessionReminderMinutes = dto.SessionReminderMinutes;
         entity.CourseGoalReminderDays = dto.CourseGoalReminderDays;
         entity.InactivityThresholdDays = dto.InactivityThresholdDays;
@@ -281,7 +281,7 @@ public class SettingsService(
         AccentColor = string.IsNullOrWhiteSpace(e.AccentColor) ? "coral" : e.AccentColor,
         AutoSwitchFocus = e.AutoSwitchFocus,
         AutoSwitchMinutesBefore = e.AutoSwitchMinutesBefore,
-        MotivationalStyle = e.MotivationalStyle,
+        MotivationalStyle = MotivationalStyles.Canonical(e.MotivationalStyle),
         SessionReminderMinutes = string.IsNullOrWhiteSpace(e.SessionReminderMinutes) ? "60,30,10,5,3,2,1" : e.SessionReminderMinutes,
         CourseGoalReminderDays = string.IsNullOrWhiteSpace(e.CourseGoalReminderDays) ? "14,7,3,1,0" : e.CourseGoalReminderDays,
         InactivityThresholdDays = e.InactivityThresholdDays > 0 ? e.InactivityThresholdDays : 5,

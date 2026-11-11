@@ -1693,7 +1693,7 @@ public class AppStateService : IAsyncDisposable
         AccentColor = d.AccentColor,
         AutoSwitchFocus = d.AutoSwitchFocus,
         AutoSwitchMinutesBefore = d.AutoSwitchMinutesBefore,
-        MotivationalStyle = d.MotivationalStyle,
+        MotivationalStyle = MotivationalStyles.Canonical(d.MotivationalStyle),
         SessionReminderMinutes = d.SessionReminderMinutes,
         CourseGoalReminderDays = d.CourseGoalReminderDays,
         InactivityThresholdDays = d.InactivityThresholdDays,

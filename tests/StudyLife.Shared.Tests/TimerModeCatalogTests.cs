@@ -29,6 +29,12 @@ public class TimerModeCatalogTests
     }
 
     [Fact]
+    public void FindBuiltIn_ModeFour_HasTheNeutralName()
+    {
+        Assert.Equal("Steady Focus", TimerModeCatalog.FindBuiltIn(4)!.Value.Name);
+    }
+
+    [Fact]
     public void FindBuiltIn_UnknownId_ReturnsNull()
     {
         Assert.Null(TimerModeCatalog.FindBuiltIn(999));

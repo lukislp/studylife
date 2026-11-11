@@ -45,7 +45,7 @@ public static class TimerModeCatalog
         new(1, "Pomodoro Classic", 25, 5, 4),
         new(2, "Flow State", 52, 17, 3),
         new(3, "Ultradian Rhythm", 90, 20, 2),
-        new(4, "Claude Mode", 40, 10, 3),
+        new(4, "Steady Focus", 40, 10, 3),
         new(5, "Sprint Bursts", 10, 3, 6),
         new(6, "Micro Focus", 5, 1, 8),
         new(7, "Quick Burst", 15, 3, 5),

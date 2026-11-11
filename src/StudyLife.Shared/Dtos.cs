@@ -50,7 +50,7 @@ public class UserSettingsDto
     public bool AutoSwitchFocus { get; set; } = true;
     public int AutoSwitchMinutesBefore { get; set; } = 2;
     [MaxLength(50)]
-    public string MotivationalStyle { get; set; } = "claude";
+    public string MotivationalStyle { get; set; } = MotivationalStyles.Default;
     /// <summary>Comma-separated minute values before session start, e.g. "60,30,10,5,3,2,1".</summary>
     [MaxLength(200)]
     public string SessionReminderMinutes { get; set; } = "60,30,10,5,3,2,1";

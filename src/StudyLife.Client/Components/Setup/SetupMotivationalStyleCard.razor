@@ -2,6 +2,7 @@
   SPDX-FileCopyrightText: 2026 Lukas Körber
   SPDX-License-Identifier: AGPL-3.0-only
 *@
+@using StudyLife.Shared
 <div class="setup-section">
     <div class="ss-label">@Label</div>
     <div class="style-grid">
@@ -23,7 +24,7 @@
 
     public static readonly List<StyleOption> DefaultStyles = new()
     {
-        new("claude", "✦", "Claude", "Thoughtful, precise motivation. The kind that makes you think."),
+        new(MotivationalStyles.Thoughtful, "✦", "Thoughtful", "Reflective, precise motivation. The kind that makes you think."),
         new("zen", "◌", "Zen", "Calm and grounding. Quiet encouragement."),
         new("intense", "⚡", "Intense", "No excuses. Pure drive. Built for sprints."),
         new("hype", "🔥", "Hype", "Energy, enthusiasm, and high-fives. Loud motivation."),

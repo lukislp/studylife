@@ -250,7 +250,7 @@ public class BackgroundTaskServiceDailyMotivationExpiredSubscriptionTests : ICla
 public class BackgroundTaskServiceDailyMotivationQuotePickTests
 {
     [Theory]
-    [InlineData("claude")]
+    [InlineData("thoughtful")]
     [InlineData("zen")]
     [InlineData("intense")]
     [InlineData("hype")]
@@ -265,13 +265,13 @@ public class BackgroundTaskServiceDailyMotivationQuotePickTests
     }
 
     [Fact]
-    public void UnknownOrNullStyle_FallsBackToClaudePool()
+    public void UnknownOrNullStyle_FallsBackToDefaultPool()
     {
         var date = new DateTime(2026, 7, 15);
-        var claude = BackgroundTaskService.PickDailyMotivationQuote("claude", date);
+        var thoughtful = BackgroundTaskService.PickDailyMotivationQuote("thoughtful", date);
 
-        Assert.Equal(claude, BackgroundTaskService.PickDailyMotivationQuote("does-not-exist", date));
-        Assert.Equal(claude, BackgroundTaskService.PickDailyMotivationQuote(null, date));
+        Assert.Equal(thoughtful, BackgroundTaskService.PickDailyMotivationQuote("does-not-exist", date));
+        Assert.Equal(thoughtful, BackgroundTaskService.PickDailyMotivationQuote(null, date));
     }
 
     [Fact]

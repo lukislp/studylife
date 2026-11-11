@@ -238,7 +238,7 @@ public partial class Index
         }
     }
 
-    /// <summary>Localized replacement for the old hardcoded-English DefaultData.ClaudeMotivations
+    /// <summary>Localized replacement for the old hardcoded-English DefaultData's motivation list
     /// list - picks one of the 12 quotes from IndexText, translated per the active language.</summary>
     private string GetRandomMotivation()
     {
