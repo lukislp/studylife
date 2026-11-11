@@ -29,7 +29,7 @@
          COSE keys by hand instead of relying on Fido2NetLib internals). -->
     <PackageReference Include="System.Formats.Cbor" Version="10.0.15" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.15" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.12.0" />
     <!-- StackExchange.Redis's IDatabase is too large to hand-stub in this codebase's usual style
          (see RedisVersionCounterTests/RedisWorkerShardClaimTests) - NSubstitute is the only
          production-code-free way to mock it. -->
