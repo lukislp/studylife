@@ -861,12 +861,12 @@
       },
       "OpenTelemetry.Instrumentation.Http": {
         "type": "Transitive",
-        "resolved": "1.20.2",
-        "contentHash": "B84T2n4U7r3l+N5qP8vmoztGhbliWXc+vSz0BefjYNXbW9BA9q7iqU9+xn5dtCPlMNdHb+9Horgk8YhcO+eNTw==",
+        "resolved": "1.21.0",
+        "contentHash": "sThY0J9yMUZ4yWX5/JWpRlFN0LedPpA2ZTj35Z2unkxXLcCiXxDmmlL8UkqFDR6I16E+o/bTFC1HPylr/CbJ8A==",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
           "Microsoft.Extensions.Options": "10.0.0",
-          "OpenTelemetry.Api.ProviderBuilderExtensions": "[1.20.1, 2.0.0)"
+          "OpenTelemetry.Api.ProviderBuilderExtensions": "[1.21.0, 2.0.0)"
         }
       },
       "OpenTelemetry.Instrumentation.Runtime": {
@@ -1063,7 +1063,7 @@
           "OpenTelemetry.Exporter.Prometheus.AspNetCore": "[1.18.0-beta.1, )",
           "OpenTelemetry.Extensions.Hosting": "[1.21.0, )",
           "OpenTelemetry.Instrumentation.AspNetCore": "[1.20.2, )",
-          "OpenTelemetry.Instrumentation.Http": "[1.20.2, )",
+          "OpenTelemetry.Instrumentation.Http": "[1.21.0, )",
           "OpenTelemetry.Instrumentation.Runtime": "[1.20.1, )",
           "SQLitePCLRaw.lib.e_sqlite3": "[3.53.3, )",
           "StudyLife.Client": "[1.0.0, )",
