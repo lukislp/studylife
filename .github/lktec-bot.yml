@@ -32,6 +32,14 @@ modules:
     paths: []
     # One line; {number} is the pull request number.
     commit-message: "chore(deps): refresh lockfiles after Dependabot bump"
+    # Regenerated with the lock files of a Dependabot pull request (lktec-bot v0.10.0, see
+    # docs/modules/lockfiles.md there): a bump that adds or drops a transitive package changes the
+    # third-party notices, and test-lint fails until they are current. The command comes from this
+    # file on the default branch and runs without secrets; only the listed path is committed.
+    derived:
+      - name: third-party notices
+        run: python3 tools/check-licences.py --update
+        paths: [THIRD-PARTY-NOTICES.md]
 
   # Commits the image tag bump of the deploy manifests onto the default branch after a release (see
   # docs/modules/sync.md in lukislp/lktec-bot). The App is a bypass actor of the branch ruleset for it.
