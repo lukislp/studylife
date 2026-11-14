@@ -599,6 +599,96 @@ public class OwnerPasswordResetTests(CustomWebApplicationFactory factory) : ICla
 }
 
 /// <summary>Per-IP limit on the sign-in endpoint (10 per 15 minutes; one partition in the TestServer).</summary>
+public class PasswordFixedUsernameTests(CustomWebApplicationFactory factory) : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly PasswordHttp _http = new(factory);
+
+    private async Task<PasswordStatusDto> StatusAsync(string session) =>
+        (await (await _http.SendAsync(HttpMethod.Get, "/api/auth/password", session)).Content.ReadFromJsonAsync<PasswordStatusDto>())!;
+
+    [Fact]
+    public async Task Change_KeepsTheName_RefusesAnotherOne_AndReAddingAfterRemovalMayChooseANewName()
+    {
+        var session = await _http.AgedSessionAsync(1);
+        var add = await _http.SendAsync(HttpMethod.Put, "/api/auth/password", session, new JsonObject
+        {
+            ["username"] = "Fixed.Name",
+            ["newPassword"] = PasswordHttp.Strong,
+            ["recoveryCode"] = await _http.RecoveryCodeAsync(session),
+        });
+        Assert.Equal(HttpStatusCode.NoContent, add.StatusCode);
+
+        // A different name is refused, the stored name and the old password stay untouched.
+        var rename = await _http.SendAsync(HttpMethod.Put, "/api/auth/password", session, new JsonObject
+        {
+            ["username"] = "Other.Name",
+            ["newPassword"] = PasswordHttp.Stronger,
+            ["currentPassword"] = PasswordHttp.Strong,
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, rename.StatusCode);
+        Assert.Equal("username-fixed", await PasswordHttp.ProblemTypeAsync(rename));
+        Assert.Equal("Fixed.Name", (await StatusAsync(session)).Username);
+        Assert.Equal(HttpStatusCode.OK, (await _http.LoginAsync("fixed.name", PasswordHttp.Strong)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await _http.LoginAsync("other.name", PasswordHttp.Stronger)).StatusCode);
+
+        // The same name (also with other case or spacing) and a blank one are fine and keep the stored spelling.
+        foreach (var name in new[] { "FIXED.name", "  Fixed.Name ", "", null })
+        {
+            var body = new JsonObject { ["newPassword"] = PasswordHttp.Stronger, ["currentPassword"] = PasswordHttp.Strong };
+            if (name is not null) body["username"] = name;
+            var change = await _http.SendAsync(HttpMethod.Put, "/api/auth/password", session, body);
+            Assert.Equal(HttpStatusCode.NoContent, change.StatusCode);
+            Assert.Equal("Fixed.Name", (await StatusAsync(session)).Username);
+            // Put the password back for the next round.
+            var back = await _http.SendAsync(HttpMethod.Put, "/api/auth/password", session,
+                new JsonObject { ["newPassword"] = PasswordHttp.Strong, ["currentPassword"] = PasswordHttp.Stronger });
+            Assert.Equal(HttpStatusCode.NoContent, back.StatusCode);
+        }
+
+        // Removing the password deletes the row, so a later new password may choose a new name.
+        await _http.AddApprovedPasskeyAsync(1);
+        var removed = await _http.SendAsync(HttpMethod.Delete, "/api/auth/password", session,
+            new JsonObject { ["currentPassword"] = PasswordHttp.Strong });
+        Assert.Equal(HttpStatusCode.NoContent, removed.StatusCode);
+        var readd = await _http.SendAsync(HttpMethod.Put, "/api/auth/password", session, new JsonObject
+        {
+            ["username"] = "Other.Name",
+            ["newPassword"] = PasswordHttp.Strong,
+            ["recoveryCode"] = await _http.RecoveryCodeAsync(session),
+        });
+        Assert.Equal(HttpStatusCode.NoContent, readd.StatusCode);
+        Assert.Equal("Other.Name", (await StatusAsync(session)).Username);
+    }
+
+    [Fact]
+    public async Task OwnerReset_CannotRenameAnAccountThatHasAName()
+    {
+        var target = await factory.WithDbAsync(async db =>
+        {
+            var user = new AuthUserEntity { DisplayName = "ResetTarget", CreatedAt = DateTime.UtcNow };
+            db.AuthUsers.Add(user);
+            await db.SaveChangesAsync();
+            return user.Id;
+        });
+        var ownerSession = await _http.AgedSessionAsync(1);
+        var url = $"/api/auth/users/{target}/password-reset";
+
+        var first = await _http.SendAsync(HttpMethod.Post, url, ownerSession,
+            new JsonObject { ["username"] = "reset.target", ["recoveryCode"] = await _http.RecoveryCodeAsync(ownerSession) });
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+
+        var rename = await _http.SendAsync(HttpMethod.Post, url, ownerSession,
+            new JsonObject { ["username"] = "renamed.target", ["recoveryCode"] = await _http.RecoveryCodeAsync(ownerSession) });
+        Assert.Equal(HttpStatusCode.BadRequest, rename.StatusCode);
+        Assert.Equal("username-fixed", await PasswordHttp.ProblemTypeAsync(rename));
+
+        var again = await _http.SendAsync(HttpMethod.Post, url, ownerSession,
+            new JsonObject { ["username"] = "Reset.Target", ["recoveryCode"] = await _http.RecoveryCodeAsync(ownerSession) });
+        Assert.Equal(HttpStatusCode.OK, again.StatusCode);
+        Assert.Equal("reset.target", (await again.Content.ReadFromJsonAsync<PasswordResetResultDto>())!.Username);
+    }
+}
+
 public class PasswordLoginRateLimitTests(CustomWebApplicationFactory factory) : IClassFixture<CustomWebApplicationFactory>
 {
     private readonly PasswordHttp _http = new(factory);
@@ -662,6 +752,26 @@ public class PasswordCredentialServiceTests(CustomWebApplicationFactory factory)
         Assert.Equal(0, row.FailedAttemptCount);
         Assert.Null(row.LockedUntil);
         Assert.NotNull(row.LastUsedAt);
+    }
+
+    [Fact]
+    public async Task Prepare_KeepsTheStoredName_AndRefusesADifferentOne()
+    {
+        var userId = await NewUserAsync("PrepareFixed");
+        await _http.GivePasswordAsync(userId, "Prep.Name", PasswordHttp.Strong);
+        using var scope = factory.Services.CreateScope();
+        var service = Create(scope.ServiceProvider, new Clock());
+
+        var other = await service.PrepareAsync(userId, "prep.other", PasswordHttp.Stronger);
+        Assert.Equal(PasswordProblem.UsernameFixed, other.Problem);
+        Assert.Null(other.Prepared);
+
+        Assert.Equal("Prep.Name", (await service.PrepareAsync(userId, " PREP.name ", PasswordHttp.Stronger)).Prepared!.Username);
+        Assert.Equal("Prep.Name", (await service.PrepareAsync(userId, null, PasswordHttp.Stronger)).Prepared!.Username);
+
+        // An account without a credential chooses its name.
+        var fresh = await service.PrepareAsync(await NewUserAsync("PrepareNew"), "Chosen.Name", PasswordHttp.Stronger);
+        Assert.Equal("Chosen.Name", fresh.Prepared!.Username);
     }
 
     [Fact]

@@ -90,6 +90,7 @@ public class PasswordSignInStateTests
 
     [Theory]
     [InlineData("username-invalid", PasswordFailure.UsernameInvalid)]
+    [InlineData("username-fixed", PasswordFailure.UsernameFixed)]
     [InlineData("password-too-short", PasswordFailure.TooShort)]
     [InlineData("password-too-long", PasswordFailure.TooLong)]
     [InlineData("password-common", PasswordFailure.Common)]
@@ -241,6 +242,40 @@ public class SetupPasswordCardTests : ConsentBunitTest
         var body = JsonNode.Parse(server.Bodies.Single(b => b.Contains("newPassword")))!.AsObject();
         Assert.Equal("alex", body["username"]!.GetValue<string>());
         Assert.Equal("ABCD-EFGH-JKLM", body["recoveryCode"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void ChangeMode_ShowsTheUsernameReadOnly()
+    {
+        var (cut, _) = Render(new PasswordStatusDto { Enabled = true, HasPassword = true, Username = "alex", CanRemove = true });
+        cut.WaitForAssertion(() => Assert.Contains("ChangeButton", cut.Markup));
+        cut.FindAll("button").First(b => b.TextContent.Trim() == "ChangeButton").Click();
+        var field = cut.Find("#password-username");
+        Assert.True(field.HasAttribute("readonly"));
+        Assert.Equal("alex", field.GetAttribute("value"));
+        Assert.Contains("UsernameFixedHint", cut.Markup);
+    }
+
+    [Fact]
+    public void AddMode_LetsYouChooseTheUsername()
+    {
+        var (addCut, _) = Render(new PasswordStatusDto { Enabled = true, HasPassword = false });
+        addCut.WaitForAssertion(() => Assert.Contains("AddButton", addCut.Markup));
+        addCut.FindAll("button").First(b => b.TextContent.Trim() == "AddButton").Click();
+        Assert.False(addCut.Find("#password-username").HasAttribute("readonly"));
+    }
+
+    [Fact]
+    public void ARefusedRename_ShowsTheFixedNameReason()
+    {
+        var (cut, server) = Render(new PasswordStatusDto { Enabled = true, HasPassword = true, Username = "alex", CanRemove = true });
+        server.On("PUT api/auth/password", _ => PasswordSignInStateTests.Problem(HttpStatusCode.BadRequest, "username-fixed"));
+        cut.WaitForAssertion(() => Assert.Contains("ChangeButton", cut.Markup));
+        cut.FindAll("button").First(b => b.TextContent.Trim() == "ChangeButton").Click();
+        cut.Find("#password-new").Input("password1234");
+        cut.Find("#password-current").Input("old phrase here!");
+        cut.Find("form").Submit();
+        cut.WaitForAssertion(() => Assert.Equal("ErrorUsernameFixed", cut.Find("[role=alert]").TextContent.Trim()));
     }
 
     [Fact]
