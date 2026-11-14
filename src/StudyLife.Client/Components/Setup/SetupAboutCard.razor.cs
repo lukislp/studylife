@@ -30,6 +30,10 @@ public partial class SetupAboutCard : ComponentBase, IDisposable
     /// component tests pass one with fake HTTP and platform.</summary>
     [Parameter] public AboutState? State { get; set; }
 
+    /// <summary>UI language that picks the privacy policy page. Left null in the app (the current
+    /// i18n language); component tests pass one.</summary>
+    [Parameter] public string? Language { get; set; }
+
     private readonly CancellationTokenSource _cts = new();
     private AboutText? T;
     private AboutState? _state;
@@ -43,6 +47,10 @@ public partial class SetupAboutCard : ComponentBase, IDisposable
     {
         T = Text ?? await Services.GetRequiredService<Toolbelt.Blazor.I18nText.I18nText>()
             .GetTextTableAsync<AboutText>(this);
+        if (Language is null)
+            Language = Services.GetService<Toolbelt.Blazor.I18nText.I18nText>() is { } i18n
+                ? await i18n.GetCurrentLanguageAsync()
+                : null;
         _state = State ?? new AboutState(Http, Platform);
         _builds = await _state.LoadBuildsAsync(_cts.Token);
     }
@@ -86,6 +94,10 @@ public partial class SetupAboutCard : ComponentBase, IDisposable
         $"{T!.SourceLink}: {BuildLabel(build)} {VersionText(build)}, {SourceTitle(build)} ({T.NewTab})";
 
     private string LicenceAriaLabel => $"{T!.LicenceLabel}: {LicenceName} ({T.NewTab})";
+
+    private string PrivacyUrl => PrivacyPolicyLink.For(Language);
+
+    private string PrivacyAriaLabel => $"{T!.PrivacyPolicy} ({T.NewTab})";
 
     private string ExpandedValue => _open ? "true" : "false";
 
