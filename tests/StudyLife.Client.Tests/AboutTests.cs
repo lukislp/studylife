@@ -302,6 +302,7 @@ public class SetupAboutCardTests : BunitContext
         NewTab = "opens in a new tab",
         LicenceLabel = "Licence",
         LicenceMeaning = "You may share it.",
+        PrivacyPolicy = "Privacy policy",
         NoticesHeading = "Third-party notices",
         NoticesDesc = "Components.",
         ShowNotices = "Show notices",
@@ -347,6 +348,33 @@ public class SetupAboutCardTests : BunitContext
         Assert.Contains("You may share it.", cut.Markup);
         Assert.True(links.ContainsKey("AGPL-3.0-only"));
     }
+
+    [Theory]
+    [InlineData("de", "https://legal.lktec.org/studylife/")]
+    [InlineData("de-AT", "https://legal.lktec.org/studylife/")]
+    [InlineData("en", "https://legal.lktec.org/en/studylife/")]
+    [InlineData("fr", "https://legal.lktec.org/en/studylife/")]
+    [InlineData("ru", "https://legal.lktec.org/en/studylife/")]
+    [InlineData(null, "https://legal.lktec.org/en/studylife/")]
+    public void Privacy_policy_link_follows_the_language_and_opens_externally(string? language, string expected)
+    {
+        var http = new HttpClient(Server()) { BaseAddress = new Uri("https://studylife.test/") };
+        var state = new AboutState(http, new FakePlatform(), "3.26.5");
+        Services.AddSingleton(http);
+        Services.AddSingleton<IClientPlatform>(new FakePlatform());
+        var cut = Render<SetupAboutCard>(p => p.Add(c => c.Text, Texts).Add(c => c.State, state).Add(c => c.Language, language ?? "en"));
+
+        var link = cut.FindAll("a").First(a => a.TextContent.Trim() == "Privacy policy");
+        Assert.Equal(expected, link.GetAttribute("href"));
+        Assert.Equal("_blank", link.GetAttribute("target"));
+        Assert.Contains("noopener", link.GetAttribute("rel"));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("pt-BR")]
+    public void Privacy_policy_defaults_to_english(string? language) =>
+        Assert.Equal(PrivacyPolicyLink.English, PrivacyPolicyLink.For(language));
 
     [Fact]
     public void Native_app_shows_its_own_version_and_source()
