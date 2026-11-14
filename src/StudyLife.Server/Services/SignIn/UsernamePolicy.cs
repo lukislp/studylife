@@ -18,6 +18,9 @@ namespace StudyLife.Server.Services.SignIn;
 /// invisible characters.</item>
 /// <item>Comparison: case-insensitive (<see cref="Key"/>, invariant lower case of the NFC form),
 /// so "Alex" and "alex" are the same account name.</item>
+/// <item>Fixed once set: while an account has a password credential its name never changes
+/// (<see cref="ChangesFixedName"/>); removing the password deletes the row, so a later new
+/// password may choose a new name.</item>
 /// </list>
 /// </summary>
 public static class UsernamePolicy
@@ -61,6 +64,12 @@ public static class UsernamePolicy
         }
         return true;
     }
+
+    /// <summary>True when <paramref name="requested"/> (already <see cref="Normalize">normalised</see>)
+    /// would rename an account whose login name is fixed, i.e. it is not blank and its
+    /// <see cref="Key"/> differs from the stored one. A case-only difference is the same name.</summary>
+    public static bool ChangesFixedName(string storedKey, string requested) =>
+        requested.Length > 0 && Key(requested) != storedKey;
 
     /// <summary>The case-insensitive lookup key of a normalised name.</summary>
     public static string Key(string normalized) => normalized.ToLower(CultureInfo.InvariantCulture);

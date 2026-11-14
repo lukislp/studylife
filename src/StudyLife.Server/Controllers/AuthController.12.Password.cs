@@ -22,8 +22,9 @@ public partial class AuthController
     // check (VerifyFreshProofAsync), the shared session issuance (IssueSignInSessionAsync) and the
     // status codes. Brute force: per-IP partitions in Program.cs, per-account lockout in the service.
 
-    /// <summary>PUT api/auth/password: add a password to the calling account or change it. A blank
-    /// <see cref="Username"/> keeps the account's current login name.</summary>
+    /// <summary>PUT api/auth/password: add a password to the calling account or change it. The login
+    /// name is fixed once the account has a password: a blank or equal <see cref="Username"/> is
+    /// fine, a different one is refused (400 username-fixed). Only the first password chooses it.</summary>
     public class PasswordSetRequest : FreshProofRequest
     {
         [MaxLength(256)]
@@ -32,8 +33,8 @@ public partial class AuthController
         public string? NewPassword { get; set; }
     }
 
-    /// <summary>POST api/auth/users/{id}/password-reset: the login name is only needed when the
-    /// account has none yet.</summary>
+    /// <summary>POST api/auth/users/{id}/password-reset: the login name is only needed (and only
+    /// accepted) when the account has none yet; a different one is refused (400 username-fixed).</summary>
     public class PasswordResetRequest : FreshProofRequest
     {
         [MaxLength(256)]
@@ -253,6 +254,8 @@ public partial class AuthController
             PasswordProblem.UsernameInvalid => (StatusCodes.Status400BadRequest, "username-invalid",
                 $"The username needs {UsernamePolicy.MinLength} to {UsernamePolicy.MaxLength} letters, digits, '.', '_', '-' or '@' and must start with a letter or digit."),
             PasswordProblem.UsernameTaken => (StatusCodes.Status409Conflict, "username-taken", "This username is already in use."),
+            PasswordProblem.UsernameFixed => (StatusCodes.Status400BadRequest, "username-fixed",
+                "The login name of an account with a password cannot be changed. Remove the password first to choose a new name."),
             PasswordProblem.TooShort => (StatusCodes.Status400BadRequest, "password-too-short",
                 $"The password needs at least {PasswordPolicy.MinLength} characters."),
             PasswordProblem.TooLong => (StatusCodes.Status400BadRequest, "password-too-long",

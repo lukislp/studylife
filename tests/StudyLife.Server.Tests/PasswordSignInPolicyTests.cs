@@ -69,6 +69,16 @@ public class UsernamePolicyTests
         Assert.Equal(UsernamePolicy.Key("Alex.Example"), UsernamePolicy.Key("ALEX.example"));
         Assert.Equal(UsernamePolicy.Key("JÜRGEN"), UsernamePolicy.Key("jürgen"));
     }
+
+    [Theory]
+    [InlineData("alex", "", false)]
+    [InlineData("alex", "alex", false)]
+    [InlineData("alex", "Alex", false)]
+    [InlineData("jürgen", "JÜRGEN", false)]
+    [InlineData("alex", "alexa", true)]
+    [InlineData("alex", "bob", true)]
+    public void ChangesFixedName_OnlyForADifferentNonBlankName(string storedKey, string requested, bool expected) =>
+        Assert.Equal(expected, UsernamePolicy.ChangesFixedName(storedKey, requested));
 }
 
 public class PasswordPolicyTests

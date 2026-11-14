@@ -19,6 +19,9 @@ public enum PasswordProblem
     Disabled,
     UsernameInvalid,
     UsernameTaken,
+    /// <summary>The account already has a password credential, so its login name is fixed; the
+    /// request asked for a different one.</summary>
+    UsernameFixed,
     TooShort,
     TooLong,
     Common,
@@ -66,8 +69,9 @@ public interface IPasswordCredentialService
     Task<bool> VerifyForUserAsync(int userId, string? password, CancellationToken ct = default);
 
     /// <summary>Validates and hashes a new credential. <paramref name="forUserId"/> is the account
-    /// it is for (null for a brand-new account); a blank <paramref name="username"/> keeps that
-    /// account's existing login name.</summary>
+    /// it is for (null for a brand-new account). Once the account has a credential its login name is
+    /// fixed: a blank or equal <paramref name="username"/> keeps it, a different one is refused with
+    /// <see cref="PasswordProblem.UsernameFixed"/>.</summary>
     Task<(PasswordProblem Problem, PreparedPassword? Prepared)> PrepareAsync(
         int? forUserId, string? username, string? password, CancellationToken ct = default);
 
@@ -218,9 +222,10 @@ public sealed class PasswordCredentialService(
         var existing = forUserId is int userId
             ? await db.PasswordCredentials.AsNoTracking().FirstOrDefaultAsync(c => c.AuthUserId == userId, ct)
             : null;
-        var name = string.IsNullOrWhiteSpace(username) && existing is not null
-            ? existing.Username
-            : UsernamePolicy.Normalize(username);
+        var requested = UsernamePolicy.Normalize(username);
+        if (existing is not null && UsernamePolicy.ChangesFixedName(existing.NormalizedUsername, requested))
+            return (PasswordProblem.UsernameFixed, null);
+        var name = existing is not null ? existing.Username : requested;
         if (!UsernamePolicy.IsValid(name)) return (PasswordProblem.UsernameInvalid, null);
 
         var key = UsernamePolicy.Key(name);

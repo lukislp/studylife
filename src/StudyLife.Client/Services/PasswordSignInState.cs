@@ -22,6 +22,8 @@ public enum PasswordFailure
     Disabled,
     UsernameInvalid,
     UsernameTaken,
+    /// <summary>The account already has a password, so its login name cannot change.</summary>
+    UsernameFixed,
     TooShort,
     TooLong,
     Common,
@@ -103,7 +105,7 @@ public sealed class PasswordSignInState(HttpClient http)
         catch (TaskCanceledException) { return null; }
     }
 
-    /// <summary>Adds or changes the password. A blank <paramref name="username"/> keeps the current one.</summary>
+    /// <summary>Adds or changes the password. Only the first password chooses the login name; for a change pass null (the server refuses a different name).</summary>
     public Task<PasswordAttempt> SetAsync(string? username, string newPassword, PasswordProof proof)
     {
         var body = BuildProof(proof);
@@ -218,6 +220,7 @@ public sealed class PasswordSignInState(HttpClient http)
             "password-sign-in-disabled" => PasswordFailure.Disabled,
             "username-invalid" => PasswordFailure.UsernameInvalid,
             "username-taken" => PasswordFailure.UsernameTaken,
+            "username-fixed" => PasswordFailure.UsernameFixed,
             "password-too-short" => PasswordFailure.TooShort,
             "password-too-long" => PasswordFailure.TooLong,
             "password-common" => PasswordFailure.Common,
@@ -244,6 +247,7 @@ public sealed class PasswordSignInState(HttpClient http)
         PasswordFailure.Disabled => t.ErrorDisabled,
         PasswordFailure.UsernameInvalid => t.ErrorUsernameInvalid,
         PasswordFailure.UsernameTaken => t.ErrorUsernameTaken,
+        PasswordFailure.UsernameFixed => t.ErrorUsernameFixed,
         PasswordFailure.TooShort => t.ErrorTooShort,
         PasswordFailure.TooLong => t.ErrorTooLong,
         PasswordFailure.Common => t.ErrorCommon,
