@@ -14,6 +14,7 @@
 @inject NotificationService Notifications
 @inject SessionTokenStore TokenStore
 @inject INativeAppAuth NativeAuth
+@inject IClientPlatform Platform
 @inject TelemetryService Telemetry
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
 @inject LocalDateNames DateNames
@@ -115,13 +116,22 @@
         @if (_langPopupOpen)
         {
             <div class="lang-popup fab-lang-popup" @onclick:stopPropagation="true">
-                @foreach (var lang in UiLanguage.All)
+                @* Native shells take the language from the system setting for the app (IClientPlatform.
+                   LanguageFromSystem): a hint that leads there instead of a picker that would disagree with it. *@
+                @if (Platform.LanguageFromSystem)
                 {
-                    var l = lang;
-                    <button class="lang-option @(l.Code == _lang ? "active" : "")" @onclick="() => SetLanguageAsync(l.Code)">
-                        <span class="lang-flag">@l.Flag</span>
-                        <span class="lang-name">@l.Name</span>
-                    </button>
+                    <LanguageFromSystemHint />
+                }
+                else
+                {
+                    @foreach (var lang in UiLanguage.All)
+                    {
+                        var l = lang;
+                        <button class="lang-option @(l.Code == _lang ? "active" : "")" @onclick="() => SetLanguageAsync(l.Code)">
+                            <span class="lang-flag">@l.Flag</span>
+                            <span class="lang-name">@l.Name</span>
+                        </button>
+                    }
                 }
             </div>
         }

@@ -11,5 +11,7 @@
   "HealthDesc": "StudyLife može spremati dovršene runde fokusa kao minute svjesnosti i prikazivati san, varijabilnost srčanog ritma i korake uz tvoje vrijeme učenja. Podaci ostaju na ovom uređaju.",
   "HealthConnectButton": "Poveži Apple Health",
   "HealthConnected": "Povezano. Što StudyLife smije čitati i zapisivati, možeš promijeniti u aplikaciji Zdravlje.",
-  "HealthDeclined": "Pristup aplikaciji Apple Health je isključen. Za uključivanje otvori aplikaciju Zdravlje, dodirni profilnu sliku, odaberi Aplikacije, a zatim StudyLife."
+  "HealthDeclined": "Pristup aplikaciji Apple Health je isključen. Za uključivanje otvori aplikaciju Zdravlje, dodirni profilnu sliku, odaberi Aplikacije, a zatim StudyLife.",
+  "LanguageFromSystemHint": "StudyLife koristi jezik koji je za aplikaciju postavljen u postavkama sustava.",
+  "OpenLanguageSettingsButton": "Otvori postavke"
 }

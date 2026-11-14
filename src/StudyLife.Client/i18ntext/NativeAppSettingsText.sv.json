@@ -11,5 +11,7 @@
   "HealthDesc": "StudyLife kan spara avslutade fokusrundor som mindfulminuter och visa sömn, pulsvariabilitet och steg bredvid din studietid. Datan stannar på den här enheten.",
   "HealthConnectButton": "Anslut Apple Hälsa",
   "HealthConnected": "Ansluten. Vad StudyLife får läsa och skriva ändrar du i Hälsa-appen.",
-  "HealthDeclined": "Åtkomst till Apple Hälsa är avstängd. Slå på den genom att öppna Hälsa-appen, trycka på din profilbild, välja Appar och sedan StudyLife."
+  "HealthDeclined": "Åtkomst till Apple Hälsa är avstängd. Slå på den genom att öppna Hälsa-appen, trycka på din profilbild, välja Appar och sedan StudyLife.",
+  "LanguageFromSystemHint": "StudyLife använder det språk du har valt för appen i systeminställningarna.",
+  "OpenLanguageSettingsButton": "Öppna inställningar"
 }

@@ -11,5 +11,7 @@
   "HealthDesc": "StudyLife może zapisywać zakończone rundy skupienia jako minuty uważności oraz pokazywać sen, zmienność rytmu serca i kroki obok twojego czasu nauki. Dane zostają na tym urządzeniu.",
   "HealthConnectButton": "Połącz z Apple Health",
   "HealthConnected": "Połączono. To, co StudyLife może odczytywać i zapisywać, zmienisz w aplikacji Zdrowie.",
-  "HealthDeclined": "Dostęp do Apple Health jest wyłączony. Aby go włączyć, otwórz aplikację Zdrowie, stuknij swoje zdjęcie profilowe, wybierz Aplikacje, a potem StudyLife."
+  "HealthDeclined": "Dostęp do Apple Health jest wyłączony. Aby go włączyć, otwórz aplikację Zdrowie, stuknij swoje zdjęcie profilowe, wybierz Aplikacje, a potem StudyLife.",
+  "LanguageFromSystemHint": "StudyLife używa języka ustawionego dla aplikacji w ustawieniach systemu.",
+  "OpenLanguageSettingsButton": "Otwórz ustawienia"
 }

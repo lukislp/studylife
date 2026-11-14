@@ -11,5 +11,7 @@
   "HealthDesc": "A StudyLife a befejezett fókuszköröket tudatosságperceként mentheti, és a tanulási idő mellett megmutathatja az alvást, a pulzusvariabilitást és a lépéseket. Az adatok ezen az eszközön maradnak.",
   "HealthConnectButton": "Apple Health összekapcsolása",
   "HealthConnected": "Összekapcsolva. Hogy a StudyLife mit olvashat és írhat, azt az Egészség appban módosíthatod.",
-  "HealthDeclined": "Az Apple Health-hozzáférés ki van kapcsolva. A bekapcsoláshoz nyisd meg az Egészség appot, koppints a profilképedre, válaszd az Appok, majd a StudyLife lehetőséget."
+  "HealthDeclined": "Az Apple Health-hozzáférés ki van kapcsolva. A bekapcsoláshoz nyisd meg az Egészség appot, koppints a profilképedre, válaszd az Appok, majd a StudyLife lehetőséget.",
+  "LanguageFromSystemHint": "A StudyLife azt a nyelvet használja, amelyet a rendszerbeállításokban megadtál neki.",
+  "OpenLanguageSettingsButton": "Beállítások megnyitása"
 }

@@ -10,5 +10,10 @@
   "Intro": "StudyLife hostujesz sam: nie ma usługi centralnej. Do aplikacji potrzebujesz adresu własnego serwera StudyLife albo serwera prowadzonego przez twoją szkołę, uczelnię lub organizację.",
   "SetupGuideLink": "Jak skonfigurować własny serwer",
   "EmptyUrl": "Najpierw wpisz adres swojego serwera StudyLife.",
-  "NotStudyLifeServer": "Pod tym adresem coś odpowiada, ale nie wygląda to na serwer StudyLife. Sprawdź adres lub stuknij ponownie, aby mimo to go użyć."
+  "NotStudyLifeServer": "Pod tym adresem coś odpowiada, ale nie wygląda to na serwer StudyLife. Sprawdź adres lub stuknij ponownie, aby mimo to go użyć.",
+  "UntrustedCertificate": "Certyfikat tego serwera nie jest zaufany (pochodzi na przykład z twojego własnego urzędu certyfikacji). Zainstaluj profil urzędu certyfikacji na tym urządzeniu lub użyj publicznego adresu serwera.",
+  "SignedOutUnreachable": "Serwer {0} jest w tej chwili niedostępny. Jeśli adres jest błędny, zmień serwer.",
+  "SignedOutNotStudyLife": "{0} nie odpowiada jak serwer StudyLife. Jeśli adres jest błędny, zmień serwer.",
+  "PasskeyDomainHint": "Klucze dostępu działają tylko pod adresem {0}.",
+  "UsePasskeyAddress": "Użyj tego adresu"
 }

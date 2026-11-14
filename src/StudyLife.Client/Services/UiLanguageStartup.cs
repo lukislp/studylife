@@ -21,15 +21,30 @@ public static class UiLanguageStartup
     /// <summary>
     /// Decides the language of this start, stores it when it differs from what is stored, and
     /// returns it. <paramref name="setLanguage"/> is <c>I18nText.SetCurrentLanguageAsync</c>;
-    /// <paramref name="hasPriorUse"/> is "a session token already exists on this device".
+    /// <paramref name="hasPriorUse"/> is "a session token already exists on this device";
+    /// <paramref name="prescribed"/> is the language the host prescribes (see <see cref="UiLanguage.Resolve"/>).
     /// </summary>
-    public static async Task<string> ApplyAsync(IJSRuntime js, Func<string, Task> setLanguage, bool hasPriorUse)
+    public static async Task<string> ApplyAsync(IJSRuntime js, Func<string, Task> setLanguage, bool hasPriorUse, string? prescribed = null)
     {
         var stored = await TryAsync<string?>(js, "localStorage.getItem", StorageKey);
-        var language = UiLanguage.Resolve(stored, await GetDeviceLanguagesAsync(js), hasPriorUse);
+        var language = UiLanguage.Resolve(stored, await GetDeviceLanguagesAsync(js), hasPriorUse, prescribed);
         if (!string.Equals(stored, language, StringComparison.Ordinal))
+        {
             await setLanguage(language);
+            // Written here as well: the library skips its own persistence when the language it detected
+            // from navigator.languages already equals this one, so nothing was stored and the next start
+            // counted as "no stored choice". In the native app that next start comes right after the first
+            // server address is saved, where an install with a server and no stored choice is treated as
+            // an old install and switched to German (the English iPad of 2026-11-14).
+            await TryWriteAsync(js, language);
+        }
         return language;
+    }
+
+    private static async Task TryWriteAsync(IJSRuntime js, string language)
+    {
+        try { await js.InvokeVoidAsync("localStorage.setItem", StorageKey, language); }
+        catch { /* storage not available: this start still shows the language */ }
     }
 
     /// <summary>The device or browser languages in preference order: <c>navigator.languages</c>,

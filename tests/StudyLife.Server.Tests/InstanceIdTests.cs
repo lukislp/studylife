@@ -4,7 +4,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
@@ -120,5 +122,49 @@ public partial class InstanceEndpointTests : IClassFixture<CustomWebApplicationF
         var b = await session.GetFromJsonAsync<InstanceInfoDto>("/api/instance");
 
         Assert.Equal(a!.Id, b!.Id);
+    }
+
+    [Fact]
+    public async Task Get_HasNoPasskeyDomain_WhenNoneIsPinned()
+    {
+        using var anonymous = ApiKeyTestHelpers.CreateClientWithKey(_factory, null);
+
+        var body = await anonymous.GetFromJsonAsync<InstanceInfoDto>("/api/instance");
+
+        Assert.Null(body!.PasskeyRpId);
+        Assert.Null(body.PasskeyOrigin);
+    }
+}
+
+/// <summary>GET /api/instance names the pinned passkey domain (the app's hint for internal addresses).</summary>
+public class InstancePasskeyDomainTests : IClassFixture<InstancePasskeyDomainTests.PinnedPasskeyFactory>
+{
+    public sealed class PinnedPasskeyFactory : CustomWebApplicationFactory
+    {
+        protected override void ConfigureWebHost(IWebHostBuilder builder)
+        {
+            base.ConfigureWebHost(builder);
+            builder.ConfigureAppConfiguration((_, config) =>
+                config.AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["Fido2:ServerDomain"] = "studylife.example.com",
+                    ["Fido2:Origins:0"] = "https://studylife.example.com",
+                }));
+        }
+    }
+
+    private readonly PinnedPasskeyFactory _factory;
+
+    public InstancePasskeyDomainTests(PinnedPasskeyFactory factory) => _factory = factory;
+
+    [Fact]
+    public async Task Get_NamesThePinnedPasskeyDomain()
+    {
+        using var anonymous = ApiKeyTestHelpers.CreateClientWithKey(_factory, null);
+
+        var body = await anonymous.GetFromJsonAsync<InstanceInfoDto>("/api/instance");
+
+        Assert.Equal("studylife.example.com", body!.PasskeyRpId);
+        Assert.Equal("https://studylife.example.com", body.PasskeyOrigin);
     }
 }

@@ -10,5 +10,10 @@
   "Intro": "StudyLife se hostira sam: ne postoji središnja usluga. Za aplikaciju trebaš adresu vlastitog StudyLife poslužitelja ili poslužitelja koji vodi tvoja škola, fakultet ili organizacija.",
   "SetupGuideLink": "Kako postaviti vlastiti poslužitelj",
   "EmptyUrl": "Prvo upiši adresu svojeg StudyLife poslužitelja.",
-  "NotStudyLifeServer": "Na toj adresi nešto odgovara, ali ne izgleda kao StudyLife poslužitelj. Provjeri je ili dodirni ponovno da je ipak upotrijebiš."
+  "NotStudyLifeServer": "Na toj adresi nešto odgovara, ali ne izgleda kao StudyLife poslužitelj. Provjeri je ili dodirni ponovno da je ipak upotrijebiš.",
+  "UntrustedCertificate": "Certifikat ovog poslužitelja nije pouzdan (dolazi, primjerice, od tvog vlastitog izdavatelja certifikata). Instaliraj profil izdavatelja certifikata na ovaj uređaj ili upotrijebi javnu adresu poslužitelja.",
+  "SignedOutUnreachable": "{0} trenutno nije dostupan. Ako je adresa pogrešna, promijeni poslužitelj.",
+  "SignedOutNotStudyLife": "{0} ne odgovara kao StudyLife poslužitelj. Ako je adresa pogrešna, promijeni poslužitelj.",
+  "PasskeyDomainHint": "Pristupni ključevi rade samo na {0}.",
+  "UsePasskeyAddress": "Koristi ovu adresu"
 }

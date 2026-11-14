@@ -10,5 +10,10 @@
   "Intro": "StudyLife tiek mitināts pašrocīgi: centrāla pakalpojuma nav. Lietotnei vajadzīga tava paša StudyLife servera adrese vai tā servera adrese, ko uztur tava skola, universitāte vai organizācija.",
   "SetupGuideLink": "Kā iestatīt savu serveri",
   "EmptyUrl": "Vispirms ievadi sava StudyLife servera adresi.",
-  "NotStudyLifeServer": "Šajā adresē kaut kas atbild, bet tas neizskatās pēc StudyLife servera. Pārbaudi adresi vai pieskaries vēlreiz, lai to tomēr izmantotu."
+  "NotStudyLifeServer": "Šajā adresē kaut kas atbild, bet tas neizskatās pēc StudyLife servera. Pārbaudi adresi vai pieskaries vēlreiz, lai to tomēr izmantotu.",
+  "UntrustedCertificate": "Šī servera sertifikāts nav uzticams (piemēram, to izdevusi tava paša sertifikācijas iestāde). Instalē sertifikācijas iestādes profilu šajā ierīcē vai izmanto servera publisko adresi.",
+  "SignedOutUnreachable": "{0} pašlaik nav sasniedzams. Ja adrese ir nepareiza, maini serveri.",
+  "SignedOutNotStudyLife": "{0} neatbild kā StudyLife serveris. Ja adrese ir nepareiza, maini serveri.",
+  "PasskeyDomainHint": "Piekļuves atslēgas darbojas tikai adresē {0}.",
+  "UsePasskeyAddress": "Izmantot šo adresi"
 }

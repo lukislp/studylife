@@ -11,5 +11,7 @@
   "HealthDesc": "StudyLife var saglabāt pabeigtos fokusa raundus kā apzinātības minūtes un rādīt miegu, sirdsdarbības mainīgumu un soļus līdzās tavam mācību laikam. Dati paliek šajā ierīcē.",
   "HealthConnectButton": "Savienot Apple Health",
   "HealthConnected": "Savienots. Ko StudyLife drīkst lasīt un rakstīt, vari mainīt lietotnē Health.",
-  "HealthDeclined": "Piekļuve Apple Health ir izslēgta. Lai to ieslēgtu, atver lietotni Health, pieskaries profila attēlam, izvēlies Apps un pēc tam StudyLife."
+  "HealthDeclined": "Piekļuve Apple Health ir izslēgta. Lai to ieslēgtu, atver lietotni Health, pieskaries profila attēlam, izvēlies Apps un pēc tam StudyLife.",
+  "LanguageFromSystemHint": "StudyLife izmanto valodu, kas tam iestatīta sistēmas iestatījumos.",
+  "OpenLanguageSettingsButton": "Atvērt iestatījumus"
 }

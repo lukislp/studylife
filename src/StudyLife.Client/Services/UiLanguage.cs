@@ -66,6 +66,9 @@ public static class UiLanguage
     /// <summary>
     /// The language a start uses:
     /// <list type="number">
+    /// <item>the language the host prescribes (<paramref name="prescribed"/>): the native app shell takes
+    /// it from the operating system's language setting for the app and has no picker of its own, and it
+    /// passes that language on to the auth pages it opens in the system browser (?applang=);</item>
     /// <item>the user's stored choice, if there is one (a region tag such as <c>en-GB</c> that an
     /// older library version persisted counts as its language);</item>
     /// <item>an existing user without a stored choice (<paramref name="hasPriorUse"/>: a session
@@ -75,8 +78,22 @@ public static class UiLanguage
     /// <item><see cref="Fallback"/>.</item>
     /// </list>
     /// </summary>
-    public static string Resolve(string? stored, IEnumerable<string>? deviceLanguages, bool hasPriorUse = false)
+    /// <summary>The UI language of a native shell whose language is the operating system's setting for
+    /// the app: the best match of <paramref name="systemLanguages"/> (in the system's order), else
+    /// <see cref="Fallback"/>. A stored choice plays no part, there is no picker in the app.</summary>
+    public static string FromSystem(IEnumerable<string>? systemLanguages) => Resolve(null, systemLanguages);
+
+    /// <summary>The language a native shell has to switch to after the system language for the app
+    /// changed while it was in the background, or null when <paramref name="shown"/> still matches.</summary>
+    public static string? SystemLanguageChange(string? shown, IEnumerable<string>? systemLanguages)
     {
+        var wanted = FromSystem(systemLanguages);
+        return string.Equals(Match(shown), wanted, StringComparison.Ordinal) ? null : wanted;
+    }
+
+    public static string Resolve(string? stored, IEnumerable<string>? deviceLanguages, bool hasPriorUse = false, string? prescribed = null)
+    {
+        if (Match(prescribed) is { } given) return given;
         if (Match(stored) is { } chosen) return chosen;
         if (hasPriorUse) return LegacyDefault;
         if (deviceLanguages is not null)

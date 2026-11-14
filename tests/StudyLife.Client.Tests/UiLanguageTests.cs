@@ -120,6 +120,26 @@ public class UiLanguageTests
     }
 
     [Fact]
+    public void A_prescribed_language_wins_over_everything()
+        => Assert.Equal("en", UiLanguage.Resolve("de", German, hasPriorUse: true, prescribed: "en-US"));
+
+    [Fact]
+    public void The_native_shell_follows_the_system_language_for_the_app()
+        => Assert.Equal("de", UiLanguage.FromSystem(new[] { "de-AT", "en" }));
+
+    [Fact]
+    public void An_unsupported_system_language_gives_english()
+        => Assert.Equal("en", UiLanguage.FromSystem(new[] { "ja-JP" }));
+
+    [Fact]
+    public void No_change_while_the_system_language_still_matches()
+        => Assert.Null(UiLanguage.SystemLanguageChange("en", new[] { "en-GB" }));
+
+    [Fact]
+    public void A_new_system_language_for_the_app_is_reported_as_a_change()
+        => Assert.Equal("de", UiLanguage.SystemLanguageChange("en", new[] { "de-DE" }));
+
+    [Fact]
     public void Registry_matches_the_language_files_of_every_i18n_table()
     {
         var dir = FindI18nDirectory();

@@ -10,5 +10,10 @@
   "Intro": "StudyLife draai je zelf: er is geen centrale dienst. Voor de app heb je het adres nodig van je eigen StudyLife-server, of van de server die je school, universiteit of organisatie beheert.",
   "SetupGuideLink": "Zo zet je je eigen server op",
   "EmptyUrl": "Vul eerst het adres van je StudyLife-server in.",
-  "NotStudyLifeServer": "Op dit adres antwoordt iets, maar het lijkt geen StudyLife-server. Controleer het adres of tik nogmaals om het toch te gebruiken."
+  "NotStudyLifeServer": "Op dit adres antwoordt iets, maar het lijkt geen StudyLife-server. Controleer het adres of tik nogmaals om het toch te gebruiken.",
+  "UntrustedCertificate": "Het certificaat van deze server wordt niet vertrouwd (bijvoorbeeld omdat het van je eigen certificeringsinstantie komt). Installeer het profiel van de certificeringsinstantie op dit apparaat of gebruik het openbare adres van de server.",
+  "SignedOutUnreachable": "{0} is op dit moment niet bereikbaar. Als het adres verkeerd is, wissel dan van server.",
+  "SignedOutNotStudyLife": "{0} antwoordt niet als een StudyLife-server. Als het adres verkeerd is, wissel dan van server.",
+  "PasskeyDomainHint": "Passkeys werken alleen op {0}.",
+  "UsePasskeyAddress": "Dit adres gebruiken"
 }

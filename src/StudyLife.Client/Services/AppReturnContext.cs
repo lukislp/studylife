@@ -31,11 +31,12 @@ public sealed class AppReturnContext
 {
     private const string CustomSchemeReturn = "studylife://auth";
 
-    private AppReturnContext(bool isActive, string? returnUrl, string? codeChallenge)
+    private AppReturnContext(bool isActive, string? returnUrl, string? codeChallenge, string? language)
     {
         IsActive = isActive;
         _returnUrl = returnUrl;
         _codeChallenge = codeChallenge;
+        Language = language;
     }
 
     private readonly string? _returnUrl;
@@ -43,11 +44,17 @@ public sealed class AppReturnContext
 
     public bool IsActive { get; }
 
+    /// <summary>The app's UI language (?applang=), so the auth page in the system browser speaks the
+    /// language the app shows instead of whatever this browser last stored; null when absent or not a
+    /// supported language. Program.cs passes it to UiLanguageStartup as the prescribed language.</summary>
+    public string? Language { get; }
+
     public static AppReturnContext FromUri(Uri uri)
     {
         var isActive = false;
         string? returnUrl = null;
         string? codeChallenge = null;
+        string? language = null;
         foreach (var pair in uri.Query.TrimStart('?').Split('&'))
         {
             if (pair == "app=1") isActive = true;
@@ -56,8 +63,10 @@ public sealed class AppReturnContext
                 returnUrl = ValidateLoopbackUrl(Uri.UnescapeDataString(kv[1]));
             if (kv.Length == 2 && kv[0] == "appchallenge")
                 codeChallenge = Uri.UnescapeDataString(kv[1]);
+            if (kv.Length == 2 && kv[0] == "applang")
+                language = SupportedLanguages.Match(Uri.UnescapeDataString(kv[1]));
         }
-        return new AppReturnContext(isActive, isActive ? returnUrl : null, isActive ? codeChallenge : null);
+        return new AppReturnContext(isActive, isActive ? returnUrl : null, isActive ? codeChallenge : null, isActive ? language : null);
     }
 
     /// <summary>Query suffix that links between the auth pages use to carry the app context
@@ -66,6 +75,7 @@ public sealed class AppReturnContext
         ? "?app=1"
           + (_returnUrl != null ? "&appret=" + Uri.EscapeDataString(_returnUrl) : "")
           + (_codeChallenge != null ? "&appchallenge=" + Uri.EscapeDataString(_codeChallenge) : "")
+          + (Language != null ? "&applang=" + Uri.EscapeDataString(Language) : "")
         : "";
 
     /// <summary>Target URL for returning a non-token result to the app, e.g.

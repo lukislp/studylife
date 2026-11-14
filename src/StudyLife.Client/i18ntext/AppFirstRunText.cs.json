@@ -10,5 +10,10 @@
   "Intro": "StudyLife si provozuješ sám: neexistuje žádná centrální služba. Pro aplikaci potřebuješ adresu vlastního serveru StudyLife nebo serveru, který provozuje tvá škola, univerzita či organizace.",
   "SetupGuideLink": "Jak nastavit vlastní server",
   "EmptyUrl": "Nejdřív zadej adresu svého serveru StudyLife.",
-  "NotStudyLifeServer": "Na této adrese něco odpovídá, ale nevypadá to jako server StudyLife. Zkontroluj ji, nebo klepni znovu a použij ji přesto."
+  "NotStudyLifeServer": "Na této adrese něco odpovídá, ale nevypadá to jako server StudyLife. Zkontroluj ji, nebo klepni znovu a použij ji přesto.",
+  "UntrustedCertificate": "Certifikát tohoto serveru není důvěryhodný (pochází například z tvé vlastní certifikační autority). Nainstaluj do tohoto zařízení profil certifikační autority, nebo použij veřejnou adresu serveru.",
+  "SignedOutUnreachable": "Server {0} teď není dostupný. Pokud je adresa špatně, změň server.",
+  "SignedOutNotStudyLife": "{0} neodpovídá jako server StudyLife. Pokud je adresa špatně, změň server.",
+  "PasskeyDomainHint": "Přístupové klíče fungují jen na adrese {0}.",
+  "UsePasskeyAddress": "Použít tuto adresu"
 }
