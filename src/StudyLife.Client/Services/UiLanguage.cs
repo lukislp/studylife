@@ -63,6 +63,19 @@ public static class UiLanguage
     /// <see cref="SupportedLanguages.Match"/>.</summary>
     public static string? Match(string? tag) => SupportedLanguages.Match(tag);
 
+    /// <summary>The UI language of a native shell whose language is the operating system's setting for
+    /// the app: the best match of <paramref name="systemLanguages"/> (in the system's order), else
+    /// <see cref="Fallback"/>. A stored choice plays no part, there is no picker in the app.</summary>
+    public static string FromSystem(IEnumerable<string>? systemLanguages) => Resolve(null, systemLanguages);
+
+    /// <summary>The language a native shell has to switch to after the system language for the app
+    /// changed while it was in the background, or null when <paramref name="shown"/> still matches.</summary>
+    public static string? SystemLanguageChange(string? shown, IEnumerable<string>? systemLanguages)
+    {
+        var wanted = FromSystem(systemLanguages);
+        return string.Equals(Match(shown), wanted, StringComparison.Ordinal) ? null : wanted;
+    }
+
     /// <summary>
     /// The language a start uses:
     /// <list type="number">
@@ -78,19 +91,6 @@ public static class UiLanguage
     /// <item><see cref="Fallback"/>.</item>
     /// </list>
     /// </summary>
-    /// <summary>The UI language of a native shell whose language is the operating system's setting for
-    /// the app: the best match of <paramref name="systemLanguages"/> (in the system's order), else
-    /// <see cref="Fallback"/>. A stored choice plays no part, there is no picker in the app.</summary>
-    public static string FromSystem(IEnumerable<string>? systemLanguages) => Resolve(null, systemLanguages);
-
-    /// <summary>The language a native shell has to switch to after the system language for the app
-    /// changed while it was in the background, or null when <paramref name="shown"/> still matches.</summary>
-    public static string? SystemLanguageChange(string? shown, IEnumerable<string>? systemLanguages)
-    {
-        var wanted = FromSystem(systemLanguages);
-        return string.Equals(Match(shown), wanted, StringComparison.Ordinal) ? null : wanted;
-    }
-
     public static string Resolve(string? stored, IEnumerable<string>? deviceLanguages, bool hasPriorUse = false, string? prescribed = null)
     {
         if (Match(prescribed) is { } given) return given;
