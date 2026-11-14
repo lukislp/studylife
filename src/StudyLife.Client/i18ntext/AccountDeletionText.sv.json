@@ -46,5 +46,8 @@
   "ErrorNetwork": "Servern kunde inte nås. Inget har raderats.",
   "ErrorOwner": "Ägaren kan inte raderas så länge det finns andra användare.",
   "ErrorGeneric": "Något gick fel. Inget har raderats.",
-  "AddonPending": "Städningen hos anslutna tillägg väntar fortfarande och slutförs automatiskt."
+  "AddonPending": "Städningen hos anslutna tillägg väntar fortfarande och slutförs automatiskt.",
+  "PasswordToggle": "Använd mitt lösenord i stället",
+  "PasswordLabel": "Ditt lösenord",
+  "PasswordButton": "Bekräfta med lösenord och radera"
 }

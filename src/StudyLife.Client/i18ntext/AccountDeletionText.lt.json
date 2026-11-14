@@ -46,5 +46,8 @@
   "ErrorNetwork": "Nepavyko pasiekti serverio. Niekas neištrinta.",
   "ErrorOwner": "Savininko ištrinti negalima, kol yra kitų naudotojų.",
   "ErrorGeneric": "Kažkas nepavyko. Niekas neištrinta.",
-  "AddonPending": "Valymas prijungtuose papildiniuose dar nebaigtas ir pasibaigs automatiškai."
+  "AddonPending": "Valymas prijungtuose papildiniuose dar nebaigtas ir pasibaigs automatiškai.",
+  "PasswordToggle": "Vietoj to naudoti mano slaptažodį",
+  "PasswordLabel": "Tavo slaptažodis",
+  "PasswordButton": "Patvirtinti slaptažodžiu ir ištrinti"
 }

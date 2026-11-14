@@ -46,5 +46,8 @@
   "ErrorNetwork": "Níorbh fhéidir teacht ar an bhfreastalaí. Níor scriosadh aon rud.",
   "ErrorOwner": "Ní féidir an t-úinéir a scriosadh fad is atá úsáideoirí eile ann.",
   "ErrorGeneric": "Chuaigh rud éigin cearr. Níor scriosadh aon rud.",
-  "AddonPending": "Tá an glanadh ag forlíontáin cheangailte ar feitheamh fós agus críochnóidh sé go huathoibríoch."
+  "AddonPending": "Tá an glanadh ag forlíontáin cheangailte ar feitheamh fós agus críochnóidh sé go huathoibríoch.",
+  "PasswordToggle": "Úsáid mo phasfhocal ina ionad",
+  "PasswordLabel": "Do phasfhocal",
+  "PasswordButton": "Deimhnigh le pasfhocal agus scrios"
 }

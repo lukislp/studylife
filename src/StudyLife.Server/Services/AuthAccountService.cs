@@ -37,13 +37,18 @@ public interface IAuthAccountService
 
     /// <summary>Deletes a passkey and, with it, every session of the account except the caller's
     /// own - removing a passkey usually means "that device is gone" (2026-09 audit S7). Refuses
-    /// to delete the account's LAST approved passkey: there is no password fallback, so that
-    /// would lock the user out permanently once their sessions expire.</summary>
+    /// to delete the account's last usable sign-in method (SignInMethodRules): without a password
+    /// that is the last approved passkey, which would lock the user out permanently once their
+    /// sessions expire.</summary>
     Task<ServiceResult> DeleteCredentialAsync(int userId, int credentialId, int currentSessionId);
 
     /// <summary>"Sign out everywhere else": deletes every session of the account except the one
     /// making the call, and evicts the revoked tokens from this pod's cache.</summary>
     Task<int> RevokeOtherSessionsAsync(int userId, int currentSessionId);
+
+    /// <summary>Deletes EVERY session of the account (owner password reset - the account's holder is
+    /// not the caller, so there is no session to keep) and evicts them from this pod's cache.</summary>
+    Task<int> RevokeAllSessionsAsync(int userId);
 
     Task<List<ClientApiKeyListItemDto>> ListClientKeysAsync(int userId);
 
@@ -55,7 +60,7 @@ public interface IAuthAccountService
     Task<PasskeyCompleteResponseDto?> IssueDemoSessionAsync();
 }
 
-public class AuthAccountService(StudyLifeDb db, AuthSessionCache sessionCache) : IAuthAccountService
+public class AuthAccountService(StudyLifeDb db, AuthSessionCache sessionCache, SignIn.ISignInMethodCatalog signInMethods) : IAuthAccountService
 {
     public async Task LogoutAsync(int sessionId, string? sessionTokenHash)
     {
@@ -107,13 +112,14 @@ public class AuthAccountService(StudyLifeDb db, AuthSessionCache sessionCache) :
         var credential = await db.PasskeyCredentials.FirstOrDefaultAsync(c => c.Id == credentialId && c.AuthUserId == userId);
         if (credential is null) return ServiceResult.NotFound();
 
-        // Deleting the last passkey would permanently lock the user out once their sessions
-        // expire (there is no password fallback) - deliberately blocked. Only APPROVED
-        // passkeys count toward this: a still-pending additional passkey (reject case) is
-        // useless for login anyway and must never prevent deletion of the only real access
-        // method.
-        var ownApprovedCount = await db.PasskeyCredentials.CountAsync(c => c.AuthUserId == userId && c.ApprovedAt != null);
-        if (credential.ApprovedAt is not null && ownApprovedCount <= 1)
+        // Deleting the last usable sign-in method would permanently lock the user out once their
+        // sessions expire - deliberately blocked (SignInMethodRules). Only APPROVED passkeys count
+        // toward this: a still-pending additional passkey (reject case) is useless for login
+        // anyway and must never prevent deletion of the only real access method. A password
+        // counts while the instance allows password sign-in, so an account with one may drop its
+        // last passkey.
+        var usable = await signInMethods.CountUsableAsync(userId);
+        if (!SignIn.SignInMethodRules.MayRemove(removedIsUsable: credential.ApprovedAt is not null, usable))
             return ServiceResult.Invalid("The last passkey of an account cannot be removed.");
 
         db.PasskeyCredentials.Remove(credential);
@@ -133,6 +139,15 @@ public class AuthAccountService(StudyLifeDb db, AuthSessionCache sessionCache) :
         // Other pods drop their entries at the cache's TTL (documented on AuthSessionCache).
         var revokedHashes = await others.Select(s => s.TokenHash).ToListAsync();
         var deleted = await others.ExecuteDeleteAsync();
+        foreach (var hash in revokedHashes) sessionCache.Remove(hash);
+        return deleted;
+    }
+
+    public async Task<int> RevokeAllSessionsAsync(int userId)
+    {
+        var all = db.AuthSessions.Where(s => s.AuthUserId == userId);
+        var revokedHashes = await all.Select(s => s.TokenHash).ToListAsync();
+        var deleted = await all.ExecuteDeleteAsync();
         foreach (var hash in revokedHashes) sessionCache.Remove(hash);
         return deleted;
     }

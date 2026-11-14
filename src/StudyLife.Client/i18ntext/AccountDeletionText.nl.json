@@ -46,5 +46,8 @@
   "ErrorNetwork": "De server is niet bereikbaar. Er is niets verwijderd.",
   "ErrorOwner": "De eigenaar kan niet worden verwijderd zolang er andere gebruikers zijn.",
   "ErrorGeneric": "Er ging iets mis. Er is niets verwijderd.",
-  "AddonPending": "De opruiming bij gekoppelde add-ons is nog bezig en wordt automatisch afgerond."
+  "AddonPending": "De opruiming bij gekoppelde add-ons is nog bezig en wordt automatisch afgerond.",
+  "PasswordToggle": "Gebruik in plaats daarvan mijn wachtwoord",
+  "PasswordLabel": "Je wachtwoord",
+  "PasswordButton": "Bevestigen met wachtwoord en verwijderen"
 }

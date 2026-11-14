@@ -24,7 +24,7 @@ unlocked device; availability under a determined denial-of-service attack beyond
 | Asset | Where it lives | Why it matters |
 |---|---|---|
 | Study data (sessions, notes, course goals, settings, timer state) | PostgreSQL (k8s) / SQLite (single container) | The user's personal data |
-| Credentials: passkey public keys, session tokens, per-slot API keys, calendar/share tokens, recovery codes | Database, stored as SHA-256 hashes (except public keys) | Account takeover |
+| Credentials: passkey public keys, session tokens, per-slot API keys, calendar/share tokens, recovery codes, password hashes | Database, stored as SHA-256 hashes (except public keys; passwords as salted PBKDF2-HMAC-SHA512 hashes) | Account takeover |
 | Server secrets: DataProtection key ring, VAPID key, AI proxy signing secret, add-on shared secrets, APNs key, Redis/DB passwords | Kubernetes Secrets / SealedSecrets, mounted files; key ring encrypted at rest in Redis with a certificate | Forging tokens, impersonating the server |
 | Backups | Downloaded by the owner; optional AES-256-GCM encryption | Contain the whole database |
 | Release artifacts | `ghcr.io`, GitHub Releases | Supply-chain compromise of every installation |
@@ -95,7 +95,7 @@ flowchart LR
 
 | Threat | Example | Countermeasure | Evidence |
 |---|---|---|---|
-| **S**poofing a user | Stolen password, phishing | No passwords at all. Passkeys (WebAuthn, origin-bound). New devices need approval from an existing device. | `docs/ARCHITECTURE.md` Phase 2. `AuthController.*` tests |
+| **S**poofing a user | Stolen password, phishing | Passkeys (WebAuthn, origin-bound) are the recommended method. New devices need approval from an existing device. The optional password (operator switch `PasswordSignIn:Enabled`) follows NIST 800-63B (length 12+, common-password check), is hashed with PBKDF2-HMAC-SHA512, and is protected by per-account exponential lockout, per-IP and instance-wide rate limits, uniform answers and timing for unknown names, and a fresh proof before it can be added or changed. | `docs/ARCHITECTURE.md` Phase 2. `AuthController.*` tests |
 | Spoofing the first owner | Racing the operator to the first registration | One-time setup secret printed to the server log, compared in constant time | `SetupSecretService`, audit section in ARCHITECTURE |
 | Spoofing a server (Redis, K8s API) | Rogue TLS endpoint in the cluster | Certificate chain to the internal CA, plus host-name check | `PrivateCaCertificateValidator` + loopback handshake tests |
 | **T**ampering with data of another user | IDOR on `/api/sessions/{id}` | Global query filters. Every query is scoped to the authenticated user. | Two-user regression tests (ARCHITECTURE, "Security review after Phase 3") |
@@ -134,7 +134,7 @@ How the classic Saltzer & Schroeder principles show up in the code:
   needed (worker, read-only `scale` RBAC). NetworkPolicies are default-deny.
 - **Least common mechanism.** Each secret space is separate (session tokens, API keys per slot,
   calendar tokens, share tokens), so one kind of token can never be used as another.
-- **Psychological acceptability.** Passkeys instead of passwords. Pairing with Home Assistant is
+- **Psychological acceptability.** Passkeys first; a username and password only as an additional, operator-controlled option for devices without passkeys (and App Store review accounts). Pairing with Home Assistant is
   a single copy-and-paste. Consent pages show the redirect target's host.
 
 ## 7. Common implementation weaknesses (OWASP Top 10 2021)
@@ -147,7 +147,7 @@ How the classic Saltzer & Schroeder principles show up in the code:
 | A04 Insecure design | This document. Bounds on generators (exam planner, history ranges). Single-use assertions. |
 | A05 Security misconfiguration | Security headers set by the app (CSP, HSTS, XFO, Permissions-Policy, nosniff). Hardened pod security contexts. `kubeconform` and `kustomize` checks in CI. |
 | A06 Vulnerable components | Dependabot and Renovate, NuGet severity gate, dependency review on every PR, Trivy gate on the image, Socket |
-| A07 Identification and authentication failures | Passkeys, sliding sessions capped at 180 days, revocation on device removal and recovery, throttled recovery login |
+| A07 Identification and authentication failures | Passkeys, optional NIST-style passwords with lockout and rate limits, sliding sessions capped at 180 days, revocation on device removal, password change and recovery, throttled recovery login |
 | A08 Software and data integrity failures | Locked NuGet restore, SHA-pinned actions, signed releases with provenance, signed commits required on `main` |
 | A09 Logging and monitoring failures | Structured logs, Prometheus metrics, OTLP traces, Grafana alerting (production) |
 | A10 SSRF | `OutboundUrlPolicy` for push and webhooks, and fixed in-cluster URLs for add-ons (config, not user input) |
@@ -199,6 +199,7 @@ Where each algorithm is fixed and what replacing it would take:
 | Use | Algorithm | How it can be replaced |
 |---|---|---|
 | Passkey sign-in (WebAuthn) | Negotiated per credential (COSE algorithm list of Fido2NetLib, e.g. ES256, RS256, EdDSA) | Already agile: the authenticator picks from the server's list, and the stored credential records its algorithm. |
+| Password sign-in (optional) | ASP.NET Core Identity `PasswordHasher` format v3: PBKDF2-HMAC-SHA512, 210 000 iterations, 128-bit salt, constant-time comparison | Already agile: the iteration count and PRF are stored in every hash, and a sign-in with an outdated hash stores a fresh one (`SuccessRehashNeeded`). A different KDF is a new format marker the hasher dispatches on. |
 | TLS (Kestrel, Redis, PostgreSQL, Kubernetes API, add-ons) | Negotiated by the OS TLS stack, TLS 1.2+ | Already agile: protocol versions and cipher suites follow the OS/OpenSSL configuration. |
 | DataProtection (antiforgery, auth cookies, key ring at rest) | ASP.NET Core defaults (AES-256-CBC + HMAC-SHA256), key ring encrypted with an X.509 certificate | Already agile: every payload carries its key id, and the key descriptor records the algorithms, so a changed configuration applies to new keys while old payloads stay readable. |
 | Encrypted backups | PBKDF2-SHA256 (210 000 iterations) + AES-256-GCM | Versioned format: the magic `SLBKENC1` names the version. A new KDF or cipher gets `SLBKENC2` and the reader dispatches on the magic. Old readers refuse unknown versions instead of misreading them. |
@@ -325,6 +326,8 @@ ZAP findings themselves do not fail the workflow; they are triaged here. The fir
 | DNS rebinding for push/webhook URLs | Host names are not resolved on the request path | Literal private IPs and internal suffixes are rejected |
 | `X-Forwarded-For` trust on a flat pod network | No CIDR can single out the gateway | IP-independent global bucket for recovery login, configurable `KnownNetworks` |
 | Inline style attributes allowed (`style-src-attr 'unsafe-inline'`, 8.5) | Blazor binds dynamic values into `style=""` attributes; moving about 250 of them to classes or CSSOM interop is a large UI refactor | Scripts stay strict (`script-src 'self' 'wasm-unsafe-eval'`, no inline script). `<style>` elements are blocked, so injected markup cannot add selector-based CSS that reads attribute values. A style attribute can only restyle its own element, and `url()` loads are limited by `img-src`/`font-src` `'self'`. Razor output encoding prevents markup injection in the first place. |
+| Usernames can be probed through the registration form (409 `username-taken`) | A user-chosen unique login name cannot be registered without saying that it is taken | Registration is gated (setup code, `Registration:Mode` default `invite`) and rate-limited; sign-in itself never tells unknown names from wrong passwords |
+| A stranger who knows a username can delay that account's password sign-in by up to 15 minutes at a time (lockout) | Per-account lockout is what stops distributed guessing | Passkeys and recovery codes are not affected by the lockout; the per-IP limit slows the stranger down as well |
 | Single maintainer (bus factor 1) | No second person available | [GOVERNANCE.md](../GOVERNANCE.md) continuity section, fully public build |
 
 ## 10. Review record

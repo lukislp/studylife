@@ -45,6 +45,7 @@ public static class StudyLifeOptionsRegistration
         services.AddOptions<Fido2Options>().BindConfiguration(Fido2Options.SectionName);
         services.AddOptions<ConsentOptions>().BindConfiguration(ConsentOptions.SectionName);
         services.AddOptions<RegistrationOptions>().BindConfiguration(RegistrationOptions.SectionName);
+        services.AddOptions<PasswordSignInOptions>().BindConfiguration(PasswordSignInOptions.SectionName);
         services.AddOptions<VapidOptions>().BindConfiguration(VapidOptions.SectionName);
         services.AddOptions<StudyLifeAiOptions>().BindConfiguration(StudyLifeAiOptions.SectionName);
         services.AddOptions<StudyLifeWebhooksOptions>().BindConfiguration(StudyLifeWebhooksOptions.SectionName);

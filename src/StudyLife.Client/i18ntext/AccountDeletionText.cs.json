@@ -46,5 +46,8 @@
   "ErrorNetwork": "Server není dostupný. Nic nebylo smazáno.",
   "ErrorOwner": "Vlastníka nelze smazat, dokud existují další uživatelé.",
   "ErrorGeneric": "Něco se nepovedlo. Nic nebylo smazáno.",
-  "AddonPending": "Úklid v propojených doplňcích stále probíhá a dokončí se automaticky."
+  "AddonPending": "Úklid v propojených doplňcích stále probíhá a dokončí se automaticky.",
+  "PasswordToggle": "Místo toho použít mé heslo",
+  "PasswordLabel": "Vaše heslo",
+  "PasswordButton": "Potvrdit heslem a smazat"
 }

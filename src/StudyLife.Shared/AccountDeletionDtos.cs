@@ -44,11 +44,14 @@ public class AccountDeletionResultDto
     public int AddonCleanupPending { get; set; }
 }
 
-/// <summary>One account in GET /api/auth/users (owner-only list behind the "remove user" action).
-/// Deliberately minimal: an id for the delete call and the display name the owner confirms by.</summary>
+/// <summary>One account in GET /api/auth/users (owner-only list behind the "remove user" and
+/// "reset password" actions). Deliberately minimal: an id for the calls, the display name the owner
+/// confirms by, and the login name of the account's password, if it has one (the reset dialog asks
+/// for a name only when there is none yet).</summary>
 public class UserListItemDto
 {
     public int Id { get; set; }
     public string DisplayName { get; set; } = "";
     public DateTime CreatedAt { get; set; }
+    public string? Username { get; set; }
 }

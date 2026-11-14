@@ -63,3 +63,17 @@ public sealed class VapidOptions
     /// <summary>Blank falls back to the built-in mailto: subject.</summary>
     public string? Subject { get; set; }
 }
+
+/// <summary>
+/// Instance switch for signing in with a username and password next to passkeys
+/// (docs/ARCHITECTURE.md "Password sign-in"). On by default for new and existing installations. Off means:
+/// no password fields in the UI, every password endpoint answers 403
+/// <c>password-sign-in-disabled</c>, and stored password hashes stay in the database untouched but
+/// unusable until the switch is turned on again. Env form <c>PasswordSignIn__Enabled=false</c>.
+/// </summary>
+public sealed class PasswordSignInOptions
+{
+    public const string SectionName = "PasswordSignIn";
+
+    public bool Enabled { get; set; } = true;
+}

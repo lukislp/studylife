@@ -27,12 +27,31 @@
 <div class="progress-share-page">
     <div class="progress-share-card">
         <h1>@T.RegisterHeading</h1>
-        <p class="ss-desc">@T.RegisterIntro</p>
+        @if (!_usePassword)
+        {
+            <p class="ss-desc">@T.RegisterIntro</p>
+        }
         @if (_error != null)
         {
             <p class="ss-desc" style="color:var(--danger, #e74c3c)">@_error</p>
         }
         <div style="display:flex; flex-direction:column; gap:0.75rem; margin-top:1.25rem;">
+            @if (_passwordOffered && P is not null)
+            {
+                @* Passkey or username + password (owner decision 2026-11-14). The passkey stays the
+                   first and recommended choice; both create the same kind of account. *@
+                <fieldset style="border:none; margin:0; padding:0; display:flex; flex-direction:column; gap:0.5rem;">
+                    <legend class="ss-label" style="margin-bottom:0.5rem;">@P.RegisterMethodLegend</legend>
+                    <label class="toggle-row" style="gap:0.5rem; align-items:flex-start;">
+                        <input type="radio" name="register-method" checked="@(!_usePassword)" @onchange="() => _usePassword = false" />
+                        <span><strong>@P.RegisterMethodPasskey</strong><br /><span class="ss-desc">@P.RegisterMethodPasskeyHint</span></span>
+                    </label>
+                    <label class="toggle-row" style="gap:0.5rem; align-items:flex-start;">
+                        <input type="radio" name="register-method" checked="@_usePassword" @onchange="() => _usePassword = true" />
+                        <span><strong>@P.RegisterMethodPassword</strong><br /><span class="ss-desc">@P.RegisterMethodPasswordHint</span></span>
+                    </label>
+                </fieldset>
+            }
             <label class="ss-label" for="register-name">@T.DisplayNameLabel</label>
             <input id="register-name" class="input" type="text" maxlength="100"
                    placeholder="@T.DisplayNamePlaceholder" @bind="_displayName" @bind:event="oninput" />
@@ -40,10 +59,36 @@
             <input id="register-setup-secret" class="input" type="text" maxlength="20"
                    placeholder="@T.SetupSecretPlaceholder" @bind="_setupSecret" @bind:event="oninput" />
             <p class="ss-desc" style="font-size:0.8rem; margin-top:-0.5rem;">@T.SetupSecretHint</p>
-            <button type="button" class="btn-primary" @onclick="RegisterAsync"
-                    disabled="@(_busy || string.IsNullOrWhiteSpace(_displayName))">
-                @(_busy ? T.LoginWorking : T.RegisterButton)
-            </button>
+            @if (_usePassword && P is not null)
+            {
+                <form @onsubmit="RegisterWithPasswordAsync" style="display:flex; flex-direction:column; gap:0.5rem;">
+                    <label class="ss-label" for="register-username">@P.UsernameLabel</label>
+                    <input id="register-username" name="username" class="input" type="text" autocomplete="username"
+                           autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="64"
+                           aria-describedby="register-username-hint" @bind="_username" @bind:event="oninput" />
+                    <p class="ss-desc" id="register-username-hint" style="font-size:0.8rem; margin-top:0">@P.UsernameHint</p>
+                    <label class="ss-label" for="register-password">@P.PasswordLabel</label>
+                    <input id="register-password" name="new-password" class="input" type="@(_showPassword ? "text" : "password")"
+                           autocomplete="new-password" maxlength="512" aria-describedby="register-password-hint"
+                           @bind="_password" @bind:event="oninput" />
+                    <p class="ss-desc" id="register-password-hint" style="font-size:0.8rem; margin-top:0">@P.PasswordHint</p>
+                    <label class="toggle-row" style="gap:0.5rem; font-size:0.85rem;">
+                        <input type="checkbox" @bind="_showPassword" />
+                        <span>@P.ShowPassword</span>
+                    </label>
+                    <button type="submit" class="btn-primary"
+                            disabled="@(_busy || string.IsNullOrWhiteSpace(_displayName) || string.IsNullOrWhiteSpace(_username) || string.IsNullOrEmpty(_password))">
+                        @(_busy ? T.LoginWorking : P.RegisterPasswordButton)
+                    </button>
+                </form>
+            }
+            else
+            {
+                <button type="button" class="btn-primary" @onclick="RegisterAsync"
+                        disabled="@(_busy || string.IsNullOrWhiteSpace(_displayName))">
+                    @(_busy ? T.LoginWorking : T.RegisterButton)
+                </button>
+            }
             <a href="@("/login" + _app.LinkQuery)" class="btn-secondary" style="text-align:center;">@T.GoToLoginLink</a>
             <a href="@("/link" + _app.LinkQuery)" class="btn-secondary" style="text-align:center;">@T.GoToLinkDeviceLink</a>
         </div>
@@ -58,6 +103,14 @@
 @code {
     private string _displayName = "";
     private string _setupSecret = "";
+
+    // Username + password registration (shown only when the server offers it, api/auth/methods).
+    private StudyLife.Client.I18nText.PasswordText? P;
+    private bool _passwordOffered;
+    private bool _usePassword;
+    private bool _showPassword;
+    private string _username = "";
+    private string _password = "";
     private bool _busy;
     private string? _error;
     private IJSObjectReference? _module;
@@ -103,6 +156,51 @@
         "invite_required" => T.RegisterInviteRequiredHint ?? T.RegisterFailed,
         _ => T.RegisterClosed ?? T.RegisterFailed,
     };
+
+    protected override async Task OnTextLoadedAsync()
+    {
+        P = await I18nText.GetTextTableAsync<StudyLife.Client.I18nText.PasswordText>(this);
+        _passwordOffered = await new PasswordSignInState(Http).IsOfferedAsync();
+    }
+
+    /// <summary>Registration with a username and password instead of a passkey - also inside the
+    /// native shells' web view, which needs no system browser for it (no WebAuthn involved). Same
+    /// gates as the passkey path; the token is handled exactly like after a passkey registration.</summary>
+    private async Task RegisterWithPasswordAsync()
+    {
+        var displayName = _displayName.Trim();
+        if (_busy || displayName.Length == 0 || P is null) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            var attempt = await new PasswordSignInState(Http)
+                .RegisterAsync(displayName, _username, _password, _setupSecret, _inviteToken);
+            if (!attempt.Succeeded)
+            {
+                _error = attempt.Failure switch
+                {
+                    PasswordFailure.SetupSecretInvalid => T.SetupSecretInvalid,
+                    PasswordFailure.RegistrationGate => GateErrorMessage(attempt.GateReason),
+                    _ => PasswordSignInState.Message(attempt.Failure, P),
+                };
+                return;
+            }
+            _password = "";
+
+            if (_app.IsActive)
+            {
+                Nav.NavigateTo(await _app.BuildTokenReturnRedirectAsync(Http, attempt.Token!), forceLoad: true);
+                return;
+            }
+            await TokenStore.SetTokenAsync(attempt.Token!);
+            Nav.NavigateTo("/", forceLoad: true);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
 
     private async Task<bool> TryHandleGateErrorAsync(HttpResponseMessage response)
     {

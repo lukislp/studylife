@@ -46,5 +46,8 @@
   "ErrorNetwork": "Não foi possível contactar o servidor. Nada foi eliminado.",
   "ErrorOwner": "O proprietário não pode ser eliminado enquanto existirem outros utilizadores.",
   "ErrorGeneric": "Ocorreu um erro. Nada foi eliminado.",
-  "AddonPending": "A limpeza nos suplementos ligados ainda está pendente e termina automaticamente."
+  "AddonPending": "A limpeza nos suplementos ligados ainda está pendente e termina automaticamente.",
+  "PasswordToggle": "Usar antes a minha palavra-passe",
+  "PasswordLabel": "A tua palavra-passe",
+  "PasswordButton": "Confirmar com palavra-passe e eliminar"
 }

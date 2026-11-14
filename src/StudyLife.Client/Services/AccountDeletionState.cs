@@ -30,8 +30,8 @@ public enum AccountDeletionFailure
 }
 
 /// <summary>What the user proved right before deletion: a passkey assertion for the challenge the
-/// server issued, or one of their recovery codes.</summary>
-public sealed record AccountDeletionProof(string? OptionsId, string? AssertionJson, string? RecoveryCode);
+/// server issued, one of their recovery codes, or their current password.</summary>
+public sealed record AccountDeletionProof(string? OptionsId, string? AssertionJson, string? RecoveryCode, string? Password = null);
 
 public sealed record AccountDeletionAttempt(AccountDeletionFailure Failure, AccountDeletionResultDto? Result = null)
 {
@@ -131,6 +131,7 @@ public sealed class AccountDeletionState
     {
         var body = new JsonObject();
         if (!string.IsNullOrWhiteSpace(proof.RecoveryCode)) body["recoveryCode"] = proof.RecoveryCode.Trim();
+        if (!string.IsNullOrEmpty(proof.Password)) body["currentPassword"] = proof.Password;
         if (proof.OptionsId is not null && proof.AssertionJson is not null)
         {
             body["optionsId"] = proof.OptionsId;

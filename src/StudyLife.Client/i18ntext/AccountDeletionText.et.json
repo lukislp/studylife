@@ -46,5 +46,8 @@
   "ErrorNetwork": "Serveriga ei saanud ühendust. Midagi ei kustutatud.",
   "ErrorOwner": "Omanikku ei saa kustutada, kuni on olemas teisi kasutajaid.",
   "ErrorGeneric": "Midagi läks valesti. Midagi ei kustutatud.",
-  "AddonPending": "Ühendatud lisandmoodulite koristus on veel pooleli ja lõpeb automaatselt."
+  "AddonPending": "Ühendatud lisandmoodulite koristus on veel pooleli ja lõpeb automaatselt.",
+  "PasswordToggle": "Kasuta hoopis minu parooli",
+  "PasswordLabel": "Sinu parool",
+  "PasswordButton": "Kinnita parooliga ja kustuta"
 }

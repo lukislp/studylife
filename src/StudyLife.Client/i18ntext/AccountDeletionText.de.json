@@ -46,5 +46,8 @@
   "ErrorNetwork": "Der Server ist nicht erreichbar. Es wurde nichts gelöscht.",
   "ErrorOwner": "Der Eigentümer kann nicht gelöscht werden, solange es weitere Nutzer gibt.",
   "ErrorGeneric": "Etwas ist schiefgelaufen. Es wurde nichts gelöscht.",
-  "AddonPending": "Die Bereinigung bei verbundenen Add-ons steht noch aus und läuft automatisch zu Ende."
+  "AddonPending": "Die Bereinigung bei verbundenen Add-ons steht noch aus und läuft automatisch zu Ende.",
+  "PasswordToggle": "Stattdessen mein Passwort verwenden",
+  "PasswordLabel": "Dein Passwort",
+  "PasswordButton": "Mit Passwort bestätigen und löschen"
 }

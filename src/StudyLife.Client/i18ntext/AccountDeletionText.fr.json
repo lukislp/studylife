@@ -46,5 +46,8 @@
   "ErrorNetwork": "Le serveur est injoignable. Rien n'a été supprimé.",
   "ErrorOwner": "Le propriétaire ne peut pas être supprimé tant que d'autres utilisateurs existent.",
   "ErrorGeneric": "Une erreur s'est produite. Rien n'a été supprimé.",
-  "AddonPending": "Le nettoyage dans les modules complémentaires connectés est encore en attente et se terminera automatiquement."
+  "AddonPending": "Le nettoyage dans les modules complémentaires connectés est encore en attente et se terminera automatiquement.",
+  "PasswordToggle": "Utiliser plutôt mon mot de passe",
+  "PasswordLabel": "Votre mot de passe",
+  "PasswordButton": "Confirmer avec le mot de passe et supprimer"
 }

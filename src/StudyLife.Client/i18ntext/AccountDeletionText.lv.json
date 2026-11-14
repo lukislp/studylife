@@ -46,5 +46,8 @@
   "ErrorNetwork": "Serveris nav sasniedzams. Nekas netika dzēsts.",
   "ErrorOwner": "Īpašnieku nevar dzēst, kamēr pastāv citi lietotāji.",
   "ErrorGeneric": "Kaut kas nogāja greizi. Nekas netika dzēsts.",
-  "AddonPending": "Tīrīšana pievienotajos papildinājumos vēl nav pabeigta un beigsies automātiski."
+  "AddonPending": "Tīrīšana pievienotajos papildinājumos vēl nav pabeigta un beigsies automātiski.",
+  "PasswordToggle": "Tā vietā izmantot manu paroli",
+  "PasswordLabel": "Tava parole",
+  "PasswordButton": "Apstiprināt ar paroli un dzēst"
 }

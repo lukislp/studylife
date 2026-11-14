@@ -46,5 +46,8 @@
   "ErrorNetwork": "A kiszolgáló nem érhető el. Semmi sem törlődött.",
   "ErrorOwner": "A tulajdonos nem törölhető, amíg más felhasználók is léteznek.",
   "ErrorGeneric": "Hiba történt. Semmi sem törlődött.",
-  "AddonPending": "A csatlakoztatott bővítményeknél a takarítás még függőben van, és automatikusan befejeződik."
+  "AddonPending": "A csatlakoztatott bővítményeknél a takarítás még függőben van, és automatikusan befejeződik.",
+  "PasswordToggle": "Inkább a jelszavamat használom",
+  "PasswordLabel": "A jelszavad",
+  "PasswordButton": "Megerősítés jelszóval és törlés"
 }
