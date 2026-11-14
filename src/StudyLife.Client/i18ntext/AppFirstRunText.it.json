@@ -10,5 +10,10 @@
   "Intro": "StudyLife si ospita da sé: non esiste un servizio centrale. Per usare l'app ti serve l'indirizzo del tuo server StudyLife oppure di quello gestito dalla tua scuola, università o organizzazione.",
   "SetupGuideLink": "Come configurare un server tuo",
   "EmptyUrl": "Inserisci prima l'indirizzo del tuo server StudyLife.",
-  "NotStudyLifeServer": "A questo indirizzo risponde qualcosa, ma non sembra un server StudyLife. Controllalo oppure tocca di nuovo per usarlo comunque."
+  "NotStudyLifeServer": "A questo indirizzo risponde qualcosa, ma non sembra un server StudyLife. Controllalo oppure tocca di nuovo per usarlo comunque.",
+  "UntrustedCertificate": "Il certificato di questo server non è attendibile (ad esempio proviene da una tua autorità di certificazione). Installa il profilo dell'autorità di certificazione su questo dispositivo oppure usa l'indirizzo pubblico del server.",
+  "SignedOutUnreachable": "{0} non è raggiungibile al momento. Se l'indirizzo è sbagliato, cambia server.",
+  "SignedOutNotStudyLife": "{0} non risponde come un server StudyLife. Se l'indirizzo è sbagliato, cambia server.",
+  "PasskeyDomainHint": "Le passkey funzionano solo su {0}.",
+  "UsePasskeyAddress": "Usa questo indirizzo"
 }

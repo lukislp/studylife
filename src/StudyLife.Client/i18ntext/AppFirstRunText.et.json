@@ -10,5 +10,10 @@
   "Intro": "StudyLife'i majutad ise: keskset teenust ei ole. Rakenduse jaoks vajad oma StudyLife'i serveri aadressi või selle serveri aadressi, mida haldab sinu kool, ülikool või organisatsioon.",
   "SetupGuideLink": "Kuidas oma serverit seadistada",
   "EmptyUrl": "Sisesta esmalt oma StudyLife'i serveri aadress.",
-  "NotStudyLifeServer": "Sellel aadressil vastab miski, kuid see ei tundu olevat StudyLife'i server. Kontrolli aadressi või puuduta uuesti, et seda ikkagi kasutada."
+  "NotStudyLifeServer": "Sellel aadressil vastab miski, kuid see ei tundu olevat StudyLife'i server. Kontrolli aadressi või puuduta uuesti, et seda ikkagi kasutada.",
+  "UntrustedCertificate": "Selle serveri sertifikaat ei ole usaldusväärne (see pärineb näiteks sinu enda sertifitseerimiskeskusest). Paigalda sellesse seadmesse sertifitseerimiskeskuse profiil või kasuta serveri avalikku aadressi.",
+  "SignedOutUnreachable": "{0} pole praegu kättesaadav. Kui aadress on vale, vaheta serverit.",
+  "SignedOutNotStudyLife": "{0} ei vasta nagu StudyLife'i server. Kui aadress on vale, vaheta serverit.",
+  "PasskeyDomainHint": "Pääsuvõtmed töötavad ainult aadressil {0}.",
+  "UsePasskeyAddress": "Kasuta seda aadressi"
 }

@@ -1,0 +1,26 @@
+@*
+  SPDX-FileCopyrightText: 2026 Lukas Körber
+  SPDX-License-Identifier: AGPL-3.0-only
+*@
+@using StudyLife.Client.I18nText
+@inject IClientPlatform Platform
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+@* Shown instead of the language picker in a native app shell, whose language is the operating system's
+   setting for the app (IClientPlatform.LanguageFromSystem decides where this appears): says where the
+   language is changed and opens that setting. *@
+
+@if (T is not null)
+{
+    <div class="language-from-system" style="display:flex; flex-direction:column; gap:0.6rem; padding:0.5rem; max-width:18rem;">
+        <p class="ss-desc" style="margin:0">@T.LanguageFromSystemHint</p>
+        <button type="button" class="btn-secondary" @onclick="Platform.OpenLanguageSettingsAsync">@T.OpenLanguageSettingsButton</button>
+    </div>
+}
+
+@code {
+    private NativeAppSettingsText? T;
+
+    protected override async Task OnInitializedAsync() =>
+        T = await I18nText.GetTextTableAsync<NativeAppSettingsText>(this);
+}

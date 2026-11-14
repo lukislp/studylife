@@ -10,5 +10,10 @@
   "Intro": "StudyLife se găzduiește singur: nu există un serviciu central. Pentru aplicație ai nevoie de adresa propriului tău server StudyLife sau a celui pe care îl administrează școala, universitatea sau organizația ta.",
   "SetupGuideLink": "Cum îți configurezi propriul server",
   "EmptyUrl": "Introdu mai întâi adresa serverului tău StudyLife.",
-  "NotStudyLifeServer": "La această adresă răspunde ceva, dar nu pare un server StudyLife. Verific-o sau atinge din nou pentru a o folosi oricum."
+  "NotStudyLifeServer": "La această adresă răspunde ceva, dar nu pare un server StudyLife. Verific-o sau atinge din nou pentru a o folosi oricum.",
+  "UntrustedCertificate": "Certificatul acestui server nu este de încredere (de exemplu, provine de la propria ta autoritate de certificare). Instalează profilul autorității de certificare pe acest dispozitiv sau folosește adresa publică a serverului.",
+  "SignedOutUnreachable": "{0} nu poate fi accesat acum. Dacă adresa este greșită, schimbă serverul.",
+  "SignedOutNotStudyLife": "{0} nu răspunde ca un server StudyLife. Dacă adresa este greșită, schimbă serverul.",
+  "PasskeyDomainHint": "Cheile de acces funcționează doar la {0}.",
+  "UsePasskeyAddress": "Folosește această adresă"
 }

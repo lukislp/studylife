@@ -11,5 +11,7 @@
   "HealthDesc": "StudyLife can save finished focus rounds as Mindful Minutes and show sleep, heart rate variability and steps next to your study time. The data stays on this device.",
   "HealthConnectButton": "Connect Apple Health",
   "HealthConnected": "Connected. You can change what StudyLife may read or write in the Health app.",
-  "HealthDeclined": "Access to Apple Health is turned off. To turn it on, open the Health app, tap your profile picture, choose Apps, then StudyLife."
+  "HealthDeclined": "Access to Apple Health is turned off. To turn it on, open the Health app, tap your profile picture, choose Apps, then StudyLife.",
+  "LanguageFromSystemHint": "StudyLife uses the language you set for it in the system settings.",
+  "OpenLanguageSettingsButton": "Open settings"
 }

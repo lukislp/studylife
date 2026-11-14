@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Lukas Körber
 // SPDX-License-Identifier: AGPL-3.0-only
 
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.JSInterop;
@@ -81,7 +82,9 @@ var i18nText = host.Services.GetRequiredService<I18nText>();
 try
 {
     var hasPriorUse = !string.IsNullOrEmpty(host.Services.GetRequiredService<SessionTokenStore>().Token);
-    var currentLanguage = await UiLanguageStartup.ApplyAsync(js, i18nText.SetCurrentLanguageAsync, hasPriorUse);
+    // An auth page the native app opened in the system browser (?app=1&applang=xx) speaks the app's language.
+    var appLanguage = AppReturnContext.FromUri(new Uri(host.Services.GetRequiredService<NavigationManager>().Uri)).Language;
+    var currentLanguage = await UiLanguageStartup.ApplyAsync(js, i18nText.SetCurrentLanguageAsync, hasPriorUse, appLanguage);
 
     // Keep <html lang> in sync with the actually active language - index.html only carries a
     // neutral default, and Chromium browsers render native form controls (especially the

@@ -36,7 +36,10 @@ GET /api/instance
 
 No session or API key is needed (it carries nothing secret; the normal rate limiter applies). The
 response may be cached privately for a minute, the value itself never changes. `version` is the
-server version without build metadata.
+server version without build metadata. Two more fields are set only when the operator pinned the
+passkey relying party: `passkeyRpId` (`Fido2:ServerDomain`) and `passkeyOrigin` (the first
+`Fido2:Origins` entry). Both are public anyway (every sign-in ceremony carries them); the native app
+uses them to tell a user on an internal address that passkeys only work under that domain.
 
 Nothing else goes on the wire: never an API key, token, user data or database detail. Anyone on the
 same network segment can read the announcement - it contains only what the TXT table above lists.

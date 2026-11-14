@@ -11,5 +11,7 @@
   "HealthDesc": "StudyLife kan voltooide focusrondes opslaan als mindfulminuten en slaap, hartslagvariabiliteit en stappen naast je studietijd tonen. De gegevens blijven op dit apparaat.",
   "HealthConnectButton": "Apple Gezondheid koppelen",
   "HealthConnected": "Gekoppeld. Wat StudyLife mag lezen en schrijven, wijzig je in de Gezondheid-app.",
-  "HealthDeclined": "Toegang tot Apple Gezondheid staat uit. Zet het aan door de Gezondheid-app te openen, op je profielfoto te tikken, Apps te kiezen en dan StudyLife."
+  "HealthDeclined": "Toegang tot Apple Gezondheid staat uit. Zet het aan door de Gezondheid-app te openen, op je profielfoto te tikken, Apps te kiezen en dan StudyLife.",
+  "LanguageFromSystemHint": "StudyLife gebruikt de taal die je ervoor hebt ingesteld in de systeeminstellingen.",
+  "OpenLanguageSettingsButton": "Instellingen openen"
 }

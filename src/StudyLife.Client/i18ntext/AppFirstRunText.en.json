@@ -10,5 +10,10 @@
   "Intro": "StudyLife is self-hosted: there is no central service. To use the app you need the address of your own StudyLife server, or of the one your school, university or organisation runs.",
   "SetupGuideLink": "How to set up your own server",
   "EmptyUrl": "Enter the address of your StudyLife server first.",
-  "NotStudyLifeServer": "That address answers, but it does not look like a StudyLife server. Check it, or tap again to use it anyway."
+  "NotStudyLifeServer": "That address answers, but it does not look like a StudyLife server. Check it, or tap again to use it anyway.",
+  "UntrustedCertificate": "This server's certificate is not trusted (for example, it comes from your own certificate authority). Install the certificate authority's profile on this device, or use the server's public address.",
+  "SignedOutUnreachable": "{0} cannot be reached right now. If the address is wrong, change the server.",
+  "SignedOutNotStudyLife": "{0} does not answer like a StudyLife server. If the address is wrong, change the server.",
+  "PasskeyDomainHint": "Passkeys only work at {0}.",
+  "UsePasskeyAddress": "Use this address"
 }

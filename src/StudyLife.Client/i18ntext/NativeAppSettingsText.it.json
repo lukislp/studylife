@@ -11,5 +11,7 @@
   "HealthDesc": "StudyLife può salvare i round di concentrazione completati come minuti di consapevolezza e mostrare sonno, variabilità della frequenza cardiaca e passi accanto al tuo tempo di studio. I dati restano su questo dispositivo.",
   "HealthConnectButton": "Collega Apple Salute",
   "HealthConnected": "Collegato. Ciò che StudyLife può leggere o scrivere si cambia nell'app Salute.",
-  "HealthDeclined": "L'accesso ad Apple Salute è disattivato. Per attivarlo, apri l'app Salute, tocca la tua foto profilo, scegli App e poi StudyLife."
+  "HealthDeclined": "L'accesso ad Apple Salute è disattivato. Per attivarlo, apri l'app Salute, tocca la tua foto profilo, scegli App e poi StudyLife.",
+  "LanguageFromSystemHint": "StudyLife usa la lingua che hai impostato per l'app nelle impostazioni di sistema.",
+  "OpenLanguageSettingsButton": "Apri impostazioni"
 }

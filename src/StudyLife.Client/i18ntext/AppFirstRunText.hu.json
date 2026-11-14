@@ -10,5 +10,10 @@
   "Intro": "A StudyLife saját üzemeltetésű: nincs központi szolgáltatás. Az apphoz a saját StudyLife-szervered címére van szükséged, vagy arra a szerverre, amelyet az iskolád, egyetemed vagy szervezeted üzemeltet.",
   "SetupGuideLink": "Így állíthatsz be saját szervert",
   "EmptyUrl": "Először add meg a StudyLife-szervered címét.",
-  "NotStudyLifeServer": "Ezen a címen válaszol valami, de nem tűnik StudyLife-szervernek. Ellenőrizd, vagy koppints újra, hogy mégis használd."
+  "NotStudyLifeServer": "Ezen a címen válaszol valami, de nem tűnik StudyLife-szervernek. Ellenőrizd, vagy koppints újra, hogy mégis használd.",
+  "UntrustedCertificate": "A szerver tanúsítványa nem megbízható (például a saját hitelesítésszolgáltatódtól származik). Telepítsd a hitelesítésszolgáltató profilját erre az eszközre, vagy használd a szerver nyilvános címét.",
+  "SignedOutUnreachable": "{0} jelenleg nem érhető el. Ha a cím hibás, válts szervert.",
+  "SignedOutNotStudyLife": "{0} nem úgy válaszol, mint egy StudyLife-szerver. Ha a cím hibás, válts szervert.",
+  "PasskeyDomainHint": "A jelkulcsok csak itt működnek: {0}.",
+  "UsePasskeyAddress": "Ennek a címnek a használata"
 }

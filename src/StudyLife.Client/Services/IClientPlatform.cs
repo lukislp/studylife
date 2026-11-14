@@ -28,6 +28,19 @@ public interface IClientPlatform
     /// notices the server publishes. Default for the same reason as <see cref="AppVersion"/>.
     /// </summary>
     Task<string?> ReadBundledNoticesAsync() => Task.FromResult<string?>(null);
+
+    /// <summary>
+    /// True when the UI language comes from the operating system's language setting for this app
+    /// (iOS/iPadOS/macOS: Settings, StudyLife, Language; Android 13+: per-app language; Windows: the
+    /// system language). The shared UI then shows no language picker but a hint with
+    /// <see cref="OpenLanguageSettingsAsync"/> instead - this flag is the one place that decides it.
+    /// False in the browser, where the picker stays. Default so older shells keep the picker.
+    /// </summary>
+    bool LanguageFromSystem => false;
+
+    /// <summary>Opens the operating system's language setting for this app (or its settings page
+    /// where the system has no per-app language page). Only used when <see cref="LanguageFromSystem"/>.</summary>
+    Task OpenLanguageSettingsAsync() => Task.CompletedTask;
 }
 
 /// <summary>Default registration in the browser client (Program.cs).</summary>

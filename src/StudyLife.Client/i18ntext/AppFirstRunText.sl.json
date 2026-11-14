@@ -10,5 +10,10 @@
   "Intro": "StudyLife gostiš sam: osrednje storitve ni. Za aplikacijo potrebuješ naslov svojega strežnika StudyLife ali strežnika, ki ga upravlja tvoja šola, univerza ali organizacija.",
   "SetupGuideLink": "Kako nastaviti lasten strežnik",
   "EmptyUrl": "Najprej vnesi naslov svojega strežnika StudyLife.",
-  "NotStudyLifeServer": "Na tem naslovu nekaj odgovarja, vendar ne izgleda kot strežnik StudyLife. Preveri naslov ali se znova dotakni, da ga vseeno uporabiš."
+  "NotStudyLifeServer": "Na tem naslovu nekaj odgovarja, vendar ne izgleda kot strežnik StudyLife. Preveri naslov ali se znova dotakni, da ga vseeno uporabiš.",
+  "UntrustedCertificate": "Potrdilo tega strežnika ni zaupanja vredno (izhaja na primer iz tvojega lastnega overitelja). Na to napravo namesti profil overitelja ali uporabi javni naslov strežnika.",
+  "SignedOutUnreachable": "{0} trenutno ni dosegljiv. Če je naslov napačen, zamenjaj strežnik.",
+  "SignedOutNotStudyLife": "{0} se ne odziva kot strežnik StudyLife. Če je naslov napačen, zamenjaj strežnik.",
+  "PasskeyDomainHint": "Ključi za dostop delujejo samo na {0}.",
+  "UsePasskeyAddress": "Uporabi ta naslov"
 }

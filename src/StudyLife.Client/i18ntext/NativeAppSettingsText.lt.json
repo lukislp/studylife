@@ -11,5 +11,7 @@
   "HealthDesc": "„StudyLife“ gali įrašyti baigtus susitelkimo ciklus kaip dėmesingumo minutes ir rodyti miegą, širdies ritmo kintamumą bei žingsnius šalia tavo mokymosi laiko. Duomenys lieka šiame įrenginyje.",
   "HealthConnectButton": "Prijungti „Apple Health“",
   "HealthConnected": "Prijungta. Ką „StudyLife“ gali skaityti ir rašyti, gali pakeisti programėlėje „Health“.",
-  "HealthDeclined": "Prieiga prie „Apple Health“ išjungta. Norėdamas ją įjungti, atidaryk programėlę „Health“, bakstelėk savo profilio nuotrauką, pasirink „Apps“, tada „StudyLife“."
+  "HealthDeclined": "Prieiga prie „Apple Health“ išjungta. Norėdamas ją įjungti, atidaryk programėlę „Health“, bakstelėk savo profilio nuotrauką, pasirink „Apps“, tada „StudyLife“.",
+  "LanguageFromSystemHint": "„StudyLife“ naudoja kalbą, kuri jai nustatyta sistemos nustatymuose.",
+  "OpenLanguageSettingsButton": "Atidaryti nustatymus"
 }

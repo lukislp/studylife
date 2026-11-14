@@ -8293,6 +8293,18 @@
           },
           "version": {
             "type": "string"
+          },
+          "passkeyRpId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "passkeyOrigin": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

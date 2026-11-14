@@ -11,5 +11,7 @@
   "HealthDesc": "StudyLife saab salvestada lõpetatud fookusringid teadveloleku minutitena ning näidata und, südamerütmi varieeruvust ja samme õppeaja kõrval. Andmed jäävad sellesse seadmesse.",
   "HealthConnectButton": "Ühenda Apple Health",
   "HealthConnected": "Ühendatud. Mida StudyLife võib rakenduses Health lugeda ja kirjutada, saad muuta seal.",
-  "HealthDeclined": "Juurdepääs Apple Healthile on välja lülitatud. Sisselülitamiseks ava rakendus Health, puuduta oma profiilipilti, vali Apps ja seejärel StudyLife."
+  "HealthDeclined": "Juurdepääs Apple Healthile on välja lülitatud. Sisselülitamiseks ava rakendus Health, puuduta oma profiilipilti, vali Apps ja seejärel StudyLife.",
+  "LanguageFromSystemHint": "StudyLife kasutab keelt, mille oled rakendusele süsteemi seadetes määranud.",
+  "OpenLanguageSettingsButton": "Ava seaded"
 }

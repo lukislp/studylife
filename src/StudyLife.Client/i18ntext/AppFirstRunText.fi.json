@@ -10,5 +10,10 @@
   "Intro": "StudyLife on itse ylläpidettävä: keskitettyä palvelua ei ole. Sovellus tarvitsee oman StudyLife-palvelimesi osoitteen tai sen palvelimen osoitteen, jota koulusi, yliopistosi tai organisaatiosi ylläpitää.",
   "SetupGuideLink": "Näin otat käyttöön oman palvelimen",
   "EmptyUrl": "Kirjoita ensin StudyLife-palvelimesi osoite.",
-  "NotStudyLifeServer": "Osoitteessa vastaa jokin, mutta se ei näytä StudyLife-palvelimelta. Tarkista osoite tai napauta uudelleen käyttääksesi sitä silti."
+  "NotStudyLifeServer": "Osoitteessa vastaa jokin, mutta se ei näytä StudyLife-palvelimelta. Tarkista osoite tai napauta uudelleen käyttääksesi sitä silti.",
+  "UntrustedCertificate": "Tämän palvelimen varmenteeseen ei luoteta (se on esimerkiksi oman varmentajasi myöntämä). Asenna varmentajan profiili tähän laitteeseen tai käytä palvelimen julkista osoitetta.",
+  "SignedOutUnreachable": "{0} ei ole juuri nyt tavoitettavissa. Jos osoite on väärä, vaihda palvelinta.",
+  "SignedOutNotStudyLife": "{0} ei vastaa kuin StudyLife-palvelin. Jos osoite on väärä, vaihda palvelinta.",
+  "PasskeyDomainHint": "Pääsyavaimet toimivat vain osoitteessa {0}.",
+  "UsePasskeyAddress": "Käytä tätä osoitetta"
 }

@@ -11,8 +11,16 @@ public class UiLanguageStartupTests
     /// <summary>A web view with a fixed localStorage entry and navigator.languages.</summary>
     private sealed class FakeWebView(string? stored, string? languages, bool languagesThrow = false) : IJSRuntime
     {
+        /// <summary>What the startup wrote to localStorage itself (not through the library).</summary>
+        public List<string> Written { get; } = [];
+
         public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args)
         {
+            if (identifier == "localStorage.setItem" && args is [UiLanguageStartup.StorageKey, string value])
+            {
+                Written.Add(value);
+                return ValueTask.FromResult(default(TValue)!);
+            }
             object? answer = identifier switch
             {
                 "localStorage.getItem" when args is [UiLanguageStartup.StorageKey] => stored,
@@ -27,10 +35,10 @@ public class UiLanguageStartupTests
             => InvokeAsync<TValue>(identifier, args);
     }
 
-    private static async Task<(string Language, List<string> Stored)> RunAsync(FakeWebView js, bool hasPriorUse = false)
+    private static async Task<(string Language, List<string> Stored)> RunAsync(FakeWebView js, bool hasPriorUse = false, string? prescribed = null)
     {
         var stored = new List<string>();
-        var language = await UiLanguageStartup.ApplyAsync(js, l => { stored.Add(l); return Task.CompletedTask; }, hasPriorUse);
+        var language = await UiLanguageStartup.ApplyAsync(js, l => { stored.Add(l); return Task.CompletedTask; }, hasPriorUse, prescribed);
         return (language, stored);
     }
 
@@ -87,5 +95,40 @@ public class UiLanguageStartupTests
     {
         var (language, _) = await RunAsync(new(null, null, languagesThrow: true));
         Assert.Equal("en", language);
+    }
+
+    [Fact]
+    public async Task The_decided_language_is_written_even_when_the_library_skips_its_own_persistence()
+    {
+        // The library's SetCurrentLanguageAsync returns early when it already shows the language it
+        // detected from navigator.languages; the start must still leave a stored choice behind.
+        var js = new FakeWebView(null, "en");
+        await RunAsync(js);
+        Assert.Equal(new[] { "en" }, js.Written);
+    }
+
+    [Fact]
+    public async Task A_stored_choice_is_not_written_again()
+    {
+        var js = new FakeWebView("fr", "en");
+        await RunAsync(js);
+        Assert.Empty(js.Written);
+    }
+
+    [Fact]
+    public async Task A_prescribed_language_wins_over_the_stored_choice_and_the_device()
+    {
+        var js = new FakeWebView("de", "de-DE");
+        var (language, stored) = await RunAsync(js, hasPriorUse: true, prescribed: "en");
+        Assert.Equal("en", language);
+        Assert.Equal(new[] { "en" }, stored);
+        Assert.Equal(new[] { "en" }, js.Written);
+    }
+
+    [Fact]
+    public async Task An_unsupported_prescribed_language_falls_through_to_the_normal_rule()
+    {
+        var (language, _) = await RunAsync(new("fr", "en"), prescribed: "ja");
+        Assert.Equal("fr", language);
     }
 }

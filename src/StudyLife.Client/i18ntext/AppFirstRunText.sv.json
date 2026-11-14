@@ -10,5 +10,10 @@
   "Intro": "StudyLife driver du själv: det finns ingen central tjänst. För appen behöver du adressen till din egen StudyLife-server, eller till den som din skola, ditt universitet eller din organisation driver.",
   "SetupGuideLink": "Så sätter du upp en egen server",
   "EmptyUrl": "Ange först adressen till din StudyLife-server.",
-  "NotStudyLifeServer": "Något svarar på adressen, men det ser inte ut som en StudyLife-server. Kontrollera adressen eller tryck igen för att använda den ändå."
+  "NotStudyLifeServer": "Något svarar på adressen, men det ser inte ut som en StudyLife-server. Kontrollera adressen eller tryck igen för att använda den ändå.",
+  "UntrustedCertificate": "Serverns certifikat är inte betrott (det kommer till exempel från din egen certifikatutfärdare). Installera certifikatutfärdarens profil på den här enheten eller använd serverns offentliga adress.",
+  "SignedOutUnreachable": "{0} går inte att nå just nu. Om adressen är fel, byt server.",
+  "SignedOutNotStudyLife": "{0} svarar inte som en StudyLife-server. Om adressen är fel, byt server.",
+  "PasskeyDomainHint": "Nycklar fungerar bara på {0}.",
+  "UsePasskeyAddress": "Använd den här adressen"
 }

@@ -11,5 +11,7 @@
   "HealthDesc": "StudyLife jista' jissejvja r-rawnds ta' fokus lesti bħala minuti ta' mindfulness u juri n-nom, il-varjabilità tar-rata tal-qalb u l-passi maġenb il-ħin tal-istudju tiegħek. Id-data tibqa' fuq dan l-apparat.",
   "HealthConnectButton": "Qabbad Apple Health",
   "HealthConnected": "Konness. Dak li StudyLife jista' jaqra u jikteb tista' tbiddlu fl-app Health.",
-  "HealthDeclined": "L-aċċess għal Apple Health huwa mitfi. Biex iddawwru, iftaħ l-app Health, tektek ir-ritratt tal-profil tiegħek, agħżel Apps u mbagħad StudyLife."
+  "HealthDeclined": "L-aċċess għal Apple Health huwa mitfi. Biex iddawwru, iftaħ l-app Health, tektek ir-ritratt tal-profil tiegħek, agħżel Apps u mbagħad StudyLife.",
+  "LanguageFromSystemHint": "StudyLife juża l-lingwa li ssettjajt għalih fis-settings tas-sistema.",
+  "OpenLanguageSettingsButton": "Iftaħ is-settings"
 }

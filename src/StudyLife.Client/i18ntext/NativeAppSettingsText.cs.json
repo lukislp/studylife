@@ -11,5 +11,7 @@
   "HealthDesc": "StudyLife může ukládat dokončená soustředěná kola jako minuty všímavosti a zobrazovat spánek, variabilitu srdeční frekvence a kroky vedle tvého času učení. Data zůstávají v tomto zařízení.",
   "HealthConnectButton": "Připojit Apple Health",
   "HealthConnected": "Připojeno. Co smí StudyLife v aplikaci Zdraví číst a zapisovat, můžeš změnit tam.",
-  "HealthDeclined": "Přístup k Apple Health je vypnutý. Zapneš ho tak, že otevřeš aplikaci Zdraví, klepneš na profilový obrázek, vybereš Aplikace a pak StudyLife."
+  "HealthDeclined": "Přístup k Apple Health je vypnutý. Zapneš ho tak, že otevřeš aplikaci Zdraví, klepneš na profilový obrázek, vybereš Aplikace a pak StudyLife.",
+  "LanguageFromSystemHint": "StudyLife používá jazyk, který je pro aplikaci nastavený v nastavení systému.",
+  "OpenLanguageSettingsButton": "Otevřít nastavení"
 }

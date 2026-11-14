@@ -723,6 +723,17 @@ public class InstanceInfoDto
 {
     public string Id { get; set; } = "";
     public string Version { get; set; } = "";
+
+    /// <summary>The passkey (WebAuthn) relying-party id when the operator pinned one (Fido2:ServerDomain),
+    /// else null: passkeys then belong to whatever host the request came in on. Public anyway (every
+    /// sign-in ceremony carries it); the native app compares it with the address it was given, so a user
+    /// on an internal address learns that passkeys only work under this domain.</summary>
+    public string? PasskeyRpId { get; set; }
+
+    /// <summary>The first pinned passkey origin (Fido2:Origins), e.g. "https://studylife.example.com", or
+    /// null when none is pinned. The address the app suggests when the configured one is outside
+    /// <see cref="PasskeyRpId"/>.</summary>
+    public string? PasskeyOrigin { get; set; }
 }
 
 /// <summary>Body of POST /api/auth/register/begin (phase 2, passkey login).</summary>
