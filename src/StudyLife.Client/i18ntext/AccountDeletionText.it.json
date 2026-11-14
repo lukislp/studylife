@@ -46,5 +46,8 @@
   "ErrorNetwork": "Impossibile raggiungere il server. Non è stato eliminato nulla.",
   "ErrorOwner": "Il proprietario non può essere eliminato finché esistono altri utenti.",
   "ErrorGeneric": "Qualcosa è andato storto. Non è stato eliminato nulla.",
-  "AddonPending": "La pulizia nei componenti aggiuntivi collegati è ancora in sospeso e terminerà automaticamente."
+  "AddonPending": "La pulizia nei componenti aggiuntivi collegati è ancora in sospeso e terminerà automaticamente.",
+  "PasswordToggle": "Usa invece la mia password",
+  "PasswordLabel": "La tua password",
+  "PasswordButton": "Conferma con la password ed elimina"
 }

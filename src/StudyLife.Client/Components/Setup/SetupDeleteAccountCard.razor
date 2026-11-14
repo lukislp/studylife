@@ -153,6 +153,13 @@
                     {
                         <p class="ss-desc">@T.ReauthText</p>
                     }
+                    @if (_passwordOpen)
+                    {
+                        <label class="ss-desc" for="delete-account-password">@T.PasswordLabel</label>
+                        <input id="delete-account-password" class="input" type="password" autocomplete="current-password"
+                               @bind="_password" @bind:event="oninput" disabled="@_busy"
+                               @onkeyup="@(e => { if (e.Key == "Enter") _ = DeleteWithPasswordAsync(); })" />
+                    }
                     @if (_recoveryOpen)
                     {
                         <label class="ss-desc" for="delete-account-recovery">@T.RecoveryLabel</label>
@@ -168,8 +175,19 @@
                 </div>
                 <div class="modal-footer" style="flex-wrap:wrap">
                     <button type="button" class="btn-secondary" @onclick="BackToConfirm" disabled="@_busy">@T.BackButton</button>
-                    @if (!_recoveryOpen)
+                    @if (_passwordOpen)
                     {
+                        <button type="button" class="btn-danger" @onclick="DeleteWithPasswordAsync"
+                                disabled="@(_busy || string.IsNullOrEmpty(_password))">
+                            @(_busy ? T.Working : T.PasswordButton)
+                        </button>
+                    }
+                    else if (!_recoveryOpen)
+                    {
+                        @if (_hasPassword)
+                        {
+                            <button type="button" class="btn-secondary" @onclick="() => _passwordOpen = true" disabled="@_busy">@T.PasswordToggle</button>
+                        }
                         <button type="button" class="btn-secondary" @onclick="() => _recoveryOpen = true" disabled="@_busy">@T.RecoveryToggle</button>
                         @if (_browserSignIn)
                         {
@@ -215,6 +233,11 @@
     private bool _understood;
     private bool _recoveryOpen;
     private string _recoveryCode = "";
+    // The current password as the proof (password sign-in): offered only when the account has one
+    // and the operator allows passwords - the server would refuse it otherwise.
+    private bool _hasPassword;
+    private bool _passwordOpen;
+    private string _password = "";
     private bool _browserSignIn;
     private bool _busy;
     private string? _error;
@@ -245,6 +268,7 @@
         _users.Clear();
         if (_preview is { IsOwner: true })
             _users.AddRange(await State.AccountDeletion.ListUsersAsync() ?? []);
+        _hasPassword = await State.PasswordSignIn.GetStatusAsync() is { Enabled: true, HasPassword: true };
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -267,6 +291,8 @@
         _status = null;
         _recoveryOpen = false;
         _recoveryCode = "";
+        _passwordOpen = false;
+        _password = "";
         // A native shell without in-app passkeys cannot run WebAuthn in its web view: it signs in
         // again through the system browser instead (the server accepts a session that just signed in).
         _browserSignIn = NativeAuth.IsAvailable && !NativeAuth.SupportsInAppPasskeys;
@@ -279,6 +305,7 @@
         if (_busy) return;
         _step = Step.Closed;
         _recoveryCode = "";
+        _password = "";
     }
 
     private void OnKeyDown(KeyboardEventArgs e)
@@ -298,6 +325,8 @@
     {
         _error = null;
         _recoveryOpen = false;
+        _passwordOpen = false;
+        _password = "";
         _step = Step.Confirm;
         _focusPending = true;
     }
@@ -376,6 +405,15 @@
         _busy = true;
         _error = null;
         try { await RunAsync(new AccountDeletionProof(null, null, _recoveryCode)); }
+        finally { _busy = false; }
+    }
+
+    private async Task DeleteWithPasswordAsync()
+    {
+        if (_busy || string.IsNullOrEmpty(_password)) return;
+        _busy = true;
+        _error = null;
+        try { await RunAsync(new AccountDeletionProof(null, null, null, _password)); }
         finally { _busy = false; }
     }
 

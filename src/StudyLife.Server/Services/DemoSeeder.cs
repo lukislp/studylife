@@ -59,6 +59,7 @@ public static class DemoSeeder
         await db.AuthSessions.ExecuteDeleteAsync();
         await db.PasskeyCredentials.ExecuteDeleteAsync();
         await db.RecoveryCodes.ExecuteDeleteAsync();
+        await db.PasswordCredentials.ExecuteDeleteAsync();
         await db.AuthUsers.ExecuteDeleteAsync();
 
         // ── Demo user ────────────────────────────────────────────────────────────

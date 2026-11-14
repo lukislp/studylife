@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Auth;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
+using StudyLife.Server.Services.SignIn;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Controllers;
@@ -54,7 +55,9 @@ public partial class AuthController
         // (or restored-empty) install must never be bricked by Registration:Mode=invite/closed
         // before an owner has even had the chance to log in and generate an invite in the first
         // place (nobody could - invite creation is owner-only, see the /api/auth/invites group).
-        var anyPasskeyExists = await _db.PasskeyCredentials.AnyAsync();
+        // Since password sign-in this is InstanceBootstrap.IsClaimedAsync ("any passkey OR any
+        // password"): an installation claimed by a password-only owner must not look unclaimed here.
+        var anyPasskeyExists = await InstanceBootstrap.IsClaimedAsync(_db);
 
         // The first registration ever requires the setup secret generated at startup and printed
         // to the container logs - this prevents anyone who reaches the open registration endpoint
@@ -232,7 +235,7 @@ public partial class AuthController
         // Shared by the legacy-user-claim decision below AND the invite-consumption check further
         // down (audit A10) - hoisted out of the `else` branch so both can read it. Same predicate
         // RegisterBegin used to decide whether its RegistrationGateService check even ran.
-        var anyPasskeyExists = await _db.PasskeyCredentials.AnyAsync();
+        var anyPasskeyExists = await InstanceBootstrap.IsClaimedAsync(_db);
 
         AuthUserEntity targetUser;
         if (pending.ForAuthUserId is int ownUserId)
@@ -241,38 +244,7 @@ public partial class AuthController
         }
         else
         {
-            // Core of the first-registration logic: if NOT a single passkey exists yet, meaning
-            // nobody has ever registered, then this first registration "claims" the legacy user
-            // created by the phase-1 migration ("My Studies") along with all of its existing
-            // data - only its DisplayName is updated to the input. Once at least one passkey
-            // exists, the legacy user is taken and every further registration creates a
-            // brand-new, empty user (open signup, intentional).
-            var legacyUser = anyPasskeyExists
-                ? null
-                : await _db.AuthUsers.OrderBy(u => u.Id).FirstOrDefaultAsync();
-
-            if (legacyUser is not null)
-            {
-                // Claiming the legacy user (created by the phase-1 migration, or - on a normal,
-                // never-emptied instance - the true first-ever user): IsOwner already sits on
-                // this row from the AddAuthUserIsOwner backfill (lowest Id) or an earlier first
-                // registration, so nothing to set here.
-                legacyUser.DisplayName = pending.DisplayName;
-                targetUser = legacyUser;
-            }
-            else
-            {
-                // Reached either for open family signup (anyPasskeyExists == true, a legacy/
-                // owner user already exists - IsOwner stays false, the entity default) or for the
-                // genuine "zero AuthUsers exist at all" edge case (anyPasskeyExists == false AND
-                // the query above still found nothing - e.g. a restored empty/wiped DB): only the
-                // latter is the true first-ever user and becomes owner (audit A15/A2 fix - this
-                // used to be re-derived implicitly as "lowest Id" at every check instead of
-                // decided once, here, at creation time).
-                targetUser = new AuthUserEntity { DisplayName = pending.DisplayName, CreatedAt = now, IsOwner = !anyPasskeyExists };
-                _db.AuthUsers.Add(targetUser);
-                await _db.SaveChangesAsync(); // Id is needed for the credential row
-            }
+            targetUser = await ProvisionSelfRegisteredUserAsync(pending.DisplayName, anyPasskeyExists, now);
         }
 
         // Registration gate (audit A10): consume the invite that gated this self-registration at
@@ -332,6 +304,50 @@ public partial class AuthController
         if (pending.LinkCode is { } usedCode) await _cache.RemoveAsync(LinkCodeCacheKey(usedCode));
 
         return new PasskeyCompleteResponseDto { Token = token, DisplayName = targetUser.DisplayName, Pending = isAdditionalDevice };
+    }
+
+    /// <summary>
+    /// The account a SELF-registration (passkey or password) lands on - shared by RegisterComplete
+    /// and the password registration so the legacy-claim/owner decision exists once. Runs inside
+    /// the caller's transaction; <paramref name="anyPasskeyExists"/> is the caller's
+    /// InstanceBootstrap.IsClaimedAsync read from within that transaction.
+    /// </summary>
+    private async Task<AuthUserEntity> ProvisionSelfRegisteredUserAsync(string displayName, bool anyPasskeyExists, DateTime now)
+    {
+        AuthUserEntity targetUser;
+        // Core of the first-registration logic: if NOT a single passkey exists yet, meaning
+        // nobody has ever registered, then this first registration "claims" the legacy user
+        // created by the phase-1 migration ("My Studies") along with all of its existing
+        // data - only its DisplayName is updated to the input. Once at least one passkey
+        // exists, the legacy user is taken and every further registration creates a
+        // brand-new, empty user (open signup, intentional).
+        var legacyUser = anyPasskeyExists
+            ? null
+            : await _db.AuthUsers.OrderBy(u => u.Id).FirstOrDefaultAsync();
+
+        if (legacyUser is not null)
+        {
+            // Claiming the legacy user (created by the phase-1 migration, or - on a normal,
+            // never-emptied instance - the true first-ever user): IsOwner already sits on
+            // this row from the AddAuthUserIsOwner backfill (lowest Id) or an earlier first
+            // registration, so nothing to set here.
+            legacyUser.DisplayName = displayName;
+            targetUser = legacyUser;
+        }
+        else
+        {
+            // Reached either for open family signup (anyPasskeyExists == true, a legacy/
+            // owner user already exists - IsOwner stays false, the entity default) or for the
+            // genuine "zero AuthUsers exist at all" edge case (anyPasskeyExists == false AND
+            // the query above still found nothing - e.g. a restored empty/wiped DB): only the
+            // latter is the true first-ever user and becomes owner (audit A15/A2 fix - this
+            // used to be re-derived implicitly as "lowest Id" at every check instead of
+            // decided once, here, at creation time).
+            targetUser = new AuthUserEntity { DisplayName = displayName, CreatedAt = now, IsOwner = !anyPasskeyExists };
+            _db.AuthUsers.Add(targetUser);
+            await _db.SaveChangesAsync(); // Id is needed for the credential row
+        }
+        return targetUser;
     }
 
     private static string RegistrationCacheKey(string optionsId) => $"passkey-reg:{optionsId}";

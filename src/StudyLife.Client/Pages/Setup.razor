@@ -434,6 +434,10 @@
              State.AccountDeletion); every decision is made server-side by AccountDeletionService.
              Deliberately outside the backup block above: it must exist on Postgres installations
              too, and for every user, not only the owner. -->
+        <!-- Sign-in with username + password next to passkeys (add / change / remove, owner reset).
+             Self-contained (own PasswordText table, talks to State.PasswordSignIn); renders nothing
+             while the operator has password sign-in switched off and the account has no password. -->
+        <SetupPasswordCard />
         <SetupNativeAppCard />
         <SetupDeleteAccountCard />
 

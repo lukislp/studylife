@@ -35,6 +35,7 @@
             <button type="button" class="btn-primary" @onclick="SignInAsync" disabled="@_busy">
                 @(_busy ? T.LoginWorking : T.LoginButton)
             </button>
+            <PasswordSignInForm App="_app" ReturnUrl="@_returnUrl" />
             <a href="@("/register" + _app.LinkQuery)" class="btn-secondary" style="text-align:center;">@T.GoToRegisterLink</a>
             <a href="@("/link" + _app.LinkQuery)" class="btn-secondary" style="text-align:center;">@T.GoToLinkDeviceLink</a>
 

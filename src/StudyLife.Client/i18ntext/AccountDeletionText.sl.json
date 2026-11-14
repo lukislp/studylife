@@ -46,5 +46,8 @@
   "ErrorNetwork": "Strežnika ni bilo mogoče doseči. Nič ni bilo izbrisano.",
   "ErrorOwner": "Lastnika ni mogoče izbrisati, dokler obstajajo drugi uporabniki.",
   "ErrorGeneric": "Nekaj je šlo narobe. Nič ni bilo izbrisano.",
-  "AddonPending": "Čiščenje v povezanih dodatkih še poteka in se bo samodejno končalo."
+  "AddonPending": "Čiščenje v povezanih dodatkih še poteka in se bo samodejno končalo.",
+  "PasswordToggle": "Namesto tega uporabi moje geslo",
+  "PasswordLabel": "Vaše geslo",
+  "PasswordButton": "Potrdi z geslom in izbriši"
 }

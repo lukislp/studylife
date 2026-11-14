@@ -46,5 +46,8 @@
   "ErrorNetwork": "Server nie je dostupný. Nič nebolo odstránené.",
   "ErrorOwner": "Vlastníka nie je možné odstrániť, kým existujú ďalší používatelia.",
   "ErrorGeneric": "Niečo sa nepodarilo. Nič nebolo odstránené.",
-  "AddonPending": "Upratovanie v prepojených doplnkoch stále prebieha a dokončí sa automaticky."
+  "AddonPending": "Upratovanie v prepojených doplnkoch stále prebieha a dokončí sa automaticky.",
+  "PasswordToggle": "Namiesto toho použiť moje heslo",
+  "PasswordLabel": "Vaše heslo",
+  "PasswordButton": "Potvrdiť heslom a odstrániť"
 }

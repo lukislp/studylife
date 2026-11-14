@@ -29,18 +29,24 @@ public partial class AuthController
 
     private sealed record PendingReauth(AssertionOptions Options, int UserId);
 
-    /// <summary>Body of DELETE api/auth/account and DELETE api/auth/users/{id}: the fresh proof.
-    /// Either a passkey assertion for the challenge of POST account/reauth/begin
-    /// (<see cref="OptionsId"/> + <see cref="Response"/>) or one of the caller's own recovery codes.
-    /// Both absent is accepted only for a session that signed in within
+    /// <summary>The fresh proof of presence a sensitive action carries (account deletion, adding,
+    /// changing or removing a password, the owner's password reset). Either a passkey assertion
+    /// for the challenge of POST account/reauth/begin (<see cref="OptionsId"/> +
+    /// <see cref="Response"/>), one of the caller's own recovery codes, or the caller's current
+    /// password. None of them is accepted only for a session that signed in within
     /// <see cref="FreshSessionWindow"/>.</summary>
-    public class AccountDeleteRequest
+    public class FreshProofRequest
     {
         public string? OptionsId { get; set; }
         public AuthenticatorAssertionRawResponse? Response { get; set; }
         [MaxLength(50)]
         public string? RecoveryCode { get; set; }
+        [MaxLength(512)]
+        public string? CurrentPassword { get; set; }
     }
+
+    /// <summary>Body of DELETE api/auth/account and DELETE api/auth/users/{id}: the fresh proof.</summary>
+    public class AccountDeleteRequest : FreshProofRequest;
 
     /// <summary>What the "Delete account" card shows before the user commits: whether deletion is
     /// possible and, if not, why - plus what would go with it.</summary>
@@ -111,7 +117,7 @@ public partial class AuthController
 
         var proof = await VerifyFreshProofAsync(request, callerId);
         if (proof == FreshProof.Missing)
-            return BadRequest("A fresh proof is required: confirm with a passkey, a recovery code, or sign in again.");
+            return BadRequest("A fresh proof is required: confirm with a passkey, a recovery code, your password, or sign in again.");
         if (proof == FreshProof.Failed)
             return Problem(statusCode: StatusCodes.Status403Forbidden, type: "reauthentication-failed",
                 title: "reauthentication-failed", detail: "The confirmation was not accepted.");
@@ -137,13 +143,20 @@ public partial class AuthController
 
     private enum FreshProof { Accepted, Missing, Failed }
 
-    /// <summary>Re-authentication right before a destructive action. Order: an explicit recovery
-    /// code, an explicit passkey assertion, and only without either the recency of the session's
-    /// own sign-in. An explicit proof that fails is a failure - it never falls back to recency.</summary>
-    private async Task<FreshProof> VerifyFreshProofAsync(AccountDeleteRequest request, int userId)
+    /// <summary>Re-authentication right before a sensitive action. Order: an explicit recovery
+    /// code, the current password, an explicit passkey assertion, and only without any of them the
+    /// recency of the session's own sign-in. An explicit proof that fails is a failure - it never
+    /// falls back to recency. The current password counts only while password sign-in is enabled
+    /// (switched off, a password proves nothing the operator still accepts).</summary>
+    private async Task<FreshProof> VerifyFreshProofAsync(FreshProofRequest request, int userId)
     {
         if (!string.IsNullOrWhiteSpace(request.RecoveryCode))
             return await _recovery.TryConsumeForUserAsync(userId, request.RecoveryCode) ? FreshProof.Accepted : FreshProof.Failed;
+
+        if (!string.IsNullOrEmpty(request.CurrentPassword))
+            return _passwords.Enabled && await _passwords.VerifyForUserAsync(userId, request.CurrentPassword)
+                ? FreshProof.Accepted
+                : FreshProof.Failed;
 
         if (request.Response is not null || !string.IsNullOrEmpty(request.OptionsId))
         {

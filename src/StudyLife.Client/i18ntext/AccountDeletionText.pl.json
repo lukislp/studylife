@@ -46,5 +46,8 @@
   "ErrorNetwork": "Nie można połączyć się z serwerem. Nic nie zostało usunięte.",
   "ErrorOwner": "Właściciela nie można usunąć, dopóki istnieją inni użytkownicy.",
   "ErrorGeneric": "Coś poszło nie tak. Nic nie zostało usunięte.",
-  "AddonPending": "Porządkowanie w połączonych dodatkach jest jeszcze w toku i zakończy się automatycznie."
+  "AddonPending": "Porządkowanie w połączonych dodatkach jest jeszcze w toku i zakończy się automatycznie.",
+  "PasswordToggle": "Użyj zamiast tego mojego hasła",
+  "PasswordLabel": "Twoje hasło",
+  "PasswordButton": "Potwierdź hasłem i usuń"
 }

@@ -349,6 +349,19 @@ builder.Services.AddRateLimiter(options =>
         if (context.Request.Path.StartsWithSegments("/api/auth/recovery/login"))
             return FixedWindow(context, $"recovery|{clientIp}", permitLimit: 5, TimeSpan.FromMinutes(15));
 
+        // Password sign-in: a guessable secret behind an unauthenticated endpoint, like the
+        // recovery code. 10 attempts per 15 minutes per IP here; the per-ACCOUNT exponential
+        // lockout (PasswordLockoutPolicy) covers an attacker spreading over many IPs, and the
+        // instance-wide bucket below caps password spraying across many accounts.
+        if (context.Request.Path.StartsWithSegments("/api/auth/password/login"))
+            return FixedWindow(context, $"password-login|{clientIp}", permitLimit: 10, TimeSpan.FromMinutes(15));
+
+        // Everything else that hashes a password or accepts one as proof: registration, adding/
+        // changing/removing it, the owner's reset. Each request runs the deliberately slow KDF, so
+        // these get their own small bucket instead of the generic 300/min.
+        if (IsPasswordManagement(context.Request))
+            return FixedWindow(context, $"password-manage|{clientIp}", permitLimit: 20, TimeSpan.FromMinutes(15));
+
         // Account deletion accepts a one-time recovery code as its proof, so it gets its own
         // strict partition like the recovery login (a stolen session must not be able to
         // brute-force the 12-character code at the generic 300/min).
@@ -379,12 +392,22 @@ builder.Services.AddRateLimiter(options =>
     var globalRecoveryLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
         context.Request.Path.StartsWithSegments("/api/auth/recovery/login")
             ? FixedWindow(context, "recovery|global", permitLimit: 30, TimeSpan.FromMinutes(15))
+            // Generous on purpose (a household signing in after an outage must not hit it), but it
+            // bounds what forged client IPs can try across all accounts together.
+            : context.Request.Path.StartsWithSegments("/api/auth/password/login")
+            ? FixedWindow(context, "password-login|global", permitLimit: 300, TimeSpan.FromMinutes(15))
             : HttpMethods.IsDelete(context.Request.Method)
               && (context.Request.Path.StartsWithSegments("/api/auth/account")
                   || context.Request.Path.StartsWithSegments("/api/auth/users"))
                 ? FixedWindow(context, "account-deletion|global", permitLimit: 30, TimeSpan.FromMinutes(15))
                 : RateLimitPartition.GetNoLimiter("no-limit"));
     options.GlobalLimiter = PartitionedRateLimiter.CreateChained(perClientLimiter, globalRecoveryLimiter);
+
+    static bool IsPasswordManagement(HttpRequest request) =>
+        !HttpMethods.IsGet(request.Method)
+        && (request.Path.StartsWithSegments("/api/auth/password")
+            || (request.Path.StartsWithSegments("/api/auth/users")
+                && request.Path.Value!.EndsWith("/password-reset", StringComparison.Ordinal)));
 
     // CPU-heavy endpoints (Whisper transcription, Piper synthesis, the AI proxy, the JSON export,
     // the exam planner) shared the flat 300/min bucket with everything else - 300 concurrent
@@ -511,6 +534,14 @@ builder.Services.AddScoped<IDeveloperClientService, DeveloperClientService>();
 builder.Services.AddScoped<IAuthInviteService, AuthInviteService>();
 builder.Services.AddScoped<IAuthRecoveryService, AuthRecoveryService>();
 builder.Services.AddScoped<IAuthAccountService, AuthAccountService>();
+// Sign-in methods (docs/ARCHITECTURE.md "Password sign-in"): one ISignInMethod per method, summed by
+// the catalog for the "never remove the last way in" rule; the password use cases behind
+// IPasswordCredentialService and the hashing port behind IPasswordHashing (stateless, singleton).
+builder.Services.AddScoped<StudyLife.Server.Services.SignIn.ISignInMethod, StudyLife.Server.Services.SignIn.PasskeySignInMethod>();
+builder.Services.AddScoped<StudyLife.Server.Services.SignIn.ISignInMethod, StudyLife.Server.Services.SignIn.PasswordSignInMethod>();
+builder.Services.AddScoped<StudyLife.Server.Services.SignIn.ISignInMethodCatalog, StudyLife.Server.Services.SignIn.SignInMethodCatalog>();
+builder.Services.AddSingleton<StudyLife.Server.Services.SignIn.IPasswordHashing, StudyLife.Server.Services.SignIn.IdentityPasswordHashing>();
+builder.Services.AddScoped<StudyLife.Server.Services.SignIn.IPasswordCredentialService, StudyLife.Server.Services.SignIn.PasswordCredentialService>();
 // The one account-deletion use case (self-service and the owner's "remove user"), see its doc.
 builder.Services.AddScoped<StudyLife.Server.Services.Account.IAccountDeletionService, StudyLife.Server.Services.Account.AccountDeletionService>();
 // Per-audience redirect_uri allow-list for the consent connect flow (2026-09 audit S1) - see
@@ -709,11 +740,12 @@ if (!EF.IsDesignTime)
         Console.WriteLine("[demo] DEMO_MODE active: database wiped and reseeded with demo data");
     }
 
-    // Setup secret for the very first registration (AuthController.RegisterBegin) - as long as no
-    // passkey exists, re-issue it on every start, so an operator who misses it on the first
+    // Setup secret for the very first registration (AuthController.RegisterBegin and the password
+    // registration) - as long as the installation is unclaimed (no passkey and no password yet,
+    // InstanceBootstrap), re-issue it on every start, so an operator who misses it on the first
     // boot finds it again in the logs on the next restart. Once registered,
     // the code is never needed again - clean it up instead of leaving it around indefinitely.
-    if (await db.PasskeyCredentials.AnyAsync())
+    if (await StudyLife.Server.Services.SignIn.InstanceBootstrap.IsClaimedAsync(db))
     {
         await systemSecrets.ClearSetupSecretAsync();
     }

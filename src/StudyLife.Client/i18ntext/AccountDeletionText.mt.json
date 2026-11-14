@@ -46,5 +46,8 @@
   "ErrorNetwork": "Ma setax jintlaħaq is-server. Ma tħassar xejn.",
   "ErrorOwner": "Is-sid ma jistax jitħassar sakemm ikun hemm utenti oħra.",
   "ErrorGeneric": "Xi ħaġa marret ħażin. Ma tħassar xejn.",
-  "AddonPending": "It-tindif fl-add-ons imqabbda għadu pendenti u se jintemm awtomatikament."
+  "AddonPending": "It-tindif fl-add-ons imqabbda għadu pendenti u se jintemm awtomatikament.",
+  "PasswordToggle": "Uża l-password tiegħi minflok",
+  "PasswordLabel": "Il-password tiegħek",
+  "PasswordButton": "Ikkonferma bil-password u ħassar"
 }

@@ -79,15 +79,25 @@ public partial class AuthController
         credential.SignCount = verified.SignCount;
         credential.LastUsedAt = now;
 
+        var (token, displayName) = await IssueSignInSessionAsync(credential.AuthUserId, now);
+        return new PasskeyCompleteResponseDto { Token = token, DisplayName = displayName };
+    }
+
+    /// <summary>
+    /// The end of every interactive sign-in (passkey assertion, username + password): one session
+    /// through AuthSessionService.IssueSession, so both methods produce exactly the same token with
+    /// the same lifetime. Also saves whatever the caller changed on its credential before.
+    /// </summary>
+    private async Task<(string Token, string DisplayName)> IssueSignInSessionAsync(int userId, DateTime now)
+    {
         // Opportunistic cleanup instead of a dedicated background job: expired sessions are
         // worthless anyway (Validate rejects them), here they get removed when the chance arises.
         await _db.AuthSessions.Where(s => s.ExpiresAt <= now || s.HardExpiresAt <= now).ExecuteDeleteAsync();
 
-        var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == credential.AuthUserId);
-        var token = AuthSessionService.IssueSession(_db, credential.AuthUserId, now);
+        var user = await _db.AuthUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+        var token = AuthSessionService.IssueSession(_db, userId, now);
         await _db.SaveChangesAsync();
-
-        return new PasskeyCompleteResponseDto { Token = token, DisplayName = user?.DisplayName ?? "" };
+        return (token, user?.DisplayName ?? "");
     }
 
     private sealed record VerifiedAssertion(PasskeyCredentialEntity Credential, uint SignCount);

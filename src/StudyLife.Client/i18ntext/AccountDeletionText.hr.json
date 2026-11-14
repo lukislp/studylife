@@ -46,5 +46,8 @@
   "ErrorNetwork": "Poslužitelj nije dostupan. Ništa nije izbrisano.",
   "ErrorOwner": "Vlasnik se ne može izbrisati dok postoje drugi korisnici.",
   "ErrorGeneric": "Nešto je pošlo po zlu. Ništa nije izbrisano.",
-  "AddonPending": "Čišćenje u povezanim dodacima još je u tijeku i završit će automatski."
+  "AddonPending": "Čišćenje u povezanim dodacima još je u tijeku i završit će automatski.",
+  "PasswordToggle": "Umjesto toga upotrijebi moju lozinku",
+  "PasswordLabel": "Vaša lozinka",
+  "PasswordButton": "Potvrdi lozinkom i izbriši"
 }

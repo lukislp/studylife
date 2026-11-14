@@ -63,6 +63,9 @@ public partial class AuthController : ControllerBase
     private readonly IAuthAccountService _account;
     // The one account-deletion use case (AuthController.11.AccountDeletion.cs only maps it).
     private readonly Services.Account.IAccountDeletionService _accountDeletion;
+    // Username + password sign-in (AuthController.12.Password.cs) and the password proof of the
+    // shared step-up check (VerifyFreshProofAsync).
+    private readonly Services.SignIn.IPasswordCredentialService _passwords;
     // Monitors, not IOptions: both sections used to be re-read from IConfiguration on every
     // request, so a configuration reload has to keep taking effect the same way.
     private readonly IOptionsMonitor<Fido2Options> _fido2Options;
@@ -72,6 +75,7 @@ public partial class AuthController : ControllerBase
         SystemSecretsService systemSecrets, IOwnershipService ownership, IRegistrationGateService registrationGate,
         ConsentRedirectPolicy consentRedirects, IAuthInviteService invites, IAuthRecoveryService recovery,
         IAuthAccountService account, Services.Account.IAccountDeletionService accountDeletion,
+        Services.SignIn.IPasswordCredentialService passwords,
         IOptionsMonitor<Fido2Options> fido2Options, IOptionsMonitor<ConsentOptions> consentOptions)
     {
         _db = db;
@@ -85,6 +89,7 @@ public partial class AuthController : ControllerBase
         _recovery = recovery;
         _account = account;
         _accountDeletion = accountDeletion;
+        _passwords = passwords;
         _fido2Options = fido2Options;
         _consentOptions = consentOptions;
     }

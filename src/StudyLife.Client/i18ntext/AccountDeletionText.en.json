@@ -46,5 +46,8 @@
   "ErrorNetwork": "The server could not be reached. Nothing was deleted.",
   "ErrorOwner": "The owner cannot be deleted while other users exist.",
   "ErrorGeneric": "Something went wrong. Nothing was deleted.",
-  "AddonPending": "Clean-up at connected add-ons is still pending and finishes automatically."
+  "AddonPending": "Clean-up at connected add-ons is still pending and finishes automatically.",
+  "PasswordToggle": "Use my password instead",
+  "PasswordLabel": "Your password",
+  "PasswordButton": "Confirm with password and delete"
 }

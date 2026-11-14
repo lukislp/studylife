@@ -46,5 +46,8 @@
   "ErrorNetwork": "Serveren kunne ikke nås. Der blev ikke slettet noget.",
   "ErrorOwner": "Ejeren kan ikke slettes, så længe der findes andre brugere.",
   "ErrorGeneric": "Noget gik galt. Der blev ikke slettet noget.",
-  "AddonPending": "Oprydningen hos tilsluttede tilføjelser afventer stadig og afsluttes automatisk."
+  "AddonPending": "Oprydningen hos tilsluttede tilføjelser afventer stadig og afsluttes automatisk.",
+  "PasswordToggle": "Brug i stedet min adgangskode",
+  "PasswordLabel": "Din adgangskode",
+  "PasswordButton": "Bekræft med adgangskode og slet"
 }

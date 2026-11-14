@@ -46,5 +46,8 @@
   "ErrorNetwork": "Serverul nu a putut fi contactat. Nu s-a șters nimic.",
   "ErrorOwner": "Proprietarul nu poate fi șters cât timp există alți utilizatori.",
   "ErrorGeneric": "Ceva nu a mers bine. Nu s-a șters nimic.",
-  "AddonPending": "Curățarea în suplimentele conectate este încă în așteptare și se va încheia automat."
+  "AddonPending": "Curățarea în suplimentele conectate este încă în așteptare și se va încheia automat.",
+  "PasswordToggle": "Folosește în schimb parola mea",
+  "PasswordLabel": "Parola ta",
+  "PasswordButton": "Confirmă cu parola și șterge"
 }

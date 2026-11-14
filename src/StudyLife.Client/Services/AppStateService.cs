@@ -357,11 +357,16 @@ public class AppStateService : IAsyncDisposable
     /// same reason as <see cref="AiConsent"/>.</summary>
     public AccountDeletionState AccountDeletion { get; }
 
+    /// <summary>The API calls behind the password card and the owner's password reset (Setup).
+    /// Composition for the same reason as <see cref="AiConsent"/>.</summary>
+    public PasswordSignInState PasswordSignIn { get; }
+
     public AppStateService(HttpClient http, IJSRuntime jsRuntime, ILogger<AppStateService> logger, SessionTokenStore sessionTokenStore)
     {
         _http = http;
         AiConsent = new AiConsentState(http);
         AccountDeletion = new AccountDeletionState(http, sessionTokenStore);
+        PasswordSignIn = new PasswordSignInState(http);
         _jsRuntime = jsRuntime;
         _logger = logger;
         _sessionTokenStore = sessionTokenStore;

@@ -46,5 +46,8 @@
   "ErrorNetwork": "Palvelimeen ei saatu yhteyttä. Mitään ei poistettu.",
   "ErrorOwner": "Omistajaa ei voi poistaa, kun muita käyttäjiä on olemassa.",
   "ErrorGeneric": "Jokin meni pieleen. Mitään ei poistettu.",
-  "AddonPending": "Yhdistettyjen lisäosien siivous on vielä kesken ja päättyy automaattisesti."
+  "AddonPending": "Yhdistettyjen lisäosien siivous on vielä kesken ja päättyy automaattisesti.",
+  "PasswordToggle": "Käytä sen sijaan salasanaani",
+  "PasswordLabel": "Salasanasi",
+  "PasswordButton": "Vahvista salasanalla ja poista"
 }

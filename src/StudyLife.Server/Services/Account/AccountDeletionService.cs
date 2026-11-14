@@ -125,7 +125,13 @@ public sealed class AccountDeletionService(
         await db.AuthUsers.AsNoTracking()
             .Where(u => u.Id != ownerUserId)
             .OrderBy(u => u.CreatedAt).ThenBy(u => u.Id)
-            .Select(u => new UserListItemDto { Id = u.Id, DisplayName = u.DisplayName, CreatedAt = u.CreatedAt })
+            .Select(u => new UserListItemDto
+            {
+                Id = u.Id,
+                DisplayName = u.DisplayName,
+                CreatedAt = u.CreatedAt,
+                Username = db.PasswordCredentials.Where(c => c.AuthUserId == u.Id).Select(c => c.Username).FirstOrDefault(),
+            })
             .ToListAsync();
 
     public async Task<AccountDeletionResult> DeleteAsync(int userId, int initiatedByUserId, CancellationToken ct)
@@ -184,6 +190,7 @@ public sealed class AccountDeletionService(
                 await db.AuthSessions.ExecuteDeleteAsync(ct);
                 await db.PasskeyCredentials.ExecuteDeleteAsync(ct);
                 await db.RecoveryCodes.ExecuteDeleteAsync(ct);
+                await db.PasswordCredentials.ExecuteDeleteAsync(ct);
                 await db.AuthInvites.ExecuteDeleteAsync(ct);
             }
 
