@@ -14,6 +14,7 @@
   "UntrustedCertificate": "Potrdilo tega strežnika ni zaupanja vredno (izhaja na primer iz tvojega lastnega overitelja). Na to napravo namesti profil overitelja ali uporabi javni naslov strežnika.",
   "SignedOutUnreachable": "{0} trenutno ni dosegljiv. Če je naslov napačen, zamenjaj strežnik.",
   "SignedOutNotStudyLife": "{0} se ne odziva kot strežnik StudyLife. Če je naslov napačen, zamenjaj strežnik.",
+  "SignedOutNoNetwork": "Ni omrežne povezave – Wi-Fi in mobilni podatki so izklopljeni.",
   "PasskeyDomainHint": "Ključi za dostop delujejo samo na {0}.",
   "UsePasskeyAddress": "Uporabi ta naslov"
 }

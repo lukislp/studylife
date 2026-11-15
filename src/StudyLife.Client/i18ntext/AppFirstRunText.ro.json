@@ -14,6 +14,7 @@
   "UntrustedCertificate": "Certificatul acestui server nu este de încredere (de exemplu, provine de la propria ta autoritate de certificare). Instalează profilul autorității de certificare pe acest dispozitiv sau folosește adresa publică a serverului.",
   "SignedOutUnreachable": "{0} nu poate fi accesat acum. Dacă adresa este greșită, schimbă serverul.",
   "SignedOutNotStudyLife": "{0} nu răspunde ca un server StudyLife. Dacă adresa este greșită, schimbă serverul.",
+  "SignedOutNoNetwork": "Nicio conexiune la rețea – Wi-Fi-ul și datele mobile sunt oprite.",
   "PasskeyDomainHint": "Cheile de acces funcționează doar la {0}.",
   "UsePasskeyAddress": "Folosește această adresă"
 }

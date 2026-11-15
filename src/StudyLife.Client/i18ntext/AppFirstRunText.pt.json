@@ -14,6 +14,7 @@
   "UntrustedCertificate": "O certificado deste servidor não é fidedigno (por exemplo, vem da tua própria autoridade de certificação). Instala o perfil da autoridade de certificação neste dispositivo ou usa o endereço público do servidor.",
   "SignedOutUnreachable": "Não é possível contactar {0} neste momento. Se o endereço estiver errado, muda de servidor.",
   "SignedOutNotStudyLife": "{0} não responde como um servidor StudyLife. Se o endereço estiver errado, muda de servidor.",
+  "SignedOutNoNetwork": "Sem ligação de rede – o Wi-Fi e os dados móveis estão desligados.",
   "PasskeyDomainHint": "As chaves de acesso só funcionam em {0}.",
   "UsePasskeyAddress": "Usar este endereço"
 }

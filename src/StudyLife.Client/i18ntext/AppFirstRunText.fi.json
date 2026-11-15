@@ -14,6 +14,7 @@
   "UntrustedCertificate": "Tämän palvelimen varmenteeseen ei luoteta (se on esimerkiksi oman varmentajasi myöntämä). Asenna varmentajan profiili tähän laitteeseen tai käytä palvelimen julkista osoitetta.",
   "SignedOutUnreachable": "{0} ei ole juuri nyt tavoitettavissa. Jos osoite on väärä, vaihda palvelinta.",
   "SignedOutNotStudyLife": "{0} ei vastaa kuin StudyLife-palvelin. Jos osoite on väärä, vaihda palvelinta.",
+  "SignedOutNoNetwork": "Ei verkkoyhteyttä – Wi-Fi ja mobiilidata ovat pois päältä.",
   "PasskeyDomainHint": "Pääsyavaimet toimivat vain osoitteessa {0}.",
   "UsePasskeyAddress": "Käytä tätä osoitetta"
 }

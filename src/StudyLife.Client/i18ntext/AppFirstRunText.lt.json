@@ -14,6 +14,7 @@
   "UntrustedCertificate": "Šio serverio sertifikatu nepasitikima (pavyzdžiui, jį išdavė tavo paties sertifikavimo įstaiga). Įdiek sertifikavimo įstaigos profilį šiame įrenginyje arba naudok viešąjį serverio adresą.",
   "SignedOutUnreachable": "{0} šiuo metu nepasiekiamas. Jei adresas neteisingas, pakeisk serverį.",
   "SignedOutNotStudyLife": "{0} neatsako kaip „StudyLife“ serveris. Jei adresas neteisingas, pakeisk serverį.",
+  "SignedOutNoNetwork": "Nėra tinklo ryšio – Wi-Fi ir mobilieji duomenys išjungti.",
   "PasskeyDomainHint": "Prieigos raktai veikia tik adresu {0}.",
   "UsePasskeyAddress": "Naudoti šį adresą"
 }
