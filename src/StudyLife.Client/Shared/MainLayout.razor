@@ -210,6 +210,8 @@
 @code {
     private bool _hasActive;
     private string _currentPage = "page-dashboard";
+    // Route of the current page for telemetry ("/planner") - _currentPage is a CSS class, not what the server accepts as `page`.
+    private string _currentRoute = "/";
     private System.Threading.Timer? _clockTimer;
     private I18nText.MainLayoutText T = new();
     private string _lang = "en";
@@ -588,7 +590,7 @@
             // "previous page" to time from) - contract: navigation.renderMs.
             _navigationStartedAtTimestamp = null;
             var elapsedMs = System.Diagnostics.Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds;
-            Telemetry.RecordNavigation(_currentPage, elapsedMs);
+            Telemetry.RecordNavigation(_currentRoute, elapsedMs);
         }
     }
 
@@ -705,7 +707,7 @@
     /// only adds the telemetry recording, called as a side effect from the render fragment
     /// itself since ErrorContent has no separate lifecycle hook to attach to.</summary>
     private void RecordPageError(Exception ex) =>
-        Telemetry.RecordError("dotnet", ex.GetType().Name, ex.ToString(), fatal: true, page: _currentPage);
+        Telemetry.RecordError("dotnet", ex.GetType().Name, ex.ToString(), fatal: true, page: _currentRoute);
 
     private void UpdateCurrentPage(string uri)
     {
