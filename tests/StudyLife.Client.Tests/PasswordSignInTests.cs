@@ -198,7 +198,29 @@ public class SetupPasswordCardTests : ConsentBunitTest
         public Task<string?> AuthenticateAsync(string startPage) => Task.FromResult<string?>(null);
     }
 
-    private (IRenderedComponent<SetupPasswordCard> Cut, ScriptedServer Server) Render(PasswordStatusDto status, List<UserListItemDto>? users = null)
+    private sealed class FakeNative : INativeAppAuth
+    {
+        public bool IsAvailable => true;
+        public bool SupportsInAppPasskeys { get; init; }
+        public string? SignInToken;
+        public int AuthenticateCalls;
+        public string? LastPage;
+        public Task<string?> AuthenticateAsync(string startPage)
+        {
+            AuthenticateCalls++;
+            LastPage = startPage;
+            return Task.FromResult(SignInToken);
+        }
+    }
+
+    private static void ConfirmWith(IRenderedComponent<SetupPasswordCard> cut, string toggle, string inputId, string value, string confirm)
+    {
+        cut.FindAll("button").First(b => b.TextContent.Trim() == toggle).Click();
+        cut.Find("#" + inputId).Input(value);
+        cut.FindAll("button").First(b => b.TextContent.Trim() == confirm).Click();
+    }
+
+    private (IRenderedComponent<SetupPasswordCard> Cut, ScriptedServer Server) Render(PasswordStatusDto status, List<UserListItemDto>? users = null, INativeAppAuth? native = null)
     {
         var server = new ScriptedServer();
         server.OnJson("GET api/auth/password", status);
@@ -208,8 +230,9 @@ public class SetupPasswordCardTests : ConsentBunitTest
         var tokens = new SessionTokenStore(js);
         var http = new HttpClient(server) { BaseAddress = new Uri("https://studylife.test/") };
         Ctx.JSInterop.Mode = JSRuntimeMode.Loose;
+        Services.AddSingleton(tokens);
         Services.AddSingleton(new AppStateService(http, js, NullLogger<AppStateService>.Instance, tokens));
-        Services.AddSingleton<INativeAppAuth>(new WebOnly());
+        Services.AddSingleton(native ?? new WebOnly());
         var cut = Render<SetupPasswordCard>(p => p.Add(c => c.Text, PasswordTexts.Keys()));
         cut.WaitForState(() => cut.Markup.Contains("CardHeading") || server.Count("GET api/auth/password") > 0);
         return (cut, server);
@@ -243,9 +266,10 @@ public class SetupPasswordCardTests : ConsentBunitTest
         Assert.Equal("new-password", cut.Find("#password-new").GetAttribute("autocomplete"));
         cut.Find("#password-username").Input("alex");
         cut.Find("#password-new").Input("violet harbour lantern 7");
-        cut.Find("#password-recovery").Input("ABCD-EFGH-JKLM");
         server.OnJson("GET api/auth/password", new PasswordStatusDto { Enabled = true, HasPassword = true, Username = "alex" });
-        cut.Find("form").Submit();
+        cut.FindAll("button").First(b => b.TextContent.Trim() == "RecoveryToggle").Click();
+        cut.Find("#password-recovery").Input("ABCD-EFGH-JKLM");
+        cut.FindAll("button").First(b => b.TextContent.Trim() == "SaveButton").Click();
 
         cut.WaitForAssertion(() => Assert.Contains("AddedInfo:alex", cut.Markup));
         var body = JsonNode.Parse(server.Bodies.Single(b => b.Contains("newPassword")))!.AsObject();
@@ -282,8 +306,7 @@ public class SetupPasswordCardTests : ConsentBunitTest
         cut.WaitForAssertion(() => Assert.Contains("ChangeButton", cut.Markup));
         cut.FindAll("button").First(b => b.TextContent.Trim() == "ChangeButton").Click();
         cut.Find("#password-new").Input("password1234");
-        cut.Find("#password-current").Input("old phrase here!");
-        cut.Find("form").Submit();
+        ConfirmWith(cut, "PasswordToggle", "password-current", "old phrase here!", "SaveButton");
         cut.WaitForAssertion(() => Assert.Equal("ErrorUsernameFixed", cut.Find("[role=alert]").TextContent.Trim()));
     }
 
@@ -295,12 +318,124 @@ public class SetupPasswordCardTests : ConsentBunitTest
         cut.WaitForAssertion(() => Assert.Contains("ChangeButton", cut.Markup));
 
         cut.FindAll("button").First(b => b.TextContent.Trim() == "ChangeButton").Click();
-        Assert.Equal("current-password", cut.Find("#password-current").GetAttribute("autocomplete"));
         cut.Find("#password-new").Input("password1234");
-        cut.Find("#password-current").Input("old phrase here!");
-        cut.Find("form").Submit();
+        ConfirmWith(cut, "PasswordToggle", "password-current", "old phrase here!", "SaveButton");
 
         cut.WaitForAssertion(() => Assert.Equal("ErrorCommon", cut.Find("[role=alert]").TextContent.Trim()));
+    }
+
+    private static PasswordStatusDto PasskeyOnly() => new() { Enabled = true, HasPassword = false, HasPasskey = true };
+
+    private static void StartAdding(IRenderedComponent<SetupPasswordCard> cut)
+    {
+        cut.WaitForAssertion(() => Assert.Contains("AddButton", cut.Markup));
+        cut.FindAll("button").First(b => b.TextContent.Trim() == "AddButton").Click();
+        cut.Find("#password-username").Input("alex");
+        cut.Find("#password-new").Input("violet harbour lantern 7");
+    }
+
+    private static List<string> ButtonLabels(IRenderedComponent<SetupPasswordCard> cut) =>
+        cut.FindAll("form button").Select(b => b.TextContent.Trim()).ToList();
+
+    [Fact]
+    public void NativeWithoutInAppPasskeys_OffersConfirmBySigningIn_NotThePasskeyPrompt()
+    {
+        var (cut, _) = Render(PasskeyOnly(), native: new FakeNative { SignInToken = "fresh" });
+        StartAdding(cut);
+
+        var labels = ButtonLabels(cut);
+        Assert.DoesNotContain("ConfirmWithPasskey", labels);
+        Assert.DoesNotContain("PasswordToggle", labels); // the account has no password
+        Assert.Contains("RecoveryToggle", labels);
+        Assert.Contains("BrowserSignInHint", cut.Markup);
+        // The recommended route comes first, the recovery code after it.
+        Assert.True(labels.IndexOf("BrowserSignInButton") >= 0 && labels.IndexOf("BrowserSignInButton") < labels.IndexOf("RecoveryToggle"));
+    }
+
+    [Fact]
+    public void ConfirmBySigningIn_StoresTheFreshToken_AndSubmitsWithoutAnExplicitProof()
+    {
+        var native = new FakeNative { SignInToken = "fresh-token" };
+        var (cut, server) = Render(PasskeyOnly(), native: native);
+        server.On("PUT api/auth/password", _ => new HttpResponseMessage(HttpStatusCode.NoContent));
+        StartAdding(cut);
+        server.OnJson("GET api/auth/password", new PasswordStatusDto { Enabled = true, HasPassword = true, Username = "alex" });
+
+        cut.FindAll("button").First(b => b.TextContent.Trim() == "BrowserSignInButton").Click();
+
+        cut.WaitForAssertion(() => Assert.Contains("AddedInfo:alex", cut.Markup));
+        Assert.Equal(1, native.AuthenticateCalls);
+        Assert.Equal("login", native.LastPage);
+        Assert.Equal("fresh-token", ((IServiceProvider)Ctx.Services).GetRequiredService<SessionTokenStore>().Token);
+        var body = JsonNode.Parse(server.Bodies.Single(b => b.Contains("newPassword")))!.AsObject();
+        Assert.False(body.ContainsKey("currentPassword"));
+        Assert.False(body.ContainsKey("recoveryCode"));
+        Assert.False(body.ContainsKey("optionsId"));
+    }
+
+    [Fact]
+    public void ConfirmBySigningIn_WaitsUntilTheNewPasswordIsFilledIn()
+    {
+        var (cut, _) = Render(PasskeyOnly(), native: new FakeNative { SignInToken = "fresh" });
+        cut.WaitForAssertion(() => Assert.Contains("AddButton", cut.Markup));
+        cut.FindAll("button").First(b => b.TextContent.Trim() == "AddButton").Click();
+
+        Assert.True(cut.FindAll("button").First(b => b.TextContent.Trim() == "BrowserSignInButton").HasAttribute("disabled"));
+    }
+
+    [Fact]
+    public void ACancelledBrowserSignIn_SendsNothing_AndSaysSo()
+    {
+        var (cut, server) = Render(PasskeyOnly(), native: new FakeNative { SignInToken = null });
+        StartAdding(cut);
+
+        cut.FindAll("button").First(b => b.TextContent.Trim() == "BrowserSignInButton").Click();
+
+        cut.WaitForAssertion(() => Assert.Equal("ErrorProofRejected", cut.Find("[role=alert]").TextContent.Trim()));
+        Assert.Equal(0, server.Count("PUT api/auth/password"));
+    }
+
+    [Fact]
+    public void WhenTheServerStillWantsAProofAfterTheSignIn_TheMessageSaysTheSignInWasTooOld()
+    {
+        var (cut, server) = Render(PasskeyOnly(), native: new FakeNative { SignInToken = "fresh" });
+        server.On("PUT api/auth/password", _ => PasswordSignInStateTests.Problem(HttpStatusCode.Forbidden, "reauthentication-required"));
+        StartAdding(cut);
+
+        cut.FindAll("button").First(b => b.TextContent.Trim() == "BrowserSignInButton").Click();
+
+        cut.WaitForAssertion(() => Assert.Equal("ErrorFreshSignInExpired", cut.Find("[role=alert]").TextContent.Trim()));
+        // The typed password stays, so a second try needs only the sign-in again.
+        Assert.Equal("violet harbour lantern 7", cut.Find("#password-new").GetAttribute("value"));
+    }
+
+    [Fact]
+    public void NativeWithInAppPasskeys_KeepsThePasskeyPrompt()
+    {
+        var (cut, _) = Render(PasskeyOnly(), native: new FakeNative { SupportsInAppPasskeys = true });
+        StartAdding(cut);
+
+        var labels = ButtonLabels(cut);
+        Assert.Contains("ConfirmWithPasskey", labels);
+        Assert.DoesNotContain("BrowserSignInButton", labels);
+    }
+
+    [Fact]
+    public void OnTheWeb_APasskeyAccountSeesThePasskeyButton()
+    {
+        var (cut, _) = Render(PasskeyOnly());
+        StartAdding(cut);
+        Assert.Contains("ConfirmWithPasskey", ButtonLabels(cut));
+    }
+
+    [Fact]
+    public void OnTheWeb_WithoutAPasskeyOrPassword_OnlyTheRecoveryCodeIsOffered()
+    {
+        var (cut, _) = Render(new PasswordStatusDto { Enabled = true, HasPassword = false, HasPasskey = false });
+        StartAdding(cut);
+        var labels = ButtonLabels(cut);
+        Assert.DoesNotContain("ConfirmWithPasskey", labels);
+        Assert.Contains("RecoveryToggle", labels);
     }
 
     [Fact]
@@ -326,8 +461,7 @@ public class SetupPasswordCardTests : ConsentBunitTest
         Assert.Equal("ResetAriaFormat:Guest", reset.GetAttribute("aria-label"));
         reset.Click();
         cut.Find("#password-username").Input("guest");
-        cut.Find("#password-current").Input("owner phrase here");
-        cut.Find("form").Submit();
+        ConfirmWith(cut, "PasswordToggle", "password-current", "owner phrase here", "ResetButton");
 
         cut.WaitForAssertion(() => Assert.Contains("abcde-fghjk-mnpqr-stuvw", cut.Markup));
         Assert.Contains("ResetResultFormat:Guest:guest", cut.Markup);

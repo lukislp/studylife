@@ -6,7 +6,6 @@
 @using StudyLife.Client.Services
 @using Microsoft.Extensions.DependencyInjection
 @inject AppStateService State
-@inject SessionTokenStore TokenStore
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 @inject INativeAppAuth NativeAuth
@@ -144,72 +143,14 @@
             }
             else
             {
-                <div class="modal-body">
-                    @if (_browserSignIn)
-                    {
-                        <p class="ss-desc">@T.BrowserSignInText</p>
-                    }
-                    else
-                    {
-                        <p class="ss-desc">@T.ReauthText</p>
-                    }
-                    @if (_passwordOpen)
-                    {
-                        <label class="ss-desc" for="delete-account-password">@T.PasswordLabel</label>
-                        <input id="delete-account-password" class="input" type="password" autocomplete="current-password"
-                               @bind="_password" @bind:event="oninput" disabled="@_busy"
-                               @onkeyup="@(e => { if (e.Key == "Enter") _ = DeleteWithPasswordAsync(); })" />
-                    }
-                    @if (_recoveryOpen)
-                    {
-                        <label class="ss-desc" for="delete-account-recovery">@T.RecoveryLabel</label>
-                        <input id="delete-account-recovery" class="input" style="text-align:center;letter-spacing:0.08em"
-                               placeholder="XXXX-XXXX-XXXX" autocapitalize="characters" spellcheck="false" autocomplete="off"
-                               @bind="_recoveryCode" @bind:event="oninput" disabled="@_busy"
-                               @onkeyup="@(e => { if (e.Key == "Enter") _ = DeleteWithRecoveryAsync(); })" />
-                    }
-                    @if (_error is not null)
-                    {
-                        <p class="ss-desc" role="alert" style="color:var(--danger, #e74c3c)">@_error</p>
-                    }
-                </div>
-                <div class="modal-footer" style="flex-wrap:wrap">
-                    <button type="button" class="btn-secondary" @onclick="BackToConfirm" disabled="@_busy">@T.BackButton</button>
-                    @if (_passwordOpen)
-                    {
-                        <button type="button" class="btn-danger" @onclick="DeleteWithPasswordAsync"
-                                disabled="@(_busy || string.IsNullOrEmpty(_password))">
-                            @(_busy ? T.Working : T.PasswordButton)
-                        </button>
-                    }
-                    else if (!_recoveryOpen)
-                    {
-                        @if (_hasPassword)
-                        {
-                            <button type="button" class="btn-secondary" @onclick="() => _passwordOpen = true" disabled="@_busy">@T.PasswordToggle</button>
-                        }
-                        <button type="button" class="btn-secondary" @onclick="() => _recoveryOpen = true" disabled="@_busy">@T.RecoveryToggle</button>
-                        @if (_browserSignIn)
-                        {
-                            <button type="button" class="btn-danger" @onclick="DeleteAfterBrowserSignInAsync" disabled="@_busy">
-                                @(_busy ? T.Working : T.BrowserSignInButton)
-                            </button>
-                        }
-                        else
-                        {
-                            <button type="button" class="btn-danger" @onclick="DeleteWithPasskeyAsync" disabled="@_busy">
-                                @(_busy ? T.Working : T.PasskeyButton)
-                            </button>
-                        }
-                    }
-                    else
-                    {
-                        <button type="button" class="btn-danger" @onclick="DeleteWithRecoveryAsync"
-                                disabled="@(_busy || string.IsNullOrWhiteSpace(_recoveryCode))">
-                            @(_busy ? T.Working : T.RecoveryButton)
-                        </button>
-                    }
-                </div>
+                <FreshProofPicker Dialog="true" PrimaryClass="btn-danger" Labels="_labels" HasPasskey="true"
+                                  HasPassword="_hasPassword" Busy="_busy" Error="@_error"
+                                  PasswordInputId="delete-account-password" RecoveryInputId="delete-account-recovery"
+                                  OnProof="DeleteWithProofAsync" OnCeremonyFailed="OnCeremonyFailed">
+                    <Secondary>
+                        <button type="button" class="btn-secondary" @onclick="BackToConfirm" disabled="@_busy">@T.BackButton</button>
+                    </Secondary>
+                </FreshProofPicker>
             }
         </div>
     </div>
@@ -231,19 +172,13 @@
     private Step _step = Step.Closed;
     private UserListItemDto? _target; // null = the signed-in account itself
     private bool _understood;
-    private bool _recoveryOpen;
-    private string _recoveryCode = "";
     // The current password as the proof (password sign-in): offered only when the account has one
     // and the operator allows passwords - the server would refuse it otherwise.
     private bool _hasPassword;
-    private bool _passwordOpen;
-    private string _password = "";
-    private bool _browserSignIn;
     private bool _busy;
     private string? _error;
     private ElementReference _dialog;
     private bool _focusPending;
-    private IJSObjectReference? _passkeyModule;
     private IJSObjectReference? _downloadModule;
 
     private string Title => _step == Step.Reauth ? T!.ReauthTitle
@@ -289,13 +224,6 @@
         _understood = false;
         _error = null;
         _status = null;
-        _recoveryOpen = false;
-        _recoveryCode = "";
-        _passwordOpen = false;
-        _password = "";
-        // A native shell without in-app passkeys cannot run WebAuthn in its web view: it signs in
-        // again through the system browser instead (the server accepts a session that just signed in).
-        _browserSignIn = NativeAuth.IsAvailable && !NativeAuth.SupportsInAppPasskeys;
         _step = Step.Confirm;
         _focusPending = true;
     }
@@ -304,8 +232,6 @@
     {
         if (_busy) return;
         _step = Step.Closed;
-        _recoveryCode = "";
-        _password = "";
     }
 
     private void OnKeyDown(KeyboardEventArgs e)
@@ -324,9 +250,6 @@
     private void BackToConfirm()
     {
         _error = null;
-        _recoveryOpen = false;
-        _passwordOpen = false;
-        _password = "";
         _step = Step.Confirm;
         _focusPending = true;
     }
@@ -362,77 +285,19 @@
         }
     }
 
-    // ── re-authentication, then deletion ─────────────────────────────────────────────────────────
-    private async Task DeleteWithPasskeyAsync()
+    // ── re-authentication (FreshProofPicker), then deletion ─────────────────────────────────────
+    private FreshProofLabels _labels => new(T!.ReauthText, T.BrowserSignInText, T.PasskeyButton, T.BrowserSignInButton,
+        T.PasswordToggle, T.PasswordLabel, T.PasswordButton, T.RecoveryToggle, T.RecoveryLabel, T.RecoveryButton,
+        T.Working, T.ErrorPasskeyUnavailable);
+
+    private void OnCeremonyFailed(string message) => _error = message;
+
+    private async Task DeleteWithProofAsync(FreshProof proof)
     {
         _busy = true;
         _error = null;
-        try
-        {
-            var begin = await State.AccountDeletion.BeginPasskeyProofAsync();
-            if (begin is null) { _error = T!.ErrorPasskeyUnavailable; _recoveryOpen = true; return; }
-
-            string? assertion;
-            try
-            {
-                if (NativeAuth.IsAvailable && NativeAuth.SupportsInAppPasskeys)
-                    assertion = await NativeAuth.GetPasskeyAssertionAsync(begin.OptionsJson);
-                else
-                {
-                    _passkeyModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/Login.razor.js");
-                    assertion = await _passkeyModule.InvokeAsync<bool>("isPasskeySupported")
-                        ? await _passkeyModule.InvokeAsync<string>("getPasskeyAssertion", begin.OptionsJson)
-                        : null;
-                }
-            }
-            catch (JSException)
-            {
-                assertion = null; // cancelled in the browser's passkey dialog
-            }
-            if (assertion is null) { _error = T!.ErrorPasskeyUnavailable; return; }
-
-            await RunAsync(new AccountDeletionProof(begin.OptionsId, assertion, null));
-        }
-        finally
-        {
-            _busy = false;
-        }
-    }
-
-    private async Task DeleteWithRecoveryAsync()
-    {
-        if (_busy || string.IsNullOrWhiteSpace(_recoveryCode)) return;
-        _busy = true;
-        _error = null;
-        try { await RunAsync(new AccountDeletionProof(null, null, _recoveryCode)); }
+        try { await RunAsync(new AccountDeletionProof(proof.OptionsId, proof.AssertionJson, proof.RecoveryCode, proof.CurrentPassword)); }
         finally { _busy = false; }
-    }
-
-    private async Task DeleteWithPasswordAsync()
-    {
-        if (_busy || string.IsNullOrEmpty(_password)) return;
-        _busy = true;
-        _error = null;
-        try { await RunAsync(new AccountDeletionProof(null, null, null, _password)); }
-        finally { _busy = false; }
-    }
-
-    private async Task DeleteAfterBrowserSignInAsync()
-    {
-        _busy = true;
-        _error = null;
-        try
-        {
-            var token = await NativeAuth.AuthenticateAsync("login");
-            if (string.IsNullOrEmpty(token)) { _error = T!.ErrorPasskeyUnavailable; return; }
-            // The fresh session is the proof: the server accepts one that signed in moments ago.
-            await TokenStore.SetTokenAsync(token);
-            await RunAsync(new AccountDeletionProof(null, null, null));
-        }
-        finally
-        {
-            _busy = false;
-        }
     }
 
     private async Task RunAsync(AccountDeletionProof proof)
