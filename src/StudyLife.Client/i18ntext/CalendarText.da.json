@@ -58,5 +58,7 @@
   "AriaCloseDialog": "Luk dialog",
   "AriaPreviousWeek": "Forrige uge",
   "AriaNextWeek": "Næste uge",
+  "NavPreviousHint": "Forrige (←)",
+  "NavNextHint": "Næste (→)",
   "AriaSessionDone": "Fuldført"
 }

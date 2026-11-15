@@ -58,5 +58,7 @@
   "AriaCloseDialog": "Párbeszédpanel bezárása",
   "AriaPreviousWeek": "Előző hét",
   "AriaNextWeek": "Következő hét",
+  "NavPreviousHint": "Előző (←)",
+  "NavNextHint": "Következő (→)",
   "AriaSessionDone": "Befejezve"
 }

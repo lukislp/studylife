@@ -45,6 +45,21 @@ function scrollElementToTop(id) {
     if (el) el.scrollTop = 0;
 }
 
+// Makes the keyboard scroll the page: arrows/space/page keys scroll the nearest scrollable
+// ancestor of the FOCUSED element, and html/body are clipped (base.css), so with focus on <body>
+// or on the nav link that was just used, they do nothing. The scroll containers carry
+// tabindex="-1" (clicking empty content focuses them natively, no Tab stop); this moves focus
+// there after navigation, but only when nothing meaningful holds it.
+function focusScrollRegion(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var a = document.activeElement;
+    var idle = !a || a === document.body || a === document.documentElement ||
+        (a.id === id) || a.id === 'main-scroll' || (a.closest && a.closest('nav'));
+    if (!idle || a === el) return;
+    el.focus({ preventScroll: true });
+}
+
 function scrollElementToBottom(id) {
     var el = document.getElementById(id);
     if (el) el.scrollTop = el.scrollHeight;

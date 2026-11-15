@@ -58,5 +58,7 @@
   "AriaCloseDialog": "Dialoogvenster sluiten",
   "AriaPreviousWeek": "Vorige week",
   "AriaNextWeek": "Volgende week",
+  "NavPreviousHint": "Vorige (←)",
+  "NavNextHint": "Volgende (→)",
   "AriaSessionDone": "Voltooid"
 }

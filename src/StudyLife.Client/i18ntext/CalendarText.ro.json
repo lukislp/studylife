@@ -58,5 +58,7 @@
   "AriaCloseDialog": "Închide dialogul",
   "AriaPreviousWeek": "Săptămâna anterioară",
   "AriaNextWeek": "Săptămâna următoare",
+  "NavPreviousHint": "Anterior (←)",
+  "NavNextHint": "Următor (→)",
   "AriaSessionDone": "Finalizată"
 }

@@ -58,5 +58,7 @@
   "AriaCloseDialog": "Dialog schließen",
   "AriaPreviousWeek": "Vorherige Woche",
   "AriaNextWeek": "Nächste Woche",
+  "NavPreviousHint": "Zurück (←)",
+  "NavNextHint": "Weiter (→)",
   "AriaSessionDone": "Abgeschlossen"
 }

@@ -1,0 +1,231 @@
+@*
+  SPDX-FileCopyrightText: 2026 Lukas Körber
+  SPDX-License-Identifier: AGPL-3.0-only
+*@
+@using StudyLife.Client.Services
+@implements IDisposable
+@inject AppStateService State
+@inject SessionTokenStore TokenStore
+@inject IJSRuntime JS
+@inject INativeAppAuth NativeAuth
+
+@* The shared "confirm it's you" step for everything the server guards with a fresh proof
+   (VerifyFreshProofAsync): deleting the account, adding / changing / removing a password, the
+   owner's password reset. Which proofs are offered is decided by FreshProofOptions.Decide; this
+   component renders them, runs the ceremony (passkey prompt, or the system-browser sign-in of a
+   native shell without in-app passkeys) and hands the result to the host through OnProof. The host
+   decides what the proof is for and sends the request.
+
+   Uses only services the hosts already needed (AppStateService, SessionTokenStore, INativeAppAuth,
+   IJSRuntime) - nothing new for the native app to register.
+
+   Dialog = true renders a modal body and footer (the deletion dialog), otherwise one inline block
+   (the password form). Texts come from the host's own i18n table as FreshProofLabels. *@
+
+@if (Dialog)
+{
+    <div class="modal-body">@Body</div>
+    <div class="modal-footer" style="flex-wrap:wrap">
+        @Secondary
+        @Actions
+    </div>
+}
+else
+{
+    @Body
+    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+        @Actions
+        @Secondary
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public FreshProofLabels Labels { get; set; } = default!;
+    /// <summary>Whether the account has a passkey (gates the passkey routes).</summary>
+    [Parameter] public bool HasPasskey { get; set; } = true;
+    /// <summary>Whether the current password may be offered (the account has one and the operator allows passwords).</summary>
+    [Parameter] public bool HasPassword { get; set; }
+    /// <summary>The host is busy with its own request.</summary>
+    [Parameter] public bool Busy { get; set; }
+    /// <summary>The host's form is not ready to be confirmed yet; the confirm actions stay disabled.</summary>
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public bool Dialog { get; set; }
+    [Parameter] public string PrimaryClass { get; set; } = "btn-primary";
+    [Parameter] public string PasswordInputId { get; set; } = "fresh-proof-password";
+    [Parameter] public string RecoveryInputId { get; set; } = "fresh-proof-recovery";
+    /// <summary>The host's message (request refused, ceremony failed), announced as an alert.</summary>
+    [Parameter] public string? Error { get; set; }
+    /// <summary>Raised with the proof; the host sends its request and reports problems via <see cref="Error"/>.</summary>
+    [Parameter] public EventCallback<FreshProof> OnProof { get; set; }
+    /// <summary>The ceremony did not complete (cancelled passkey prompt, closed browser); carries the label text.</summary>
+    [Parameter] public EventCallback<string> OnCeremonyFailed { get; set; }
+    /// <summary>The host's own button (Back / Cancel), placed where its dialog or form wants it.</summary>
+    [Parameter] public RenderFragment? Secondary { get; set; }
+
+    private FreshProofOptions _options = new(FreshProofPrimary.None, false);
+    private bool _passwordOpen;
+    private bool _recoveryOpen;
+    private string _password = "";
+    private string _recoveryCode = "";
+    private bool _working;
+    private bool _disposed;
+    private IJSObjectReference? _passkeyModule;
+
+    private bool Locked => Busy || _working;
+
+    protected override void OnParametersSet() =>
+        _options = FreshProofOptions.Decide(NativeAuth.IsAvailable, NativeAuth.SupportsInAppPasskeys, HasPasskey, HasPassword);
+
+    public void Dispose() => _disposed = true;
+
+    private RenderFragment Body => @<text>
+        <p class="ss-desc">@(_options.Primary == FreshProofPrimary.BrowserSignIn ? Labels.BrowserSignInIntro : Labels.Intro)</p>
+        @if (_passwordOpen)
+        {
+            <label class="ss-desc" for="@PasswordInputId">@Labels.PasswordLabel</label>
+            <input id="@PasswordInputId" class="input" type="password" autocomplete="current-password" maxlength="512"
+                   @bind="_password" @bind:event="oninput" disabled="@Locked"
+                   @onkeyup="@(e => { if (e.Key == "Enter") _ = ConfirmPasswordAsync(); })" />
+        }
+        @if (_recoveryOpen)
+        {
+            <label class="ss-desc" for="@RecoveryInputId">@Labels.RecoveryLabel</label>
+            <input id="@RecoveryInputId" class="input" style="text-align:center;letter-spacing:0.08em"
+                   placeholder="XXXX-XXXX-XXXX" autocapitalize="characters" spellcheck="false" autocomplete="off" maxlength="50"
+                   @bind="_recoveryCode" @bind:event="oninput" disabled="@Locked"
+                   @onkeyup="@(e => { if (e.Key == "Enter") _ = ConfirmRecoveryAsync(); })" />
+        }
+        @if (Error is not null)
+        {
+            <p class="ss-desc" role="alert" style="color:var(--danger, #e74c3c)">@Error</p>
+        }
+    </text>;
+
+    // Dialog order: Back, toggles, primary (the danger action sits last). Inline order: the
+    // recommended route first, then the alternatives, then the host's Cancel.
+    private RenderFragment Actions => @<text>
+        @if (_passwordOpen)
+        {
+            <button type="button" class="@PrimaryClass" @onclick="ConfirmPasswordAsync"
+                    disabled="@(Locked || Disabled || string.IsNullOrEmpty(_password))">
+                @(Locked ? Labels.Working : Labels.PasswordButton)
+            </button>
+        }
+        else if (_recoveryOpen)
+        {
+            <button type="button" class="@PrimaryClass" @onclick="ConfirmRecoveryAsync"
+                    disabled="@(Locked || Disabled || string.IsNullOrWhiteSpace(_recoveryCode))">
+                @(Locked ? Labels.Working : Labels.RecoveryButton)
+            </button>
+        }
+        else
+        {
+            @if (!Dialog) { @PrimaryButton }
+            @if (_options.CurrentPassword)
+            {
+                <button type="button" class="btn-secondary" @onclick="() => _passwordOpen = true" disabled="@Locked">@Labels.PasswordToggle</button>
+            }
+            @if (_options.RecoveryCode)
+            {
+                <button type="button" class="btn-secondary" @onclick="() => _recoveryOpen = true" disabled="@Locked">@Labels.RecoveryToggle</button>
+            }
+            @if (Dialog) { @PrimaryButton }
+        }
+    </text>;
+
+    private RenderFragment PrimaryButton => @<text>
+        @switch (_options.Primary)
+        {
+            case FreshProofPrimary.BrowserSignIn:
+                <button type="button" class="@PrimaryClass" @onclick="ConfirmBrowserSignInAsync" disabled="@(Locked || Disabled)">
+                    @(Locked ? Labels.Working : Labels.BrowserSignInButton)
+                </button>
+                break;
+            case FreshProofPrimary.WebPasskey:
+            case FreshProofPrimary.InAppPasskey:
+                <button type="button" class="@PrimaryClass" @onclick="ConfirmPasskeyAsync" disabled="@(Locked || Disabled)">
+                    @(Locked ? Labels.Working : Labels.PasskeyButton)
+                </button>
+                break;
+        }
+    </text>;
+
+    private async Task ConfirmPasskeyAsync()
+    {
+        if (Locked) return;
+        _working = true;
+        try
+        {
+            var begin = await State.AccountDeletion.BeginPasskeyProofAsync();
+            if (begin is null)
+            {
+                _recoveryOpen = true; // no passkey challenge: the recovery code is the way out
+                await OnCeremonyFailed.InvokeAsync(Labels.PasskeyFailed);
+                return;
+            }
+
+            string? assertion;
+            try
+            {
+                if (_options.Primary == FreshProofPrimary.InAppPasskey)
+                    assertion = await NativeAuth.GetPasskeyAssertionAsync(begin.OptionsJson);
+                else
+                {
+                    _passkeyModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/Login.razor.js");
+                    assertion = await _passkeyModule.InvokeAsync<bool>("isPasskeySupported")
+                        ? await _passkeyModule.InvokeAsync<string>("getPasskeyAssertion", begin.OptionsJson)
+                        : null;
+                }
+            }
+            catch (JSException)
+            {
+                assertion = null; // cancelled in the browser's passkey dialog
+            }
+            if (assertion is null) { await OnCeremonyFailed.InvokeAsync(Labels.PasskeyFailed); return; }
+
+            await Emit(new FreshProof(OptionsId: begin.OptionsId, AssertionJson: assertion));
+        }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    private async Task ConfirmBrowserSignInAsync()
+    {
+        if (Locked) return;
+        _working = true;
+        try
+        {
+            var token = await NativeAuth.AuthenticateAsync("login");
+            if (string.IsNullOrEmpty(token)) { await OnCeremonyFailed.InvokeAsync(Labels.PasskeyFailed); return; }
+            // The fresh session is the proof: the server accepts one that signed in moments ago, so
+            // the host submits right away with no explicit proof.
+            await TokenStore.SetTokenAsync(token);
+            await Emit(new FreshProof());
+        }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    private async Task ConfirmRecoveryAsync()
+    {
+        if (Locked || Disabled || string.IsNullOrWhiteSpace(_recoveryCode)) return;
+        _working = true;
+        try { await Emit(new FreshProof(RecoveryCode: _recoveryCode)); }
+        finally { _working = false; }
+    }
+
+    private async Task ConfirmPasswordAsync()
+    {
+        if (Locked || Disabled || string.IsNullOrEmpty(_password)) return;
+        _working = true;
+        try { await Emit(new FreshProof(CurrentPassword: _password)); }
+        finally { _working = false; }
+    }
+
+    // The host may have closed its dialog while the ceremony ran (Back, Escape): nothing is sent then.
+    private Task Emit(FreshProof proof) => _disposed ? Task.CompletedTask : OnProof.InvokeAsync(proof);
+}

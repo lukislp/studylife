@@ -58,5 +58,7 @@
   "AriaCloseDialog": "Zapri pogovorno okno",
   "AriaPreviousWeek": "Prejšnji teden",
   "AriaNextWeek": "Naslednji teden",
+  "NavPreviousHint": "Prejšnje (←)",
+  "NavNextHint": "Naslednje (→)",
   "AriaSessionDone": "Dokončano"
 }

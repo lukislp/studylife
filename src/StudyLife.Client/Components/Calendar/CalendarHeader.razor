@@ -3,14 +3,14 @@
   SPDX-License-Identifier: AGPL-3.0-only
 *@
 <div class="cal-header" @ontouchstart="OnHeaderTouchStart" @ontouchend="OnHeaderTouchEnd">
-    <button class="btn-nav" aria-label="@PrevWeekLabel" @onclick="OnPrevWeek">‹</button>
-    <h2>@WeekLabel</h2>
-    <button class="btn-nav" aria-label="@NextWeekLabel" @onclick="OnNextWeek">›</button>
+    <button class="btn-nav" aria-label="@PrevWeekLabel" title="@PrevHint" @onclick="OnPrevWeek">‹</button>
+    <h2 aria-live="polite" aria-atomic="true">@WeekLabel</h2>
+    <button class="btn-nav" aria-label="@NextWeekLabel" title="@NextHint" @onclick="OnNextWeek">›</button>
     <div class="cal-view-switch">
         <button class="cal-view-opt @(ViewMode == "week" ? "active" : "")" @onclick='() => OnViewModeChanged.InvokeAsync("week")'>@WeekViewText</button>
         <button class="cal-view-opt @(ViewMode == "day" ? "active" : "")" @onclick='() => OnViewModeChanged.InvokeAsync("day")'>@DayViewText</button>
     </div>
-    <button class="btn-today" @onclick="OnToday">@TodayText</button>
+    <button class="btn-today" title="@TodayHint" @onclick="OnToday">@TodayText</button>
 </div>
 
 @code {
@@ -21,6 +21,9 @@
     [Parameter] public string DayViewText { get; set; } = "";
     [Parameter] public string PrevWeekLabel { get; set; } = "";
     [Parameter] public string NextWeekLabel { get; set; } = "";
+    [Parameter] public string PrevHint { get; set; } = "";
+    [Parameter] public string NextHint { get; set; } = "";
+    [Parameter] public string TodayHint { get; set; } = "";
     [Parameter] public EventCallback<string> OnViewModeChanged { get; set; }
     [Parameter] public EventCallback OnPrevWeek { get; set; }
     [Parameter] public EventCallback OnNextWeek { get; set; }
