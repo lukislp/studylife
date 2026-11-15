@@ -36,11 +36,12 @@
 }
 
 @code {
-    [Inject] private TimeProvider Clock { get; set; } = default!;
-
-    [Parameter] public StudySession Session { get; set; } = new();
+        [Parameter] public StudySession Session { get; set; } = new();
     [Parameter] public EventCallback OnClick { get; set; }
+    /// <summary>Time source; defaults to the system clock. A parameter, not an injected service, because
+    /// the native app registers its services by hand and must not need a new one for this component.</summary>
+    [Parameter] public TimeProvider? Clock { get; set; }
 
     private SessionBlockLayout Layout => SessionBlockLayout.Compute(
-        Session.StartTime, Session.EndTime, Session.IsCompleted, Clock.GetLocalNow().DateTime);
+        Session.StartTime, Session.EndTime, Session.IsCompleted, (Clock ?? TimeProvider.System).GetLocalNow().DateTime);
 }

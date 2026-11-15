@@ -24,7 +24,6 @@ public class CalendarSessionBlockTests : ConsentBunitTest
     private IRenderedComponent<CalendarSessionBlock> Arrange(int minutes, bool completed, DateTime now, string? topic = "Backprop")
     {
         Ctx.JSInterop.Mode = JSRuntimeMode.Loose;
-        Services.AddSingleton<TimeProvider>(new FixedClock(now));
         Services.AddI18nText();
         var session = new StudySession
         {
@@ -34,7 +33,7 @@ public class CalendarSessionBlockTests : ConsentBunitTest
             EndTime = Start.AddMinutes(minutes),
             IsCompleted = completed,
         };
-        var cut = Render<CalendarSessionBlock>(p => p.Add(c => c.Session, session));
+        var cut = Render<CalendarSessionBlock>(p => p.Add(c => c.Session, session).Add(c => c.Clock, new FixedClock(now)));
         cut.WaitForElement(".cal-session");
         return cut;
     }

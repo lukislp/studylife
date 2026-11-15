@@ -23,7 +23,6 @@ builder.Services.AddI18nText(options => options.PersistenceLevel = PersistanceLe
 // The former ApiKeyHandler (a global, rotating X-Api-Key with its own bootstrap endpoint) has
 // been completely removed - API keys now only exist per user for Home Assistant & co. and
 // are never used by the browser.
-builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<SessionTokenStore>();
 builder.Services.AddScoped(sp =>
 {
