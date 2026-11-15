@@ -16,6 +16,7 @@
   "SetupSecretHint": "Potrebna samo pri prav prvi nastavitvi — kodo najdete v dnevnikih strežnika.",
   "SetupSecretInvalid": "Nastavitvena koda manjka ali je napačna. Najdete jo v dnevnikih strežnika.",
   "RegisterButton": "Ustvari ključ za dostop",
+  "RegisterMissingFields": "Izpolni še:",
   "RegisterFailed": "Registracija ni uspela. Poskusite znova.",
   "GoToLoginLink": "Ste že registrirani? Prijavite se",
   "InstallHint": "Nasvet za iPhone/iPad: aplikacijo najprej namestite prek „Dodaj na začetni zaslon” — tako ostanete trajno prijavljeni.",

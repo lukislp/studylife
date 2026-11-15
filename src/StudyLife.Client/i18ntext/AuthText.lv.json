@@ -16,6 +16,7 @@
   "SetupSecretHint": "Nepieciešams tikai pašā pirmajā iestatīšanas reizē — kodu atradīsi servera žurnālos.",
   "SetupSecretInvalid": "Iestatīšanas kods trūkst vai ir nepareizs. Atradīsi to servera žurnālos.",
   "RegisterButton": "Izveidot piekļuves atslēgu",
+  "RegisterMissingFields": "Lūdzu, aizpildiet vēl:",
   "RegisterFailed": "Reģistrācija neizdevās. Mēģini vēlreiz.",
   "GoToLoginLink": "Jau esi reģistrējies? Piesakies",
   "InstallHint": "Padoms iPhone/iPad lietotājiem: vispirms instalē lietotni ar „Pievienot sākuma ekrānam” — tā paliksi pastāvīgi pieteicies.",
