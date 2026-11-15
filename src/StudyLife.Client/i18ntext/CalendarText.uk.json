@@ -57,5 +57,6 @@
   "WeekPlanLinkButton": "Роздрукувати тижневий план",
   "AriaCloseDialog": "Закрити діалог",
   "AriaPreviousWeek": "Попередній тиждень",
-  "AriaNextWeek": "Наступний тиждень"
+  "AriaNextWeek": "Наступний тиждень",
+  "AriaSessionDone": "Завершено"
 }

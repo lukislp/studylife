@@ -107,7 +107,7 @@ public class NativeAppCardTests : ConsentBunitTest
         var cut = Render<NativeServerSwitch>();
         cut.WaitForElement("button").Click();
 
-        cut.Find("[role=dialog] .btn-secondary").Click();
+        cut.WaitForElement("[role=dialog] .btn-secondary").Click();
 
         cut.WaitForAssertion(() => Assert.Empty(cut.FindAll("[role=dialog]")));
         Assert.Equal(0, auth.ChangeCalls);
@@ -120,7 +120,7 @@ public class NativeAppCardTests : ConsentBunitTest
         var cut = Render<NativeServerSwitch>();
         cut.WaitForElement("button").Click();
 
-        cut.Find("[role=dialog] .btn-danger").Click();
+        cut.WaitForElement("[role=dialog] .btn-danger").Click();
 
         cut.WaitForAssertion(() => Assert.Equal(1, auth.ChangeCalls));
     }

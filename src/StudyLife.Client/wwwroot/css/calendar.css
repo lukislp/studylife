@@ -322,3 +322,14 @@
     color: var(--text2);
 }
 
+
+/* Block state (SessionBlockLayout): done = finished with the timer, past = over but never
+   completed, running = in progress right now. */
+.cal-session.is-done { opacity: 0.6; border-left-style: solid; }
+.cal-session.is-past { opacity: 0.75; }
+.cal-session.is-running { box-shadow: 0 0 0 1px var(--c); }
+.cs-done-mark { margin-right: 0.25rem; color: var(--c); font-weight: 700; }
+
+/* Blocks shorter than SessionBlockLayout.CompactBelowMinutes: one "name · time" line. */
+.cal-session-compact { padding: 0 6px; border-radius: 4px; display: flex; align-items: center; }
+.cal-session-compact .cs-name { line-height: 1.1; min-width: 0; }

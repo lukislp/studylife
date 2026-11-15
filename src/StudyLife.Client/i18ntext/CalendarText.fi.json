@@ -57,5 +57,6 @@
   "WeekPlanLinkButton": "Tulosta viikkosuunnitelma",
   "AriaCloseDialog": "Sulje valintaikkuna",
   "AriaPreviousWeek": "Edellinen viikko",
-  "AriaNextWeek": "Seuraava viikko"
+  "AriaNextWeek": "Seuraava viikko",
+  "AriaSessionDone": "Suoritettu"
 }

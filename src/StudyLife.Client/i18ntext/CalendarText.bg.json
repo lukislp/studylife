@@ -57,5 +57,6 @@
   "WeekPlanLinkButton": "Отпечатай седмичния план",
   "AriaCloseDialog": "Затваряне на диалога",
   "AriaPreviousWeek": "Предишна седмица",
-  "AriaNextWeek": "Следваща седмица"
+  "AriaNextWeek": "Следваща седмица",
+  "AriaSessionDone": "Завършена"
 }

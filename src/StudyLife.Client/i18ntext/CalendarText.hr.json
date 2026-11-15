@@ -57,5 +57,6 @@
   "WeekPlanLinkButton": "Ispiši tjedni plan",
   "AriaCloseDialog": "Zatvori dijalog",
   "AriaPreviousWeek": "Prethodni tjedan",
-  "AriaNextWeek": "Sljedeći tjedan"
+  "AriaNextWeek": "Sljedeći tjedan",
+  "AriaSessionDone": "Završeno"
 }

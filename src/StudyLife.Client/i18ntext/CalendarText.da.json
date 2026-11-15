@@ -57,5 +57,6 @@
   "WeekPlanLinkButton": "Print ugeplan",
   "AriaCloseDialog": "Luk dialog",
   "AriaPreviousWeek": "Forrige uge",
-  "AriaNextWeek": "Næste uge"
+  "AriaNextWeek": "Næste uge",
+  "AriaSessionDone": "Fuldført"
 }

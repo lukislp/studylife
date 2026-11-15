@@ -57,5 +57,6 @@
   "WeekPlanLinkButton": "Skriv ut veckoplan",
   "AriaCloseDialog": "Stäng dialogruta",
   "AriaPreviousWeek": "Föregående vecka",
-  "AriaNextWeek": "Nästa vecka"
+  "AriaNextWeek": "Nästa vecka",
+  "AriaSessionDone": "Slutförd"
 }
