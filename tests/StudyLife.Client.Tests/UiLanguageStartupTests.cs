@@ -67,11 +67,13 @@ public class UiLanguageStartupTests
     }
 
     [Fact]
-    public async Task Stored_choice_is_kept_and_not_written_again()
+    public async Task Stored_choice_is_kept_and_told_to_the_library_without_rewriting_storage()
     {
-        var (language, stored) = await RunAsync(new("fr", "en-US"));
+        var js = new FakeWebView("fr", "en-US");
+        var (language, told) = await RunAsync(js);
         Assert.Equal("fr", language);
-        Assert.Empty(stored);
+        Assert.Equal(new[] { "fr" }, told);
+        Assert.Empty(js.Written);
     }
 
     [Fact]
@@ -105,6 +107,36 @@ public class UiLanguageStartupTests
         var js = new FakeWebView(null, "en");
         await RunAsync(js);
         Assert.Equal(new[] { "en" }, js.Written);
+    }
+
+    [Fact]
+    public async Task A_stored_choice_equal_to_the_decision_is_still_told_to_the_library()
+    {
+        // The native app shell had a stored "en" and the library's own current language stayed empty,
+        // so read aloud sent ?lang= (empty). The library must be told every start; it returns early
+        // itself when it already shows that language.
+        var (language, set) = await RunAsync(new("en", "en"));
+        Assert.Equal("en", language);
+        Assert.Equal(new[] { "en" }, set);
+    }
+
+    [Theory]
+    [InlineData("fr", "fr", null)]
+    [InlineData("pt-BR", "pt", null)]
+    [InlineData("", "de", "de-DE,en")]
+    [InlineData(null, "en", "xx")]
+    public async Task The_current_code_is_never_empty(string? library, string expected, string? device)
+    {
+        var js = new FakeWebView(null, device);
+        var code = await UiLanguageStartup.GetCurrentCodeAsync(js, () => Task.FromResult(library!));
+        Assert.Equal(expected, code);
+    }
+
+    [Fact]
+    public async Task The_current_code_falls_back_to_the_stored_choice_when_the_library_is_empty()
+    {
+        var code = await UiLanguageStartup.GetCurrentCodeAsync(new FakeWebView("sv", "en"), () => Task.FromResult(""));
+        Assert.Equal("sv", code);
     }
 
     [Fact]

@@ -648,7 +648,7 @@ else
         _ttsTimedOut = false;
         _ttsBrowserFallbackActive = false;
         StateHasChanged();
-        var lang = await I18nText.GetCurrentLanguageAsync();
+        var lang = await UiLanguageStartup.GetCurrentCodeAsync(JS, I18nText.GetCurrentLanguageAsync);
         try
         {
             _ttsAudioUrl = await FetchAudioDataUrl(_selectedNote.Id, lang);
@@ -659,7 +659,7 @@ else
             // the browser's own synthesis instead of just telling the user it's unavailable.
             await TryBrowserSpeechFallback(lang);
         }
-        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException)
+        catch (Exception ex) when (TransientFailure.IsTransient(ex))
         {
             // A long note's first (uncached) synthesis can take a while on the Pi cluster's
             // real ARM CPU - long enough to exceed the gateway's own read timeout more than
@@ -678,12 +678,24 @@ else
                     _ttsAudioUrl = await FetchAudioDataUrl(_selectedNote.Id, lang);
                     succeeded = true;
                 }
-                catch
+                catch (Exception retryEx) when (TransientFailure.IsTransient(retryEx))
                 {
                     // keep trying
                 }
+                catch
+                {
+                    // Permanent now (a 4xx, say): no point in waiting for the remaining attempts.
+                    _ttsUnavailable = true;
+                    break;
+                }
             }
-            if (!succeeded) _ttsTimedOut = true;
+            if (!succeeded && !_ttsUnavailable) _ttsTimedOut = true;
+        }
+        catch (HttpRequestException)
+        {
+            // A permanent failure (400, 403, 422, 500, ...): the same request fails the same way
+            // every time, so say so right away instead of retrying for two minutes.
+            _ttsUnavailable = true;
         }
         finally
         {
@@ -760,7 +772,7 @@ else
         _dictationFailed = false;
         _dictationSilent = false;
         _dictationUsingBrowserFallback = false;
-        var lang = await I18nText.GetCurrentLanguageAsync();
+        var lang = await UiLanguageStartup.GetCurrentCodeAsync(JS, I18nText.GetCurrentLanguageAsync);
 
         // Both calls below reject (rather than resolve false) when the browser has no
         // SpeechRecognition implementation at all (every WebKit/Safari browser, including iOS) -
@@ -835,7 +847,7 @@ else
             }
             var wavBytes = Convert.FromBase64String(wavBase64);
 
-            var lang = await I18nText.GetCurrentLanguageAsync();
+            var lang = await UiLanguageStartup.GetCurrentCodeAsync(JS, I18nText.GetCurrentLanguageAsync);
             using var content = new MultipartFormDataContent();
             var audioContent = new ByteArrayContent(wavBytes);
             audioContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("audio/wav");
