@@ -938,6 +938,7 @@ API), SSE change-stream lifecycle (`AppStateService.StartChangeStreamAsync`'s
 in `MainLayout.razor` (unchanged visible fallback; recording is a side effect of the
 `ErrorContent` render) and JS `window.onerror`/`unhandledrejection` — as `kind`/`type` + a
 sanitized, hashed stack, never the exception/error **message** (may contain user content).
+The stack keeps frames only (type + method names, plus file:line where the runtime has one); a frame is recognised by its `at ` prefix, because the trimmed WebAssembly build prints frames without file:line. The `page` of navigation and error events is the first route segment (`/planner`, `TelemetryService.PageFromRelativePath`) - the shape `TelemetryController.SanitizePage` accepts; a CSS-class-like value is logged as `unknown`.
 `INativeTelemetry` (next to `INativeHealthData`/`INativePush`) is the native-app hook for MetricKit
 launch/resource/crash reports and HealthKit query outcomes, merged into the same batches; the
 browser registers the no-op `NoNativeTelemetry`.

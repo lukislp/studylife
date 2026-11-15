@@ -31,6 +31,10 @@ public class AppStateService : IAsyncDisposable
     private UserSettings? _settingsCache;
     private string _settingsHash = "";
     private List<StudySession>? _sessionsCache;
+    // Bumped on every invalidation of _sessionsCache. A fetch that was already on the wire when a
+    // save/delete invalidated the cache compares it after its awaits: its answer predates the
+    // change, so it must neither be cached nor handed out as current.
+    private int _sessionsGeneration;
     private string _sessionsHash = "";
     private List<CourseDto>? _coursesCache;
     /// <summary>Program id that _coursesCache is valid for (null = built-in program).</summary>
@@ -315,6 +319,12 @@ public class AppStateService : IAsyncDisposable
     private readonly Dictionary<string, (Task<List<StudySessionDto>?> Task, DateTime FetchedAt)> _historyMemo = new();
 
     private void InvalidateHistoryMemo() => _historyMemo.Clear();
+
+    private void InvalidateSessionsCache()
+    {
+        _sessionsCache = null;
+        _sessionsGeneration++;
+    }
 
     public async Task<T?> GetJsonCachedAsync<T>(string url) where T : class
     {
@@ -1060,7 +1070,7 @@ public class AppStateService : IAsyncDisposable
                         // Re-fetch the server's ground truth: invalidate the cache and reset the hash,
                         // so the poll fetch immediately following is guaranteed to be recognized as a
                         // change and the granular events fire.
-                        _sessionsCache = null;
+                        InvalidateSessionsCache();
                         _sessionsHash = "";
                         _settingsHash = "";
                     }
@@ -1541,29 +1551,50 @@ public class AppStateService : IAsyncDisposable
         return _sessionsFetchInFlight ??= FetchSessionsDedupedAsync();
     }
 
+    private const int MaxSessionFetchAttempts = 3;
+
     private async Task<List<StudySession>> FetchSessionsDedupedAsync()
     {
-        try { return await FetchSessionsFromServerAsync(); }
+        try
+        {
+            // The result is returned from a local, never re-read from _sessionsCache: that field is
+            // nulled by every save/delete, and one can land while this fetch is awaiting the
+            // response or the read-cache write (the planner's accept loop saves 21 sessions in a
+            // row while each save's change event triggers a fetch). Re-reading it returned null,
+            // which callers then handed to LINQ (ArgumentNullException).
+            List<StudySession> sessions = new();
+            for (var attempt = 0; attempt < MaxSessionFetchAttempts; attempt++)
+            {
+                var generation = _sessionsGeneration;
+                var (fetched, hash) = await FetchSessionsFromServerAsync();
+                sessions = fetched;
+                if (generation != _sessionsGeneration) continue; // changed while in flight: stale, ask again
+                _sessionsCache = fetched;
+                _sessionsHash = hash;
+                break;
+            }
+            return sessions;
+        }
         finally { _sessionsFetchInFlight = null; }
     }
 
-    private async Task<List<StudySession>> FetchSessionsFromServerAsync()
+    private async Task<(List<StudySession> Sessions, string Hash)> FetchSessionsFromServerAsync()
     {
         try
         {
             var dtos = await _http.GetFromJsonAsync<List<StudySessionDto>>("api/sessions");
-            _sessionsCache = dtos?.Select(FromDto).ToList() ?? new List<StudySession>();
-            _sessionsHash = ComputeHash(dtos ?? new List<StudySessionDto>());
+            var sessions = dtos?.Select(FromDto).ToList() ?? new List<StudySession>();
+            var hash = ComputeHash(dtos ?? new List<StudySessionDto>());
             if (dtos != null) await StoreReadCacheAsync(ReadCacheKeySessions, dtos);
+            return (sessions, hash);
         }
         catch
         {
             // Offline cold start: last successful server state instead of an empty list.
             var cached = await LoadReadCacheAsync<List<StudySessionDto>>(ReadCacheKeySessions);
-            _sessionsCache = cached?.Select(FromDto).ToList() ?? new List<StudySession>();
-            _sessionsHash = ComputeHash(cached ?? new List<StudySessionDto>());
+            return (cached?.Select(FromDto).ToList() ?? new List<StudySession>(),
+                ComputeHash(cached ?? new List<StudySessionDto>()));
         }
-        return _sessionsCache;
     }
 
     /// <summary>
@@ -1587,7 +1618,7 @@ public class AppStateService : IAsyncDisposable
         catch
         {
             await EnqueueSaveSessionAsync(ToDto(session)); /* offline: replay later */
-            _sessionsCache = null;
+            InvalidateSessionsCache();
             InvalidateHistoryMemo();
             OnSessionsChanged?.Invoke();
             NotifyStateChanged();
@@ -1606,7 +1637,7 @@ public class AppStateService : IAsyncDisposable
             var dto = await response.Content.ReadFromJsonAsync<StudySessionDto>(StudyLifeJson.Options);
             if (dto != null) session.Id = dto.Id;
         }
-        _sessionsCache = null;
+        InvalidateSessionsCache();
         InvalidateHistoryMemo();
         OnSessionsChanged?.Invoke();
         NotifyStateChanged();
@@ -1617,7 +1648,7 @@ public class AppStateService : IAsyncDisposable
     {
         try { await _http.DeleteAsync($"api/sessions/{id}"); }
         catch { await EnqueueDeleteSessionAsync(id); /* offline: replay later */ }
-        _sessionsCache = null;
+        InvalidateSessionsCache();
         InvalidateHistoryMemo();
         OnSessionsChanged?.Invoke();
         NotifyStateChanged();
@@ -1631,7 +1662,7 @@ public class AppStateService : IAsyncDisposable
             await _http.DeleteAsync($"api/sessions/series/{groupId}{query}");
         }
         catch { await EnqueueDeleteSeriesAsync(groupId, fromDate); /* offline: replay later */ }
-        _sessionsCache = null;
+        InvalidateSessionsCache();
         InvalidateHistoryMemo();
         OnSessionsChanged?.Invoke();
         NotifyStateChanged();

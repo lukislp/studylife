@@ -238,16 +238,36 @@ public sealed class TelemetryService : IAsyncDisposable
     /// text) and returns it alongside its SHA-256 hex hash. A stack's first line is conventionally
     /// "ExceptionType: message" (both .NET's ToString() and JS's Error.stack) - dropped
     /// unconditionally since the exception TYPE already travels as its own field and the message
-    /// text must never leave the device (may contain user content/PII).</summary>
+    /// text must never leave the device (may contain user content/PII). What stays is the frames:
+    /// type and method names (plus a file:line where the runtime has one). A frame is recognised
+    /// by its "at " prefix alone - the trimmed WebAssembly/AOT build of the native app prints
+    /// "at Namespace.Type.Method(ArgType)" without any file:line, and requiring a ':' there once
+    /// dropped every frame, so crashes arrived with an empty stack (hash of "").</summary>
     internal static (string Stack, string StackHash) SanitizeAndHashStack(string? rawStack)
     {
         if (string.IsNullOrWhiteSpace(rawStack)) return ("", ComputeSha256Hex(""));
         var lines = rawStack.Replace("\r\n", "\n").Split('\n')
-            .Where(l => l.Contains(':') && (l.TrimStart().StartsWith("at ", StringComparison.Ordinal) || l.Contains(".cs:") || l.Contains(".js:")))
-            .Select(l => System.Text.RegularExpressions.Regex.Replace(l, @"\?[^\s:)]*", ""));
+            .Where(l => l.TrimStart().StartsWith("at ", StringComparison.Ordinal) || l.Contains(".cs:") || l.Contains(".js:"))
+            .Select(l => System.Text.RegularExpressions.Regex.Replace(l.TrimEnd(), @"\?[^\s:)]*", ""));
         var sanitized = string.Join('\n', lines);
         if (sanitized.Length > 4096) sanitized = sanitized[..4096];
         return (sanitized, ComputeSha256Hex(sanitized));
+    }
+
+    /// <summary>The `page` field of navigation/error events, in the shape the server accepts
+    /// (TelemetryController.SanitizePage: a path starting with '/', only its first segment is
+    /// kept): "/planner" for "planner/anything?x=1#y", "/" for the dashboard. Takes the app-relative
+    /// path (NavigationManager.ToBaseRelativePath). Previously the layout sent its CSS class name
+    /// ("page-planner"), which the server could only log as "unknown".</summary>
+    public static string PageFromRelativePath(string? relativePath)
+    {
+        var path = relativePath ?? "";
+        var end = path.IndexOfAny(new[] { '?', '#' });
+        if (end >= 0) path = path[..end];
+        path = path.TrimStart('/');
+        var slash = path.IndexOf('/');
+        var segment = slash >= 0 ? path[..slash] : path;
+        return "/" + segment.ToLowerInvariant();
     }
 
     private static string ComputeSha256Hex(string text) =>
