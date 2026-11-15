@@ -35,7 +35,7 @@ public class LanguageFromSystemHintTests : ConsentBunitTest
         var cut = Render<LanguageFromSystemHint>();
         cut.WaitForElement("button").Click();
 
-        Assert.Equal(1, platform.Opened);
+        cut.WaitForAssertion(() => Assert.Equal(1, platform.Opened));
     }
 
     [Fact]

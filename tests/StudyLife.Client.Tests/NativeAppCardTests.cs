@@ -72,7 +72,7 @@ public class NativeAppCardTests : ConsentBunitTest
         Assert.Empty(cut.FindAll("[role=dialog]"));
         cut.WaitForElement("button").Click();
 
-        Assert.Single(cut.FindAll("[role=dialog]"));
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll("[role=dialog]")));
         Assert.Equal(0, auth.ChangeCalls);
     }
 
@@ -109,7 +109,7 @@ public class NativeAppCardTests : ConsentBunitTest
 
         cut.Find("[role=dialog] .btn-secondary").Click();
 
-        Assert.Empty(cut.FindAll("[role=dialog]"));
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll("[role=dialog]")));
         Assert.Equal(0, auth.ChangeCalls);
     }
 
@@ -122,7 +122,7 @@ public class NativeAppCardTests : ConsentBunitTest
 
         cut.Find("[role=dialog] .btn-danger").Click();
 
-        Assert.Equal(1, auth.ChangeCalls);
+        cut.WaitForAssertion(() => Assert.Equal(1, auth.ChangeCalls));
     }
 
     [Fact]
@@ -144,8 +144,11 @@ public class NativeAppCardTests : ConsentBunitTest
 
         cut.WaitForElement("#native-health button").Click();
 
-        Assert.Equal(1, health.RequestCalls);
-        Assert.Empty(cut.FindAll("#native-health button"));
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Equal(1, health.RequestCalls);
+            Assert.Empty(cut.FindAll("#native-health button"));
+        });
     }
 
     [Theory]

@@ -63,8 +63,11 @@ public class RegisterPageTests : ConsentBunitTest
 
         button.Click();
 
-        Assert.Contains("DisplayNameLabel", cut.Find("[role=alert]").TextContent);
-        Assert.Equal("true", cut.Find("#register-name").GetAttribute("aria-invalid"));
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("DisplayNameLabel", cut.Find("[role=alert]").TextContent);
+            Assert.Equal("true", cut.Find("#register-name").GetAttribute("aria-invalid"));
+        });
         Assert.DoesNotContain(server.Requests, r => r.StartsWith("POST api/auth/register"));
     }
 
@@ -79,6 +82,7 @@ public class RegisterPageTests : ConsentBunitTest
 
         cut.Find("form").Submit();
 
+        cut.WaitForAssertion(() => Assert.Contains("DisplayNameLabel", cut.Find("[role=alert]").TextContent));
         var message = cut.Find("[role=alert]").TextContent;
         Assert.Contains("DisplayNameLabel", message);
         Assert.Contains("UsernameLabel", message);
@@ -101,6 +105,7 @@ public class RegisterPageTests : ConsentBunitTest
 
         cut.Find("form").Submit();
 
+        cut.WaitForAssertion(() => Assert.Contains("PasswordLabel", cut.Find("[role=alert]").TextContent));
         var message = cut.Find("[role=alert]").TextContent;
         Assert.Contains("PasswordLabel", message);
         Assert.DoesNotContain("UsernameLabel", message);
