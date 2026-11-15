@@ -58,5 +58,7 @@
   "AriaCloseDialog": "Sulje valintaikkuna",
   "AriaPreviousWeek": "Edellinen viikko",
   "AriaNextWeek": "Seuraava viikko",
+  "NavPreviousHint": "Edellinen (←)",
+  "NavNextHint": "Seuraava (→)",
   "AriaSessionDone": "Suoritettu"
 }

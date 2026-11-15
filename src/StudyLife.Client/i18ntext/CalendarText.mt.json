@@ -58,5 +58,7 @@
   "AriaCloseDialog": "Agħlaq id-djalogu",
   "AriaPreviousWeek": "Il-ġimgħa ta' qabel",
   "AriaNextWeek": "Il-ġimgħa d-dieħla",
+  "NavPreviousHint": "Preċedenti (←)",
+  "NavNextHint": "Li jmiss (→)",
   "AriaSessionDone": "Tlestiet"
 }

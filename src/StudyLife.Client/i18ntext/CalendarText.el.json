@@ -58,5 +58,7 @@
   "AriaCloseDialog": "Κλείσιμο παραθύρου διαλόγου",
   "AriaPreviousWeek": "Προηγούμενη εβδομάδα",
   "AriaNextWeek": "Επόμενη εβδομάδα",
+  "NavPreviousHint": "Προηγούμενο (←)",
+  "NavNextHint": "Επόμενο (→)",
   "AriaSessionDone": "Ολοκληρώθηκε"
 }

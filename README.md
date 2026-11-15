@@ -170,6 +170,8 @@ https://github.com/user-attachments/assets/0498d54b-f7e3-4854-b7cf-8eea538dd112
 - Print the weekly schedule/export as PDF
 - Automatic topic suggestion when creating a new session (from the course's still-open topics)
 - Swipe gesture on mobile devices (swipe the header or calendar grid left/right) for quick week/day switching
+- Keyboard and trackpad: Left/Right arrow = previous/next week (day in day view), `T` = today, two-finger horizontal scroll pages at the grid edge; shortcuts are inactive while typing in a field or with a dialog open, and never take Cmd/Ctrl/Alt combinations
+- Keyboard scrolling (arrows, Space, Page Up/Down) works without clicking first, including with an external keyboard on iPad
 
 ### Study Planner
 - Exam planner: choose a course and exam date - automatically distributes the still-open topics as study sessions across free time slots in the calendar up to the date (session length and total hours configurable, suggestion editable/removable before acceptance)

@@ -183,7 +183,7 @@
     <TelemetryConsentModal Show="_showTelemetryConsentModal" OnAnswered="OnTelemetryConsentAnswered" />
     <AiConsentModal />
 
-    <main class="main-content" id="main-scroll">
+    <main class="main-content" id="main-scroll" tabindex="-1">
         @* Catches rendering exceptions of individual pages instead of crashing the whole WASM app
            - mainly for the 401 race on session expiry: SessionHandler discards the token and
            OnSessionInvalidated above redirects to /login via forceLoad at almost the same time,
@@ -557,6 +557,8 @@
             }
             catch { /* stale cached index.html without the helper - skip silently */ }
 
+            try { await JS.InvokeVoidAsync("focusScrollRegion", "main-scroll"); } catch { /* stale cached index.html */ }
+
             _searchHotkeyRef = DotNetObjectReference.Create(this);
 
             // Ctrl+K/Cmd+K hotkey: a document-wide keydown listener (index.html).
@@ -699,6 +701,11 @@
         {
             StateHasChanged();
             try { await JS.InvokeVoidAsync("scrollElementToTop", "main-scroll"); } catch { /* best-effort, ignore */ }
+            // Keys only scroll the focused element's scroll container, and html/body are clipped
+            // (base.css), so after a click on a nav link or on empty space they scroll nothing.
+            // A page with an h1 takes focus afterwards (FocusOnNavigate in App.razor) - that is
+            // inside #main-scroll too; this covers the pages without one.
+            try { await JS.InvokeVoidAsync("focusScrollRegion", "main-scroll"); } catch { /* stale cached index.html */ }
         });
     }
 
