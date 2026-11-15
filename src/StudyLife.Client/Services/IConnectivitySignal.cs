@@ -15,6 +15,11 @@ namespace StudyLife.Client.Services;
 public interface IConnectivitySignal
 {
     event Action? Restored;
+
+    /// <summary>False while asking the network makes no sense, e.g. the native app is in the background:
+    /// <see cref="Reasker"/> then neither asks nor keeps a timer, and continues on the next <see cref="Restored"/>
+    /// (the app raises it on resume). Default true, so signals that predate it (and the browser) keep working.</summary>
+    bool CanAsk => true;
 }
 
 /// <summary>Default registration in the browser client: <c>window</c>'s <c>online</c> event. Listens only

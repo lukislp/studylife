@@ -33,7 +33,9 @@ public sealed class RetryPolicy(IReadOnlyList<TimeSpan> steps, TimeSpan steady)
 /// flight), waits per <see cref="RetryPolicy"/>, and asks again immediately when poked - by the platform's
 /// <see cref="IConnectivitySignal"/> (network back) or by the owner (app resumed). Stops for good on
 /// <see cref="ReaskVerdict.Done"/> unless created restartable, and on <see cref="Dispose"/>, which also
-/// cancels the question in flight. Nothing runs between questions except one timer.
+/// cancels the question in flight. Nothing runs between questions except one timer, and not even that while
+/// the signal says <see cref="IConnectivitySignal.CanAsk"/> is false (app in the background): it waits for the
+/// next poke, then continues with the normal rhythm.
 /// </summary>
 public sealed class Reasker : IDisposable
 {
@@ -102,9 +104,13 @@ public sealed class Reasker : IDisposable
             {
                 lock (_gate) _poked = false;
                 ReaskVerdict verdict;
-                try { verdict = await _ask(ct); }
-                catch (OperationCanceledException) when (ct.IsCancellationRequested) { return; }
-                catch { verdict = ReaskVerdict.Retry; }
+                if (_signal is { CanAsk: false }) verdict = ReaskVerdict.WaitForPoke; // paused (app in the background): no question, no timer
+                else
+                {
+                    try { verdict = await _ask(ct); }
+                    catch (OperationCanceledException) when (ct.IsCancellationRequested) { return; }
+                    catch { verdict = ReaskVerdict.Retry; }
+                }
                 _first.TrySetResult();
 
                 CancellationTokenSource wait;
