@@ -18,6 +18,10 @@ namespace StudyLife.Client.Tests;
 /// cannot cope with.</summary>
 public abstract class ConsentBunitTest : IAsyncLifetime
 {
+    // bUnit waits only 1 s by default, which a loaded CI runner can exceed between a click and the
+    // async HTTP / consent round trip behind it; a wait that succeeds returns immediately anyway.
+    static ConsentBunitTest() => BunitContext.DefaultWaitTimeout = TimeSpan.FromSeconds(30);
+
     protected BunitContext Ctx { get; } = new();
 
     protected IServiceCollection Services => Ctx.Services;
@@ -384,7 +388,9 @@ public class AgentChatModalConsentTests : ConsentBunitTest
         // The consent was withdrawn on another device: the next status call says so.
         server.OnJson("GET api/ai/consent", Status(granted: false, hasKey: true));
 
-        cut.Find(".acm-input-row input").Input("hello");
+        cut.WaitForElement(".acm-input-row input").Input("hello");
+        // The send button enables only after the input's re-render; click it once it has.
+        cut.WaitForAssertion(() => Assert.False(cut.Find(".acm-input-row button").HasAttribute("disabled")));
         cut.Find(".acm-input-row button").Click();
 
         cut.WaitForAssertion(() => Assert.NotNull(state.AiConsent.Pending));
