@@ -16,6 +16,7 @@
   "SetupSecretHint": "Potřebný jen při úplně prvním nastavení — kód najdete v serverových protokolech.",
   "SetupSecretInvalid": "Nastavovací kód chybí nebo je nesprávný. Najdete ho v serverových protokolech.",
   "RegisterButton": "Vytvořit přístupový klíč",
+  "RegisterMissingFields": "Doplň ještě:",
   "RegisterFailed": "Registrace se nezdařila. Zkuste to znovu.",
   "GoToLoginLink": "Už jste zaregistrováni? Přihlaste se",
   "InstallHint": "Tip pro iPhone/iPad: nejdřív aplikaci nainstalujte přes „Přidat na plochu” — zůstanete tak přihlášeni natrvalo.",

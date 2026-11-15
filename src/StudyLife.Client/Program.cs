@@ -33,6 +33,7 @@ builder.Services.AddScoped(sp =>
     };
     return new HttpClient(handler) { BaseAddress = baseAddress };
 });
+builder.Services.AddScoped<IServerLinks, HttpServerLinks>();
 builder.Services.AddScoped<AppStateService>();
 builder.Services.AddScoped<TimerService>();
 builder.Services.AddScoped<NotificationService>();

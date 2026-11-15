@@ -1,6 +1,7 @@
 {
   "ServerHeading": "Poslužitelj",
   "ServerConnectedTo": "Povezano s {0}",
+  "ServerAddressLabel": "Server: {0}",
   "ChangeServerButton": "Promijeni poslužitelj",
   "ChangeServerConfirmTitle": "Promijeniti poslužitelj?",
   "ChangeServerConfirmBody": "Bit ćeš odjavljen s {0}, a kopije koje StudyLife čuva na ovom uređaju (widgeti, Apple Watch, pretraga) bit će uklonjene. Tvoj račun i podaci na poslužitelju ostaju nepromijenjeni.",

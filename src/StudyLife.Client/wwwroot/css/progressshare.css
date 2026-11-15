@@ -9,9 +9,14 @@
    app-internal card/dashboard styles. Uses the same theme variables as the rest of the app
    (--bg/--bg2/--bg3/--text/--text2/--text3/--accent/--border/--radius from base.css). */
 
+/* html/body clip (base.css: the app scrolls inside its own container), so the public layout is
+   its own scroll container - otherwise a page taller than the window (registration with the
+   password form, a long shared snapshot) is cut off and cannot be scrolled. */
 .public-shell {
-    min-height: 100vh;
-    min-height: 100dvh;
+    height: 100vh;
+    height: 100dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     background: var(--bg);
     color: var(--text);
 }
@@ -131,4 +136,12 @@
     font-size: 0.75rem;
     color: var(--text3);
     text-align: center;
+}
+
+/* Printing (a shared snapshot) needs the full page, not the scroll container's viewport. */
+@media print {
+    .public-shell {
+        height: auto;
+        overflow: visible;
+    }
 }

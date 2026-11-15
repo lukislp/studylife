@@ -16,6 +16,7 @@
   "SetupSecretHint": "Tarvitaan vain aivan ensimmäisessä käyttöönotossa — löydät koodin palvelimen lokeista.",
   "SetupSecretInvalid": "Asennuskoodi puuttuu tai on väärä. Löydät sen palvelimen lokeista.",
   "RegisterButton": "Luo avainkoodi",
+  "RegisterMissingFields": "Täytä vielä:",
   "RegisterFailed": "Rekisteröinti epäonnistui. Yritä uudelleen.",
   "GoToLoginLink": "Oletko jo rekisteröitynyt? Kirjaudu sisään",
   "InstallHint": "Vinkki iPhonelle/iPadille: asenna sovellus ensin valinnalla ”Lisää Koti-valikkoon” — näin pysyt kirjautuneena pysyvästi.",

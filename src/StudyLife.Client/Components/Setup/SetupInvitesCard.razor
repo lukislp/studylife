@@ -6,7 +6,7 @@
 @using StudyLife.Client.Services
 @inject HttpClient Http
 @inject IJSRuntime JS
-@inject NavigationManager Nav
+@inject IServerLinks Links
 @inject AppStateService State
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
@@ -153,10 +153,9 @@
                 var dto = await response.Content.ReadFromJsonAsync<CreateInviteResponseDto>();
                 if (!string.IsNullOrEmpty(dto?.Token))
                 {
-                    // GetLeftPart(Authority) = scheme://host[:port], exactly the "{origin}" half of
-                    // the "/register?invite=<token>" link format.
-                    var origin = Nav.ToAbsoluteUri("/").GetLeftPart(UriPartial.Authority);
-                    _generatedLink = $"{origin}/register?invite={Uri.EscapeDataString(dto.Token)}";
+                    // The invitee opens this on their own device: the server's public address
+                    // (incl. a sub-path base), never the native WebView's local app:// host.
+                    _generatedLink = Links.Absolute($"register?invite={Uri.EscapeDataString(dto.Token)}");
                     await LoadAsync();
                 }
             }

@@ -16,6 +16,7 @@
   "SetupSecretHint": "Necesar doar la prima configurare — găsești codul în jurnalele serverului.",
   "SetupSecretInvalid": "Codul de configurare lipsește sau este greșit. Îl găsești în jurnalele serverului.",
   "RegisterButton": "Creează cheie de acces",
+  "RegisterMissingFields": "Completează și:",
   "RegisterFailed": "Înregistrarea a eșuat. Încearcă din nou.",
   "GoToLoginLink": "Ești deja înregistrat? Autentifică-te",
   "InstallHint": "Sfat pentru iPhone/iPad: instalează mai întâi aplicația prin „Adaugă la ecranul principal” — astfel rămâi autentificat permanent.",

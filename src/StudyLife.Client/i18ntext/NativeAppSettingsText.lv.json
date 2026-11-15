@@ -1,6 +1,7 @@
 {
   "ServerHeading": "Serveris",
   "ServerConnectedTo": "Savienots ar {0}",
+  "ServerAddressLabel": "Server: {0}",
   "ChangeServerButton": "Mainīt serveri",
   "ChangeServerConfirmTitle": "Mainīt serveri?",
   "ChangeServerConfirmBody": "Tu tiksi izrakstīts no {0}, un kopijas, ko StudyLife glabā šajā ierīcē (logrīki, Apple Watch, meklēšana), tiks dzēstas. Tavs konts un dati serverī paliek nemainīti.",

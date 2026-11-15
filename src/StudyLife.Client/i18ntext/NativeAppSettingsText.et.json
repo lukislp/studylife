@@ -1,6 +1,7 @@
 {
   "ServerHeading": "Server",
   "ServerConnectedTo": "Ühendatud: {0}",
+  "ServerAddressLabel": "Server: {0}",
   "ChangeServerButton": "Vaheta serverit",
   "ChangeServerConfirmTitle": "Kas vahetada serverit?",
   "ChangeServerConfirmBody": "Sind logitakse välja serverist {0} ja koopiad, mida StudyLife selles seadmes hoiab (vidinad, Apple Watch, otsing), eemaldatakse. Sinu konto ja andmed serveris jäävad samaks.",

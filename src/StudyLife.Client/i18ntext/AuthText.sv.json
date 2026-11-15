@@ -16,6 +16,7 @@
   "SetupSecretHint": "Behövs bara vid den allra första installationen — du hittar koden i serverloggarna.",
   "SetupSecretInvalid": "Installationskoden saknas eller är felaktig. Du hittar den i serverloggarna.",
   "RegisterButton": "Skapa passkey",
+  "RegisterMissingFields": "Fyll även i:",
   "RegisterFailed": "Registreringen misslyckades. Försök igen.",
   "GoToLoginLink": "Redan registrerad? Logga in",
   "InstallHint": "Tips för iPhone/iPad: Installera appen först via 'Lägg till på hemskärmen' — då förblir du inloggad permanent.",

@@ -16,6 +16,7 @@
   "SetupSecretHint": "Only needed for the very first setup — find the code in the server logs.",
   "SetupSecretInvalid": "Setup code is missing or wrong. You'll find it in the server logs.",
   "RegisterButton": "Create passkey",
+  "RegisterMissingFields": "Please fill in:",
   "RegisterFailed": "Registration didn't work. Please try again.",
   "GoToLoginLink": "Already registered? Sign in",
   "InstallHint": "Tip for iPhone/iPad: install the app via “Add to Home Screen” first — that keeps you signed in permanently.",

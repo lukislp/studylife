@@ -16,6 +16,7 @@
   "SetupSecretHint": "Reikalingas tik pačiam pirmam nustatymui — kodą rasi serverio žurnaluose.",
   "SetupSecretInvalid": "Nustatymo kodo trūksta arba jis neteisingas. Rasi jį serverio žurnaluose.",
   "RegisterButton": "Sukurti prieigos raktą",
+  "RegisterMissingFields": "Užpildykite dar:",
   "RegisterFailed": "Registracija nepavyko. Bandyk dar kartą.",
   "GoToLoginLink": "Jau užsiregistravai? Prisijunk",
   "InstallHint": "Patarimas iPhone/iPad: pirmiausia įdiek programėlę per „Pridėti prie pradžios ekrano” — taip liksi prisijungęs visam laikui.",

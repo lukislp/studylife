@@ -16,6 +16,7 @@
   "SetupSecretHint": "Potrebný len pri úplne prvom nastavení — kód nájdete v logoch servera.",
   "SetupSecretInvalid": "Nastavovací kód chýba alebo je nesprávny. Nájdete ho v logoch servera.",
   "RegisterButton": "Vytvoriť prístupový kľúč",
+  "RegisterMissingFields": "Doplň ešte:",
   "RegisterFailed": "Registrácia sa nepodarila. Skúste to znova.",
   "GoToLoginLink": "Už ste zaregistrovaní? Prihláste sa",
   "InstallHint": "Tip pre iPhone/iPad: najprv si aplikáciu nainštalujte cez „Pridať na plochu” — tak zostanete prihlásení natrvalo.",
