@@ -1,5 +1,5 @@
 {
-  "PageTitleTag": "StudyLife — Progres",
+  "PageTitleTag": "StudyAtrium — Progres",
   "Heading": "Progres academic",
   "SubHeading": "O imagine partajată, doar pentru vizualizare — actualizată automat.",
   "EctsLabel": "ECTS obținute",
@@ -15,5 +15,5 @@
   "TemporaryErrorHeading": "Temporar indisponibil",
   "TemporaryErrorMessage": "Ceva nu a funcționat la încărcarea acestei pagini. Te rugăm să încerci din nou peste puțin timp.",
   "GeneratedAtFormat": "Ultima actualizare: {0}",
-  "PoweredByLabel": "Partajat prin StudyLife"
+  "PoweredByLabel": "Partajat prin StudyAtrium"
 }

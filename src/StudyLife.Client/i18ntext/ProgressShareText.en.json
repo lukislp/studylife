@@ -1,5 +1,5 @@
 {
-  "PageTitleTag": "StudyLife — Progress",
+  "PageTitleTag": "StudyAtrium — Progress",
   "Heading": "Study Progress",
   "SubHeading": "A shared read-only snapshot — updated automatically.",
   "EctsLabel": "ECTS earned",
@@ -15,5 +15,5 @@
   "TemporaryErrorHeading": "Temporarily unavailable",
   "TemporaryErrorMessage": "Something went wrong loading this page. Please try again in a moment.",
   "GeneratedAtFormat": "Last updated: {0}",
-  "PoweredByLabel": "Shared via StudyLife"
+  "PoweredByLabel": "Shared via StudyAtrium"
 }

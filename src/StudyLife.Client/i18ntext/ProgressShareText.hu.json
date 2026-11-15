@@ -1,5 +1,5 @@
 {
-  "PageTitleTag": "StudyLife — Előrehaladás",
+  "PageTitleTag": "StudyAtrium — Előrehaladás",
   "Heading": "Tanulmányi előrehaladás",
   "SubHeading": "Megosztott, csak olvasható pillanatkép — automatikusan frissül.",
   "EctsLabel": "Megszerzett ECTS",
@@ -15,5 +15,5 @@
   "TemporaryErrorHeading": "Átmenetileg nem elérhető",
   "TemporaryErrorMessage": "Hiba történt az oldal betöltése közben. Kérjük, próbáld újra egy pillanat múlva.",
   "GeneratedAtFormat": "Utolsó frissítés: {0}",
-  "PoweredByLabel": "Megosztva a StudyLife-on keresztül"
+  "PoweredByLabel": "Megosztva a StudyAtrium-on keresztül"
 }

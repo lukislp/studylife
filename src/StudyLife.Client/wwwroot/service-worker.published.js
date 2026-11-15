@@ -120,10 +120,10 @@ self.addEventListener('message', event => {
 
 self.addEventListener('push', event => {
     let data = {};
-    try { data = event.data ? event.data.json() : {}; } catch { data = { title: 'StudyLife', body: event.data ? event.data.text() : '' }; }
+    try { data = event.data ? event.data.json() : {}; } catch { data = { title: 'StudyAtrium', body: event.data ? event.data.text() : '' }; }
 
     // iOS Safari (16.4+) strictly requires a visible notification per push event
-    const title = data.title || 'StudyLife';
+    const title = data.title || 'StudyAtrium';
     const options = {
         body: data.body || '',
         icon: '/icons/icon-192.png',

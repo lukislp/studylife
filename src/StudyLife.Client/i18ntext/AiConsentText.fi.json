@@ -4,7 +4,7 @@
   "WhomHeading": "Kuka saa nämä tiedot:",
   "WhomUnknown": "Tekoälypalveluntarjoaja, jonka tämän palvelimen ylläpitäjä on määrittänyt.",
   "LeavesServerText": "Nämä tiedot poistuvat tältä palvelimelta, ja yllä mainittu palveluntarjoaja käsittelee ne.",
-  "OptionalText": "Tämä on vapaaehtoista. StudyLife toimii täysin ilman tekoälyä.",
+  "OptionalText": "Tämä on vapaaehtoista. StudyAtrium toimii täysin ilman tekoälyä.",
   "WithdrawText": "Voit peruuttaa suostumuksesi milloin tahansa kohdassa Asetukset → Tekoäly. Tekoälytietosi poistetaan tällöin.",
   "ExistingUserText": "Käytät jo tekoälyavustajaa. Tarvitsemme nyt nimenomaisen suostumuksesi. Jos valitset Ei nyt, tekoäly kytketään pois ja tekoälytietosi poistetaan.",
   "AgreeButton": "Hyväksy",

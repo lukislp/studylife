@@ -105,7 +105,7 @@ public static class BackupEncryptionService
     public static byte[] Decrypt(byte[] data, string password)
     {
         if (data.Length < HeaderSize || !IsEncrypted(data))
-            throw new BackupDecryptionException("Not a StudyLife encrypted backup (missing or invalid header).");
+            throw new BackupDecryptionException("Not a StudyAtrium encrypted backup (missing or invalid header).");
 
         var offset = Magic.Length;
         var salt = data.AsSpan(offset, SaltSize).ToArray(); offset += SaltSize;
@@ -124,7 +124,7 @@ public static class BackupEncryptionService
         catch (CryptographicException)
         {
             throw new BackupDecryptionException(
-                "Wrong password, or the file is corrupted / not a valid encrypted StudyLife backup.");
+                "Wrong password, or the file is corrupted / not a valid encrypted StudyAtrium backup.");
         }
 
         return plaintext;

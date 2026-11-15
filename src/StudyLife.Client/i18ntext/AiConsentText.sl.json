@@ -4,7 +4,7 @@
   "WhomHeading": "Kdo prejme te podatke:",
   "WhomUnknown": "Ponudnik UI, ki ga je nastavil upravljavec tega strežnika.",
   "LeavesServerText": "Ti podatki zapustijo ta strežnik, obdeluje pa jih zgoraj navedeni ponudnik.",
-  "OptionalText": "To je neobvezno. StudyLife v celoti deluje tudi brez UI.",
+  "OptionalText": "To je neobvezno. StudyAtrium v celoti deluje tudi brez UI.",
   "WithdrawText": "Soglasje lahko kadar koli prekličete v Nastavitve → UI. Vaši podatki UI se nato izbrišejo.",
   "ExistingUserText": "UI-pomočnika že uporabljate. Zdaj potrebujemo vaše izrecno soglasje. Če izberete Ne zdaj, se UI izklopi in vaši podatki UI se izbrišejo.",
   "AgreeButton": "Se strinjam",

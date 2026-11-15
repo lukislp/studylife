@@ -1,5 +1,5 @@
 {
-  "Heading": "Despre StudyLife",
+  "Heading": "Despre StudyAtrium",
   "Desc": "Versiunea, licența și codul sursă ale software-ului pe care îl folosești.",
   "ServerLabel": "Server",
   "BrowserLabel": "Interfața din acest browser",
@@ -10,7 +10,7 @@
   "SourceRepo": "Depozitul codului sursă (această versiune nu are etichetă de lansare)",
   "NewTab": "se deschide într-o filă nouă",
   "LicenceLabel": "Licență",
-  "LicenceMeaning": "Poți folosi, studia, modifica și distribui StudyLife; dacă rulezi o versiune modificată pentru alte persoane, trebuie să le oferi și codul ei sursă.",
+  "LicenceMeaning": "Poți folosi, studia, modifica și distribui StudyAtrium; dacă rulezi o versiune modificată pentru alte persoane, trebuie să le oferi și codul ei sursă.",
   "PrivacyPolicy": "Politica de confidențialitate",
   "NoticesHeading": "Note despre software-ul terților",
   "NoticesDesc": "Componentele open source din această versiune, cu licențele și deținătorii drepturilor de autor.",

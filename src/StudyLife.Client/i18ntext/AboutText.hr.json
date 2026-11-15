@@ -1,5 +1,5 @@
 {
-  "Heading": "O aplikaciji StudyLife",
+  "Heading": "O aplikaciji StudyAtrium",
   "Desc": "Verzija, licencija i izvorni kôd softvera koji koristite.",
   "ServerLabel": "Poslužitelj",
   "BrowserLabel": "Sučelje u ovom pregledniku",
@@ -10,7 +10,7 @@
   "SourceRepo": "Repozitorij izvornog koda (ova inačica nema oznaku izdanja)",
   "NewTab": "otvara se u novoj kartici",
   "LicenceLabel": "Licencija",
-  "LicenceMeaning": "StudyLife smijete koristiti, proučavati, mijenjati i dijeliti; ako izmijenjenu verziju pokrećete za druge, morate im ponuditi i njezin izvorni kôd.",
+  "LicenceMeaning": "StudyAtrium smijete koristiti, proučavati, mijenjati i dijeliti; ako izmijenjenu verziju pokrećete za druge, morate im ponuditi i njezin izvorni kôd.",
   "PrivacyPolicy": "Pravila privatnosti",
   "NoticesHeading": "Napomene o softveru trećih strana",
   "NoticesDesc": "Komponente otvorenog koda u ovoj inačici, s njihovim licencijama i nositeljima autorskih prava.",

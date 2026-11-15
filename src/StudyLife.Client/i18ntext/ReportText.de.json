@@ -27,6 +27,6 @@
   "StatusOverdueFormat": "Ziel überfällig seit {0} Tag(en)",
   "StatusDueFormat": "Ziel in {0} Tag(en)",
   "NoCourses": "Noch keine abgeschlossenen Lernsessions erfasst.",
-  "FooterNote": "Automatisch erstellt von StudyLife.",
+  "FooterNote": "Automatisch erstellt von StudyAtrium.",
   "ReportButton": "📄 Studienbericht exportieren"
 }

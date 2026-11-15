@@ -1,5 +1,5 @@
 {
-  "Heading": "O aplikacji StudyLife",
+  "Heading": "O aplikacji StudyAtrium",
   "Desc": "Wersja, licencja i kod źródłowy oprogramowania, z którego korzystasz.",
   "ServerLabel": "Serwer",
   "BrowserLabel": "Interfejs w tej przeglądarce",
@@ -10,7 +10,7 @@
   "SourceRepo": "Repozytorium kodu źródłowego (ta kompilacja nie ma znacznika wydania)",
   "NewTab": "otwiera się w nowej karcie",
   "LicenceLabel": "Licencja",
-  "LicenceMeaning": "Możesz używać, badać, zmieniać i udostępniać StudyLife; jeśli uruchamiasz zmienioną wersję dla innych osób, musisz zaoferować im również jej kod źródłowy.",
+  "LicenceMeaning": "Możesz używać, badać, zmieniać i udostępniać StudyAtrium; jeśli uruchamiasz zmienioną wersję dla innych osób, musisz zaoferować im również jej kod źródłowy.",
   "PrivacyPolicy": "Polityka prywatności",
   "NoticesHeading": "Informacje o oprogramowaniu osób trzecich",
   "NoticesDesc": "Komponenty open source w tej kompilacji wraz z ich licencjami i posiadaczami praw autorskich.",

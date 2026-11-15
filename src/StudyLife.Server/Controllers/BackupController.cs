@@ -325,7 +325,7 @@ public class BackupController : ControllerBase
             return Accepted(new
             {
                 status = "staged",
-                message = "Backup verified and staged. Restart the StudyLife server to apply it "
+                message = "Backup verified and staged. Restart the StudyAtrium server to apply it "
                           + "(e.g. \"docker restart studylife-server\"). Until then the app keeps "
                           + "running on the current data.",
                 safetyBackup = Path.GetFileName(safetyBackupPath),

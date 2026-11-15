@@ -4,7 +4,7 @@
   "WhomHeading": "Ki kapja meg ezeket az adatokat:",
   "WhomUnknown": "Az az MI-szolgáltató, amelyet a szerver üzemeltetője beállított.",
   "LeavesServerText": "Ezek az adatok elhagyják ezt a szervert, és a fent megnevezett szolgáltató dolgozza fel őket.",
-  "OptionalText": "Ez nem kötelező. A StudyLife MI nélkül is teljes értékűen működik.",
+  "OptionalText": "Ez nem kötelező. A StudyAtrium MI nélkül is teljes értékűen működik.",
   "WithdrawText": "A hozzájárulásodat bármikor visszavonhatod itt: Beállítások → MI. Ekkor az MI-adataid törlődnek.",
   "ExistingUserText": "Már használod az MI-asszisztenst. Most szükségünk van a kifejezett hozzájárulásodra. Ha a Most nem lehetőséget választod, az MI kikapcsol, és az MI-adataid törlődnek.",
   "AgreeButton": "Elfogadom",

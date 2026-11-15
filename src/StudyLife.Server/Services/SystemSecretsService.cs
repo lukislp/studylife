@@ -215,7 +215,7 @@ public sealed class SystemSecretsService
             writer.WriteLine($"  {note}");
             writer.WriteLine();
         }
-        writer.WriteLine("  StudyLife setup code (for the very first registration only):");
+        writer.WriteLine("  StudyAtrium setup code (for the very first registration only):");
         writer.WriteLine();
         writer.WriteLine($"      {code}");
         writer.WriteLine();

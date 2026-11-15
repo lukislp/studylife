@@ -1,5 +1,5 @@
 {
-  "PageTitleTag": "StudyLife — Edenemine",
+  "PageTitleTag": "StudyAtrium — Edenemine",
   "Heading": "Õpingute edenemine",
   "SubHeading": "Jagatud, ainult vaatamiseks mõeldud hetkeseis — uueneb automaatselt.",
   "EctsLabel": "Kogutud ECTS",
@@ -15,5 +15,5 @@
   "TemporaryErrorHeading": "Ajutiselt pole saadaval",
   "TemporaryErrorMessage": "Selle lehe laadimisel läks midagi valesti. Palun proovi natukese aja pärast uuesti.",
   "GeneratedAtFormat": "Viimati uuendatud: {0}",
-  "PoweredByLabel": "Jagatud StudyLife'i kaudu"
+  "PoweredByLabel": "Jagatud StudyAtrium'i kaudu"
 }

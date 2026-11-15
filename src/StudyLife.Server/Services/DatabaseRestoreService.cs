@@ -113,7 +113,7 @@ public class DatabaseRestoreService
 
             var missing = RequiredTables.Where(t => !names.Contains(t)).ToList();
             if (missing.Count > 0)
-                return $"The file is a SQLite database but not a StudyLife backup (missing tables: {string.Join(", ", missing)}).";
+                return $"The file is a SQLite database but not a StudyAtrium backup (missing tables: {string.Join(", ", missing)}).";
 
             return null;
         }

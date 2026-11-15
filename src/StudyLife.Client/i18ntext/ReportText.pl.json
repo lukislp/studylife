@@ -27,6 +27,6 @@
   "StatusOverdueFormat": "Zaległość: {0} dzień/dni",
   "StatusDueFormat": "Termin za {0} dzień/dni",
   "NoCourses": "Nie zarejestrowano jeszcze żadnych ukończonych sesji nauki.",
-  "FooterNote": "Wygenerowano automatycznie przez StudyLife.",
+  "FooterNote": "Wygenerowano automatycznie przez StudyAtrium.",
   "ReportButton": "📄 Eksportuj raport z nauki"
 }

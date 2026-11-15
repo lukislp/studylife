@@ -110,7 +110,7 @@ public class PushService(StudyLifeDb db, VapidKeysHolder vapidKeysHolder) : IPus
     public async Task SubscribeApnsAsync(ApnsSubscribeRequest dto)
     {
         var syntheticEndpoint = SyntheticApnsEndpoint(dto.Token);
-        var deviceName = string.IsNullOrWhiteSpace(dto.DeviceName) ? "StudyLife App" : dto.DeviceName.Trim();
+        var deviceName = string.IsNullOrWhiteSpace(dto.DeviceName) ? "StudyAtrium App" : dto.DeviceName.Trim();
 
         var existing = await db.PushSubscriptions
             .FirstOrDefaultAsync(s => s.Endpoint == syntheticEndpoint);

@@ -1,5 +1,5 @@
 {
-  "PageTitleTag": "StudyLife — Прогресс",
+  "PageTitleTag": "StudyAtrium — Прогресс",
   "Heading": "Учебный прогресс",
   "SubHeading": "Общий снимок только для просмотра — обновляется автоматически.",
   "EctsLabel": "Получено ECTS",
@@ -15,5 +15,5 @@
   "TemporaryErrorHeading": "Временно недоступно",
   "TemporaryErrorMessage": "Что-то пошло не так при загрузке этой страницы. Пожалуйста, попробуйте ещё раз через некоторое время.",
   "GeneratedAtFormat": "Последнее обновление: {0}",
-  "PoweredByLabel": "Опубликовано через StudyLife"
+  "PoweredByLabel": "Опубликовано через StudyAtrium"
 }

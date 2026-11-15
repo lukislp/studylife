@@ -1,5 +1,5 @@
 {
-  "PageTitleTag": "StudyLife — Postępy",
+  "PageTitleTag": "StudyAtrium — Postępy",
   "Heading": "Postępy w nauce",
   "SubHeading": "Udostępniony podgląd tylko do odczytu — aktualizowany automatycznie.",
   "EctsLabel": "Zdobyte ECTS",
@@ -15,5 +15,5 @@
   "TemporaryErrorHeading": "Chwilowo niedostępne",
   "TemporaryErrorMessage": "Podczas ładowania tej strony coś poszło nie tak. Spróbuj ponownie za chwilę.",
   "GeneratedAtFormat": "Ostatnia aktualizacja: {0}",
-  "PoweredByLabel": "Udostępniono przez StudyLife"
+  "PoweredByLabel": "Udostępniono przez StudyAtrium"
 }

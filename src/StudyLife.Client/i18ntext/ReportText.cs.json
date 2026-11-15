@@ -27,6 +27,6 @@
   "StatusOverdueFormat": "Termín překročen o {0} den/dní",
   "StatusDueFormat": "Termín za {0} den/dní",
   "NoCourses": "Zatím nejsou zaznamenány žádné dokončené studijní seance.",
-  "FooterNote": "Automaticky vytvořeno aplikací StudyLife.",
+  "FooterNote": "Automaticky vytvořeno aplikací StudyAtrium.",
   "ReportButton": "📄 Exportovat studijní zprávu"
 }

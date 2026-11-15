@@ -27,6 +27,6 @@
   "StatusOverdueFormat": "Просрочено на {0} дн.",
   "StatusDueFormat": "Срок через {0} дн.",
   "NoCourses": "Завершённых учебных сессий пока не зафиксировано.",
-  "FooterNote": "Автоматически создано StudyLife.",
+  "FooterNote": "Автоматически создано StudyAtrium.",
   "ReportButton": "📄 Экспортировать отчёт об обучении"
 }

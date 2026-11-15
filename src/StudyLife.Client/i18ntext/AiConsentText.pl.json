@@ -4,7 +4,7 @@
   "WhomHeading": "Kto otrzymuje te dane:",
   "WhomUnknown": "Dostawca AI skonfigurowany przez operatora tego serwera.",
   "LeavesServerText": "Te dane opuszczają ten serwer i są przetwarzane przez dostawcę wskazanego powyżej.",
-  "OptionalText": "To jest dobrowolne. StudyLife działa w pełni bez AI.",
+  "OptionalText": "To jest dobrowolne. StudyAtrium działa w pełni bez AI.",
   "WithdrawText": "Zgodę możesz wycofać w każdej chwili w Ustawienia → AI. Twoje dane AI zostaną wtedy usunięte.",
   "ExistingUserText": "Korzystasz już z asystenta AI. Potrzebujemy teraz Twojej wyraźnej zgody. Jeśli wybierzesz Nie teraz, AI zostanie wyłączone, a Twoje dane AI usunięte.",
   "AgreeButton": "Zgadzam się",

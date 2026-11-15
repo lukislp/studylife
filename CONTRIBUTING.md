@@ -1,6 +1,6 @@
-# Contributing to StudyLife
+# Contributing to StudyAtrium
 
-Thanks for taking the time. StudyLife is a single-maintainer project, so the process is deliberately
+Thanks for taking the time. StudyAtrium is a single-maintainer project, so the process is deliberately
 small - but it is the same for every change, including the maintainer's own.
 
 ## How changes get in
@@ -92,7 +92,7 @@ bundled file that is not a NuGet package (a font, a script, a stylesheet) is add
 ### Licence headers
 
 The repository follows the [REUSE Specification](https://reuse.software/): every file states its
-licence and copyright in machine-readable form. StudyLife is `AGPL-3.0-only` (licence texts in
+licence and copyright in machine-readable form. StudyAtrium is `AGPL-3.0-only` (licence texts in
 [`LICENSES/`](LICENSES/)); the only third-party files are the self-hosted DM Sans and DM Mono
 fonts under `src/StudyLife.Client/wwwroot/fonts/` (`OFL-1.1`). A source file starts with two SPDX
 tags in its own comment syntax (after a shebang, an `<?xml ...?>` declaration or `<!DOCTYPE html>`):

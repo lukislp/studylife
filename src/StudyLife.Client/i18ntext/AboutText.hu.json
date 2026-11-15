@@ -1,5 +1,5 @@
 {
-  "Heading": "A StudyLife névjegye",
+  "Heading": "A StudyAtrium névjegye",
   "Desc": "A futtatott szoftver verziója, licence és forráskódja.",
   "ServerLabel": "Szerver",
   "BrowserLabel": "Felület ebben a böngészőben",
@@ -10,7 +10,7 @@
   "SourceRepo": "Forráskód-tárhely (ehhez a buildhez nincs kiadási címke)",
   "NewTab": "új lapon nyílik meg",
   "LicenceLabel": "Licenc",
-  "LicenceMeaning": "A StudyLife-ot használhatod, tanulmányozhatod, módosíthatod és megoszthatod; ha módosított változatot futtatsz másoknak, annak forráskódját is fel kell kínálnod nekik.",
+  "LicenceMeaning": "A StudyAtrium-ot használhatod, tanulmányozhatod, módosíthatod és megoszthatod; ha módosított változatot futtatsz másoknak, annak forráskódját is fel kell kínálnod nekik.",
   "PrivacyPolicy": "Adatvédelmi irányelvek",
   "NoticesHeading": "Harmadik féltől származó szoftverek közleményei",
   "NoticesDesc": "A build nyílt forráskódú összetevői licencükkel és szerzői jogi tulajdonosaikkal.",

@@ -1,5 +1,5 @@
 {
-  "PageTitleTag": "StudyLife — Pažanga",
+  "PageTitleTag": "StudyAtrium — Pažanga",
   "Heading": "Studijų pažanga",
   "SubHeading": "Bendrinama, tik skaitymui skirta akimirka — atnaujinama automatiškai.",
   "EctsLabel": "Surinkti ECTS",
@@ -15,5 +15,5 @@
   "TemporaryErrorHeading": "Laikinai nepasiekiama",
   "TemporaryErrorMessage": "Įkeliant šį puslapį kažkas nutiko. Bandykite dar kartą po akimirkos.",
   "GeneratedAtFormat": "Paskutinį kartą atnaujinta: {0}",
-  "PoweredByLabel": "Bendrinama per StudyLife"
+  "PoweredByLabel": "Bendrinama per StudyAtrium"
 }

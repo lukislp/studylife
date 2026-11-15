@@ -4,7 +4,7 @@
   "WhomHeading": "Kas gauna šiuos duomenis:",
   "WhomUnknown": "DI paslaugų teikėjas, kurį sukonfigūravo šio serverio operatorius.",
   "LeavesServerText": "Šie duomenys palieka šį serverį, o juos apdoroja aukščiau nurodytas teikėjas.",
-  "OptionalText": "Tai neprivaloma. StudyLife visiškai veikia ir be DI.",
+  "OptionalText": "Tai neprivaloma. StudyAtrium visiškai veikia ir be DI.",
   "WithdrawText": "Sutikimą gali bet kada atšaukti skiltyje Nustatymai → DI. Tada tavo DI duomenys ištrinami.",
   "ExistingUserText": "DI asistentą jau naudoji. Dabar mums reikia tavo aiškaus sutikimo. Jei pasirinksi Ne dabar, DI bus išjungtas, o tavo DI duomenys ištrinti.",
   "AgreeButton": "Sutinku",

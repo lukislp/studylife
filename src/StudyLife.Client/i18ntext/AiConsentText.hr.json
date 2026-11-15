@@ -4,7 +4,7 @@
   "WhomHeading": "Tko prima ove podatke:",
   "WhomUnknown": "AI pružatelj koji je konfigurirao operater ovog poslužitelja.",
   "LeavesServerText": "Ovi podaci napuštaju ovaj poslužitelj i obrađuje ih gore navedeni pružatelj.",
-  "OptionalText": "To je neobavezno. StudyLife u potpunosti radi i bez AI-ja.",
+  "OptionalText": "To je neobavezno. StudyAtrium u potpunosti radi i bez AI-ja.",
   "WithdrawText": "Privolu možeš povući u bilo kojem trenutku u Postavke → AI. Tvoji AI podaci tada se brišu.",
   "ExistingUserText": "Već koristiš AI asistenta. Sada nam je potrebna tvoja izričita privola. Ako odabereš Ne sada, AI se isključuje, a tvoji AI podaci se brišu.",
   "AgreeButton": "Slažem se",

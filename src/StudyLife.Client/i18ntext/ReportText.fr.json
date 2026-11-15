@@ -27,6 +27,6 @@
   "StatusOverdueFormat": "En retard de {0} jour(s)",
   "StatusDueFormat": "Échéance dans {0} jour(s)",
   "NoCourses": "Aucune session d'étude terminée enregistrée pour le moment.",
-  "FooterNote": "Généré automatiquement par StudyLife.",
+  "FooterNote": "Généré automatiquement par StudyAtrium.",
   "ReportButton": "📄 Exporter le rapport d'études"
 }

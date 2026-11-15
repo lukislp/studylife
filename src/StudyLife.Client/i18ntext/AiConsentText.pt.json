@@ -4,7 +4,7 @@
   "WhomHeading": "Quem recebe estes dados:",
   "WhomUnknown": "O fornecedor de IA configurado pelo operador deste servidor.",
   "LeavesServerText": "Estes dados saem deste servidor e são processados pelo fornecedor indicado acima.",
-  "OptionalText": "É opcional. O StudyLife funciona totalmente sem IA.",
+  "OptionalText": "É opcional. O StudyAtrium funciona totalmente sem IA.",
   "WithdrawText": "Podes retirar o consentimento a qualquer momento em Configurações → IA. Os teus dados de IA são então eliminados.",
   "ExistingUserText": "Já usas o assistente de IA. Precisamos agora do teu consentimento explícito. Se escolheres Agora não, a IA é desativada e os teus dados de IA são eliminados.",
   "AgreeButton": "Aceitar",

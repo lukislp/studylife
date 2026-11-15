@@ -27,6 +27,6 @@
   "StatusOverdueFormat": "Försenad med {0} dag(ar)",
   "StatusDueFormat": "Deadline om {0} dag(ar)",
   "NoCourses": "Inga avklarade studiepass registrerade än.",
-  "FooterNote": "Genererad automatiskt av StudyLife.",
+  "FooterNote": "Genererad automatiskt av StudyAtrium.",
   "ReportButton": "📄 Exportera studierapport"
 }
