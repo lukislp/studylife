@@ -16,6 +16,7 @@
   "SetupSecretHint": "Alleen nodig bij de allereerste installatie — je vindt de code in de serverlogs.",
   "SetupSecretInvalid": "Installatiecode ontbreekt of is onjuist. Je vindt hem in de serverlogs.",
   "RegisterButton": "Passkey aanmaken",
+  "RegisterMissingFields": "Vul nog in:",
   "RegisterFailed": "Registreren is niet gelukt. Probeer het opnieuw.",
   "GoToLoginLink": "Al geregistreerd? Inloggen",
   "InstallHint": "Tip voor iPhone/iPad: installeer de app eerst via 'Zet op beginscherm' — zo blijf je permanent ingelogd.",

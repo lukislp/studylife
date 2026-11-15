@@ -16,6 +16,7 @@
   "SetupSecretHint": "Meħtieġ biss għall-ewwel konfigurazzjoni — issib il-kodiċi fil-logs tas-server.",
   "SetupSecretInvalid": "Il-kodiċi tal-konfigurazzjoni nieqes jew mhux korrett. Issibu fil-logs tas-server.",
   "RegisterButton": "Oħloq passkey",
+  "RegisterMissingFields": "Jekk jogħġbok imla wkoll:",
   "RegisterFailed": "Ir-reġistrazzjoni ma rnexxietx. Erġa' pprova.",
   "GoToLoginLink": "Diġà rreġistrat? Idħol",
   "InstallHint": "Parir għal iPhone/iPad: l-ewwel installa l-app permezz ta' “Żid mal-Iskrin Ewlieni” — hekk tibqa' mdaħħal b'mod permanenti.",

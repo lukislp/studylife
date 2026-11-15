@@ -16,6 +16,7 @@
   "SetupSecretHint": "Ní gá é ach don chéad socrú riamh — gheobhaidh tú an cód i logaí an fhreastalaí.",
   "SetupSecretInvalid": "Tá an cód socraithe ar iarraidh nó mícheart. Gheobhaidh tú é i logaí an fhreastalaí.",
   "RegisterButton": "Cruthaigh eochair rochtana",
+  "RegisterMissingFields": "Líon isteach freisin:",
   "RegisterFailed": "Theip ar an gclárú. Bain triail eile as.",
   "GoToLoginLink": "Cláraithe cheana? Logáil isteach",
   "InstallHint": "Leid don iPhone/iPad: suiteáil an aip ar dtús trí “Cuir leis an Scáileán Baile” — fanfaidh tú logáilte isteach go buan.",

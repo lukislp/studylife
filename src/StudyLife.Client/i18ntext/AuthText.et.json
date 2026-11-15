@@ -16,6 +16,7 @@
   "SetupSecretHint": "Vajalik ainult kõige esimesel seadistamisel — koodi leiad serveri logidest.",
   "SetupSecretInvalid": "Seadistuskood puudub või on vale. Leiad selle serveri logidest.",
   "RegisterButton": "Loo pääsuvõti",
+  "RegisterMissingFields": "Täida veel:",
   "RegisterFailed": "Registreerimine ebaõnnestus. Proovi uuesti.",
   "GoToLoginLink": "Oled juba registreeritud? Logi sisse",
   "InstallHint": "Nõuanne iPhone'i/iPadi jaoks: installi rakendus kõigepealt valikuga „Lisa avakuvale” — nii jääd püsivalt sisselogituks.",

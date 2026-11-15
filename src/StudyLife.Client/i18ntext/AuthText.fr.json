@@ -16,6 +16,7 @@
   "SetupSecretHint": "Nécessaire uniquement pour la toute première configuration — vous trouverez le code dans les journaux du serveur.",
   "SetupSecretInvalid": "Le code de configuration est manquant ou incorrect. Vous le trouverez dans les journaux du serveur.",
   "RegisterButton": "Créer une clé d'accès",
+  "RegisterMissingFields": "Merci de renseigner :",
   "RegisterFailed": "L'inscription a échoué. Veuillez réessayer.",
   "GoToLoginLink": "Déjà inscrit ? Se connecter",
   "InstallHint": "Astuce pour iPhone/iPad : installez d'abord l'app via « Ajouter à l'écran d'accueil » — vous resterez ainsi connecté durablement.",

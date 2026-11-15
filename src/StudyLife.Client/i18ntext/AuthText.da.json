@@ -16,6 +16,7 @@
   "SetupSecretHint": "Kun nødvendig ved allerførste opsætning — du finder koden i serverloggene.",
   "SetupSecretInvalid": "Opsætningskoden mangler eller er forkert. Du finder den i serverloggene.",
   "RegisterButton": "Opret adgangsnøgle",
+  "RegisterMissingFields": "Udfyld også:",
   "RegisterFailed": "Registreringen mislykkedes. Prøv igen.",
   "GoToLoginLink": "Allerede registreret? Log ind",
   "InstallHint": "Tip til iPhone/iPad: Installér først appen via 'Føj til hjemmeskærm' — så forbliver du logget ind permanent.",

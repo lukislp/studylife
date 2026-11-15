@@ -16,6 +16,7 @@
   "SetupSecretHint": "Csak a legelső beállításnál szükséges — a kódot a szerver naplóiban találod.",
   "SetupSecretInvalid": "A beállítási kód hiányzik vagy hibás. A szerver naplóiban találod.",
   "RegisterButton": "Azonosítókulcs létrehozása",
+  "RegisterMissingFields": "Kérlek, töltsd ki még:",
   "RegisterFailed": "A regisztráció nem sikerült. Próbáld újra.",
   "GoToLoginLink": "Már regisztráltál? Jelentkezz be",
   "InstallHint": "Tipp iPhone-hoz/iPadhez: először telepítsd az appot a „Hozzáadás a Főképernyőhöz” lehetőséggel — így tartósan bejelentkezve maradsz.",
