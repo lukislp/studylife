@@ -77,6 +77,30 @@ public class NativeAppCardTests : ConsentBunitTest
     }
 
     [Fact]
+    public void ServerLabel_SignedInCard_SaysConnected()
+    {
+        Arrange("studylife.example.com", NativeHealthAccess.Unavailable);
+
+        var cut = Render<NativeServerSwitch>();
+
+        var text = cut.WaitForElement(".ss-desc").TextContent;
+        Assert.Contains("ServerConnectedTo", text);
+        Assert.DoesNotContain("ServerAddressLabel", text);
+    }
+
+    [Fact]
+    public void ServerLabel_CompactSignedOutBar_IsNeutral()
+    {
+        Arrange("studylife.example.com", NativeHealthAccess.Unavailable);
+
+        var cut = Render<NativeServerSwitch>(p => p.Add(c => c.Compact, true));
+
+        var text = cut.WaitForElement(".ss-desc").TextContent;
+        Assert.Contains("ServerAddressLabel", text);
+        Assert.DoesNotContain("ServerConnectedTo", text);
+    }
+
+    [Fact]
     public void ChangeServer_CancelKeepsTheServer()
     {
         var (auth, _) = Arrange("studylife.example.com", NativeHealthAccess.Unavailable);

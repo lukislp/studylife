@@ -16,7 +16,7 @@
 @if (NativeAuth.ServerHost is { } host && T is not null)
 {
     <div class="@(Compact ? "native-server-switch native-server-switch-compact" : "native-server-switch")">
-        <span class="ss-desc">@string.Format(T.ServerConnectedTo ?? "", host)</span>
+        <span class="ss-desc">@string.Format((Compact ? T.ServerAddressLabel : T.ServerConnectedTo) ?? "", host)</span>
         <button type="button" class="btn-secondary" style="@(Compact ? "padding:0.25rem 0.6rem;font-size:0.85rem" : null)" @onclick="Open">@T.ChangeServerButton</button>
     </div>
 

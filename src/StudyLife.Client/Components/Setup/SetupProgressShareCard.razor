@@ -5,7 +5,7 @@
 @using StudyLife.Shared
 @using StudyLife.Client.Services
 @inject HttpClient Http
-@inject NavigationManager Nav
+@inject IServerLinks Links
 @inject IJSRuntime JS
 @inject AppStateService State
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
@@ -88,7 +88,7 @@
     private bool _regenerating;
     private bool _regenerateSuccess;
 
-    private string ShareUrl => string.IsNullOrEmpty(_token) ? "" : $"{Nav.BaseUri}shared/{_token}";
+    private string ShareUrl => string.IsNullOrEmpty(_token) ? "" : Links.Absolute($"shared/{_token}");
 
     // The Overview instance last applied to this card's fields - lets OnParametersSet tell a
     // genuinely new bundle (another device/add-on changed something) apart from an unrelated

@@ -1,6 +1,7 @@
 {
   "ServerHeading": "Palvelin",
   "ServerConnectedTo": "Yhdistetty: {0}",
+  "ServerAddressLabel": "Server: {0}",
   "ChangeServerButton": "Vaihda palvelinta",
   "ChangeServerConfirmTitle": "Vaihdetaanko palvelinta?",
   "ChangeServerConfirmBody": "Sinut kirjataan ulos palvelimelta {0}, ja kopiot, joita StudyLife säilyttää tällä laitteella (widgetit, Apple Watch, haku), poistetaan. Tilisi ja tietosi palvelimella säilyvät ennallaan.",

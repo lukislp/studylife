@@ -12,7 +12,7 @@
 @inject AppStateService State
 @inject NotificationService NotificationSvc
 @inject HttpClient Http
-@inject NavigationManager Nav
+@inject IServerLinks Links
 @inject IJSRuntime JS
 
 @if (IsTextLoaded)
@@ -850,10 +850,10 @@
         // (AuthUserEntity.CalendarToken). Calendar clients can't set custom headers and
         // can't go through a login - so the token never rotates, the URL stays valid until
         // it's manually regenerated via the card's button.
-        // Http.BaseAddress instead of Nav.BaseUri: identical in the browser, but in the native
-        // app Nav.BaseUri is the virtual WebView host (app://0.0.0.1/) - a subscription URL built
+        // IServerLinks instead of Nav.BaseUri: identical in the browser, but in the native app
+        // Nav.BaseUri is the virtual WebView host (app://0.0.0.1/) - a subscription URL built
         // with that couldn't be fetched by any calendar client in the world.
-        _icsUrl = $"{Http.BaseAddress}api/sessions/ics";
+        _icsUrl = Links.Absolute("api/sessions/ics");
         if (!string.IsNullOrEmpty(calendarToken)) _icsUrl += $"?calendarToken={calendarToken}";
 
         if (overview?.Version is { } bundledVersion)
@@ -1038,7 +1038,7 @@
             if (!response.IsSuccessStatusCode) return;
             var dto = await response.Content.ReadFromJsonAsync<RegenerateCalendarTokenResponseDto>();
             if (string.IsNullOrEmpty(dto?.CalendarToken)) return;
-            _icsUrl = $"{Nav.BaseUri}api/sessions/ics?calendarToken={dto.CalendarToken}";
+            _icsUrl = Links.Absolute($"api/sessions/ics?calendarToken={dto.CalendarToken}");
             _icsRegenerateSuccess = true;
             StateHasChanged();
             await Task.Delay(2000);
