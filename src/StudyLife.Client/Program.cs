@@ -43,6 +43,7 @@ builder.Services.AddScoped<NotificationService>();
 // this without a cycle.
 builder.Services.AddScoped<TelemetryService>();
 builder.Services.AddScoped<IClientPlatform, BrowserClientPlatform>();
+builder.Services.AddScoped<IConnectivitySignal, BrowserConnectivitySignal>();
 builder.Services.AddScoped<LocalDateNames>();
 
 // Marketplace catalog: reads studylife-marketplace's public listings/ directory directly from

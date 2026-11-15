@@ -40,6 +40,16 @@ public enum PasswordFailure
     Other,
 }
 
+/// <summary>The answer to "does this installation offer password sign-in?".</summary>
+public enum PasswordOffer
+{
+    /// <summary>Could not ask (no network, server unreachable or failing): ask again, do not cache.</summary>
+    Unknown,
+    /// <summary>The server answered: password sign-in is switched off (or the server predates it).</summary>
+    NotOffered,
+    Offered,
+}
+
 /// <summary>Outcome of a password request. <see cref="Token"/> is set after a successful sign-in or
 /// registration (the plaintext session token, exactly like a passkey sign-in returns it).</summary>
 public sealed record PasswordAttempt(PasswordFailure Failure, string? Token = null, bool ChangeRequired = false,
@@ -65,14 +75,26 @@ public sealed record PasswordProof(string? CurrentPassword = null, string? Recov
 /// </summary>
 public sealed class PasswordSignInState(HttpClient http)
 {
-    /// <summary>Whether the installation offers password sign-in. False when the server cannot be
-    /// reached or predates the feature - the pages then simply show the passkey path alone.</summary>
-    public async Task<bool> IsOfferedAsync()
+    /// <summary>Whether the installation offers password sign-in, as far as the server could be asked.
+    /// <see cref="PasswordOffer.Unknown"/> (offline, server down, a captive portal's page) is deliberately
+    /// not "not offered": pages keep asking (<see cref="Reasker"/>) instead of hiding the form for good.
+    /// An older server without the endpoint (404) does answer: not offered.</summary>
+    public async Task<PasswordOffer> GetOfferAsync(CancellationToken ct = default)
     {
-        try { return (await http.GetFromJsonAsync<AuthMethodsDto>("api/auth/methods"))?.PasswordSignIn ?? false; }
-        catch (HttpRequestException) { return false; }
-        catch (JsonException) { return false; }
-        catch (TaskCanceledException) { return false; }
+        try
+        {
+            using var response = await http.GetAsync("api/auth/methods", ct);
+            if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.MethodNotAllowed or HttpStatusCode.Gone)
+                return PasswordOffer.NotOffered;
+            if (!response.IsSuccessStatusCode) return PasswordOffer.Unknown;
+            var dto = await response.Content.ReadFromJsonAsync<AuthMethodsDto>(ct);
+            if (dto is null) return PasswordOffer.Unknown;
+            return dto.PasswordSignIn ? PasswordOffer.Offered : PasswordOffer.NotOffered;
+        }
+        catch (HttpRequestException) { return PasswordOffer.Unknown; }
+        catch (JsonException) { return PasswordOffer.Unknown; }
+        catch (NotSupportedException) { return PasswordOffer.Unknown; } // a non-JSON body
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested) { return PasswordOffer.Unknown; } // timeout
     }
 
     public Task<PasswordAttempt> SignInAsync(string username, string password) =>

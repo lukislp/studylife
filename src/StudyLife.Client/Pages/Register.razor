@@ -8,11 +8,13 @@
 @using System.Text.Json.Nodes
 @using StudyLife.Shared
 @inherits LocalizedComponentBase<I18nText.AuthText>
+@implements IDisposable
 @inject HttpClient Http
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 @inject SessionTokenStore TokenStore
 @inject INativeAppAuth NativeAuth
+@inject IServiceProvider Services
 
 @* Passkey registration (phase 2), same layout/style pattern as Login.razor. The very first
    registration "claims" the existing phase-1 user server-side, including all existing data
@@ -114,6 +116,7 @@
     // Username + password registration (shown only when the server offers it, api/auth/methods).
     private StudyLife.Client.I18nText.PasswordText? P;
     private bool _passwordOffered;
+    private Reasker? _offerAsker;
     private bool _usePassword;
     private bool _showPassword;
     private string _username = "";
@@ -200,8 +203,21 @@
     protected override async Task OnTextLoadedAsync()
     {
         P = await I18nText.GetTextTableAsync<StudyLife.Client.I18nText.PasswordText>(this);
-        _passwordOffered = await new PasswordSignInState(Http).IsOfferedAsync();
+        // The method choice waits for the server's answer and re-asks while it cannot be asked (offline).
+        _offerAsker = new Reasker(AskOfferAsync, Services.GetService<IConnectivitySignal>());
+        await _offerAsker.StartAsync();
     }
+
+    private async Task<ReaskVerdict> AskOfferAsync(CancellationToken ct)
+    {
+        var offer = await new PasswordSignInState(Http).GetOfferAsync(ct);
+        if (offer == PasswordOffer.Unknown) return ReaskVerdict.Retry;
+        _passwordOffered = offer == PasswordOffer.Offered;
+        await InvokeAsync(StateHasChanged);
+        return ReaskVerdict.Done;
+    }
+
+    public void Dispose() => _offerAsker?.Dispose();
 
     /// <summary>Registration with a username and password instead of a passkey - also inside the
     /// native shells' web view, which needs no system browser for it (no WebAuthn involved). Same
