@@ -15,7 +15,7 @@ links to the place that explains it.
   ([`docs/SECURITY-ASSURANCE.md`](docs/SECURITY-ASSURANCE.md#83-in-cluster-calls-to-the-add-ons)).
   Still plain: the add-ons' old ports for probes and Prometheus scraping, the gateway → pod hop of
   the developer portal (needs a `BackendTLSPolicy`), and the OTLP export to the collector. Once
-  the switch is live, the NetworkPolicies can stop admitting StudyLife on the old add-on ports.
+  the switch is live, the NetworkPolicies can stop admitting StudyAtrium on the old add-on ports.
 - **Image signature verification at deploy time.** Images are already signed with cosign. Flux
   should refuse unsigned images (see the comment at the signing step in
   `.github/workflows/ci-cd.yml`).

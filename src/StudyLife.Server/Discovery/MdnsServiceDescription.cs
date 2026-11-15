@@ -51,7 +51,7 @@ public sealed record MdnsServiceDescription(string InstanceName, int Port, IRead
         };
         // A malformed id is dropped rather than announced: Home Assistant would store garbage.
         if (Services.InstanceIdProvider.IsValidId(id)) txt.Add($"id={id}");
-        var name = string.IsNullOrWhiteSpace(options.Name) ? "StudyLife" : options.Name.Trim();
+        var name = string.IsNullOrWhiteSpace(options.Name) ? "StudyAtrium" : options.Name.Trim();
         return new MdnsServiceDescription(name, url.Port, txt);
     }
 

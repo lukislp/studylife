@@ -25,7 +25,7 @@ public sealed class MdnsOptions
     public string? Url { get; set; }
 
     /// <summary>Instance name shown by DNS-SD browsers.</summary>
-    public string Name { get; set; } = "StudyLife";
+    public string Name { get; set; } = "StudyAtrium";
 
     /// <summary>Run ONLY the announcer (no database, no web endpoints) - the dedicated hostNetwork
     /// pod of k8s/optional/studylife-mdns.yaml, announcing on behalf of the ingress URL.</summary>

@@ -263,7 +263,7 @@
         {
             var response = await Http.GetAsync("api/backup/export");
             if (!response.IsSuccessStatusCode) { _error = T!.ExportFailed; return; }
-            var fileName = $"studylife-export-{DateTime.UtcNow:yyyyMMdd}.json";
+            var fileName = $"studyatrium-export-{DateTime.UtcNow:yyyyMMdd}.json";
             if (NativeFiles.IsAvailable)
             {
                 await NativeFiles.SaveTextAsync(fileName, await response.Content.ReadAsStringAsync());

@@ -58,7 +58,7 @@ public class MdnsTests
         var o = Options().Value; // resolving also runs the validator: off needs no Url
         Assert.False(o.Enabled);
         Assert.False(o.Only);
-        Assert.Equal("StudyLife", o.Name);
+        Assert.Equal("StudyAtrium", o.Name);
         Assert.Null(o.Url);
         Assert.False(o.Active);
     }
@@ -112,7 +112,7 @@ public class MdnsTests
         var d = Describe("https://studylife.example.org");
         Assert.Equal(443, d.Port);
         Assert.Equal(["version=1.2.3", "url=https://studylife.example.org", "https=true", "path=/"], d.TxtRecords);
-        Assert.Equal("StudyLife", d.InstanceName);
+        Assert.Equal("StudyAtrium", d.InstanceName);
     }
 
     [Fact]
