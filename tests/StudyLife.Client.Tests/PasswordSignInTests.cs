@@ -30,16 +30,25 @@ public class PasswordSignInStateTests
         new(status) { Content = JsonContent.Create(new { type, title = type, status = (int)status }) };
 
     [Fact]
-    public async Task IsOffered_FollowsTheServer_AndIsFalseWhenItCannotBeAsked()
+    public async Task GetOffer_TellsAnAnswerFromNotBeingAbleToAsk()
     {
         var (state, server) = Create();
-        Assert.False(await state.IsOfferedAsync()); // 404: an older server without the endpoint
+        Assert.Equal(PasswordOffer.NotOffered, await state.GetOfferAsync()); // 404: an older server without the endpoint
 
         server.OnJson("GET api/auth/methods", new AuthMethodsDto { PasswordSignIn = true });
-        Assert.True(await state.IsOfferedAsync());
+        Assert.Equal(PasswordOffer.Offered, await state.GetOfferAsync());
+
+        server.OnJson("GET api/auth/methods", new AuthMethodsDto { PasswordSignIn = false });
+        Assert.Equal(PasswordOffer.NotOffered, await state.GetOfferAsync()); // 200 false: the server said no
 
         server.On("GET api/auth/methods", _ => throw new HttpRequestException("offline"));
-        Assert.False(await state.IsOfferedAsync());
+        Assert.Equal(PasswordOffer.Unknown, await state.GetOfferAsync());
+
+        server.On("GET api/auth/methods", _ => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+        Assert.Equal(PasswordOffer.Unknown, await state.GetOfferAsync());
+
+        server.On("GET api/auth/methods", _ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("<html>portal</html>") });
+        Assert.Equal(PasswordOffer.Unknown, await state.GetOfferAsync());
     }
 
     [Fact]
@@ -342,6 +351,61 @@ public class PasswordSignInFormTests : ConsentBunitTest
         var cut = Render<PasswordSignInForm>(p => p.Add(c => c.Text, PasswordTexts.Keys()));
         cut.WaitForState(() => server.Count("GET api/auth/methods") > 0);
         return (cut, server, tokens);
+    }
+
+    private sealed class FakeSignal : IConnectivitySignal
+    {
+        public event Action? Restored;
+        public void Raise() => Restored?.Invoke();
+    }
+
+    private (IRenderedComponent<PasswordSignInForm> Cut, ScriptedServer Server, FakeSignal Signal) RenderWithSignal(Func<HttpRequestMessage, HttpResponseMessage> methods)
+    {
+        var server = new ScriptedServer().On("GET api/auth/methods", methods);
+        var signal = new FakeSignal();
+        Services.AddSingleton(new HttpClient(server) { BaseAddress = new Uri("https://studylife.test/") });
+        Services.AddSingleton(new SessionTokenStore(new StubJSRuntime()));
+        Services.AddSingleton<IConnectivitySignal>(signal);
+        Ctx.JSInterop.Mode = JSRuntimeMode.Loose;
+        var cut = Render<PasswordSignInForm>(p => p.Add(c => c.Text, PasswordTexts.Keys()));
+        cut.WaitForState(() => server.Count("GET api/auth/methods") == 1);
+        return (cut, server, signal);
+    }
+
+    [Fact]
+    public void WhileTheServerCannotBeAsked_TheFormStaysHidden_AndAppearsWhenConnectivityReturns()
+    {
+        var (cut, server, signal) = RenderWithSignal(_ => throw new HttpRequestException("offline"));
+        Assert.Empty(cut.FindAll("form")); // Unknown is not "not offered", and nothing was cached
+
+        server.OnJson("GET api/auth/methods", new AuthMethodsDto { PasswordSignIn = true });
+        signal.Raise(); // the platform reports connectivity back: ask now, not at the next backoff step
+
+        cut.WaitForAssertion(() => cut.Find("form"));
+        Assert.Equal(2, server.Count("GET api/auth/methods"));
+    }
+
+    [Fact]
+    public void ADefiniteNo_IsNotAskedAgain_EvenWhenConnectivityReturns()
+    {
+        var (cut, server, signal) = RenderWithSignal(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        { Content = JsonContent.Create(new AuthMethodsDto { PasswordSignIn = false }) });
+
+        signal.Raise();
+
+        Assert.Equal(1, server.Count("GET api/auth/methods"));
+        Assert.Empty(cut.FindAll("form"));
+    }
+
+    [Fact]
+    public void AfterDisposal_ConnectivityNoLongerTriggersQuestions()
+    {
+        var (cut, server, signal) = RenderWithSignal(_ => throw new HttpRequestException("offline"));
+
+        cut.Dispose();
+        signal.Raise();
+
+        Assert.Equal(1, server.Count("GET api/auth/methods"));
     }
 
     [Fact]

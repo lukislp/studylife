@@ -813,3 +813,20 @@ function studylifeTelemetryInit() {
             (reason && reason.name) || 'UnhandledRejection', stack, false, location.pathname).catch(function () { });
     });
 }
+
+// Browser side of IConnectivitySignal (BrowserConnectivitySignal): tells the .NET page when the
+// network is back, so a sign-in page that could not reach the server asks again at once.
+window.studylifeConnectivity = (function () {
+    var ref = null;
+    function onOnline() { if (ref) ref.invokeMethodAsync('OnOnline').catch(function () { }); }
+    return {
+        listen: function (dotNetRef) {
+            if (ref === null) window.addEventListener('online', onOnline);
+            ref = dotNetRef;
+        },
+        stop: function () {
+            window.removeEventListener('online', onOnline);
+            ref = null;
+        },
+    };
+})();

@@ -54,6 +54,34 @@ public class RegisterPageTests : ConsentBunitTest
         return (cut, server);
     }
 
+    private sealed class FakeSignal : IConnectivitySignal
+    {
+        public event Action? Restored;
+        public void Raise() => Restored?.Invoke();
+    }
+
+    [Fact]
+    public void TheMethodChoice_AppearsOnceTheServerCanBeAsked_AfterConnectivityReturns()
+    {
+        var server = new ScriptedServer();
+        server.On("GET api/auth/methods", _ => throw new HttpRequestException("offline"));
+        var signal = new FakeSignal();
+        Services.AddSingleton(new HttpClient(server) { BaseAddress = new Uri("https://studylife.test/") });
+        Services.AddSingleton(new SessionTokenStore(new StubJSRuntime()));
+        Services.AddSingleton<INativeAppAuth>(new NoNativeAppAuth());
+        Services.AddSingleton<IConnectivitySignal>(signal);
+        Services.AddI18nText();
+        Ctx.JSInterop.Mode = JSRuntimeMode.Loose;
+        var cut = Render<Register>();
+        cut.WaitForAssertion(() => cut.Find("#register-name"));
+        Assert.Empty(cut.FindAll("input[name=register-method]"));
+
+        server.OnJson("GET api/auth/methods", new AuthMethodsDto { PasswordSignIn = true });
+        signal.Raise();
+
+        cut.WaitForAssertion(() => cut.Find("input[name=register-method]"));
+    }
+
     [Fact]
     public void Passkey_ButtonIsEnabledWithEmptyFields_AndClickNamesTheNameField()
     {
