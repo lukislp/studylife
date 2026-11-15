@@ -35,7 +35,6 @@ public enum PasswordFailure
     SetupSecretInvalid,
     /// <summary>Registration refused by Registration:Mode; <see cref="PasswordAttempt.GateReason"/> says why.</summary>
     RegistrationGate,
-    OwnerOnly,
     Network,
     Other,
 }
@@ -52,13 +51,12 @@ public enum PasswordOffer
 
 /// <summary>Outcome of a password request. <see cref="Token"/> is set after a successful sign-in or
 /// registration (the plaintext session token, exactly like a passkey sign-in returns it).</summary>
-public sealed record PasswordAttempt(PasswordFailure Failure, string? Token = null, bool ChangeRequired = false,
-    string? GateReason = null, PasswordResetResultDto? Reset = null)
+public sealed record PasswordAttempt(PasswordFailure Failure, string? Token = null, string? GateReason = null)
 {
     public bool Succeeded => Failure == PasswordFailure.None;
 }
 
-/// <summary>The fresh proof a password change, removal or owner reset carries: the current password,
+/// <summary>The fresh proof a password change or removal carries: the current password,
 /// a recovery code, or a passkey assertion for the challenge of account/reauth/begin. All empty =
 /// rely on a sign-in within the last two minutes.</summary>
 public sealed record PasswordProof(string? CurrentPassword = null, string? RecoveryCode = null,
@@ -139,22 +137,6 @@ public sealed class PasswordSignInState(HttpClient http)
     public Task<PasswordAttempt> RemoveAsync(PasswordProof proof) =>
         SendAsync(HttpMethod.Delete, "api/auth/password", BuildProof(proof));
 
-    /// <summary>Owner only: a temporary password for another account (<see cref="PasswordAttempt.Reset"/>).</summary>
-    public async Task<PasswordAttempt> ResetUserAsync(int userId, string? username, PasswordProof proof)
-    {
-        var body = BuildProof(proof);
-        if (!string.IsNullOrWhiteSpace(username)) body["username"] = username.Trim();
-        try
-        {
-            using var response = await http.PostAsync($"api/auth/users/{userId}/password-reset",
-                new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json"));
-            if (!response.IsSuccessStatusCode) return new PasswordAttempt(await ClassifyAsync(response));
-            return new PasswordAttempt(PasswordFailure.None, Reset: await response.Content.ReadFromJsonAsync<PasswordResetResultDto>());
-        }
-        catch (HttpRequestException) { return new PasswordAttempt(PasswordFailure.Network); }
-        catch (TaskCanceledException) { return new PasswordAttempt(PasswordFailure.Network); }
-    }
-
     internal static JsonObject BuildProof(PasswordProof proof)
     {
         var body = new JsonObject();
@@ -197,7 +179,7 @@ public sealed class PasswordSignInState(HttpClient http)
             {
                 var dto = await response.Content.ReadFromJsonAsync<PasswordLoginResponseDto>();
                 return dto?.Token is { Length: > 0 } token
-                    ? new PasswordAttempt(PasswordFailure.None, token, dto.PasswordChangeRequired)
+                    ? new PasswordAttempt(PasswordFailure.None, token)
                     : new PasswordAttempt(PasswordFailure.Other);
             }
             if (response.StatusCode == HttpStatusCode.Unauthorized) return new PasswordAttempt(unauthorized);
@@ -250,7 +232,6 @@ public sealed class PasswordSignInState(HttpClient http)
             "last-sign-in-method" => PasswordFailure.LastMethod,
             "reauthentication-required" => PasswordFailure.ProofRequired,
             "reauthentication-failed" => PasswordFailure.ProofRejected,
-            "owner-only" => PasswordFailure.OwnerOnly,
             _ => response.StatusCode switch
             {
                 HttpStatusCode.Unauthorized => PasswordFailure.InvalidCredentials,

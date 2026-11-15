@@ -357,7 +357,7 @@ builder.Services.AddRateLimiter(options =>
             return FixedWindow(context, $"password-login|{clientIp}", permitLimit: 10, TimeSpan.FromMinutes(15));
 
         // Everything else that hashes a password or accepts one as proof: registration, adding/
-        // changing/removing it, the owner's reset. Each request runs the deliberately slow KDF, so
+        // changing/removing it. Each request runs the deliberately slow KDF, so
         // these get their own small bucket instead of the generic 300/min.
         if (IsPasswordManagement(context.Request))
             return FixedWindow(context, $"password-manage|{clientIp}", permitLimit: 20, TimeSpan.FromMinutes(15));
@@ -405,9 +405,7 @@ builder.Services.AddRateLimiter(options =>
 
     static bool IsPasswordManagement(HttpRequest request) =>
         !HttpMethods.IsGet(request.Method)
-        && (request.Path.StartsWithSegments("/api/auth/password")
-            || (request.Path.StartsWithSegments("/api/auth/users")
-                && request.Path.Value!.EndsWith("/password-reset", StringComparison.Ordinal)));
+        && request.Path.StartsWithSegments("/api/auth/password");
 
     // CPU-heavy endpoints (Whisper transcription, Piper synthesis, the AI proxy, the JSON export,
     // the exam planner) shared the flat 300/min bucket with everything else - 300 concurrent

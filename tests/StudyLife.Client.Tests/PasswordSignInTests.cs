@@ -12,6 +12,7 @@ using StudyLife.Client.Components;
 using StudyLife.Client.Components.Setup;
 using StudyLife.Client.Services;
 using StudyLife.Shared;
+using Toolbelt.Blazor.Extensions.DependencyInjection;
 
 namespace StudyLife.Client.Tests;
 
@@ -52,16 +53,15 @@ public class PasswordSignInStateTests
     }
 
     [Fact]
-    public async Task SignIn_ReturnsTheSessionToken_AndTheChangeRequiredFlag()
+    public async Task SignIn_ReturnsTheSessionToken()
     {
         var (state, server) = Create();
-        server.OnJson("POST api/auth/password/login", new PasswordLoginResponseDto { Token = "tok", PasswordChangeRequired = true });
+        server.OnJson("POST api/auth/password/login", new PasswordLoginResponseDto { Token = "tok" });
 
         var attempt = await state.SignInAsync("alex", "violet harbour lantern 7");
 
         Assert.True(attempt.Succeeded);
         Assert.Equal("tok", attempt.Token);
-        Assert.True(attempt.ChangeRequired);
         var body = JsonNode.Parse(Assert.Single(server.Bodies))!.AsObject();
         Assert.Equal("alex", body["username"]!.GetValue<string>());
     }
@@ -107,7 +107,6 @@ public class PasswordSignInStateTests
     [InlineData("last-sign-in-method", PasswordFailure.LastMethod)]
     [InlineData("reauthentication-required", PasswordFailure.ProofRequired)]
     [InlineData("reauthentication-failed", PasswordFailure.ProofRejected)]
-    [InlineData("owner-only", PasswordFailure.OwnerOnly)]
     public async Task ProblemTypes_AreMapped(string type, PasswordFailure expected)
     {
         var (state, server) = Create();
@@ -132,19 +131,15 @@ public class PasswordSignInStateTests
     }
 
     [Fact]
-    public async Task Remove_And_Reset_CarryThePasskeyProof()
+    public async Task Remove_CarriesThePasskeyProof()
     {
         var (state, server) = Create();
         server.On("DELETE api/auth/password", _ => new HttpResponseMessage(HttpStatusCode.NoContent));
-        server.OnJson("POST api/auth/users/4/password-reset", new PasswordResetResultDto { Username = "guest", TemporaryPassword = "abcde-fghjk-mnpqr-stuvw" });
         var proof = new PasswordProof(OptionsId: "opt", AssertionJson: "{\"id\":\"x\"}");
 
         Assert.True((await state.RemoveAsync(proof)).Succeeded);
-        var reset = await state.ResetUserAsync(4, "guest", proof);
 
-        Assert.Equal("abcde-fghjk-mnpqr-stuvw", reset.Reset!.TemporaryPassword);
-        Assert.All(server.Bodies, b => Assert.Equal("opt", JsonNode.Parse(b)!["optionsId"]!.GetValue<string>()));
-        Assert.Equal("guest", JsonNode.Parse(server.Bodies[^1])!["username"]!.GetValue<string>());
+        Assert.Equal("opt", JsonNode.Parse(Assert.Single(server.Bodies))!["optionsId"]!.GetValue<string>());
     }
 
     [Fact]
@@ -153,12 +148,10 @@ public class PasswordSignInStateTests
         var (state, server) = Create();
         server.On("POST api/auth/password/login", _ => throw new HttpRequestException("offline"));
         server.On("PUT api/auth/password", _ => throw new HttpRequestException("offline"));
-        server.On("POST api/auth/users/1/password-reset", _ => throw new HttpRequestException("offline"));
         server.On("GET api/auth/password", _ => throw new HttpRequestException("offline"));
 
         Assert.Equal(PasswordFailure.Network, (await state.SignInAsync("a", "b")).Failure);
         Assert.Equal(PasswordFailure.Network, (await state.SetAsync(null, "b", new PasswordProof())).Failure);
-        Assert.Equal(PasswordFailure.Network, (await state.ResetUserAsync(1, null, new PasswordProof())).Failure);
         Assert.Null(await state.GetStatusAsync());
     }
 
@@ -183,8 +176,6 @@ internal static class PasswordTexts
         texts.CardUsernameFormat = "CardUsernameFormat:{0}";
         texts.CardUpdatedFormat = "CardUpdatedFormat:{0}";
         texts.AddedInfo = "AddedInfo:{0}";
-        texts.ResetAriaFormat = "ResetAriaFormat:{0}";
-        texts.ResetResultFormat = "ResetResultFormat:{0}:{1}";
         return texts;
     }
 }
@@ -220,12 +211,10 @@ public class SetupPasswordCardTests : ConsentBunitTest
         cut.FindAll("button").First(b => b.TextContent.Trim() == confirm).Click();
     }
 
-    private (IRenderedComponent<SetupPasswordCard> Cut, ScriptedServer Server) Render(PasswordStatusDto status, List<UserListItemDto>? users = null, INativeAppAuth? native = null)
+    private (IRenderedComponent<SetupPasswordCard> Cut, ScriptedServer Server) Render(PasswordStatusDto status, INativeAppAuth? native = null, bool startChange = false)
     {
         var server = new ScriptedServer();
         server.OnJson("GET api/auth/password", status);
-        if (users is not null) server.OnJson("GET api/auth/users", users);
-        else server.On("GET api/auth/users", _ => new HttpResponseMessage(HttpStatusCode.Forbidden));
         var js = new StubJSRuntime();
         var tokens = new SessionTokenStore(js);
         var http = new HttpClient(server) { BaseAddress = new Uri("https://studylife.test/") };
@@ -233,7 +222,7 @@ public class SetupPasswordCardTests : ConsentBunitTest
         Services.AddSingleton(tokens);
         Services.AddSingleton(new AppStateService(http, js, NullLogger<AppStateService>.Instance, tokens));
         Services.AddSingleton(native ?? new WebOnly());
-        var cut = Render<SetupPasswordCard>(p => p.Add(c => c.Text, PasswordTexts.Keys()));
+        var cut = Render<SetupPasswordCard>(p => p.Add(c => c.Text, PasswordTexts.Keys()).Add(c => c.StartChange, startChange));
         cut.WaitForState(() => cut.Markup.Contains("CardHeading") || server.Count("GET api/auth/password") > 0);
         return (cut, server);
     }
@@ -439,35 +428,73 @@ public class SetupPasswordCardTests : ConsentBunitTest
     }
 
     [Fact]
-    public void TheOnlyMethod_CannotBeRemoved_AndATemporaryPasswordAsksForAChange()
+    public void TheOnlyMethod_CannotBeRemoved()
     {
-        var (cut, _) = Render(new PasswordStatusDto { Enabled = true, HasPassword = true, Username = "alex", CanRemove = false, ChangeRequired = true });
-        cut.WaitForAssertion(() => Assert.Contains("CardChangeRequired", cut.Markup));
+        var (cut, _) = Render(new PasswordStatusDto { Enabled = true, HasPassword = true, Username = "alex", CanRemove = false });
+        cut.WaitForAssertion(() => Assert.Contains("CardUsernameFormat:alex", cut.Markup));
         Assert.True(cut.FindAll("button").First(b => b.TextContent.Trim() == "RemoveButton").HasAttribute("disabled"));
         Assert.Contains("RemoveBlockedHint", cut.Markup);
-        Assert.Contains("CardUsernameFormat:alex", cut.Markup);
     }
 
     [Fact]
-    public void TheOwner_ResetsAnotherPassword_AndSeesItOnce()
+    public void NoResetOfAnotherAccountIsOffered_NotEvenToTheOwner()
     {
-        var (cut, server) = Render(
-            new PasswordStatusDto { Enabled = true, HasPassword = true, Username = "owner", CanRemove = true },
-            [new UserListItemDto { Id = 4, DisplayName = "Guest", Username = null }]);
-        server.OnJson("POST api/auth/users/4/password-reset", new PasswordResetResultDto { Username = "guest", TemporaryPassword = "abcde-fghjk-mnpqr-stuvw" });
-        cut.WaitForAssertion(() => Assert.Contains("ResetHeading", cut.Markup));
-
-        var reset = cut.Find("[role=listitem] button");
-        Assert.Equal("ResetAriaFormat:Guest", reset.GetAttribute("aria-label"));
-        reset.Click();
-        cut.Find("#password-username").Input("guest");
-        ConfirmWith(cut, "PasswordToggle", "password-current", "owner phrase here", "ResetButton");
-
-        cut.WaitForAssertion(() => Assert.Contains("abcde-fghjk-mnpqr-stuvw", cut.Markup));
-        Assert.Contains("ResetResultFormat:Guest:guest", cut.Markup);
-        cut.FindAll("button").First(b => b.TextContent.Trim() == "DoneButton").Click();
-        Assert.DoesNotContain("abcde-fghjk-mnpqr-stuvw", cut.Markup);
+        var (cut, server) = Render(new PasswordStatusDto { Enabled = true, HasPassword = true, Username = "owner", CanRemove = true });
+        cut.WaitForAssertion(() => Assert.Contains("CardHeading", cut.Markup));
+        Assert.DoesNotContain("Reset", cut.Markup);
+        Assert.Equal(0, server.Count("GET api/auth/users"));
     }
+
+    [Fact]
+    public void FromTheForgotPath_TheChangeFormIsOpen_AndSavingNeedsNoExtraProof()
+    {
+        var (cut, server) = Render(new PasswordStatusDto { Enabled = true, HasPassword = true, Username = "alex", CanRemove = true },
+            startChange: true);
+        server.On("PUT api/auth/password", _ => new HttpResponseMessage(HttpStatusCode.NoContent));
+        cut.WaitForAssertion(() => cut.Find("#password-new"));
+        Assert.Contains("ForgotCardHint", cut.Markup);
+        // The sign-in was the proof: no confirmation picker, just Save.
+        Assert.DoesNotContain("PasswordToggle", cut.Markup);
+        Assert.DoesNotContain("RecoveryToggle", cut.Markup);
+        Assert.DoesNotContain("ConfirmWithPasskey", cut.Markup);
+
+        cut.Find("#password-new").Input("quiet meadow compass 19");
+        cut.FindAll("button").First(b => b.TextContent.Trim() == "SaveButton").Click();
+
+        cut.WaitForAssertion(() => Assert.Contains("ChangedInfo", cut.Markup));
+        var body = JsonNode.Parse(Assert.Single(server.Bodies))!.AsObject();
+        Assert.Equal("quiet meadow compass 19", body["newPassword"]!.GetValue<string>());
+        Assert.Null(body["currentPassword"]);
+        Assert.Null(body["recoveryCode"]);
+        Assert.Null(body["optionsId"]);
+    }
+
+    [Fact]
+    public void FromTheForgotPath_AnExpiredSignInFallsBackToTheConfirmationPicker()
+    {
+        var (cut, server) = Render(new PasswordStatusDto { Enabled = true, HasPassword = true, Username = "alex", CanRemove = true, HasPasskey = true },
+            startChange: true);
+        server.On("PUT api/auth/password", _ => Problem(HttpStatusCode.BadRequest, "reauthentication-required"));
+        cut.WaitForAssertion(() => cut.Find("#password-new"));
+
+        cut.Find("#password-new").Input("quiet meadow compass 19");
+        cut.FindAll("button").First(b => b.TextContent.Trim() == "SaveButton").Click();
+
+        cut.WaitForAssertion(() => Assert.Contains("ErrorFreshSignInExpired", cut.Markup));
+        Assert.Contains("RecoveryToggle", cut.Markup);
+    }
+
+    [Fact]
+    public void WithoutTheForgotFlag_TheCardStartsClosed()
+    {
+        var (cut, _) = Render(new PasswordStatusDto { Enabled = true, HasPassword = true, Username = "alex", CanRemove = true });
+        cut.WaitForAssertion(() => Assert.Contains("ChangeButton", cut.Markup));
+        Assert.Empty(cut.FindAll("#password-new"));
+        Assert.DoesNotContain("ForgotCardHint", cut.Markup);
+    }
+
+    private static HttpResponseMessage Problem(HttpStatusCode status, string type) =>
+        new(status) { Content = new StringContent($"{{\"type\":\"{type}\"}}", System.Text.Encoding.UTF8, "application/json") };
 }
 
 /// <summary>The sign-in form under the passkey button.</summary>
@@ -561,10 +588,10 @@ public class PasswordSignInFormTests : ConsentBunitTest
     }
 
     [Fact]
-    public void ASuccessfulSignIn_KeepsOnlyTheToken_AndATemporaryPasswordGoesToSettings()
+    public void ASuccessfulSignIn_KeepsOnlyTheToken_AndGoesToTheDashboard()
     {
         var (cut, server, tokens) = Render(offered: true);
-        server.OnJson("POST api/auth/password/login", new PasswordLoginResponseDto { Token = "session-token", PasswordChangeRequired = true });
+        server.OnJson("POST api/auth/password/login", new PasswordLoginResponseDto { Token = "session-token" });
         cut.WaitForAssertion(() => cut.Find("form"));
 
         cut.Find("#signin-username").Input("alex");
@@ -572,8 +599,30 @@ public class PasswordSignInFormTests : ConsentBunitTest
         cut.Find("form").Submit();
 
         var nav = ((IServiceProvider)Ctx.Services).GetRequiredService<NavigationManager>();
-        cut.WaitForAssertion(() => Assert.EndsWith("/setup#password", nav.Uri));
+        cut.WaitForAssertion(() => Assert.Equal(nav.BaseUri, nav.Uri));
         Assert.Equal("session-token", tokens.Token);
+    }
+
+    [Fact]
+    public void TheForgotLink_IsShownWithThePasswordForm_AndOpensTheHint()
+    {
+        var (cut, _, _) = Render(offered: true);
+        cut.WaitForAssertion(() => cut.Find("form"));
+        var link = cut.FindAll("form button").First(b => b.TextContent.Trim() == "ForgotLink");
+        Assert.Equal("false", link.GetAttribute("aria-expanded"));
+        Assert.DoesNotContain("ForgotIntro", cut.Markup);
+
+        link.Click();
+
+        Assert.Equal("true", cut.FindAll("form button").First(b => b.TextContent.Trim() == "ForgotLink").GetAttribute("aria-expanded"));
+        Assert.Equal("ForgotIntro", cut.Find("#password-forgot-hint").TextContent.Trim());
+    }
+
+    [Fact]
+    public void TheForgotLink_IsNotShownWhenPasswordSignInIsSwitchedOff()
+    {
+        var (cut, _, _) = Render(offered: false);
+        Assert.DoesNotContain("ForgotLink", cut.Markup);
     }
 
     [Fact]
@@ -661,5 +710,83 @@ public class DeleteAccountPasswordProofTests : ConsentBunitTest
         cut.WaitForAssertion(() => Assert.Equal(1, server.Count("DELETE api/auth/account")));
         var body = JsonNode.Parse(server.Bodies.Single())!.AsObject();
         Assert.Equal("violet harbour lantern 7", body["currentPassword"]!.GetValue<string>());
+    }
+}
+
+/// <summary>Login.razor: after "Forgot your password?" the next passkey or recovery-code sign-in
+/// lands on the password card (the fresh sign-in is the proof); without it nothing changes.</summary>
+public class LoginForgotPasswordTests : ConsentBunitTest
+{
+    private sealed class FakeNativeSignIn : INativeAppAuth
+    {
+        public bool IsAvailable => true;
+        public Task<string?> AuthenticateAsync(string startPage) => Task.FromResult<string?>("browser-token");
+    }
+
+    private (IRenderedComponent<StudyLife.Client.Pages.Login> Cut, SessionTokenStore Tokens, NavigationManager Nav) Render(INativeAppAuth? native = null)
+    {
+        var server = new ScriptedServer();
+        server.OnJson("GET api/auth/methods", new AuthMethodsDto { PasswordSignIn = true });
+        server.OnJson("GET api/auth/demo", new DemoInfoDto { Demo = false });
+        server.OnJson("POST api/auth/recovery/login", new PasskeyCompleteResponseDto { Token = "recovery-token" });
+        var tokens = new SessionTokenStore(new StubJSRuntime());
+        Services.AddSingleton(new HttpClient(server) { BaseAddress = new Uri("https://studylife.test/") });
+        Services.AddSingleton(tokens);
+        Services.AddSingleton(native ?? new NoNativeAppAuth());
+        Services.AddI18nText();
+        Ctx.JSInterop.Mode = JSRuntimeMode.Loose;
+        var cut = Render<StudyLife.Client.Pages.Login>();
+        cut.WaitForAssertion(() => cut.FindAll("button").First(b => b.TextContent.Trim() == "ForgotLink"));
+        return (cut, tokens, ((IServiceProvider)Ctx.Services).GetRequiredService<NavigationManager>());
+    }
+
+    private static void OpenForgot(IRenderedComponent<StudyLife.Client.Pages.Login> cut) =>
+        cut.FindAll("button").First(b => b.TextContent.Trim() == "ForgotLink").Click();
+
+    private static void RecoverySignIn(IRenderedComponent<StudyLife.Client.Pages.Login> cut)
+    {
+        cut.FindAll("button").First(b => b.TextContent.Trim() == "RecoveryLoginLink").Click();
+        cut.Find("input[placeholder='XXXX-XXXX-XXXX']").Input("ABCD-EFGH-JKLM");
+        cut.FindAll("button").First(b => b.TextContent.Trim() == "RecoveryLoginButton").Click();
+    }
+
+    [Fact]
+    public void RecoverySignIn_FromTheForgotPath_LandsOnThePasswordCard()
+    {
+        var (cut, tokens, nav) = Render();
+        OpenForgot(cut);
+        RecoverySignIn(cut);
+
+        cut.WaitForAssertion(() => Assert.EndsWith("/setup?forgotPassword=true#password", nav.Uri));
+        Assert.Equal("recovery-token", tokens.Token);
+    }
+
+    [Fact]
+    public void RecoverySignIn_WithoutTheForgotPath_StaysOnSetup()
+    {
+        var (cut, _, nav) = Render();
+        RecoverySignIn(cut);
+
+        cut.WaitForAssertion(() => Assert.EndsWith("/setup", nav.Uri));
+    }
+
+    [Fact]
+    public void PasskeySignIn_InTheApp_FromTheForgotPath_LandsOnThePasswordCard()
+    {
+        var (cut, tokens, nav) = Render(new FakeNativeSignIn());
+        OpenForgot(cut);
+        cut.FindAll("button").First(b => b.TextContent.Trim() == "LoginButton").Click();
+
+        cut.WaitForAssertion(() => Assert.EndsWith("/setup?forgotPassword=true#password", nav.Uri));
+        Assert.Equal("browser-token", tokens.Token);
+    }
+
+    [Fact]
+    public void PasskeySignIn_InTheApp_WithoutTheForgotPath_GoesToTheDashboard()
+    {
+        var (cut, _, nav) = Render(new FakeNativeSignIn());
+        cut.FindAll("button").First(b => b.TextContent.Trim() == "LoginButton").Click();
+
+        cut.WaitForAssertion(() => Assert.Equal(nav.BaseUri, nav.Uri));
     }
 }

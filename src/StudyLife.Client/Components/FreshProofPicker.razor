@@ -10,8 +10,8 @@
 @inject INativeAppAuth NativeAuth
 
 @* The shared "confirm it's you" step for everything the server guards with a fresh proof
-   (VerifyFreshProofAsync): deleting the account, adding / changing / removing a password, the
-   owner's password reset. Which proofs are offered is decided by FreshProofOptions.Decide; this
+   (VerifyFreshProofAsync): deleting the account, adding / changing / removing a password. Which
+   proofs are offered is decided by FreshProofOptions.Decide; this
    component renders them, runs the ceremony (passkey prompt, or the system-browser sign-in of a
    native shell without in-app passkeys) and hands the result to the host through OnProof. The host
    decides what the proof is for and sends the request.

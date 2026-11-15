@@ -38,11 +38,11 @@ public sealed record PreparedPassword(string Username, string NormalizedUsername
 
 /// <summary>Outcome of a sign-in attempt. Deliberately only "who" or "nobody": unknown name,
 /// wrong password and a locked account are indistinguishable to the caller.</summary>
-public readonly record struct PasswordSignInResult(int? UserId, bool ChangeRequired)
+public readonly record struct PasswordSignInResult(int? UserId)
 {
     public bool Succeeded => UserId is not null;
 
-    public static PasswordSignInResult Failed => new(null, false);
+    public static PasswordSignInResult Failed => new(null);
 }
 
 /// <summary>
@@ -80,9 +80,9 @@ public interface IPasswordCredentialService
     void AddForNewAccount(int userId, PreparedPassword prepared, DateTime now);
 
     /// <summary>Adds or replaces the account's password. Replacing one revokes every other session
-    /// of the account (the one in <paramref name="keepSessionId"/> survives; null revokes all).</summary>
-    Task<PasswordProblem> SetAsync(int userId, PreparedPassword prepared, int? keepSessionId,
-        bool changeRequired = false, CancellationToken ct = default);
+    /// of the account (the one in <paramref name="keepSessionId"/> survives).</summary>
+    Task<PasswordProblem> SetAsync(int userId, PreparedPassword prepared, int keepSessionId,
+        CancellationToken ct = default);
 
     /// <summary>Whether the password may be removed - checked before the caller spends a one-time
     /// proof on a request that would be refused anyway.</summary>
@@ -90,9 +90,6 @@ public interface IPasswordCredentialService
 
     /// <summary>Removes the password and revokes every other session of the account.</summary>
     Task<PasswordProblem> RemoveAsync(int userId, int currentSessionId, CancellationToken ct = default);
-
-    /// <summary>A random temporary password for the owner reset (about 99 bits).</summary>
-    string GenerateTemporaryPassword();
 }
 
 public sealed class PasswordCredentialService(
@@ -121,7 +118,6 @@ public sealed class PasswordCredentialService(
             HasPassword = credential is not null,
             Username = credential?.Username,
             UpdatedAt = credential?.UpdatedAt,
-            ChangeRequired = credential?.ChangeRequired ?? false,
             CanRemove = credential is not null && await CheckRemovableAsync(userId, ct) == PasswordProblem.None,
             HasPasskey = hasPasskey,
         };
@@ -147,7 +143,7 @@ public sealed class PasswordCredentialService(
         }
 
         return await CheckAsync(credential, normalizedPassword, ct)
-            ? new PasswordSignInResult(credential.AuthUserId, credential.ChangeRequired)
+            ? new PasswordSignInResult(credential.AuthUserId)
             : PasswordSignInResult.Failed;
     }
 
@@ -259,8 +255,8 @@ public sealed class PasswordCredentialService(
             UpdatedAt = now,
         });
 
-    public async Task<PasswordProblem> SetAsync(int userId, PreparedPassword prepared, int? keepSessionId,
-        bool changeRequired = false, CancellationToken ct = default)
+    public async Task<PasswordProblem> SetAsync(int userId, PreparedPassword prepared, int keepSessionId,
+        CancellationToken ct = default)
     {
         if (!Enabled) return PasswordProblem.Disabled;
 
@@ -277,7 +273,6 @@ public sealed class PasswordCredentialService(
         credential.UpdatedAt = now;
         credential.FailedAttemptCount = 0;
         credential.LockedUntil = null;
-        credential.ChangeRequired = changeRequired;
 
         try
         {
@@ -290,18 +285,10 @@ public sealed class PasswordCredentialService(
             return PasswordProblem.UsernameTaken;
         }
 
-        if (changeRequired)
-            _logger.LogInformation("Temporary password set for account {UserId} (owner reset); its sessions are revoked", userId);
-
-        // A changed password usually means "the old one may be known to someone": every session
-        // that might have been opened with it goes (2026-09 audit S7, same rule as removing a
-        // passkey). Adding a first password changes nothing about existing sessions; an owner
-        // reset (no session to keep) always revokes them all.
-        if (existing is not null || keepSessionId is null)
-        {
-            if (keepSessionId is int keep) await accounts.RevokeOtherSessionsAsync(userId, keep);
-            else await accounts.RevokeAllSessionsAsync(userId);
-        }
+        // A changed password usually means "the old one may be known to someone": every other
+        // session that might have been opened with it goes (2026-09 audit S7, same rule as removing
+        // a passkey). Adding a first password changes nothing about existing sessions.
+        if (existing is not null) await accounts.RevokeOtherSessionsAsync(userId, keepSessionId);
         return PasswordProblem.None;
     }
 
@@ -320,17 +307,5 @@ public sealed class PasswordCredentialService(
         await db.PasswordCredentials.Where(c => c.AuthUserId == userId).ExecuteDeleteAsync(ct);
         await accounts.RevokeOtherSessionsAsync(userId, currentSessionId);
         return PasswordProblem.None;
-    }
-
-    // No 0/O/1/l/i: the owner may have to read the temporary password out or copy it by hand.
-    private const string TemporaryAlphabet = "abcdefghjkmnpqrstuvwxyz23456789";
-
-    public string GenerateTemporaryPassword()
-    {
-        var groups = new string[4];
-        for (var g = 0; g < groups.Length; g++)
-            groups[g] = string.Concat(Enumerable.Range(0, 5)
-                .Select(_ => TemporaryAlphabet[RandomNumberGenerator.GetInt32(TemporaryAlphabet.Length)]));
-        return string.Join('-', groups);
     }
 }

@@ -569,9 +569,6 @@ namespace StudyLife.Server.Migrations
                     b.Property<int>("AuthUserId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<bool>("ChangeRequired")
-                        .HasColumnType("INTEGER");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 

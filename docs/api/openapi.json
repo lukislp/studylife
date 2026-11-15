@@ -938,87 +938,6 @@
         }
       }
     },
-    "/api/auth/users/{id}/password-reset": {
-      "post": {
-        "tags": [
-          "Auth"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "oneOf": [
-                  {
-                    "type": "null"
-                  },
-                  {
-                    "$ref": "#/components/schemas/PasswordResetRequest"
-                  }
-                ]
-              }
-            },
-            "text/json": {
-              "schema": {
-                "oneOf": [
-                  {
-                    "type": "null"
-                  },
-                  {
-                    "$ref": "#/components/schemas/PasswordResetRequest"
-                  }
-                ]
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "oneOf": [
-                  {
-                    "type": "null"
-                  },
-                  {
-                    "$ref": "#/components/schemas/PasswordResetRequest"
-                  }
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/PasswordResetResultDto"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PasswordResetResultDto"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PasswordResetResultDto"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/auth/invites": {
       "post": {
         "tags": [
@@ -9693,15 +9612,11 @@
       },
       "PasswordLoginResponseDto": {
         "required": [
-          "passwordChangeRequired",
           "displayName",
           "pending"
         ],
         "type": "object",
         "properties": {
-          "passwordChangeRequired": {
-            "type": "boolean"
-          },
           "token": {
             "type": [
               "null",
@@ -9753,63 +9668,6 @@
               "null",
               "string"
             ]
-          }
-        }
-      },
-      "PasswordResetRequest": {
-        "type": "object",
-        "properties": {
-          "username": {
-            "maxLength": 256,
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "optionsId": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "response": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/AuthenticatorAssertionRawResponse"
-              }
-            ]
-          },
-          "recoveryCode": {
-            "maxLength": 50,
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "currentPassword": {
-            "maxLength": 512,
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        }
-      },
-      "PasswordResetResultDto": {
-        "required": [
-          "username",
-          "temporaryPassword"
-        ],
-        "type": "object",
-        "properties": {
-          "username": {
-            "type": "string"
-          },
-          "temporaryPassword": {
-            "type": "string"
           }
         }
       },
@@ -9866,7 +9724,6 @@
         "required": [
           "enabled",
           "hasPassword",
-          "changeRequired",
           "canRemove",
           "hasPasskey"
         ],
@@ -9890,9 +9747,6 @@
               "string"
             ],
             "format": "date-time"
-          },
-          "changeRequired": {
-            "type": "boolean"
           },
           "canRemove": {
             "type": "boolean"
@@ -12931,12 +12785,6 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
-          },
-          "username": {
-            "type": [
-              "null",
-              "string"
-            ]
           }
         }
       },
