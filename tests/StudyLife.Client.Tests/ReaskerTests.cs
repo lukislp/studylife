@@ -13,6 +13,8 @@ public class ReaskerTests
         public event Action? Restored;
         public void Raise() => Restored?.Invoke();
         public bool HasSubscribers => Restored is not null;
+        public bool Allowed { get; set; } = true;
+        public bool CanAsk => Allowed;
     }
 
     private static readonly TimeSpan Limit = TimeSpan.FromSeconds(5);
@@ -81,6 +83,45 @@ public class ReaskerTests
         await Task.Delay(50);
         asker.Poke(); // restartable: asks again even after Done
         await WaitUntil(() => asked == 3);
+    }
+
+    [Fact]
+    public async Task WhilePaused_NothingIsAskedAndNoTimerRuns_AndTheResumePokeAsksAtOnce()
+    {
+        var asked = 0;
+        var waits = 0;
+        var signal = new FakeSignal { Allowed = false }; // app in the background
+        using var asker = new Reasker(_ => { asked++; return Task.FromResult(ReaskVerdict.Retry); }, signal,
+            delay: (_, ct) => { waits++; return Task.Delay(Timeout.InfiniteTimeSpan, ct); });
+
+        await asker.StartAsync(); // does not hang while paused
+        await Task.Delay(100);
+        signal.Raise(); // a poke that is still paused changes nothing
+        await Task.Delay(50);
+        Assert.Equal(0, asked);
+        Assert.Equal(0, waits);
+
+        signal.Allowed = true;
+        signal.Raise(); // resumed
+
+        await WaitUntil(() => asked == 1 && waits == 1);
+    }
+
+    [Fact]
+    public async Task ASignalWithoutCanAsk_KeepsWorking()
+    {
+        var asked = 0;
+        var signal = new LegacySignal();
+        using var asker = new Reasker(_ => { asked++; return Task.FromResult(ReaskVerdict.Done); }, signal);
+
+        await asker.StartAsync();
+
+        Assert.Equal(1, asked);
+    }
+
+    private sealed class LegacySignal : IConnectivitySignal
+    {
+        public event Action? Restored { add { } remove { } }
     }
 
     [Fact]
