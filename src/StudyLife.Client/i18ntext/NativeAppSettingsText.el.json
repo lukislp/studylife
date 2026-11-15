@@ -1,6 +1,7 @@
 {
   "ServerHeading": "Διακομιστής",
   "ServerConnectedTo": "Συνδεδεμένο με {0}",
+  "ServerAddressLabel": "Server: {0}",
   "ChangeServerButton": "Αλλαγή διακομιστή",
   "ChangeServerConfirmTitle": "Αλλαγή διακομιστή;",
   "ChangeServerConfirmBody": "Θα αποσυνδεθείς από το {0} και τα αντίγραφα που κρατά το StudyLife σε αυτή τη συσκευή (γραφικά στοιχεία, Apple Watch, αναζήτηση) θα διαγραφούν. Ο λογαριασμός και τα δεδομένα σου στον διακομιστή μένουν ως έχουν.",

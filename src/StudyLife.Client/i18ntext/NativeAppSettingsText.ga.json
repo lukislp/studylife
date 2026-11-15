@@ -1,6 +1,7 @@
 {
   "ServerHeading": "Freastalaí",
   "ServerConnectedTo": "Ceangailte le {0}",
+  "ServerAddressLabel": "Server: {0}",
   "ChangeServerButton": "Athraigh freastalaí",
   "ChangeServerConfirmTitle": "An bhfuil tú ag iarraidh an freastalaí a athrú?",
   "ChangeServerConfirmBody": "Logálfar amach as {0} thú, agus bainfear na cóipeanna a choinníonn StudyLife ar an ngléas seo (giuirléidí, Apple Watch, cuardach). Fanann do chuntas agus do chuid sonraí ar an bhfreastalaí gan athrú.",

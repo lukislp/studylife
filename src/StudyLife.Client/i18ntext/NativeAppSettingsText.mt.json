@@ -1,6 +1,7 @@
 {
   "ServerHeading": "Server",
   "ServerConnectedTo": "Konness ma' {0}",
+  "ServerAddressLabel": "Server: {0}",
   "ChangeServerButton": "Biddel is-server",
   "ChangeServerConfirmTitle": "Tbiddel is-server?",
   "ChangeServerConfirmBody": "Se tiġi diskonness minn {0}, u l-kopji li StudyLife iżomm fuq dan l-apparat (widgets, Apple Watch, tiftix) jitneħħew. Il-kont u d-data tiegħek fuq is-server jibqgħu kif inhuma.",

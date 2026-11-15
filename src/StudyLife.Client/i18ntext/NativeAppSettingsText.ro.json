@@ -1,6 +1,7 @@
 {
   "ServerHeading": "Server",
   "ServerConnectedTo": "Conectat la {0}",
+  "ServerAddressLabel": "Server: {0}",
   "ChangeServerButton": "Schimbă serverul",
   "ChangeServerConfirmTitle": "Schimbi serverul?",
   "ChangeServerConfirmBody": "Vei fi deconectat de la {0}, iar copiile pe care StudyLife le păstrează pe acest dispozitiv (widgeturi, Apple Watch, căutare) vor fi șterse. Contul și datele tale de pe server rămân neschimbate.",

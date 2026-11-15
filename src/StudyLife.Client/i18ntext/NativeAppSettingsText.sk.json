@@ -1,6 +1,7 @@
 {
   "ServerHeading": "Server",
   "ServerConnectedTo": "Pripojené k {0}",
+  "ServerAddressLabel": "Server: {0}",
   "ChangeServerButton": "Zmeniť server",
   "ChangeServerConfirmTitle": "Zmeniť server?",
   "ChangeServerConfirmBody": "Budeš odhlásený z {0} a kópie, ktoré StudyLife uchováva v tomto zariadení (widgety, Apple Watch, vyhľadávanie), sa odstránia. Tvoj účet a dáta na serveri zostanú bez zmeny.",
