@@ -2,16 +2,24 @@
   SPDX-FileCopyrightText: 2026 Lukas Körber
   SPDX-License-Identifier: AGPL-3.0-only
 *@
+@using StudyLife.Client.Services
 @using StudyLife.Shared
 
-<div class="cal-session cal-session-ghost" style="top:@(Top)px;height:@(Height)px;--c:@Proposal.CourseColor"
+<div class="cal-session cal-session-ghost @(Layout.Compact ? "cal-session-compact" : "")" title="@Proposal.CourseName · @LocalDate.Time(Proposal.Start)–@LocalDate.Time(Proposal.End)" style="top:@(Layout.Top)px;height:@(Layout.Height.ToString(System.Globalization.CultureInfo.InvariantCulture))px;--c:@Proposal.CourseColor"
      @onclick:stopPropagation="true">
-    <div class="cs-name">@Proposal.CourseName</div>
-    @if (!string.IsNullOrEmpty(Proposal.Topic))
+    @if (Layout.Compact)
     {
-        <div class="cs-topic">@Proposal.Topic</div>
+        <div class="cs-name">@Proposal.CourseName · @LocalDate.Time(Proposal.Start)–@LocalDate.Time(Proposal.End)</div>
     }
-    <div class="cs-time">@LocalDate.Time(Proposal.Start)–@LocalDate.Time(Proposal.End)</div>
+    else
+    {
+        <div class="cs-name">@Proposal.CourseName</div>
+        @if (!string.IsNullOrEmpty(Proposal.Topic))
+        {
+            <div class="cs-topic">@Proposal.Topic</div>
+        }
+        <div class="cs-time">@LocalDate.Time(Proposal.Start)–@LocalDate.Time(Proposal.End)</div>
+    }
     <div class="cs-ghost-actions">
         <button type="button" class="cs-ghost-btn cs-ghost-confirm" title="@ConfirmTitle" aria-label="@ConfirmTitle"
                 @onclick="() => OnConfirm.InvokeAsync()">✓</button>
@@ -27,6 +35,10 @@
     [Parameter] public string? ConfirmTitle { get; set; }
     [Parameter] public string? RemoveTitle { get; set; }
 
-    private int Top => Proposal.Start.Hour * 60 + Proposal.Start.Minute;
-    private double Height => Math.Max(30, (Proposal.End - Proposal.Start).TotalMinutes);
+    /// <summary>A proposal is always in the future, so only the geometry matters. The block carries
+    /// the confirm/remove buttons (14 px tall in compact blocks), hence the larger minimum height.</summary>
+    private SessionBlockLayout Layout => SessionBlockLayout.Compute(
+        Proposal.Start, Proposal.End, false, DateTime.MinValue, GhostMinHeightPx);
+
+    private const double GhostMinHeightPx = 16;
 }

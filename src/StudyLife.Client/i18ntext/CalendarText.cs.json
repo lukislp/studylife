@@ -57,5 +57,6 @@
   "WeekPlanLinkButton": "Vytisknout týdenní plán",
   "AriaCloseDialog": "Zavřít dialog",
   "AriaPreviousWeek": "Předchozí týden",
-  "AriaNextWeek": "Další týden"
+  "AriaNextWeek": "Další týden",
+  "AriaSessionDone": "Dokončeno"
 }

@@ -137,3 +137,7 @@
     .planner-cal-wrap .cal-outer { height: 70vh; }
 }
 
+
+.cal-session-ghost.cal-session-compact { padding-right: 36px; }
+.cal-session-compact .cs-ghost-actions { top: 1px; right: 1px; }
+.cal-session-compact .cs-ghost-btn { width: 14px; height: 14px; font-size: 0.5rem; }

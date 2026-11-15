@@ -57,5 +57,6 @@
   "WeekPlanLinkButton": "Εκτύπωση εβδομαδιαίου προγράμματος",
   "AriaCloseDialog": "Κλείσιμο παραθύρου διαλόγου",
   "AriaPreviousWeek": "Προηγούμενη εβδομάδα",
-  "AriaNextWeek": "Επόμενη εβδομάδα"
+  "AriaNextWeek": "Επόμενη εβδομάδα",
+  "AriaSessionDone": "Ολοκληρώθηκε"
 }

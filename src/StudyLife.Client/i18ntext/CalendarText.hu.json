@@ -57,5 +57,6 @@
   "WeekPlanLinkButton": "Heti terv nyomtatása",
   "AriaCloseDialog": "Párbeszédpanel bezárása",
   "AriaPreviousWeek": "Előző hét",
-  "AriaNextWeek": "Következő hét"
+  "AriaNextWeek": "Következő hét",
+  "AriaSessionDone": "Befejezve"
 }

@@ -57,5 +57,6 @@
   "WeekPlanLinkButton": "Vytlačiť týždenný plán",
   "AriaCloseDialog": "Zavrieť dialóg",
   "AriaPreviousWeek": "Predchádzajúci týždeň",
-  "AriaNextWeek": "Nasledujúci týždeň"
+  "AriaNextWeek": "Nasledujúci týždeň",
+  "AriaSessionDone": "Dokončené"
 }

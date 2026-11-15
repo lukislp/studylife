@@ -57,5 +57,6 @@
   "WeekPlanLinkButton": "Weekplan afdrukken",
   "AriaCloseDialog": "Dialoogvenster sluiten",
   "AriaPreviousWeek": "Vorige week",
-  "AriaNextWeek": "Volgende week"
+  "AriaNextWeek": "Volgende week",
+  "AriaSessionDone": "Voltooid"
 }

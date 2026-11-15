@@ -3,22 +3,44 @@
   SPDX-License-Identifier: AGPL-3.0-only
 *@
 @using StudyLife.Client.Models
+@using StudyLife.Client.Services
+@inherits LocalizedComponentBase<I18nText.CalendarText>
 
-<div class="cal-session" style="top:@(Top)px;height:@(Height)px;--c:@Session.CourseColor"
-     @onclick:stopPropagation="true"
-     @onclick="OnClick">
-    <div class="cs-name">@Session.CourseName</div>
-    @if (!string.IsNullOrEmpty(Session.Topic))
-    {
-        <div class="cs-topic">@Session.Topic</div>
-    }
-    <div class="cs-time">@LocalDate.Time(Session.StartTime)</div>
-</div>
+@if (IsTextLoaded)
+{
+    var geo = Layout;
+    var time = LocalDate.Time(Session.StartTime);
+    var done = geo.State == SessionBlockState.Done;
+    var label = string.IsNullOrEmpty(Session.Topic)
+        ? $"{Session.CourseName} · {time}"
+        : $"{Session.CourseName} · {Session.Topic} · {time}";
+    <div class="cal-session @geo.StateClass @(geo.Compact ? "cal-session-compact" : "")"
+         style="top:@(geo.Top)px;height:@(geo.Height.ToString(System.Globalization.CultureInfo.InvariantCulture))px;--c:@Session.CourseColor"
+         title="@label"
+         @onclick:stopPropagation="true"
+         @onclick="OnClick">
+        @if (geo.Compact)
+        {
+            <div class="cs-name">@if (done) {<span class="cs-done-mark" role="img" aria-label="@T.AriaSessionDone">✓</span>}@Session.CourseName · @time</div>
+        }
+        else
+        {
+            <div class="cs-name">@if (done) {<span class="cs-done-mark" role="img" aria-label="@T.AriaSessionDone">✓</span>}@Session.CourseName</div>
+            @if (!string.IsNullOrEmpty(Session.Topic))
+            {
+                <div class="cs-topic">@Session.Topic</div>
+            }
+            <div class="cs-time">@time</div>
+        }
+    </div>
+}
 
 @code {
+    [Inject] private TimeProvider Clock { get; set; } = default!;
+
     [Parameter] public StudySession Session { get; set; } = new();
     [Parameter] public EventCallback OnClick { get; set; }
 
-    private int Top => Session.StartTime.Hour * 60 + Session.StartTime.Minute;
-    private double Height => Math.Max(30, (Session.EndTime - Session.StartTime).TotalMinutes);
+    private SessionBlockLayout Layout => SessionBlockLayout.Compute(
+        Session.StartTime, Session.EndTime, Session.IsCompleted, Clock.GetLocalNow().DateTime);
 }

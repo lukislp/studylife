@@ -57,5 +57,6 @@
   "WeekPlanLinkButton": "Priontáil an plean seachtainiúil",
   "AriaCloseDialog": "Dún an dialóg",
   "AriaPreviousWeek": "An tseachtain roimhe",
-  "AriaNextWeek": "An tseachtain seo chugainn"
+  "AriaNextWeek": "An tseachtain seo chugainn",
+  "AriaSessionDone": "Críochnaithe"
 }
