@@ -588,7 +588,7 @@
             string userAgent = "";
             try { userAgent = await JS.InvokeAsync<string>("getUserAgent"); }
             catch { /* prerender/old cached interop.js: the line simply has no browser */ }
-            var locale = await I18nText.GetCurrentLanguageAsync();
+            var locale = await UiLanguageStartup.GetCurrentCodeAsync(JS, I18nText.GetCurrentLanguageAsync);
             var demo = await State.GetIsDemoAsync();
             _reportUrl = ProblemReportLink.Build(new ProblemReportContext(
                 version,

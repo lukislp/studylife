@@ -19,8 +19,8 @@ public static class UiLanguageStartup
     public const string StorageKey = "Toolbelt.Blazor.I18nText.CurrentLanguage";
 
     /// <summary>
-    /// Decides the language of this start, stores it when it differs from what is stored, and
-    /// returns it. <paramref name="setLanguage"/> is <c>I18nText.SetCurrentLanguageAsync</c>;
+    /// Decides the language of this start, tells the library, stores it when it differs from what is
+    /// stored, and returns it. <paramref name="setLanguage"/> is <c>I18nText.SetCurrentLanguageAsync</c>;
     /// <paramref name="hasPriorUse"/> is "a session token already exists on this device";
     /// <paramref name="prescribed"/> is the language the host prescribes (see <see cref="UiLanguage.Resolve"/>).
     /// </summary>
@@ -28,9 +28,13 @@ public static class UiLanguageStartup
     {
         var stored = await TryAsync<string?>(js, "localStorage.getItem", StorageKey);
         var language = UiLanguage.Resolve(stored, await GetDeviceLanguagesAsync(js), hasPriorUse, prescribed);
+        // Always told to the library, also when it equals the stored choice: the library's own current
+        // language is not necessarily initialised from storage (in the native app shell it stayed empty,
+        // so GetCurrentLanguageAsync returned "" and read aloud sent ?lang=). The library returns early
+        // when it already shows this language, so the call is free in that case.
+        await setLanguage(language);
         if (!string.Equals(stored, language, StringComparison.Ordinal))
         {
-            await setLanguage(language);
             // Written here as well: the library skips its own persistence when the language it detected
             // from navigator.languages already equals this one, so nothing was stored and the next start
             // counted as "no stored choice". In the native app that next start comes right after the first
@@ -39,6 +43,23 @@ public static class UiLanguageStartup
             await TryWriteAsync(js, language);
         }
         return language;
+    }
+
+    /// <summary>
+    /// The current UI language as a <see cref="StudyLife.Shared.SupportedLanguages"/> code, never empty:
+    /// what the library reports, else the stored choice, else the device languages, else English.
+    /// For every consumer that sends the language to the server or to a speech engine; the library
+    /// alone can report an empty string in a host that never set it.
+    /// <paramref name="getLibraryLanguage"/> is <c>I18nText.GetCurrentLanguageAsync</c>.
+    /// </summary>
+    public static async Task<string> GetCurrentCodeAsync(IJSRuntime js, Func<Task<string>> getLibraryLanguage)
+    {
+        string? reported = null;
+        try { reported = await getLibraryLanguage(); }
+        catch { /* fall through to the stored choice */ }
+        if (UiLanguage.Match(reported) is { } known) return known;
+        var stored = await TryAsync<string?>(js, "localStorage.getItem", StorageKey);
+        return UiLanguage.Resolve(stored, await GetDeviceLanguagesAsync(js));
     }
 
     private static async Task TryWriteAsync(IJSRuntime js, string language)

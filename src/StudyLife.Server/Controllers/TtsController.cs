@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
+using StudyLife.Shared;
 using StudyLife.Tts;
 
 namespace StudyLife.Server.Controllers;
@@ -79,11 +80,14 @@ public class TtsController : ControllerBase
         if (_voices is null || _phonemizer is null || _cache is null)
             return NotFound(new { error = "text-to-speech is not available on this server" });
 
-        if (string.IsNullOrWhiteSpace(lang))
-            return BadRequest(new { error = "lang query parameter is required" });
-
         var note = await _db.Notes.AsNoTracking().FirstOrDefaultAsync(n => n.Id == id);
         if (note == null) return NotFound();
+
+        // A missing or blank lang (a client whose UI language was unknown) is not an error: the
+        // account's language preference decides, then the legacy default. A non-empty lang that
+        // has no voice still answers 404 below, which the client turns into the browser voice.
+        if (string.IsNullOrWhiteSpace(lang))
+            lang = await ResolveAccountLanguageAsync();
 
         var voice = _voices.TryGet(lang);
         if (voice == null)
@@ -126,6 +130,12 @@ public class TtsController : ControllerBase
         {
             InFlightSyntheses.TryRemove(new KeyValuePair<string, Task<byte[]>>(cacheKey, synthesis));
         }
+    }
+
+    private async Task<string> ResolveAccountLanguageAsync()
+    {
+        var reported = await _db.Settings.AsNoTracking().Select(s => s.Language).FirstOrDefaultAsync();
+        return SupportedLanguages.Match(reported) ?? SupportedLanguages.LegacyDefault;
     }
 
     // Static + all dependencies passed explicitly (not reading instance fields) on purpose:

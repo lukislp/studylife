@@ -103,7 +103,7 @@ public sealed class TelemetryService : IAsyncDisposable
         {
             var settings = await _state.GetSettingsAsync();
             _consent = settings.TelemetryConsent;
-            _language = await _i18nText.GetCurrentLanguageAsync();
+            _language = await UiLanguageStartup.GetCurrentCodeAsync(_js, _i18nText.GetCurrentLanguageAsync);
         }
         catch { /* best-effort - telemetry must never block app startup */ }
 
