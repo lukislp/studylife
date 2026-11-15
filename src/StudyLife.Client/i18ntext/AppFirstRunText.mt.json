@@ -14,6 +14,7 @@
   "UntrustedCertificate": "Iċ-ċertifikat ta' dan is-server mhuwiex fdat (pereżempju ġej mill-awtorità taċ-ċertifikazzjoni tiegħek stess). Installa l-profil tal-awtorità taċ-ċertifikazzjoni fuq dan l-apparat jew uża l-indirizz pubbliku tas-server.",
   "SignedOutUnreachable": "{0} mhuwiex aċċessibbli bħalissa. Jekk l-indirizz huwa ħażin, biddel is-server.",
   "SignedOutNotStudyLife": "{0} ma jwieġibx bħal server ta' StudyLife. Jekk l-indirizz huwa ħażin, biddel is-server.",
+  "SignedOutNoNetwork": "M'hemmx konnessjoni man-netwerk – il-Wi-Fi u d-data mobbli huma mitfija.",
   "PasskeyDomainHint": "Il-passkeys jaħdmu biss fuq {0}.",
   "UsePasskeyAddress": "Uża dan l-indirizz"
 }

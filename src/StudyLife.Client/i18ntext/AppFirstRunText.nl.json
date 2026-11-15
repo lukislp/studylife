@@ -14,6 +14,7 @@
   "UntrustedCertificate": "Het certificaat van deze server wordt niet vertrouwd (bijvoorbeeld omdat het van je eigen certificeringsinstantie komt). Installeer het profiel van de certificeringsinstantie op dit apparaat of gebruik het openbare adres van de server.",
   "SignedOutUnreachable": "{0} is op dit moment niet bereikbaar. Als het adres verkeerd is, wissel dan van server.",
   "SignedOutNotStudyLife": "{0} antwoordt niet als een StudyLife-server. Als het adres verkeerd is, wissel dan van server.",
+  "SignedOutNoNetwork": "Geen netwerkverbinding – wifi en mobiele data staan uit.",
   "PasskeyDomainHint": "Passkeys werken alleen op {0}.",
   "UsePasskeyAddress": "Dit adres gebruiken"
 }

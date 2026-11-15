@@ -14,6 +14,7 @@
   "UntrustedCertificate": "Níl muinín as teastas an fhreastalaí seo (mar shampla, is ó d'údarás deimhnithe féin é). Suiteáil próifíl an údaráis deimhnithe ar an ngléas seo, nó úsáid seoladh poiblí an fhreastalaí.",
   "SignedOutUnreachable": "Ní féidir {0} a bhaint amach faoi láthair. Má tá an seoladh mícheart, athraigh an freastalaí.",
   "SignedOutNotStudyLife": "Ní fhreagraíonn {0} mar fhreastalaí StudyLife. Má tá an seoladh mícheart, athraigh an freastalaí.",
+  "SignedOutNoNetwork": "Níl aon nasc líonra ann – tá Wi-Fi agus sonraí móibíleacha múchta.",
   "PasskeyDomainHint": "Ní oibríonn eochracha pasfhocail ach ag {0}.",
   "UsePasskeyAddress": "Úsáid an seoladh seo"
 }

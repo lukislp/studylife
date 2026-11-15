@@ -14,6 +14,7 @@
   "UntrustedCertificate": "Certifikát tohoto serveru není důvěryhodný (pochází například z tvé vlastní certifikační autority). Nainstaluj do tohoto zařízení profil certifikační autority, nebo použij veřejnou adresu serveru.",
   "SignedOutUnreachable": "Server {0} teď není dostupný. Pokud je adresa špatně, změň server.",
   "SignedOutNotStudyLife": "{0} neodpovídá jako server StudyLife. Pokud je adresa špatně, změň server.",
+  "SignedOutNoNetwork": "Žádné připojení k síti – Wi-Fi i mobilní data jsou vypnutá.",
   "PasskeyDomainHint": "Přístupové klíče fungují jen na adrese {0}.",
   "UsePasskeyAddress": "Použít tuto adresu"
 }

@@ -14,6 +14,7 @@
   "UntrustedCertificate": "Serverns certifikat är inte betrott (det kommer till exempel från din egen certifikatutfärdare). Installera certifikatutfärdarens profil på den här enheten eller använd serverns offentliga adress.",
   "SignedOutUnreachable": "{0} går inte att nå just nu. Om adressen är fel, byt server.",
   "SignedOutNotStudyLife": "{0} svarar inte som en StudyLife-server. Om adressen är fel, byt server.",
+  "SignedOutNoNetwork": "Ingen nätverksanslutning – wifi och mobildata är avstängda.",
   "PasskeyDomainHint": "Nycklar fungerar bara på {0}.",
   "UsePasskeyAddress": "Använd den här adressen"
 }

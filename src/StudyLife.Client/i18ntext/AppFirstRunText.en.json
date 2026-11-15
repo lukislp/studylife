@@ -14,6 +14,7 @@
   "UntrustedCertificate": "This server's certificate is not trusted (for example, it comes from your own certificate authority). Install the certificate authority's profile on this device, or use the server's public address.",
   "SignedOutUnreachable": "{0} cannot be reached right now. If the address is wrong, change the server.",
   "SignedOutNotStudyLife": "{0} does not answer like a StudyLife server. If the address is wrong, change the server.",
+  "SignedOutNoNetwork": "No network connection – Wi-Fi and mobile data are off.",
   "PasskeyDomainHint": "Passkeys only work at {0}.",
   "UsePasskeyAddress": "Use this address"
 }

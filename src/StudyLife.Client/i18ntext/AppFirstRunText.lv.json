@@ -14,6 +14,7 @@
   "UntrustedCertificate": "Šī servera sertifikāts nav uzticams (piemēram, to izdevusi tava paša sertifikācijas iestāde). Instalē sertifikācijas iestādes profilu šajā ierīcē vai izmanto servera publisko adresi.",
   "SignedOutUnreachable": "{0} pašlaik nav sasniedzams. Ja adrese ir nepareiza, maini serveri.",
   "SignedOutNotStudyLife": "{0} neatbild kā StudyLife serveris. Ja adrese ir nepareiza, maini serveri.",
+  "SignedOutNoNetwork": "Nav tīkla savienojuma – Wi-Fi un mobilie dati ir izslēgti.",
   "PasskeyDomainHint": "Piekļuves atslēgas darbojas tikai adresē {0}.",
   "UsePasskeyAddress": "Izmantot šo adresi"
 }
