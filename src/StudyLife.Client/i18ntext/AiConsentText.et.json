@@ -4,7 +4,7 @@
   "WhomHeading": "Kes need andmed saab:",
   "WhomUnknown": "Tehisintellekti pakkuja, kelle selle serveri haldaja on seadistanud.",
   "LeavesServerText": "Need andmed lahkuvad sellelt serverilt ning neid töötleb ülal nimetatud pakkuja.",
-  "OptionalText": "See on vabatahtlik. StudyLife töötab täielikult ka ilma tehisintellektita.",
+  "OptionalText": "See on vabatahtlik. StudyAtrium töötab täielikult ka ilma tehisintellektita.",
   "WithdrawText": "Võid oma nõusoleku igal ajal tagasi võtta asukohas Seaded → Tehisintellekt. Seejärel kustutatakse sinu tehisintellekti andmed.",
   "ExistingUserText": "Kasutad tehisintellekti assistenti juba. Nüüd vajame sinu selgesõnalist nõusolekut. Kui valid Mitte praegu, lülitatakse tehisintellekt välja ja sinu tehisintellekti andmed kustutatakse.",
   "AgreeButton": "Nõustun",

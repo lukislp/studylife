@@ -1,5 +1,5 @@
 {
-  "PageTitleTag": "StudyLife — Fremskridt",
+  "PageTitleTag": "StudyAtrium — Fremskridt",
   "Heading": "Studiefremskridt",
   "SubHeading": "Et delt, skrivebeskyttet øjebliksbillede — opdateres automatisk.",
   "EctsLabel": "Optjente ECTS",
@@ -15,5 +15,5 @@
   "TemporaryErrorHeading": "Midlertidigt utilgængelig",
   "TemporaryErrorMessage": "Der opstod en fejl ved indlæsning af denne side. Prøv venligst igen om lidt.",
   "GeneratedAtFormat": "Sidst opdateret: {0}",
-  "PoweredByLabel": "Delt via StudyLife"
+  "PoweredByLabel": "Delt via StudyAtrium"
 }

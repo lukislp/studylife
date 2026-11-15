@@ -159,7 +159,7 @@ public class SessionService : ISessionService
         Line("VERSION:2.0");
         Line("PRODID:-//StudyLife//Sessions//DE");
         Line("CALSCALE:GREGORIAN");
-        Line("X-WR-CALNAME:StudyLife");
+        Line("X-WR-CALNAME:StudyAtrium");
 
         var stamp = DateTime.UtcNow.ToString("yyyyMMddTHHmmssZ");
         foreach (var s in sessions)

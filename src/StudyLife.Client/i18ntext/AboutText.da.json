@@ -1,5 +1,5 @@
 {
-  "Heading": "Om StudyLife",
+  "Heading": "Om StudyAtrium",
   "Desc": "Version, licens og kildekode for den software, du kører.",
   "ServerLabel": "Server",
   "BrowserLabel": "Brugerflade i denne browser",
@@ -10,7 +10,7 @@
   "SourceRepo": "Kildekodearkiv (denne build har ikke noget udgivelsestag)",
   "NewTab": "åbner i en ny fane",
   "LicenceLabel": "Licens",
-  "LicenceMeaning": "Du må bruge, studere, ændre og dele StudyLife; hvis du driver en ændret version for andre, skal du også tilbyde dem kildekoden til den.",
+  "LicenceMeaning": "Du må bruge, studere, ændre og dele StudyAtrium; hvis du driver en ændret version for andre, skal du også tilbyde dem kildekoden til den.",
   "PrivacyPolicy": "Privatlivspolitik",
   "NoticesHeading": "Meddelelser om tredjepartssoftware",
   "NoticesDesc": "Open source-komponenterne i denne build med deres licenser og indehavere af ophavsret.",

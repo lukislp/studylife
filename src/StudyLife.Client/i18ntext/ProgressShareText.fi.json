@@ -1,5 +1,5 @@
 {
-  "PageTitleTag": "StudyLife — Edistyminen",
+  "PageTitleTag": "StudyAtrium — Edistyminen",
   "Heading": "Opintojen edistyminen",
   "SubHeading": "Jaettu, vain luku -tilassa oleva tilannekuva — päivittyy automaattisesti.",
   "EctsLabel": "Kerätyt ECTS",
@@ -15,5 +15,5 @@
   "TemporaryErrorHeading": "Tilapäisesti pois käytöstä",
   "TemporaryErrorMessage": "Tämän sivun lataamisessa tapahtui virhe. Yritä hetken kuluttua uudelleen.",
   "GeneratedAtFormat": "Viimeksi päivitetty: {0}",
-  "PoweredByLabel": "Jaettu StudyLifen kautta"
+  "PoweredByLabel": "Jaettu StudyAtriumin kautta"
 }

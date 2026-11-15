@@ -17,7 +17,7 @@ reproduce, and the impact you expect.
 
 ## What happens after you report
 
-StudyLife has one maintainer (see [GOVERNANCE.md](GOVERNANCE.md)), so these are the targets one
+StudyAtrium has one maintainer (see [GOVERNANCE.md](GOVERNANCE.md)), so these are the targets one
 person can actually meet:
 
 | Step | Target |
@@ -34,7 +34,7 @@ The process:
 2. **Fix.** The fix is developed in the advisory's private fork or on a branch that does not
    reveal the vulnerability, and it comes with a regression test. It ships through the normal
    pipeline (signed images and `server.zip`).
-3. **CVE and advisory.** For accepted vulnerabilities in StudyLife itself, the maintainer
+3. **CVE and advisory.** For accepted vulnerabilities in StudyAtrium itself, the maintainer
    requests a CVE through GitHub (GitHub is a CVE Numbering Authority). The GitHub Security
    Advisory is published when the fixed release is out. It names the fixed version, and the
    release notes link to it.
@@ -54,7 +54,7 @@ manifests, CI workflows) and the public demo at https://studylife-demo.lktec.org
 
 **Out of scope here:**
 - the add-on repositories (studylife-ai, studylife-hacs, studylife-mcp, ...). Report those to the
-  respective project, unless the flaw is on StudyLife's side of the integration;
+  respective project, unless the flaw is on StudyAtrium's side of the integration;
 - publicly known vulnerabilities in third-party dependencies, which Dependabot already tracks;
 - findings that need an already-compromised host or cluster node.
 
@@ -132,6 +132,6 @@ it, and please report it as described above.
 
 ## Security design
 
-For what StudyLife protects against, what it does not, and how, see the assurance case in
+For what StudyAtrium protects against, what it does not, and how, see the assurance case in
 [`docs/SECURITY-ASSURANCE.md`](docs/SECURITY-ASSURANCE.md) and the "Security" sections of the
 [README](README.md#security) and [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#security).

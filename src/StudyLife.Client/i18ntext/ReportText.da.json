@@ -27,6 +27,6 @@
   "StatusOverdueFormat": "Overskredet med {0} dag(e)",
   "StatusDueFormat": "Forfalder om {0} dag(e)",
   "NoCourses": "Ingen afsluttede studiesessioner registreret endnu.",
-  "FooterNote": "Genereret automatisk af StudyLife.",
+  "FooterNote": "Genereret automatisk af StudyAtrium.",
   "ReportButton": "📄 Eksportér studierapport"
 }

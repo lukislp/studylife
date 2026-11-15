@@ -2,7 +2,7 @@
 
 In addition to the existing single-instance setup (SQLite, one process - the default when no
 `Database:Provider`/`Cache:Provider`/`Worker:Enabled` overrides are set, see the table below),
-this branch makes it possible to run StudyLife as multiple simultaneously running instances
+this branch makes it possible to run StudyAtrium as multiple simultaneously running instances
 distributed behind a load balancer. **Audit finding O5:** this branch's own K3s/Flux setup has
 since BECOME the real production deployment (see "GitLab Integration: Kubernetes Agent + Flux
 Image Automation" below for the migration off the old Watchtower-polled single container) - the
@@ -1149,7 +1149,7 @@ the file itself still has placeholder hostnames), verified the certificate showe
 and reachability again.
 
 **Third bug found live, this time in Uptime Kuma's own monitor configuration rather than in the
-cluster**: the internal monitor "StudyLife Web (intern)" kept checking `http://studylife-web...`
+cluster**: the internal monitor "StudyAtrium Web (intern)" kept checking `http://studylife-web...`
 (plaintext) - since the Kestrel HTTPS termination above became active, this path now responds
 with `307` to `https://...:8443` (ASP.NET's `UseHttpsRedirection` previously had no valid HTTPS
 port and therefore didn't redirect at all, now it does so correctly) - a plain HTTP monitor
@@ -1486,7 +1486,7 @@ for your own origin/app logs is tied to higher Cloudflare plans. So this is enti
 - **[Uptime Kuma](https://github.com/louislam/uptime-kuma)** (`k8s/09-uptime-kuma.yaml`,
   already live from an earlier round, version v2 as of this round - see below). Pure HTTP
   health-check monitoring + push/email/webhook notification on failure - "know immediately when
-  something is broken". Has its own ingress, so it stays reachable even if StudyLife itself is
+  something is broken". Has its own ingress, so it stays reachable even if StudyAtrium itself is
   down.
 
   **Updated v1 → v2**: not a deliberate pin to the old version, just a never-revisited default
@@ -1550,7 +1550,7 @@ for your own origin/app logs is tied to higher Cloudflare plans. So this is enti
   WHOLE directory (no `subPath`) under `/etc/grafana/provisioning/dashboard-json/{core,community}`
   - a new/changed dashboard therefore only needs a new key in `k8s/17b`/`17c`, NEVER AGAIN a
   change to the Grafana deployment itself (previously: one ConfigMap + one `subPath` mount PER
-  dashboard). Two dashboard providers/folders (`StudyLife` / `StudyLife (Community)`).
+  dashboard). Two dashboard providers/folders (`StudyAtrium` / `StudyAtrium (Community)`).
 
   **8 core dashboards** (`k8s/17b-grafana-dashboards.yaml`, all panel queries written against
   metric names actually observed live, not blindly imported):

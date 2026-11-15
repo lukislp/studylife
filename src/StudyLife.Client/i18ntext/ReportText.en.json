@@ -27,6 +27,6 @@
   "StatusOverdueFormat": "Overdue by {0} day(s)",
   "StatusDueFormat": "Due in {0} day(s)",
   "NoCourses": "No completed study sessions recorded yet.",
-  "FooterNote": "Generated automatically by StudyLife.",
+  "FooterNote": "Generated automatically by StudyAtrium.",
   "ReportButton": "📄 Export study report"
 }

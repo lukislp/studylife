@@ -27,6 +27,6 @@
   "StatusOverdueFormat": "Tard b'{0} jum/jiem",
   "StatusDueFormat": "Dovut fi {0} jum/jiem",
   "NoCourses": "Għadhom ma ġewx irreġistrati sessjonijiet ta' studju mitmuma.",
-  "FooterNote": "Iġġenerat awtomatikament minn StudyLife.",
+  "FooterNote": "Iġġenerat awtomatikament minn StudyAtrium.",
   "ReportButton": "📄 Esporta r-rapport tal-istudju"
 }

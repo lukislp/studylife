@@ -1,5 +1,5 @@
 {
-  "PageTitleTag": "StudyLife — Progreso",
+  "PageTitleTag": "StudyAtrium — Progreso",
   "Heading": "Progreso académico",
   "SubHeading": "Una instantánea compartida de solo lectura — se actualiza automáticamente.",
   "EctsLabel": "ECTS obtenidos",
@@ -15,5 +15,5 @@
   "TemporaryErrorHeading": "No disponible temporalmente",
   "TemporaryErrorMessage": "Algo salió mal al cargar esta página. Inténtalo de nuevo en un momento.",
   "GeneratedAtFormat": "Última actualización: {0}",
-  "PoweredByLabel": "Compartido mediante StudyLife"
+  "PoweredByLabel": "Compartido mediante StudyAtrium"
 }

@@ -1,5 +1,5 @@
 {
-  "PageTitleTag": "StudyLife — Framsteg",
+  "PageTitleTag": "StudyAtrium — Framsteg",
   "Heading": "Studieframsteg",
   "SubHeading": "En delad skrivskyddad ögonblicksbild — uppdateras automatiskt.",
   "EctsLabel": "Intjänade ECTS",
@@ -15,5 +15,5 @@
   "TemporaryErrorHeading": "Tillfälligt otillgänglig",
   "TemporaryErrorMessage": "Något gick fel när sidan laddades. Försök igen om en liten stund.",
   "GeneratedAtFormat": "Senast uppdaterad: {0}",
-  "PoweredByLabel": "Delat via StudyLife"
+  "PoweredByLabel": "Delat via StudyAtrium"
 }

@@ -1,5 +1,5 @@
 {
-  "PageTitleTag": "StudyLife — Fortschritt",
+  "PageTitleTag": "StudyAtrium — Fortschritt",
   "Heading": "Studienfortschritt",
   "SubHeading": "Ein geteilter, schreibgeschützter Überblick — wird automatisch aktualisiert.",
   "EctsLabel": "Erreichte ECTS",
@@ -15,5 +15,5 @@
   "TemporaryErrorHeading": "Vorübergehend nicht verfügbar",
   "TemporaryErrorMessage": "Beim Laden dieser Seite ist etwas schiefgelaufen. Bitte versuche es gleich noch einmal.",
   "GeneratedAtFormat": "Zuletzt aktualisiert: {0}",
-  "PoweredByLabel": "Geteilt über StudyLife"
+  "PoweredByLabel": "Geteilt über StudyAtrium"
 }

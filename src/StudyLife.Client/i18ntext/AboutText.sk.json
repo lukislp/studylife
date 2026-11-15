@@ -1,5 +1,5 @@
 {
-  "Heading": "O aplikácii StudyLife",
+  "Heading": "O aplikácii StudyAtrium",
   "Desc": "Verzia, licencia a zdrojový kód softvéru, ktorý používate.",
   "ServerLabel": "Server",
   "BrowserLabel": "Rozhranie v tomto prehliadači",
@@ -10,7 +10,7 @@
   "SourceRepo": "Úložisko zdrojového kódu (tento build nemá značku vydania)",
   "NewTab": "otvorí sa na novej karte",
   "LicenceLabel": "Licencia",
-  "LicenceMeaning": "StudyLife môžete používať, skúmať, upravovať a zdieľať; ak prevádzkujete upravenú verziu pre iných, musíte im ponúknuť aj jej zdrojový kód.",
+  "LicenceMeaning": "StudyAtrium môžete používať, skúmať, upravovať a zdieľať; ak prevádzkujete upravenú verziu pre iných, musíte im ponúknuť aj jej zdrojový kód.",
   "PrivacyPolicy": "Zásady ochrany osobných údajov",
   "NoticesHeading": "Upozornenia na softvér tretích strán",
   "NoticesDesc": "Open-source komponenty v tomto builde s ich licenciami a držiteľmi autorských práv.",

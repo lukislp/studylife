@@ -27,6 +27,6 @@
   "StatusOverdueFormat": "Myöhässä {0} päivää",
   "StatusDueFormat": "Määräaika {0} päivän kuluttua",
   "NoCourses": "Suoritettuja opiskelusessioita ei ole vielä tallennettu.",
-  "FooterNote": "StudyLifen automaattisesti luoma.",
+  "FooterNote": "StudyAtriumin automaattisesti luoma.",
   "ReportButton": "📄 Vie opintoraportti"
 }

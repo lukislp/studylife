@@ -1,4 +1,4 @@
-# StudyLife — Architecture & Developer Documentation
+# StudyAtrium — Architecture & Developer Documentation
 
 Short technical overview for future changes. Feature description from a user's perspective lives in the [README](../README.md).
 

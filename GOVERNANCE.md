@@ -1,6 +1,6 @@
 # Governance
 
-StudyLife is a **single-maintainer project**. This file says who decides what, how decisions are
+StudyAtrium is a **single-maintainer project**. This file says who decides what, how decisions are
 made, and what happens when the maintainer is unavailable. It describes how the project works
 today. It does not describe a larger team that does not exist.
 

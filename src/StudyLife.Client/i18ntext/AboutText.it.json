@@ -1,5 +1,5 @@
 {
-  "Heading": "Informazioni su StudyLife",
+  "Heading": "Informazioni su StudyAtrium",
   "Desc": "Versione, licenza e codice sorgente del software che stai usando.",
   "ServerLabel": "Server",
   "BrowserLabel": "Interfaccia in questo browser",
@@ -10,7 +10,7 @@
   "SourceRepo": "Repository del codice sorgente (questa build non ha un tag di rilascio)",
   "NewTab": "si apre in una nuova scheda",
   "LicenceLabel": "Licenza",
-  "LicenceMeaning": "Puoi usare, studiare, modificare e condividere StudyLife; se esegui una versione modificata per altre persone, devi offrire loro anche il relativo codice sorgente.",
+  "LicenceMeaning": "Puoi usare, studiare, modificare e condividere StudyAtrium; se esegui una versione modificata per altre persone, devi offrire loro anche il relativo codice sorgente.",
   "PrivacyPolicy": "Informativa sulla privacy",
   "NoticesHeading": "Avvisi sul software di terze parti",
   "NoticesDesc": "I componenti open source di questa build, con le relative licenze e i titolari del copyright.",

@@ -4,7 +4,7 @@
   "WhomHeading": "Kas saņem šos datus:",
   "WhomUnknown": "MI sniedzējs, ko konfigurējis šī servera operators.",
   "LeavesServerText": "Šie dati atstāj šo serveri, un tos apstrādā iepriekš minētais sniedzējs.",
-  "OptionalText": "Tas ir neobligāti. StudyLife pilnībā darbojas arī bez MI.",
+  "OptionalText": "Tas ir neobligāti. StudyAtrium pilnībā darbojas arī bez MI.",
   "WithdrawText": "Savu piekrišanu vari atsaukt jebkurā laikā sadaļā Iestatījumi → MI. Tavi MI dati tiek izdzēsti.",
   "ExistingUserText": "Tu jau izmanto MI asistentu. Tagad mums ir vajadzīga tava skaidra piekrišana. Ja izvēlēsies Ne tagad, MI tiks izslēgts un tavi MI dati tiks izdzēsti.",
   "AgreeButton": "Piekrītu",

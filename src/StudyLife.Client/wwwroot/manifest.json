@@ -1,6 +1,6 @@
 {
-  "name": "StudyLife",
-  "short_name": "StudyLife",
+  "name": "StudyAtrium",
+  "short_name": "StudyAtrium",
   "description": "Deine persönliche Lern-App",
   "start_url": "/",
   "display": "standalone",

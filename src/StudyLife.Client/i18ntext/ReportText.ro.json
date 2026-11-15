@@ -27,6 +27,6 @@
   "StatusOverdueFormat": "Întârziat cu {0} zi(le)",
   "StatusDueFormat": "Termen în {0} zi(le)",
   "NoCourses": "Nu există încă sesiuni de studiu finalizate înregistrate.",
-  "FooterNote": "Generat automat de StudyLife.",
+  "FooterNote": "Generat automat de StudyAtrium.",
   "ReportButton": "📄 Exportă raportul de studiu"
 }

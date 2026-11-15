@@ -1,5 +1,5 @@
 {
-  "PageTitleTag": "StudyLife — Прогрес",
+  "PageTitleTag": "StudyAtrium — Прогрес",
   "Heading": "Навчальний прогрес",
   "SubHeading": "Спільний знімок лише для перегляду — оновлюється автоматично.",
   "EctsLabel": "Отримано ECTS",
@@ -15,5 +15,5 @@
   "TemporaryErrorHeading": "Тимчасово недоступно",
   "TemporaryErrorMessage": "Під час завантаження цієї сторінки щось пішло не так. Будь ласка, спробуйте ще раз за мить.",
   "GeneratedAtFormat": "Востаннє оновлено: {0}",
-  "PoweredByLabel": "Поширено через StudyLife"
+  "PoweredByLabel": "Поширено через StudyAtrium"
 }

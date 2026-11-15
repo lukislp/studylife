@@ -1,5 +1,5 @@
 {
-  "PageTitleTag": "StudyLife — Πρόοδος",
+  "PageTitleTag": "StudyAtrium — Πρόοδος",
   "Heading": "Ακαδημαϊκή πρόοδος",
   "SubHeading": "Ένα κοινόχρηστο στιγμιότυπο μόνο για ανάγνωση — ενημερώνεται αυτόματα.",
   "EctsLabel": "Κερδισμένα ECTS",
@@ -15,5 +15,5 @@
   "TemporaryErrorHeading": "Προσωρινά μη διαθέσιμο",
   "TemporaryErrorMessage": "Κάτι πήγε στραβά κατά τη φόρτωση αυτής της σελίδας. Δοκιμάστε ξανά σε λίγο.",
   "GeneratedAtFormat": "Τελευταία ενημέρωση: {0}",
-  "PoweredByLabel": "Κοινή χρήση μέσω StudyLife"
+  "PoweredByLabel": "Κοινή χρήση μέσω StudyAtrium"
 }

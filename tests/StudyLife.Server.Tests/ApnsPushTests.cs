@@ -82,7 +82,7 @@ public class ApnsPushTests : IClassFixture<CustomWebApplicationFactory>
         await _client.PostAsJsonAsync("/api/push/subscribe-apns", new ApnsSubscribeRequest("token-noname", null));
 
         var sub = await FindByEndpoint("apns:token-noname");
-        Assert.Equal("StudyLife App", sub!.UserAgent);
+        Assert.Equal("StudyAtrium App", sub!.UserAgent);
     }
 
     [Fact]

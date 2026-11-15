@@ -27,6 +27,6 @@
   "StatusOverdueFormat": "{0} dag(en) te laat",
   "StatusDueFormat": "Over {0} dag(en)",
   "NoCourses": "Nog geen afgeronde studiesessies geregistreerd.",
-  "FooterNote": "Automatisch gegenereerd door StudyLife.",
+  "FooterNote": "Automatisch gegenereerd door StudyAtrium.",
   "ReportButton": "📄 Studierapport exporteren"
 }

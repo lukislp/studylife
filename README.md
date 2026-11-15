@@ -1,5 +1,6 @@
 
-# StudyLife
+# StudyAtrium
+> Formerly StudyLife. The project was renamed in November 2026 (name collision with an established app); repositories, image names, hostnames and API routes keep the old name.
 
 [![CI/CD](https://github.com/lukislp/studylife/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/lukislp/studylife/actions/workflows/ci-cd.yml) [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/lukislp/studylife/badge)](https://scorecard.dev/viewer/?uri=github.com/lukislp/studylife) [![CodeQL](https://github.com/lukislp/studylife/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/lukislp/studylife/security/code-scanning) [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/16303/badge)](https://www.bestpractices.dev/projects/16303)
 [![Release](https://img.shields.io/github/v/release/lukislp/studylife)](https://github.com/lukislp/studylife/releases)
@@ -25,7 +26,7 @@ built-in study program, with weeks of study history, a live streak, and planned 
 Edits apply locally but are never saved; the dataset reseeds itself relative to "today" on every
 container restart.
 
-![StudyLife dashboard, live demo screenshot](docs/screenshot.png)
+![StudyAtrium dashboard, live demo screenshot](docs/screenshot.png)
 
 ---
 
@@ -38,7 +39,7 @@ flowchart LR
         MauiApp["studylife-app\nMAUI native shell\niOS / Android / Windows / macOS"]
     end
 
-    subgraph StudyLife["StudyLife (this repo, one image)"]
+    subgraph StudyLife["StudyAtrium (this repo, one image)"]
         API["ASP.NET Core REST API\n(StudyLife.Server, Worker:Enabled=false)\nTTS (Piper) + STT (Whisper) in-process"]
         AiProxy["AiProxyController\n(mints short-lived proxy tokens)"]
         Worker["Worker\n(reminders, reports, nudges,\nachievements, APNs, capture enrichment)\nWorker:Enabled=true"]
@@ -142,7 +143,7 @@ https://github.com/user-attachments/assets/0498d54b-f7e3-4854-b7cf-8eea538dd112
 - Add another device of your own either directly on the device itself or via a linking code from an already logged-in device (no cross-device Bluetooth fumbling needed)
 - New devices/additional passkeys must first be approved from an already logged-in device before they can be used
 - Device management: rename passkeys, view the list, remove individually, and "sign out everywhere else" (removing a passkey or using a recovery code revokes every other session automatically)
-- Emergency access via recovery codes: generate 8 one-time codes in Setup (shown only once) to sign in if the only registered device/passkey is ever lost; a forgotten password is replaced by signing in with a passkey or a recovery code and choosing a new one under Setup > Password ("Forgot your password?" on the sign-in page) - nobody, the owner included, can reset another account's password, and StudyLife sends no e-mail
+- Emergency access via recovery codes: generate 8 one-time codes in Setup (shown only once) to sign in if the only registered device/passkey is ever lost; a forgotten password is replaced by signing in with a passkey or a recovery code and choosing a new one under Setup > Password ("Forgot your password?" on the sign-in page) - nobody, the owner included, can reset another account's password, and StudyAtrium sends no e-mail
 - Delete your own account from inside the app (Setup, also in the native apps): everything the account owns is removed, after a fresh passkey or recovery-code confirmation and an optional data export first; the owner administers the installation and can leave only as its last account (the installation then returns to first run), or remove other users. Backups made earlier keep a copy until they rotate out (built-in weekly copies: four weeks; further backups as long as the operator configured, 30 days in the supplied Kubernetes setup); restoring an older backup brings a deleted account back, so the operator re-applies the deletion first - see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) "Account deletion"
 - Native app sign-in through the system browser with a PKCE-style token handoff (the bearer token never travels in the app's redirect URL)
 
@@ -150,7 +151,7 @@ https://github.com/user-attachments/assets/0498d54b-f7e3-4854-b7cf-8eea538dd112
 - Fully usable in 26 languages: all 24 official EU languages (English, German, French, Spanish, Italian, Portuguese, Dutch, Danish, Swedish, Finnish, Greek, Polish, Czech, Slovak, Hungarian, Romanian, Bulgarian, Croatian, Slovenian, Estonian, Latvian, Lithuanian, Maltese, Irish) plus Ukrainian and Russian
 - First start: the app opens in the language of your browser or device (the best match of your preferred languages, `pt-BR` counts as Portuguese), English when none of them is one of the 26; no choice is ever forced. A language you choose yourself always wins and is remembered. Users who already had a session but never stored a choice keep German, which is what they had been shown
 - Switcher in the top right (positioned the same way on desktop and mobile): click the current flag, choose a language from the popup; the selection persists across restarts/browser sessions
-- Native apps (iPhone, iPad, Mac, Android, Windows) have no switcher: they use the operating system's language setting for the app (iOS/iPadOS/macOS: Settings, StudyLife, Language; Android 13+: Settings, Apps, StudyLife, Language; Windows: the display language), and the menu entry shows where to change it instead. The app reports that language to the server, so push texts follow it too, and the sign-in pages it opens in the system browser use it as well
+- Native apps (iPhone, iPad, Mac, Android, Windows) have no switcher: they use the operating system's language setting for the app (iOS/iPadOS/macOS: Settings, StudyAtrium, Language; Android 13+: Settings, Apps, StudyAtrium, Language; Windows: the display language), and the menu entry shows where to change it instead. The app reports that language to the server, so push texts follow it too, and the sign-in pages it opens in the system browser use it as well
 - Localized weekday and month names everywhere, 12-hour clock for English and 24-hour clock for every other language
 
 ### Calendar
@@ -295,7 +296,7 @@ https://github.com/user-attachments/assets/0498d54b-f7e3-4854-b7cf-8eea538dd112
 - Offline write queue: sessions and settings saved while offline are replayed once the connection is back
 
 ### Native Apps
-- [StudyLife App](https://github.com/lukislp/studylife-app) is a separate .NET MAUI Blazor Hybrid shell (iOS/Android/Mac/Windows) built on top of this repo's Blazor Client, adding native notifications, home screen widgets, Live Activities, Siri Shortcuts, an Apple Watch companion app, and Apple HealthKit integration (HRV-based study readiness, sleep consistency, a movement-break reminder, and a cardio fitness trend chart) - all read-only and processed entirely on-device, never leaving it. In the native apps, Setup also shows which server the app is connected to ("Change server" signs out, removes the copies the app keeps on the device and returns to the first-start screen) and connects Apple Health only when the user taps the button there - the app never asks for Health access at start-up.
+- [StudyAtrium App](https://github.com/lukislp/studylife-app) is a separate .NET MAUI Blazor Hybrid shell (iOS/Android/Mac/Windows) built on top of this repo's Blazor Client, adding native notifications, home screen widgets, Live Activities, Siri Shortcuts, an Apple Watch companion app, and Apple HealthKit integration (HRV-based study readiness, sleep consistency, a movement-break reminder, and a cardio fitness trend chart) - all read-only and processed entirely on-device, never leaving it. In the native apps, Setup also shows which server the app is connected to ("Change server" signs out, removes the copies the app keeps on the device and returns to the first-start screen) and connects Apple Health only when the user taps the button there - the app never asks for Health access at start-up.
 
 ---
 
@@ -362,7 +363,7 @@ The k8s setup above already runs this way by default: PostgreSQL instead of SQLi
 
 ### Telemetry
 
-Everything is opt-in and off by default. `Telemetry:MetricsPort` opens a dedicated, non-public Kestrel listener answering only `GET /metrics` in Prometheus format (ASP.NET Core, Kestrel, EF Core/Npgsql, .NET runtime, rate limiter, HttpClient meters plus StudyLife's own: cache outcomes, SSE streams, TTS, webhooks, worker tick). `Telemetry:OtlpEndpoint` exports request/HttpClient/Npgsql traces via OTLP to a collector (production forwards to Grafana Tempo), head-sampled at `Telemetry:TraceSampleRatio`. Client-side, `POST /api/telemetry` accepts a small batch of boot/vitals/API/SSE/error events - only after the user explicitly accepted the consent modal, never on the demo instance, and never carrying a user id, IP, or content. Details in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#telemetry).
+Everything is opt-in and off by default. `Telemetry:MetricsPort` opens a dedicated, non-public Kestrel listener answering only `GET /metrics` in Prometheus format (ASP.NET Core, Kestrel, EF Core/Npgsql, .NET runtime, rate limiter, HttpClient meters plus StudyAtrium's own: cache outcomes, SSE streams, TTS, webhooks, worker tick). `Telemetry:OtlpEndpoint` exports request/HttpClient/Npgsql traces via OTLP to a collector (production forwards to Grafana Tempo), head-sampled at `Telemetry:TraceSampleRatio`. Client-side, `POST /api/telemetry` accepts a small batch of boot/vitals/API/SSE/error events - only after the user explicitly accepted the consent modal, never on the demo instance, and never carrying a user id, IP, or content. Details in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#telemetry).
 
 ---
 
@@ -484,7 +485,7 @@ exactly those scopes, and the resulting key can only reach what it asked for.
 | [studylife-telegram](https://github.com/lukislp/studylife-telegram) | Telegram bot: start/pause/stop the timer, today/agenda, quick notes, session-event and reminder messages | Dynamic OAuth client, one key per chat obtained with `/login` (PKCE, callback on the bot); receives events as a studylife-webhooks subscriber | No (timer, sessions, notes) |
 | [studylife-alexa](https://github.com/lukislp/studylife-alexa) | Alexa Skill backend: study time, next session, goals, program progress, note search, create a note by voice | Account linking: its own OAuth 2.0 server wraps the dynamic-client consent flow | Mostly (only `Notes.Create` writes) |
 | [studylife-display](https://github.com/lukislp/studylife-display) | Raspberry Pi e-paper dashboard: today's hours, streak, next exam countdown, weekly goal, heatmap, timer line | Dynamic OAuth client with three read scopes | Yes |
-| [studylife-webhooks](https://github.com/lukislp/studylife-webhooks) | Outbound fan-out: signed HTTP callbacks for session/note/goal/... events to Zapier, n8n, Discord, bots | StudyLife calls it with a shared secret; subscriptions are managed from the Setup page or with a named fixed-slot `webhooks` key | n/a (never calls back into study data) |
+| [studylife-webhooks](https://github.com/lukislp/studylife-webhooks) | Outbound fan-out: signed HTTP callbacks for session/note/goal/... events to Zapier, n8n, Discord, bots | StudyAtrium calls it with a shared secret; subscriptions are managed from the Setup page or with a named fixed-slot `webhooks` key | n/a (never calls back into study data) |
 | [studylife-developers](https://github.com/lukislp/studylife-developers) | Portal for registering your own add-on (client ID, scopes, redirect URIs) against your instance | Fixed slot `developer`, registered automatically on the Setup toggle; can only manage your registrations | n/a (no study data) |
 | [studylife-marketplace](https://github.com/lukislp/studylife-marketplace) | Public catalog of add-on manifests, validated in CI | None - your browser fetches the listings read-only from GitHub | n/a |
 
@@ -495,7 +496,7 @@ compromises exactly one account and only the endpoints its slot or grant allows.
 
 ## Add-on Marketplace
 
-Beyond the first-party integrations above, StudyLife has a generic, data-driven client registry so **any** third-party add-on can plug in without a code change to StudyLife itself: a developer registers their own add-on's name, description, redirect URIs, and the exact API scopes it needs, and it gets the same OAuth-style consent screen the first-party consent flows use, generalized to any registered client (`AuthController.10.OAuthClients.cs`, `Pages/ConnectClient.razor`).
+Beyond the first-party integrations above, StudyAtrium has a generic, data-driven client registry so **any** third-party add-on can plug in without a code change to StudyAtrium itself: a developer registers their own add-on's name, description, redirect URIs, and the exact API scopes it needs, and it gets the same OAuth-style consent screen the first-party consent flows use, generalized to any registered client (`AuthController.10.OAuthClients.cs`, `Pages/ConnectClient.razor`).
 
 - **Browse & install**: the Setup page's Marketplace card lists every add-on published to [studylife-marketplace](https://github.com/lukislp/studylife-marketplace), fetched directly from GitHub by your own browser (cached for 24 hours). Installing registers the add-on on your instance and takes you straight to a consent screen showing exactly what it's asking for.
 - **[studylife-marketplace](https://github.com/lukislp/studylife-marketplace)** - the public catalog: one JSON manifest per add-on (name, developer, requested scopes, redirect URI, a link to the add-on's own repository - never code), added via pull request and validated in CI against a JSON schema. Its `known-scopes.json` mirrors `ApiKeyScopes.PubliclyGrantable`.
@@ -505,15 +506,15 @@ Beyond the first-party integrations above, StudyLife has a generic, data-driven 
 
 ## Command-Line Interface
 
-[studylife-cli](https://github.com/lukislp/studylife-cli) is a terminal client for notes, sessions, course goals, the focus timer, courses, study programs, and webhooks - with a `--json` flag on every command for scripting, study-time reports and exports, and a live dashboard. It registers itself through the same generic dynamic-client mechanism as the Add-on Marketplace above (`studylife login` opens your browser to approve the connection, the key lands in a local config file) rather than through any dedicated server-side code, so it needs nothing StudyLife itself doesn't already expose.
+[studylife-cli](https://github.com/lukislp/studylife-cli) is a terminal client for notes, sessions, course goals, the focus timer, courses, study programs, and webhooks - with a `--json` flag on every command for scripting, study-time reports and exports, and a live dashboard. It registers itself through the same generic dynamic-client mechanism as the Add-on Marketplace above (`studylife login` opens your browser to approve the connection, the key lands in a local config file) rather than through any dedicated server-side code, so it needs nothing StudyAtrium itself doesn't already expose.
 
 ## Webhooks
 
-[studylife-webhooks](https://github.com/lukislp/studylife-webhooks) delivers signed HTTP callbacks (`X-StudyLife-Webhook-Signature`, HMAC-SHA256 over the raw body) to your own automations (Zapier, n8n, Discord, and similar) or to add-ons such as studylife-telegram. Unlike the add-ons above it's an outbound event pipe rather than something that reads study data: StudyLife's backend publishes 21 event types (`Services/WebhookEventTypes.cs` - timer started/ended, session created/completed/deleted, new record, note created/updated/deleted, course goal created/updated/completed/deleted, course resource and session template created/deleted, study program created/completed/deleted, plan generated) to the service with a shared secret, and the service fans them out to every matching subscription. Subscriptions are created, listed, and deleted from the Setup page; alternatively, one or more independently-named `webhooks` API keys let an external program manage its own subscriptions through `api/webhooks` - and nothing else. Private, loopback, and cluster-internal target URLs are rejected before they are ever registered.
+[studylife-webhooks](https://github.com/lukislp/studylife-webhooks) delivers signed HTTP callbacks (`X-StudyLife-Webhook-Signature`, HMAC-SHA256 over the raw body) to your own automations (Zapier, n8n, Discord, and similar) or to add-ons such as studylife-telegram. Unlike the add-ons above it's an outbound event pipe rather than something that reads study data: StudyAtrium's backend publishes 21 event types (`Services/WebhookEventTypes.cs` - timer started/ended, session created/completed/deleted, new record, note created/updated/deleted, course goal created/updated/completed/deleted, course resource and session template created/deleted, study program created/completed/deleted, plan generated) to the service with a shared secret, and the service fans them out to every matching subscription. Subscriptions are created, listed, and deleted from the Setup page; alternatively, one or more independently-named `webhooks` API keys let an external program manage its own subscriptions through `api/webhooks` - and nothing else. Private, loopback, and cluster-internal target URLs are rejected before they are ever registered.
 
 ## Home Assistant Integration
 
-[StudyLife for Home Assistant](https://github.com/lukislp/studylife-hacs) is a separate HACS custom integration that maps dashboard and evaluation data (active/next session, weekly/monthly statistics, streak including the longest ever achieved series, quotas, grade average, ECTS progress, ECTS forecast, month comparison, achievements, topic progress, course tags, course catalog, live timer phase, weekly review as an event) as sensors, binary sensors (including inactivity warning), and calendars (sessions plus course goals) in Home Assistant - one device per study program - plus a dropdown of active courses (`select.studylife_active_course`) and six services for creating/editing/deleting sessions and course goals, generating an exam plan, and switching the active program. All numbers come pre-computed from `GET /api/metrics/summary` and `GET /api/metrics/achievements`, the same shared metrics code the dashboard uses. The pairing runs via a per-user API key generated once on the Setup page (see [Security](#security)). Installation and details are in that repo's README.
+[StudyAtrium for Home Assistant](https://github.com/lukislp/studylife-hacs) is a separate HACS custom integration that maps dashboard and evaluation data (active/next session, weekly/monthly statistics, streak including the longest ever achieved series, quotas, grade average, ECTS progress, ECTS forecast, month comparison, achievements, topic progress, course tags, course catalog, live timer phase, weekly review as an event) as sensors, binary sensors (including inactivity warning), and calendars (sessions plus course goals) in Home Assistant - one device per study program - plus a dropdown of active courses (`select.studylife_active_course`) and six services for creating/editing/deleting sessions and course goals, generating an exam plan, and switching the active program. All numbers come pre-computed from `GET /api/metrics/summary` and `GET /api/metrics/achievements`, the same shared metrics code the dashboard uses. The pairing runs via a per-user API key generated once on the Setup page (see [Security](#security)). Installation and details are in that repo's README.
 
 ### Automatic discovery (optional)
 

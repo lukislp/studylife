@@ -106,7 +106,7 @@ public sealed class ApnsSender
         if (!Enabled)
             return ApnsSendOutcome.Failed; // Callers treat Failed as a best-effort no-op
 
-        string title = "StudyLife";
+        string title = "StudyAtrium";
         string body = "";
         try
         {

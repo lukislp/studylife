@@ -1,5 +1,5 @@
 {
-  "PageTitleTag": "StudyLife — Napredek",
+  "PageTitleTag": "StudyAtrium — Napredek",
   "Heading": "Študijski napredek",
   "SubHeading": "Deljen posnetek samo za branje — samodejno posodobljen.",
   "EctsLabel": "Pridobljeni ECTS",
@@ -15,5 +15,5 @@
   "TemporaryErrorHeading": "Začasno nedosegljivo",
   "TemporaryErrorMessage": "Pri nalaganju te strani je prišlo do napake. Poskusite znova čez trenutek.",
   "GeneratedAtFormat": "Nazadnje posodobljeno: {0}",
-  "PoweredByLabel": "Deljeno prek StudyLife"
+  "PoweredByLabel": "Deljeno prek StudyAtrium"
 }

@@ -1,5 +1,5 @@
 {
-  "PageTitleTag": "StudyLife — Pokrok",
+  "PageTitleTag": "StudyAtrium — Pokrok",
   "Heading": "Studijní pokrok",
   "SubHeading": "Sdílený náhled jen pro čtení — aktualizuje se automaticky.",
   "EctsLabel": "Získané ECTS",
@@ -15,5 +15,5 @@
   "TemporaryErrorHeading": "Dočasně nedostupné",
   "TemporaryErrorMessage": "Při načítání této stránky se něco pokazilo. Zkuste to prosím za chvíli znovu.",
   "GeneratedAtFormat": "Naposledy aktualizováno: {0}",
-  "PoweredByLabel": "Sdíleno přes StudyLife"
+  "PoweredByLabel": "Sdíleno přes StudyAtrium"
 }

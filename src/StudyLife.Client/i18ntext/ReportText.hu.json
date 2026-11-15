@@ -27,6 +27,6 @@
   "StatusOverdueFormat": "{0} napja lejárt",
   "StatusDueFormat": "{0} nap múlva esedékes",
   "NoCourses": "Még nincs rögzített befejezett tanulási munkamenet.",
-  "FooterNote": "Automatikusan létrehozva a StudyLife által.",
+  "FooterNote": "Automatikusan létrehozva a StudyAtrium által.",
   "ReportButton": "📄 Tanulmányi jelentés exportálása"
 }
