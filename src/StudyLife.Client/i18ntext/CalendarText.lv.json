@@ -57,5 +57,6 @@
   "WeekPlanLinkButton": "Drukāt nedēļas plānu",
   "AriaCloseDialog": "Aizvērt dialoglodziņu",
   "AriaPreviousWeek": "Iepriekšējā nedēļa",
-  "AriaNextWeek": "Nākamā nedēļa"
+  "AriaNextWeek": "Nākamā nedēļa",
+  "AriaSessionDone": "Pabeigta"
 }

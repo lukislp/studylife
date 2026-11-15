@@ -57,5 +57,6 @@
   "WeekPlanLinkButton": "Spausdinti savaitės planą",
   "AriaCloseDialog": "Uždaryti dialogo langą",
   "AriaPreviousWeek": "Ankstesnė savaitė",
-  "AriaNextWeek": "Kita savaitė"
+  "AriaNextWeek": "Kita savaitė",
+  "AriaSessionDone": "Baigta"
 }

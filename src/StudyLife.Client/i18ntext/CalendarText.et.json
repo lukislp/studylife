@@ -57,5 +57,6 @@
   "WeekPlanLinkButton": "Prindi nädalaplaan",
   "AriaCloseDialog": "Sulge dialoog",
   "AriaPreviousWeek": "Eelmine nädal",
-  "AriaNextWeek": "Järgmine nädal"
+  "AriaNextWeek": "Järgmine nädal",
+  "AriaSessionDone": "Lõpetatud"
 }

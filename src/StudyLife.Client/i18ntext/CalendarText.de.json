@@ -57,5 +57,6 @@
   "WeekPlanLinkButton": "Wochenplan drucken",
   "AriaCloseDialog": "Dialog schließen",
   "AriaPreviousWeek": "Vorherige Woche",
-  "AriaNextWeek": "Nächste Woche"
+  "AriaNextWeek": "Nächste Woche",
+  "AriaSessionDone": "Abgeschlossen"
 }
