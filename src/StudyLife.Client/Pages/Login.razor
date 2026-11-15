@@ -35,7 +35,7 @@
             <button type="button" class="btn-primary" @onclick="SignInAsync" disabled="@_busy">
                 @(_busy ? T.LoginWorking : T.LoginButton)
             </button>
-            <PasswordSignInForm App="_app" ReturnUrl="@_returnUrl" />
+            <PasswordSignInForm App="_app" ReturnUrl="@_returnUrl" @bind-Forgot="_forgot" />
             <a href="@("/register" + _app.LinkQuery)" class="btn-secondary" style="text-align:center;">@T.GoToRegisterLink</a>
             <a href="@("/link" + _app.LinkQuery)" class="btn-secondary" style="text-align:center;">@T.GoToLinkDeviceLink</a>
 
@@ -78,6 +78,15 @@
     // which redirects here when there's no session yet - see ConnectMcp.razor). Only ever used
     // on the plain web flow, never when _app.IsActive (the native return redirect always wins).
     private string? _returnUrl;
+
+    // "Forgot your password?" (PasswordSignInForm) is open: the passkey or recovery-code sign-in that
+    // follows is the proof for choosing a new password, so it lands on the password card with the
+    // change form open instead of the dashboard. Nobody can reset another account's password; this
+    // is the only way back in for somebody who forgot theirs. In the native app the passkey sign-in
+    // runs in the system browser but this page (in the app) does the navigation afterwards, so the
+    // same target applies there.
+    private bool _forgot;
+    private const string ForgotPasswordTarget = "/setup?forgotPassword=true#password";
 
     protected override Task OnInitializingAsync()
     {
@@ -212,7 +221,7 @@
             await TokenStore.SetTokenAsync(token);
             // forceLoad: full restart of the WASM app so AppStateService & co. don't keep
             // showing cached data from another (previously resolved) account.
-            Nav.NavigateTo(_returnUrl ?? "/", forceLoad: true);
+            Nav.NavigateTo(_forgot ? ForgotPasswordTarget : _returnUrl ?? "/", forceLoad: true);
         }
         catch (JSException)
         {
@@ -262,7 +271,7 @@
                 return;
             }
             await TokenStore.SetTokenAsync(token);
-            Nav.NavigateTo("/setup", forceLoad: true);
+            Nav.NavigateTo(_forgot ? ForgotPasswordTarget : "/setup", forceLoad: true);
         }
         catch (HttpRequestException)
         {
@@ -286,7 +295,7 @@
                 await TokenStore.SetTokenAsync(token);
                 // forceLoad for the same reason as in the web flow: full restart so no
                 // cached data from another account lives on.
-                Nav.NavigateTo(_returnUrl ?? "/", forceLoad: true);
+                Nav.NavigateTo(_forgot ? ForgotPasswordTarget : _returnUrl ?? "/", forceLoad: true);
                 return;
             }
             _error = T.LoginFailed; // cancelled or failed - same message as on the web

@@ -29,11 +29,9 @@ public class PasswordLoginRequestDto
 }
 
 /// <summary>Successful POST /api/auth/password/login: the same session token a passkey sign-in
-/// returns, plus whether the password is a temporary one the owner set (the client then sends the
-/// user to Settings to choose their own).</summary>
+/// returns.</summary>
 public class PasswordLoginResponseDto : PasskeyCompleteResponseDto
 {
-    public bool PasswordChangeRequired { get; set; }
 }
 
 /// <summary>POST /api/auth/password/register: a new account that signs in with a username and
@@ -70,9 +68,6 @@ public class PasswordStatusDto
 
     public DateTime? UpdatedAt { get; set; }
 
-    /// <summary>The owner set a temporary password; the user should choose their own.</summary>
-    public bool ChangeRequired { get; set; }
-
     /// <summary>False when the password is the account's only usable sign-in method, so removing
     /// it would lock the account out (add a passkey first).</summary>
     public bool CanRemove { get; set; }
@@ -80,12 +75,4 @@ public class PasswordStatusDto
     /// <summary>True when the account has at least one approved passkey (the card then offers the
     /// passkey as the confirmation for changes).</summary>
     public bool HasPasskey { get; set; }
-}
-
-/// <summary>POST /api/auth/users/{id}/password-reset (owner only): the temporary password, shown to
-/// the owner exactly once - only its hash is stored.</summary>
-public class PasswordResetResultDto
-{
-    public string Username { get; set; } = "";
-    public string TemporaryPassword { get; set; } = "";
 }

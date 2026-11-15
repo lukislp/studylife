@@ -46,10 +46,6 @@ public interface IAuthAccountService
     /// making the call, and evicts the revoked tokens from this pod's cache.</summary>
     Task<int> RevokeOtherSessionsAsync(int userId, int currentSessionId);
 
-    /// <summary>Deletes EVERY session of the account (owner password reset - the account's holder is
-    /// not the caller, so there is no session to keep) and evicts them from this pod's cache.</summary>
-    Task<int> RevokeAllSessionsAsync(int userId);
-
     Task<List<ClientApiKeyListItemDto>> ListClientKeysAsync(int userId);
 
     Task<ServiceResult> RevokeClientKeyAsync(int userId, int keyId);
@@ -139,15 +135,6 @@ public class AuthAccountService(StudyLifeDb db, AuthSessionCache sessionCache, S
         // Other pods drop their entries at the cache's TTL (documented on AuthSessionCache).
         var revokedHashes = await others.Select(s => s.TokenHash).ToListAsync();
         var deleted = await others.ExecuteDeleteAsync();
-        foreach (var hash in revokedHashes) sessionCache.Remove(hash);
-        return deleted;
-    }
-
-    public async Task<int> RevokeAllSessionsAsync(int userId)
-    {
-        var all = db.AuthSessions.Where(s => s.AuthUserId == userId);
-        var revokedHashes = await all.Select(s => s.TokenHash).ToListAsync();
-        var deleted = await all.ExecuteDeleteAsync();
         foreach (var hash in revokedHashes) sessionCache.Remove(hash);
         return deleted;
     }

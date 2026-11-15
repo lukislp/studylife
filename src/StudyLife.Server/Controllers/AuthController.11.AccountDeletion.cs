@@ -30,7 +30,7 @@ public partial class AuthController
     private sealed record PendingReauth(AssertionOptions Options, int UserId);
 
     /// <summary>The fresh proof of presence a sensitive action carries (account deletion, adding,
-    /// changing or removing a password, the owner's password reset). Either a passkey assertion
+    /// changing or removing a password). Either a passkey assertion
     /// for the challenge of POST account/reauth/begin (<see cref="OptionsId"/> +
     /// <see cref="Response"/>), one of the caller's own recovery codes, or the caller's current
     /// password. None of them is accepted only for a session that signed in within

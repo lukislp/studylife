@@ -600,9 +600,6 @@ namespace StudyLife.Server.Migrations.Postgres
                     b.Property<int>("AuthUserId")
                         .HasColumnType("integer");
 
-                    b.Property<bool>("ChangeRequired")
-                        .HasColumnType("boolean");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone");
 

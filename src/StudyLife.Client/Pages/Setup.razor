@@ -434,10 +434,10 @@
              State.AccountDeletion); every decision is made server-side by AccountDeletionService.
              Deliberately outside the backup block above: it must exist on Postgres installations
              too, and for every user, not only the owner. -->
-        <!-- Sign-in with username + password next to passkeys (add / change / remove, owner reset).
+        <!-- Sign-in with username + password next to passkeys (add / change / remove).
              Self-contained (own PasswordText table, talks to State.PasswordSignIn); renders nothing
              while the operator has password sign-in switched off and the account has no password. -->
-        <SetupPasswordCard />
+        <SetupPasswordCard StartChange="ForgotPassword" />
         <SetupNativeAppCard />
         <SetupDeleteAccountCard />
 
@@ -506,6 +506,11 @@
 }
 
 @code {
+    /// <summary>?forgotPassword=true: the visitor chose "Forgot your password?" on the sign-in page and
+    /// has just signed in with a passkey or recovery code - the password card opens its change form
+    /// (that fresh sign-in is the proof, see SetupPasswordCard.StartChange).</summary>
+    [Parameter, SupplyParameterFromQuery(Name = "forgotPassword")] public bool ForgotPassword { get; set; }
+
     // Progressive render: the header/page shell paints as soon as text loads, before any of
     // the settings-driven cards below have their data - see the loading flags further down.
     protected override bool RenderShellBeforeData => true;

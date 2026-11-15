@@ -201,14 +201,12 @@ public class PasswordLifecycleTests(CustomWebApplicationFactory factory) : IClas
         Assert.True(status!.HasPassword);
         Assert.Equal("Alex.Example", status.Username);
         Assert.False(status.CanRemove); // no passkey on this account: the password is its only way in
-        Assert.False(status.ChangeRequired);
 
         // Sign-in: case-insensitive name, same kind of session a passkey sign-in issues.
         var login = await _http.LoginAsync("ALEX.example", PasswordHttp.Strong);
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
         var loginDto = await login.Content.ReadFromJsonAsync<PasswordLoginResponseDto>();
-        Assert.False(loginDto!.PasswordChangeRequired);
-        Assert.Equal(43, loginDto.Token!.Length);
+        Assert.Equal(43, loginDto!.Token!.Length);
         var whoami = await (await _http.SendAsync(HttpMethod.Get, "/api/auth/whoami", loginDto.Token)).Content.ReadFromJsonAsync<WhoamiResponseDto>();
         Assert.Equal(1, whoami!.UserId);
         Assert.Equal("session", whoami.Credential);
@@ -525,76 +523,73 @@ public class PasswordSignInDisabledTests(PasswordSignInDisabledTests.DisabledFac
     }
 }
 
-/// <summary>The owner's temporary password for another account.</summary>
-public class OwnerPasswordResetTests(CustomWebApplicationFactory factory) : IClassFixture<CustomWebApplicationFactory>
+/// <summary>The owner can no longer reset another account's password (owner decision 2026-11-15);
+/// a user who forgot theirs signs in with a passkey or recovery code and chooses a new one.</summary>
+public class NoOwnerPasswordResetTests(CustomWebApplicationFactory factory) : IClassFixture<CustomWebApplicationFactory>
 {
     private readonly PasswordHttp _http = new(factory);
 
     [Fact]
-    public async Task Owner_SetsATemporaryPassword_ThatRevokesSessionsAndAsksForAChange()
+    public async Task TheResetEndpointIsGone_EvenForTheOwner()
     {
         await _http.GivePasswordAsync(1, "the.owner", PasswordHttp.Strong);
         var ownerSession = await _http.AgedSessionAsync(1);
-
         var guest = await _http.RegisterAsync("Guest", "guest.user", PasswordHttp.Stronger);
-        var guestToken = (await guest.Content.ReadFromJsonAsync<PasswordLoginResponseDto>())!.Token!;
-        var guestId = await _http.UserIdOfAsync(guestToken);
-
-        // Only the owner, and never for themselves.
-        var byGuest = await _http.SendAsync(HttpMethod.Post, "/api/auth/users/1/password-reset", guestToken, new JsonObject());
-        Assert.Equal("owner-only", await PasswordHttp.ProblemTypeAsync(byGuest));
-        var self = await _http.SendAsync(HttpMethod.Post, "/api/auth/users/1/password-reset", ownerSession,
-            new JsonObject { ["currentPassword"] = PasswordHttp.Strong });
-        Assert.Equal(HttpStatusCode.BadRequest, self.StatusCode);
-        var missing = await _http.SendAsync(HttpMethod.Post, "/api/auth/users/9999/password-reset", ownerSession,
-            new JsonObject { ["currentPassword"] = PasswordHttp.Strong });
-        Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
-
-        var users = await (await _http.SendAsync(HttpMethod.Get, "/api/auth/users", ownerSession)).Content.ReadFromJsonAsync<List<UserListItemDto>>();
-        Assert.Equal("guest.user", users!.Single(u => u.Id == guestId).Username);
+        var guestId = await _http.UserIdOfAsync((await guest.Content.ReadFromJsonAsync<PasswordLoginResponseDto>())!.Token!);
 
         var reset = await _http.SendAsync(HttpMethod.Post, $"/api/auth/users/{guestId}/password-reset", ownerSession,
             new JsonObject { ["currentPassword"] = PasswordHttp.Strong });
-        Assert.Equal(HttpStatusCode.OK, reset.StatusCode);
-        var result = await reset.Content.ReadFromJsonAsync<PasswordResetResultDto>();
-        Assert.Equal("guest.user", result!.Username);
-        Assert.Matches("^[a-z2-9]{5}-[a-z2-9]{5}-[a-z2-9]{5}-[a-z2-9]{5}$", result.TemporaryPassword);
-
-        Assert.Equal(HttpStatusCode.Unauthorized, (await _http.SendAsync(HttpMethod.Get, "/api/auth/account-info", guestToken)).StatusCode);
-        Assert.Equal(HttpStatusCode.Unauthorized, (await _http.LoginAsync("guest.user", PasswordHttp.Stronger)).StatusCode);
-
-        var login = await _http.LoginAsync("guest.user", result.TemporaryPassword);
-        var dto = await login.Content.ReadFromJsonAsync<PasswordLoginResponseDto>();
-        Assert.True(dto!.PasswordChangeRequired);
-
-        var change = await _http.SendAsync(HttpMethod.Put, "/api/auth/password", dto.Token,
-            new JsonObject { ["newPassword"] = "a brand new phrase 2026", ["currentPassword"] = result.TemporaryPassword });
-        Assert.Equal(HttpStatusCode.NoContent, change.StatusCode);
-        var status = await (await _http.SendAsync(HttpMethod.Get, "/api/auth/password", dto.Token)).Content.ReadFromJsonAsync<PasswordStatusDto>();
-        Assert.False(status!.ChangeRequired);
+        Assert.Equal(HttpStatusCode.NotFound, reset.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await _http.LoginAsync("guest.user", PasswordHttp.Stronger)).StatusCode);
     }
 
     [Fact]
-    public async Task Reset_ForAnAccountWithoutPassword_NeedsAUsername()
+    public void TheDtosCarryNoChangeRequiredFlag_AndTheOwnersUserListNoLoginName()
     {
-        var passkeyOnly = await factory.WithDbAsync(async db =>
-        {
-            var user = new AuthUserEntity { DisplayName = "PasskeyOnly", CreatedAt = DateTime.UtcNow };
-            db.AuthUsers.Add(user);
-            await db.SaveChangesAsync();
-            return user.Id;
-        });
-        var ownerSession = await _http.AgedSessionAsync(1);
-        var code = await _http.RecoveryCodeAsync(ownerSession);
+        Assert.Null(typeof(PasswordLoginResponseDto).GetProperty("PasswordChangeRequired"));
+        Assert.Null(typeof(PasswordStatusDto).GetProperty("ChangeRequired"));
+        Assert.Null(typeof(UserListItemDto).GetProperty("Username"));
+        Assert.Null(typeof(PasswordCredentialEntity).GetProperty("ChangeRequired"));
+        Assert.Null(typeof(PasswordStatusDto).Assembly.GetType("StudyLife.Shared.PasswordResetResultDto"));
+    }
+}
 
-        var noName = await _http.SendAsync(HttpMethod.Post, $"/api/auth/users/{passkeyOnly}/password-reset", ownerSession,
-            new JsonObject { ["recoveryCode"] = code });
-        Assert.Equal("username-invalid", await PasswordHttp.ProblemTypeAsync(noName));
+/// <summary>"Forgot your password?": the fresh recovery-code sign-in is the proof for choosing a new
+/// password - no second confirmation within the two-minute window, one afterwards.</summary>
+public class ForgotPasswordFlowTests(CustomWebApplicationFactory factory) : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly PasswordHttp _http = new(factory);
 
-        var withName = await _http.SendAsync(HttpMethod.Post, $"/api/auth/users/{passkeyOnly}/password-reset", ownerSession,
-            new JsonObject { ["username"] = "rescued.user", ["recoveryCode"] = code });
-        Assert.Equal(HttpStatusCode.OK, withName.StatusCode);
-        Assert.Equal("rescued.user", (await withName.Content.ReadFromJsonAsync<PasswordResetResultDto>())!.Username);
+    [Fact]
+    public async Task RecoverySignIn_ThenANewPasswordWithoutAnyExtraProof()
+    {
+        await _http.GivePasswordAsync(1, "forgetful.user", PasswordHttp.Strong);
+        var aged = await _http.AgedSessionAsync(1);
+        var code = await _http.RecoveryCodeAsync(aged);
+
+        var recovery = await _http.Anonymous.PostAsJsonAsync("/api/auth/recovery/login", new RecoveryLoginRequestDto { Code = code });
+        Assert.Equal(HttpStatusCode.OK, recovery.StatusCode);
+        var fresh = (await recovery.Content.ReadFromJsonAsync<PasskeyCompleteResponseDto>())!.Token!;
+
+        // The old password is not known any more; the fresh sign-in alone carries the change.
+        var change = await _http.SendAsync(HttpMethod.Put, "/api/auth/password", fresh,
+            new JsonObject { ["newPassword"] = PasswordHttp.Stronger });
+        Assert.Equal(HttpStatusCode.NoContent, change.StatusCode);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, (await _http.LoginAsync("forgetful.user", PasswordHttp.Strong)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await _http.LoginAsync("forgetful.user", PasswordHttp.Stronger)).StatusCode);
+        // The other session of the account (the aged one) went with the change; the fresh one stays.
+        Assert.Equal(HttpStatusCode.Unauthorized, (await _http.SendAsync(HttpMethod.Get, "/api/auth/whoami", aged)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await _http.SendAsync(HttpMethod.Get, "/api/auth/whoami", fresh)).StatusCode);
+    }
+
+    [Fact]
+    public async Task AnOldSession_StillNeedsAProofForTheChange()
+    {
+        var aged = await _http.AgedSessionAsync(1);
+        var change = await _http.SendAsync(HttpMethod.Put, "/api/auth/password", aged,
+            new JsonObject { ["username"] = "late.user", ["newPassword"] = PasswordHttp.Stronger });
+        Assert.Equal("reauthentication-required", await PasswordHttp.ProblemTypeAsync(change));
     }
 }
 
@@ -658,34 +653,6 @@ public class PasswordFixedUsernameTests(CustomWebApplicationFactory factory) : I
         });
         Assert.Equal(HttpStatusCode.NoContent, readd.StatusCode);
         Assert.Equal("Other.Name", (await StatusAsync(session)).Username);
-    }
-
-    [Fact]
-    public async Task OwnerReset_CannotRenameAnAccountThatHasAName()
-    {
-        var target = await factory.WithDbAsync(async db =>
-        {
-            var user = new AuthUserEntity { DisplayName = "ResetTarget", CreatedAt = DateTime.UtcNow };
-            db.AuthUsers.Add(user);
-            await db.SaveChangesAsync();
-            return user.Id;
-        });
-        var ownerSession = await _http.AgedSessionAsync(1);
-        var url = $"/api/auth/users/{target}/password-reset";
-
-        var first = await _http.SendAsync(HttpMethod.Post, url, ownerSession,
-            new JsonObject { ["username"] = "reset.target", ["recoveryCode"] = await _http.RecoveryCodeAsync(ownerSession) });
-        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
-
-        var rename = await _http.SendAsync(HttpMethod.Post, url, ownerSession,
-            new JsonObject { ["username"] = "renamed.target", ["recoveryCode"] = await _http.RecoveryCodeAsync(ownerSession) });
-        Assert.Equal(HttpStatusCode.BadRequest, rename.StatusCode);
-        Assert.Equal("username-fixed", await PasswordHttp.ProblemTypeAsync(rename));
-
-        var again = await _http.SendAsync(HttpMethod.Post, url, ownerSession,
-            new JsonObject { ["username"] = "Reset.Target", ["recoveryCode"] = await _http.RecoveryCodeAsync(ownerSession) });
-        Assert.Equal(HttpStatusCode.OK, again.StatusCode);
-        Assert.Equal("reset.target", (await again.Content.ReadFromJsonAsync<PasswordResetResultDto>())!.Username);
     }
 }
 
@@ -826,6 +793,5 @@ public class PasswordCredentialServiceTests(CustomWebApplicationFactory factory)
         Assert.False((await service.SignInAsync(null, null)).Succeeded);
         Assert.False((await service.SignInAsync("x", PasswordHttp.Strong)).Succeeded);
         Assert.False((await service.SignInAsync("valid.name", new string('a', 200))).Succeeded);
-        Assert.Equal(23, service.GenerateTemporaryPassword().Length);
     }
 }

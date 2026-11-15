@@ -572,9 +572,6 @@ public class PasswordCredentialEntity
     public int FailedAttemptCount { get; set; }
     /// <summary>Temporary lockout end (PasswordLockoutPolicy); null = not locked.</summary>
     public DateTime? LockedUntil { get; set; }
-    /// <summary>Set when the owner reset the password to a temporary one: the user is asked to
-    /// choose their own. Cleared by the next password change.</summary>
-    public bool ChangeRequired { get; set; }
 }
 
 /// <summary>

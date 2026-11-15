@@ -33,14 +33,6 @@ public partial class AuthController
         public string? NewPassword { get; set; }
     }
 
-    /// <summary>POST api/auth/users/{id}/password-reset: the login name is only needed (and only
-    /// accepted) when the account has none yet; a different one is refused (400 username-fixed).</summary>
-    public class PasswordResetRequest : FreshProofRequest
-    {
-        [MaxLength(256)]
-        public string? Username { get; set; }
-    }
-
     /// <summary>Which sign-in methods the sign-in and registration pages offer. Anonymous - it
     /// reveals only the operator's switch, which the pages show anyway. Never offered on a demo
     /// instance (it signs in automatically).</summary>
@@ -69,7 +61,6 @@ public partial class AuthController
         {
             Token = token,
             DisplayName = displayName,
-            PasswordChangeRequired = result.ChangeRequired,
         };
     }
 
@@ -192,45 +183,6 @@ public partial class AuthController
 
         var result = await _passwords.RemoveAsync(userId, CurrentSessionId);
         return result == PasswordProblem.None ? NoContent() : PasswordProblemResult(result);
-    }
-
-    /// <summary>
-    /// Owner only: give another account a temporary password, shown to the owner exactly once (only
-    /// its hash is stored). Meant for "lost every passkey and every recovery code". Revokes every
-    /// session of that account and marks the password as temporary, so the user is asked to choose
-    /// their own after signing in. Confirmed with the owner's own fresh proof, like removing a user.
-    /// </summary>
-    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
-    [HttpPost("users/{id:int}/password-reset")]
-    public async Task<ActionResult<PasswordResetResultDto>> ResetUserPassword(int id, [FromBody] PasswordResetRequest? request)
-    {
-        request ??= new PasswordResetRequest();
-        var callerId = SessionUserId;
-        if (!_passwords.Enabled) return PasswordProblemResult(PasswordProblem.Disabled);
-        if (!await _ownership.IsOwnerAsync(callerId))
-            return Problem(statusCode: StatusCodes.Status403Forbidden, type: "owner-only",
-                title: "owner-only", detail: "Only the owner can reset another account's password.");
-        if (id == callerId) return BadRequest("Use the password settings to change your own password.");
-        if (!await _db.AuthUsers.AnyAsync(u => u.Id == id)) return NotFound();
-
-        // A random temporary password never trips the common-password check; it could only contain
-        // a short login name by sheer chance - draw again in that case.
-        string temporary;
-        (PasswordProblem Problem, PreparedPassword? Prepared) prepared;
-        var attempts = 0;
-        do
-        {
-            temporary = _passwords.GenerateTemporaryPassword();
-            prepared = await _passwords.PrepareAsync(id, request.Username, temporary);
-        }
-        while (prepared.Problem == PasswordProblem.ContainsUsername && ++attempts < 5);
-        if (prepared.Problem != PasswordProblem.None) return PasswordProblemResult(prepared.Problem);
-
-        if (await ProofRefusalAsync(request, callerId) is { } refusal) return refusal;
-
-        var result = await _passwords.SetAsync(id, prepared.Prepared!, keepSessionId: null, changeRequired: true);
-        if (result != PasswordProblem.None) return PasswordProblemResult(result);
-        return new PasswordResetResultDto { Username = prepared.Prepared!.Username, TemporaryPassword = temporary };
     }
 
     private async Task<ActionResult?> ProofRefusalAsync(FreshProofRequest request, int userId) =>

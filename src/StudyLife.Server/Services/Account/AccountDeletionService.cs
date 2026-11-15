@@ -130,7 +130,6 @@ public sealed class AccountDeletionService(
                 Id = u.Id,
                 DisplayName = u.DisplayName,
                 CreatedAt = u.CreatedAt,
-                Username = db.PasswordCredentials.Where(c => c.AuthUserId == u.Id).Select(c => c.Username).FirstOrDefault(),
             })
             .ToListAsync();
 
