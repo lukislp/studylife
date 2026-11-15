@@ -58,5 +58,7 @@
   "AriaCloseDialog": "Dún an dialóg",
   "AriaPreviousWeek": "An tseachtain roimhe",
   "AriaNextWeek": "An tseachtain seo chugainn",
+  "NavPreviousHint": "Roimhe seo (←)",
+  "NavNextHint": "Ar aghaidh (→)",
   "AriaSessionDone": "Críochnaithe"
 }

@@ -58,5 +58,7 @@
   "AriaCloseDialog": "Aizvērt dialoglodziņu",
   "AriaPreviousWeek": "Iepriekšējā nedēļa",
   "AriaNextWeek": "Nākamā nedēļa",
+  "NavPreviousHint": "Iepriekšējais (←)",
+  "NavNextHint": "Nākamais (→)",
   "AriaSessionDone": "Pabeigta"
 }

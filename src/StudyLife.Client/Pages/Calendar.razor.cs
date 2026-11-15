@@ -142,6 +142,18 @@ public partial class Calendar
                 // header swipe still work) — never show the error banner.
             }
 
+            // Keyboard shortcuts and trackpad paging (Calendar.razor.js). Collocated module
+            // instead of index.html; best-effort like the swipe above.
+            try
+            {
+                _navModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/Calendar.razor.js");
+                await _navModule.InvokeVoidAsync("attach", _swipeRef, "cal-outer", CalendarNavigation.WheelThreshold);
+            }
+            catch
+            {
+                // Module unavailable (stale service-worker cache): the buttons and touch swipe still work.
+            }
+
             // Auto-default: switch to day view once on narrow viewports (phones).
             // Only on the first render and only as long as the user hasn't
             // operated the toggle themselves yet — the manual choice always wins.
@@ -192,7 +204,19 @@ public partial class Calendar
                 // the calendar just starts uncentered (default scroll position) instead.
             }
         }
+
+        // The grid scrolls inside #cal-outer (main-content is clipped on this page): hand it
+        // the focus once it exists so arrows/space/page keys scroll it without a click first.
+        // focusScrollRegion leaves a focus the user already put somewhere meaningful alone.
+        if (!_gridLoading && !_gridFocused)
+        {
+            _gridFocused = true;
+            try { await JS.InvokeVoidAsync("focusScrollRegion", "cal-outer"); }
+            catch { /* stale cached index.html without the helper */ }
+        }
     }
+
+    private bool _gridFocused;
 
     // _weekLabel is built once per navigation, so a language switch (which is when the localized
     // weekday names arrive) leaves it stuck in the old language - same class of staleness as the
@@ -211,6 +235,7 @@ public partial class Calendar
         // (after navigating away from the calendar it's usually already removed from the DOM,
         // in which case the call is a no-op and the listeners die with the element).
         try { _ = JS.InvokeVoidAsync("disposeCalendarSwipe", "cal-outer"); } catch { }
+        try { _ = _navModule?.InvokeVoidAsync("detach"); } catch { }
         _swipeRef?.Dispose();
         _swipeRef = null;
     }
@@ -320,5 +345,31 @@ public partial class Calendar
 
     [JSInvokable]
     public void SwipePrevWeek() { Prev(); StateHasChanged(); }
+
+    // Keyboard shortcuts and trackpad paging (Calendar.razor.js reports the DOM facts, the
+    // decision is CalendarNavigation). Returns whether the key was consumed so the script can
+    // suppress the browser default (ArrowLeft/Right would otherwise pan the grid).
+    private IJSObjectReference? _navModule;
+
+    [JSInvokable]
+    public bool OnShortcutKey(string key, bool ctrl, bool meta, bool alt, bool shift, bool blocked)
+        => ApplyNavigation(CalendarNavigation.FromKey(key, ctrl, meta, alt, shift, blocked));
+
+    [JSInvokable]
+    public void OnHorizontalGesture(double dx, double dy)
+        => ApplyNavigation(CalendarNavigation.FromHorizontalGesture(dx, dy));
+
+    private bool ApplyNavigation(CalendarNavStep step)
+    {
+        switch (step)
+        {
+            case CalendarNavStep.Previous: Prev(); break;
+            case CalendarNavStep.Next: Next(); break;
+            case CalendarNavStep.Today: GoToday(); break;
+            default: return false;
+        }
+        StateHasChanged();
+        return true;
+    }
 
 }

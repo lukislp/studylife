@@ -58,5 +58,7 @@
   "AriaCloseDialog": "Uždaryti dialogo langą",
   "AriaPreviousWeek": "Ankstesnė savaitė",
   "AriaNextWeek": "Kita savaitė",
+  "NavPreviousHint": "Ankstesnis (←)",
+  "NavNextHint": "Kitas (→)",
   "AriaSessionDone": "Baigta"
 }

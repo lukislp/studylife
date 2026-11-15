@@ -58,5 +58,7 @@
   "AriaCloseDialog": "Zavřít dialog",
   "AriaPreviousWeek": "Předchozí týden",
   "AriaNextWeek": "Další týden",
+  "NavPreviousHint": "Předchozí (←)",
+  "NavNextHint": "Další (→)",
   "AriaSessionDone": "Dokončeno"
 }

@@ -58,5 +58,7 @@
   "AriaCloseDialog": "Zavrieť dialóg",
   "AriaPreviousWeek": "Predchádzajúci týždeň",
   "AriaNextWeek": "Nasledujúci týždeň",
+  "NavPreviousHint": "Predchádzajúce (←)",
+  "NavNextHint": "Ďalšie (→)",
   "AriaSessionDone": "Dokončené"
 }
