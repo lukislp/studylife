@@ -1,6 +1,7 @@
 {
   "ServerHeading": "Serveur",
   "ServerConnectedTo": "Connecté à {0}",
+  "ServerAddressLabel": "Server: {0}",
   "ChangeServerButton": "Changer de serveur",
   "ChangeServerConfirmTitle": "Changer de serveur ?",
   "ChangeServerConfirmBody": "Tu seras déconnecté de {0} et les copies que StudyLife garde sur cet appareil (widgets, Apple Watch, recherche) seront supprimées. Ton compte et tes données sur le serveur restent inchangés.",

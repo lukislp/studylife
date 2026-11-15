@@ -1,6 +1,7 @@
 {
   "ServerHeading": "Server",
   "ServerConnectedTo": "Forbundet til {0}",
+  "ServerAddressLabel": "Server: {0}",
   "ChangeServerButton": "Skift server",
   "ChangeServerConfirmTitle": "Skift server?",
   "ChangeServerConfirmBody": "Du bliver logget ud af {0}, og de kopier, StudyLife har på denne enhed (widgets, Apple Watch, søgning), fjernes. Din konto og dine data på serveren forbliver uændrede.",

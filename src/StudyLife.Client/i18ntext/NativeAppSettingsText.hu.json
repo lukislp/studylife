@@ -1,6 +1,7 @@
 {
   "ServerHeading": "Szerver",
   "ServerConnectedTo": "Kapcsolódva: {0}",
+  "ServerAddressLabel": "Server: {0}",
   "ChangeServerButton": "Szerver váltása",
   "ChangeServerConfirmTitle": "Szervert váltasz?",
   "ChangeServerConfirmBody": "Kijelentkeztetünk innen: {0}, és a StudyLife által ezen az eszközön tárolt másolatok (widgetek, Apple Watch, keresés) törlődnek. A fiókod és az adataid a szerveren változatlanok maradnak.",
