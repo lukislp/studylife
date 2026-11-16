@@ -49,7 +49,7 @@
             }
             else
             {
-                <input class="input" style="text-align:center;letter-spacing:0.08em" placeholder="XXXX-XXXX-XXXX"
+                <input class="input" style="text-align:center;letter-spacing:0.08em" placeholder="XXXX-XXXX-XXXX-XXXX"
                        autocapitalize="characters" spellcheck="false"
                        @bind="_recoveryCode" @bind:event="oninput"
                        @onkeyup="@(e => { if (e.Key == "Enter") _ = RecoverySignInAsync(); })" />
