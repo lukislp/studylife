@@ -152,6 +152,8 @@ public class AccountDeletionStateTests
 /// so every assertion also pins which key the markup uses.</summary>
 public class SetupDeleteAccountCardTests : ConsentBunitTest
 {
+    private RecordingFileDownloads Downloads { get; } = new();
+
     private sealed class FakeNativeAuth : INativeAppAuth
     {
         public bool IsAvailable { get; init; }
@@ -193,7 +195,7 @@ public class SetupDeleteAccountCardTests : ConsentBunitTest
         Services.AddSingleton(tokens);
         Services.AddSingleton(new AppStateService(http, js, NullLogger<AppStateService>.Instance, tokens));
         Services.AddSingleton<INativeAppAuth>(native);
-        Services.AddSingleton<INativeFileExport>(new NoNativeFileExport());
+        Services.AddSingleton<IFileDownloadService>(Downloads);
         var cut = Render<SetupDeleteAccountCard>(p => p.Add(c => c.Text, KeyTexts()));
         cut.WaitForState(() => !cut.Markup.Contains("Working"));
         return (cut, server, native, tokens);
@@ -265,6 +267,35 @@ public class SetupDeleteAccountCardTests : ConsentBunitTest
         Assert.True(next.HasAttribute("disabled"));
         cut.Find("input[type=checkbox]").Change(true);
         Assert.False(cut.Find(".modal-footer button.btn-danger").HasAttribute("disabled"));
+    }
+
+    [Fact]
+    public void TheExportBeforeDeleting_GoesThroughTheFileDownloadService()
+    {
+        var (cut, server, _, _) = Render(Available());
+        server.On("GET api/backup/export", _ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{\"formatVersion\":2}") });
+        cut.Find("button.btn-danger").Click();
+
+        cut.FindAll("button").Single(b => b.TextContent == "ExportButton").Click();
+
+        cut.WaitForAssertion(() => Assert.Single(Downloads.Saved), ChainTimeout);
+        var file = Downloads.Saved[0];
+        Assert.Matches(@"^studyatrium-export-\d{8}\.json$", file.FileName);
+        Assert.Equal("{\"formatVersion\":2}", System.Text.Encoding.UTF8.GetString(file.Content));
+        Assert.DoesNotContain("ExportFailed", cut.Markup);
+    }
+
+    [Fact]
+    public void AnExportTheDeviceCannotOffer_ShowsTheErrorText()
+    {
+        Downloads.Failure = new InvalidOperationException("no sheet");
+        var (cut, server, _, _) = Render(Available());
+        server.On("GET api/backup/export", _ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{}") });
+        cut.Find("button.btn-danger").Click();
+
+        cut.FindAll("button").Single(b => b.TextContent == "ExportButton").Click();
+
+        cut.WaitForAssertion(() => Assert.Contains("ExportFailed", cut.Markup), ChainTimeout);
     }
 
     [Fact]

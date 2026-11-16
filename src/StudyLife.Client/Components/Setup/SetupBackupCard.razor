@@ -2,16 +2,14 @@
   SPDX-FileCopyrightText: 2026 Lukas Körber
   SPDX-License-Identifier: AGPL-3.0-only
 *@
+@using StudyLife.Client.Services
 @inject HttpClient Http
-@inject IJSRuntime JS
-@implements IDisposable
+@inject IFileDownloadService Downloads
 
-@* Since phase 3, all downloads go through the Blazor HttpClient + blob download
-   (SetupBackupCard.razor.js) instead of native <a download> links: the /api gate now
-   requires a session token OR a per-user API key, and the browser client only holds the
-   session token - the SessionHandler attaches that automatically to HttpClient requests, but
-   not to native browser navigation. The former ?apiKey= query parameter (global key from
-   the bootstrap endpoint) no longer exists for the browser.
+@* All downloads go through the Blazor HttpClient (the /api gate wants the session token, which
+   only the SessionHandler attaches - a plain <a download> link would arrive unauthenticated) and
+   are then handed to IFileDownloadService: a blob download in the browser, the system save/share
+   sheet in the native app.
 
    Optional password field for the encrypted variant: empty = unencrypted GET
    download. As soon as a password is entered, the download button switches to
@@ -67,7 +65,6 @@
     private string _password = "";
     private bool _downloading;
     private string? _error;
-    private IJSObjectReference? _module;
 
     // With a password: encrypted POST download; without: normal GET of the SQLite file.
     private Task DownloadDatabase() =>
@@ -88,20 +85,14 @@
         _downloading = true;
         try
         {
-            var response = await send();
+            using var response = await send();
             if (!response.IsSuccessStatusCode)
             {
                 _error = EncryptedDownloadErrorText;
                 return;
             }
 
-            _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Setup/SetupBackupCard.razor.js");
-            var fileName = response.Content.Headers.ContentDisposition?.FileNameStar
-                           ?? response.Content.Headers.ContentDisposition?.FileName
-                           ?? fallbackFileName;
-            await using var stream = await response.Content.ReadAsStreamAsync();
-            using var streamRef = new DotNetStreamReference(stream);
-            await _module.InvokeVoidAsync("downloadFileFromStream", fileName.Trim('"'), streamRef);
+            await Downloads.SaveResponseAsync(response, fallbackFileName);
         }
         catch
         {
@@ -110,14 +101,6 @@
         finally
         {
             _downloading = false;
-        }
-    }
-
-    public void Dispose()
-    {
-        if (_module != null)
-        {
-            try { _ = _module.DisposeAsync(); } catch { /* best-effort, component is unmounting */ }
         }
     }
 }

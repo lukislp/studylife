@@ -1423,7 +1423,7 @@ public class AppStateService : IAsyncDisposable
     /// Sets the curated accent color as a data attribute on &lt;html&gt; (wwwroot/js/accent.js,
     /// mirrors the existing theme mechanism exactly). Its own JS module via dynamic
     /// import() instead of a global index.html script, because index.html is intentionally left
-    /// untouched - analogous to the already-existing Focus.razor.js/SetupBackupCard.razor.js
+    /// untouched - analogous to the already-existing Focus.razor.js/Calendar.razor.js
     /// pattern. Wired centrally here instead of in MainLayout/Setup so it automatically applies
     /// on EVERY load/save AND on the 30s cross-client poll (the theme, by contrast, is only
     /// applied on the initial MainLayout mount resp. explicitly in the Setup theme switch).
