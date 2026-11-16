@@ -73,13 +73,13 @@
     private Task DownloadDatabase() =>
         string.IsNullOrEmpty(_password)
             ? DownloadViaHttpAsync(() => Http.GetAsync("api/backup/database"),
-                $"studylife-backup-{DateTime.UtcNow:yyyyMMdd}.db")
+                $"studyatrium-backup-{DateTime.UtcNow:yyyyMMdd}.db")
             : DownloadViaHttpAsync(() => Http.PostAsJsonAsync("api/backup/database/encrypted", new { password = _password }),
-                $"studylife-backup-{DateTime.UtcNow:yyyyMMdd}.db.enc");
+                $"studyatrium-backup-{DateTime.UtcNow:yyyyMMdd}.db.enc");
 
     private Task DownloadExport() =>
         DownloadViaHttpAsync(() => Http.GetAsync("api/backup/export"),
-            $"studylife-export-{DateTime.UtcNow:yyyyMMdd}.json");
+            $"studyatrium-export-{DateTime.UtcNow:yyyyMMdd}.json");
 
     private async Task DownloadViaHttpAsync(Func<Task<HttpResponseMessage>> send, string fallbackFileName)
     {

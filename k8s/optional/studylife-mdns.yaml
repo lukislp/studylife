@@ -7,7 +7,7 @@
 #
 #   kubectl apply -f k8s/optional/studylife-mdns.yaml
 #
-# What it is: ONE pod that announces the StudyLife service on the LAN via mDNS / DNS-SD
+# What it is: ONE pod that announces the StudyAtrium service on the LAN via mDNS / DNS-SD
 # (_studylife._tcp, see docs/MDNS.md) on behalf of the ingress/gateway URL. The web pods cannot do
 # it themselves: they run N replicas on the pod network, where multicast never reaches the LAN.
 # This pod therefore uses hostNetwork, and runs the same image in announcer-only mode
@@ -106,7 +106,7 @@ spec:
             # - name: Discovery__Mdns__InstanceUrl
             #   value: "https://studylife.heim.lan"
             - name: Discovery__Mdns__Name
-              value: "StudyLife"
+              value: "StudyAtrium"
           resources:
             requests: {cpu: 10m, memory: 48Mi}
             limits: {cpu: 100m, memory: 128Mi}

@@ -1,6 +1,6 @@
 # Security Assurance Case
 
-This document argues why StudyLife's security requirements are met. It covers the threat model,
+This document argues why StudyAtrium's security requirements are met. It covers the threat model,
 the trust boundaries, how the secure-design principles are applied, how common implementation
 weaknesses are countered, and which risks are knowingly accepted. It pulls the security-relevant
 parts of [`ARCHITECTURE.md`](ARCHITECTURE.md#security), [`SCALING.md`](SCALING.md) and the
@@ -10,7 +10,7 @@ Last full review: **2026-11-03** (maintainer, see [Review record](#review-record
 
 ## 1. Claim
 
-> A StudyLife installation deployed as documented keeps each user's study data confidential and
+> A StudyAtrium installation deployed as documented keeps each user's study data confidential and
 > intact against other users, against unauthenticated network attackers, and against
 > integrations acting outside the permissions the user granted them. It also fails safe
 > (rejects) when a credential, certificate or input is invalid.
@@ -218,7 +218,7 @@ node, or a compromised pod on a CNI without encryption) could read those secrets
 within their lifetime. NetworkPolicies limit who can *connect*, but they do not provide
 confidentiality. All of these hops therefore use TLS with certificate validation.
 
-**StudyLife side.** The three proxy clients get their `HttpClient` from `AddonTlsConfiguration`
+**StudyAtrium side.** The three proxy clients get their `HttpClient` from `AddonTlsConfiguration`
 (`src/StudyLife.Server/Services/AddonTlsConfiguration.cs`), controlled by two settings:
 
 | Setting (env) | Default (code) | Kubernetes (`k8s/04-web.yaml`, `k8s/05-worker.yaml`) | Effect |
@@ -253,8 +253,8 @@ restart.
 
 - The add-ons' previous plain ports (`8000`/`8001`, `8000`, `8080`) keep running for the kubelet
   probes, Prometheus scraping and, for studylife-developers, the gateway → pod hop of its public
-  HTTPRoute. StudyLife no longer uses them (`RequireHttps`). The NetworkPolicies still admit
-  StudyLife on them for the switch-over and can drop those ports afterwards.
+  HTTPRoute. StudyAtrium no longer uses them (`RequireHttps`). The NetworkPolicies still admit
+  StudyAtrium on them for the switch-over and can drop those ports afterwards.
 - The web and worker pods' own plain port `8080` and metrics port, for probes and Prometheus,
   next to the TLS backend port `8443` that the gateway uses (TB2).
 - The OTLP export from web and worker to the in-cluster OpenTelemetry collector
@@ -265,9 +265,9 @@ None of these carries the add-on secrets or user credentials from StudyLife.
 
 **Rollout order.** The add-on repositories ship first: their Flux-managed manifests add the
 Certificate, the TLS port and the TLS settings, and the release image starts the HTTPS listener
-next to the plain port, so nothing changes for StudyLife yet. Then the updated NetworkPolicies
+next to the plain port, so nothing changes for StudyAtrium yet. Then the updated NetworkPolicies
 (applied by hand, additive: each add-on's policy file and `k8s/12-network-policies.yaml` here).
-Only then the StudyLife change that switches the URLs to `https://` and turns on `RequireHttps`.
+Only then the StudyAtrium change that switches the URLs to `https://` and turns on `RequireHttps`.
 A cluster-wide alternative remains a CNI with transparent encryption (WireGuard) or a service
 mesh with mTLS.
 
@@ -320,7 +320,7 @@ ZAP findings themselves do not fail the workflow; they are triaged here. The fir
 
 | Risk | Why accepted | Mitigation |
 |---|---|---|
-| Plain-HTTP ports kept in the cluster: add-on probe/metrics ports, the developer portal's gateway → pod hop, OTLP to the collector (8.3) | Probes, Prometheus and the gateway have no client certificate setup for these targets yet; none of these hops carries StudyLife's add-on secrets or user credentials | StudyLife → add-on calls are HTTPS-only (`AddonTls:RequireHttps`, CA + host-name validation). NetworkPolicies restrict each port to its caller. Follow-ups in [ROADMAP.md](../ROADMAP.md). |
+| Plain-HTTP ports kept in the cluster: add-on probe/metrics ports, the developer portal's gateway → pod hop, OTLP to the collector (8.3) | Probes, Prometheus and the gateway have no client certificate setup for these targets yet; none of these hops carries StudyAtrium's add-on secrets or user credentials | StudyAtrium → add-on calls are HTTPS-only (`AddonTls:RequireHttps`, CA + host-name validation). NetworkPolicies restrict each port to its caller. Follow-ups in [ROADMAP.md](../ROADMAP.md). |
 | Redis cluster bus (gossip) in plaintext | `tls-cluster yes` broke the pod-IP-based cluster during a rolling update ([SCALING.md](SCALING.md)) | Bus port reachable only between Redis pods (NetworkPolicy). No user payload on the bus beyond replication. |
 | Redis password visible in the Redis process command line | Redis reads it as CLI flags from a Secret | Visible only to someone who can exec into the Redis pod, which is already past the boundary |
 | DNS rebinding for push/webhook URLs | Host names are not resolved on the request path | Literal private IPs and internal suffixes are rejected |
@@ -336,7 +336,7 @@ ZAP findings themselves do not fail the workflow; they are triaged here. The fir
 |---|---|---|---|
 | 2026-08 / 2026-09 | Multi-user overhaul (phases 1–3), audit rounds A1–A6, S1–S12, O1–O6 | Maintainer (internal) | Findings and fixes documented in [ARCHITECTURE.md](ARCHITECTURE.md#security), each with regression tests |
 | 2026-11-03 | This assurance case: requirements, trust boundaries, TLS validation of internal peers | Maintainer (internal) | TLS validation for Redis and the K8s API fixed. In-cluster plain-HTTP hops assessed and planned (8.3). Residual risks listed (9). |
-| 2026-11-04 | TLS for the add-on hops | Maintainer (internal) | studylife-ai, studylife-webhooks and studylife-developers serve HTTPS from the internal CA; StudyLife calls them over `https://` with CA and host-name validation and `RequireHttps` (8.3). Remaining plain-HTTP ports listed (9). |
+| 2026-11-04 | TLS for the add-on hops | Maintainer (internal) | studylife-ai, studylife-webhooks and studylife-developers serve HTTPS from the internal CA; StudyAtrium calls them over `https://` with CA and host-name validation and `RequireHttps` (8.3). Remaining plain-HTTP ports listed (9). |
 
 No external security review has taken place so far. The next internal review is due when a
 trust boundary changes, and at the latest after twelve months.

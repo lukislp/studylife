@@ -116,7 +116,7 @@ public class BackupController : ControllerBase
         {
             var bytes = await System.IO.File.ReadAllBytesAsync(tempPath);
             await _backupData.TouchLastBackupDownloadAsync();
-            return File(bytes, "application/octet-stream", $"studylife-backup-{DateTime.UtcNow:yyyyMMdd}.db");
+            return File(bytes, "application/octet-stream", $"studyatrium-backup-{DateTime.UtcNow:yyyyMMdd}.db");
         }
         finally
         {
@@ -167,7 +167,7 @@ public class BackupController : ControllerBase
             var bytes = await System.IO.File.ReadAllBytesAsync(tempPath);
             var encrypted = BackupEncryptionService.Encrypt(bytes, request.Password);
             await _backupData.TouchLastBackupDownloadAsync();
-            return File(encrypted, "application/octet-stream", $"studylife-backup-{DateTime.UtcNow:yyyyMMdd}.db.enc");
+            return File(encrypted, "application/octet-stream", $"studyatrium-backup-{DateTime.UtcNow:yyyyMMdd}.db.enc");
         }
         finally
         {
@@ -193,7 +193,7 @@ public class BackupController : ControllerBase
         // Serialized with the SAME JsonSerializerOptions the framework itself uses for every
         // other endpoint (_jsonOptions) - the fix for the casing bug (audit finding M4(a)).
         var bytes = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(export, _jsonOptions);
-        return File(bytes, "application/json", $"studylife-export-{DateTime.UtcNow:yyyyMMdd}.json");
+        return File(bytes, "application/json", $"studyatrium-export-{DateTime.UtcNow:yyyyMMdd}.json");
     }
 
     // A JSON export is text and far smaller than the raw 512MB SQLite backup (Restore below) -

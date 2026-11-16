@@ -1,6 +1,6 @@
 # Automatic discovery (mDNS / DNS-SD)
 
-StudyLife can announce itself on the local network so that Home Assistant discovers it without
+StudyAtrium can announce itself on the local network so that Home Assistant discovers it without
 typing an address. The announcement is **opt-in** and **off by default**: with the default
 configuration the server opens no multicast socket and sends nothing.
 
@@ -9,7 +9,7 @@ configuration the server opens no multicast socket and sends nothing.
 | | |
 |---|---|
 | Service type | `_studylife._tcp` (full name `_studylife._tcp.local.`) |
-| Instance name | the configured `Name` (default `StudyLife`) |
+| Instance name | the configured `Name` (default `StudyAtrium`) |
 | Port | the port of the advertised URL: 443 for `https` without an explicit port, 80 for `http` |
 | TXT `version` | the server version |
 | TXT `url` | the advertised base URL, scheme + host[:port], no trailing slash |
@@ -44,7 +44,7 @@ uses them to tell a user on an internal address that passkeys only work under th
 Nothing else goes on the wire: never an API key, token, user data or database detail. Anyone on the
 same network segment can read the announcement - it contains only what the TXT table above lists.
 
-The advertised `url` is **configuration, not derived from the host**. A StudyLife server usually
+The advertised `url` is **configuration, not derived from the host**. A StudyAtrium server usually
 runs behind a reverse proxy, ingress or gateway under a name like `https://studylife.example.org`,
 and that is the address Home Assistant has to connect to - not the address of the container or pod.
 
@@ -54,7 +54,7 @@ and that is the address Home Assistant has to connect to - not the address of th
 |---|---|---|---|
 | `Discovery:Mdns:Enabled` | `Discovery__Mdns__Enabled` | `false` | Announce while serving normally |
 | `Discovery:Mdns:Url` | `Discovery__Mdns__Url` | none | Advertised base URL. Required when `Enabled` or `Only`; must be an absolute `http`/`https` URL, otherwise the server refuses to start with a clear message |
-| `Discovery:Mdns:Name` | `Discovery__Mdns__Name` | `StudyLife` | Instance name (max. 63 bytes) |
+| `Discovery:Mdns:Name` | `Discovery__Mdns__Name` | `StudyAtrium` | Instance name (max. 63 bytes) |
 | `Discovery:Mdns:Only` | `Discovery__Mdns__Only` | `false` | Run **only** the announcer: no database, no migrations, no Redis, no web endpoints |
 | `Discovery:Mdns:InstanceUrl` | `Discovery__Mdns__InstanceUrl` | `Url` | Announcer-only mode: where to fetch the instance id (`GET <InstanceUrl>/api/instance`). Set it when the announcer pod reaches the server under another address than the advertised one, e.g. a LAN name |
 | `Discovery:Mdns:Id` | `Discovery__Mdns__Id` | none | Announcer-only mode: announce this instance id (32 hex characters) and skip the fetch. Ignored when the process serves the database itself |
@@ -98,7 +98,7 @@ services:
     environment:
       Discovery__Mdns__Enabled: "true"
       Discovery__Mdns__Url: "https://studylife.example.org"
-      # Discovery__Mdns__Name: "StudyLife"
+      # Discovery__Mdns__Name: "StudyAtrium"
 ```
 
 If the server itself must stay on a bridge network (for example behind the compose load balancer
@@ -168,7 +168,7 @@ mDNS is link-local multicast: it does not cross VLANs or subnets on its own.
 ## What Home Assistant offers
 
 With the matching Home Assistant integration installed ([studylife-hacs](https://github.com/lukislp/studylife-hacs)),
-the server shows up under *Settings, Devices & services* as a discovered StudyLife server. Home
+the server shows up under *Settings, Devices & services* as a discovered StudyAtrium server. Home
 Assistant reads the `url` from the announcement, so you only confirm it and enter the per-user API
 key from the Setup page (see the README's Security section) - the key is never part of the
 announcement. Without discovery nothing changes: the integration can still be set up by entering the

@@ -32,7 +32,7 @@ public class BackupControllerTests : IClassFixture<CustomWebApplicationFactory>
         Assert.NotNull(disposition);
         Assert.Equal("attachment", disposition!.DispositionType);
         Assert.NotNull(disposition.FileName);
-        Assert.Matches(@"^""?studylife-backup-\d{8}\.db""?$", disposition.FileName!);
+        Assert.Matches(@"^""?studyatrium-backup-\d{8}\.db""?$", disposition.FileName!);
 
         var bytes = await response.Content.ReadAsByteArrayAsync();
         Assert.True(bytes.Length >= 16, "Response is too short for a SQLite header.");
@@ -111,7 +111,7 @@ public class BackupControllerTests : IClassFixture<CustomWebApplicationFactory>
 
         var disposition = exportResponse.Content.Headers.ContentDisposition;
         Assert.NotNull(disposition);
-        Assert.Matches(@"^""?studylife-export-\d{8}\.json""?$", disposition!.FileName!);
+        Assert.Matches(@"^""?studyatrium-export-\d{8}\.json""?$", disposition!.FileName!);
 
         var json = await exportResponse.Content.ReadAsStringAsync();
         using var document = JsonDocument.Parse(json);
