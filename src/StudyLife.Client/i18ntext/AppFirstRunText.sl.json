@@ -16,5 +16,7 @@
   "SignedOutNotStudyLife": "{0} se ne odziva kot strežnik StudyAtrium. Če je naslov napačen, zamenjaj strežnik.",
   "SignedOutNoNetwork": "Ni omrežne povezave – Wi-Fi in mobilni podatki so izklopljeni.",
   "PasskeyDomainHint": "Ključi za dostop delujejo samo na {0}.",
-  "UsePasskeyAddress": "Uporabi ta naslov"
+  "UsePasskeyAddress": "Uporabi ta naslov",
+  "CleartextServer": "Ta naslov ni šifriran (http://). Prijava in podatki bi potovali berljivo. Uporabite https:// ali se znova dotaknite, da ga vseeno uporabite.",
+  "SharedTextConfirm": "Ali želite deljeno besedilo shraniti kot nov zapisek?"
 }

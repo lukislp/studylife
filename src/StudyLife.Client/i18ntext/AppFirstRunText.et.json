@@ -16,5 +16,7 @@
   "SignedOutNotStudyLife": "{0} ei vasta nagu StudyAtrium'i server. Kui aadress on vale, vaheta serverit.",
   "SignedOutNoNetwork": "Võrguühendus puudub – Wi-Fi ja mobiilne andmeside on välja lülitatud.",
   "PasskeyDomainHint": "Pääsuvõtmed töötavad ainult aadressil {0}.",
-  "UsePasskeyAddress": "Kasuta seda aadressi"
+  "UsePasskeyAddress": "Kasuta seda aadressi",
+  "CleartextServer": "See aadress pole krüpteeritud (http://). Sinu sisselogimine ja andmed liiguksid loetavalt. Kasuta https:// või puuduta uuesti, et seda siiski kasutada.",
+  "SharedTextConfirm": "Kas salvestada jagatud tekst uue märkmena?"
 }

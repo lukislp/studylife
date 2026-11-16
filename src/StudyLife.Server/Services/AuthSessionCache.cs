@@ -13,11 +13,13 @@ namespace StudyLife.Server.Services;
 /// answers from memory instead.
 ///
 /// Deliberately process-local (not IDistributedCache): in Redis mode a distributed lookup would
-/// only trade the DB round trip for a Redis round trip, saving DB load but no latency. The
-/// price is a bounded staleness window: a session deleted on another pod (or directly in the
-/// DB) can keep authenticating on THIS pod for up to <see cref="Ttl"/>. Logout removes the
-/// caller's own entry immediately (AuthController.Logout via <see cref="Remove"/>), so the
-/// common "I clicked sign out" path has no window at all. Only successful validations are
+/// only trade the DB round trip for a Redis round trip, saving DB load but no latency.
+/// Revocations are not left to the TTL: <see cref="Remove"/> evicts locally AND publishes the
+/// token hash through <see cref="ISessionRevocationSignal"/>, so every pod drops the entry at
+/// once (audit 2026-11-16 L9). What remains is only a session deleted directly in the DB
+/// without going through <see cref="Remove"/> (expiry is re-checked on every hit anyway), or a
+/// revocation published while Redis is unreachable: those stay valid on other pods for up to
+/// <see cref="Ttl"/>. Only successful validations are
 /// cached - a flood of invalid tokens can't fill it - and the entry count is capped anyway.
 /// </summary>
 public sealed class AuthSessionCache
@@ -30,6 +32,14 @@ public sealed class AuthSessionCache
     public sealed record Entry(int SessionId, int AuthUserId, DateTime ExpiresAt, DateTime HardExpiresAt);
 
     private readonly MemoryCache _cache = new(new MemoryCacheOptions { SizeLimit = 10_000 });
+    private readonly ISessionRevocationSignal _revocations;
+
+    public AuthSessionCache(ISessionRevocationSignal revocations)
+    {
+        _revocations = revocations;
+        // Singleton for the process lifetime, so the subscription is never disposed.
+        _revocations.Subscribe(tokenHash => _cache.Remove(tokenHash));
+    }
 
     public bool TryGet(string tokenHash, DateTime utcNow, out Entry entry)
     {
@@ -48,5 +58,11 @@ public sealed class AuthSessionCache
     public void Set(string tokenHash, Entry entry) =>
         _cache.Set(tokenHash, entry, new MemoryCacheEntryOptions { Size = 1, AbsoluteExpirationRelativeToNow = Ttl });
 
-    public void Remove(string tokenHash) => _cache.Remove(tokenHash);
+    /// <summary>The session behind <paramref name="tokenHash"/> was revoked: evict it here right
+    /// away and tell every other pod to do the same.</summary>
+    public void Remove(string tokenHash)
+    {
+        _cache.Remove(tokenHash);
+        _revocations.Publish(tokenHash);
+    }
 }
