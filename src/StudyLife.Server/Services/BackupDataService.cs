@@ -350,7 +350,8 @@ public class BackupDataService(StudyLifeDb db, SettingsCacheVersion settingsCach
                 CourseId = newCourseId,
                 SessionId = newSessionId,
                 IsMarkdown = dto.IsMarkdown,
-                SourceUrl = dto.SourceUrl,
+                // A backup is foreign input: a non-web SourceUrl is dropped, the note kept.
+                SourceUrl = WebLinkPolicy.WebLinkOrNull(dto.SourceUrl),
                 Tags = dto.Tags,
                 Summary = dto.Summary,
                 // RelatedNoteIds filled in the second pass below, once every note has an id.

@@ -56,8 +56,13 @@ public partial class BackgroundTaskService
         // Same stepper as TimerService.Tick() (StudyLife.Shared.TimerModeCatalog.AdvancePhase):
         // also catches up on multiple entirely missed phases (e.g. if the worker tick itself was
         // delayed).
+        // Bounded: a stored row from before the input clamp (TimerStateLimits) could sit years
+        // in the past and would otherwise spin this loop for millions of phases (audit L12).
+        // Hitting the cap means the timer is long over, so it ends like a completed one.
+        var catchUpSteps = 0;
         while (now >= endsAt)
         {
+            if (++catchUpSteps > TimerStateLimits.MaxCatchUpPhases) { complete = true; break; }
             var step = TimerModeCatalog.AdvancePhase(modeData, isBreak, round, endsAt);
             isBreak = step.IsBreak;
             round = step.Round;
