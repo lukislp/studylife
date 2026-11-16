@@ -287,6 +287,9 @@ public partial class AuthController
             SignCount = credential.SignCount,
             CreatedAt = now,
             ApprovedAt = isAdditionalDevice ? null : now,
+            // The session that ran this ceremony (begin-additional) may not approve the result
+            // itself (ApproveCredentialAsync, 2026-11-16 audit M1). The link-code path has none.
+            CreatedBySessionId = isAdditionalDevice && pending.RequiresSessionAtComplete ? CurrentSessionId : null,
         });
 
         // Issue a session only directly at the open first registration (instead of forcing a

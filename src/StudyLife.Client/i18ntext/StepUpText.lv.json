@@ -1,0 +1,23 @@
+{
+  "Title": "Apstipriniet, ka tas esat jūs",
+  "Intro": "Šī darbība aizsargā jūsu kontu. Lai turpinātu, apstipriniet ar šī konta piekļuves atslēgu.",
+  "BrowserSignInIntro": "Pierakstieties vēlreiz, lai apstiprinātu, ka tas esat jūs. Darbība turpināsies uzreiz pēc tam.",
+  "PasskeyButton": "Apstiprināt ar piekļuves atslēgu",
+  "BrowserSignInButton": "Pierakstīties vēlreiz",
+  "PasswordToggle": "Izmantot manu paroli",
+  "PasswordLabel": "Jūsu parole",
+  "PasswordButton": "Apstiprināt ar paroli",
+  "RecoveryToggle": "Izmantot atkopšanas kodu",
+  "RecoveryLabel": "Atkopšanas kods",
+  "RecoveryButton": "Apstiprināt ar atkopšanas kodu",
+  "Working": "Notiek apstrāde…",
+  "PasskeyFailed": "Piekļuves atslēgas pieprasījums netika pabeigts. Mēģiniet vēlreiz vai apstipriniet citādi.",
+  "CancelButton": "Atcelt",
+  "CloseDialog": "Aizvērt dialogu",
+  "ErrorRejected": "Šis apstiprinājums netika pieņemts.",
+  "ErrorMissing": "Apstipriniet ar piekļuves atslēgu, paroli vai atkopšanas kodu.",
+  "ErrorTooMany": "Pārāk daudz mēģinājumu. Lūdzu, uzgaidiet dažas minūtes.",
+  "ErrorNetwork": "Serveris nav sasniedzams.",
+  "ErrorGeneric": "Kaut kas nogāja greizi. Mēģiniet vēlreiz.",
+  "ApprovalOtherSession": "Jaunu piekļuves atslēgu nevar apstiprināt no sesijas, kurā tā tika pievienota. Apstipriniet to citā pierakstītā ierīcē vai izrakstieties un pierakstieties vēlreiz ar esošu piekļuves atslēgu vai paroli un apstipriniet to šeit."
+}

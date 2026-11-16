@@ -549,16 +549,30 @@ public class PasskeyApprovalTests : IClassFixture<CustomWebApplicationFactory>
             Assert.Equal(HttpStatusCode.Unauthorized, anonApprove.StatusCode);
         }
 
-        // ── Approval by the OWN (first) device: 204, idempotent afterward ────────────────────
+        // ── Approval by the session that registered it: 403 (2026-11-16 audit M1) ────────────
+        using (var selfApprove = new HttpRequestMessage(HttpMethod.Post, $"/api/auth/credentials/{credentialId}/approve"))
+        {
+            selfApprove.Headers.Add("X-Session-Token", token);
+            var selfResponse = await _client.SendAsync(selfApprove);
+            Assert.Equal(HttpStatusCode.Forbidden, selfResponse.StatusCode);
+            Assert.Equal("approval-needs-other-session", await PasswordHttp.ProblemTypeAsync(selfResponse));
+        }
+
+        // ── Approval by a NEW sign-in with the first passkey: 204, idempotent afterward ───────
+        var (firstLoginId, firstLoginJson) = await PasskeyHttp.BeginAsync(_client, "/api/auth/login/begin");
+        var firstLogin = await PasskeyHttp.CompleteAsync(_client, "/api/auth/login/complete", firstLoginId,
+            firstKey.CreateAssertionResponse(firstLoginJson, PasskeyHttp.Origin, signCount: 5));
+        Assert.Equal(HttpStatusCode.OK, firstLogin.StatusCode);
+        var approverToken = (await firstLogin.Content.ReadFromJsonAsync<PasskeyCompleteResponseDto>())!.Token!;
         using (var approve = new HttpRequestMessage(HttpMethod.Post, $"/api/auth/credentials/{credentialId}/approve"))
         {
-            approve.Headers.Add("X-Session-Token", token);
+            approve.Headers.Add("X-Session-Token", approverToken);
             var approveResponse = await _client.SendAsync(approve);
             Assert.Equal(HttpStatusCode.NoContent, approveResponse.StatusCode);
         }
         using (var approveAgain = new HttpRequestMessage(HttpMethod.Post, $"/api/auth/credentials/{credentialId}/approve"))
         {
-            approveAgain.Headers.Add("X-Session-Token", token);
+            approveAgain.Headers.Add("X-Session-Token", approverToken);
             var approveAgainResponse = await _client.SendAsync(approveAgain);
             Assert.Equal(HttpStatusCode.NoContent, approveAgainResponse.StatusCode);
         }

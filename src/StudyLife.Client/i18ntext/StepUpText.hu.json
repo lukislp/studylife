@@ -1,0 +1,23 @@
+{
+  "Title": "Erősítsd meg, hogy te vagy az",
+  "Intro": "Ez a művelet a fiókodat védi. A folytatáshoz erősítsd meg a fiók egyik hozzáférési kulcsával.",
+  "BrowserSignInIntro": "Jelentkezz be újra, hogy megerősítsd, te vagy az. A művelet utána azonnal folytatódik.",
+  "PasskeyButton": "Megerősítés hozzáférési kulccsal",
+  "BrowserSignInButton": "Újra bejelentkezés",
+  "PasswordToggle": "A jelszavam használata",
+  "PasswordLabel": "A jelszavad",
+  "PasswordButton": "Megerősítés jelszóval",
+  "RecoveryToggle": "Helyreállító kód használata",
+  "RecoveryLabel": "Helyreállító kód",
+  "RecoveryButton": "Megerősítés helyreállító kóddal",
+  "Working": "Folyamatban…",
+  "PasskeyFailed": "A hozzáférési kulcs kérése nem fejeződött be. Próbáld újra, vagy erősítsd meg más módon.",
+  "CancelButton": "Mégse",
+  "CloseDialog": "Párbeszédablak bezárása",
+  "ErrorRejected": "Ezt a megerősítést nem fogadtuk el.",
+  "ErrorMissing": "Erősítsd meg hozzáférési kulccsal, a jelszavaddal vagy egy helyreállító kóddal.",
+  "ErrorTooMany": "Túl sok próbálkozás. Várj néhány percet.",
+  "ErrorNetwork": "A szerver nem érhető el.",
+  "ErrorGeneric": "Hiba történt. Próbáld újra.",
+  "ApprovalOtherSession": "Új hozzáférési kulcsot nem lehet abból a munkamenetből jóváhagyni, amely hozzáadta. Hagyd jóvá egy másik bejelentkezett eszközön, vagy jelentkezz ki, majd be újra egy meglévő hozzáférési kulccsal vagy a jelszavaddal, és hagyd jóvá itt."
+}

@@ -66,6 +66,8 @@ public partial class AuthController : ControllerBase
     // Username + password sign-in (AuthController.12.Password.cs) and the password proof of the
     // shared step-up check (VerifyFreshProofAsync).
     private readonly Services.SignIn.IPasswordCredentialService _passwords;
+    // The "confirmed moments ago" mark behind POST account/reauth and [RequireStepUp].
+    private readonly Services.Account.ISessionStepUpService _stepUp;
     // Monitors, not IOptions: both sections used to be re-read from IConfiguration on every
     // request, so a configuration reload has to keep taking effect the same way.
     private readonly IOptionsMonitor<Fido2Options> _fido2Options;
@@ -75,7 +77,7 @@ public partial class AuthController : ControllerBase
         SystemSecretsService systemSecrets, IOwnershipService ownership, IRegistrationGateService registrationGate,
         ConsentRedirectPolicy consentRedirects, IAuthInviteService invites, IAuthRecoveryService recovery,
         IAuthAccountService account, Services.Account.IAccountDeletionService accountDeletion,
-        Services.SignIn.IPasswordCredentialService passwords,
+        Services.SignIn.IPasswordCredentialService passwords, Services.Account.ISessionStepUpService stepUp,
         IOptionsMonitor<Fido2Options> fido2Options, IOptionsMonitor<ConsentOptions> consentOptions)
     {
         _db = db;
@@ -90,6 +92,7 @@ public partial class AuthController : ControllerBase
         _account = account;
         _accountDeletion = accountDeletion;
         _passwords = passwords;
+        _stepUp = stepUp;
         _fido2Options = fido2Options;
         _consentOptions = consentOptions;
     }
