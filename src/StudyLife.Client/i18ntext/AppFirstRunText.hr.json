@@ -16,5 +16,7 @@
   "SignedOutNotStudyLife": "{0} ne odgovara kao StudyAtrium poslužitelj. Ako je adresa pogrešna, promijeni poslužitelj.",
   "SignedOutNoNetwork": "Nema mrežne veze – Wi-Fi i mobilni podaci su isključeni.",
   "PasskeyDomainHint": "Pristupni ključevi rade samo na {0}.",
-  "UsePasskeyAddress": "Koristi ovu adresu"
+  "UsePasskeyAddress": "Koristi ovu adresu",
+  "CleartextServer": "Ova adresa nije šifrirana (http://). Prijava i podaci putovali bi čitljivo. Upotrijebite https:// ili ponovno dodirnite da biste je ipak upotrijebili.",
+  "SharedTextConfirm": "Spremiti podijeljeni tekst kao novu bilješku?"
 }
