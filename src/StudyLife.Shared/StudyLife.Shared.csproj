@@ -10,4 +10,13 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="StudyLife.Shared.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- SafeMarkdown: the one Markdown pipeline of client and server. -->
+    <PackageReference Include="Markdig" Version="1.6.0" />
+  </ItemGroup>
+
 </Project>

@@ -5,7 +5,6 @@
 @page "/notes"
 @using System.Net
 @using System.Text
-@using Markdig
 @using StudyLife.Client.Models
 @using StudyLife.Client.Services
 @using StudyLife.Shared
@@ -889,12 +888,10 @@ else
         ScheduleSave();
     }
 
-    // Mirrors StudyLife.Tts's MarkdownToSpeechText.Extract server-side - not shared as a
-    // project reference: StudyLife.Tts P/Invokes into a native Linux library (libespeak-ng),
-    // which can't run in the Blazor WASM client, so the whole project isn't referenceable
-    // from here. This one small piece (Markdig -> plain text) is duplicated instead.
+    // Same rule as StudyLife.Tts's MarkdownToSpeechText.Extract server-side; both use the
+    // shared SafeMarkdown pipeline.
     private static string ExtractPlainTextForSpeech(string? content, bool isMarkdown) =>
-        isMarkdown ? Markdown.ToPlainText(content ?? "", MarkdownPipeline) : content ?? "";
+        isMarkdown ? SafeMarkdown.ToPlainText(content) : content ?? "";
 
     private void SetFormat(bool isMarkdown)
     {
@@ -904,15 +901,9 @@ else
         ScheduleSave();
     }
 
-    // One shared pipeline instance (Markdig recommends reuse - immutable/thread-safe once built).
-    // DisableHtml: notes are personal content, not shared with other users - there's no
-    // legitimate need for raw HTML embedding, so it's stripped rather than passed through
-    // (defense in depth against a pasted <script> tag rendering in the author's own preview/print).
-    private static readonly MarkdownPipeline MarkdownPipeline =
-        new MarkdownPipelineBuilder().UseAdvancedExtensions().DisableHtml().Build();
-
-    private static MarkupString RenderMarkdown(string content) =>
-        new(Markdig.Markdown.ToHtml(content ?? "", MarkdownPipeline));
+    // Notes are untrusted input (AI, MCP and capture keys can create them), so the HTML comes
+    // only from SafeMarkdown: no raw HTML, no generic attributes, only http/https/mailto links.
+    private static MarkupString RenderMarkdown(string content) => new(SafeMarkdown.ToHtml(content));
 
     private void OnSearchQueryChanged()
     {

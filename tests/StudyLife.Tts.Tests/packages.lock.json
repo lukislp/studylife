@@ -125,11 +125,17 @@
           "xunit.extensibility.core": "[2.9.3]"
         }
       },
+      "studylife.shared": {
+        "type": "Project",
+        "dependencies": {
+          "Markdig": "[1.6.0, )"
+        }
+      },
       "studylife.tts": {
         "type": "Project",
         "dependencies": {
-          "Markdig": "[1.6.0, )",
-          "Microsoft.ML.OnnxRuntime": "[1.32.0, )"
+          "Microsoft.ML.OnnxRuntime": "[1.32.0, )",
+          "StudyLife.Shared": "[1.0.0, )"
         }
       }
     }
