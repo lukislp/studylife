@@ -16,5 +16,7 @@
   "SignedOutNotStudyLife": "{0} neatsako kaip „StudyAtrium“ serveris. Jei adresas neteisingas, pakeisk serverį.",
   "SignedOutNoNetwork": "Nėra tinklo ryšio – Wi-Fi ir mobilieji duomenys išjungti.",
   "PasskeyDomainHint": "Prieigos raktai veikia tik adresu {0}.",
-  "UsePasskeyAddress": "Naudoti šį adresą"
+  "UsePasskeyAddress": "Naudoti šį adresą",
+  "CleartextServer": "Šis adresas nešifruotas (http://). Prisijungimas ir duomenys būtų perduodami įskaitomi. Naudokite https:// arba bakstelėkite dar kartą, kad vis tiek jį naudotumėte.",
+  "SharedTextConfirm": "Išsaugoti bendrinamą tekstą kaip naują pastabą?"
 }
