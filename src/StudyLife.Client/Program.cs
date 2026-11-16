@@ -63,9 +63,11 @@ builder.Services.AddHttpClient<MarketplaceClient>(client =>
 builder.Services.AddScoped<INativeAppAuth, NoNativeAppAuth>();
 builder.Services.AddScoped<INativePush, NoNativePush>();
 builder.Services.AddScoped<INativeIcsIntake, NoNativeIcsIntake>();
-builder.Services.AddScoped<INativeFileExport, NoNativeFileExport>();
 builder.Services.AddScoped<INativeHealthData, NoNativeHealthData>();
 builder.Services.AddScoped<INativeTelemetry, NoNativeTelemetry>();
+// Every file the user downloads (backup, export, recovery codes): a blob download here, the
+// system save/share sheet in the native app, which registers its own implementation.
+builder.Services.AddScoped<IFileDownloadService, BrowserFileDownloadService>();
 
 var host = builder.Build();
 
