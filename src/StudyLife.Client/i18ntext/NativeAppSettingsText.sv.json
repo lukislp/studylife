@@ -9,7 +9,7 @@
   "Cancel": "Avbryt",
   "ChangeServerWorking": "Loggar ut …",
   "HealthHeading": "Apple Hälsa",
-  "HealthDesc": "StudyAtrium kan spara avslutade fokusrundor som mindfulminuter och visa sömn, pulsvariabilitet och steg bredvid din studietid. Datan stannar på den här enheten.",
+  "HealthDesc": "StudyAtrium kan spara avslutade fokusrundor som mindfulminuter och läsa sömn, pulsvariabilitet, steg och konditionsvärde (VO2max) för att visa dem bredvid din studietid. Datan stannar på den här enheten.",
   "HealthConnectButton": "Anslut Apple Hälsa",
   "HealthConnected": "Ansluten. Vad StudyAtrium får läsa och skriva ändrar du i Hälsa-appen.",
   "HealthDeclined": "Åtkomst till Apple Hälsa är avstängd. Slå på den genom att öppna Hälsa-appen, trycka på din profilbild, välja Appar och sedan StudyAtrium.",

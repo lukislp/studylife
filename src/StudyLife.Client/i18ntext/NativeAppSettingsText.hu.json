@@ -9,7 +9,7 @@
   "Cancel": "Mégse",
   "ChangeServerWorking": "Kijelentkezés …",
   "HealthHeading": "Apple Health",
-  "HealthDesc": "A StudyAtrium a befejezett fókuszköröket tudatosságperceként mentheti, és a tanulási idő mellett megmutathatja az alvást, a pulzusvariabilitást és a lépéseket. Az adatok ezen az eszközön maradnak.",
+  "HealthDesc": "A StudyAtrium a befejezett fókuszköröket tudatosságperceként mentheti, és beolvashatja az alvást, a pulzusvariabilitást, a lépéseket és a kardiovaszkuláris erőnlétet (VO2max), hogy a tanulási idő mellett megmutassa őket. Az adatok ezen az eszközön maradnak.",
   "HealthConnectButton": "Apple Health összekapcsolása",
   "HealthConnected": "Összekapcsolva. Hogy a StudyAtrium mit olvashat és írhat, azt az Egészség appban módosíthatod.",
   "HealthDeclined": "Az Apple Health-hozzáférés ki van kapcsolva. A bekapcsoláshoz nyisd meg az Egészség appot, koppints a profilképedre, válaszd az Appok, majd a StudyAtrium lehetőséget.",
