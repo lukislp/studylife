@@ -10,7 +10,7 @@
 @inject IJSRuntime JS
 @inject NavigationManager Nav
 @inject SessionTokenStore TokenStore
-@inject INativeFileExport NativeFiles
+@inject IFileDownloadService Downloads
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
 @* Passkey management, opened via the fourth FAB action button (MainLayout.razor) - same
@@ -234,7 +234,6 @@
     private readonly List<PasskeyListItemDto> _devices = new();
     private PasskeyListItemDto? _confirmDeleteDevice;
     private IJSObjectReference? _module;
-    private IJSObjectReference? _downloadModule;
     private string? _linkCode;
     private int _linkCodeExpiresInMinutes;
     private List<string>? _recoveryCodes;
@@ -278,29 +277,15 @@
         catch { /* Clipboard not available (e.g. http) - codes stay visible to copy by hand */ }
     }
 
-    /// <summary>
-    /// Save codes as a text file: native app via the system share/save sheet
-    /// (INativeFileExport - there's no download manager in the WebView), browser/PWA via
-    /// the established blob download (same JS module as the backup download).
-    /// </summary>
+    /// <summary>Save the codes as a text file through IFileDownloadService (browser download, or
+    /// the system save/share sheet in the native app).</summary>
     private async Task DownloadRecoveryCodesAsync()
     {
         if (_recoveryCodes == null) return;
         var content = $"StudyAtrium — {T.RecoveryCodesOnceHint}\n\n{string.Join("\n", _recoveryCodes)}\n";
-        const string fileName = "studyatrium-recovery-codes.txt";
         try
         {
-            if (NativeFiles.IsAvailable)
-            {
-                await NativeFiles.SaveTextAsync(fileName, content);
-                return;
-            }
-            // Separate module field: _module belongs to the WebAuthn module (Login.razor.js) -
-            // a shared ??= could end up grabbing the wrong module depending on call order.
-            _downloadModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Setup/SetupBackupCard.razor.js");
-            await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(content));
-            using var streamRef = new DotNetStreamReference(stream);
-            await _downloadModule.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+            await Downloads.SaveTextAsync("studyatrium-recovery-codes.txt", content);
         }
         catch { _error = T.PasskeysActionFailed; }
     }
