@@ -16,5 +16,7 @@
   "SignedOutNotStudyLife": "{0} does not answer like a StudyAtrium server. If the address is wrong, change the server.",
   "SignedOutNoNetwork": "No network connection – Wi-Fi and mobile data are off.",
   "PasskeyDomainHint": "Passkeys only work at {0}.",
-  "UsePasskeyAddress": "Use this address"
+  "UsePasskeyAddress": "Use this address",
+  "CleartextServer": "This address is not encrypted (http://). Your sign-in and data would travel readable. Use https://, or tap again to use it anyway.",
+  "SharedTextConfirm": "Save the shared text as a new note?"
 }
