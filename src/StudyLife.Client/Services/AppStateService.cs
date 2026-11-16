@@ -367,7 +367,7 @@ public class AppStateService : IAsyncDisposable
     /// same reason as <see cref="AiConsent"/>.</summary>
     public AccountDeletionState AccountDeletion { get; }
 
-    /// <summary>The API calls behind the password card and the owner's password reset (Setup).
+    /// <summary>The API calls behind the password card (Setup).
     /// Composition for the same reason as <see cref="AiConsent"/>.</summary>
     public PasswordSignInState PasswordSignIn { get; }
 

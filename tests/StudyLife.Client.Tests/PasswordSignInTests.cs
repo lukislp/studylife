@@ -746,7 +746,7 @@ public class LoginForgotPasswordTests : ConsentBunitTest
     private static void RecoverySignIn(IRenderedComponent<StudyLife.Client.Pages.Login> cut)
     {
         cut.FindAll("button").First(b => b.TextContent.Trim() == "RecoveryLoginLink").Click();
-        cut.Find("input[placeholder='XXXX-XXXX-XXXX']").Input("ABCD-EFGH-JKLM");
+        cut.Find("input[placeholder='XXXX-XXXX-XXXX-XXXX']").Input("ABCD-EFGH-JKLM");
         cut.FindAll("button").First(b => b.TextContent.Trim() == "RecoveryLoginButton").Click();
     }
 

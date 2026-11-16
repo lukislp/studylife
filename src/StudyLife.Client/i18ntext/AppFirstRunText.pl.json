@@ -16,5 +16,7 @@
   "SignedOutNotStudyLife": "{0} nie odpowiada jak serwer StudyAtrium. Jeśli adres jest błędny, zmień serwer.",
   "SignedOutNoNetwork": "Brak połączenia z siecią – Wi-Fi i dane mobilne są wyłączone.",
   "PasskeyDomainHint": "Klucze dostępu działają tylko pod adresem {0}.",
-  "UsePasskeyAddress": "Użyj tego adresu"
+  "UsePasskeyAddress": "Użyj tego adresu",
+  "CleartextServer": "Ten adres nie jest szyfrowany (http://). Logowanie i dane byłyby przesyłane w czytelnej postaci. Użyj https:// lub dotknij ponownie, aby mimo to go użyć.",
+  "SharedTextConfirm": "Zapisać udostępniony tekst jako nową notatkę?"
 }
