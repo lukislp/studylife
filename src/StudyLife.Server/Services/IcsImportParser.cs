@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 using System.Globalization;
+using System.Text.RegularExpressions;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Services;
@@ -16,7 +17,7 @@ namespace StudyLife.Server.Services;
 /// timezone-aware recurrence is its own large problem) - a VEVENT with RRULE
 /// only yields its first occurrence, marked with HasUnexpandedRecurrence=true.
 /// </summary>
-public static class IcsImportParser
+public static partial class IcsImportParser
 {
     private sealed record PropertyValue(Dictionary<string, string> Params, string Value);
 
@@ -182,7 +183,7 @@ public static class IcsImportParser
         if (isUtc)
             return DateTime.SpecifyKind(parsed, DateTimeKind.Utc).ToLocalTime();
 
-        if (prop.Params.TryGetValue("TZID", out var tzid) && !string.IsNullOrWhiteSpace(tzid))
+        if (prop.Params.TryGetValue("TZID", out var tzid) && IsPlausibleTimeZoneId(tzid))
         {
             try
             {
@@ -196,6 +197,17 @@ public static class IcsImportParser
 
         return parsed; // floating
     }
+
+    // IANA ("Europe/Berlin", "America/Argentina/Buenos_Aires", "Etc/GMT+1") and Windows
+    // ("W. Europe Standard Time", "Pacific Standard Time (Mexico)") ids only: a bounded length and
+    // a plain character set, so an uploaded TZID cannot reach the time zone lookup as a path
+    // (audit L13).
+    [GeneratedRegex(@"^[A-Za-z0-9_+\-./() ]{1,64}$")]
+    private static partial Regex TimeZoneIdShape();
+
+    internal static bool IsPlausibleTimeZoneId(string? tzid) =>
+        !string.IsNullOrWhiteSpace(tzid) && TimeZoneIdShape().IsMatch(tzid)
+        && !tzid.Contains("..", StringComparison.Ordinal) && !tzid.StartsWith('/');
 
     /// <summary>Reverses SessionService.IcsEscape (same order, backwards).</summary>
     private static string Unescape(string value) =>
