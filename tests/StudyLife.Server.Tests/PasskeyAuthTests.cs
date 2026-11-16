@@ -869,3 +869,49 @@ public class RegisterBegin_SecondRegistrationTests : IClassFixture<CustomWebAppl
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 }
+
+/// <summary>
+/// Audit 2026-11-16 L8: the claim state a self-registration was begun under must still hold at
+/// Complete. Own factory: the test empties the credential table to simulate an installation
+/// reset between Begin and Complete.
+/// </summary>
+public class RegisterComplete_ClaimStateChangedTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+
+    public RegisterComplete_ClaimStateChangedTests(CustomWebApplicationFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient();
+    }
+
+    [Fact]
+    public async Task FamilySignupBegunOnClaimedInstance_CannotCompleteAsOwnerAfterReset()
+    {
+        using var ownerKey = new FakePasskey();
+        await PasskeyHttp.RegisterAsync(_factory, _client, "Owner", ownerKey);
+
+        // Begun as an ordinary family signup: no setup code involved.
+        using var lateKey = new FakePasskey();
+        var (optionsId, optionsJson) = await PasskeyHttp.BeginAsync(_client, "/api/auth/register/begin",
+            new PasskeyRegisterBeginRequestDto { DisplayName = "Late" });
+
+        // The installation is reset in between: no credential exists any more.
+        await _factory.WithDbAsync(async db =>
+        {
+            db.PasskeyCredentials.RemoveRange(db.PasskeyCredentials);
+            await db.SaveChangesAsync();
+        });
+
+        var response = await PasskeyHttp.CompleteAsync(_client, "/api/auth/register/complete", optionsId,
+            lateKey.CreateAttestationResponse(optionsJson, PasskeyHttp.Origin));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await _factory.WithDbAsync(async db =>
+        {
+            Assert.False(await db.PasskeyCredentials.AnyAsync());
+            Assert.DoesNotContain(await db.AuthUsers.ToListAsync(), u => u.DisplayName == "Late");
+        });
+    }
+}

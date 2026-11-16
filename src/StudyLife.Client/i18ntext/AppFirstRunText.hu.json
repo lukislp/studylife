@@ -16,5 +16,7 @@
   "SignedOutNotStudyLife": "{0} nem úgy válaszol, mint egy StudyAtrium-szerver. Ha a cím hibás, válts szervert.",
   "SignedOutNoNetwork": "Nincs hálózati kapcsolat – a Wi-Fi és a mobiladat ki van kapcsolva.",
   "PasskeyDomainHint": "A jelkulcsok csak itt működnek: {0}.",
-  "UsePasskeyAddress": "Ennek a címnek a használata"
+  "UsePasskeyAddress": "Ennek a címnek a használata",
+  "CleartextServer": "Ez a cím nincs titkosítva (http://). A bejelentkezésed és az adataid olvasható formában utaznának. Használj https://-t, vagy koppints újra, ha mégis ezt szeretnéd használni.",
+  "SharedTextConfirm": "Mented a megosztott szöveget új jegyzetként?"
 }
