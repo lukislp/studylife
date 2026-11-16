@@ -102,8 +102,12 @@ public class MarketplaceBrowserModalTests : ConsentBunitTest
 
     private static object Listing(string id, object? extra = null) => new Dictionary<string, object?>
     {
-        ["id"] = id, ["name"] = id, ["description"] = "d", ["developer"] = "dev",
-        ["repository"] = "https://github.com/x/" + id, ["requestedScopes"] = new[] { "Notes.Create" },
+        ["id"] = id,
+        ["name"] = id,
+        ["description"] = "d",
+        ["developer"] = "dev",
+        ["repository"] = "https://github.com/x/" + id,
+        ["requestedScopes"] = new[] { "Notes.Create" },
     }.Concat(extra is null ? [] : extra.GetType().GetProperties().Select(p => new KeyValuePair<string, object?>(p.Name, p.GetValue(extra))))
      .ToDictionary(kv => kv.Key, kv => kv.Value);
 
