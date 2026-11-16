@@ -47,7 +47,8 @@ public class RecoveryCodeTests : IClassFixture<CustomWebApplicationFactory>
         var first = await generate.Content.ReadFromJsonAsync<RecoveryCodesResponseDto>();
         Assert.NotNull(first);
         Assert.Equal(8, first!.Codes.Count);
-        Assert.All(first.Codes, c => Assert.Matches("^[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$", c));
+        // 16 characters = 80 bits since audit 2026-11-16 L4 (was 12 = 60 bits).
+        Assert.All(first.Codes, c => Assert.Matches("^[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$", c));
 
         // 2) Regenerating invalidates the old batch completely.
         var regenerate = await _client.PostAsync("/api/auth/recovery/generate", null);
@@ -102,7 +103,9 @@ public class RecoveryCodeTests : IClassFixture<CustomWebApplicationFactory>
     public async Task Login_ResolvesOwningUser_NotJustAnyUser()
     {
         // Multi-user isolation: a code seeded directly for user 2 issues a session
-        // for USER 2 - provable via the AuthUserId of the created session row.
+        // for USER 2 - provable via the AuthUserId of the created session row. The seeded code
+        // has the pre-L4 length (12 characters): codes issued before the switch to 16 keep
+        // working, nobody is locked out by the upgrade.
         const string rawCode = "ZZZZTESTUSER";
         using (var scope = _factory.Services.CreateScope())
         {
@@ -159,5 +162,28 @@ public class RecoveryLoginRateLimitTests : IClassFixture<CustomWebApplicationFac
         var sixth = await anon.PostAsJsonAsync("/api/auth/recovery/login",
             new RecoveryLoginRequestDto { Code = "XXXX-YYYY-9999" });
         Assert.Equal(HttpStatusCode.TooManyRequests, sixth.StatusCode);
+    }
+}
+
+/// <summary>Audit 2026-11-16 L4: recovery codes carry 80 bits.</summary>
+public class RecoveryCodeGeneratorTests
+{
+    [Fact]
+    public void Next_Has16AlphabetCharacters_InFourGroups()
+    {
+        var (raw, display) = RecoveryCodeGenerator.Next();
+
+        Assert.Equal(16, raw.Length);
+        Assert.All(raw, c => Assert.Contains(c, RecoveryCodeGenerator.Alphabet));
+        Assert.Equal(string.Join('-', raw.Chunk(4).Select(g => new string(g))), display);
+        // 32^16 = 2^80.
+        Assert.Equal(80, (int)(RecoveryCodeGenerator.Length * Math.Log2(RecoveryCodeGenerator.Alphabet.Length)));
+    }
+
+    [Fact]
+    public void Next_IsNotRepeating()
+    {
+        var codes = Enumerable.Range(0, 200).Select(_ => RecoveryCodeGenerator.Next().Raw).ToHashSet();
+        Assert.Equal(200, codes.Count);
     }
 }

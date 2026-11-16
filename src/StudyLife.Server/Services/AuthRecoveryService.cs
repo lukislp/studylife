@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2026 Lukas Körber
 // SPDX-License-Identifier: AGPL-3.0-only
 
-using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
 using StudyLife.Shared;
@@ -46,8 +45,7 @@ public interface IAuthRecoveryService
 public class AuthRecoveryService(StudyLifeDb db, AuthSessionCache sessionCache) : IAuthRecoveryService
 {
     private const int RecoveryCodeCount = 8;
-    // Without 0/O/1/I - codes are typed in from paper. 12 characters from a 32-char alphabet = 60 bits.
-    private const string RecoveryCodeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    // Code format and strength: RecoveryCodeGenerator.
 
     public async Task<RecoveryCodesResponseDto> GenerateAsync(int userId, int sessionId)
     {
@@ -57,9 +55,8 @@ public class AuthRecoveryService(StudyLifeDb db, AuthSessionCache sessionCache) 
         var codes = new List<string>();
         for (var i = 0; i < RecoveryCodeCount; i++)
         {
-            var raw = string.Concat(Enumerable.Range(0, 12)
-                .Select(_ => RecoveryCodeAlphabet[RandomNumberGenerator.GetInt32(RecoveryCodeAlphabet.Length)]));
-            codes.Add($"{raw[..4]}-{raw[4..8]}-{raw[8..]}");
+            var (raw, display) = RecoveryCodeGenerator.Next();
+            codes.Add(display);
             db.RecoveryCodes.Add(new RecoveryCodeEntity
             {
                 AuthUserId = userId,

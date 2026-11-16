@@ -44,15 +44,30 @@ public class SettingsController : ControllerBase
         // body at all) is untouched - there's nothing to mask on an empty response. It also
         // stays in the controller rather than moving into SettingsService: which credential the
         // caller presented is an HTTP fact, read off HttpContext.Items.
-        if (result.Value is not null && HttpContext.Items.ContainsKey(AuthSessionService.ApiKeySlotItemKey))
-            result.Value.ProgressShareToken = null;
+        MaskShareTokenForApiKeyCaller(result.Value);
 
         return result;
     }
 
     [HttpPut]
-    public async Task<ActionResult<UserSettingsDto>> Save(UserSettingsDto dto) =>
-        (await _settings.SaveAsync(dto)).ToActionResult(this);
+    public async Task<ActionResult<UserSettingsDto>> Save(UserSettingsDto dto)
+    {
+        var result = await _settings.SaveAsync(dto);
+        // Same A12b rule as Get: PUT echoes the saved settings back, and the "ha" slot can reach
+        // it too - an API-key caller must not get the share token out of the response either
+        // (audit 2026-11-16 L3).
+        if (result.Outcome == ServiceOutcome.Success)
+            MaskShareTokenForApiKeyCaller(result.Value);
+        return result.ToActionResult(this);
+    }
+
+    /// <summary>The progress share token is a bearer credential that only the user's own
+    /// session may see; every settings response to an API-key caller has it removed.</summary>
+    private void MaskShareTokenForApiKeyCaller(UserSettingsDto? settings)
+    {
+        if (settings is not null && HttpContext.Items.ContainsKey(AuthSessionService.ApiKeySlotItemKey))
+            settings.ProgressShareToken = null;
+    }
 
     /// <summary>
     /// The client reports the UI language it now shows (on start and when the user switches), so

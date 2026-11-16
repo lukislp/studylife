@@ -16,5 +16,7 @@
   "SignedOutNotStudyLife": "{0} antwortet nicht wie ein StudyAtrium-Server. Wenn die Adresse falsch ist, wechsle den Server.",
   "SignedOutNoNetwork": "Keine Netzwerkverbindung – WLAN und mobile Daten sind aus.",
   "PasskeyDomainHint": "Passkeys funktionieren nur unter {0}.",
-  "UsePasskeyAddress": "Diese Adresse verwenden"
+  "UsePasskeyAddress": "Diese Adresse verwenden",
+  "CleartextServer": "Diese Adresse ist nicht verschlüsselt (http://). Anmeldung und Daten würden lesbar übertragen. Verwende https:// oder tippe nochmal, um sie trotzdem zu verwenden.",
+  "SharedTextConfirm": "Den geteilten Text als neue Notiz speichern?"
 }

@@ -1,0 +1,29 @@
+@*
+  SPDX-FileCopyrightText: 2026 Lukas Körber
+  SPDX-License-Identifier: AGPL-3.0-only
+*@
+@using StudyLife.Client.I18nText
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+@* The privacy policy link for pages shown before sign-in (sign-in, registration): the policy has to
+   be reachable without an account (App Store guideline 5.1.1(i)). Same address and text as the
+   About section in Setup (PrivacyPolicyLink, AboutText). *@
+
+@if (T is not null)
+{
+    <p class="ss-desc privacy-policy-note" style="margin-top:1rem; font-size:0.8rem;">
+        <a href="@PrivacyPolicyLink.For(_language)" target="_blank" rel="noopener noreferrer"
+           aria-label="@($"{T.PrivacyPolicy} ({T.NewTab})")">@T.PrivacyPolicy</a>
+    </p>
+}
+
+@code {
+    private AboutText? T;
+    private string? _language;
+
+    protected override async Task OnInitializedAsync()
+    {
+        T = await I18nText.GetTextTableAsync<AboutText>(this);
+        _language = await I18nText.GetCurrentLanguageAsync();
+    }
+}
