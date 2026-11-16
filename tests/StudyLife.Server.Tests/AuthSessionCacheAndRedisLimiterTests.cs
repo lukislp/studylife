@@ -15,7 +15,7 @@ public class AuthSessionCacheTests
     [Fact]
     public void Hit_OnlyWhileTheSessionItselfIsStillValid()
     {
-        var cache = new AuthSessionCache();
+        var cache = new AuthSessionCache(new InMemorySessionRevocationSignal());
         var now = DateTime.UtcNow;
         cache.Set("hash", new AuthSessionCache.Entry(7, 1, now.AddHours(1), now.AddDays(1)));
 
@@ -30,13 +30,53 @@ public class AuthSessionCacheTests
     [Fact]
     public void Remove_EvictsImmediately()
     {
-        var cache = new AuthSessionCache();
+        var cache = new AuthSessionCache(new InMemorySessionRevocationSignal());
         var now = DateTime.UtcNow;
         cache.Set("hash", new AuthSessionCache.Entry(7, 1, now.AddHours(1), now.AddDays(1)));
 
         cache.Remove("hash");
 
         Assert.False(cache.TryGet("hash", now, out _));
+    }
+
+    [Fact]
+    public void Remove_EvictsOnEveryPodSharingTheSignal()
+    {
+        // Audit 2026-11-16 L9: a revocation on pod A must not stay valid on pod B for the TTL.
+        var signal = new InMemorySessionRevocationSignal();
+        var podA = new AuthSessionCache(signal);
+        var podB = new AuthSessionCache(signal);
+        var now = DateTime.UtcNow;
+        var entry = new AuthSessionCache.Entry(7, 1, now.AddHours(1), now.AddDays(1));
+        podA.Set("hash", entry);
+        podB.Set("hash", entry);
+        podB.Set("other", entry);
+
+        podA.Remove("hash");
+
+        Assert.False(podA.TryGet("hash", now, out _));
+        Assert.False(podB.TryGet("hash", now, out _));
+        Assert.True(podB.TryGet("other", now, out _));
+    }
+
+    [Fact]
+    public void Redis_PublishesTheHash_AndEvictsOnIncomingMessages()
+    {
+        var subscriber = Substitute.For<ISubscriber>();
+        var mux = Substitute.For<IConnectionMultiplexer>();
+        mux.GetSubscriber(Arg.Any<object?>()).Returns(subscriber);
+        var signal = new RedisSessionRevocationSignal(mux);
+        var cache = new AuthSessionCache(signal);
+        var now = DateTime.UtcNow;
+        cache.Set("remote-hash", new AuthSessionCache.Entry(7, 1, now.AddHours(1), now.AddDays(1)));
+
+        cache.Remove("local-hash");
+        subscriber.Received(1).Publish(RedisSessionRevocationSignal.Channel, (RedisValue)"local-hash", CommandFlags.FireAndForget);
+
+        // Another pod revoked "remote-hash": the message alone evicts it here.
+        signal.OnMessage("remote-hash");
+        Assert.False(cache.TryGet("remote-hash", now, out _));
+        signal.OnMessage(null); // ignored
     }
 }
 

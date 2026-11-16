@@ -16,5 +16,7 @@
   "SignedOutNotStudyLife": "{0} neodpovedá ako server StudyAtrium. Ak je adresa nesprávna, zmeň server.",
   "SignedOutNoNetwork": "Žiadne pripojenie k sieti – Wi-Fi aj mobilné dáta sú vypnuté.",
   "PasskeyDomainHint": "Prístupové kľúče fungujú len na adrese {0}.",
-  "UsePasskeyAddress": "Použiť túto adresu"
+  "UsePasskeyAddress": "Použiť túto adresu",
+  "CleartextServer": "Táto adresa nie je šifrovaná (http://). Prihlásenie a údaje by sa prenášali čitateľne. Použite https:// alebo ťuknite znova a použite ju aj tak.",
+  "SharedTextConfirm": "Uložiť zdieľaný text ako novú poznámku?"
 }

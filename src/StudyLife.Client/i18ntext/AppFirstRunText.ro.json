@@ -16,5 +16,7 @@
   "SignedOutNotStudyLife": "{0} nu răspunde ca un server StudyAtrium. Dacă adresa este greșită, schimbă serverul.",
   "SignedOutNoNetwork": "Nicio conexiune la rețea – Wi-Fi-ul și datele mobile sunt oprite.",
   "PasskeyDomainHint": "Cheile de acces funcționează doar la {0}.",
-  "UsePasskeyAddress": "Folosește această adresă"
+  "UsePasskeyAddress": "Folosește această adresă",
+  "CleartextServer": "Această adresă nu este criptată (http://). Autentificarea și datele tale ar circula în clar. Folosește https:// sau atinge din nou pentru a o folosi totuși.",
+  "SharedTextConfirm": "Salvezi textul partajat ca notă nouă?"
 }
