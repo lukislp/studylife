@@ -4,6 +4,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using StudyLife.Server.Data;
+using StudyLife.Server.Services;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Tests;
@@ -69,6 +70,11 @@ public class TimerStateControllerTests : IClassFixture<CustomWebApplicationFacto
         return session.Id;
     });
 
+    /// <summary>A plausible phase end: the server clamps phase ends to a window around "now"
+    /// (TimerStateLimits), so fixed historical dates no longer round-trip.</summary>
+    private static DateTime SoonPhaseEnd() =>
+        DateTime.SpecifyKind(DateTime.Now.AddMinutes(30), DateTimeKind.Unspecified).AddTicks(-(DateTime.Now.Ticks % TimeSpan.TicksPerSecond));
+
     private static TimerStateDto RunningFocusState(int sessionId) => new()
     {
         SessionId = sessionId,
@@ -76,7 +82,7 @@ public class TimerStateControllerTests : IClassFixture<CustomWebApplicationFacto
         IsBreak = false,
         CurrentRound = 2,
         TimerModeId = 1,
-        PhaseEndsAt = new DateTime(2026, 8, 1, 12, 30, 0, DateTimeKind.Utc),
+        PhaseEndsAt = SoonPhaseEnd(),
     };
 
     [Fact]
@@ -134,7 +140,7 @@ public class TimerStateControllerTests : IClassFixture<CustomWebApplicationFacto
     /// must still be persisted without complaint.
     /// </summary>
     [Fact]
-    public async Task Put_WithImplausibleStaleState_PersistsWithoutValidation()
+    public async Task Put_WithImplausibleStaleState_StoresItClamped()
     {
         var implausible = new TimerStateDto
         {
@@ -152,7 +158,12 @@ public class TimerStateControllerTests : IClassFixture<CustomWebApplicationFacto
         var getResponse = await _client.GetAsync("/api/timerstate");
         var getResult = await getResponse.Content.ReadFromJsonAsync<TimerStateDto>();
 
-        AssertMatches(implausible, getResult);
+        // Never rejected (fire-and-forget path), but a round and a phase end outside sane
+        // ranges are clamped so the Live Activity worker cannot be made to spin (audit L12).
+        Assert.NotNull(getResult);
+        Assert.Equal(0, getResult!.CurrentRound);
+        Assert.Equal(9999, getResult.TimerModeId);
+        Assert.True(getResult.PhaseEndsAt >= DateTime.Now - TimerStateLimits.MaxPhaseOffset - TimeSpan.FromMinutes(1));
     }
 
     /// <summary>
