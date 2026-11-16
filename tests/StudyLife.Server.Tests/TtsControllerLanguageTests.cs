@@ -84,3 +84,29 @@ public class TtsControllerLanguageTests : IDisposable
         try { Directory.Delete(_voices, true); } catch (IOException) { }
     }
 }
+
+/// <summary>Audit L7: the language code becomes part of a voice file name, so only the product's
+/// own codes may reach the file system - even when a file with the crafted name exists.</summary>
+public class PiperVoiceRegistryLanguageTests : IDisposable
+{
+    private readonly string _voices = Directory.CreateTempSubdirectory("studylife-voices-").FullName;
+
+    [Theory]
+    [InlineData("..")]
+    [InlineData("../secret")]
+    [InlineData("a/b")]
+    [InlineData("xx")]
+    [InlineData("DE")]
+    [InlineData("")]
+    public void TryGet_NonSupportedCode_IsRefusedWithoutTouchingFiles(string lang)
+    {
+        File.WriteAllText(Path.Combine(_voices, lang.Replace("/", "_") + ".onnx"), "x");
+        using var registry = new PiperVoiceRegistry(_voices);
+        Assert.Null(registry.TryGet(lang));
+    }
+
+    public void Dispose()
+    {
+        try { Directory.Delete(_voices, true); } catch (IOException) { }
+    }
+}

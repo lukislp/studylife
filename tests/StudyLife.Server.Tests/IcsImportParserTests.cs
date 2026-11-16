@@ -199,6 +199,35 @@ public class IcsImportParserTests
         Assert.Equal(new DateTime(2026, 1, 15, 10, 30, 0), e.EndTime);
     }
 
+    [Theory]
+    [InlineData("Europe/Berlin", true)]
+    [InlineData("America/Argentina/Buenos_Aires", true)]
+    [InlineData("Etc/GMT+1", true)]
+    [InlineData("W. Europe Standard Time", true)]
+    [InlineData("Pacific Standard Time (Mexico)", true)]
+    [InlineData("../../etc/passwd", false)]
+    [InlineData("/etc/passwd", false)]
+    [InlineData("Europe\\Berlin", false)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    public void IsPlausibleTimeZoneId_AcceptsOnlyIanaAndWindowsShapes(string? tzid, bool expected) =>
+        Assert.Equal(expected, IcsImportParser.IsPlausibleTimeZoneId(tzid));
+
+    [Fact]
+    public void IsPlausibleTimeZoneId_RejectsOverlongIds() =>
+        Assert.False(IcsImportParser.IsPlausibleTimeZoneId(new string('a', 65)));
+
+    [Fact]
+    public void Parse_PathLikeTzid_DegradesToFloatingTime()
+    {
+        var ics = "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\n"
+            + "DTSTART;TZID=../../etc/passwd:20260115T090000\r\n"
+            + "SUMMARY:Pfad\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n";
+
+        var e = Assert.Single(IcsImportParser.Parse(ics));
+        Assert.Equal(new DateTime(2026, 1, 15, 9, 0, 0), e.StartTime);
+    }
+
     [Fact]
     public void Parse_UnparseableDtStartTimestamp_SkipsTheEvent()
     {

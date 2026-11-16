@@ -156,7 +156,7 @@ public class ApnsPushTests : IClassFixture<CustomWebApplicationFactory>
         var sender = CreateSender();
 
         Assert.False(sender.Enabled);
-        Assert.Equal(ApnsSendOutcome.Failed, await sender.SendPayloadAsync("tok", "{\"title\":\"x\",\"body\":\"y\"}"));
+        Assert.Equal(ApnsSendOutcome.Failed, await sender.SendPayloadAsync("tok-12345", "{\"title\":\"x\",\"body\":\"y\"}"));
     }
 
     [Fact]
@@ -205,8 +205,8 @@ public class ApnsPushTests : IClassFixture<CustomWebApplicationFactory>
             var handler = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
             var sender = CreateSender(handler, keyPath: keyPath);
 
-            await sender.SendPayloadAsync("tok", "{\"title\":\"a\",\"body\":\"b\"}");
-            await sender.SendPayloadAsync("tok", "{\"title\":\"a\",\"body\":\"b\"}");
+            await sender.SendPayloadAsync("tok-12345", "{\"title\":\"a\",\"body\":\"b\"}");
+            await sender.SendPayloadAsync("tok-12345", "{\"title\":\"a\",\"body\":\"b\"}");
 
             Assert.Equal(2, handler.Requests.Count);
             Assert.Equal(handler.Requests[0].Headers["authorization"], handler.Requests[1].Headers["authorization"]);
@@ -232,7 +232,7 @@ public class ApnsPushTests : IClassFixture<CustomWebApplicationFactory>
             });
             var sender = CreateSender(handler, keyPath: keyPath);
 
-            var outcome = await sender.SendPayloadAsync("tok", "{\"title\":\"a\",\"body\":\"b\"}");
+            var outcome = await sender.SendPayloadAsync("tok-12345", "{\"title\":\"a\",\"body\":\"b\"}");
 
             Assert.Equal(ApnsSendOutcome.ExpiredToken, outcome);
         }
@@ -254,7 +254,7 @@ public class ApnsPushTests : IClassFixture<CustomWebApplicationFactory>
             });
             var sender = CreateSender(handler, keyPath: keyPath);
 
-            Assert.Equal(ApnsSendOutcome.Failed, await sender.SendPayloadAsync("tok", "{\"title\":\"a\",\"body\":\"b\"}"));
+            Assert.Equal(ApnsSendOutcome.Failed, await sender.SendPayloadAsync("tok-12345", "{\"title\":\"a\",\"body\":\"b\"}"));
         }
         finally
         {
@@ -271,7 +271,7 @@ public class ApnsPushTests : IClassFixture<CustomWebApplicationFactory>
             var handler = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
             var sender = CreateSender(handler, keyPath: keyPath);
 
-            await sender.SendPayloadAsync("tok", "kein json");
+            await sender.SendPayloadAsync("tok-12345", "kein json");
 
             Assert.Contains("kein json", Assert.Single(handler.Requests).Body);
         }
@@ -375,7 +375,7 @@ public class ApnsPushTests : IClassFixture<CustomWebApplicationFactory>
             // Worst case for the byte budget: emoji are still written as two \uXXXX escapes each.
             var longBody = "Übung " + string.Concat(Enumerable.Repeat("📚", 2000));
 
-            await sender.SendPayloadAsync("tok", System.Text.Json.JsonSerializer.Serialize(new { title = "Lernphase", body = longBody }));
+            await sender.SendPayloadAsync("tok-12345", System.Text.Json.JsonSerializer.Serialize(new { title = "Lernphase", body = longBody }));
 
             var request = Assert.Single(handler.Requests);
             // Priority 5 would let iOS hold the banner back until the app is opened.

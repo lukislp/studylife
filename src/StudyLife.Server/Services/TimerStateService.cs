@@ -18,7 +18,7 @@ public interface ITimerStateService
 {
     Task<TimerStateDto> GetAsync();
     Task<TimerStateDto> SaveAsync(TimerStateDto dto);
-    Task SetLiveActivityPushTokenAsync(LiveActivityPushTokenDto dto);
+    Task<ServiceResult> SetLiveActivityPushTokenAsync(LiveActivityPushTokenDto dto);
 }
 
 public class TimerStateService(StudyLifeDb db, WebhooksProxyClient webhooks, ICurrentUserAccessor currentUser) : ITimerStateService
@@ -101,16 +101,18 @@ public class TimerStateService(StudyLifeDb db, WebhooksProxyClient webhooks, ICu
             : null;
         entity.IsRunning = dto.IsRunning;
         entity.IsBreak = dto.IsBreak;
-        entity.CurrentRound = dto.CurrentRound;
+        entity.CurrentRound = TimerStateLimits.ClampRound(dto.CurrentRound);
         entity.TimerModeId = dto.TimerModeId;
         // Rebase the deadline onto the server clock when the writer told us its own clock:
         // the other devices compute "remaining" against ServerNow (see GetAsync), so a writer
         // whose clock runs a few seconds ahead used to make their banner start above the full
         // length.
         var now = DateTime.Now;
-        entity.PhaseEndsAt = dto.PhaseEndsAt is { } endsAt && dto.ClientNow is { } clientNow
-            ? now + (endsAt - clientNow)
-            : dto.PhaseEndsAt;
+        entity.PhaseEndsAt = TimerStateLimits.ClampPhaseEnd(
+            dto.PhaseEndsAt is { } endsAt && dto.ClientNow is { } clientNow
+                ? now + (endsAt - clientNow)
+                : dto.PhaseEndsAt,
+            now);
         entity.UpdatedAt = now;
         if (dto.ClientSequence is { } newSeq) entity.LastClientSequence = newSeq;
         // The out-of-order check above must have left the stored sequence monotonic.
@@ -144,8 +146,14 @@ public class TimerStateService(StudyLifeDb db, WebhooksProxyClient webhooks, ICu
     /// the normal state push from TimerService (start/pause/stop, runs on every platform incl.
     /// web) doesn't know about this app-only field and would otherwise overwrite it with null on
     /// every call. Only invoked by the app with the push entitlement (paid profile).</summary>
-    public async Task SetLiveActivityPushTokenAsync(LiveActivityPushTokenDto dto)
+    public async Task<ServiceResult> SetLiveActivityPushTokenAsync(LiveActivityPushTokenDto dto)
     {
+        // The token ends up in the APNs request path (ApnsSender), so it gets the same shape
+        // check as a device token (audit L6). Null/empty stays the "activity ended" clear.
+        var token = string.IsNullOrEmpty(dto.Token) ? null : dto.Token;
+        if (token is not null && !PushService.IsValidApnsToken(token))
+            return ServiceResult.Invalid("Invalid Live Activity push token.");
+
         // Same retry-and-re-apply shape as SaveAsync above, and the most important place for it:
         // the worker nulls this very field when it sees an expired token, so a registration
         // racing that write is precisely the update that must not be lost - without it the app
@@ -153,8 +161,8 @@ public class TimerStateService(StudyLifeDb db, WebhooksProxyClient webhooks, ICu
         for (var attempt = 0; ; attempt++)
         {
             var entity = await db.TimerState.GetOrCreateAsync(db);
-            entity.LiveActivityPushToken = dto.Token;
-            if (await SaveWithReloadAsync(attempt)) return;
+            entity.LiveActivityPushToken = token;
+            if (await SaveWithReloadAsync(attempt)) return ServiceResult.Success();
         }
     }
 

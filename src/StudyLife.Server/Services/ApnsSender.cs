@@ -225,6 +225,15 @@ public sealed class ApnsSender
     private async Task<ApnsSendOutcome> SendAsync(string deviceToken, string apsJson, string pushType,
         string priority, string? topicSuffix = null, long? expiration = null)
     {
+        // The token is interpolated into the request PATH below, so a value outside the
+        // URL-path-safe alphabet ('/', '?', '#', '..') must never reach it, whatever stored it
+        // (audit L6). Treated like a token Apple rejected: the caller drops it.
+        if (!PushService.IsValidApnsToken(deviceToken))
+        {
+            _logger.LogWarning("APNs token has an unexpected shape, not sending");
+            return ApnsSendOutcome.ExpiredToken;
+        }
+
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Post, $"{_endpoint}/3/device/{deviceToken}")
