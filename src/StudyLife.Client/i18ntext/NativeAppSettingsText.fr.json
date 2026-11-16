@@ -9,7 +9,7 @@
   "Cancel": "Annuler",
   "ChangeServerWorking": "Déconnexion …",
   "HealthHeading": "Apple Santé",
-  "HealthDesc": "StudyAtrium peut enregistrer les sessions de concentration terminées comme minutes de pleine conscience et afficher le sommeil, la variabilité de la fréquence cardiaque et les pas à côté de ton temps d'étude. Les données restent sur cet appareil.",
+  "HealthDesc": "StudyAtrium peut enregistrer les sessions de concentration terminées comme minutes de pleine conscience et lire le sommeil, la variabilité de la fréquence cardiaque, les pas et la capacité cardio-respiratoire (VO2max) pour les afficher à côté de ton temps d'étude. Les données restent sur cet appareil.",
   "HealthConnectButton": "Connecter Apple Santé",
   "HealthConnected": "Connecté. Ce que StudyAtrium peut lire ou écrire se règle dans l'app Santé.",
   "HealthDeclined": "L'accès à Apple Santé est désactivé. Pour l'activer, ouvre l'app Santé, touche ta photo de profil, choisis Apps, puis StudyAtrium.",

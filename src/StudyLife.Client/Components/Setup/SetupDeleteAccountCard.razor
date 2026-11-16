@@ -9,7 +9,7 @@
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 @inject INativeAppAuth NativeAuth
-@inject INativeFileExport NativeFiles
+@inject IFileDownloadService Downloads
 @inject HttpClient Http
 @inject IServiceProvider Services
 
@@ -179,7 +179,6 @@
     private string? _error;
     private ElementReference _dialog;
     private bool _focusPending;
-    private IJSObjectReference? _downloadModule;
 
     private string Title => _step == Step.Reauth ? T!.ReauthTitle
         : _target is null ? T!.DialogTitle : string.Format(T!.RemoveUserTitle ?? "", _target.DisplayName);
@@ -261,19 +260,9 @@
         _error = null;
         try
         {
-            var response = await Http.GetAsync("api/backup/export");
+            using var response = await Http.GetAsync("api/backup/export");
             if (!response.IsSuccessStatusCode) { _error = T!.ExportFailed; return; }
-            var fileName = $"studyatrium-export-{DateTime.UtcNow:yyyyMMdd}.json";
-            if (NativeFiles.IsAvailable)
-            {
-                await NativeFiles.SaveTextAsync(fileName, await response.Content.ReadAsStringAsync());
-                return;
-            }
-            // The same collocated module SetupBackupCard uses - no new interop function.
-            _downloadModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Setup/SetupBackupCard.razor.js");
-            await using var stream = await response.Content.ReadAsStreamAsync();
-            using var streamRef = new DotNetStreamReference(stream);
-            await _downloadModule.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+            await Downloads.SaveResponseAsync(response, $"studyatrium-export-{DateTime.UtcNow:yyyyMMdd}.json");
         }
         catch
         {

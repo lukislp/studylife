@@ -9,6 +9,7 @@
 @inherits LocalizedComponentBase<I18nText.SetupText>
 @implements IDisposable
 @inject INativeAppAuth NativeAuth
+@inject IClientPlatform Platform
 @inject AppStateService State
 @inject NotificationService NotificationSvc
 @inject HttpClient Http
@@ -369,17 +370,20 @@
              SetupWebhookSubscriptionsCard. -->
         <SetupWebhookSubscriptionsCard />
 
-        <!-- studylife-developers: separate long-lived per-user API key slot (DeveloperApiKeyHash),
-             a toggle like studylife-ai's own card - scoped exclusively to managing one's own
-             add-on registrations (ApiKeyScopes.Developer), never any study data. See
-             SetupDeveloperCard. -->
-        <SetupDeveloperCard />
+        @if (Platform.ShowsDeveloperIntegrations)
+        {
+            <!-- studylife-developers: separate long-lived per-user API key slot (DeveloperApiKeyHash),
+                 a toggle like studylife-ai's own card - scoped exclusively to managing one's own
+                 add-on registrations (ApiKeyScopes.Developer), never any study data. See
+                 SetupDeveloperCard. -->
+            <SetupDeveloperCard />
 
-        <!-- Marketplace: browse/install add-ons published to the public studylife-marketplace
-             catalog. Fetches the catalog directly from GitHub client-side (MarketplaceClient) -
-             no StudyLife.Server involvement for browsing; installing reuses the existing
-             DeveloperController/generic connect-consent endpoints. See SetupMarketplaceCard. -->
-        <SetupMarketplaceCard />
+            <!-- Marketplace: browse/install add-ons published to the public studylife-marketplace
+                 catalog. Fetches the catalog directly from GitHub client-side (MarketplaceClient) -
+                 no StudyLife.Server involvement for browsing; installing reuses the existing
+                 DeveloperController/generic connect-consent endpoints. See SetupMarketplaceCard. -->
+            <SetupMarketplaceCard />
+        }
 
         <!-- studylife-ai: separate long-lived per-user API key slot (AiApiKeyHash). UNLIKE the
              Home Assistant card above, this one is a plain on/off toggle, not a reveal-once-

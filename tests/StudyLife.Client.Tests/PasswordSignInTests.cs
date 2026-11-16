@@ -673,7 +673,7 @@ public class DeleteAccountPasswordProofTests : ConsentBunitTest
         Services.AddSingleton(tokens);
         Services.AddSingleton(new AppStateService(http, js, NullLogger<AppStateService>.Instance, tokens));
         Services.AddSingleton<INativeAppAuth>(new WebOnly());
-        Services.AddSingleton<INativeFileExport>(new NoNativeFileExport());
+        Services.AddSingleton<IFileDownloadService>(new RecordingFileDownloads());
         var cut = Render<SetupDeleteAccountCard>(p => p.Add(c => c.Text, Keys()));
         cut.WaitForState(() => cut.Markup.Contains("OpenButton"));
         return (cut, server);
