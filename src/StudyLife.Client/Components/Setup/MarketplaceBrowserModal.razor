@@ -57,7 +57,10 @@
                                 @T.MarketplaceScopesLabel
                                 @string.Join(", ", listing.RequestedScopes.Select(MarketplaceScopeLabels.Describe))
                             </div>
-                            <a href="@listing.Repository" target="_blank" rel="noopener" class="ss-desc">@T.MarketplaceViewSource</a>
+                            @if (WebLinkPolicy.IsWebLink(listing.Repository))
+                            {
+                                <a href="@listing.Repository" target="_blank" rel="noopener noreferrer" class="ss-desc">@T.MarketplaceViewSource</a>
+                            }
                         </div>
                         <div class="toggle-row" style="gap:0.5rem;flex-shrink:0">
                             <button type="button" class="btn-secondary" disabled="@(_busyClientId != null || _isDemo)"
