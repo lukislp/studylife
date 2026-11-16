@@ -599,14 +599,16 @@
       "studylife.client": {
         "type": "Project",
         "dependencies": {
-          "Markdig": "[1.6.0, )",
           "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.15, )",
           "StudyLife.Shared": "[1.0.0, )",
           "Toolbelt.Blazor.I18nText": "[14.1.1, )"
         }
       },
       "studylife.shared": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "Markdig": "[1.6.0, )"
+        }
       },
       "studylife.stt": {
         "type": "Project",
@@ -618,8 +620,8 @@
       "studylife.tts": {
         "type": "Project",
         "dependencies": {
-          "Markdig": "[1.6.0, )",
-          "Microsoft.ML.OnnxRuntime": "[1.32.0, )"
+          "Microsoft.ML.OnnxRuntime": "[1.32.0, )",
+          "StudyLife.Shared": "[1.0.0, )"
         }
       }
     },
