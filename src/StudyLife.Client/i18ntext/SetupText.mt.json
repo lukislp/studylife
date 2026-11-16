@@ -94,6 +94,7 @@
   "ReminderCustomValuesLabel": "Personalizzat: {0}",
   "BackupHeading": "Backup u Esportazzjoni",
   "BackupDesc": "Niżżel kopja konsistenti tad-database tiegħek, jew esporta d-data tiegħek bħala JSON. Backup jinħoloq ukoll awtomatikament kull ġimgħa — jinżammu l-aħħar 4.",
+  "ExportOwnDataDesc": "Niżżel kopja tad-data kollha tiegħek bħala fajl JSON — korsijiet, sessjonijiet, noti, għanijiet u settings. Fiha d-data tiegħek biss.",
   "BackupDownloadDatabaseButton": "Niżżel backup tad-database",
   "BackupExportJsonButton": "Esporta bħala JSON",
   "RestoreHeading": "Irrestawra minn backup",

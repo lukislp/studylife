@@ -94,6 +94,7 @@
   "ReminderCustomValuesLabel": "Mukautetut: {0}",
   "BackupHeading": "Varmuuskopio ja vienti",
   "BackupDesc": "Lataa yhtenäinen kopio tietokannastasi tai vie tietosi JSON-muodossa. Lisäksi varmuuskopio luodaan automaattisesti kerran viikossa — viimeiset 4 säilytetään.",
+  "ExportOwnDataDesc": "Lataa kopio kaikista tiedoistasi JSON-tiedostona — kurssit, sessiot, muistiinpanot, tavoitteet ja asetukset. Se sisältää vain omat tietosi.",
   "BackupDownloadDatabaseButton": "Lataa tietokannan varmuuskopio",
   "BackupExportJsonButton": "Vie JSON-muodossa",
   "RestoreHeading": "Palauta varmuuskopiosta",

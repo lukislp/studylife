@@ -94,6 +94,7 @@
   "ReminderCustomValuesLabel": "Egyéni: {0}",
   "BackupHeading": "Biztonsági mentés és exportálás",
   "BackupDesc": "Töltsd le adatbázisod konzisztens másolatát, vagy exportáld adataidat JSON formátumban. Emellett hetente automatikusan készül biztonsági mentés — az utolsó 4 megmarad.",
+  "ExportOwnDataDesc": "Töltsd le az összes adatod másolatát JSON-fájlként — kurzusok, munkamenetek, jegyzetek, célok és beállítások. Csak a saját adataidat tartalmazza.",
   "BackupDownloadDatabaseButton": "Adatbázis-mentés letöltése",
   "BackupExportJsonButton": "Exportálás JSON-ként",
   "RestoreHeading": "Visszaállítás biztonsági mentésből",

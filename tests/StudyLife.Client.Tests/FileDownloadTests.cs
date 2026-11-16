@@ -193,13 +193,14 @@ public class SetupBackupCardDownloadTests : ConsentBunitTest
 {
     private readonly RecordingFileDownloads _downloads = new();
 
-    private (IRenderedComponent<SetupBackupCard> Cut, ScriptedServer Server) Render(bool isOwner = false)
+    private (IRenderedComponent<SetupBackupCard> Cut, ScriptedServer Server) Render(bool isOwner = false, bool rawBackupSupported = true)
     {
         var server = new ScriptedServer();
         Services.AddSingleton(new HttpClient(server) { BaseAddress = new Uri("https://studylife.test/") });
         Services.AddSingleton<IFileDownloadService>(_downloads);
         var cut = Render<SetupBackupCard>(p => p
             .Add(c => c.IsOwner, isOwner)
+            .Add(c => c.RawBackupSupported, rawBackupSupported)
             .Add(c => c.ExportJsonButtonText, "ExportJson")
             .Add(c => c.DownloadDatabaseButtonText, "DownloadDb")
             .Add(c => c.DownloadErrorText, "DownloadFailed")
@@ -211,6 +212,33 @@ public class SetupBackupCardDownloadTests : ConsentBunitTest
     {
         cut.FindAll("button").Single(b => b.TextContent.Trim() == text).Click();
         return cut;
+    }
+
+    [Theory]
+    [InlineData(true, true, true)]    // owner on SQLite: database download and export
+    [InlineData(true, false, false)]  // owner on Postgres: export only
+    [InlineData(false, true, false)]  // other user on SQLite: export only
+    [InlineData(false, false, false)] // other user on Postgres: export only
+    public void ExportMyData_IsOfferedToEveryUserOnEveryProvider_TheDatabaseDownloadOnlyToTheOwnerOnSqlite(
+        bool isOwner, bool rawBackupSupported, bool showsDatabase)
+    {
+        var (cut, _) = Render(isOwner, rawBackupSupported);
+
+        Assert.Single(cut.FindAll("button"), b => b.TextContent.Trim() == "ExportJson");
+        Assert.Equal(showsDatabase, cut.FindAll("button").Any(b => b.TextContent.Trim() == "DownloadDb"));
+        Assert.Equal(showsDatabase, cut.FindAll("input[type=password]").Count == 1);
+    }
+
+    [Fact]
+    public void ExportMyData_WorksOnPostgres()
+    {
+        var (cut, server) = Render(isOwner: false, rawBackupSupported: false);
+        server.On("GET api/backup/export", _ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{}") });
+
+        Click(cut, "ExportJson");
+
+        cut.WaitForAssertion(() => Assert.Single(_downloads.Saved), ChainTimeout);
+        Assert.Equal(0, server.Count("GET api/backup/database"));
     }
 
     [Fact]

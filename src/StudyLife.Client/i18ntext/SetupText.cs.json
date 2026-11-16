@@ -94,6 +94,7 @@
   "ReminderCustomValuesLabel": "Vlastní: {0}",
   "BackupHeading": "Záloha a export",
   "BackupDesc": "Stáhněte si konzistentní kopii databáze nebo exportujte svá data jako JSON. Záloha se navíc automaticky vytváří jednou týdně, uchovávají se poslední 4.",
+  "ExportOwnDataDesc": "Stáhni si kopii všech svých dat jako soubor JSON — kurzy, relace, poznámky, cíle a nastavení. Obsahuje jen tvá data.",
   "BackupDownloadDatabaseButton": "Stáhnout zálohu databáze",
   "BackupExportJsonButton": "Exportovat jako JSON",
   "RestoreHeading": "Obnovit ze zálohy",

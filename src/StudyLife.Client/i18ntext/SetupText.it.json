@@ -94,6 +94,7 @@
   "ReminderCustomValuesLabel": "Personalizzato: {0}",
   "BackupHeading": "Backup ed esportazione",
   "BackupDesc": "Scarica una copia coerente del tuo database o esporta i tuoi dati come JSON. Viene inoltre creato automaticamente un backup ogni settimana — vengono conservati gli ultimi 4.",
+  "ExportOwnDataDesc": "Scarica una copia di tutti i tuoi dati come file JSON: corsi, sessioni, note, obiettivi e impostazioni. Contiene solo i tuoi dati.",
   "BackupDownloadDatabaseButton": "Scarica backup del database",
   "BackupExportJsonButton": "Esporta come JSON",
   "RestoreHeading": "Ripristina da backup",

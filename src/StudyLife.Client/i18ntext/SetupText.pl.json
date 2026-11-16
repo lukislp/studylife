@@ -94,6 +94,7 @@
   "ReminderCustomValuesLabel": "Niestandardowe: {0}",
   "BackupHeading": "Kopia zapasowa i eksport",
   "BackupDesc": "Pobierz spójną kopię swojej bazy danych lub wyeksportuj dane jako JSON. Dodatkowo raz w tygodniu automatycznie tworzona jest kopia zapasowa — przechowywane są ostatnie 4.",
+  "ExportOwnDataDesc": "Pobierz kopię wszystkich swoich danych jako plik JSON — kursy, sesje, notatki, cele i ustawienia. Zawiera tylko twoje dane.",
   "BackupDownloadDatabaseButton": "Pobierz kopię zapasową bazy danych",
   "BackupExportJsonButton": "Eksportuj jako JSON",
   "RestoreHeading": "Przywróć z kopii zapasowej",

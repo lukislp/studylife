@@ -94,6 +94,7 @@
   "ReminderCustomValuesLabel": "Anpassat: {0}",
   "BackupHeading": "Säkerhetskopiering och export",
   "BackupDesc": "Ladda ner en konsekvent kopia av din databas eller exportera dina data som JSON. Dessutom skapas en säkerhetskopia automatiskt varje vecka — de senaste 4 sparas.",
+  "ExportOwnDataDesc": "Ladda ner en kopia av all din data som JSON-fil — kurser, sessioner, anteckningar, mål och inställningar. Den innehåller bara din egen data.",
   "BackupDownloadDatabaseButton": "Ladda ner databassäkerhetskopia",
   "BackupExportJsonButton": "Exportera som JSON",
   "RestoreHeading": "Återställ från säkerhetskopia",

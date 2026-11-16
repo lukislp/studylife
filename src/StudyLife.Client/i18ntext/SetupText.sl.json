@@ -94,6 +94,7 @@
   "ReminderCustomValuesLabel": "Po meri: {0}",
   "BackupHeading": "Varnostna kopija in izvoz",
   "BackupDesc": "Prenesite dosledno kopijo svoje podatkovne baze ali izvozite podatke kot JSON. Poleg tega se enkrat tedensko samodejno ustvari varnostna kopija — ohranijo se zadnje 4.",
+  "ExportOwnDataDesc": "Prenesi kopijo vseh svojih podatkov kot datoteko JSON — predmeti, seje, zapiski, cilji in nastavitve. Vsebuje samo tvoje podatke.",
   "BackupDownloadDatabaseButton": "Prenesi varnostno kopijo podatkovne baze",
   "BackupExportJsonButton": "Izvozi kot JSON",
   "RestoreHeading": "Obnovitev iz varnostne kopije",
