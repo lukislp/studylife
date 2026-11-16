@@ -9,7 +9,7 @@
   "Cancel": "Zrušiť",
   "ChangeServerWorking": "Odhlasujem …",
   "HealthHeading": "Apple Health",
-  "HealthDesc": "StudyAtrium môže ukladať dokončené sústredené kolá ako minúty všímavosti a zobrazovať spánok, variabilitu srdcovej frekvencie a kroky vedľa tvojho času učenia. Dáta zostávajú v tomto zariadení.",
+  "HealthDesc": "StudyAtrium môže ukladať dokončené sústredené kolá ako minúty všímavosti a čítať spánok, variabilitu srdcovej frekvencie, kroky a kardiovaskulárnu kondíciu (VO2max), aby ich zobrazil vedľa tvojho času učenia. Dáta zostávajú v tomto zariadení.",
   "HealthConnectButton": "Pripojiť Apple Health",
   "HealthConnected": "Pripojené. Čo smie StudyAtrium v aplikácii Zdravie čítať a zapisovať, môžeš zmeniť tam.",
   "HealthDeclined": "Prístup k Apple Health je vypnutý. Zapneš ho tak, že otvoríš aplikáciu Zdravie, klepneš na profilový obrázok, vyberieš Aplikácie a potom StudyAtrium.",

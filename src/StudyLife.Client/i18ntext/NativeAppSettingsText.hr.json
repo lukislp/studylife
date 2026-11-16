@@ -9,7 +9,7 @@
   "Cancel": "Odustani",
   "ChangeServerWorking": "Odjava …",
   "HealthHeading": "Apple Health",
-  "HealthDesc": "StudyAtrium može spremati dovršene runde fokusa kao minute svjesnosti i prikazivati san, varijabilnost srčanog ritma i korake uz tvoje vrijeme učenja. Podaci ostaju na ovom uređaju.",
+  "HealthDesc": "StudyAtrium može spremati dovršene runde fokusa kao minute svjesnosti te čitati san, varijabilnost srčanog ritma, korake i kardiovaskularnu kondiciju (VO2max) kako bi ih prikazao uz tvoje vrijeme učenja. Podaci ostaju na ovom uređaju.",
   "HealthConnectButton": "Poveži Apple Health",
   "HealthConnected": "Povezano. Što StudyAtrium smije čitati i zapisivati, možeš promijeniti u aplikaciji Zdravlje.",
   "HealthDeclined": "Pristup aplikaciji Apple Health je isključen. Za uključivanje otvori aplikaciju Zdravlje, dodirni profilnu sliku, odaberi Aplikacije, a zatim StudyAtrium.",
