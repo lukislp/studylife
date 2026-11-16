@@ -37,8 +37,7 @@ public enum NativeHealthAccess
 }
 
 /// <summary>
-/// Additive hook for Apple Health data (same pattern as INativePush/INativeAppAuth/
-/// INativeFileExport): HealthKit is iOS-only and the data never leaves the device - the
+/// Additive hook for Apple Health data (same pattern as INativePush/INativeAppAuth): HealthKit is iOS-only and the data never leaves the device - the
 /// Dashboard's readiness-score tile (Index.Health.razor.cs) simply stays hidden in the
 /// browser/PWA and on every non-iOS platform, exactly like the other native-only features.
 /// </summary>
