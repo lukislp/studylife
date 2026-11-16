@@ -400,8 +400,25 @@ builder.Services.AddRateLimiter(options =>
               && (context.Request.Path.StartsWithSegments("/api/auth/account")
                   || context.Request.Path.StartsWithSegments("/api/auth/users"))
                 ? FixedWindow(context, "account-deletion|global", permitLimit: 30, TimeSpan.FromMinutes(15))
+            // Setup-code and link-code guessing (2026-11-16 audit M8): both codes are short, and the
+            // per-IP buckets are only as good as the forwarded-header trust. Generous for real use
+            // (a household registering after a reset), tight against guessing across forged IPs.
+            : IsRegistration(context.Request)
+                ? FixedWindow(context, "registration|global", permitLimit: 60, TimeSpan.FromMinutes(15))
+            : IsDeviceLink(context.Request)
+                ? FixedWindow(context, "device-link|global", permitLimit: 60, TimeSpan.FromMinutes(15))
                 : RateLimitPartition.GetNoLimiter("no-limit"));
     options.GlobalLimiter = PartitionedRateLimiter.CreateChained(perClientLimiter, globalRecoveryLimiter);
+
+    // register/begin and password/register check the setup code while the installation is
+    // unclaimed, and the invite afterwards; begin-linked checks a device-link code.
+    static bool IsRegistration(HttpRequest request) =>
+        HttpMethods.IsPost(request.Method)
+        && (request.Path.Equals("/api/auth/register/begin", StringComparison.OrdinalIgnoreCase)
+            || request.Path.Equals("/api/auth/password/register", StringComparison.OrdinalIgnoreCase));
+
+    static bool IsDeviceLink(HttpRequest request) =>
+        HttpMethods.IsPost(request.Method) && request.Path.Equals("/api/auth/register/begin-linked", StringComparison.OrdinalIgnoreCase);
 
     static bool IsPasswordManagement(HttpRequest request) =>
         !HttpMethods.IsGet(request.Method)
@@ -759,11 +776,15 @@ if (!EF.IsDesignTime)
 // request as HTTP, regardless of whether the browser actually talks to nginx over HTTPS.
 // WHICH upstreams may set X-Forwarded-For/-Proto is the whole security question here (a
 // trusted sender can forge a fresh client IP per request and thereby defeat the IP-partitioned
-// rate limiter above) - see ForwardedHeadersConfig for the default RFC1918 trust, the
+// rate limiter above) - see ForwardedHeadersConfig for the default loopback + gateway trust, the
 // ForwardedHeaders:KnownNetworks/KnownProxies/ForwardLimit configuration that narrows it per
 // deployment, and the documented flat-pod-network limitation on Kubernetes.
 app.UseForwardedHeaders(ForwardedHeadersConfig.Build(
-    builder.Configuration.Bind<TrustedProxyOptions>(TrustedProxyOptions.SectionName)));
+    builder.Configuration.Bind<TrustedProxyOptions>(TrustedProxyOptions.SectionName),
+    DefaultGateways.Discover()));
+// Says once, in the log, which upstream sent X-Forwarded-* without being trusted - the one line an
+// operator needs after the 2026-11-16 default change (ForwardedHeadersConfig).
+app.UseMiddleware<UntrustedForwardedHeadersWarning>();
 
 // Metrics scrape surface (see Telemetry:MetricsPort at the top): GET /metrics is answered only
 // on the dedicated listener, and that listener answers nothing else - a request for the app or

@@ -4,7 +4,12 @@
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ForwardedHeaders__ForwardHost": "true",
+        "ForwardedHeaders__KnownNetworks__0": "127.0.0.0/8",
+        "ForwardedHeaders__KnownNetworks__1": "10.0.0.0/8",
+        "ForwardedHeaders__KnownNetworks__2": "172.16.0.0/12",
+        "ForwardedHeaders__KnownNetworks__3": "192.168.0.0/16"
       },
       "applicationUrl": "https://0.0.0.0:53963;http://0.0.0.0:53964"
     }
