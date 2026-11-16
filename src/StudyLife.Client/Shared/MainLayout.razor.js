@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Lukas Körber
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Collocated module for MainLayout (same pattern as Focus.razor.js/SetupBackupCard.razor.js).
+// Collocated module for MainLayout (same pattern as Focus.razor.js/Calendar.razor.js).
 //
 // Client update flow (see also CheckForClientUpdateAsync/ReloadForUpdateAsync in MainLayout.razor.cs):
 //
