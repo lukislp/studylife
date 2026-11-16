@@ -71,10 +71,15 @@ if (metricsPort is not null || !string.IsNullOrEmpty(otlpEndpoint))
     if (!string.IsNullOrEmpty(otlpEndpoint))
     {
         openTelemetry.WithTracing(tracing => tracing
-            .AddAspNetCoreInstrumentation(options => options.Filter = context =>
-                context.Request.Path.StartsWithSegments("/api")
-                && !context.Request.Path.StartsWithSegments("/api/events")
-                && !context.Request.Path.StartsWithSegments("/api/telemetry"))
+            .AddAspNetCoreInstrumentation(options =>
+            {
+                options.Filter = context =>
+                    context.Request.Path.StartsWithSegments("/api")
+                    && !context.Request.Path.StartsWithSegments("/api/events")
+                    && !context.Request.Path.StartsWithSegments("/api/telemetry");
+                // A credential in the URL path (progress share link) never reaches the trace store.
+                options.EnrichWithHttpRequest = StudyLife.Server.Diagnostics.TracePathRedaction.Enrich;
+            })
             .AddHttpClientInstrumentation()
             .AddNpgsql()
             .SetSampler(new ParentBasedSampler(new TraceIdRatioBasedSampler(traceSampleRatio)))
