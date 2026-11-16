@@ -208,7 +208,7 @@ else
                     @if (!string.IsNullOrEmpty(_selectedNote.SourceUrl) || !string.IsNullOrEmpty(_selectedNote.Tags) || !string.IsNullOrEmpty(_selectedNote.Summary) || RelatedNotes.Count > 0)
                     {
                         <div class="note-capture-meta">
-                            @if (!string.IsNullOrEmpty(_selectedNote.SourceUrl))
+                            @if (WebLinkPolicy.IsWebLink(_selectedNote.SourceUrl))
                             {
                                 <a href="@_selectedNote.SourceUrl" target="_blank" rel="noopener noreferrer" class="note-source-link">🔗 @T.CaptureSourceLinkLabel</a>
                             }
