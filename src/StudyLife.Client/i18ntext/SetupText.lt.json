@@ -286,6 +286,8 @@
   "MarketplaceByDeveloper": "kūrėjas {0}",
   "MarketplaceViewSource": "Peržiūrėti šaltinio kodą",
   "MarketplaceDemoNotice": "Priedų diegimas šioje demonstracinėje versijoje išjungtas.",
+  "MarketplaceManualSetupNotice": "Savarankiškai talpinamas papildinys: jis neturi nuolatinio adreso, todėl jo negalima įdiegti vienu spustelėjimu. Užregistruokite jį kaip kūrėjo programą su peradresavimo URI iš jo sąrankos vadovo, o tada prijunkite iš paties papildinio.",
+  "MarketplaceManualSetupLink": "Atidaryti sąrankos vadovą",
   "ClientKeysHeading": "Prijungti priedai",
   "TelemetryHeading": "Naudojimo ir klaidų ataskaitos",
   "TelemetryDesc": "Padeda mums rasti klaidas ir lėtas vietas siunčiant anonimiškus našumo ir klaidų duomenis — niekada tavo pastabų, sesijų ar sveikatos duomenų. Tai gali išjungti bet kada.",

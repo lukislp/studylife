@@ -286,6 +286,8 @@
   "MarketplaceByDeveloper": "por {0}",
   "MarketplaceViewSource": "Ver código fuente",
   "MarketplaceDemoNotice": "La instalación de complementos está deshabilitada en esta instancia de demostración.",
+  "MarketplaceManualSetupNotice": "Complemento autoalojado: no tiene una dirección fija, por lo que no se puede instalar con un clic. Regístralo como aplicación de desarrollador con el URI de redirección de su guía de configuración y después conéctalo desde el propio complemento.",
+  "MarketplaceManualSetupLink": "Abrir la guía de configuración",
   "ClientKeysHeading": "Complementos conectados",
   "TelemetryHeading": "Informes de uso y errores",
   "TelemetryDesc": "Nos ayuda a detectar fallos y puntos lentos enviando datos anónimos de rendimiento y errores — nunca tus notas, sesiones ni datos de salud. Puedes desactivarlo cuando quieras.",
