@@ -238,6 +238,30 @@ public class NoteServiceTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal(SessionValidationMessages.UnknownSessionId(424242), result.Error);
     }
 
+    [Theory]
+    [InlineData("javascript:alert(document.cookie)")]
+    [InlineData("data:text/html,<script>alert(1)</script>")]
+    [InlineData("//evil.example")]
+    public async Task CreateAsync_NonWebSourceUrl_IsInvalid(string sourceUrl)
+    {
+        // Audit L1: SourceUrl is rendered as a link, so a capture/API key must not store script.
+        var result = await _factory.WithServiceAsync<INoteService, ServiceResult<NoteDto>>(
+            (notes, _) => notes.CreateAsync(new NoteDto { Title = "X", Content = "", SourceUrl = sourceUrl }));
+
+        Assert.Equal(ServiceOutcome.Invalid, result.Outcome);
+        Assert.Equal(NoteValidationMessages.SourceUrlNotWebLink, result.Error);
+    }
+
+    [Fact]
+    public async Task CreateAsync_HttpsSourceUrl_IsKept()
+    {
+        var result = await _factory.WithServiceAsync<INoteService, ServiceResult<NoteDto>>(
+            (notes, _) => notes.CreateAsync(new NoteDto { Title = "X", Content = "", SourceUrl = "https://example.com/a" }));
+
+        Assert.Equal(ServiceOutcome.Success, result.Outcome);
+        Assert.Equal("https://example.com/a", result.Value!.SourceUrl);
+    }
+
     [Fact]
     public async Task UpdateAsync_UnknownId_IsNotFound()
     {

@@ -341,6 +341,37 @@ public class BackupImportEdgeCaseTests : IClassFixture<CustomWebApplicationFacto
     /// of failing the whole request.
     /// </summary>
     [Fact]
+    public async Task Import_NonWebSourceUrl_IsDroppedButNoteKept()
+    {
+        // Audit L1: a backup file is foreign input - a javascript: SourceUrl must not survive
+        // the import as a clickable link, but the note itself is kept.
+        var title = "UnsafeLink-" + Guid.NewGuid().ToString("N")[..8];
+        var json = $$"""
+        {
+          "exportedAt": "2025-01-01T00:00:00Z",
+          "sessions": [],
+          "notes": [{
+            "Id": 0, "Title": "{{title}}", "Content": "c",
+            "CreatedAt": "2025-01-01T00:00:00", "UpdatedAt": "2025-01-01T00:00:00",
+            "CourseId": null, "SessionId": null, "IsMarkdown": false, "SourceUrl": "javascript:alert(1)",
+            "Tags": null, "Summary": null, "RelatedNoteIds": []
+          }],
+          "courseGoals": [],
+          "courseResources": [],
+          "settings": { "SelectedCourseIds": [], "CompletedCourseIds": [], "Theme": "dark" }
+        }
+        """;
+
+        using var content = new StringContent(json, Encoding.UTF8, "application/json");
+        var response = await _client.PostAsync("/api/backup/import-json", content);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var notes = await _client.GetFromJsonAsync<List<NoteDto>>("/api/notes");
+        var imported = Assert.Single(notes!, n => n.Title == title);
+        Assert.Null(imported.SourceUrl);
+    }
+
+    [Fact]
     public async Task Import_AcceptsLegacyV1Envelope()
     {
         var suffix = Guid.NewGuid().ToString("N")[..8];
