@@ -606,10 +606,10 @@ public class TimerStateServiceTests : IClassFixture<CustomWebApplicationFactory>
         }));
 
         await _factory.WithServiceAsync<ITimerStateService>(
-            (timer, _) => timer.SetLiveActivityPushTokenAsync(new LiveActivityPushTokenDto { Token = "tok-abc" }));
+            (timer, _) => timer.SetLiveActivityPushTokenAsync(new LiveActivityPushTokenDto { Token = "tok-abc-123" }));
 
         var stored = await _factory.WithDbAsync(db => db.TimerState.AsNoTracking().FirstAsync());
-        Assert.Equal("tok-abc", stored.LiveActivityPushToken);
+        Assert.Equal("tok-abc-123", stored.LiveActivityPushToken);
         Assert.True(stored.IsRunning);
         Assert.Equal(3, stored.CurrentRound);
     }

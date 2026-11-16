@@ -92,14 +92,14 @@ public class TelemetryTagSanitizationTests : IClassFixture<CustomWebApplicationF
                 appVersion: "3.16.99-rc1", language: "fr",
                 new TelemetryEventDto { Type = "boot", Cold = false, HtmlMs = 5 },
                 new TelemetryEventDto { Type = "api", Route = "/api/notes", Method = "get", DurationMs = 3, Status = 200 },
-                new TelemetryEventDto { Type = "navigation", Page = "/sanitizer-ok", RenderMs = 2 },
-                new TelemetryEventDto { Type = "error", Kind = "dotnet", ErrorType = "Sanitizer.WellFormedException", StackHash = "abc" })).Result;
+                new TelemetryEventDto { Type = "navigation", Page = "/notes", RenderMs = 2 },
+                new TelemetryEventDto { Type = "error", Kind = "dotnet", ErrorType = "System.InvalidOperationException", StackHash = "abc" })).Result;
             Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         });
 
         Assert.True(Has(seen, "studylife.client.boots", ("app_version", "3.16.99-rc1"), ("language", "fr")));
         Assert.True(Has(seen, "studylife.client.api.duration", ("method", "GET")));
-        Assert.True(Has(seen, "studylife.client.navigation.render.duration", ("page", "/sanitizer-ok")));
-        Assert.True(Has(seen, "studylife.client.errors", ("type", "Sanitizer.WellFormedException"), ("kind", "dotnet")));
+        Assert.True(Has(seen, "studylife.client.navigation.render.duration", ("page", "/notes")));
+        Assert.True(Has(seen, "studylife.client.errors", ("type", "System.InvalidOperationException"), ("kind", "dotnet")));
     }
 }

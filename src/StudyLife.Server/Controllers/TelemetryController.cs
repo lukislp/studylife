@@ -181,7 +181,7 @@ public class TelemetryController : ControllerBase
     private void RecordError(TelemetryEventDto ev, string platform, KeyValuePair<string, object?> platformTag, string appVersion, string sessionId)
     {
         var kind = SanitizeEnum(ev.Kind, ErrorKinds, "unknown");
-        var errorType = SanitizeShape(ev.ErrorType, ErrorTypeShape, "other");
+        var errorType = SanitizeErrorType(ev.ErrorType);
         var fatal = ev.Fatal ?? false;
 
         ClientTelemetryMetrics.Errors.Add(1,
@@ -196,10 +196,11 @@ public class TelemetryController : ControllerBase
         // value here is either allow-listed above or run through ForLog: a client-supplied
         // newline must not be able to forge a second log record (2026-09-11 audit, CodeQL
         // cs/log-forging). The stack keeps its line breaks but every continuation line is
-        // indented, so an injected "ClientError ..." line can never sit at column 0.
+        // folded onto one line and length-capped (audit L11), so neither a continuation line nor an
+        // oversized stack can add or flood log records.
         _logger.LogInformation(
-            "ClientError kind={Kind} type={Type} stackHash={StackHash} platform={Platform} appVersion={AppVersion} sessionId={SessionId} page={Page}\n    {Stack}",
-            kind, errorType, ForLog(ev.StackHash), platform, appVersion, ForLog(sessionId), SanitizePage(ev.Page), ForLogMultiline(ev.Stack));
+            "ClientError kind={Kind} type={Type} stackHash={StackHash} platform={Platform} appVersion={AppVersion} sessionId={SessionId} page={Page} stack={Stack}",
+            kind, errorType, ForLog(ev.StackHash), platform, appVersion, ForLog(sessionId), SanitizePage(ev.Page), ForLogSingleLine(ev.Stack, MaxLoggedStackLength));
     }
 
     private static void RecordAppLaunch(TelemetryEventDto ev, KeyValuePair<string, object?> platformTag)
@@ -264,11 +265,37 @@ public class TelemetryController : ControllerBase
         new(@"^[0-9]{1,5}(\.[0-9]{1,5}){0,3}([-+][A-Za-z0-9.]{1,20})?$", System.Text.RegularExpressions.RegexOptions.Compiled);
     private static readonly System.Text.RegularExpressions.Regex LanguageShape =
         new(@"^[a-z]{2,3}(-[A-Za-z]{2,4})?$", System.Text.RegularExpressions.RegexOptions.Compiled);
-    /// <summary>Exception type names: dotted identifiers, e.g. System.InvalidOperationException.</summary>
-    private static readonly System.Text.RegularExpressions.Regex ErrorTypeShape =
-        new(@"^[A-Za-z0-9_.]{1,80}$", System.Text.RegularExpressions.RegexOptions.Compiled);
-    private static readonly System.Text.RegularExpressions.Regex PageSegmentShape =
-        new(@"^[a-z0-9\-]{0,40}$", System.Text.RegularExpressions.RegexOptions.Compiled);
+    /// <summary>Exception types worth their own series; every other client-invented name is the
+    /// "other" bucket, so the label set stays closed (audit L11).</summary>
+    private static readonly HashSet<string> KnownErrorTypes = new(StringComparer.Ordinal)
+    {
+        "Error", "TypeError", "ReferenceError", "SyntaxError", "RangeError", "EvalError", "URIError",
+        "AggregateError", "DOMException", "NetworkError", "AbortError", "SecurityError", "QuotaExceededError",
+        "System.Exception", "System.InvalidOperationException", "System.ArgumentException",
+        "System.ArgumentNullException", "System.ArgumentOutOfRangeException", "System.NullReferenceException",
+        "System.InvalidCastException", "System.FormatException", "System.IndexOutOfRangeException",
+        "System.Collections.Generic.KeyNotFoundException", "System.NotSupportedException",
+        "System.NotImplementedException", "System.ObjectDisposedException",
+        "System.OperationCanceledException", "System.Threading.Tasks.TaskCanceledException",
+        "System.TimeoutException", "System.UnauthorizedAccessException", "System.OutOfMemoryException",
+        "System.AggregateException", "System.IO.IOException", "System.IO.FileNotFoundException",
+        "System.Net.Http.HttpRequestException", "System.Text.Json.JsonException",
+        "Microsoft.JSInterop.JSException", "Microsoft.JSInterop.JSDisconnectedException",
+        "Microsoft.AspNetCore.Components.NavigationException",
+    };
+
+    /// <summary>The first path segment of every routable Blazor page, read from the page
+    /// components' own [Route] attributes so the list cannot drift from the app.</summary>
+    private static readonly HashSet<string> KnownPageSegments = typeof(StudyLife.Client.Services.AppStateService).Assembly
+        .GetTypes()
+        .SelectMany(t => t.GetCustomAttributes(typeof(Microsoft.AspNetCore.Components.RouteAttribute), inherit: false))
+        .Cast<Microsoft.AspNetCore.Components.RouteAttribute>()
+        .Select(r => FirstSegment(r.Template))
+        .ToHashSet(StringComparer.Ordinal);
+
+    private const int MaxLoggedStackLength = 2000;
+
+    internal static string SanitizeErrorType(string? type) => SanitizeEnum(type, KnownErrorTypes, "other");
 
     private static string SanitizeShape(string? value, System.Text.RegularExpressions.Regex shape, string fallback) =>
         value is { Length: > 0 } && shape.IsMatch(value) ? value : fallback;
@@ -276,19 +303,35 @@ public class TelemetryController : ControllerBase
     /// <summary>A page is reported by its first path segment only ("/notes/123?x=1" -> "/notes"):
     /// that is the route the Blazor page belongs to, and it keeps ids, query strings and
     /// anything a client invents out of the tag.</summary>
-    private static string SanitizePage(string? page)
+    internal static string SanitizePage(string? page)
     {
         if (string.IsNullOrWhiteSpace(page) || page[0] != '/') return "unknown";
-        var end = page.IndexOfAny(new[] { '?', '#' });
-        var path = end >= 0 ? page[..end] : page;
-        var second = path.IndexOf('/', 1);
-        var segment = (second >= 0 ? path[1..second] : path[1..]).ToLowerInvariant();
-        return PageSegmentShape.IsMatch(segment) ? "/" + segment : "other";
+        var segment = FirstSegment(page).ToLowerInvariant();
+        return KnownPageSegments.Contains(segment) ? "/" + segment : "other";
+    }
+
+    /// <summary>"/notes/123?x=1" gives "notes"; "/" gives "".</summary>
+    private static string FirstSegment(string path)
+    {
+        var end = path.IndexOfAny(new[] { '?', '#' });
+        if (end >= 0) path = path[..end];
+        path = path.TrimStart('/');
+        var slash = path.IndexOf('/');
+        return slash >= 0 ? path[..slash] : path;
     }
 
     private static string ForLog(string? value) =>
         value is null ? "" : value.Replace("\r", " ").Replace("\n", " ");
 
-    private static string ForLogMultiline(string? value) =>
-        value is null ? "" : value.Replace("\r", "").Replace("\n", "\n    ");
+    /// <summary>One line, at most <paramref name="maxLength"/> characters: every CR/LF (and other
+    /// control character) becomes a space, so client text cannot start a new log record.</summary>
+    internal static string ForLogSingleLine(string? value, int maxLength)
+    {
+        if (value is null) return "";
+        var capped = value.Length > maxLength ? value[..maxLength] : value;
+        return string.Create(capped.Length, capped, static (span, src) =>
+        {
+            for (var i = 0; i < src.Length; i++) span[i] = char.IsControl(src[i]) ? ' ' : src[i];
+        });
+    }
 }
