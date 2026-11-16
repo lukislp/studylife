@@ -6180,9 +6180,11 @@
         "type": "object",
         "properties": {
           "code": {
+            "maxLength": 64,
             "type": "string"
           },
           "codeVerifier": {
+            "maxLength": 128,
             "type": "string"
           }
         }
@@ -6200,15 +6202,12 @@
       },
       "AuthHandoffRequestDto": {
         "required": [
-          "token",
           "codeChallenge"
         ],
         "type": "object",
         "properties": {
-          "token": {
-            "type": "string"
-          },
           "codeChallenge": {
+            "pattern": "^[A-Za-z0-9_-]{43}$",
             "type": "string"
           }
         }
