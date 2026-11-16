@@ -40,6 +40,10 @@ public class TimerService
     private int _focusMilestonesFired;
     public const int FocusMilestoneIntervalMinutes = 25;
 
+    // When focus time really ran (pauses excluded), per finished round - see FocusRoundLog.
+    // Guarded by _lock like the rest of the timer state.
+    private readonly FocusRoundLog _focusLog = new();
+
     // ── State push: single-flight, latest-wins queue (audit S6) ─────────────────────────────
     // Every call site below used to fire `_ = PushStateAsync()` unawaited on every transition -
     // two rapid transitions (e.g. Start immediately followed by a phase change) could then race
@@ -92,6 +96,16 @@ public class TimerService
     public int CurrentRound { get { lock (_lock) return _currentRound; } }
     public TimerMode? CurrentMode { get { lock (_lock) return _mode; } }
 
+    /// <summary>The real focus intervals of every focus round that ended since the last call, pauses
+    /// excluded (a round that was paused yields one interval per stretch). Meant for the handler of
+    /// <see cref="OnBreakStarted"/>, which fires right after each focus phase; several rounds can be
+    /// waiting after a suspended device catches up on missed phases. Returns an empty list when
+    /// there is nothing new.</summary>
+    public IReadOnlyList<FocusInterval> TakeFinishedFocusIntervals()
+    {
+        lock (_lock) return _focusLog.TakeFinished();
+    }
+
     public void LoadMode(TimerMode mode, int? sessionId = null)
     {
         bool wasRunning;
@@ -120,7 +134,11 @@ public class TimerService
             if (_mode == null || _isRunning) return;
             _isRunning = true;
             _phaseEndsAtUtc = DateTime.UtcNow.AddSeconds(_secondsLeft);
-            if (!_isBreak) _focusStreakSegmentStartUtc = DateTime.UtcNow;
+            if (!_isBreak)
+            {
+                _focusStreakSegmentStartUtc = DateTime.UtcNow;
+                _focusLog.Started(DateTime.UtcNow);
+            }
             _timer = new System.Threading.Timer(_ => Tick(), null, 1000, 1000);
         }
         OnTick?.Invoke(SecondsLeft, IsBreak, CurrentRound, IsRunning);
@@ -136,6 +154,7 @@ public class TimerService
             if (_isRunning && _phaseEndsAtUtc is { } endsAt)
                 _secondsLeft = Math.Max(0, (int)Math.Ceiling((endsAt - DateTime.UtcNow).TotalSeconds));
             FlushFocusStreakSegment();
+            _focusLog.Paused(DateTime.UtcNow);
             _isRunning = false;
             _phaseEndsAtUtc = null;
             _timer?.Dispose();
@@ -162,6 +181,7 @@ public class TimerService
         _focusStreakSeconds = 0;
         _focusStreakSegmentStartUtc = null;
         _focusMilestonesFired = 0;
+        _focusLog.Abandoned();
     }
 
     /// <summary>Folds the currently-running focus segment's elapsed wall-clock time into the
@@ -236,6 +256,7 @@ public class TimerService
                 if (_isBreak)
                 {
                     extraEvent = () => OnBreakStarted?.Invoke();
+                    _focusLog.RoundEnded(step.PreviousPhaseEndsAt);
                     // A break interrupts the streak - fold in what was accumulated up to
                     // step.PreviousPhaseEndsAt (the segment's real end, not "now") and reset for
                     // the next streak.
@@ -251,6 +272,7 @@ public class TimerService
                     // (step.PreviousPhaseEndsAt), not "now" - keeps the streak's total accurate
                     // across a missed-phase catch-up.
                     _focusStreakSegmentStartUtc = step.PreviousPhaseEndsAt;
+                    _focusLog.Started(step.PreviousPhaseEndsAt);
                 }
             }
 

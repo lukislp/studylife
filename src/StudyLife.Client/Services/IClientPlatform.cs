@@ -41,6 +41,15 @@ public interface IClientPlatform
     /// <summary>Opens the operating system's language setting for this app (or its settings page
     /// where the system has no per-app language page). Only used when <see cref="LanguageFromSystem"/>.</summary>
     Task OpenLanguageSettingsAsync() => Task.CompletedTask;
+
+    /// <summary>
+    /// Whether Setup offers the developer-oriented integration cards: the add-on registration slot
+    /// (studylife-developers) and the marketplace browser, which reads a remote add-on catalogue.
+    /// True in the browser. The Apple store shells return false: they must not present a plug-in
+    /// store or load remote catalogue content that can change after review. Default so the
+    /// browser registration and older shells keep the cards.
+    /// </summary>
+    bool ShowsDeveloperIntegrations => true;
 }
 
 /// <summary>Default registration in the browser client (Program.cs).</summary>

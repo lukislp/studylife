@@ -66,7 +66,11 @@
                 <label class="ss-label" for="register-setup-secret">@T.SetupSecretLabel</label>
                 <input id="register-setup-secret" class="input" type="text" maxlength="20"
                        placeholder="@T.SetupSecretPlaceholder" @bind="_setupSecret" @bind:event="oninput" />
-                <p class="ss-desc" style="font-size:0.8rem; margin-top:-0.5rem;">@T.SetupSecretHint</p>
+                @if (!NativeAuth.IsAvailable)
+                {
+                    @* "Find the code in the server logs" is advice for whoever runs the server in a browser. *@
+                    <p class="ss-desc" style="font-size:0.8rem; margin-top:-0.5rem;">@T.SetupSecretHint</p>
+                }
             }
             @if (_usePassword && P is not null)
             {
@@ -101,10 +105,15 @@
             <a href="@("/login" + _app.LinkQuery)" class="btn-secondary" style="text-align:center;">@T.GoToLoginLink</a>
             <a href="@("/link" + _app.LinkQuery)" class="btn-secondary" style="text-align:center;">@T.GoToLinkDeviceLink</a>
         </div>
-        @* iOS PWA hint: Safari clears localStorage of "normal" website tabs after 7 days of
-           inactivity, but not for installed home-screen apps - without installation, the
-           90-day session on iOS would therefore be practically worthless. *@
-        <p class="ss-desc" style="margin-top:1.5rem; font-size:0.8rem; color:var(--text3);">@T.InstallHint</p>
+        @if (!NativeAuth.IsAvailable)
+        {
+            @* iOS PWA hint: Safari clears localStorage of "normal" website tabs after 7 days of
+               inactivity, but not for installed home-screen apps - without installation, the
+               90-day session on iOS would therefore be practically worthless. Meaningless in the
+               native app, which is already installed. *@
+            <p class="ss-desc" style="margin-top:1.5rem; font-size:0.8rem; color:var(--text3);">@T.InstallHint</p>
+        }
+        <PrivacyPolicyNote />
     </div>
 </div>
 }
