@@ -113,6 +113,7 @@
   "BackupPasswordPlaceholder": "Jelszó (nem kötelező)",
   "BackupPasswordHint": "Opcionális: titkosítja a letöltött biztonsági mentést ezzel a jelszóval (AES-256). Hagyd üresen a titkosítatlan letöltéshez.",
   "BackupEncryptedDownloadError": "A biztonsági mentés titkosítása vagy letöltése nem sikerült. Ellenőrizd a kapcsolatot, és próbáld újra.",
+  "BackupDownloadError": "A biztonsági mentés vagy az export letöltése nem sikerült. Ellenőrizd a kapcsolatot, és próbáld újra.",
   "RestoreEncryptedPrompt": "Ez a biztonsági mentés titkosítva van. Add meg a letöltéskor használt jelszót.",
   "RestorePasswordPlaceholder": "Jelszó",
   "RestoreUnlockButton": "Feloldás és visszaállítás",

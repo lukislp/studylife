@@ -60,7 +60,11 @@
     [Parameter] public string ExportJsonButtonText { get; set; } = "";
     [Parameter] public string PasswordPlaceholder { get; set; } = "";
     [Parameter] public string PasswordHint { get; set; } = "";
+    /// <summary>Shown when the password-encrypted database download fails.</summary>
     [Parameter] public string EncryptedDownloadErrorText { get; set; } = "";
+    /// <summary>Shown when the JSON export or the unencrypted database download fails - these
+    /// involve no encryption, so they must not say so.</summary>
+    [Parameter] public string DownloadErrorText { get; set; } = "";
 
     private string _password = "";
     private bool _downloading;
@@ -70,15 +74,15 @@
     private Task DownloadDatabase() =>
         string.IsNullOrEmpty(_password)
             ? DownloadViaHttpAsync(() => Http.GetAsync("api/backup/database"),
-                $"studyatrium-backup-{DateTime.UtcNow:yyyyMMdd}.db")
+                $"studyatrium-backup-{DateTime.UtcNow:yyyyMMdd}.db", DownloadErrorText)
             : DownloadViaHttpAsync(() => Http.PostAsJsonAsync("api/backup/database/encrypted", new { password = _password }),
-                $"studyatrium-backup-{DateTime.UtcNow:yyyyMMdd}.db.enc");
+                $"studyatrium-backup-{DateTime.UtcNow:yyyyMMdd}.db.enc", EncryptedDownloadErrorText);
 
     private Task DownloadExport() =>
         DownloadViaHttpAsync(() => Http.GetAsync("api/backup/export"),
-            $"studyatrium-export-{DateTime.UtcNow:yyyyMMdd}.json");
+            $"studyatrium-export-{DateTime.UtcNow:yyyyMMdd}.json", DownloadErrorText);
 
-    private async Task DownloadViaHttpAsync(Func<Task<HttpResponseMessage>> send, string fallbackFileName)
+    private async Task DownloadViaHttpAsync(Func<Task<HttpResponseMessage>> send, string fallbackFileName, string errorText)
     {
         if (_downloading) return;
         _error = null;
@@ -88,7 +92,7 @@
             using var response = await send();
             if (!response.IsSuccessStatusCode)
             {
-                _error = EncryptedDownloadErrorText;
+                _error = errorText;
                 return;
             }
 
@@ -96,7 +100,7 @@
         }
         catch
         {
-            _error = EncryptedDownloadErrorText;
+            _error = errorText;
         }
         finally
         {

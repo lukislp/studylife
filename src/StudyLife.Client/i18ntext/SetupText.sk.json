@@ -113,6 +113,7 @@
   "BackupPasswordPlaceholder": "Heslo (nepovinné)",
   "BackupPasswordHint": "Nepovinné: zašifruje stiahnutú zálohu týmto heslom (AES-256). Nechaj prázdne pre nešifrované stiahnutie.",
   "BackupEncryptedDownloadError": "Šifrovanie alebo sťahovanie zálohy zlyhalo. Skontroluj pripojenie a skús to znova.",
+  "BackupDownloadError": "Sťahovanie zálohy alebo exportu zlyhalo. Skontroluj pripojenie a skús to znova.",
   "RestoreEncryptedPrompt": "Táto záloha je zašifrovaná. Zadaj heslo, ktoré si použil(a) pri jej stiahnutí.",
   "RestorePasswordPlaceholder": "Heslo",
   "RestoreUnlockButton": "Odomknúť a obnoviť",

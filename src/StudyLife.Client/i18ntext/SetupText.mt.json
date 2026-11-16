@@ -113,6 +113,7 @@
   "BackupPasswordPlaceholder": "Password (mhux obbligatorja)",
   "BackupPasswordHint": "Mhux obbligatorja: tikkripta l-backup imniżżel b'din il-password (AES-256). Ħalliha vojta għal download mhux kriptat.",
   "BackupEncryptedDownloadError": "L-kriptaġġ jew it-tniżżil tal-backup falla. Iċċekkja l-konnessjoni tiegħek u erġa' pprova.",
+  "BackupDownloadError": "It-tniżżil tal-backup jew tal-esportazzjoni falla. Iċċekkja l-konnessjoni tiegħek u erġa' pprova.",
   "RestoreEncryptedPrompt": "Dan il-backup huwa kriptat. Daħħal il-password li użajt meta niżżiltu.",
   "RestorePasswordPlaceholder": "Password",
   "RestoreUnlockButton": "Iftaħ u irrestawra",

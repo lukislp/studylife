@@ -113,6 +113,7 @@
   "BackupPasswordPlaceholder": "Geslo (neobvezno)",
   "BackupPasswordHint": "Neobvezno: šifrira preneseno varnostno kopijo s tem geslom (AES-256). Pusti prazno za nešifriran prenos.",
   "BackupEncryptedDownloadError": "Šifriranje ali prenos varnostne kopije ni uspelo. Preveri povezavo in poskusi znova.",
+  "BackupDownloadError": "Prenos varnostne kopije ali izvoza ni uspel. Preveri povezavo in poskusi znova.",
   "RestoreEncryptedPrompt": "Ta varnostna kopija je šifrirana. Vnesi geslo, ki si ga uporabil(a) ob prenosu.",
   "RestorePasswordPlaceholder": "Geslo",
   "RestoreUnlockButton": "Odkleni in obnovi",

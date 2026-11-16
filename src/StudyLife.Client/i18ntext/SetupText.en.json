@@ -113,6 +113,7 @@
   "BackupPasswordPlaceholder": "Password (optional)",
   "BackupPasswordHint": "Optional: encrypts the downloaded backup with this password (AES-256). Leave empty for an unencrypted download.",
   "BackupEncryptedDownloadError": "Encrypting or downloading the backup failed. Please check your connection and try again.",
+  "BackupDownloadError": "Downloading the backup or export failed. Please check your connection and try again.",
   "RestoreEncryptedPrompt": "This backup is encrypted. Enter the password you used when downloading it.",
   "RestorePasswordPlaceholder": "Password",
   "RestoreUnlockButton": "Unlock & restore",

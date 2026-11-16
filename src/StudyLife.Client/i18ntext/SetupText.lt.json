@@ -113,6 +113,7 @@
   "BackupPasswordPlaceholder": "Slaptažodis (neprivalomas)",
   "BackupPasswordHint": "Neprivaloma: užšifruoja atsisiųstą atsarginę kopiją šiuo slaptažodžiu (AES-256). Palik tuščią, jei nori atsisiųsti nešifruotą kopiją.",
   "BackupEncryptedDownloadError": "Nepavyko užšifruoti ar atsisiųsti atsarginės kopijos. Patikrink ryšį ir bandyk dar kartą.",
+  "BackupDownloadError": "Nepavyko atsisiųsti atsarginės kopijos ar eksporto. Patikrink ryšį ir bandyk dar kartą.",
   "RestoreEncryptedPrompt": "Ši atsarginė kopija yra užšifruota. Įvesk slaptažodį, kurį naudojai ją atsisiųsdamas(-a).",
   "RestorePasswordPlaceholder": "Slaptažodis",
   "RestoreUnlockButton": "Atrakinti ir atkurti",

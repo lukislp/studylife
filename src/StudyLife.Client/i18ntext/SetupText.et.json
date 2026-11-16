@@ -113,6 +113,7 @@
   "BackupPasswordPlaceholder": "Parool (valikuline)",
   "BackupPasswordHint": "Valikuline: krüpteerib allalaaditud varukoopia selle parooliga (AES-256). Jäta tühjaks krüpteerimata allalaadimiseks.",
   "BackupEncryptedDownloadError": "Varukoopia krüpteerimine või allalaadimine ebaõnnestus. Kontrolli internetiühendust ja proovi uuesti.",
+  "BackupDownloadError": "Varukoopia või ekspordi allalaadimine ebaõnnestus. Kontrolli internetiühendust ja proovi uuesti.",
   "RestoreEncryptedPrompt": "See varukoopia on krüpteeritud. Sisesta parool, mida kasutasid selle allalaadimisel.",
   "RestorePasswordPlaceholder": "Parool",
   "RestoreUnlockButton": "Ava ja taasta",

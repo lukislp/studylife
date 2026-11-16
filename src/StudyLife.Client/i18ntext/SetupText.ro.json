@@ -113,6 +113,7 @@
   "BackupPasswordPlaceholder": "Parolă (opțional)",
   "BackupPasswordHint": "Opțional: criptează backup-ul descărcat cu această parolă (AES-256). Lasă necompletat pentru o descărcare necriptată.",
   "BackupEncryptedDownloadError": "Criptarea sau descărcarea backup-ului a eșuat. Verifică-ți conexiunea și încearcă din nou.",
+  "BackupDownloadError": "Descărcarea backup-ului sau a exportului a eșuat. Verifică-ți conexiunea și încearcă din nou.",
   "RestoreEncryptedPrompt": "Acest backup este criptat. Introdu parola folosită la descărcarea lui.",
   "RestorePasswordPlaceholder": "Parolă",
   "RestoreUnlockButton": "Deblochează și restaurează",

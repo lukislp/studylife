@@ -202,7 +202,8 @@ public class SetupBackupCardDownloadTests : ConsentBunitTest
             .Add(c => c.IsOwner, isOwner)
             .Add(c => c.ExportJsonButtonText, "ExportJson")
             .Add(c => c.DownloadDatabaseButtonText, "DownloadDb")
-            .Add(c => c.EncryptedDownloadErrorText, "DownloadFailed"));
+            .Add(c => c.DownloadErrorText, "DownloadFailed")
+            .Add(c => c.EncryptedDownloadErrorText, "EncryptedDownloadFailed"));
         return (cut, server);
     }
 
@@ -242,6 +243,29 @@ public class SetupBackupCardDownloadTests : ConsentBunitTest
         cut.WaitForAssertion(() => Assert.Equal("studyatrium-backup-20261116.db", Assert.Single(_downloads.Saved).FileName), ChainTimeout);
     }
 
+    // The header exactly as ASP.NET Core's File(bytes, type, name) sends it (BackupController).
+    private static HttpResponseMessage ServerFile(byte[] body, string name)
+    {
+        var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(body) };
+        response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+        response.Content.Headers.ContentDisposition = ContentDispositionHeaderValue.Parse($"attachment; filename={name}; filename*=UTF-8''{name}");
+        return response;
+    }
+
+    [Theory]
+    [InlineData("", "GET api/backup/database", "studyatrium-backup-20261116.db")]
+    [InlineData("secret", "POST api/backup/database/encrypted", "studyatrium-backup-20261116.db.enc")]
+    public void TheDatabaseDownloads_KeepTheServersFullName_IncludingBothExtensions(string password, string route, string name)
+    {
+        var (cut, server) = Render(isOwner: true);
+        server.On(route, _ => ServerFile([1, 2], name));
+        if (password.Length > 0) cut.Find("input[type=password]").Input(password);
+
+        Click(cut, "DownloadDb");
+
+        cut.WaitForAssertion(() => Assert.Equal(name, Assert.Single(_downloads.Saved).FileName), ChainTimeout);
+    }
+
     [Fact]
     public void TheEncryptedDatabaseDownload_PostsThePasswordAndOffersTheFile()
     {
@@ -265,6 +289,31 @@ public class SetupBackupCardDownloadTests : ConsentBunitTest
         Click(cut, "ExportJson");
 
         cut.WaitForAssertion(() => Assert.Contains("DownloadFailed", cut.Markup), ChainTimeout);
+        Assert.DoesNotContain("EncryptedDownloadFailed", cut.Markup);
+    }
+
+    [Fact]
+    public void AFailedEncryptedDownload_ShowsTheEncryptionErrorText()
+    {
+        var (cut, server) = Render(isOwner: true);
+        server.On("POST api/backup/database/encrypted", _ => new HttpResponseMessage(HttpStatusCode.InternalServerError));
+        cut.Find("input[type=password]").Input("secret");
+
+        Click(cut, "DownloadDb");
+
+        cut.WaitForAssertion(() => Assert.Contains("EncryptedDownloadFailed", cut.Markup), ChainTimeout);
+    }
+
+    [Fact]
+    public void AFailedUnencryptedDatabaseDownload_DoesNotMentionEncryption()
+    {
+        var (cut, server) = Render(isOwner: true);
+        server.On("GET api/backup/database", _ => new HttpResponseMessage(HttpStatusCode.InternalServerError));
+
+        Click(cut, "DownloadDb");
+
+        cut.WaitForAssertion(() => Assert.Contains("DownloadFailed", cut.Markup), ChainTimeout);
+        Assert.DoesNotContain("EncryptedDownloadFailed", cut.Markup);
     }
 
     [Fact]

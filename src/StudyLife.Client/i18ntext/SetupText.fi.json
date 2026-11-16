@@ -113,6 +113,7 @@
   "BackupPasswordPlaceholder": "Salasana (valinnainen)",
   "BackupPasswordHint": "Valinnainen: salaa ladatun varmuuskopion tällä salasanalla (AES-256). Jätä tyhjäksi salaamatonta latausta varten.",
   "BackupEncryptedDownloadError": "Varmuuskopion salaus tai lataus epäonnistui. Tarkista yhteytesi ja yritä uudelleen.",
+  "BackupDownloadError": "Varmuuskopion tai viennin lataus epäonnistui. Tarkista yhteytesi ja yritä uudelleen.",
   "RestoreEncryptedPrompt": "Tämä varmuuskopio on salattu. Anna salasana, jota käytit sitä ladatessasi.",
   "RestorePasswordPlaceholder": "Salasana",
   "RestoreUnlockButton": "Avaa ja palauta",

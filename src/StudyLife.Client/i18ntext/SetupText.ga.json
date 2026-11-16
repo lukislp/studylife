@@ -113,6 +113,7 @@
   "BackupPasswordPlaceholder": "Pasfhocal (roghnach)",
   "BackupPasswordHint": "Roghnach: criptíonn sé seo an cúltaca íoslódáilte leis an bpasfhocal seo (AES-256). Fág folamh é le haghaidh íoslódáil neamhchriptithe.",
   "BackupEncryptedDownloadError": "Theip ar chriptiú nó íoslódáil an chúltaca. Seiceáil do nasc agus bain triail eile as.",
+  "BackupDownloadError": "Theip ar íoslódáil an chúltaca nó an easpórtála. Seiceáil do nasc agus bain triail eile as.",
   "RestoreEncryptedPrompt": "Tá an cúltaca seo criptithe. Cuir isteach an pasfhocal a d'úsáid tú agus é á íoslódáil.",
   "RestorePasswordPlaceholder": "Pasfhocal",
   "RestoreUnlockButton": "Díghlasáil agus athchóirigh",

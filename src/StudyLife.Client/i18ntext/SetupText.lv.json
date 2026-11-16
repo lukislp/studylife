@@ -113,6 +113,7 @@
   "BackupPasswordPlaceholder": "Parole (nav obligāta)",
   "BackupPasswordHint": "Nav obligāti: šifrē lejupielādēto dublējumu ar šo paroli (AES-256). Atstāj tukšu, ja vēlies nešifrētu lejupielādi.",
   "BackupEncryptedDownloadError": "Dublējuma šifrēšana vai lejupielāde neizdevās. Pārbaudi savienojumu un mēģini vēlreiz.",
+  "BackupDownloadError": "Dublējuma vai eksporta lejupielāde neizdevās. Pārbaudi savienojumu un mēģini vēlreiz.",
   "RestoreEncryptedPrompt": "Šis dublējums ir šifrēts. Ievadi paroli, ko izmantoji, to lejupielādējot.",
   "RestorePasswordPlaceholder": "Parole",
   "RestoreUnlockButton": "Atbloķēt un atjaunot",

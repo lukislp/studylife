@@ -113,6 +113,7 @@
   "BackupPasswordPlaceholder": "Adgangskode (valgfri)",
   "BackupPasswordHint": "Valgfrit: krypterer den downloadede backup med denne adgangskode (AES-256). Lad feltet stå tomt for en ukrypteret download.",
   "BackupEncryptedDownloadError": "Kryptering og download af backup mislykkedes. Tjek din forbindelse, og prøv igen.",
+  "BackupDownloadError": "Download af backup eller eksport mislykkedes. Tjek din forbindelse, og prøv igen.",
   "RestoreEncryptedPrompt": "Denne backup er krypteret. Indtast den adgangskode, du brugte ved download.",
   "RestorePasswordPlaceholder": "Adgangskode",
   "RestoreUnlockButton": "Lås op og gendan",

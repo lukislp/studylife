@@ -113,6 +113,7 @@
   "BackupPasswordPlaceholder": "Wachtwoord (optioneel)",
   "BackupPasswordHint": "Optioneel: versleutelt de gedownloade back-up met dit wachtwoord (AES-256). Laat leeg voor een onversleutelde download.",
   "BackupEncryptedDownloadError": "Versleutelen of downloaden van de back-up is mislukt. Controleer je verbinding en probeer het opnieuw.",
+  "BackupDownloadError": "Downloaden van de back-up of export is mislukt. Controleer je verbinding en probeer het opnieuw.",
   "RestoreEncryptedPrompt": "Deze back-up is versleuteld. Voer het wachtwoord in dat je bij het downloaden hebt gebruikt.",
   "RestorePasswordPlaceholder": "Wachtwoord",
   "RestoreUnlockButton": "Ontgrendelen & herstellen",

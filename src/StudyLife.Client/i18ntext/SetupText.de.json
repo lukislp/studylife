@@ -113,6 +113,7 @@
   "BackupPasswordPlaceholder": "Passwort (optional)",
   "BackupPasswordHint": "Optional: Verschlüsselt das heruntergeladene Backup mit diesem Passwort (AES-256). Leer lassen für einen unverschlüsselten Download.",
   "BackupEncryptedDownloadError": "Verschlüsseln oder Herunterladen des Backups ist fehlgeschlagen. Bitte prüfe deine Verbindung und versuch es erneut.",
+  "BackupDownloadError": "Herunterladen des Backups oder Exports ist fehlgeschlagen. Bitte prüfe deine Verbindung und versuch es erneut.",
   "RestoreEncryptedPrompt": "Dieses Backup ist verschlüsselt. Gib das Passwort ein, das du beim Herunterladen verwendet hast.",
   "RestorePasswordPlaceholder": "Passwort",
   "RestoreUnlockButton": "Entsperren & wiederherstellen",

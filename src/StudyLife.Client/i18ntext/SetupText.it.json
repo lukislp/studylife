@@ -113,6 +113,7 @@
   "BackupPasswordPlaceholder": "Password (facoltativa)",
   "BackupPasswordHint": "Facoltativo: cifra il backup scaricato con questa password (AES-256). Lascia vuoto per un download non cifrato.",
   "BackupEncryptedDownloadError": "Impossibile cifrare o scaricare il backup. Controlla la connessione e riprova.",
+  "BackupDownloadError": "Impossibile scaricare il backup o l'esportazione. Controlla la connessione e riprova.",
   "RestoreEncryptedPrompt": "Questo backup è cifrato. Inserisci la password usata al momento del download.",
   "RestorePasswordPlaceholder": "Password",
   "RestoreUnlockButton": "Sblocca e ripristina",

@@ -113,6 +113,7 @@
   "BackupPasswordPlaceholder": "Mot de passe (facultatif)",
   "BackupPasswordHint": "Facultatif : chiffre la sauvegarde téléchargée avec ce mot de passe (AES-256). Laisser vide pour un téléchargement non chiffré.",
   "BackupEncryptedDownloadError": "Le chiffrement ou le téléchargement de la sauvegarde a échoué. Vérifiez votre connexion et réessayez.",
+  "BackupDownloadError": "Le téléchargement de la sauvegarde ou de l'export a échoué. Vérifiez votre connexion et réessayez.",
   "RestoreEncryptedPrompt": "Cette sauvegarde est chiffrée. Saisissez le mot de passe utilisé lors du téléchargement.",
   "RestorePasswordPlaceholder": "Mot de passe",
   "RestoreUnlockButton": "Déverrouiller et restaurer",

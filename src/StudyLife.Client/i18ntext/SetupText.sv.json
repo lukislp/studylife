@@ -113,6 +113,7 @@
   "BackupPasswordPlaceholder": "Lösenord (valfritt)",
   "BackupPasswordHint": "Valfritt: krypterar den nedladdade säkerhetskopian med det här lösenordet (AES-256). Lämna tomt för en okrypterad nedladdning.",
   "BackupEncryptedDownloadError": "Det gick inte att kryptera eller ladda ner säkerhetskopian. Kontrollera din anslutning och försök igen.",
+  "BackupDownloadError": "Det gick inte att ladda ner säkerhetskopian eller exporten. Kontrollera din anslutning och försök igen.",
   "RestoreEncryptedPrompt": "Den här säkerhetskopian är krypterad. Ange lösenordet du använde när du laddade ner den.",
   "RestorePasswordPlaceholder": "Lösenord",
   "RestoreUnlockButton": "Lås upp och återställ",

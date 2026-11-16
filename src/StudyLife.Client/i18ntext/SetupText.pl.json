@@ -113,6 +113,7 @@
   "BackupPasswordPlaceholder": "Hasło (opcjonalnie)",
   "BackupPasswordHint": "Opcjonalnie: szyfruje pobraną kopię zapasową tym hasłem (AES-256). Zostaw puste, aby pobrać niezaszyfrowaną kopię.",
   "BackupEncryptedDownloadError": "Szyfrowanie lub pobieranie kopii zapasowej nie powiodło się. Sprawdź połączenie i spróbuj ponownie.",
+  "BackupDownloadError": "Pobieranie kopii zapasowej lub eksportu nie powiodło się. Sprawdź połączenie i spróbuj ponownie.",
   "RestoreEncryptedPrompt": "Ta kopia zapasowa jest zaszyfrowana. Podaj hasło użyte podczas jej pobierania.",
   "RestorePasswordPlaceholder": "Hasło",
   "RestoreUnlockButton": "Odblokuj i przywróć",
