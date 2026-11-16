@@ -213,7 +213,7 @@ public class TelemetryEventMappingTests : IClassFixture<CustomWebApplicationFact
 
     [Theory]
     [InlineData("/notes/123?tab=2", "/notes", 1)]
-    [InlineData("/Stats#top", "/stats", 2)]
+    [InlineData("/Focus#top", "/focus", 2)]
     [InlineData("/", "/", 3)]
     [InlineData("/<script>", "other", 4)]
     [InlineData("notes", "unknown", 5)]

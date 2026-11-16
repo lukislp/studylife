@@ -80,6 +80,20 @@ public class LiveActivityPushEndpointTests : IClassFixture<CustomWebApplicationF
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Null(await ReadStoredTokenAsync());
     }
+
+    [Theory]
+    [InlineData("../../v3/device/other")]
+    [InlineData("has/slash/in/it")]
+    [InlineData("query?x=1")]
+    [InlineData("short")]
+    public async Task SetLiveActivityPushToken_UnsafeToken_Answers400AndStoresNothing(string token)
+    {
+        var response = await _client.PutAsJsonAsync("/api/timerstate/liveactivity-token",
+            new LiveActivityPushTokenDto { Token = token });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Null(await ReadStoredTokenAsync());
+    }
 }
 
 public class LiveActivityPushWorkerTests : IClassFixture<CustomWebApplicationFactory>
@@ -393,5 +407,29 @@ public class LiveActivityPushWorkerTests : IClassFixture<CustomWebApplicationFac
             lock (Requests) Requests.Add(new RecordedRequest(request.RequestUri!.ToString(), headers, body));
             return _responder(request);
         }
+    }
+
+    [Fact]
+    public async Task RunLiveActivityPushAsync_AncientPhaseEnd_IsBoundedAndEndsTheActivity()
+    {
+        // A row written before the input clamp: a phase end near year 1 would otherwise need
+        // hundreds of millions of catch-up steps (audit L12).
+        await SeedTimerStateAsync(e =>
+        {
+            e.IsRunning = true;
+            e.IsBreak = false;
+            e.CurrentRound = 1;
+            e.TimerModeId = 1;
+            e.PhaseEndsAt = new DateTime(2, 1, 1);
+            e.LiveActivityPushToken = "tok-ancient-phase";
+        });
+        var (service, handler) = CreateService();
+
+        var run = _factory.WithDbAsync(db => service.RunLiveActivityPushAsync(db));
+        Assert.Same(run, await Task.WhenAny(run, Task.Delay(TimeSpan.FromSeconds(20))));
+        await run;
+
+        var request = Assert.Single(handler.Requests);
+        Assert.Contains("\"event\":\"end\"", request.Body);
     }
 }
