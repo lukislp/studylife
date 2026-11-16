@@ -91,7 +91,7 @@ else
         {
             <label class="ss-desc" for="@RecoveryInputId">@Labels.RecoveryLabel</label>
             <input id="@RecoveryInputId" class="input" style="text-align:center;letter-spacing:0.08em"
-                   placeholder="XXXX-XXXX-XXXX" autocapitalize="characters" spellcheck="false" autocomplete="off" maxlength="50"
+                   placeholder="XXXX-XXXX-XXXX-XXXX" autocapitalize="characters" spellcheck="false" autocomplete="off" maxlength="50"
                    @bind="_recoveryCode" @bind:event="oninput" disabled="@Locked"
                    @onkeyup="@(e => { if (e.Key == "Enter") _ = ConfirmRecoveryAsync(); })" />
         }

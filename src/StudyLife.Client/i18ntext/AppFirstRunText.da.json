@@ -16,5 +16,7 @@
   "SignedOutNotStudyLife": "{0} svarer ikke som en StudyAtrium-server. Hvis adressen er forkert, så skift server.",
   "SignedOutNoNetwork": "Ingen netværksforbindelse – Wi-Fi og mobildata er slået fra.",
   "PasskeyDomainHint": "Adgangsnøgler virker kun på {0}.",
-  "UsePasskeyAddress": "Brug denne adresse"
+  "UsePasskeyAddress": "Brug denne adresse",
+  "CleartextServer": "Denne adresse er ikke krypteret (http://). Dit login og dine data ville blive sendt læsbart. Brug https://, eller tryk igen for at bruge den alligevel.",
+  "SharedTextConfirm": "Gem den delte tekst som en ny note?"
 }
