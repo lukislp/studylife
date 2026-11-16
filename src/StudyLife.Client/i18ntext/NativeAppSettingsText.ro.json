@@ -9,7 +9,7 @@
   "Cancel": "Anulează",
   "ChangeServerWorking": "Se deconectează …",
   "HealthHeading": "Apple Health",
-  "HealthDesc": "StudyAtrium poate salva rundele de concentrare încheiate ca minute de atenție și poate afișa somnul, variabilitatea ritmului cardiac și pașii lângă timpul tău de studiu. Datele rămân pe acest dispozitiv.",
+  "HealthDesc": "StudyAtrium poate salva rundele de concentrare încheiate ca minute de atenție și poate citi somnul, variabilitatea ritmului cardiac, pașii și capacitatea cardiovasculară (VO2max) pentru a le afișa lângă timpul tău de studiu. Datele rămân pe acest dispozitiv.",
   "HealthConnectButton": "Conectează Apple Health",
   "HealthConnected": "Conectat. Ce poate citi și scrie StudyAtrium poți schimba în aplicația Health.",
   "HealthDeclined": "Accesul la Apple Health este dezactivat. Pentru a-l activa, deschide aplicația Health, atinge fotografia de profil, alege Aplicații, apoi StudyAtrium.",

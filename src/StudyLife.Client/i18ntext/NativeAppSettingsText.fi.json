@@ -9,7 +9,7 @@
   "Cancel": "Peruuta",
   "ChangeServerWorking": "Kirjaudutaan ulos …",
   "HealthHeading": "Apple Health",
-  "HealthDesc": "StudyAtrium voi tallentaa päättyneet keskittymiskierrokset tietoisuusminuutteina ja näyttää unen, sydämen sykevälin vaihtelun ja askeleet opiskeluaikasi rinnalla. Tiedot pysyvät tällä laitteella.",
+  "HealthDesc": "StudyAtrium voi tallentaa päättyneet keskittymiskierrokset tietoisuusminuutteina ja lukea unen, sydämen sykevälin vaihtelun, askeleet ja kardiokunnon (VO2max) näyttääkseen ne opiskeluaikasi rinnalla. Tiedot pysyvät tällä laitteella.",
   "HealthConnectButton": "Yhdistä Apple Health",
   "HealthConnected": "Yhdistetty. Sen, mitä StudyAtrium saa lukea ja kirjoittaa, voit muuttaa Terveys-sovelluksessa.",
   "HealthDeclined": "Pääsy Apple Healthiin on pois päältä. Ota se käyttöön avaamalla Terveys-sovellus, napauttamalla profiilikuvaasi, valitsemalla Sovellukset ja sitten StudyAtrium.",

@@ -9,7 +9,7 @@
   "Cancel": "Loobu",
   "ChangeServerWorking": "Väljalogimine …",
   "HealthHeading": "Apple Health",
-  "HealthDesc": "StudyAtrium saab salvestada lõpetatud fookusringid teadveloleku minutitena ning näidata und, südamerütmi varieeruvust ja samme õppeaja kõrval. Andmed jäävad sellesse seadmesse.",
+  "HealthDesc": "StudyAtrium saab salvestada lõpetatud fookusringid teadveloleku minutitena ning lugeda und, südamerütmi varieeruvust, samme ja kardiovormi (VO2max), et neid õppeaja kõrval näidata. Andmed jäävad sellesse seadmesse.",
   "HealthConnectButton": "Ühenda Apple Health",
   "HealthConnected": "Ühendatud. Mida StudyAtrium võib rakenduses Health lugeda ja kirjutada, saad muuta seal.",
   "HealthDeclined": "Juurdepääs Apple Healthile on välja lülitatud. Sisselülitamiseks ava rakendus Health, puuduta oma profiilipilti, vali Apps ja seejärel StudyAtrium.",
