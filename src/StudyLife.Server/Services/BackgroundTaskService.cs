@@ -248,7 +248,7 @@ public partial class BackgroundTaskService : BackgroundService
         var (pushOutcome, error) = await client.SendAsync(sub, payload, budget);
         // A delivery cut off by the budget is reported once per user (RunPerUserSubtasksAsync), not per endpoint.
         if (pushOutcome == WebPushOutcome.Failed && !budget.IsCancellationRequested)
-            _logger.LogWarning(error, warningTemplate, sub.Endpoint);
+            _logger.LogWarning(error, warningTemplate, sub.Id);
         return new PushSendResult(sub, pushOutcome == WebPushOutcome.Expired);
     }
 }
