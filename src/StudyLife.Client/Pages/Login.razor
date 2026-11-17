@@ -49,7 +49,7 @@
             }
             else
             {
-                <input class="input" style="text-align:center;letter-spacing:0.08em" placeholder="XXXX-XXXX-XXXX"
+                <input class="input" style="text-align:center;letter-spacing:0.08em" placeholder="XXXX-XXXX-XXXX-XXXX"
                        autocapitalize="characters" spellcheck="false"
                        @bind="_recoveryCode" @bind:event="oninput"
                        @onkeyup="@(e => { if (e.Key == "Enter") _ = RecoverySignInAsync(); })" />
@@ -95,7 +95,8 @@
         // (same "start work immediately" idiom as Index.razor.cs/Setup.razor).
         var uri = Nav.ToAbsoluteUri(Nav.Uri);
         _app = AppReturnContext.FromUri(uri);
-        _returnUrl = ValidateReturnUrl(System.Web.HttpUtility.ParseQueryString(uri.Query)["returnUrl"]);
+        _returnUrl = ReturnUrlPolicy.ToSameOriginPath(
+            System.Web.HttpUtility.ParseQueryString(uri.Query)["returnUrl"], new Uri(Nav.BaseUri));
         return Task.CompletedTask;
     }
 
@@ -316,11 +317,4 @@
             _busy = false;
         }
     }
-
-    /// <summary>Only a same-origin relative path+query is accepted (must start with exactly one
-    /// "/", never "//..." which browsers treat as protocol-relative) - anything else is dropped
-    /// silently and login falls back to "/", so a crafted ?returnUrl= can't turn a successful
-    /// sign-in into an open redirect to an attacker-controlled origin.</summary>
-    private static string? ValidateReturnUrl(string? url) =>
-        !string.IsNullOrEmpty(url) && url[0] == '/' && (url.Length == 1 || url[1] != '/') ? url : null;
 }

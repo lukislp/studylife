@@ -519,6 +519,12 @@ public class PasskeyCredentialEntity
     /// For the open initial registration (claiming a legacy user or a new
     /// user) set immediately to CreatedAt, because there is no "other" device there that could approve it.</summary>
     public DateTime? ApprovedAt { get; set; }
+    /// <summary>The session that ran the registration ceremony of an additional passkey
+    /// (register/begin-additional) - that session may not approve it (2026-11-16 audit M1), so a
+    /// stolen token cannot add and approve its own passkey in one go. Null for the first passkey of
+    /// an account and for a passkey registered through a link code (the new device has no session;
+    /// approving from the device that showed the code is the intended flow).</summary>
+    public int? CreatedBySessionId { get; set; }
 }
 
 /// <summary>
@@ -553,6 +559,9 @@ public class RecoveryCodeEntity
     public string CodeHash { get; set; } = "";
     public DateTime CreatedAt { get; set; }
     public DateTime? UsedAt { get; set; }
+    /// <summary>The session that generated the code. That session cannot spend it as a fresh proof
+    /// (2026-11-16 audit M1): codes it just received prove only that it holds the session.</summary>
+    public int? CreatedBySessionId { get; set; }
 }
 
 /// <summary>

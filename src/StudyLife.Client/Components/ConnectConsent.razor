@@ -118,7 +118,7 @@
         if (string.IsNullOrEmpty(TokenStore.Token))
         {
             // Same-origin relative path+query as ONE query value on /login - Login.razor decodes
-            // and validates it via ValidateReturnUrl before using it as the post-login redirect.
+            // and validates it via ReturnUrlPolicy before using it as the post-login redirect.
             var self = $"/connect/{Audience}?redirect_uri={Uri.EscapeDataString(_redirectUri)}&state={Uri.EscapeDataString(_state)}";
             Nav.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(self)}", forceLoad: true);
         }

@@ -206,6 +206,9 @@ public partial class BackgroundTaskService
     {
         using var userContext = CurrentUserAccessor.BeginBackgroundScope(authUserId);
         _currentAuthUserId = authUserId;
+        using var pushBudget = new CancellationTokenSource();
+        _pushBudgetSource = pushBudget;
+        _pushBudgetStarted = 0;
         using var scope = _services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<StudyLifeDb>();
 
@@ -218,7 +221,12 @@ public partial class BackgroundTaskService
                 : LoadSubscriptionsAsync();
         async Task<List<PushSubscriptionEntity>> LoadSubscriptionsAsync()
         {
-            subscriptions = await db.PushSubscriptions.ToListAsync();
+            // The newest ones up to the per-user cap (PushService.MaxSubscriptionsPerUser); older
+            // rows from before the cap existed are not delivered to.
+            subscriptions = await db.PushSubscriptions
+                .OrderByDescending(s => s.CreatedAt).ThenByDescending(s => s.Id)
+                .Take(PushService.MaxSubscriptionsPerUser)
+                .ToListAsync();
             return subscriptions;
         }
 
@@ -240,6 +248,11 @@ public partial class BackgroundTaskService
                 subtask.MarkRan(now);
             }
         }
+
+        if (pushBudget.IsCancellationRequested)
+            _logger.LogWarning("Push deliveries for user {AuthUserId} ran past {Budget}; the rest was skipped this tick.",
+                authUserId, PerUserPushBudget);
+        _pushBudgetSource = null;
     }
 
     /// <summary>Instance-wide subtasks, run once after the user loop. internal for the same reason

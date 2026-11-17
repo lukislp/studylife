@@ -34,7 +34,7 @@ public class TimerStateController : ControllerBase
     [HttpPut("liveactivity-token")]
     public async Task<IActionResult> SetLiveActivityPushToken(LiveActivityPushTokenDto dto)
     {
-        await _timerState.SetLiveActivityPushTokenAsync(dto);
-        return Ok();
+        var result = await _timerState.SetLiveActivityPushTokenAsync(dto);
+        return result.Outcome == ServiceOutcome.Invalid ? BadRequest(result.Error) : Ok();
     }
 }

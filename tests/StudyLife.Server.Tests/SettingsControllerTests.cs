@@ -902,6 +902,32 @@ public class SettingsControllerProgressShareTokenLeakTests : IClassFixture<Custo
         // Only the secret field is masked - the rest of the response is unaffected.
         Assert.True(apiKeyGet.ProgressShareEnabled);
     }
+
+    [Fact]
+    public async Task Put_ApiKeySeesNull_SessionSeesRealToken()
+    {
+        // Audit 2026-11-16 L3: PUT /api/settings echoes the saved row back, and the "ha" slot
+        // may call it - the share token must be masked there exactly like on GET.
+        var enableResponse = await _client.PostAsync("/api/settings/progress-share/enable", null);
+        var enabled = await enableResponse.Content.ReadFromJsonAsync<UserSettingsDto>();
+        Assert.False(string.IsNullOrEmpty(enabled!.ProgressShareToken));
+
+        var generateResponse = await _client.PostAsync("/api/settings/ha-api-key/generate", null);
+        var generated = await generateResponse.Content.ReadFromJsonAsync<HaApiKeyGenerateResponseDto>();
+        using var keyClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, generated!.ApiKey);
+
+        var current = await _client.GetFromJsonAsync<UserSettingsDto>("/api/settings");
+        var apiKeyPut = await keyClient.PutAsJsonAsync("/api/settings", current);
+        Assert.Equal(HttpStatusCode.OK, apiKeyPut.StatusCode);
+        var apiKeySaved = await apiKeyPut.Content.ReadFromJsonAsync<UserSettingsDto>();
+        Assert.Null(apiKeySaved!.ProgressShareToken);
+        Assert.True(apiKeySaved.ProgressShareEnabled);
+
+        var latest = await _client.GetFromJsonAsync<UserSettingsDto>("/api/settings");
+        var sessionPut = await _client.PutAsJsonAsync("/api/settings", latest);
+        var sessionSaved = await sessionPut.Content.ReadFromJsonAsync<UserSettingsDto>();
+        Assert.Equal(enabled.ProgressShareToken, sessionSaved!.ProgressShareToken);
+    }
 }
 
 /// <summary>

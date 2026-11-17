@@ -46,6 +46,10 @@ public class NoteService(
 
     public async Task<ServiceResult<NoteDto>> CreateAsync(NoteDto dto)
     {
+        // SourceUrl is rendered as a clickable link, and capture/MCP/API keys can set it - so
+        // only an absolute http(s) URL is accepted (javascript:, data:, app schemes refused).
+        if (dto.SourceUrl is not null && !WebLinkPolicy.IsWebLink(dto.SourceUrl))
+            return ServiceResult<NoteDto>.Invalid(NoteValidationMessages.SourceUrlNotWebLink);
         // A note without a course is legit (e.g. a fresh capture before the AI enrichment or the
         // user assigns one) - only a NON-NULL CourseId/SessionId is validated, same "set means
         // checked" contract as the CourseId re-validation on UpdateAsync below.
@@ -139,4 +143,11 @@ public class NoteService(
         Summary = e.Summary,
         RelatedNoteIds = CommaSeparatedIds.Parse(e.RelatedNoteIds)
     };
+}
+
+/// <summary>Stable, user-facing error text for a note write that fails validation - the note
+/// analogue of <see cref="CourseValidationMessages"/>.</summary>
+public static class NoteValidationMessages
+{
+    public const string SourceUrlNotWebLink = "SourceUrl must be an absolute http or https URL.";
 }

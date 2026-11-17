@@ -71,10 +71,15 @@ if (metricsPort is not null || !string.IsNullOrEmpty(otlpEndpoint))
     if (!string.IsNullOrEmpty(otlpEndpoint))
     {
         openTelemetry.WithTracing(tracing => tracing
-            .AddAspNetCoreInstrumentation(options => options.Filter = context =>
-                context.Request.Path.StartsWithSegments("/api")
-                && !context.Request.Path.StartsWithSegments("/api/events")
-                && !context.Request.Path.StartsWithSegments("/api/telemetry"))
+            .AddAspNetCoreInstrumentation(options =>
+            {
+                options.Filter = context =>
+                    context.Request.Path.StartsWithSegments("/api")
+                    && !context.Request.Path.StartsWithSegments("/api/events")
+                    && !context.Request.Path.StartsWithSegments("/api/telemetry");
+                // A credential in the URL path (progress share link) never reaches the trace store.
+                options.EnrichWithHttpRequest = StudyLife.Server.Diagnostics.TracePathRedaction.Enrich;
+            })
             .AddHttpClientInstrumentation()
             .AddNpgsql()
             .SetSampler(new ParentBasedSampler(new TraceIdRatioBasedSampler(traceSampleRatio)))
@@ -235,6 +240,9 @@ if (isRedisCache)
     // between writes.
     builder.Services.AddSingleton<IChangeSignal>(sp => new RedisChangeSignal(
         sp.GetRequiredService<StackExchange.Redis.IConnectionMultiplexer>()));
+    // Session revocations reach every pod's AuthSessionCache at once (see ISessionRevocationSignal).
+    builder.Services.AddSingleton<ISessionRevocationSignal>(sp => new RedisSessionRevocationSignal(
+        sp.GetRequiredService<StackExchange.Redis.IConnectionMultiplexer>()));
     builder.Services.AddSingleton(sp => new SessionHistoryCacheVersion(
         new SignalInvalidatedVersionCounter(
             new RedisVersionCounter(sp.GetRequiredService<StackExchange.Redis.IConnectionMultiplexer>(), "version:sessionhistory"),
@@ -290,6 +298,7 @@ else
     // fan-out - still wired so the SSE stream (EventsController) works on the single-instance
     // and demo hosts exactly like in multi-pod mode.
     builder.Services.AddSingleton<IChangeSignal>(new InMemoryChangeSignal());
+    builder.Services.AddSingleton<ISessionRevocationSignal>(new InMemorySessionRevocationSignal());
     builder.Services.AddSingleton(sp => new SessionHistoryCacheVersion(new InMemoryVersionCounter(), sp.GetRequiredService<IChangeSignal>()));
     builder.Services.AddSingleton(sp => new SettingsCacheVersion(new InMemoryVersionCounter(), sp.GetRequiredService<IChangeSignal>()));
     builder.Services.AddSingleton(new ChangeSequence(new InMemoryVersionCounter()));
@@ -362,12 +371,11 @@ builder.Services.AddRateLimiter(options =>
         if (IsPasswordManagement(context.Request))
             return FixedWindow(context, $"password-manage|{clientIp}", permitLimit: 20, TimeSpan.FromMinutes(15));
 
-        // Account deletion accepts a one-time recovery code as its proof, so it gets its own
-        // strict partition like the recovery login (a stolen session must not be able to
-        // brute-force the 12-character code at the generic 300/min).
-        if (HttpMethods.IsDelete(context.Request.Method)
-            && (context.Request.Path.StartsWithSegments("/api/auth/account")
-                || context.Request.Path.StartsWithSegments("/api/auth/users")))
+        // Account deletion and the "confirm it's you" step (POST account/reauth) accept a one-time
+        // recovery code as their proof, so they get their own strict partition like the recovery
+        // login (a stolen session must not be able to brute-force the 12-character code at the
+        // generic 300/min).
+        if (IsProofSpending(context.Request))
             return FixedWindow(context, $"account-deletion|{clientIp}", permitLimit: 10, TimeSpan.FromMinutes(15));
 
         return FixedWindow(context, $"api|{clientIp}", permitLimit: 300, TimeSpan.FromSeconds(60));
@@ -396,12 +404,15 @@ builder.Services.AddRateLimiter(options =>
             // bounds what forged client IPs can try across all accounts together.
             : context.Request.Path.StartsWithSegments("/api/auth/password/login")
             ? FixedWindow(context, "password-login|global", permitLimit: 300, TimeSpan.FromMinutes(15))
-            : HttpMethods.IsDelete(context.Request.Method)
-              && (context.Request.Path.StartsWithSegments("/api/auth/account")
-                  || context.Request.Path.StartsWithSegments("/api/auth/users"))
+            : IsProofSpending(context.Request)
                 ? FixedWindow(context, "account-deletion|global", permitLimit: 30, TimeSpan.FromMinutes(15))
                 : RateLimitPartition.GetNoLimiter("no-limit"));
     options.GlobalLimiter = PartitionedRateLimiter.CreateChained(perClientLimiter, globalRecoveryLimiter);
+
+    static bool IsProofSpending(HttpRequest request) =>
+        (HttpMethods.IsDelete(request.Method)
+         && (request.Path.StartsWithSegments("/api/auth/account") || request.Path.StartsWithSegments("/api/auth/users")))
+        || (HttpMethods.IsPost(request.Method) && request.Path.Equals("/api/auth/account/reauth", StringComparison.OrdinalIgnoreCase));
 
     static bool IsPasswordManagement(HttpRequest request) =>
         !HttpMethods.IsGet(request.Method)
@@ -532,6 +543,8 @@ builder.Services.AddScoped<IDeveloperClientService, DeveloperClientService>();
 builder.Services.AddScoped<IAuthInviteService, AuthInviteService>();
 builder.Services.AddScoped<IAuthRecoveryService, AuthRecoveryService>();
 builder.Services.AddScoped<IAuthAccountService, AuthAccountService>();
+// "Confirm it's you" mark for the guarded account and backup actions (RequireStepUpAttribute).
+builder.Services.AddScoped<StudyLife.Server.Services.Account.ISessionStepUpService, StudyLife.Server.Services.Account.SessionStepUpService>();
 // Sign-in methods (docs/ARCHITECTURE.md "Password sign-in"): one ISignInMethod per method, summed by
 // the catalog for the "never remove the last way in" rule; the password use cases behind
 // IPasswordCredentialService and the hashing port behind IPasswordHashing (stateless, singleton).
@@ -592,6 +605,8 @@ if (!isPostgres)
 builder.Services.AddScoped<SystemSecretsService>();
 builder.Services.AddSingleton<IInstanceIdProvider, InstanceIdProvider>();
 builder.Services.AddSingleton<VapidKeysHolder>();
+// The one Web Push transport (shared HttpClient, short timeouts) for the worker and SessionService.
+builder.Services.AddSingleton<WebPushDelivery>();
 // Speech:Enabled gates TTS (PiperVoiceRegistry/EspeakPhonemizer) and STT (WhisperTranscriber)
 // registration entirely - default true, unchanged behavior for the single-container Pi,
 // docker-compose, and the k8s WEB Deployment. Only the k8s WORKER Deployment

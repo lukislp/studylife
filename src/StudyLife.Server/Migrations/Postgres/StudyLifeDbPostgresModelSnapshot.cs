@@ -568,6 +568,9 @@ namespace StudyLife.Server.Migrations.Postgres
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone");
 
+                    b.Property<int?>("CreatedBySessionId")
+                        .HasColumnType("integer");
+
                     b.Property<byte[]>("CredentialId")
                         .IsRequired()
                         .HasColumnType("bytea");
@@ -703,6 +706,9 @@ namespace StudyLife.Server.Migrations.Postgres
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone");
+
+                    b.Property<int?>("CreatedBySessionId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("UsedAt")
                         .HasColumnType("timestamp without time zone");

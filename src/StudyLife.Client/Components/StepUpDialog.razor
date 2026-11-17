@@ -1,0 +1,99 @@
+@*
+  SPDX-FileCopyrightText: 2026 Lukas Körber
+  SPDX-License-Identifier: AGPL-3.0-only
+*@
+@using StudyLife.Client.Services
+@inject AppStateService State
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+@* "Confirm it's you" in front of the guarded account and backup actions (2026-11-16 audit, M1).
+   The host tries its request; when the server answers step-up-required (StepUpState.IsStepUpRequiredAsync)
+   it opens this dialog, which runs the shared FreshProofPicker, sends the proof (POST
+   api/auth/account/reauth) and raises OnConfirmed - the host then repeats its request. Which proofs are
+   offered follows the account (passkey, password) like the password and deletion cards. *@
+
+@if (Open && T is not null)
+{
+    <div class="modal-overlay" @onclick="CancelAsync">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="step-up-title" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3 id="step-up-title">@T.Title</h3>
+                <button type="button" class="modal-close" aria-label="@T.CloseDialog" @onclick="CancelAsync">✕</button>
+            </div>
+            <FreshProofPicker Dialog="true" Labels="Labels" HasPasskey="_hasPasskey" HasPassword="_hasPassword"
+                              Busy="_busy" Error="@_error" PasswordInputId="step-up-password" RecoveryInputId="step-up-recovery"
+                              OnProof="ConfirmAsync" OnCeremonyFailed="message => _error = message">
+                <Secondary>
+                    <button type="button" class="btn-secondary" @onclick="CancelAsync" disabled="@_busy">@T.CancelButton</button>
+                </Secondary>
+            </FreshProofPicker>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Open { get; set; }
+    /// <summary>The session is confirmed: the host repeats its request.</summary>
+    [Parameter] public EventCallback OnConfirmed { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    /// <summary>Texts to render with. Left null in the app (loaded from the i18n table); component
+    /// tests pass them in directly.</summary>
+    [Parameter] public StudyLife.Client.I18nText.StepUpText? Text { get; set; }
+
+    private StudyLife.Client.I18nText.StepUpText? T;
+    private bool _wasOpen;
+    private bool _busy;
+    private string? _error;
+    private bool _hasPasskey = true;
+    private bool _hasPassword;
+
+    private FreshProofLabels Labels => new(T!.Intro, T.BrowserSignInIntro, T.PasskeyButton, T.BrowserSignInButton,
+        T.PasswordToggle, T.PasswordLabel, T.PasswordButton, T.RecoveryToggle, T.RecoveryLabel, T.RecoveryButton,
+        T.Working, T.PasskeyFailed);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        T ??= Text ?? await I18nText.GetTextTableAsync<StudyLife.Client.I18nText.StepUpText>(this);
+        if (Open && !_wasOpen)
+        {
+            _error = null;
+            // Which proofs the account can give; without an answer the passkey route stays offered
+            // and the recovery code is always there.
+            if (await State.PasswordSignIn.GetStatusAsync() is { } status)
+            {
+                _hasPasskey = status.HasPasskey;
+                _hasPassword = status.Enabled && status.HasPassword;
+            }
+        }
+        _wasOpen = Open;
+    }
+
+    private async Task ConfirmAsync(FreshProof proof)
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            var outcome = await State.StepUp.ConfirmAsync(proof);
+            if (outcome == StepUpOutcome.Confirmed)
+            {
+                await OnConfirmed.InvokeAsync();
+                return;
+            }
+            _error = outcome switch
+            {
+                StepUpOutcome.Rejected => T!.ErrorRejected,
+                StepUpOutcome.Missing => T!.ErrorMissing,
+                StepUpOutcome.TooManyAttempts => T!.ErrorTooMany,
+                StepUpOutcome.Network => T!.ErrorNetwork,
+                _ => T!.ErrorGeneric,
+            };
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private Task CancelAsync() => _busy ? Task.CompletedTask : OnCancel.InvokeAsync();
+}

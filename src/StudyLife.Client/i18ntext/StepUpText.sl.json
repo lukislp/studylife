@@ -1,0 +1,23 @@
+{
+  "Title": "Potrdite, da ste to vi",
+  "Intro": "To dejanje ščiti vaš račun. Za nadaljevanje potrdite s ključem za dostop tega računa.",
+  "BrowserSignInIntro": "Znova se prijavite, da potrdite, da ste to vi. Dejanje se nadaljuje takoj zatem.",
+  "PasskeyButton": "Potrdi s ključem za dostop",
+  "BrowserSignInButton": "Znova se prijavi",
+  "PasswordToggle": "Uporabi moje geslo",
+  "PasswordLabel": "Vaše geslo",
+  "PasswordButton": "Potrdi z geslom",
+  "RecoveryToggle": "Uporabi obnovitveno kodo",
+  "RecoveryLabel": "Obnovitvena koda",
+  "RecoveryButton": "Potrdi z obnovitveno kodo",
+  "Working": "Obdelava…",
+  "PasskeyFailed": "Zahteva za ključ za dostop ni bila dokončana. Poskusite znova ali potrdite drugače.",
+  "CancelButton": "Prekliči",
+  "CloseDialog": "Zapri pogovorno okno",
+  "ErrorRejected": "Ta potrditev ni bila sprejeta.",
+  "ErrorMissing": "Potrdite s ključem za dostop, geslom ali obnovitveno kodo.",
+  "ErrorTooMany": "Preveč poskusov. Počakajte nekaj minut.",
+  "ErrorNetwork": "Strežnik ni dosegljiv.",
+  "ErrorGeneric": "Nekaj je šlo narobe. Poskusite znova.",
+  "ApprovalOtherSession": "Novega ključa za dostop ni mogoče odobriti iz seje, ki ga je dodala. Odobrite ga v drugi prijavljeni napravi ali se odjavite in znova prijavite z obstoječim ključem za dostop ali geslom ter ga odobrite tukaj."
+}

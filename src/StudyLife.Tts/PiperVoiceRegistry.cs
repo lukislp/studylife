@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Lukas Körber
 // SPDX-License-Identifier: AGPL-3.0-only
 
+using StudyLife.Shared;
+
 namespace StudyLife.Tts;
 
 /// <summary>
@@ -17,6 +19,11 @@ public sealed class PiperVoiceRegistry(string voicesDirectory) : IDisposable
 
     public PiperVoice? TryGet(string lang)
     {
+        // The code becomes part of a file name below: only the product's own language codes
+        // (a fixed lower-case set) may get that far, so no client string builds a path and the
+        // answer cannot probe the file system (audit L7).
+        if (!SupportedLanguages.IsSupported(lang)) return null;
+
         lock (_lock)
         {
             if (_loaded.TryGetValue(lang, out var cached)) return cached;
