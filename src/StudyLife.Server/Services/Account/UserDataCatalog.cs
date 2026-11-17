@@ -40,7 +40,8 @@ public static class UserDataCatalog
             "for them to anyone. Other users' integrations with such an app stop working; the deletion dialog says so.",
         [typeof(AiKeyOutboxEntity)] =
             "Pending 'register' rows (they may hold a plaintext AI key) are deleted. 'revoke'/'purge' rows must SURVIVE the " +
-            "user: they are the retry queue for the add-ons and hold nothing but the user id and an action name.",
+            "user: they are the retry queue for the add-ons and hold nothing but the user id, an action name and, for the " +
+            "add-on purges, the hashes of the deleted keys the add-on finds the data by. Each row goes once delivered.",
     };
 
     /// <summary>Further user-reference columns that exist on explicit entities and are handled in

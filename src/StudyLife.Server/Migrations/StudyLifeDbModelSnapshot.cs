@@ -39,6 +39,12 @@ namespace StudyLife.Server.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("FailureWarnedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("KeyHashes")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("LastAttemptAt")
                         .HasColumnType("TEXT");
 

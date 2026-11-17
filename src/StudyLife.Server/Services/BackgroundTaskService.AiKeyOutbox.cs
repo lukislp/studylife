@@ -15,10 +15,12 @@ public partial class BackgroundTaskService
     private static readonly TimeSpan AiKeyOutboxBaseBackoff = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan AiKeyOutboxMaxBackoff = TimeSpan.FromHours(1);
 
-    // After this many failed attempts, stop retrying and just keep the row as evidence an
-    // operator can act on - a key registration failure is rarer and more consequential to lose
+    // After this many failed attempts, stop retrying a "register" row and just keep it as evidence
+    // an operator can act on - a key registration failure is rarer and more consequential to lose
     // silently than e.g. a capture enrichment miss (BackgroundTaskService.CaptureEnrichment.cs's
-    // much lower MaxEnrichmentAttempts), hence the far higher ceiling here.
+    // much lower MaxEnrichmentAttempts), hence the far higher ceiling here. Only "register" rows
+    // ever give up (AddonOutbox.MayGiveUp): revokes and purges are retried until delivered, with a
+    // warning from AddonOutbox.WarnAfterAttempts on (audit F-15).
     private const int AiKeyOutboxMaxAttempts = 100;
 
     /// <summary>
@@ -41,12 +43,15 @@ public partial class BackgroundTaskService
     /// </summary>
     internal async Task RunAiKeyOutboxAsync(StudyLifeDb db)
     {
-        // The other two add-ons (account deletion's webhooks purge / developers revoke) come from the
-        // service provider rather than the constructor: the constructor is called directly by many
-        // tests, and a missing client simply means "leave those rows for a process that has it".
-        var webhooksClient = _services.GetService<WebhooksProxyClient>();
-        var developersClient = _services.GetService<DeveloperProxyClient>();
-        if (_aiProxyClient is null && webhooksClient is null && developersClient is null) return;
+        // The other add-ons (account deletion's webhooks purge / developers revoke / mcp, alexa and
+        // telegram purge) come from the service provider rather than the constructor: the
+        // constructor is called directly by many tests, and a missing client simply means "leave
+        // those rows for a process that has it".
+        var delivery = new AddonOutboxDelivery(_aiProxyClient,
+            _services.GetService<WebhooksProxyClient>(),
+            _services.GetService<DeveloperProxyClient>(),
+            _services.GetService<AddonPurgeClients>());
+        if (!delivery.HasAnyClient) return;
 
         var now = DateTime.UtcNow;
         var pending = await db.AiKeyOutbox.OrderBy(o => o.AuthUserId).ThenBy(o => o.CreatedAt).ToListAsync();
@@ -59,9 +64,9 @@ public partial class BackgroundTaskService
         {
             foreach (var row in group) // already CreatedAt-ordered by the query above
             {
-                // Gave up earlier - evidence only, doesn't block later rows of the same user
-                // forever (unlike an un-given-up failure below, which does).
-                if (row.Attempts >= AiKeyOutboxMaxAttempts) continue;
+                // A "register" that gave up earlier - evidence only, doesn't block later rows of
+                // the same user forever (unlike an un-given-up failure below, which does).
+                if (AddonOutbox.MayGiveUp(row.Action) && row.Attempts >= AiKeyOutboxMaxAttempts) continue;
 
                 if (row.LastAttemptAt is DateTime lastAttempt)
                 {
@@ -75,7 +80,7 @@ public partial class BackgroundTaskService
                     if (now - lastAttempt <= TimeSpan.FromSeconds(backoffSeconds)) break;
                 }
 
-                var outcome = await AddonOutbox.TryDeliverAsync(row, _aiProxyClient, webhooksClient, developersClient, CancellationToken.None);
+                var outcome = await delivery.TryDeliverAsync(row, CancellationToken.None);
                 if (outcome is null) break; // no client for this add-on in this process - not an attempt
                 var delivered = outcome.Value;
 
@@ -89,10 +94,20 @@ public partial class BackgroundTaskService
                     continue; // keep going - preserves order for this user's remaining rows
                 }
 
-                if (row.Attempts >= AiKeyOutboxMaxAttempts)
+                if (AddonOutbox.MayGiveUp(row.Action) && row.Attempts >= AiKeyOutboxMaxAttempts)
+                {
                     _logger.LogError(
                         "AI key outbox row {Id} (user {AuthUserId}, action {Action}) gave up after {Attempts} attempts",
                         row.Id, row.AuthUserId, row.Action, row.Attempts);
+                }
+                else if (AddonOutbox.ShouldWarn(row, now))
+                {
+                    // Ids and the count only - never the key hashes a purge row carries.
+                    _logger.LogWarning(
+                        "Add-on outbox row {Id} (user {AuthUserId}, action {Action}) still not delivered after {Attempts} attempts - retrying",
+                        row.Id, row.AuthUserId, row.Action, row.Attempts);
+                    row.FailureWarnedAt = now;
+                }
                 await db.SaveChangesAsync(); // persist the failed attempt/backoff before stopping
                 break; // stop this user's queue for this tick only - preserves order
             }
