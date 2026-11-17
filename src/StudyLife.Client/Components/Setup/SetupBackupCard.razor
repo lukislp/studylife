@@ -113,7 +113,7 @@
             using var response = await send();
             if (await StepUpState.IsStepUpRequiredAsync(response))
             {
-                _retryAfterStepUp = () => DownloadViaHttpAsync(send, fallbackFileName);
+                _retryAfterStepUp = () => DownloadViaHttpAsync(send, fallbackFileName, errorText);
                 return;
             }
             if (!response.IsSuccessStatusCode)
