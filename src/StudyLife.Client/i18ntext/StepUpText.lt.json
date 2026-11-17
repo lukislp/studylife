@@ -1,0 +1,23 @@
+{
+  "Title": "Patvirtinkite, kad tai jūs",
+  "Intro": "Šis veiksmas saugo jūsų paskyrą. Norėdami tęsti, patvirtinkite šios paskyros prieigos raktu.",
+  "BrowserSignInIntro": "Prisijunkite iš naujo, kad patvirtintumėte, jog tai jūs. Veiksmas tęsis iškart po to.",
+  "PasskeyButton": "Patvirtinti prieigos raktu",
+  "BrowserSignInButton": "Prisijungti iš naujo",
+  "PasswordToggle": "Naudoti mano slaptažodį",
+  "PasswordLabel": "Jūsų slaptažodis",
+  "PasswordButton": "Patvirtinti slaptažodžiu",
+  "RecoveryToggle": "Naudoti atkūrimo kodą",
+  "RecoveryLabel": "Atkūrimo kodas",
+  "RecoveryButton": "Patvirtinti atkūrimo kodu",
+  "Working": "Vykdoma…",
+  "PasskeyFailed": "Prieigos rakto užklausa nebuvo baigta. Bandykite dar kartą arba patvirtinkite kitu būdu.",
+  "CancelButton": "Atšaukti",
+  "CloseDialog": "Uždaryti dialogą",
+  "ErrorRejected": "Šis patvirtinimas nepriimtas.",
+  "ErrorMissing": "Patvirtinkite prieigos raktu, slaptažodžiu arba atkūrimo kodu.",
+  "ErrorTooMany": "Per daug bandymų. Palaukite kelias minutes.",
+  "ErrorNetwork": "Nepavyko pasiekti serverio.",
+  "ErrorGeneric": "Kažkas nepavyko. Bandykite dar kartą.",
+  "ApprovalOtherSession": "Naujo prieigos rakto negalima patvirtinti iš seanso, kuriame jis buvo pridėtas. Patvirtinkite jį kitame prisijungusiame įrenginyje arba atsijunkite ir vėl prisijunkite esamu prieigos raktu ar slaptažodžiu ir patvirtinkite jį čia."
+}

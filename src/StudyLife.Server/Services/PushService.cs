@@ -49,6 +49,12 @@ public class PushService(StudyLifeDb db, VapidKeysHolder vapidKeysHolder) : IPus
     /// larger is not a real PushSubscription and would only bloat the column.</summary>
     private const int MaxKeyLength = 512;
 
+    /// <summary>Push registrations one account may hold (2026-11-16 audit M9). Every reminder fans
+    /// out to all of them, so an unbounded list let one account stall the shared worker. A new
+    /// registration beyond the cap replaces the account's oldest one - a real user's new device
+    /// always gets in; the worker also only ever loads the newest this many.</summary>
+    public const int MaxSubscriptionsPerUser = 20;
+
     private static readonly Regex ApnsTokenShape = new("^[A-Za-z0-9_-]{8,256}$", RegexOptions.Compiled);
 
     public string PublicKey => vapidKeysHolder.Keys!.PublicKey; // always set - see VapidKeysHolder comment
@@ -68,6 +74,7 @@ public class PushService(StudyLifeDb db, VapidKeysHolder vapidKeysHolder) : IPus
 
         if (existing == null)
         {
+            await MakeRoomForOneMoreAsync();
             db.PushSubscriptions.Add(new PushSubscriptionEntity
             {
                 Endpoint = dto.Endpoint,
@@ -117,6 +124,7 @@ public class PushService(StudyLifeDb db, VapidKeysHolder vapidKeysHolder) : IPus
 
         if (existing == null)
         {
+            await MakeRoomForOneMoreAsync();
             db.PushSubscriptions.Add(new PushSubscriptionEntity
             {
                 Endpoint = syntheticEndpoint,
@@ -131,6 +139,19 @@ public class PushService(StudyLifeDb db, VapidKeysHolder vapidKeysHolder) : IPus
             existing.UserAgent = deviceName; // like the web subscribe: refresh the display, keep CreatedAt
         }
         await db.SaveChangesAsync();
+    }
+
+    /// <summary>Drops the calling account's oldest registrations until one more fits under
+    /// <see cref="MaxSubscriptionsPerUser"/> (the global query filter scopes this to the caller).</summary>
+    private async Task MakeRoomForOneMoreAsync()
+    {
+        var count = await db.PushSubscriptions.CountAsync();
+        if (count < MaxSubscriptionsPerUser) return;
+        var oldest = await db.PushSubscriptions
+            .OrderBy(s => s.CreatedAt).ThenBy(s => s.Id)
+            .Take(count - MaxSubscriptionsPerUser + 1)
+            .ToListAsync();
+        db.PushSubscriptions.RemoveRange(oldest);
     }
 
     public Task UnsubscribeApnsAsync(string token) => UnsubscribeAsync(SyntheticApnsEndpoint(token));

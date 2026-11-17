@@ -535,6 +535,9 @@ namespace StudyLife.Server.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("CreatedBySessionId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<byte[]>("CredentialId")
                         .IsRequired()
                         .HasColumnType("BLOB");
@@ -664,6 +667,9 @@ namespace StudyLife.Server.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("CreatedBySessionId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime?>("UsedAt")
                         .HasColumnType("TEXT");

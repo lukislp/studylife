@@ -1,0 +1,23 @@
+{
+  "Title": "Bestätige, dass du es bist",
+  "Intro": "Diese Aktion schützt dein Konto. Bestätige mit einem Passkey dieses Kontos, um fortzufahren.",
+  "BrowserSignInIntro": "Melde dich erneut an, um zu bestätigen, dass du es bist. Danach geht es direkt weiter.",
+  "PasskeyButton": "Mit Passkey bestätigen",
+  "BrowserSignInButton": "Erneut anmelden",
+  "PasswordToggle": "Stattdessen mein Passwort verwenden",
+  "PasswordLabel": "Dein Passwort",
+  "PasswordButton": "Mit Passwort bestätigen",
+  "RecoveryToggle": "Stattdessen einen Wiederherstellungscode verwenden",
+  "RecoveryLabel": "Wiederherstellungscode",
+  "RecoveryButton": "Mit Wiederherstellungscode bestätigen",
+  "Working": "Wird ausgeführt…",
+  "PasskeyFailed": "Die Passkey-Abfrage wurde nicht abgeschlossen. Versuche es erneut oder bestätige auf anderem Weg.",
+  "CancelButton": "Abbrechen",
+  "CloseDialog": "Dialog schließen",
+  "ErrorRejected": "Diese Bestätigung wurde nicht akzeptiert.",
+  "ErrorMissing": "Bitte bestätige mit einem Passkey, deinem Passwort oder einem Wiederherstellungscode.",
+  "ErrorTooMany": "Zu viele Versuche. Bitte warte ein paar Minuten.",
+  "ErrorNetwork": "Der Server ist nicht erreichbar.",
+  "ErrorGeneric": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
+  "ApprovalOtherSession": "Ein neuer Passkey kann nicht in der Sitzung freigegeben werden, in der er hinzugefügt wurde. Gib ihn auf einem anderen angemeldeten Gerät frei, oder melde dich ab und mit einem vorhandenen Passkey oder deinem Passwort erneut an und gib ihn dann hier frei."
+}
