@@ -15,9 +15,10 @@ namespace StudyLife.Client.Services;
 public interface IFileDownloadService
 {
     /// <summary>Offers <paramref name="file"/> to the user. Returns once the file was handed over:
-    /// the browser download started, the share sheet is on screen (it does not wait for a share
-    /// target), or a save dialog was completed or cancelled by the user. Throws when the file could
-    /// not be offered, so the caller can show its error text instead of doing nothing.</summary>
+    /// the browser download started, or the native save/share sheet or save dialog was closed -
+    /// saved, shared or cancelled. Cancelling is the user's choice, not a failure. Throws only when
+    /// the file could not be offered or saving it failed, so the caller shows its error text only
+    /// then and never does nothing.</summary>
     Task SaveAsync(FileDownload file, CancellationToken cancellationToken = default);
 }
 
