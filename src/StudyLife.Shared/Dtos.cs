@@ -690,18 +690,27 @@ public class AiConfirmRequestDto
 
 /// <summary>
 /// Response of GET /api/system/calendar-token (session-authenticated via the normal
-/// /api gate): the permanent calendar token for the ICS subscription URL on the setup page - replaces
-/// the former unauthenticated bootstrap-key endpoint, which additionally delivered the (by now
-/// abolished) global API key.
+/// /api gate): whether the user has a calendar link, and since when. The token itself is stored
+/// only as a hash (audit 2026-11-16 L5), so this endpoint cannot return it - the plaintext exists
+/// once, in the response of POST /api/system/regenerate-calendar-token.
 /// </summary>
 public class CalendarTokenResponseDto
 {
-    public string CalendarToken { get; set; } = "";
+    /// <summary>Always null from servers that hash the token. Servers before that returned the
+    /// plaintext here; the client still shows it when present, so a newer app keeps working
+    /// against an older server.</summary>
+    public string? CalendarToken { get; set; }
+
+    /// <summary>True when a calendar link exists (its token can no longer be shown).</summary>
+    public bool Exists { get; set; }
+
+    public DateTime? CreatedAt { get; set; }
 }
 
 /// <summary>
-/// Response of POST /api/system/regenerate-calendar-token (CalendarTokenProvider.Regenerate):
-/// the new permanent calendar token, the old one is invalid from now on - every existing
+/// Response of POST /api/system/regenerate-calendar-token (CalendarTokenService.RegenerateAsync):
+/// the new permanent calendar token - the only time it is ever shown, because only its hash is
+/// stored. Also creates the very first link. The old one is invalid from now on - every existing
 /// calendar subscription must be re-subscribed with this new URL afterward.
 /// </summary>
 public class RegenerateCalendarTokenResponseDto

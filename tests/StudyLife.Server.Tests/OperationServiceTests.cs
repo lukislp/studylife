@@ -139,6 +139,25 @@ public class SettingsServiceProgressShareTests : IClassFixture<CustomWebApplicat
         // Disabling deletes the token too, so a leaked link can't come back by re-enabling.
         Assert.Null(disabled.Value.ProgressShareToken);
     }
+
+    [Fact]
+    public async Task ShareToken_IsStoredOnlyAsHash_AndNeverReadBack()
+    {
+        var enabled = await _factory.WithServiceAsync<ISettingsService, UserSettingsDto>(
+            (settings, _) => settings.EnableProgressShareAsync());
+        var token = enabled.ProgressShareToken!;
+
+        var row = await _factory.WithDbAsync(db => db.Settings.IgnoreQueryFilters().AsNoTracking()
+            .FirstAsync(s => s.ProgressShareTokenHash == AuthSessionService.HashToken(token)));
+        Assert.Null(row.LegacyProgressShareToken);
+        Assert.NotEqual(token, row.ProgressShareTokenHash);
+
+        // Every later read (GET /api/settings, the setup bundle) can only say "enabled".
+        var loaded = await _factory.WithServiceAsync<ISettingsService, UserSettingsDto>(
+            (settings, _) => settings.LoadAsync());
+        Assert.True(loaded.ProgressShareEnabled);
+        Assert.Null(loaded.ProgressShareToken);
+    }
 }
 
 public class SettingsServiceDismissBuiltInProgramTests : IClassFixture<CustomWebApplicationFactory>
@@ -502,23 +521,32 @@ public class CalendarTokenServiceTests : IClassFixture<CustomWebApplicationFacto
     public CalendarTokenServiceTests(CustomWebApplicationFactory factory) => _factory = factory;
 
     [Fact]
-    public async Task GetOrCreateAsync_CreatesLazilyThenReturnsTheSameToken()
+    public async Task RegenerateAsync_ReturnsTheTokenOnce_AndStoresOnlyItsHash()
     {
-        var first = await _factory.WithServiceAsync<ICalendarTokenService, CalendarTokenResult>(
-            (tokens, _) => tokens.GetOrCreateAsync(SeededUserId));
-        var second = await _factory.WithServiceAsync<ICalendarTokenService, CalendarTokenResult>(
-            (tokens, _) => tokens.GetOrCreateAsync(SeededUserId));
+        var created = await _factory.WithServiceAsync<ICalendarTokenService, CalendarTokenResult>(
+            (tokens, _) => tokens.RegenerateAsync(SeededUserId));
 
-        Assert.Equal(CalendarTokenOutcome.Ok, first.Outcome);
-        Assert.False(string.IsNullOrWhiteSpace(first.Token));
-        Assert.Equal(first.Token, second.Token);
+        Assert.Equal(CalendarTokenOutcome.Ok, created.Outcome);
+        Assert.False(string.IsNullOrWhiteSpace(created.Token));
+        var stored = await _factory.WithDbAsync(db => db.AuthUsers.AsNoTracking()
+            .Where(u => u.Id == SeededUserId).Select(u => new { u.CalendarTokenHash, u.LegacyCalendarToken }).SingleAsync());
+        Assert.Equal(AuthSessionService.HashToken(created.Token!), stored.CalendarTokenHash);
+        Assert.Null(stored.LegacyCalendarToken);
+
+        // The status never carries the token - it cannot be shown again.
+        var status = await _factory.WithServiceAsync<ICalendarTokenService, CalendarLinkStatusResult>(
+            (tokens, _) => tokens.GetStatusAsync(SeededUserId));
+        Assert.Equal(CalendarTokenOutcome.Ok, status.Outcome);
+        Assert.True(status.Status!.Exists);
+        Assert.NotNull(status.Status.CreatedAt);
+        Assert.Null(status.Status.CalendarToken);
     }
 
     [Fact]
     public async Task RegenerateAsync_ReplacesTheToken()
     {
         var before = await _factory.WithServiceAsync<ICalendarTokenService, CalendarTokenResult>(
-            (tokens, _) => tokens.GetOrCreateAsync(SeededUserId));
+            (tokens, _) => tokens.RegenerateAsync(SeededUserId));
 
         var after = await _factory.WithServiceAsync<ICalendarTokenService, CalendarTokenResult>(
             (tokens, _) => tokens.RegenerateAsync(SeededUserId));
@@ -528,13 +556,17 @@ public class CalendarTokenServiceTests : IClassFixture<CustomWebApplicationFacto
     }
 
     [Fact]
-    public async Task GetOrCreateAsync_UnknownUser_ReportsUnknownUser()
+    public async Task UnknownUser_ReportsUnknownUser()
     {
-        var result = await _factory.WithServiceAsync<ICalendarTokenService, CalendarTokenResult>(
-            (tokens, _) => tokens.GetOrCreateAsync(999999));
+        var status = await _factory.WithServiceAsync<ICalendarTokenService, CalendarLinkStatusResult>(
+            (tokens, _) => tokens.GetStatusAsync(999999));
+        var regenerated = await _factory.WithServiceAsync<ICalendarTokenService, CalendarTokenResult>(
+            (tokens, _) => tokens.RegenerateAsync(999999));
 
-        Assert.Equal(CalendarTokenOutcome.UnknownUser, result.Outcome);
-        Assert.Null(result.Token);
+        Assert.Equal(CalendarTokenOutcome.UnknownUser, status.Outcome);
+        Assert.Null(status.Status);
+        Assert.Equal(CalendarTokenOutcome.UnknownUser, regenerated.Outcome);
+        Assert.Null(regenerated.Token);
     }
 }
 

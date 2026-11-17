@@ -99,9 +99,7 @@ public class SetupController : ControllerBase
                 Version = Assembly.GetExecutingAssembly()
                     .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "dev",
             },
-            // Deliberately just a read of the existing column - GET api/system/calendar-token
-            // GENERATES one when missing, which this bundle must never do (see class summary).
-            CalendarToken = user.CalendarToken,
+            CalendarLink = CalendarTokenService.ToStatus(user),
             StudyPrograms = await StudyProgramService.LoadSummariesAsync(_db),
             CourseGoals = await _db.CourseGoals.AsNoTracking().Select(g => CourseGoalService.ToDto(g)).ToListAsync(),
 

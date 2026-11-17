@@ -707,6 +707,8 @@ if (!EF.IsDesignTime)
     if (shouldMigrate)
     {
         db.Database.Migrate();
+        // Audit 2026-11-16 L5: hash calendar/share tokens still stored in plaintext (idempotent).
+        await PlaintextLinkTokenUpgrade.RunAsync(db);
     }
     else
     {

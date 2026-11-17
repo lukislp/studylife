@@ -133,10 +133,10 @@ namespace StudyLife.Server.Migrations
                     b.Property<string>("ApiKeyHash")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("CalendarToken")
+                    b.Property<DateTime?>("CalendarTokenCreatedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("CalendarTokenCreatedAt")
+                    b.Property<string>("CalendarTokenHash")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("CaptureApiKeyCreatedAt")
@@ -173,6 +173,10 @@ namespace StudyLife.Server.Migrations
                     b.Property<bool>("IsOwner")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("LegacyCalendarToken")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("CalendarToken");
+
                     b.Property<DateTime?>("McpApiKeyCreatedAt")
                         .HasColumnType("TEXT");
 
@@ -193,7 +197,7 @@ namespace StudyLife.Server.Migrations
                     b.HasIndex("ApiKeyHash")
                         .IsUnique();
 
-                    b.HasIndex("CalendarToken")
+                    b.HasIndex("CalendarTokenHash")
                         .IsUnique();
 
                     b.HasIndex("CaptureApiKeyHash")
@@ -964,6 +968,10 @@ namespace StudyLife.Server.Migrations
                     b.Property<DateTime?>("LastBackupDownloadAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("LegacyProgressShareToken")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("ProgressShareToken");
+
                     b.Property<int>("MonthlyGoalMaxHours")
                         .HasColumnType("INTEGER");
 
@@ -986,7 +994,7 @@ namespace StudyLife.Server.Migrations
                     b.Property<bool>("ProgressShareEnabled")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("ProgressShareToken")
+                    b.Property<string>("ProgressShareTokenHash")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("SelectedCourseIds")
@@ -1042,6 +1050,8 @@ namespace StudyLife.Server.Migrations
 
                     b.HasIndex("AuthUserId")
                         .IsUnique();
+
+                    b.HasIndex("ProgressShareTokenHash");
 
                     b.ToTable("Settings");
                 });
