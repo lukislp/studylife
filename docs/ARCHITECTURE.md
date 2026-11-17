@@ -966,7 +966,12 @@ sanitized, hashed stack, never the exception/error **message** (may contain user
 The stack keeps frames only (type + method names, plus file:line where the runtime has one); a frame is recognised by its `at ` prefix, because the trimmed WebAssembly build prints frames without file:line. The `page` of navigation and error events is the first route segment (`/planner`, `TelemetryService.PageFromRelativePath`) - the shape `TelemetryController.SanitizePage` accepts; a CSS-class-like value is logged as `unknown`.
 `INativeTelemetry` (next to `INativeHealthData`/`INativePush`) is the native-app hook for MetricKit
 launch/resource/crash reports and HealthKit query outcomes, merged into the same batches; the
-browser registers the no-op `NoNativeTelemetry`.
+browser registers the no-op `NoNativeTelemetry`. Its default method
+`Task ApplyConsentAsync(bool granted)` is the consent contract for the native host: the host must
+not persist native telemetry events (queue files) unless the last call was `granted: true`, and must
+delete its queued native telemetry when called with `false`. `TelemetryService` calls it once the
+consent is known at startup (undecided counts as `false`), on every change of the effective consent,
+and with `false` on sign-out.
 
 Privacy rules enforced server-side (`TelemetryController`/`ClientTelemetryMetrics`): route/page
 values are normalized (`TelemetryRouteCatalog` replaces integer/GUID/>40-char segments with
@@ -988,6 +993,15 @@ Events are buffered in memory and flushed every 20 s or at 25 events; a final fl
 before the tab is gone). Boot events collected before the consent question is answered are kept
 in memory and flushed once accepted, or discarded on decline — never sent while consent is still
 `null`.
+
+Device storage (TDDDG §25, audit F-7): the telemetry session id/coin flip in `localStorage`
+(`studylife-telemetry-session`) and the cold/warm flag in `sessionStorage` (`studylife-booted-before`,
+written by `studylifeGetBootMarks(persistBootFlag)`) exist only while consent is a confirmed `true`.
+While it is `null` or `false` the session id lives in memory only; it is persisted when the consent
+turns `true`, and both keys are removed on decline, withdrawal and sign-out
+(`AppStateService.SignedOut`, awaited before the logout reload). The same keys written by older client
+versions are removed at startup when consent is not `true`. `Tests/TelemetryConsentStorageTests.cs`
+pins this, including the `INativeTelemetry.ApplyConsentAsync` calls.
 
 ## Built-in study program dismissal (`Controllers/StudyProgramsController.cs`, `Controllers/SettingsController.cs`, migration `AddBuiltInProgramDismissed`)
 

@@ -31,6 +31,11 @@ namespace StudyLife.Client.Services;
 /// accept doesn't lose the whole session's boot mesurements, matching the contract's explicit
 /// "boot events collected before the consent answer are kept ... or discarded on decline".
 ///
+/// Device storage (TDDDG 25): the session id (localStorage) and the cold/warm flag (sessionStorage)
+/// exist only while consent is a confirmed true - never written while it is null or false, removed
+/// on decline/withdrawal and on sign-out. The native host is told about the effective consent via
+/// <see cref="INativeTelemetry.ApplyConsentAsync"/> so it persists/deletes its own queue the same way.
+///
 /// Sampling: one coin flip per SESSION (not per event) - see EnsureSessionAsync - so a boot and
 /// its own follow-up API calls either both appear or neither does, keeping correlation intact.
 /// <c>error</c> events always bypass sampling (but never the consent gate above).
@@ -41,6 +46,7 @@ public sealed class TelemetryService : IAsyncDisposable
     private const int FlushEventThreshold = 25;
     private const int MaxEventsPerBatch = 50;
     private const string SessionStorageKey = "studylife-telemetry-session";
+    private const string BootedBeforeStorageKey = "studylife-booted-before";
     // Server-provided (api/system/capabilities, Telemetry:ClientSampleRatio); 0.10 until the
     // capabilities call answers, and forever if it fails.
     private double _sampleRate = 0.10;
@@ -54,7 +60,7 @@ public sealed class TelemetryService : IAsyncDisposable
     private readonly AppStateService _state;
     private readonly INativeTelemetry _native;
     private readonly IClientPlatform _platform;
-    private readonly Toolbelt.Blazor.I18nText.I18nText _i18nText;
+    private readonly Func<Task<string>> _currentLanguage;
 
     private readonly List<TelemetryEventDto> _buffer = new();
     private readonly object _bufferLock = new();
@@ -67,18 +73,29 @@ public sealed class TelemetryService : IAsyncDisposable
     private bool? _consent;
     private string _language = "en";
     private bool _bootMarksRead;
+    private bool _sessionPersisted;
+    private bool? _nativeConsent;
+    private Task _pendingConsentChange = Task.CompletedTask;
 
     public TelemetryService(HttpClient http, IJSRuntime js, AppStateService state, INativeTelemetry native,
         IClientPlatform platform, Toolbelt.Blazor.I18nText.I18nText i18nText)
+        : this(http, js, state, native, platform, i18nText.GetCurrentLanguageAsync)
+    {
+    }
+
+    // Internal seam so tests do not need the (concrete) I18nText library class; DI only sees the public constructor.
+    internal TelemetryService(HttpClient http, IJSRuntime js, AppStateService state, INativeTelemetry native,
+        IClientPlatform platform, Func<Task<string>> currentLanguage)
     {
         _http = http;
         _js = js;
         _state = state;
         _native = native;
         _platform = platform;
-        _i18nText = i18nText;
+        _currentLanguage = currentLanguage;
         _current = this;
         _state.OnSettingsChanged += OnSettingsChanged;
+        _state.SignedOut += OnSignedOutAsync;
         _state.OnSseLifecycleEventRaised += OnSseLifecycleEvent;
         // The stream may already be up (it starts as soon as a token exists, this service is
         // constructed later) - count that connection too, otherwise a fast host never reports one.
@@ -98,14 +115,16 @@ public sealed class TelemetryService : IAsyncDisposable
                 _sampleRate = Math.Clamp(capabilities.TelemetryClientSampleRatio, 0, 1);
         }
         catch { /* keep the default - never block startup on this */ }
-        await EnsureSessionAsync();
         try
         {
             var settings = await _state.GetSettingsAsync();
             _consent = settings.TelemetryConsent;
-            _language = await UiLanguageStartup.GetCurrentCodeAsync(_js, _i18nText.GetCurrentLanguageAsync);
+            _language = await UiLanguageStartup.GetCurrentCodeAsync(_js, _currentLanguage);
         }
         catch { /* best-effort - telemetry must never block app startup */ }
+        // After the consent snapshot: whether the session may be read from / written to the device depends on it.
+        await EnsureSessionAsync();
+        await SyncDeviceStateAsync();
 
         _flushTimer = new Timer(async _ => await FlushAsync(),
             null, TimeSpan.FromSeconds(FlushIntervalSeconds), TimeSpan.FromSeconds(FlushIntervalSeconds));
@@ -116,8 +135,21 @@ public sealed class TelemetryService : IAsyncDisposable
 
     /// <summary>24h rotation, one coin flip per session persisted alongside the id so a page
     /// reload within the same session keeps the same sampling decision (contract: "a per-session
-    /// coin flip, so one session is either fully sampled or not"). Never derived from the user id.</summary>
+    /// coin flip, so one session is either fully sampled or not"). Never derived from the user id.
+    /// The id lives on the device (localStorage) only while consent is true; before that (or after a
+    /// decline) it exists in memory only, and is persisted once the consent arrives.</summary>
     private async Task EnsureSessionAsync()
+    {
+        if (_consent == true && await TryRestoreStoredSessionAsync()) return;
+
+        _sessionId = GenerateSessionId();
+        _sampled = Random.Shared.NextDouble() < _sampleRate;
+        ApplySamplingDecision();
+        _sessionPersisted = false;
+        if (_consent == true) await PersistSessionAsync();
+    }
+
+    private async Task<bool> TryRestoreStoredSessionAsync()
     {
         try
         {
@@ -133,21 +165,65 @@ public sealed class TelemetryService : IAsyncDisposable
             {
                 _sessionId = stored.Id;
                 _sampled = stored.Sampled;
+                _sessionPersisted = true;
                 ApplySamplingDecision();
-                return;
+                return true;
             }
         }
         catch { /* corrupt/unavailable storage - fall through to a fresh session */ }
+        return false;
+    }
 
-        _sessionId = GenerateSessionId();
-        _sampled = Random.Shared.NextDouble() < _sampleRate;
-        ApplySamplingDecision();
+    /// <summary>Writes the current session to localStorage. Only ever called with consent == true.</summary>
+    private async Task PersistSessionAsync()
+    {
+        if (_sessionPersisted || _sessionId.Length == 0 || _sampled is null) return;
         try
         {
             var json = JsonSerializer.Serialize(new StoredSession(_sessionId, _sampled == true, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), _sampleRate));
             await _js.InvokeVoidAsync("localStorage.setItem", SessionStorageKey, json);
+            _sessionPersisted = true;
         }
         catch { /* best-effort persistence; the session still works for the rest of this page load */ }
+    }
+
+    /// <summary>Brings everything telemetry keeps on the device in line with the consent: persist the
+    /// session with a true consent, remove the session id and the cold/warm flag otherwise (also
+    /// cleans up what an earlier client version wrote before consent was known). The native host gets
+    /// the effective consent (null counts as false) whenever it changed.</summary>
+    private async Task SyncDeviceStateAsync()
+    {
+        var granted = _consent == true;
+        if (granted) await PersistSessionAsync();
+        else await ClearDeviceStateAsync();
+        await ApplyNativeConsentAsync(granted);
+    }
+
+    private async Task ClearDeviceStateAsync()
+    {
+        _sessionPersisted = false;
+        try { await _js.InvokeVoidAsync("localStorage.removeItem", SessionStorageKey); }
+        catch { /* storage unavailable - nothing was written either */ }
+        try { await _js.InvokeVoidAsync("sessionStorage.removeItem", BootedBeforeStorageKey); }
+        catch { /* storage unavailable - nothing was written either */ }
+    }
+
+    private async Task ApplyNativeConsentAsync(bool granted)
+    {
+        if (_nativeConsent == granted) return;
+        _nativeConsent = granted;
+        try { await _native.ApplyConsentAsync(granted); }
+        catch { /* native bridge failure must never break the web side */ }
+    }
+
+    /// <summary>AppStateService.SignedOut: the next person on this device must find nothing behind -
+    /// buffers, device storage and the native queue are cleared, and nothing is recorded any more.</summary>
+    private async Task OnSignedOutAsync()
+    {
+        _consent = false;
+        lock (_bufferLock) _buffer.Clear();
+        await ClearDeviceStateAsync();
+        await ApplyNativeConsentAsync(false);
     }
 
     /// <summary>Once the coin flip is known, a sampled-out session keeps only its `error`
@@ -282,7 +358,7 @@ public sealed class TelemetryService : IAsyncDisposable
         _bootMarksRead = true;
         try
         {
-            var marks = await _js.InvokeAsync<BootMarks?>("studylifeGetBootMarks");
+            var marks = await _js.InvokeAsync<BootMarks?>("studylifeGetBootMarks", _consent == true);
             if (marks is null) return;
             RecordBoot(marks.Cold, marks.HtmlMs, marks.BootScriptMs, marks.WasmDownloadMs,
                 marks.RuntimeReadyMs, marks.FirstRenderMs, dashboardReadyMs: null,
@@ -371,7 +447,10 @@ public sealed class TelemetryService : IAsyncDisposable
             .OfType<System.Reflection.AssemblyInformationalVersionAttribute>()
             .FirstOrDefault()?.InformationalVersion?.Split('+')[0] ?? "dev";
 
-    private void OnSettingsChanged() => _ = HandleConsentChangeAsync();
+    private void OnSettingsChanged() => _pendingConsentChange = HandleConsentChangeAsync();
+
+    /// <summary>The consent change started by the last settings event (tests await it).</summary>
+    internal Task PendingConsentChange => _pendingConsentChange;
 
     private async Task HandleConsentChangeAsync()
     {
@@ -384,10 +463,11 @@ public sealed class TelemetryService : IAsyncDisposable
         }
         catch { return; }
 
+        if (_consent == false)
+            lock (_bufferLock) _buffer.Clear(); // declined/withdrawn - discard, never send device data for a decline
+        if (_consent != previous) await SyncDeviceStateAsync();
         if (_consent == true && previous != true)
             await FlushAsync(); // just accepted (or undecided->true on first load) - send whatever was buffered so far
-        else if (_consent == false)
-            lock (_bufferLock) _buffer.Clear(); // declined - discard, never send device data for a decline
     }
 
     // ── JS entry points ──────────────────────────────────────────────────────
@@ -441,6 +521,7 @@ public sealed class TelemetryService : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         _state.OnSettingsChanged -= OnSettingsChanged;
+        _state.SignedOut -= OnSignedOutAsync;
         _state.OnSseLifecycleEventRaised -= OnSseLifecycleEvent;
         if (_flushTimer != null) await _flushTimer.DisposeAsync();
         if (ReferenceEquals(_current, this)) _current = null;
