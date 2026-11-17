@@ -31,13 +31,32 @@ public class AccountDeletionServiceTests : IClassFixture<CustomWebApplicationFac
         public AiProxyClient AiClient { get; }
         public WebhooksProxyClient WebhooksClient { get; }
         public DeveloperProxyClient DevelopersClient { get; }
+        public AiKeyOutboxTestStubHandler Mcp { get; }
+        public AiKeyOutboxTestStubHandler Alexa { get; }
+        public AiKeyOutboxTestStubHandler Telegram { get; }
 
-        public Addons(HttpStatusCode status)
+        /// <summary>The studylife-mcp/-alexa/-telegram purge clients - only handed to the service
+        /// when a test asks for them (<paramref name="withPurges"/>); otherwise the host's
+        /// unconfigured ones apply (nothing to purge, no rows).</summary>
+        public AddonPurgeClients? PurgeClients { get; }
+
+        public Addons(HttpStatusCode status, bool withPurges = false)
         {
             AiKeyOutboxTestStubHandler Handler() => new(_ => new HttpResponseMessage(status));
             Ai = Handler();
             Webhooks = Handler();
             Developers = Handler();
+            Mcp = Handler();
+            Alexa = Handler();
+            Telegram = Handler();
+            if (withPurges)
+            {
+                AddonPurgeClient Purge(AddonPurgeTarget target, AiKeyOutboxTestStubHandler handler) => new(target,
+                    new AddonPurgeOptions { BaseUrl = $"https://{target.Name.ToLowerInvariant()}.test", SharedSecret = "s" },
+                    NullLogger<AddonPurgeClient>.Instance, new HttpClient(handler));
+                PurgeClients = new AddonPurgeClients([
+                    Purge(AddonPurgeTarget.Mcp, Mcp), Purge(AddonPurgeTarget.Alexa, Alexa), Purge(AddonPurgeTarget.Telegram, Telegram)]);
+            }
             AiClient = new AiProxyClient(
                 TestOptions.For<StudyLifeAiOptions>(("StudyLifeAi:BaseUrl", "https://ai.test"), ("StudyLifeAi:SharedSecret", "s")),
                 NullLogger<AiProxyClient>.Instance, new HttpClient(Ai));
@@ -53,8 +72,11 @@ public class AccountDeletionServiceTests : IClassFixture<CustomWebApplicationFac
     private static AccountDeletionService Service(IServiceScope scope, Addons? addons = null) =>
         addons is null
             ? ActivatorUtilities.CreateInstance<AccountDeletionService>(scope.ServiceProvider)
-            : ActivatorUtilities.CreateInstance<AccountDeletionService>(
-                scope.ServiceProvider, addons.AiClient, addons.WebhooksClient, addons.DevelopersClient);
+            : addons.PurgeClients is null
+                ? ActivatorUtilities.CreateInstance<AccountDeletionService>(
+                    scope.ServiceProvider, addons.AiClient, addons.WebhooksClient, addons.DevelopersClient)
+                : ActivatorUtilities.CreateInstance<AccountDeletionService>(
+                    scope.ServiceProvider, addons.AiClient, addons.WebhooksClient, addons.DevelopersClient, addons.PurgeClients);
 
     [Fact]
     public async Task Delete_RemovesEverythingOfTheUser_AndNothingOfAnyoneElse()
@@ -227,6 +249,88 @@ public class AccountDeletionServiceTests : IClassFixture<CustomWebApplicationFac
         Assert.Single(healthy.Ai.Requests);
         Assert.Single(healthy.Webhooks.Requests);
         Assert.Empty(healthy.Developers.Requests); // no developer key, nothing to revoke
+    }
+
+    [Fact]
+    public async Task Delete_QueuesTheMcpAlexaTelegramPurge_WithTheHashesOfTheKeysIssuedToEachAddon()
+    {
+        int a = 0, other = 0;
+        var mcp = AuthSessionService.HashToken("purge-mcp-key-of-jordan");
+        var alexa = AuthSessionService.HashToken("purge-alexa-key-of-jordan");
+        var telegram1 = AuthSessionService.HashToken("purge-telegram-key-1-of-jordan");
+        var telegram2 = AuthSessionService.HashToken("purge-telegram-key-2-of-jordan");
+        var foreignApp = AuthSessionService.HashToken("purge-other-app-key-of-jordan");
+        var othersAlexa = AuthSessionService.HashToken("purge-alexa-key-of-someone-else");
+        await _factory.WithDbAsync(async db =>
+        {
+            a = await UserDataSeeder.SeedUserAsync(db, "Jordan");
+            other = await UserDataSeeder.SeedUserAsync(db, "Kai");
+            await db.AuthUsers.Where(u => u.Id == a).ExecuteUpdateAsync(s => s.SetProperty(u => u.McpApiKeyHash, mcp));
+            db.ClientApiKeys.AddRange(
+                new ClientApiKeyEntity { AuthUserId = a, ClientId = "studylife-alexa", KeyHash = alexa, CreatedAt = DateTime.UtcNow },
+                new ClientApiKeyEntity { AuthUserId = a, ClientId = "studylife-telegram", KeyHash = telegram1, CreatedAt = DateTime.UtcNow },
+                new ClientApiKeyEntity { AuthUserId = a, ClientId = "studylife-telegram", KeyHash = telegram2, CreatedAt = DateTime.UtcNow },
+                new ClientApiKeyEntity { AuthUserId = a, ClientId = "some-other-app", KeyHash = foreignApp, CreatedAt = DateTime.UtcNow },
+                new ClientApiKeyEntity { AuthUserId = other, ClientId = "studylife-alexa", KeyHash = othersAlexa, CreatedAt = DateTime.UtcNow });
+            await db.SaveChangesAsync();
+        });
+
+        var outage = new Addons(HttpStatusCode.ServiceUnavailable, withPurges: true);
+        AccountDeletionResult result;
+        using (var scope = _factory.Services.CreateScope())
+            result = await Service(scope, outage).DeleteAsync(a, a, CancellationToken.None);
+
+        // The account and its keys are gone, the purges are queued with the hashes captured before.
+        Assert.Equal(AccountDeletionOutcome.Deleted, result.Outcome);
+        Assert.False(await _factory.WithDbAsync(db => db.ClientApiKeys.AnyAsync(k => k.AuthUserId == a)));
+        var rows = await _factory.WithDbAsync(db => db.AiKeyOutbox.AsNoTracking()
+            .Where(o => o.AuthUserId == a && o.KeyHashes != null).ToDictionaryAsync(o => o.Action));
+        Assert.Equal(mcp, rows[AiKeyOutboxEntity.ActionPurgeMcp].KeyHashes);
+        Assert.Equal(alexa, rows[AiKeyOutboxEntity.ActionPurgeAlexa].KeyHashes);
+        Assert.Equal($"{telegram1},{telegram2}", rows[AiKeyOutboxEntity.ActionPurgeTelegram].KeyHashes);
+        Assert.All(rows.Values, r => { Assert.Null(r.AiApiKeyPlaintext); Assert.Equal(1, r.Attempts); });
+        Assert.Equal(4, result.Value!.AddonCleanupPending); // the three purges + studylife-webhooks
+
+        // The immediate attempt went to each add-on with only that add-on's hashes.
+        var alexaCall = Assert.Single(outage.Alexa.Requests);
+        Assert.EndsWith($"/internal/users/{a}/purge", alexaCall.Uri, StringComparison.Ordinal);
+        Assert.Equal($"{{\"key_hashes\":[\"{alexa}\"]}}", alexaCall.Body);
+        Assert.Contains(mcp, Assert.Single(outage.Mcp.Requests).Body, StringComparison.Ordinal);
+        Assert.DoesNotContain(foreignApp, string.Concat(outage.Telegram.Requests.Select(r => r.Body)), StringComparison.Ordinal);
+
+        // The drain delivers them once the add-ons answer, with the same hashes, and the rows go.
+        var back = new Addons(HttpStatusCode.NoContent, withPurges: true);
+        var services = new ServiceCollection()
+            .AddSingleton(back.WebhooksClient).AddSingleton(back.DevelopersClient).AddSingleton(back.PurgeClients!).BuildServiceProvider();
+        var worker = new BackgroundTaskService(services,
+            _factory.Services.GetRequiredService<VapidKeysHolder>(),
+            NullLogger<BackgroundTaskService>.Instance,
+            _factory.Services.GetRequiredService<ApnsSender>(),
+            aiProxyClient: back.AiClient);
+        await _factory.WithDbAsync(db => db.AiKeyOutbox.Where(o => o.AuthUserId == a)
+            .ExecuteUpdateAsync(s => s.SetProperty(o => o.LastAttemptAt, DateTime.UtcNow.AddHours(-2))));
+        await _factory.WithDbAsync(db => worker.RunAiKeyOutboxAsync(db));
+
+        Assert.Empty(await _factory.WithDbAsync(db => db.AiKeyOutbox.Where(o => o.AuthUserId == a).ToListAsync()));
+        Assert.Equal($"{{\"key_hashes\":[\"{telegram1}\",\"{telegram2}\"]}}", Assert.Single(back.Telegram.Requests).Body);
+    }
+
+    [Fact]
+    public async Task Delete_WithoutAddonKeys_PurgesMcpByUserIdOnly_AndSkipsAlexaAndTelegram()
+    {
+        int a = 0;
+        await _factory.WithDbAsync(async db => a = await UserDataSeeder.SeedUserAsync(db, "Lane"));
+
+        var healthy = new Addons(HttpStatusCode.NoContent, withPurges: true);
+        using var scope = _factory.Services.CreateScope();
+        var result = await Service(scope, healthy).DeleteAsync(a, a, CancellationToken.None);
+
+        Assert.Equal(0, result.Value!.AddonCleanupPending);
+        Assert.Empty(await _factory.WithDbAsync(db => db.AiKeyOutbox.Where(o => o.AuthUserId == a).ToListAsync()));
+        // studylife-mcp also keys data by the user id; the other two know a user only by a key.
+        Assert.Equal("{\"key_hashes\":[]}", Assert.Single(healthy.Mcp.Requests).Body);
+        Assert.Empty(healthy.Alexa.Requests);
+        Assert.Empty(healthy.Telegram.Requests);
     }
 
     [Fact]

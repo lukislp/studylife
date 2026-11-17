@@ -610,6 +610,12 @@ builder.Services.AddSingleton(sp => new DeveloperProxyClient(
     sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<StudyLifeDevelopersOptions>>(),
     sp.GetRequiredService<ILogger<DeveloperProxyClient>>(),
     sp.GetRequiredService<AddonTlsTrust>().CreateHttpClient()));
+// Account-deletion purge of studylife-mcp/-alexa/-telegram (AddonPurge:*) - same pattern, one
+// client per add-on; an unconfigured add-on has nothing to purge.
+builder.Services.AddSingleton(sp => AddonPurgeClients.Create(
+    sp.GetRequiredService<Microsoft.Extensions.Options.IOptionsMonitor<AddonPurgeOptions>>(),
+    sp.GetRequiredService<ILogger<AddonPurgeClient>>(),
+    () => sp.GetRequiredService<AddonTlsTrust>().CreateHttpClient(AddonPurgeClient.RequestTimeout)));
 // Raw DB backup/restore + the former file-based VAPID/setup-secret storage are bound to a
 // local single SQLite file (online backup API, PRAGMA integrity_check, file swap) -
 // deliberately NOT registered in Postgres mode (multiple pods, no guaranteed shared volume);
