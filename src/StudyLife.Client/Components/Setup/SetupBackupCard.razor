@@ -19,11 +19,12 @@
     <div class="ss-label">@Label</div>
     <p class="ss-desc">@Desc</p>
 
-    @if (IsOwner)
+    @if (ShowsRawBackup)
     {
         <!-- Only the owner (first registered user) may download the raw .db
-             (BackupController.IsOwnerAsync - it contains ALL users' data). On
-             Postgres, Setup.razor doesn't wire the whole card in at all. -->
+             (BackupController.IsOwnerAsync - it contains ALL users' data), and only where the
+             server keeps a single SQLite file (RawBackupSupported). The JSON export below is
+             there for every user on every database provider. -->
         <div class="toggle-row" style="gap:0.5rem;flex-wrap:wrap;align-items:center">
             <input class="input input-sm" type="password" placeholder="@PasswordPlaceholder"
                    @bind="_password" @bind:event="oninput" />
@@ -32,7 +33,7 @@
     }
 
     <div class="toggle-row" style="gap:0.75rem;flex-wrap:wrap">
-        @if (IsOwner)
+        @if (ShowsRawBackup)
         {
             <button type="button" class="btn-secondary" @onclick="DownloadDatabase" disabled="@_downloading">
                 @(_downloading ? "…" : DownloadDatabaseButtonText)
@@ -58,13 +59,25 @@
     /// raw .db download - it contains ALL users' data (see
     /// BackupController.IsOwnerAsync). The JSON export remains visible to every user.</summary>
     [Parameter] public bool IsOwner { get; set; }
+    /// <summary>The server can hand out its database as a file (SQLite; api/system/capabilities
+    /// rawBackupSupported). False on Postgres, where only the JSON export is offered.</summary>
+    [Parameter] public bool RawBackupSupported { get; set; }
     [Parameter] public string Label { get; set; } = "";
     [Parameter] public string Desc { get; set; } = "";
     [Parameter] public string DownloadDatabaseButtonText { get; set; } = "";
     [Parameter] public string ExportJsonButtonText { get; set; } = "";
     [Parameter] public string PasswordPlaceholder { get; set; } = "";
     [Parameter] public string PasswordHint { get; set; } = "";
+    /// <summary>Shown when the password-encrypted database download fails.</summary>
     [Parameter] public string EncryptedDownloadErrorText { get; set; } = "";
+    /// <summary>Shown when the JSON export or the unencrypted database download fails - these
+    /// involve no encryption, so they must not say so.</summary>
+    [Parameter] public string DownloadErrorText { get; set; } = "";
+
+    /// <summary>The raw database download (plain or encrypted): owner only, SQLite only. The
+    /// JSON export ("export my data", GDPR Art. 15/20) is never gated - it only ever contains the
+    /// caller's own rows.</summary>
+    private bool ShowsRawBackup => IsOwner && RawBackupSupported;
 
     private string _password = "";
     private bool _downloading;
@@ -82,15 +95,15 @@
     private Task DownloadDatabase() =>
         string.IsNullOrEmpty(_password)
             ? DownloadViaHttpAsync(() => Http.GetAsync("api/backup/database"),
-                $"studyatrium-backup-{DateTime.UtcNow:yyyyMMdd}.db")
+                $"studyatrium-backup-{DateTime.UtcNow:yyyyMMdd}.db", DownloadErrorText)
             : DownloadViaHttpAsync(() => Http.PostAsJsonAsync("api/backup/database/encrypted", new { password = _password }),
-                $"studyatrium-backup-{DateTime.UtcNow:yyyyMMdd}.db.enc");
+                $"studyatrium-backup-{DateTime.UtcNow:yyyyMMdd}.db.enc", EncryptedDownloadErrorText);
 
     private Task DownloadExport() =>
         DownloadViaHttpAsync(() => Http.GetAsync("api/backup/export"),
-            $"studyatrium-export-{DateTime.UtcNow:yyyyMMdd}.json");
+            $"studyatrium-export-{DateTime.UtcNow:yyyyMMdd}.json", DownloadErrorText);
 
-    private async Task DownloadViaHttpAsync(Func<Task<HttpResponseMessage>> send, string fallbackFileName)
+    private async Task DownloadViaHttpAsync(Func<Task<HttpResponseMessage>> send, string fallbackFileName, string errorText)
     {
         if (_downloading) return;
         _error = null;
@@ -100,12 +113,12 @@
             using var response = await send();
             if (await StepUpState.IsStepUpRequiredAsync(response))
             {
-                _retryAfterStepUp = () => DownloadViaHttpAsync(send, fallbackFileName);
+                _retryAfterStepUp = () => DownloadViaHttpAsync(send, fallbackFileName, errorText);
                 return;
             }
             if (!response.IsSuccessStatusCode)
             {
-                _error = EncryptedDownloadErrorText;
+                _error = errorText;
                 return;
             }
 
@@ -113,7 +126,7 @@
         }
         catch
         {
-            _error = EncryptedDownloadErrorText;
+            _error = errorText;
         }
         finally
         {
