@@ -1052,6 +1052,38 @@ public class OAuthClientInfoDto
     public string Name { get; set; } = "";
     public string Description { get; set; } = "";
     public List<string> RequestedScopes { get; set; } = new();
+    /// <summary>Display name of the user who registered this client, so the consent screen can
+    /// say who stands behind it (2026-11-16 audit M5); null when that account no longer exists.</summary>
+    public string? RegisteredBy { get; set; }
+    /// <summary>True when the registrant is this instance's owner.</summary>
+    public bool RegisteredByOwner { get; set; }
+    /// <summary>One of <see cref="OAuthClientApprovalStates"/>; only "approved" clients can be connected.</summary>
+    public string Approval { get; set; } = OAuthClientApprovalStates.Pending;
+    /// <summary>The registered redirect URIs - not secret (they are the public callbacks), and
+    /// what lets the marketplace Install check that an existing registration under a listing's id
+    /// really is that listing's add-on before handing the user to consent.</summary>
+    public List<string> RedirectUris { get; set; } = new();
+}
+
+/// <summary>Wire values of an OAuth client registration's review state (2026-11-16 audit M5).</summary>
+public static class OAuthClientApprovalStates
+{
+    public const string Pending = "pending";
+    public const string Approved = "approved";
+    public const string Rejected = "rejected";
+}
+
+/// <summary>One registration in the owner's review list (GET /api/oauth-client-reviews).</summary>
+public class OAuthClientReviewDto
+{
+    public string ClientId { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string Description { get; set; } = "";
+    public List<string> RedirectUris { get; set; } = new();
+    public List<string> RequestedScopes { get; set; } = new();
+    public string? RegisteredBy { get; set; }
+    public string Approval { get; set; } = OAuthClientApprovalStates.Pending;
+    public DateTime CreatedAt { get; set; }
 }
 
 /// <summary>Body of POST /api/auth/connect - the generic, ClientId-parameterized counterpart to
@@ -1125,6 +1157,10 @@ public class DeveloperClientDto
     [MaxLength(100)]
     public List<string> RequestedScopes { get; set; } = new();
     public DateTime CreatedAt { get; set; }
+    /// <summary>One of <see cref="OAuthClientApprovalStates"/>: a registration by anyone but the
+    /// instance owner waits for the owner's approval before users can connect it.</summary>
+    [MaxLength(20)]
+    public string Approval { get; set; } = OAuthClientApprovalStates.Pending;
 }
 
 /// <summary>Body of POST /api/developer/clients - registers a new OAuthClientEntity. Every

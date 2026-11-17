@@ -20,5 +20,13 @@
   "ConnectClientPageTitle": "StudyAtrium — Kapcsolódás",
   "ConnectClientHeading": "Bővítmény összekapcsolása",
   "ConnectClientNotRegistered": "Ez a bővítmény még nincs regisztrálva a StudyAtrium-fiókodban.",
-  "ConnectRedirectTarget": "A csatlakozás után ide irányítunk át: {0}"
+  "ConnectRedirectTarget": "A csatlakozás után ide irányítunk át: {0}",
+  "ConnectKeyRecipient": "A hozzáférési kulcsodat ez kapja meg:",
+  "ConnectRequestedAccess": "Kért hozzáférés:",
+  "ConnectRegisteredBy": "Ezen a szerveren regisztrálta: {0}.",
+  "ConnectRegisteredByOwner": "Ezen a szerveren regisztrálta: {0}, a szerver tulajdonosa.",
+  "ConnectRegistrantUnknown": "Egy már nem létező fiók regisztrálta.",
+  "ConnectBuiltInClient": "A StudyAtrium része, nem felhasználó regisztrálta.",
+  "ConnectClientPendingApproval": "Ez a bővítmény a szerver tulajdonosának jóváhagyására vár. Ha jóváhagyták, összekapcsolhatod.",
+  "ConnectClientRejected": "A szerver tulajdonosa nem hagyta jóvá ezt a bővítményt, ezért nem kapcsolható össze."
 }

@@ -20,5 +20,13 @@
   "ConnectClientPageTitle": "StudyAtrium — Ligar",
   "ConnectClientHeading": "Ligar extra",
   "ConnectClientNotRegistered": "Este extra ainda não está registado na sua instância StudyAtrium.",
-  "ConnectRedirectTarget": "Depois de ligar serás redirecionado para: {0}"
+  "ConnectRedirectTarget": "Depois de ligar serás redirecionado para: {0}",
+  "ConnectKeyRecipient": "A tua chave de acesso será entregue a:",
+  "ConnectRequestedAccess": "Acesso pedido:",
+  "ConnectRegisteredBy": "Registado neste servidor por {0}.",
+  "ConnectRegisteredByOwner": "Registado neste servidor por {0}, o proprietário do servidor.",
+  "ConnectRegistrantUnknown": "Registado por uma conta que já não existe.",
+  "ConnectBuiltInClient": "Integrado no StudyAtrium, não registado por um utilizador.",
+  "ConnectClientPendingApproval": "Este suplemento aguarda a aprovação do proprietário do servidor. Poderás ligá-lo assim que for aprovado.",
+  "ConnectClientRejected": "O proprietário do servidor não aprovou este suplemento, por isso não pode ser ligado."
 }

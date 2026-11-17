@@ -20,5 +20,13 @@
   "ConnectClientPageTitle": "StudyAtrium — Подключение",
   "ConnectClientHeading": "Подключить дополнение",
   "ConnectClientNotRegistered": "Это дополнение ещё не зарегистрировано в вашем экземпляре StudyAtrium.",
-  "ConnectRedirectTarget": "После подключения ты будешь перенаправлен на: {0}"
+  "ConnectRedirectTarget": "После подключения ты будешь перенаправлен на: {0}",
+  "ConnectKeyRecipient": "Твой ключ доступа будет передан:",
+  "ConnectRequestedAccess": "Запрошенный доступ:",
+  "ConnectRegisteredBy": "Зарегистрировано на этом сервере пользователем {0}.",
+  "ConnectRegisteredByOwner": "Зарегистрировано на этом сервере пользователем {0}, владельцем сервера.",
+  "ConnectRegistrantUnknown": "Зарегистрировано учётной записью, которой больше нет.",
+  "ConnectBuiltInClient": "Встроено в StudyAtrium, не зарегистрировано пользователем.",
+  "ConnectClientPendingApproval": "Это дополнение ждёт одобрения владельца сервера. Ты сможешь подключить его после одобрения.",
+  "ConnectClientRejected": "Владелец сервера не одобрил это дополнение, поэтому его нельзя подключить."
 }

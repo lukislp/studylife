@@ -407,6 +407,10 @@
                  Entirely owner-only, same client-side gate as SetupRestoreCard below - the server
                  independently enforces this via AuthController's own IsOwnerAsync()/Forbid(). -->
             <SetupInvitesCard />
+            <!-- Add-on approvals (2026-11-16 audit M5): other users' OAuth client registrations
+                 wait here until the owner approves them. The server enforces owner-only itself
+                 (OAuthClientReviewService). See SetupClientReviewCard. -->
+            <SetupClientReviewCard />
         }
 
         @if (_rawBackupSupported)

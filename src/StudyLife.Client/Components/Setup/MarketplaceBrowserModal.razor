@@ -5,15 +5,17 @@
 @using StudyLife.Shared
 @inject MarketplaceClient MarketplaceClient
 @inject HttpClient Http
-@inject NavigationManager Nav
 @inject AppStateService State
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
 
 @* Browses studylife-marketplace's public catalog (fetched client-side, see MarketplaceClient -
    no StudyLife.Server involvement) and installs a listing by materializing a local
-   OAuthClientEntity (reusing DeveloperController.Create unchanged) before handing off to the
-   new generic consent page (ConnectClient.razor). See StudyLifeMarketplacePlan for the full
-   design - in particular why RedirectUriPattern is used as one literal redirect URI.
+   OAuthClientEntity (reusing DeveloperController.Create unchanged), or by checking that an
+   existing registration under the listing's id is exactly the listing's add-on
+   (MarketplaceRegistrationMatch, 2026-11-16 audit M5). Connecting then starts from the add-on
+   itself, which brings its own state and PKCE challenge to the consent page
+   (ConnectClient.razor). See StudyLifeMarketplacePlan for the full design - in particular why
+   RedirectUriPattern is used as one literal redirect URI.
 
    Demo mode: browsing stays fully functional (GitHub fetch, not this app's own API), but
    installing is disabled here too. This is a UX nicety, not the actual enforcement - the
@@ -73,6 +75,10 @@
                     {
                         <p class="ss-desc" style="color:var(--danger, #e74c3c);margin-top:-0.5rem">@_installError</p>
                     }
+                    @if (_installNotice != null && _installNoticeClientId == listing.Id)
+                    {
+                        <p class="ss-desc" style="margin-top:-0.5rem" data-testid="marketplace-install-notice">@_installNotice</p>
+                    }
                 }
             }
         </div>
@@ -90,6 +96,8 @@
     private string? _busyClientId;
     private string? _installError;
     private string? _installErrorClientId;
+    private string? _installNotice;
+    private string? _installNoticeClientId;
 
     protected override async Task OnInitializedAsync()
     {
@@ -113,11 +121,15 @@
     {
         _busyClientId = listing.Id;
         _installError = null;
+        _installNotice = null;
         try
         {
-            // Already registered locally (e.g. another user on this instance installed it
-            // first, or this is a reinstall) - skip straight to consent.
+            // Install only makes sure this server has a registration that really is the
+            // listing's add-on (2026-11-16 audit M5). It no longer opens the consent screen
+            // itself: the add-on starts that flow with its own state and PKCE challenge, which
+            // a consent round trip started here could never carry.
             var existing = await Http.GetAsync($"api/auth/oauth-clients/{Uri.EscapeDataString(listing.Id)}");
+            string approval;
             if (existing.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
                 var createResponse = await Http.PostAsJsonAsync("api/developer/clients", new CreateDeveloperClientRequestDto
@@ -128,23 +140,47 @@
                     AllowedRedirectUris = new List<string> { listing.RedirectUriPattern },
                     RequestedScopes = listing.RequestedScopes,
                 });
-                if (!createResponse.IsSuccessStatusCode)
+                var created = createResponse.IsSuccessStatusCode
+                    ? await createResponse.Content.ReadFromJsonAsync<DeveloperClientDto>()
+                    : null;
+                if (created is null)
                 {
                     _installError = T.MarketplaceInstallFailed;
                     _installErrorClientId = listing.Id;
                     return;
                 }
+                approval = created.Approval;
             }
-            else if (!existing.IsSuccessStatusCode)
+            else
             {
-                _installError = T.MarketplaceInstallFailed;
-                _installErrorClientId = listing.Id;
-                return;
+                var info = existing.IsSuccessStatusCode
+                    ? await existing.Content.ReadFromJsonAsync<OAuthClientInfoDto>()
+                    : null;
+                if (info is null)
+                {
+                    _installError = T.MarketplaceInstallFailed;
+                    _installErrorClientId = listing.Id;
+                    return;
+                }
+                // Somebody on this server may have registered the listing's id first (id
+                // squatting): never treat a registration with other redirect targets or other
+                // access as the listing's add-on.
+                if (!MarketplaceRegistrationMatch.Matches(listing, info))
+                {
+                    _installError = T.MarketplaceInstallMismatch;
+                    _installErrorClientId = listing.Id;
+                    return;
+                }
+                approval = info.Approval;
             }
 
-            var state = Guid.NewGuid().ToString("N");
-            var redirectUri = Uri.EscapeDataString(listing.RedirectUriPattern);
-            Nav.NavigateTo($"/connect/client/{Uri.EscapeDataString(listing.Id)}?redirect_uri={redirectUri}&state={state}");
+            _installNotice = approval switch
+            {
+                OAuthClientApprovalStates.Approved => T.MarketplaceInstallReady,
+                OAuthClientApprovalStates.Rejected => T.MarketplaceInstallRejected,
+                _ => T.MarketplaceInstallPendingApproval,
+            };
+            _installNoticeClientId = listing.Id;
         }
         catch (HttpRequestException)
         {
