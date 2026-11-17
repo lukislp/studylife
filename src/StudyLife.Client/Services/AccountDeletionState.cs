@@ -5,7 +5,6 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using StudyLife.Shared;
 
 namespace StudyLife.Client.Services;
@@ -127,18 +126,8 @@ public sealed class AccountDeletionState
         }
     }
 
-    internal static string BuildBody(AccountDeletionProof proof)
-    {
-        var body = new JsonObject();
-        if (!string.IsNullOrWhiteSpace(proof.RecoveryCode)) body["recoveryCode"] = proof.RecoveryCode.Trim();
-        if (!string.IsNullOrEmpty(proof.Password)) body["currentPassword"] = proof.Password;
-        if (proof.OptionsId is not null && proof.AssertionJson is not null)
-        {
-            body["optionsId"] = proof.OptionsId;
-            body["response"] = JsonNode.Parse(proof.AssertionJson);
-        }
-        return body.ToJsonString();
-    }
+    internal static string BuildBody(AccountDeletionProof proof) =>
+        new FreshProof(proof.OptionsId, proof.AssertionJson, proof.RecoveryCode, proof.Password).ToRequestJson();
 
     internal static async Task<AccountDeletionFailure> ClassifyAsync(HttpResponseMessage response)
     {
