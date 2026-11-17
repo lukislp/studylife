@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 using System.Net.Http.Json;
+using System.Text.RegularExpressions;
 using StudyLife.Shared;
 
 namespace StudyLife.Client.Services;
@@ -23,25 +24,39 @@ namespace StudyLife.Client.Services;
 /// BuildTokenReturnRedirectAsync then hands the real token to the server in exchange for a
 /// short-lived, single-use, opaque code and puts ONLY that code in the redirect - worthless to
 /// whoever receives it without the verifier, which never left the app's own memory (see
-/// AuthController's handoff/exchange endpoints). Old apps that don't send appchallenge keep
-/// getting the token directly (no behavior change, no protection either) - this only tightens
-/// once BOTH sides are updated.
+/// AuthController's handoff/exchange endpoints).
+///
+/// Since the 2026-11-16 audit (M2) the challenge is mandatory: ?app=1 without an S256-shaped
+/// appchallenge is not an app flow at all - the page then behaves like the plain web sign-in and
+/// never sends anything to a custom scheme or loopback URL, so another app registered for
+/// studylife:// cannot open the page without a challenge and collect the raw token afterwards.
+/// There is no "token=" redirect any more. Every released app build sends a challenge (mobile and
+/// Windows alike), so none of them is locked out. The app may also send ?appstate= (its own
+/// random value); it is echoed back as state= in every return redirect, so the app can refuse a
+/// redirect it did not start (a forged studylife://auth?code=... while its sign-in is pending).
 /// </summary>
 public sealed class AppReturnContext
 {
     private const string CustomSchemeReturn = "studylife://auth";
 
-    private AppReturnContext(bool isActive, string? returnUrl, string? codeChallenge, string? language)
+    private AppReturnContext(bool isActive, string? returnUrl, string? codeChallenge, string? state, string? language)
     {
         IsActive = isActive;
         _returnUrl = returnUrl;
         _codeChallenge = codeChallenge;
+        _state = state;
         Language = language;
     }
 
+    private const string SessionTokenHeader = "X-Session-Token";
+    private static readonly Regex ChallengeShape = new(PkceShape.ChallengePattern);
+    private static readonly Regex StateShape = new(PkceShape.StatePattern);
+
     private readonly string? _returnUrl;
     private readonly string? _codeChallenge;
+    private readonly string? _state;
 
+    /// <summary>True only for ?app=1 WITH a valid appchallenge (see class remarks).</summary>
     public bool IsActive { get; }
 
     /// <summary>The app's UI language (?applang=), so the auth page in the system browser speaks the
@@ -51,22 +66,29 @@ public sealed class AppReturnContext
 
     public static AppReturnContext FromUri(Uri uri)
     {
-        var isActive = false;
+        var appRequested = false;
         string? returnUrl = null;
         string? codeChallenge = null;
+        string? state = null;
         string? language = null;
         foreach (var pair in uri.Query.TrimStart('?').Split('&'))
         {
-            if (pair == "app=1") isActive = true;
+            if (pair == "app=1") appRequested = true;
             var kv = pair.Split('=', 2);
             if (kv.Length == 2 && kv[0] == "appret")
                 returnUrl = ValidateLoopbackUrl(Uri.UnescapeDataString(kv[1]));
             if (kv.Length == 2 && kv[0] == "appchallenge")
-                codeChallenge = Uri.UnescapeDataString(kv[1]);
+                codeChallenge = Matching(ChallengeShape, Uri.UnescapeDataString(kv[1]));
+            if (kv.Length == 2 && kv[0] == "appstate")
+                state = Matching(StateShape, Uri.UnescapeDataString(kv[1]));
             if (kv.Length == 2 && kv[0] == "applang")
                 language = SupportedLanguages.Match(Uri.UnescapeDataString(kv[1]));
         }
-        return new AppReturnContext(isActive, isActive ? returnUrl : null, isActive ? codeChallenge : null, isActive ? language : null);
+        // The language is harmless and follows the app's request either way; everything that
+        // decides where a sign-in result goes needs the challenge.
+        var isActive = appRequested && codeChallenge is not null;
+        return new AppReturnContext(isActive, isActive ? returnUrl : null, isActive ? codeChallenge : null,
+            isActive ? state : null, appRequested ? language : null);
     }
 
     /// <summary>Query suffix that links between the auth pages use to carry the app context
@@ -75,6 +97,7 @@ public sealed class AppReturnContext
         ? "?app=1"
           + (_returnUrl != null ? "&appret=" + Uri.EscapeDataString(_returnUrl) : "")
           + (_codeChallenge != null ? "&appchallenge=" + Uri.EscapeDataString(_codeChallenge) : "")
+          + (_state != null ? "&appstate=" + Uri.EscapeDataString(_state) : "")
           + (Language != null ? "&applang=" + Uri.EscapeDataString(Language) : "")
         : "";
 
@@ -82,22 +105,32 @@ public sealed class AppReturnContext
     /// BuildReturnRedirect("linked=1"). For a real session token, use
     /// BuildTokenReturnRedirectAsync instead.</summary>
     public string BuildReturnRedirect(string queryParams)
-        => $"{_returnUrl ?? CustomSchemeReturn}?{queryParams}";
+        => $"{_returnUrl ?? CustomSchemeReturn}?{queryParams}"
+           + (_state != null ? "&state=" + Uri.EscapeDataString(_state) : "");
 
     /// <summary>Hands the real session token to the server in exchange for a short-lived,
-    /// single-use handoff code when the app sent a code_challenge (see class remarks); returns
-    /// a "token=..." redirect unchanged if it didn't (old app, no protection available yet).</summary>
+    /// single-use handoff code bound to the app's code_challenge (see class remarks) and returns
+    /// the redirect that carries only that code. The token authenticates the handoff request
+    /// itself (the server takes it from the header, never from the body). Only valid in an app
+    /// flow (<see cref="IsActive"/>); the pages never call it otherwise.</summary>
     public async Task<string> BuildTokenReturnRedirectAsync(HttpClient http, string token)
     {
         if (_codeChallenge is null)
-            return BuildReturnRedirect($"token={Uri.EscapeDataString(token)}");
+            throw new InvalidOperationException("Not an app sign-in: there is no code challenge to hand the token off to.");
 
-        var response = await http.PostAsJsonAsync("api/auth/handoff",
-            new AuthHandoffRequestDto { Token = token, CodeChallenge = _codeChallenge });
+        using var request = new HttpRequestMessage(HttpMethod.Post, "api/auth/handoff")
+        {
+            Content = JsonContent.Create(new AuthHandoffRequestDto { CodeChallenge = _codeChallenge }),
+        };
+        // In an app flow the fresh token is not in this browser's store, so it goes on this request explicitly.
+        request.Headers.Add(SessionTokenHeader, token);
+        var response = await http.SendAsync(request);
         response.EnsureSuccessStatusCode();
         var result = await response.Content.ReadFromJsonAsync<AuthHandoffResponseDto>();
         return BuildReturnRedirect($"code={Uri.EscapeDataString(result!.Code)}");
     }
+
+    private static string? Matching(Regex shape, string value) => shape.IsMatch(value) ? value : null;
 
     private static string? ValidateLoopbackUrl(string raw)
     {

@@ -1,0 +1,23 @@
+{
+  "Title": "Bekræft, at det er dig",
+  "Intro": "Denne handling beskytter din konto. Bekræft med en adgangsnøgle til denne konto for at fortsætte.",
+  "BrowserSignInIntro": "Log ind igen for at bekræfte, at det er dig. Handlingen fortsætter lige bagefter.",
+  "PasskeyButton": "Bekræft med adgangsnøgle",
+  "BrowserSignInButton": "Log ind igen",
+  "PasswordToggle": "Brug min adgangskode",
+  "PasswordLabel": "Din adgangskode",
+  "PasswordButton": "Bekræft med adgangskode",
+  "RecoveryToggle": "Brug en gendannelseskode",
+  "RecoveryLabel": "Gendannelseskode",
+  "RecoveryButton": "Bekræft med gendannelseskode",
+  "Working": "Arbejder…",
+  "PasskeyFailed": "Anmodningen om adgangsnøgle blev ikke gennemført. Prøv igen, eller bekræft på en anden måde.",
+  "CancelButton": "Annuller",
+  "CloseDialog": "Luk dialog",
+  "ErrorRejected": "Bekræftelsen blev ikke godkendt.",
+  "ErrorMissing": "Bekræft med en adgangsnøgle, din adgangskode eller en gendannelseskode.",
+  "ErrorTooMany": "For mange forsøg. Vent et par minutter.",
+  "ErrorNetwork": "Serveren kunne ikke nås.",
+  "ErrorGeneric": "Noget gik galt. Prøv igen.",
+  "ApprovalOtherSession": "En ny adgangsnøgle kan ikke godkendes fra den session, der tilføjede den. Godkend den på en anden enhed, der er logget ind, eller log ud og ind igen med en eksisterende adgangsnøgle eller din adgangskode, og godkend den her."
+}

@@ -25,7 +25,7 @@ public partial class AuthController
     /// just present. Covers the native shells that cannot run a passkey ceremony inside the web
     /// view and sign in again through the system browser right before deleting; the web client
     /// always sends an explicit proof instead.</summary>
-    internal static readonly TimeSpan FreshSessionWindow = TimeSpan.FromMinutes(2);
+    internal static readonly TimeSpan FreshSessionWindow = SessionStepUpService.FreshSessionWindow;
 
     private sealed record PendingReauth(AssertionOptions Options, int UserId);
 
@@ -77,6 +77,24 @@ public partial class AuthController
         var optionsId = Guid.NewGuid().ToString("N");
         await CacheSetAsync(ReauthCacheKey(optionsId), new PendingReauth(options, userId), ChallengeLifetime);
         return new PasskeyBeginResponseDto { OptionsId = optionsId, OptionsJson = options.ToJson() };
+    }
+
+    /// <summary>
+    /// "Confirm it's you" ahead of the guarded account actions ([RequireStepUp]: approving or
+    /// removing a passkey, generating recovery codes, signing out the other devices, the raw
+    /// database download and restore). Takes the same proofs as account deletion; a success marks
+    /// THIS session as confirmed for a few minutes (ISessionStepUpService) and answers 204. 400
+    /// reauthentication-required without any proof on a session that did not just sign in, 403
+    /// reauthentication-failed for a proof that was refused. Rate limited with the deletion
+    /// partition, since it accepts a recovery code or the password.
+    /// </summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpPost("account/reauth")]
+    public async Task<IActionResult> ConfirmSession([FromBody] FreshProofRequest? request)
+    {
+        if (await ProofRefusalAsync(request ?? new FreshProofRequest(), SessionUserId) is { } refusal) return refusal;
+        await _stepUp.ConfirmAsync((string)HttpContext.Items[AuthSessionService.SessionTokenHashItemKey]!, HttpContext.RequestAborted);
+        return NoContent();
     }
 
     /// <summary>Deletes the calling account and everything it owns. Session-only; needs a fresh proof
@@ -151,7 +169,7 @@ public partial class AuthController
     private async Task<FreshProof> VerifyFreshProofAsync(FreshProofRequest request, int userId)
     {
         if (!string.IsNullOrWhiteSpace(request.RecoveryCode))
-            return await _recovery.TryConsumeForUserAsync(userId, request.RecoveryCode) ? FreshProof.Accepted : FreshProof.Failed;
+            return await _recovery.TryConsumeForUserAsync(userId, request.RecoveryCode, CurrentSessionId) ? FreshProof.Accepted : FreshProof.Failed;
 
         if (!string.IsNullOrEmpty(request.CurrentPassword))
             return _passwords.Enabled && await _passwords.VerifyForUserAsync(userId, request.CurrentPassword)

@@ -1,0 +1,23 @@
+{
+  "Title": "Potvrďte, že jste to vy",
+  "Intro": "Tato akce chrání váš účet. Pro pokračování potvrďte přístupovým klíčem tohoto účtu.",
+  "BrowserSignInIntro": "Přihlaste se znovu a potvrďte, že jste to vy. Akce pak hned pokračuje.",
+  "PasskeyButton": "Potvrdit přístupovým klíčem",
+  "BrowserSignInButton": "Přihlásit se znovu",
+  "PasswordToggle": "Použít mé heslo",
+  "PasswordLabel": "Vaše heslo",
+  "PasswordButton": "Potvrdit heslem",
+  "RecoveryToggle": "Použít kód pro obnovení",
+  "RecoveryLabel": "Kód pro obnovení",
+  "RecoveryButton": "Potvrdit kódem pro obnovení",
+  "Working": "Probíhá…",
+  "PasskeyFailed": "Výzva k přístupovému klíči nebyla dokončena. Zkuste to znovu nebo potvrďte jinak.",
+  "CancelButton": "Zrušit",
+  "CloseDialog": "Zavřít dialog",
+  "ErrorRejected": "Toto potvrzení nebylo přijato.",
+  "ErrorMissing": "Potvrďte přístupovým klíčem, heslem nebo kódem pro obnovení.",
+  "ErrorTooMany": "Příliš mnoho pokusů. Počkejte několik minut.",
+  "ErrorNetwork": "Server není dostupný.",
+  "ErrorGeneric": "Něco se pokazilo. Zkuste to znovu.",
+  "ApprovalOtherSession": "Nový přístupový klíč nelze schválit v relaci, která jej přidala. Schvalte jej na jiném přihlášeném zařízení, nebo se odhlaste, znovu se přihlaste existujícím přístupovým klíčem nebo heslem a schvalte jej zde."
+}

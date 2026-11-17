@@ -10,6 +10,7 @@ using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.JSInterop;
+using StudyLife.Client.Components;
 using StudyLife.Client.Components.Setup;
 using StudyLife.Client.Services;
 using StudyLife.Client.Shared;
@@ -198,6 +199,8 @@ public class SetupBackupCardDownloadTests : ConsentBunitTest
         var server = new ScriptedServer();
         Services.AddSingleton(new HttpClient(server) { BaseAddress = new Uri("https://studylife.test/") });
         Services.AddSingleton<IFileDownloadService>(_downloads);
+        // These tests cover the download path; the step-up dialog has its own tests (StepUpTests).
+        Ctx.ComponentFactories.AddStub<StepUpDialog>();
         var cut = Render<SetupBackupCard>(p => p
             .Add(c => c.IsOwner, isOwner)
             .Add(c => c.RawBackupSupported, rawBackupSupported)
@@ -372,6 +375,8 @@ public class PasskeyDeviceManagerRecoveryCodesDownloadTests : ConsentBunitTest
         Services.AddSingleton(new SessionTokenStore(new StubJSRuntime()));
         Services.AddSingleton<IFileDownloadService>(_downloads);
         Services.AddI18nText();
+        // These tests cover the download path; the step-up dialog has its own tests (StepUpTests).
+        Ctx.ComponentFactories.AddStub<StepUpDialog>();
         var cut = Render<PasskeyDeviceManager>(p => p.Add(c => c.Open, true));
         cut.WaitForAssertion(() => cut.FindAll("button").Single(b => b.TextContent.Trim() == "RecoveryCodesButton"), ChainTimeout);
         cut.FindAll("button").Single(b => b.TextContent.Trim() == "RecoveryCodesButton").Click();
