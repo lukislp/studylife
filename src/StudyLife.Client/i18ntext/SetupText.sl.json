@@ -291,6 +291,8 @@
   "MarketplaceByDeveloper": "avtor {0}",
   "MarketplaceViewSource": "Prikaži izvorno kodo",
   "MarketplaceDemoNotice": "Nameščanje dodatkov je na tej demo namestitvi onemogočeno.",
+  "MarketplaceManualSetupNotice": "Dodatek z lastnim gostovanjem: nima stalnega naslova, zato ga ni mogoče namestiti z enim klikom. Registrirajte ga kot razvijalsko aplikacijo s preusmeritvenim URI-jem iz njegovih navodil za nastavitev, nato pa ga povežite iz samega dodatka.",
+  "MarketplaceManualSetupLink": "Odpri navodila za nastavitev",
   "ClientKeysHeading": "Povezani dodatki",
   "TelemetryHeading": "Poročila o uporabi in napakah",
   "TelemetryDesc": "Pomaga nam odkriti hrošče in počasna mesta s pošiljanjem anonimnih podatkov o zmogljivosti in napakah — nikoli tvojih zapiskov, sej ali zdravstvenih podatkov. To lahko kadar koli izklopiš.",

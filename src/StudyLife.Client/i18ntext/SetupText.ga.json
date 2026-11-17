@@ -291,6 +291,8 @@
   "MarketplaceByDeveloper": "le {0}",
   "MarketplaceViewSource": "Féach ar an gcód foinseach",
   "MarketplaceDemoNotice": "Tá suiteáil breiseán díchumasaithe ar an gcás taispeána seo.",
+  "MarketplaceManualSetupNotice": "Breiseán féin-óstáilte: níl seoladh seasta aige, mar sin ní féidir é a shuiteáil le cliceáil amháin. Cláraigh é mar aip forbróra leis an URI atreoraithe as a threoir socraithe, agus ansin ceangail é ón mbreiseán féin.",
+  "MarketplaceManualSetupLink": "Oscail an treoir socraithe",
   "ClientKeysHeading": "Breiseáin ceangailte",
   "TelemetryHeading": "Tuairiscí Úsáide agus Earráidí",
   "TelemetryDesc": "Cabhraíonn sé linn fabhtanna agus moilleanna a aimsiú trí shonraí feidhmíochta agus earráidí gan ainm a sheoladh — ní do nótaí, seisiúin, ná sonraí sláinte, riamh. Is féidir leat é seo a mhúchadh am ar bith.",

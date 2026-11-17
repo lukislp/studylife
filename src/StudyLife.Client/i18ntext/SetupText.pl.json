@@ -291,6 +291,8 @@
   "MarketplaceByDeveloper": "od {0}",
   "MarketplaceViewSource": "Zobacz kod źródłowy",
   "MarketplaceDemoNotice": "Instalowanie dodatków jest wyłączone w tej instancji demonstracyjnej.",
+  "MarketplaceManualSetupNotice": "Dodatek hostowany samodzielnie: nie ma stałego adresu, więc nie można go zainstalować jednym kliknięciem. Zarejestruj go jako aplikację deweloperską z URI przekierowania z jego instrukcji konfiguracji, a następnie połącz go z poziomu samego dodatku.",
+  "MarketplaceManualSetupLink": "Otwórz instrukcję konfiguracji",
   "ClientKeysHeading": "Połączone dodatki",
   "TelemetryHeading": "Raporty użycia i błędów",
   "TelemetryDesc": "Pomaga nam wykrywać usterki i spowolnienia poprzez wysyłanie anonimowych danych o wydajności i błędach — nigdy Twoje notatki, sesje ani dane zdrowotne. Możesz to wyłączyć w każdej chwili.",
