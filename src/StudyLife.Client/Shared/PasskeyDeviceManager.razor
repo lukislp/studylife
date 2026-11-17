@@ -18,7 +18,11 @@
    filters via the session, GET api/auth/credentials) with rename/remove, plus "add a new
    passkey" (the session-required register/begin-additional path) and the
    "lost device" logout. Without a valid session (401) the modal shows a message with a link
-   to the login page instead of an empty list. *@
+   to the login page instead of an empty list.
+
+   Approving or removing a passkey, new recovery codes and "sign out on all other devices" need a
+   session that confirmed its user moments ago (2026-11-16 audit M1): when the server answers
+   step-up-required, StepUpDialog asks for the proof and the action runs again. *@
 
 @if (Open)
 {
@@ -210,7 +214,7 @@
                 <button type="button" class="btn-secondary" @onclick="() => _confirmDeleteDevice = null" disabled="@_working">
                     @T.PasskeysCancel
                 </button>
-                <button type="button" class="btn-danger" @onclick="ConfirmDeleteAsync" disabled="@_working">
+                <button type="button" class="btn-danger" @onclick="() => DeleteDeviceAsync(_confirmDeleteDevice)" disabled="@_working">
                     @(_working ? "…" : T.PasskeysRemove)
                 </button>
             </div>
@@ -218,11 +222,16 @@
     </div>
 }
 
+<StepUpDialog Open="_stepUpOpen" OnConfirmed="OnStepUpConfirmedAsync" OnCancel="() => { _stepUpOpen = false; _afterStepUp = null; }" />
+
 @code {
     [Parameter] public bool Open { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
 
     private I18nText.AuthText T = new();
+    private I18nText.StepUpText StepUpT = new();
+    private bool _stepUpOpen;
+    private Func<Task>? _afterStepUp;
     private bool _wasOpen;
     private bool _loading;
     private bool _notLoggedIn;
@@ -250,6 +259,7 @@
         try
         {
             var response = await Http.PostAsync("api/auth/recovery/generate", null);
+            if (await StepUpState.IsStepUpRequiredAsync(response)) { RequestStepUp(GenerateRecoveryCodesAsync); return; }
             response.EnsureSuccessStatusCode();
             var dto = await response.Content.ReadFromJsonAsync<RecoveryCodesResponseDto>();
             _recoveryCodes = dto?.Codes;
@@ -293,6 +303,7 @@
     protected override async Task OnInitializedAsync()
     {
         T = await I18nText.GetTextTableAsync<I18nText.AuthText>(this);
+        StepUpT = await I18nText.GetTextTableAsync<I18nText.StepUpText>(this);
     }
 
     protected override async Task OnParametersSetAsync()
@@ -377,16 +388,20 @@
         }
     }
 
-    private async Task ConfirmDeleteAsync()
+    private async Task DeleteDeviceAsync(PasskeyListItemDto? device)
     {
-        if (_confirmDeleteDevice == null) return;
+        if (device == null) return;
         _working = true;
         try
         {
-            var response = await Http.DeleteAsync($"api/auth/credentials/{_confirmDeleteDevice.Id}");
-            if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            var response = await Http.DeleteAsync($"api/auth/credentials/{device.Id}");
+            if (await StepUpState.IsStepUpRequiredAsync(response))
             {
-                _devices.RemoveAll(d => d.Id == _confirmDeleteDevice.Id);
+                RequestStepUp(() => DeleteDeviceAsync(device));
+            }
+            else if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _devices.RemoveAll(d => d.Id == device.Id);
             }
             else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
             {
@@ -500,6 +515,9 @@
         {
             var response = await Http.PostAsync($"api/auth/credentials/{d.Id}/approve", null);
             if (response.IsSuccessStatusCode) await LoadAsync();
+            else if (await StepUpState.IsStepUpRequiredAsync(response)) RequestStepUp(() => ApproveAsync(d));
+            // The session that added the passkey cannot approve it (audit M1): explain the way out.
+            else if (await StepUpState.ProblemTypeAsync(response) == StepUpState.ApprovalNeedsOtherSessionType) _error = StepUpT.ApprovalOtherSession;
             else _error = T.PasskeysActionFailed;
         }
         catch
@@ -523,6 +541,7 @@
         {
             var response = await Http.PostAsync("api/auth/sessions/revoke-others", null);
             if (response.IsSuccessStatusCode) _info = T.PasskeysRevokeOthersDone;
+            else if (await StepUpState.IsStepUpRequiredAsync(response)) RequestStepUp(RevokeOtherSessionsAsync);
             else _error = T.PasskeysActionFailed;
         }
         catch (HttpRequestException)
@@ -553,6 +572,22 @@
         }
         await TokenStore.ClearAsync();
         Nav.NavigateTo("/login", forceLoad: true);
+    }
+
+    /// <summary>The server wants a fresh confirmation first: show StepUpDialog, then run
+    /// <paramref name="retry"/> once it succeeded.</summary>
+    private void RequestStepUp(Func<Task> retry)
+    {
+        _afterStepUp = retry;
+        _stepUpOpen = true;
+    }
+
+    private async Task OnStepUpConfirmedAsync()
+    {
+        _stepUpOpen = false;
+        var retry = _afterStepUp;
+        _afterStepUp = null;
+        if (retry != null) await retry();
     }
 
     private async Task CloseAsync()

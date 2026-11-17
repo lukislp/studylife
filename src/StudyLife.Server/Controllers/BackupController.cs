@@ -73,6 +73,9 @@ public class BackupController : ControllerBase
     /// from insertion order at check time - that is exactly what makes a raw restore (this very
     /// controller) deterministic: the restored DB carries its own owner along with it, instead of
     /// "whoever's row happens to have the lowest Id after the swap" silently taking over.
+    /// Download and restore additionally need a confirmed session ([RequireStepUp], 2026-11-16
+    /// audit M1): a stolen owner token alone must not walk off with every account's data or
+    /// replace the database.
     /// </summary>
     private Task<bool> IsOwnerAsync()
         => HttpContext.SessionAuthUserId() is int sessionUserId ? _ownership.IsOwnerAsync(sessionUserId) : Task.FromResult(false);
@@ -86,6 +89,7 @@ public class BackupController : ControllerBase
     /// offsite download was too long ago - the weekly server dump alone doesn't protect
     /// against complete device loss.
     /// </summary>
+    [RequireStepUp]
     [HttpGet("database")]
     public async Task<IActionResult> DownloadDatabase()
     {
@@ -134,6 +138,7 @@ public class BackupController : ControllerBase
     /// client can't fetch it via a native &lt;a download&gt; - SetupBackupCard.razor does this
     /// instead via HttpClient + a collocated JS module (blob download).
     /// </summary>
+    [RequireStepUp]
     [HttpPost("database/encrypted")]
     public async Task<IActionResult> DownloadDatabaseEncrypted([FromBody] EncryptedBackupRequest request)
     {
@@ -246,6 +251,7 @@ public class BackupController : ControllerBase
     /// Response 202: only applied on the next restart (Program.cs →
     /// DatabaseRestoreService.ApplyPendingRestore); until then the app keeps running unchanged.
     /// </summary>
+    [RequireStepUp]
     [HttpPost("restore")]
     [RequestSizeLimit(512L * 1024 * 1024)]
     [RequestFormLimits(MultipartBodyLengthLimit = 512L * 1024 * 1024)]
