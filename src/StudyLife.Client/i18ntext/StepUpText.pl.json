@@ -1,0 +1,23 @@
+{
+  "Title": "Potwierdź, że to Ty",
+  "Intro": "Ta czynność chroni Twoje konto. Potwierdź kluczem dostępu tego konta, aby kontynuować.",
+  "BrowserSignInIntro": "Zaloguj się ponownie, aby potwierdzić, że to Ty. Czynność będzie kontynuowana zaraz potem.",
+  "PasskeyButton": "Potwierdź kluczem dostępu",
+  "BrowserSignInButton": "Zaloguj się ponownie",
+  "PasswordToggle": "Użyj mojego hasła",
+  "PasswordLabel": "Twoje hasło",
+  "PasswordButton": "Potwierdź hasłem",
+  "RecoveryToggle": "Użyj kodu odzyskiwania",
+  "RecoveryLabel": "Kod odzyskiwania",
+  "RecoveryButton": "Potwierdź kodem odzyskiwania",
+  "Working": "Trwa przetwarzanie…",
+  "PasskeyFailed": "Prośba o klucz dostępu nie została ukończona. Spróbuj ponownie lub potwierdź w inny sposób.",
+  "CancelButton": "Anuluj",
+  "CloseDialog": "Zamknij okno",
+  "ErrorRejected": "To potwierdzenie nie zostało zaakceptowane.",
+  "ErrorMissing": "Potwierdź kluczem dostępu, hasłem lub kodem odzyskiwania.",
+  "ErrorTooMany": "Zbyt wiele prób. Odczekaj kilka minut.",
+  "ErrorNetwork": "Nie można połączyć się z serwerem.",
+  "ErrorGeneric": "Coś poszło nie tak. Spróbuj ponownie.",
+  "ApprovalOtherSession": "Nowego klucza dostępu nie można zatwierdzić w sesji, która go dodała. Zatwierdź go na innym zalogowanym urządzeniu albo wyloguj się, zaloguj ponownie istniejącym kluczem dostępu lub hasłem i zatwierdź go tutaj."
+}

@@ -83,11 +83,11 @@ public class AuthRecoveryServiceTests : IClassFixture<CustomWebApplicationFactor
     public async Task GenerateAsync_IssuesEightCodesAndInvalidatesTheOldOnes()
     {
         var first = await _factory.WithServiceAsync<IAuthRecoveryService, RecoveryCodesResponseDto>(
-            (recovery, _) => recovery.GenerateAsync(SeededUserId));
+            (recovery, _) => recovery.GenerateAsync(SeededUserId, sessionId: 1));
         Assert.Equal(8, first.Codes.Count);
 
         var second = await _factory.WithServiceAsync<IAuthRecoveryService, RecoveryCodesResponseDto>(
-            (recovery, _) => recovery.GenerateAsync(SeededUserId));
+            (recovery, _) => recovery.GenerateAsync(SeededUserId, sessionId: 1));
 
         // Regenerating replaces the whole set - the old codes must be gone, not merely extra.
         Assert.Equal(8, await _factory.WithDbAsync(db => db.RecoveryCodes.AsNoTracking().CountAsync(c => c.AuthUserId == SeededUserId)));
@@ -112,7 +112,7 @@ public class AuthRecoveryServiceLoginTests : IClassFixture<CustomWebApplicationF
     public async Task RecoveryLoginAsync_ValidCode_IssuesASessionAndBurnsEveryOlderOne()
     {
         var codes = await _factory.WithServiceAsync<IAuthRecoveryService, RecoveryCodesResponseDto>(
-            (recovery, _) => recovery.GenerateAsync(SeededUserId));
+            (recovery, _) => recovery.GenerateAsync(SeededUserId, sessionId: 1));
         // A session that existed before the recovery - the "device I lost" case it has to kill.
         await _factory.WithDbAsync(async db =>
         {
@@ -136,7 +136,7 @@ public class AuthRecoveryServiceLoginTests : IClassFixture<CustomWebApplicationF
     public async Task RecoveryLoginAsync_SameCodeTwice_IsRejectedTheSecondTime()
     {
         var codes = await _factory.WithServiceAsync<IAuthRecoveryService, RecoveryCodesResponseDto>(
-            (recovery, _) => recovery.GenerateAsync(SeededUserId));
+            (recovery, _) => recovery.GenerateAsync(SeededUserId, sessionId: 1));
 
         var first = await _factory.WithServiceAsync<IAuthRecoveryService, PasskeyCompleteResponseDto?>(
             (recovery, _) => recovery.RecoveryLoginAsync(codes.Codes[1]));
@@ -152,7 +152,7 @@ public class AuthRecoveryServiceLoginTests : IClassFixture<CustomWebApplicationF
     public async Task RecoveryLoginAsync_NormalizesTypingVariants()
     {
         var codes = await _factory.WithServiceAsync<IAuthRecoveryService, RecoveryCodesResponseDto>(
-            (recovery, _) => recovery.GenerateAsync(SeededUserId));
+            (recovery, _) => recovery.GenerateAsync(SeededUserId, sessionId: 1));
         var typed = codes.Codes[2].ToLowerInvariant().Replace("-", " ");
 
         var result = await _factory.WithServiceAsync<IAuthRecoveryService, PasskeyCompleteResponseDto?>(
@@ -209,11 +209,11 @@ public class AuthAccountServiceCredentialTests : IClassFixture<CustomWebApplicat
         var id = await SeedCredentialAsync(approved: false);
 
         var first = await _factory.WithServiceAsync<IAuthAccountService, ServiceResult>(
-            (account, _) => account.ApproveCredentialAsync(SeededUserId, id));
+            (account, _) => account.ApproveCredentialAsync(SeededUserId, id, currentSessionId: 1));
         var again = await _factory.WithServiceAsync<IAuthAccountService, ServiceResult>(
-            (account, _) => account.ApproveCredentialAsync(SeededUserId, id));
+            (account, _) => account.ApproveCredentialAsync(SeededUserId, id, currentSessionId: 1));
         var foreign = await _factory.WithServiceAsync<IAuthAccountService, ServiceResult>(
-            (account, _) => account.ApproveCredentialAsync(SeededUserId + 1, id));
+            (account, _) => account.ApproveCredentialAsync(SeededUserId + 1, id, currentSessionId: 1));
 
         Assert.Equal(ServiceOutcome.Success, first.Outcome);
         Assert.Equal(ServiceOutcome.Success, again.Outcome); // already approved, no error
