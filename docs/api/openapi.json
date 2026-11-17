@@ -6520,12 +6520,25 @@
       },
       "CalendarTokenResponseDto": {
         "required": [
-          "calendarToken"
+          "exists"
         ],
         "type": "object",
         "properties": {
           "calendarToken": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "exists": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -10515,10 +10528,14 @@
               }
             ]
           },
-          "calendarToken": {
-            "type": [
-              "null",
-              "string"
+          "calendarLink": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CalendarTokenResponseDto"
+              }
             ]
           },
           "studyPrograms": {

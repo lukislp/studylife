@@ -181,8 +181,15 @@ public class StudyLifeDb : DbContext
 
         // Calendar feed (security fix): resolves the user analogous to the API key, instead of
         // (as before, global CalendarTokenProvider) giving every caller the same,
-        // user-independent token - see AuthUserEntity.CalendarToken.
-        modelBuilder.Entity<AuthUserEntity>().HasIndex(u => u.CalendarToken).IsUnique();
+        // user-independent token - see AuthUserEntity.CalendarTokenHash. Looked up by hash only
+        // (audit 2026-11-16 L5), like ApiKeyHash.
+        modelBuilder.Entity<AuthUserEntity>().HasIndex(u => u.CalendarTokenHash).IsUnique();
+        modelBuilder.Entity<UserSettingsEntity>().HasIndex(s => s.ProgressShareTokenHash);
+        // Plaintext columns of the releases before L5, kept under their old names only so the
+        // one-time startup upgrade (PlaintextLinkTokenUpgrade) can hash what they still hold;
+        // always null afterwards. A later release drops them.
+        modelBuilder.Entity<AuthUserEntity>().Property(u => u.LegacyCalendarToken).HasColumnName("CalendarToken");
+        modelBuilder.Entity<UserSettingsEntity>().Property(s => s.LegacyProgressShareToken).HasColumnName("ProgressShareToken");
 
         // Global query filters: one line per user-related table. 0 (= no user
         // resolved) never matches, because real AuthUserIds start at 1 and the migration
@@ -458,17 +465,20 @@ public class AuthUserEntity
     /// <summary>Timestamp of the (last) generation of <see cref="DeveloperApiKeyHash"/> - display-only, same as ApiKeyCreatedAt.</summary>
     public DateTime? DeveloperApiKeyCreatedAt { get; set; }
     /// <summary>
-    /// Permanent, per-user token for the subscribable ICS calendar feed
-    /// (GET /api/sessions/ics?calendarToken=...). Unlike ApiKeyHash, stored in PLAINTEXT
-    /// (no hash) - the user must be able to read the subscription URL again from the setup page
-    /// at any time, to re-subscribe to it in a different calendar app, not just see it once
-    /// when generating it, like the API key. Generated lazily on the first GET instead of
-    /// on user creation, so a user who never uses the feature doesn't get a token either.
-    /// Replaces the former single, global CalendarTokenProvider token, which accidentally
-    /// showed every caller the same calendar (that of the first-registered user).
+    /// SHA-256 (AuthSessionService.HashToken) of the permanent, per-user token for the
+    /// subscribable ICS calendar feed (GET /api/sessions/ics?calendarToken=...). Stored only as a
+    /// hash, like ApiKeyHash (audit 2026-11-16 L5): the plaintext exists once, in the response of
+    /// POST /api/system/regenerate-calendar-token, and the setup page tells the user to copy it
+    /// then. Null = the user never created a calendar link. Replaces the former single, global
+    /// CalendarTokenProvider token, which accidentally showed every caller the same calendar
+    /// (that of the first-registered user).
     /// </summary>
-    public string? CalendarToken { get; set; }
+    public string? CalendarTokenHash { get; set; }
     public DateTime? CalendarTokenCreatedAt { get; set; }
+    /// <summary>Plaintext calendar token of the releases before L5 (column "CalendarToken").
+    /// Read only by PlaintextLinkTokenUpgrade at startup, which moves it into
+    /// <see cref="CalendarTokenHash"/> and clears it - nothing else may read or write it.</summary>
+    public string? LegacyCalendarToken { get; set; }
     /// <summary>
     /// Explicit owner flag (audit finding A15/A2 fix) - the only user who may use the raw
     /// backup/restore/restart endpoints (BackupController) and sees the corresponding setup UI
@@ -776,10 +786,16 @@ public class UserSettingsEntity
     /// rationale as LastBackupDownloadAt (dedicated write path instead of PUT).
     /// </summary>
     public bool ProgressShareEnabled { get; set; }
-    /// <summary>Permanent token for GET /api/progress/shared/{token}. Null = disabled or
-    /// never activated - DisableProgressShare deletes it as well, so a leaked link doesn't
-    /// become valid again through disable+re-enable (see SettingsController).</summary>
-    public string? ProgressShareToken { get; set; }
+    /// <summary>SHA-256 (AuthSessionService.HashToken) of the permanent token for
+    /// GET /api/progress/shared/{token} - stored only as a hash (audit 2026-11-16 L5); the
+    /// plaintext link is returned once, by enable/regenerate. Null = disabled or never
+    /// activated - DisableProgressShare deletes it as well, so a leaked link doesn't become
+    /// valid again through disable+re-enable (see SettingsController).</summary>
+    public string? ProgressShareTokenHash { get; set; }
+    /// <summary>Plaintext share token of the releases before L5 (column "ProgressShareToken").
+    /// Read only by PlaintextLinkTokenUpgrade at startup, which moves it into
+    /// <see cref="ProgressShareTokenHash"/> and clears it - nothing else may read or write it.</summary>
+    public string? LegacyProgressShareToken { get; set; }
     /// <summary>
     /// Warns if the current study streak can still break today (RunStreakRiskCheckAsync).
     /// Default false (opt-in, new potentially intrusive nudge category).

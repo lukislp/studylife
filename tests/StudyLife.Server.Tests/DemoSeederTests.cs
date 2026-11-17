@@ -153,7 +153,8 @@ public class DemoSeederTests : IClassFixture<DemoSeederScenarioFixture>
         var user = Assert.Single(_fx.AfterFirst.Users);
 
         Assert.Equal("Demo", user.DisplayName);
-        Assert.False(string.IsNullOrWhiteSpace(user.CalendarToken)); // ICS feed is a shown-off feature
+        Assert.Matches("^[0-9a-f]{64}$", user.CalendarTokenHash!); // calendar link active, stored as a hash only
+        Assert.Null(user.LegacyCalendarToken);
         Assert.NotNull(user.CalendarTokenCreatedAt);
         Assert.Null(user.ApiKeyHash); // API keys must stay unusable on a demo instance
         Assert.Null(user.AiApiKeyHash); // same rule for the studylife-ai key slot
@@ -348,10 +349,10 @@ public class DemoSeederTests : IClassFixture<DemoSeederScenarioFixture>
         var second = Assert.Single(_fx.AfterSecond.Users);
 
         Assert.Equal("Demo", second.DisplayName);
-        Assert.False(string.IsNullOrWhiteSpace(second.CalendarToken));
+        Assert.False(string.IsNullOrWhiteSpace(second.CalendarTokenHash));
         // A brand-new user with a brand-new token - nothing of the previous identity survives.
         Assert.NotEqual(first.Id, second.Id);
-        Assert.NotEqual(first.CalendarToken, second.CalendarToken);
+        Assert.NotEqual(first.CalendarTokenHash, second.CalendarTokenHash);
         Assert.Null(second.ApiKeyHash);
 
         Assert.Equal(0, _fx.AfterSecond.AuthSessionCount);
