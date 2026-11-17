@@ -346,6 +346,15 @@ On the very first start (no user registered yet), the server outputs a one-time 
 
 A single-container deployment (`docker run ghcr.io/lukislp/studylife-server`, or plain `dotnet run` for local dev) works too and needs no Kubernetes at all - `Worker:Enabled` defaults to `true`, so one process/container handles both web traffic and the background tick, SQLite lives under `app_data/`, and the in-memory cache replaces Redis.
 
+**Behind a reverse proxy.** The server takes the client IP and scheme (`X-Forwarded-For`, `X-Forwarded-Proto`) only from upstreams it trusts. By default that is loopback and the container's own gateway, which covers a proxy on the same host that reaches a published Docker port. A proxy on another machine (Nginx Proxy Manager, Traefik, a Kubernetes gateway) must be listed, otherwise every request looks like plain HTTP and the HTTPS redirect loops. The server logs a warning that names the address to add:
+
+```bash
+ForwardedHeaders__KnownProxies__0=192.168.20.200      # one proxy IP
+ForwardedHeaders__KnownNetworks__0=10.42.0.0/16       # or a network (k3s pods, already set in k8s/01-config-and-secret.yaml)
+```
+
+Up to 2026-11 every private address was trusted. That let anything on the LAN, or a sibling container, claim any client IP and get a fresh rate-limit bucket per request. `X-Forwarded-Host` is honoured only with `ForwardedHeaders__ForwardHost=true`, which only a proxy that rewrites `Host` needs, such as GitHub Codespaces.
+
 ### Configuration
 
 Server configuration is the ConfigMap/Secret pair in `k8s/01-config-and-secret.yaml` (prod manages the real values as encrypted-in-Git SealedSecrets instead, see [docs/SCALING.md](docs/SCALING.md), "Sealed Secrets") - the same `appsettings`/environment-variable keys apply to every deployment shape, k8s included. The typed sections live in `src/StudyLife.Server/Configuration/` and are validated at startup: `Database` (`Provider`, `ConnectionString`), `Cache` (`Provider`, Redis endpoints/TLS/password), `Worker` (`Enabled`, `ReplicaCount`, `ReplicaCountSource`), `Registration` (`Mode`), `PasswordSignIn` (`Enabled`, default `true`: username + password sign-in next to passkeys; `false` hides every password field, refuses password sign-ins server-side and keeps stored password hashes unusable until it is switched on again), `Fido2` (relying-party pinning), `Consent` (PKCE enforcement, per-audience redirect allow-lists), `Vapid`, `Apns`, `Apple`, `StudyLifeAi`, `StudyLifeWebhooks`, `StudyLifeDevelopers`, `Speech`/`Tts`/`Stt`, `Telemetry` (`MetricsPort`, `OtlpEndpoint`, sample ratios), `WebBackendTls`, `ForwardedHeaders`. Every integration section is optional: with it unset, that integration is simply off. See [docs/SCALING.md](docs/SCALING.md#the-core-idea-configuration-instead-of-two-codebases) for the deployment-shape keys and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the rest.
@@ -399,7 +408,7 @@ dotnet run --project src/StudyLife.Server   # app on the forwarded port 53964
 dotnet test StudyLife.sln                   # build + tests
 ```
 
-Open the forwarded port 53964 from the Ports tab (the terminal also prints the URL on attach). GitHub terminates TLS, rewrites `Host` to `localhost:53964` and sets the `X-Forwarded-Proto` and `X-Forwarded-Host` headers, which the server trusts from loopback; the WebAuthn relying party and origin are derived from the forwarded host and scheme, so passkey registration and login work on the `*.app.github.dev` URL without extra configuration. On the very first start the server log prints a one-time setup code - enter it on `/register` to become the owner. The port is private by default; keep it that way, since the instance is yours alone. As in a local run, the speech endpoints answer 404 because the Piper voices and the Whisper model are not downloaded.
+Open the forwarded port 53964 from the Ports tab (the terminal also prints the URL on attach). GitHub terminates TLS, rewrites `Host` to `localhost:53964` and sets the `X-Forwarded-Proto` and `X-Forwarded-Host` headers, which the server trusts because `launchSettings.json` (Development) lists the local proxy hops and switches `ForwardedHeaders__ForwardHost` on; the WebAuthn relying party and origin are derived from the forwarded host and scheme, so passkey registration and login work on the `*.app.github.dev` URL without extra configuration. On the very first start the server log prints a one-time setup code - enter it on `/register` to become the owner. The port is private by default; keep it that way, since the instance is yours alone. As in a local run, the speech endpoints answer 404 because the Piper voices and the Whisper model are not downloaded.
 
 The optional scale stack (Postgres + Redis + replicas, see [docs/SCALING.md](docs/SCALING.md)) is not started automatically. Docker is available inside the Codespace, so it takes two steps:
 
