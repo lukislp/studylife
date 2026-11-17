@@ -59,6 +59,9 @@ services:
       Cache__Provider: Redis
       Cache__ConnectionString: redis:6379
       Worker__Enabled: "false"
+      # The lb (nginx) sits on this compose network; only it may report the client IP and scheme
+      # (ForwardedHeadersConfig - the default trusts loopback and the container gateway only).
+      ForwardedHeaders__KnownNetworks__0: 172.28.0.0/16
     depends_on:
       postgres:
         condition: service_healthy
@@ -142,3 +145,7 @@ services:
 networks:
   studylife-scale-net:
     driver: bridge
+    # Fixed so the servers can trust the lb by network (ForwardedHeaders__KnownNetworks__0 above).
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
