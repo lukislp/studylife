@@ -1,0 +1,23 @@
+{
+  "Title": "Confirma que eres tú",
+  "Intro": "Esta acción protege tu cuenta. Confirma con una llave de acceso de esta cuenta para continuar.",
+  "BrowserSignInIntro": "Vuelve a iniciar sesión para confirmar que eres tú. La acción continúa justo después.",
+  "PasskeyButton": "Confirmar con llave de acceso",
+  "BrowserSignInButton": "Volver a iniciar sesión",
+  "PasswordToggle": "Usar mi contraseña",
+  "PasswordLabel": "Tu contraseña",
+  "PasswordButton": "Confirmar con contraseña",
+  "RecoveryToggle": "Usar un código de recuperación",
+  "RecoveryLabel": "Código de recuperación",
+  "RecoveryButton": "Confirmar con código de recuperación",
+  "Working": "Procesando…",
+  "PasskeyFailed": "La solicitud de llave de acceso no se completó. Inténtalo de nuevo o confirma de otra forma.",
+  "CancelButton": "Cancelar",
+  "CloseDialog": "Cerrar diálogo",
+  "ErrorRejected": "Esa confirmación no fue aceptada.",
+  "ErrorMissing": "Confirma con una llave de acceso, tu contraseña o un código de recuperación.",
+  "ErrorTooMany": "Demasiados intentos. Espera unos minutos.",
+  "ErrorNetwork": "No se pudo conectar con el servidor.",
+  "ErrorGeneric": "Algo salió mal. Inténtalo de nuevo.",
+  "ApprovalOtherSession": "Una llave de acceso nueva no se puede aprobar desde la sesión que la añadió. Apruébala en otro dispositivo con sesión iniciada, o cierra sesión, vuelve a entrar con una llave de acceso existente o tu contraseña y apruébala aquí."
+}

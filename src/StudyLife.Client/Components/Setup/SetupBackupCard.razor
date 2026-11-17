@@ -49,6 +49,10 @@
     }
 </div>
 
+@* The raw download carries every account's data: the server wants a fresh "it's me" first
+   (2026-11-16 audit M1) and the download repeats after the confirmation. *@
+<StepUpDialog Open="_retryAfterStepUp is not null" OnConfirmed="OnStepUpConfirmedAsync" OnCancel="() => _retryAfterStepUp = null" />
+
 @code {
     /// <summary>Only the first registered user (owner of the installation) sees the
     /// raw .db download - it contains ALL users' data (see
@@ -65,6 +69,14 @@
     private string _password = "";
     private bool _downloading;
     private string? _error;
+    private Func<Task>? _retryAfterStepUp;
+
+    private async Task OnStepUpConfirmedAsync()
+    {
+        var retry = _retryAfterStepUp;
+        _retryAfterStepUp = null;
+        if (retry is not null) await retry();
+    }
 
     // With a password: encrypted POST download; without: normal GET of the SQLite file.
     private Task DownloadDatabase() =>
@@ -86,6 +98,11 @@
         try
         {
             using var response = await send();
+            if (await StepUpState.IsStepUpRequiredAsync(response))
+            {
+                _retryAfterStepUp = () => DownloadViaHttpAsync(send, fallbackFileName);
+                return;
+            }
             if (!response.IsSuccessStatusCode)
             {
                 _error = EncryptedDownloadErrorText;

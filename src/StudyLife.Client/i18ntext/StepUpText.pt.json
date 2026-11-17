@@ -1,0 +1,23 @@
+{
+  "Title": "Confirme que é você",
+  "Intro": "Esta ação protege a sua conta. Confirme com uma chave de acesso desta conta para continuar.",
+  "BrowserSignInIntro": "Inicie sessão novamente para confirmar que é você. A ação continua logo a seguir.",
+  "PasskeyButton": "Confirmar com chave de acesso",
+  "BrowserSignInButton": "Iniciar sessão novamente",
+  "PasswordToggle": "Usar a minha palavra-passe",
+  "PasswordLabel": "A sua palavra-passe",
+  "PasswordButton": "Confirmar com palavra-passe",
+  "RecoveryToggle": "Usar um código de recuperação",
+  "RecoveryLabel": "Código de recuperação",
+  "RecoveryButton": "Confirmar com código de recuperação",
+  "Working": "A processar…",
+  "PasskeyFailed": "O pedido da chave de acesso não foi concluído. Tente novamente ou confirme de outra forma.",
+  "CancelButton": "Cancelar",
+  "CloseDialog": "Fechar diálogo",
+  "ErrorRejected": "Essa confirmação não foi aceite.",
+  "ErrorMissing": "Confirme com uma chave de acesso, a sua palavra-passe ou um código de recuperação.",
+  "ErrorTooMany": "Demasiadas tentativas. Aguarde alguns minutos.",
+  "ErrorNetwork": "Não foi possível contactar o servidor.",
+  "ErrorGeneric": "Algo correu mal. Tente novamente.",
+  "ApprovalOtherSession": "Uma nova chave de acesso não pode ser aprovada a partir da sessão que a adicionou. Aprove-a noutro dispositivo com sessão iniciada, ou termine sessão e entre novamente com uma chave de acesso existente ou a sua palavra-passe e aprove-a aqui."
+}

@@ -18,7 +18,7 @@ public class AppReturnContextLanguageTests
     [Fact]
     public void The_app_language_is_carried_to_the_other_auth_pages()
     {
-        var context = AppReturnContext.FromUri(new Uri("https://studylife.example.com/login?app=1&applang=fr"));
+        var context = AppReturnContext.FromUri(new Uri("https://studylife.example.com/login?app=1&appchallenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&applang=fr"));
         Assert.Contains("applang=fr", context.LinkQuery);
     }
 
