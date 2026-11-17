@@ -6584,6 +6584,13 @@
         "properties": {
           "assertion": {
             "type": "string"
+          },
+          "codeVerifier": {
+            "maxLength": 128,
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -6621,6 +6628,20 @@
           "state": {
             "maxLength": 1000,
             "type": "string"
+          },
+          "codeChallenge": {
+            "maxLength": 128,
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "codeChallengeMethod": {
+            "maxLength": 10,
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -8394,6 +8415,13 @@
         "properties": {
           "assertion": {
             "type": "string"
+          },
+          "codeVerifier": {
+            "maxLength": 128,
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -8431,6 +8459,20 @@
           "state": {
             "maxLength": 1000,
             "type": "string"
+          },
+          "codeChallenge": {
+            "maxLength": 128,
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "codeChallengeMethod": {
+            "maxLength": 10,
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -8487,6 +8529,13 @@
         "properties": {
           "assertion": {
             "type": "string"
+          },
+          "codeVerifier": {
+            "maxLength": 128,
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -8524,6 +8573,20 @@
           "state": {
             "maxLength": 1000,
             "type": "string"
+          },
+          "codeChallenge": {
+            "maxLength": 128,
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "codeChallengeMethod": {
+            "maxLength": 10,
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -8896,6 +8959,13 @@
         "properties": {
           "assertion": {
             "type": "string"
+          },
+          "codeVerifier": {
+            "maxLength": 128,
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -8933,6 +9003,20 @@
           "state": {
             "maxLength": 1000,
             "type": "string"
+          },
+          "codeChallenge": {
+            "maxLength": 128,
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "codeChallengeMethod": {
+            "maxLength": 10,
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -12968,6 +13052,13 @@
         "properties": {
           "assertion": {
             "type": "string"
+          },
+          "codeVerifier": {
+            "maxLength": 128,
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -13005,6 +13096,20 @@
           "state": {
             "maxLength": 1000,
             "type": "string"
+          },
+          "codeChallenge": {
+            "maxLength": 128,
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "codeChallengeMethod": {
+            "maxLength": 10,
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

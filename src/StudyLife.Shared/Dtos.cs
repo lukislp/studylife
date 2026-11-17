@@ -896,6 +896,12 @@ public class McpConnectRequestDto
     public string RedirectUri { get; set; } = "";
     [MaxLength(1000)]
     public string State { get; set; } = "";
+    /// <summary>PKCE (RFC 7636) S256 challenge; see ConsentOptions.RequirePkce for when it is mandatory.</summary>
+    [MaxLength(128)]
+    public string? CodeChallenge { get; set; }
+    /// <summary>Only "S256" is accepted.</summary>
+    [MaxLength(10)]
+    public string? CodeChallengeMethod { get; set; }
 }
 
 /// <summary>Response of POST /api/auth/mcp-connect: the URL the Blazor page navigates to next,
@@ -910,6 +916,9 @@ public class McpConnectResponseDto
 public class McpAssertionExchangeRequestDto
 {
     public string Assertion { get; set; } = "";
+    /// <summary>PKCE code_verifier for the challenge the connect step carried; required then.</summary>
+    [MaxLength(128)]
+    public string? CodeVerifier { get; set; }
 }
 
 /// <summary>Response of POST /api/auth/mcp-assertion-exchange: the real AuthUserId and the
@@ -935,6 +944,12 @@ public class CaptureConnectRequestDto
     public string RedirectUri { get; set; } = "";
     [MaxLength(1000)]
     public string State { get; set; } = "";
+    /// <summary>PKCE (RFC 7636) S256 challenge; see ConsentOptions.RequirePkce for when it is mandatory.</summary>
+    [MaxLength(128)]
+    public string? CodeChallenge { get; set; }
+    /// <summary>Only "S256" is accepted.</summary>
+    [MaxLength(10)]
+    public string? CodeChallengeMethod { get; set; }
 }
 
 /// <summary>Response of POST /api/auth/capture-connect: the URL the Blazor page navigates to
@@ -953,6 +968,9 @@ public class CaptureConnectResponseDto
 public class CaptureAssertionExchangeRequestDto
 {
     public string Assertion { get; set; } = "";
+    /// <summary>PKCE code_verifier for the challenge the connect step carried; required then.</summary>
+    [MaxLength(128)]
+    public string? CodeVerifier { get; set; }
 }
 
 /// <summary>Response of POST /api/auth/capture-assertion-exchange: the real AuthUserId and the
@@ -974,6 +992,12 @@ public class FocusGuardConnectRequestDto
     public string RedirectUri { get; set; } = "";
     [MaxLength(1000)]
     public string State { get; set; } = "";
+    /// <summary>PKCE (RFC 7636) S256 challenge; see ConsentOptions.RequirePkce for when it is mandatory.</summary>
+    [MaxLength(128)]
+    public string? CodeChallenge { get; set; }
+    /// <summary>Only "S256" is accepted.</summary>
+    [MaxLength(10)]
+    public string? CodeChallengeMethod { get; set; }
 }
 
 /// <summary>Response of POST /api/auth/focusguard-connect: the URL the Blazor page navigates to
@@ -991,6 +1015,9 @@ public class FocusGuardConnectResponseDto
 public class FocusGuardAssertionExchangeRequestDto
 {
     public string Assertion { get; set; } = "";
+    /// <summary>PKCE code_verifier for the challenge the connect step carried; required then.</summary>
+    [MaxLength(128)]
+    public string? CodeVerifier { get; set; }
 }
 
 /// <summary>Response of POST /api/auth/focusguard-assertion-exchange: the real AuthUserId and the
@@ -1010,6 +1037,12 @@ public class FocusTunesConnectRequestDto
     public string RedirectUri { get; set; } = "";
     [MaxLength(1000)]
     public string State { get; set; } = "";
+    /// <summary>PKCE (RFC 7636) S256 challenge; see ConsentOptions.RequirePkce for when it is mandatory.</summary>
+    [MaxLength(128)]
+    public string? CodeChallenge { get; set; }
+    /// <summary>Only "S256" is accepted.</summary>
+    [MaxLength(10)]
+    public string? CodeChallengeMethod { get; set; }
 }
 
 /// <summary>Response of POST /api/auth/focustunes-connect.</summary>
@@ -1022,6 +1055,9 @@ public class FocusTunesConnectResponseDto
 public class FocusTunesAssertionExchangeRequestDto
 {
     public string Assertion { get; set; } = "";
+    /// <summary>PKCE code_verifier for the challenge the connect step carried; required then.</summary>
+    [MaxLength(128)]
+    public string? CodeVerifier { get; set; }
 }
 
 /// <summary>Response of POST /api/auth/focustunes-assertion-exchange.</summary>
@@ -1041,6 +1077,12 @@ public class TrayConnectRequestDto
     public string RedirectUri { get; set; } = "";
     [MaxLength(1000)]
     public string State { get; set; } = "";
+    /// <summary>PKCE (RFC 7636) S256 challenge; see ConsentOptions.RequirePkce for when it is mandatory.</summary>
+    [MaxLength(128)]
+    public string? CodeChallenge { get; set; }
+    /// <summary>Only "S256" is accepted.</summary>
+    [MaxLength(10)]
+    public string? CodeChallengeMethod { get; set; }
 }
 
 /// <summary>Response of POST /api/auth/tray-connect.</summary>
@@ -1053,6 +1095,9 @@ public class TrayConnectResponseDto
 public class TrayAssertionExchangeRequestDto
 {
     public string Assertion { get; set; } = "";
+    /// <summary>PKCE code_verifier for the challenge the connect step carried; required then.</summary>
+    [MaxLength(128)]
+    public string? CodeVerifier { get; set; }
 }
 
 /// <summary>Response of POST /api/auth/tray-assertion-exchange.</summary>
@@ -1121,8 +1166,8 @@ public class GenericConnectRequestDto
     /// sending the user to the consent page, passed through the page's code_challenge query
     /// parameter. The matching code_verifier is then required at assertion-exchange, so an
     /// assertion observed in the redirect (browser history, Referer, a callback host's access
-    /// log) cannot be redeemed by anyone but the client that started the flow. Required once
-    /// Consent:RequirePkce is on; until then optional, but enforced whenever it is sent.</summary>
+    /// log) cannot be redeemed by anyone but the client that started the flow. Always
+    /// required for dynamic clients (S256 only).</summary>
     [MaxLength(128)]
     public string? CodeChallenge { get; set; }
     /// <summary>Only "S256" is accepted - the "plain" method defeats the purpose.</summary>
