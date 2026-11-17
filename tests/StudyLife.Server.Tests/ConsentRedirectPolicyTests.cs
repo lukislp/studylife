@@ -38,9 +38,9 @@ public class ConsentRedirectPolicyTests
     public void LoopbackAudiences_RefuseOtherPathsAndShapes(string audience, string uri) =>
         Assert.False(Build().IsAllowed(audience, uri));
 
-    private const string CaptureId = "glhegeoapkifmhodpnbfjgijlflkdglh";
-    private const string FocusId = "hhgnenpnafffiadgabcclncnbfdopnlp"; // unpacked builds (manifest key)
-    private const string FocusStoreId = "bhjoeghhdmaoepmbklbcbdkfnjbgclbh"; // Chrome Web Store package
+    private const string CaptureId = ConsentRedirectCatalogue.CaptureStoreExtensionId;
+    private const string FocusId = ConsentRedirectCatalogue.FocusUnpackedExtensionId;
+    private const string FocusStoreId = ConsentRedirectCatalogue.FocusStoreExtensionId;
     private const string OtherId = "abcdefghijklmnopabcdefghijklmnop";
 
     [Theory]

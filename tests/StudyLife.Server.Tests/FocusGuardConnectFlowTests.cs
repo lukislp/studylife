@@ -4,6 +4,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
+using StudyLife.Server.Services;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Tests;
@@ -27,7 +28,7 @@ public class FocusGuardConnectFlowTests : IClassFixture<CustomWebApplicationFact
 
     // A real chrome.identity.launchWebAuthFlow-style redirect_uri - a perfectly ordinary https
     // origin, no special-casing needed by the server for this audience.
-    private const string RedirectUri = "https://hhgnenpnafffiadgabcclncnbfdopnlp.chromiumapp.org/";
+    private const string RedirectUri = "https://" + ConsentRedirectCatalogue.FocusUnpackedExtensionId + ".chromiumapp.org/";
 
     private static (string Assertion, string State) ParseRedirectTo(string redirectTo)
     {
@@ -50,8 +51,8 @@ public class FocusGuardConnectFlowTests : IClassFixture<CustomWebApplicationFact
     /// <summary>Both published shapes of studylife-focus reach consent: the Chrome Web Store
     /// package (store ID, no manifest key) and unpacked builds (ID from the manifest key).</summary>
     [Theory]
-    [InlineData("https://bhjoeghhdmaoepmbklbcbdkfnjbgclbh.chromiumapp.org/")]
-    [InlineData("https://hhgnenpnafffiadgabcclncnbfdopnlp.chromiumapp.org/")]
+    [InlineData("https://" + ConsentRedirectCatalogue.FocusStoreExtensionId + ".chromiumapp.org/")]
+    [InlineData("https://" + ConsentRedirectCatalogue.FocusUnpackedExtensionId + ".chromiumapp.org/")]
     public async Task Connect_AcceptsTheStoreAndTheUnpackedExtensionId(string redirectUri)
     {
         var sessionClient = _factory.CreateClient();

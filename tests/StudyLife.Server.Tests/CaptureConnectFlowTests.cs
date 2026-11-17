@@ -4,6 +4,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
+using StudyLife.Server.Services;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Tests;
@@ -26,7 +27,7 @@ public class CaptureConnectFlowTests : IClassFixture<CustomWebApplicationFactory
 
     // A real chrome.identity.launchWebAuthFlow-style redirect_uri - a perfectly ordinary https
     // origin, no special-casing needed by the server for this audience.
-    private const string RedirectUri = "https://glhegeoapkifmhodpnbfjgijlflkdglh.chromiumapp.org/";
+    private const string RedirectUri = "https://" + ConsentRedirectCatalogue.CaptureStoreExtensionId + ".chromiumapp.org/";
 
     private static (string Assertion, string State) ParseRedirectTo(string redirectTo)
     {

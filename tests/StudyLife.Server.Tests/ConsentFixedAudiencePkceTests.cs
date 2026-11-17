@@ -20,15 +20,18 @@ public class ConsentFixedAudiencePkceTests : IClassFixture<CustomWebApplicationF
 
     public ConsentFixedAudiencePkceTests(CustomWebApplicationFactory factory) => _factory = factory;
 
-    private const string ChromeRedirect = "https://abcdefghijklmnopqrstuvwxyzabcdef.chromiumapp.org/";
+    // The redirects every built-in audience really uses, taken from ConsentRedirectCatalogue so a
+    // change to the pinned IDs or the loopback path cannot leave these tests on stale values. Both
+    // focus IDs (store and unpacked) are covered, one per focus audience.
+    private static string ChromeRedirect(string extensionId) => $"https://{extensionId}.chromiumapp.org/";
 
     public static TheoryData<string, string> Audiences => new()
     {
         { "mcp", "https://mcp.example.com/auth/studylife/callback" },
-        { "capture", ChromeRedirect },
-        { "focusguard", ChromeRedirect },
-        { "focustunes", ChromeRedirect },
-        { "tray", "http://127.0.0.1:41999/callback" },
+        { "capture", ChromeRedirect(ConsentRedirectCatalogue.CaptureStoreExtensionId) },
+        { "focusguard", ChromeRedirect(ConsentRedirectCatalogue.FocusStoreExtensionId) },
+        { "focustunes", ChromeRedirect(ConsentRedirectCatalogue.FocusUnpackedExtensionId) },
+        { "tray", $"http://127.0.0.1:41999{ConsentRedirectCatalogue.LoopbackCallbackPath}" },
     };
 
     private static string OtherVerifier => "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";

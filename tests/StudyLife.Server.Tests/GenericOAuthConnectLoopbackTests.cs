@@ -53,6 +53,9 @@ public class GenericOAuthConnectLoopbackTests : IClassFixture<CustomWebApplicati
             RedirectUri = redirectUri,
             State = "s",
             Scopes = Scopes,
+            // Dynamic clients always need PKCE; these tests are about the redirect match only.
+            CodeChallenge = TestPkce.Challenge,
+            CodeChallengeMethod = "S256",
         });
     }
 
