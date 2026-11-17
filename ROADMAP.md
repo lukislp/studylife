@@ -14,8 +14,10 @@ links to the place that explains it.
   studylife-developers use HTTPS with certificates from the internal CA
   ([`docs/SECURITY-ASSURANCE.md`](docs/SECURITY-ASSURANCE.md#83-in-cluster-calls-to-the-add-ons)).
   Still plain: the add-ons' old ports for probes and Prometheus scraping, the gateway → pod hop of
-  the developer portal (needs a `BackendTLSPolicy`), and the OTLP export to the collector. Once
-  the switch is live, the NetworkPolicies can stop admitting StudyAtrium on the old add-on ports.
+  the developer portal (needs a `BackendTLSPolicy`), the OTLP export to the collector, and the
+  account-deletion purge call to studylife-mcp, studylife-alexa and studylife-telegram (explicitly
+  exempted with `AddonPurge:<Addon>:AllowPlainHttp` until those add-ons serve TLS). Once the
+  switch is live, the NetworkPolicies can stop admitting StudyAtrium on the old add-on ports.
 - **Image signature verification at deploy time.** Images are already signed with cosign. Flux
   should refuse unsigned images (see the comment at the signing step in
   `.github/workflows/ci-cd.yml`).

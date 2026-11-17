@@ -46,6 +46,36 @@ public sealed class StudyLifeDevelopersOptions
 }
 
 /// <summary>
+/// The account-deletion purge call to one add-on that keeps per-user data of its own
+/// (<see cref="Services.AddonPurgeClient"/>). One named instance per add-on, bound from
+/// <c>AddonPurge:Mcp</c>, <c>AddonPurge:Alexa</c> and <c>AddonPurge:Telegram</c>
+/// (<see cref="Services.Account.AddonPurgeTarget"/>). No BaseUrl = that add-on is not part of this
+/// installation and there is nothing to purge; a BaseUrl without SharedSecret queues the purges
+/// until the secret is set (see the client).
+/// </summary>
+public sealed class AddonPurgeOptions
+{
+    public const string SectionName = "AddonPurge";
+
+    /// <summary>The add-on's in-cluster base URL; the call goes to
+    /// <c>{BaseUrl}/internal/users/{id}/purge</c>.</summary>
+    public string? BaseUrl { get; set; }
+
+    /// <summary>Sent as X-StudyLife-Shared-Secret; the add-on's <c>STUDYLIFE_PURGE_SECRET</c>.</summary>
+    public string? SharedSecret { get; set; }
+
+    /// <summary>Only for add-ons whose keys are <see cref="Data.ClientApiKeyEntity"/> rows: the
+    /// OAuth client id the add-on registered under. Empty = the add-on's default
+    /// (<see cref="Services.Account.AddonPurgeTarget.DefaultClientId"/>).</summary>
+    public string? ClientId { get; set; }
+
+    /// <summary>Exempts this add-on's BaseUrl from <see cref="AddonTlsOptions.RequireHttps"/>.
+    /// For add-ons that do not serve TLS yet; the deployment states the exception explicitly
+    /// instead of the code making it silently (docs/SECURITY-ASSURANCE.md 8.3).</summary>
+    public bool AllowPlainHttp { get; set; }
+}
+
+/// <summary>
 /// TLS for the in-cluster hops to the add-ons (studylife-ai, studylife-webhooks,
 /// studylife-developers), see <see cref="Services.AddonTlsConfiguration"/>. Both settings are off
 /// by default, which keeps today's behaviour: the scheme of each add-on BaseUrl decides, and an
