@@ -288,6 +288,8 @@
   "MarketplaceByDeveloper": "by {0}",
   "MarketplaceViewSource": "View source",
   "MarketplaceDemoNotice": "Installing add-ons is disabled on this demo instance.",
+  "MarketplaceManualSetupNotice": "Self-hosted add-on: it has no fixed address, so it can't be installed with one click. Register it as a developer app with the redirect URI from its setup guide, then connect it from the add-on itself.",
+  "MarketplaceManualSetupLink": "Open setup guide",
   "ClientKeysHeading": "Connected add-ons",
   "TelemetryHeading": "Usage & Error Reports",
   "TelemetryDesc": "Helps us catch bugs and slow spots by sending anonymous performance and error data — never your notes, sessions, or health data. You can turn this off anytime.",
