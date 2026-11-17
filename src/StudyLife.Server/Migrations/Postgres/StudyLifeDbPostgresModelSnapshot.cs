@@ -46,6 +46,12 @@ namespace StudyLife.Server.Migrations.Postgres
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone");
 
+                    b.Property<DateTime?>("FailureWarnedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("KeyHashes")
+                        .HasColumnType("text");
+
                     b.Property<DateTime?>("LastAttemptAt")
                         .HasColumnType("timestamp without time zone");
 
