@@ -48,7 +48,7 @@ public class ProgressControllerTests : IClassFixture<CustomWebApplicationFactory
             db.Settings.Add(entity);
         }
         entity.ProgressShareEnabled = progressShareEnabled;
-        entity.ProgressShareToken = progressShareToken;
+        entity.ProgressShareTokenHash = progressShareToken is null ? null : AuthSessionService.HashToken(progressShareToken);
         entity.SelectedCourseIds = selectedCourseIds;
         entity.CompletedCourseIds = completedCourseIds;
         await db.SaveChangesAsync();
@@ -285,7 +285,7 @@ public class ProgressControllerMultiUserTests : IClassFixture<CustomWebApplicati
             {
                 AuthUserId = alex.Id,
                 ProgressShareEnabled = true,
-                ProgressShareToken = "alex-share-token",
+                ProgressShareTokenHash = AuthSessionService.HashToken("alex-share-token"),
                 SelectedCourseIds = "",
                 CompletedCourseIds = "3", // Mathematik: Analysis, 5 ECTS
             });
@@ -293,7 +293,7 @@ public class ProgressControllerMultiUserTests : IClassFixture<CustomWebApplicati
             {
                 AuthUserId = anna.Id,
                 ProgressShareEnabled = true,
-                ProgressShareToken = "anna-share-token",
+                ProgressShareTokenHash = AuthSessionService.HashToken("anna-share-token"),
                 SelectedCourseIds = "1,2",
                 CompletedCourseIds = "",
             });
@@ -360,7 +360,7 @@ public class ProgressControllerStudyProgramShareTests : IClassFixture<CustomWebA
                 db.Settings.Add(entity);
             }
             entity.ProgressShareEnabled = true;
-            entity.ProgressShareToken = "program-share-token";
+            entity.ProgressShareTokenHash = AuthSessionService.HashToken("program-share-token");
             entity.ActiveStudyProgramId = program.Id;
             entity.SelectedCourseIds = "";
             entity.CompletedCourseIds = "";

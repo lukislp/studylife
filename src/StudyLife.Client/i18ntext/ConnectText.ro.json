@@ -20,5 +20,13 @@
   "ConnectClientPageTitle": "StudyAtrium — Conectare",
   "ConnectClientHeading": "Conectează suplimentul",
   "ConnectClientNotRegistered": "Acest supliment nu este încă înregistrat pe instanța dvs. StudyAtrium.",
-  "ConnectRedirectTarget": "După conectare vei fi redirecționat către: {0}"
+  "ConnectRedirectTarget": "După conectare vei fi redirecționat către: {0}",
+  "ConnectKeyRecipient": "Cheia ta de acces va fi predată către:",
+  "ConnectRequestedAccess": "Acces solicitat:",
+  "ConnectRegisteredBy": "Înregistrat pe acest server de {0}.",
+  "ConnectRegisteredByOwner": "Înregistrat pe acest server de {0}, proprietarul serverului.",
+  "ConnectRegistrantUnknown": "Înregistrat de un cont care nu mai există.",
+  "ConnectBuiltInClient": "Integrat în StudyAtrium, nu înregistrat de un utilizator.",
+  "ConnectClientPendingApproval": "Acest supliment așteaptă aprobarea proprietarului serverului. Îl poți conecta după ce este aprobat.",
+  "ConnectClientRejected": "Proprietarul serverului nu a aprobat acest supliment, așa că nu poate fi conectat."
 }

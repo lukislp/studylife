@@ -20,5 +20,13 @@
   "ConnectClientPageTitle": "StudyAtrium — Connexion",
   "ConnectClientHeading": "Connecter l'extension",
   "ConnectClientNotRegistered": "Cette extension n'est pas encore enregistrée sur votre instance StudyAtrium.",
-  "ConnectRedirectTarget": "Après la connexion, tu seras redirigé vers : {0}"
+  "ConnectRedirectTarget": "Après la connexion, tu seras redirigé vers : {0}",
+  "ConnectKeyRecipient": "Votre clé d'accès sera transmise à :",
+  "ConnectRequestedAccess": "Accès demandé :",
+  "ConnectRegisteredBy": "Enregistrée sur ce serveur par {0}.",
+  "ConnectRegisteredByOwner": "Enregistrée sur ce serveur par {0}, le propriétaire du serveur.",
+  "ConnectRegistrantUnknown": "Enregistrée par un compte qui n'existe plus.",
+  "ConnectBuiltInClient": "Intégrée à StudyAtrium, non enregistrée par un utilisateur.",
+  "ConnectClientPendingApproval": "Cette extension attend l'approbation du propriétaire du serveur. Vous pourrez la connecter une fois approuvée.",
+  "ConnectClientRejected": "Le propriétaire du serveur n'a pas approuvé cette extension ; elle ne peut donc pas être connectée."
 }

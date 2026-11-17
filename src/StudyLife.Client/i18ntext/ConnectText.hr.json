@@ -20,5 +20,13 @@
   "ConnectClientPageTitle": "StudyAtrium — Povezivanje",
   "ConnectClientHeading": "Poveži dodatak",
   "ConnectClientNotRegistered": "Ovaj dodatak još nije registriran na vašoj StudyAtrium instanci.",
-  "ConnectRedirectTarget": "Nakon povezivanja bit ćeš preusmjeren na: {0}"
+  "ConnectRedirectTarget": "Nakon povezivanja bit ćeš preusmjeren na: {0}",
+  "ConnectKeyRecipient": "Tvoj pristupni ključ bit će predan:",
+  "ConnectRequestedAccess": "Traženi pristup:",
+  "ConnectRegisteredBy": "Na ovom poslužitelju registrirao/la {0}.",
+  "ConnectRegisteredByOwner": "Na ovom poslužitelju registrirao/la {0}, vlasnik poslužitelja.",
+  "ConnectRegistrantUnknown": "Registrirao račun koji više ne postoji.",
+  "ConnectBuiltInClient": "Ugrađeno u StudyAtrium, nije ga registrirao korisnik.",
+  "ConnectClientPendingApproval": "Ovaj dodatak čeka odobrenje vlasnika poslužitelja. Možeš ga povezati kada bude odobren.",
+  "ConnectClientRejected": "Vlasnik poslužitelja nije odobrio ovaj dodatak pa ga nije moguće povezati."
 }

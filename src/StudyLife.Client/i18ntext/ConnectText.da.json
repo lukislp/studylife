@@ -20,5 +20,13 @@
   "ConnectClientPageTitle": "StudyAtrium — Forbind",
   "ConnectClientHeading": "Forbind tilføjelse",
   "ConnectClientNotRegistered": "Denne tilføjelse er endnu ikke registreret på din StudyAtrium-instans.",
-  "ConnectRedirectTarget": "Efter tilslutningen bliver du sendt videre til: {0}"
+  "ConnectRedirectTarget": "Efter tilslutningen bliver du sendt videre til: {0}",
+  "ConnectKeyRecipient": "Din adgangsnøgle bliver overdraget til:",
+  "ConnectRequestedAccess": "Anmodet adgang:",
+  "ConnectRegisteredBy": "Registreret på denne server af {0}.",
+  "ConnectRegisteredByOwner": "Registreret på denne server af {0}, serverens ejer.",
+  "ConnectRegistrantUnknown": "Registreret af en konto, der ikke længere findes.",
+  "ConnectBuiltInClient": "Indbygget i StudyAtrium, ikke registreret af en bruger.",
+  "ConnectClientPendingApproval": "Denne tilføjelse venter på godkendelse fra serverens ejer. Du kan forbinde den, når den er godkendt.",
+  "ConnectClientRejected": "Serverens ejer har ikke godkendt denne tilføjelse, så den kan ikke forbindes."
 }

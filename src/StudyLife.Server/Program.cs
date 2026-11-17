@@ -558,6 +558,7 @@ builder.Services.AddScoped<IPushService, PushService>();
 builder.Services.AddScoped<IBackupDataService, BackupDataService>();
 builder.Services.AddScoped<ICalendarTokenService, CalendarTokenService>();
 builder.Services.AddScoped<IDeveloperClientService, DeveloperClientService>();
+builder.Services.AddScoped<IOAuthClientReviewService, OAuthClientReviewService>();
 builder.Services.AddScoped<IAuthInviteService, AuthInviteService>();
 builder.Services.AddScoped<IAuthRecoveryService, AuthRecoveryService>();
 builder.Services.AddScoped<IAuthAccountService, AuthAccountService>();
@@ -743,6 +744,8 @@ if (!EF.IsDesignTime)
     if (shouldMigrate)
     {
         db.Database.Migrate();
+        // Audit 2026-11-16 L5: hash calendar/share tokens still stored in plaintext (idempotent).
+        await PlaintextLinkTokenUpgrade.RunAsync(db);
     }
     else
     {

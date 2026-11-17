@@ -20,5 +20,13 @@
   "ConnectClientPageTitle": "StudyAtrium — Prijungti",
   "ConnectClientHeading": "Prijungti priedą",
   "ConnectClientNotRegistered": "Šis priedas dar neužregistruotas jūsų StudyAtrium egzemplioriuje.",
-  "ConnectRedirectTarget": "Prisijungus būsi nukreiptas į: {0}"
+  "ConnectRedirectTarget": "Prisijungus būsi nukreiptas į: {0}",
+  "ConnectKeyRecipient": "Tavo prieigos raktas bus perduotas:",
+  "ConnectRequestedAccess": "Prašoma prieiga:",
+  "ConnectRegisteredBy": "Šiame serveryje užregistravo {0}.",
+  "ConnectRegisteredByOwner": "Šiame serveryje užregistravo {0}, serverio savininkas.",
+  "ConnectRegistrantUnknown": "Užregistravo paskyra, kurios nebėra.",
+  "ConnectBuiltInClient": "Įtaisytas į StudyAtrium, neužregistruotas naudotojo.",
+  "ConnectClientPendingApproval": "Šis priedas laukia serverio savininko patvirtinimo. Galėsi jį prijungti, kai jis bus patvirtintas.",
+  "ConnectClientRejected": "Serverio savininkas nepatvirtino šio priedo, todėl jo prijungti negalima."
 }

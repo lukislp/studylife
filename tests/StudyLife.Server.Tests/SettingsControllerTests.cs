@@ -874,7 +874,7 @@ public class SettingsControllerProgressShareTokenLeakTests : IClassFixture<Custo
     }
 
     [Fact]
-    public async Task Get_SessionSeesRealToken_ApiKeySeesNull()
+    public async Task Get_TokenOnlyInTheEnableResponse_NeitherSessionNorApiKeySeeItLater()
     {
         var enableResponse = await _client.PostAsync("/api/settings/progress-share/enable", null);
         Assert.Equal(HttpStatusCode.OK, enableResponse.StatusCode);
@@ -882,11 +882,12 @@ public class SettingsControllerProgressShareTokenLeakTests : IClassFixture<Custo
         Assert.True(enabled!.ProgressShareEnabled);
         Assert.False(string.IsNullOrEmpty(enabled.ProgressShareToken));
 
-        // The browser's own session sees the real token on a plain GET too (not just on the
-        // dedicated enable/disable/regenerate responses) - this also populates the 15s GET
-        // cache with the real token under the current settings-cache-version key.
+        // Only the enable/regenerate responses carry the token: it is stored as a hash only (audit
+        // 2026-11-16 L5), so even the browser's own session gets null on a plain GET. This also
+        // populates the GET cache under the current settings-cache-version key.
         var sessionGet = await _client.GetFromJsonAsync<UserSettingsDto>("/api/settings");
-        Assert.Equal(enabled.ProgressShareToken, sessionGet!.ProgressShareToken);
+        Assert.True(sessionGet!.ProgressShareEnabled);
+        Assert.Null(sessionGet.ProgressShareToken);
 
         // Generating the HA key does NOT bump the settings cache version, so this next GET
         // deliberately lands on the SAME cache entry the session request above just populated -
@@ -903,7 +904,7 @@ public class SettingsControllerProgressShareTokenLeakTests : IClassFixture<Custo
     }
 
     [Fact]
-    public async Task Put_ApiKeySeesNull_SessionSeesRealToken()
+    public async Task Put_NeitherApiKeyNorSessionSeesTheToken()
     {
         // Audit 2026-11-16 L3: PUT /api/settings echoes the saved row back, and the "ha" slot
         // may call it - the share token must be masked there exactly like on GET.
@@ -925,7 +926,9 @@ public class SettingsControllerProgressShareTokenLeakTests : IClassFixture<Custo
         var latest = await _client.GetFromJsonAsync<UserSettingsDto>("/api/settings");
         var sessionPut = await _client.PutAsJsonAsync("/api/settings", latest);
         var sessionSaved = await sessionPut.Content.ReadFromJsonAsync<UserSettingsDto>();
-        Assert.Equal(enabled.ProgressShareToken, sessionSaved!.ProgressShareToken);
+        // Stored as a hash only since L5: nothing but the enable/regenerate responses has it.
+        Assert.True(sessionSaved!.ProgressShareEnabled);
+        Assert.Null(sessionSaved.ProgressShareToken);
     }
 }
 

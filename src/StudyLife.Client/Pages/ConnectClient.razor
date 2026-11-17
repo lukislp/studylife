@@ -36,25 +36,49 @@
         }
         else
         {
-            <p class="ss-desc">@_clientInfo?.Description</p>
-            @if (_clientInfo is { RequestedScopes.Count: > 0 })
+            @* Who receives the key (2026-11-16 audit M5): the add-on's name, the host the key is
+               handed to, and who registered the add-on on this server - a description alone is
+               whatever the registrant chose to write. *@
+            @if (_clientInfo is not null)
             {
-                <p class="ss-desc" style="margin-top:0.75rem">
-                    @string.Join(", ", _clientInfo.RequestedScopes.Select(MarketplaceScopeLabels.Describe))
+                <p class="ss-desc" style="font-size:1.1rem; font-weight:600">@_clientInfo.Name</p>
+                <p class="ss-desc">@_clientInfo.Description</p>
+                <p class="ss-desc consent-recipient" data-testid="consent-redirect-host">
+                    @T.ConnectKeyRecipient <strong style="font-size:1.1rem">@RedirectHost</strong>
                 </p>
+                <p class="ss-desc" data-testid="consent-registrant">@RegistrantText</p>
+                @if (_clientInfo.RequestedScopes.Count > 0)
+                {
+                    <p class="ss-desc" style="margin-top:0.75rem">
+                        <strong>@T.ConnectRequestedAccess</strong>
+                        @string.Join(", ", _clientInfo.RequestedScopes.Select(MarketplaceScopeLabels.Describe))
+                    </p>
+                }
             }
             @if (_error != null)
             {
                 <p class="ss-desc" style="color:var(--danger, #e74c3c)">@_error</p>
             }
-            <div style="display:flex; flex-direction:column; gap:0.75rem; margin-top:1.25rem;">
-                <button type="button" class="btn-primary" @onclick="ConnectAsync" disabled="@_busy">
-                    @(_busy ? T.ConnectWorking : T.ConnectButton)
-                </button>
-                <button type="button" class="btn-secondary" @onclick="Cancel" disabled="@_busy">
-                    @T.ConnectCancelButton
-                </button>
-            </div>
+            @if (_clientInfo is not null && _clientInfo.Approval != OAuthClientApprovalStates.Approved)
+            {
+                <p class="ss-desc" style="color:var(--danger, #e74c3c)" data-testid="consent-not-approved">
+                    @(_clientInfo.Approval == OAuthClientApprovalStates.Rejected ? T.ConnectClientRejected : T.ConnectClientPendingApproval)
+                </p>
+                <div style="display:flex; flex-direction:column; gap:0.75rem; margin-top:1.25rem;">
+                    <button type="button" class="btn-secondary" @onclick="Cancel">@T.ConnectCancelButton</button>
+                </div>
+            }
+            else
+            {
+                <div style="display:flex; flex-direction:column; gap:0.75rem; margin-top:1.25rem;">
+                    <button type="button" class="btn-primary" @onclick="ConnectAsync" disabled="@_busy">
+                        @(_busy ? T.ConnectWorking : T.ConnectButton)
+                    </button>
+                    <button type="button" class="btn-secondary" @onclick="Cancel" disabled="@_busy">
+                        @T.ConnectCancelButton
+                    </button>
+                </div>
+            }
         }
     </div>
 </div>
@@ -177,4 +201,15 @@
     }
 
     private void Cancel() => Nav.NavigateTo("/", forceLoad: true);
+
+    /// <summary>Host (and non-default port) of the callback the key is handed to - the server
+    /// only ever redirects to a URI registered for this client, so this is exactly where it goes.</summary>
+    private string RedirectHost => Uri.TryCreate(_redirectUri, UriKind.Absolute, out var uri) ? uri.Authority : "";
+
+    private string RegistrantText => _clientInfo switch
+    {
+        { RegisteredBy: null } => T.ConnectRegistrantUnknown,
+        { RegisteredByOwner: true } => string.Format(T.ConnectRegisteredByOwner ?? "", _clientInfo.RegisteredBy),
+        _ => string.Format(T.ConnectRegisteredBy ?? "", _clientInfo!.RegisteredBy),
+    };
 }

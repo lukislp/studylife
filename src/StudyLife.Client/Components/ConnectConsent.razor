@@ -34,6 +34,9 @@
         {
             <p class="ss-desc">@Intro</p>
             <p class="ss-desc"><strong>@string.Format(T.ConnectRedirectTarget ?? "", _redirectAuthority)</strong></p>
+            @* These five audiences ship with StudyAtrium itself - no user registered them, so the
+               consent screen says so instead of naming a registrant (2026-11-16 audit M5). *@
+            <p class="ss-desc" data-testid="consent-registrant">@T.ConnectBuiltInClient</p>
             @if (_error != null)
             {
                 <p class="ss-desc" style="color:var(--danger, #e74c3c)">@_error</p>

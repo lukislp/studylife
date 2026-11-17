@@ -20,5 +20,13 @@
   "ConnectClientPageTitle": "StudyAtrium — Connect",
   "ConnectClientHeading": "Connect add-on",
   "ConnectClientNotRegistered": "This add-on isn't registered on your StudyAtrium instance yet.",
-  "ConnectRedirectTarget": "After connecting you will be redirected to: {0}"
+  "ConnectRedirectTarget": "After connecting you will be redirected to: {0}",
+  "ConnectKeyRecipient": "Your access key will be handed to:",
+  "ConnectRequestedAccess": "Requested access:",
+  "ConnectRegisteredBy": "Registered on this server by {0}.",
+  "ConnectRegisteredByOwner": "Registered on this server by {0}, the server owner.",
+  "ConnectRegistrantUnknown": "Registered by an account that no longer exists.",
+  "ConnectBuiltInClient": "Built into StudyAtrium, not registered by a user.",
+  "ConnectClientPendingApproval": "This add-on is waiting for the server owner's approval. You can connect it once it has been approved.",
+  "ConnectClientRejected": "The server owner has not approved this add-on, so it can't be connected."
 }

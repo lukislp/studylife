@@ -20,5 +20,13 @@
   "ConnectClientPageTitle": "StudyAtrium — Свързване",
   "ConnectClientHeading": "Свързване на добавка",
   "ConnectClientNotRegistered": "Тази добавка все още не е регистрирана във вашия StudyAtrium.",
-  "ConnectRedirectTarget": "След свързването ще бъдеш пренасочен към: {0}"
+  "ConnectRedirectTarget": "След свързването ще бъдеш пренасочен към: {0}",
+  "ConnectKeyRecipient": "Ключът ти за достъп ще бъде предаден на:",
+  "ConnectRequestedAccess": "Поискан достъп:",
+  "ConnectRegisteredBy": "Регистрирано на този сървър от {0}.",
+  "ConnectRegisteredByOwner": "Регистрирано на този сървър от {0}, собственика на сървъра.",
+  "ConnectRegistrantUnknown": "Регистрирано от акаунт, който вече не съществува.",
+  "ConnectBuiltInClient": "Вградено в StudyAtrium, не е регистрирано от потребител.",
+  "ConnectClientPendingApproval": "Тази добавка чака одобрение от собственика на сървъра. Можеш да я свържеш, след като бъде одобрена.",
+  "ConnectClientRejected": "Собственикът на сървъра не е одобрил тази добавка, затова тя не може да бъде свързана."
 }

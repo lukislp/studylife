@@ -307,7 +307,7 @@
 
         @if (_secondaryLoading)
         {
-            <!-- _notifStatus/_icsUrl (phase 2) not loaded yet. -->
+            <!-- _notifStatus (phase 2) not loaded yet. -->
             <div class="setup-section sl-skeleton sl-skeleton-sm" aria-hidden="true"></div>
             <div class="setup-section sl-skeleton sl-skeleton-sm" aria-hidden="true"></div>
         }
@@ -326,20 +326,9 @@
                                     OnEnableNotifications="EnableNotifications" OnSendTest="SendTestNotification"
                                     OnResubscribe="ResubscribeNotifications" />
 
-            <!-- Calendar subscription -->
-            <SetupCalendarSubscriptionCard Label="@T.CalendarSubscriptionHeading" Desc="@T.CalendarSubscriptionDesc"
-
-                                           CloseLabel="@T.AriaCloseDialog"
-                                           IcsUrl="@_icsUrl" CopyText="@T.Copy" CopiedText="@T.Copied"
-                                           IcsCopied="_icsCopied" OnCopyClick="CopyIcsUrl"
-                                           RegenerateButtonText="@T.CalendarRegenerateButton"
-                                           RegenerateConfirmTitle="@T.CalendarRegenerateConfirmTitle"
-                                           RegenerateConfirmWarning="@T.CalendarRegenerateConfirmWarning"
-                                           RegenerateConfirmCancel="@T.CalendarRegenerateConfirmCancel"
-                                           RegenerateConfirmYes="@T.CalendarRegenerateConfirmYes"
-                                           RegenerateSuccessText="@T.CalendarRegenerateSuccess"
-                                           Regenerating="_icsRegenerating" RegenerateSuccess="_icsRegenerateSuccess"
-                                           OnRegenerateConfirmed="RegenerateCalendarToken" />
+            <!-- Calendar subscription: self-contained like SetupProgressShareCard (own texts and
+                 HTTP calls) - the link is shown once, see SetupCalendarSubscriptionCard. -->
+            <SetupCalendarSubscriptionCard />
         }
         }
 
@@ -407,6 +396,10 @@
                  Entirely owner-only, same client-side gate as SetupRestoreCard below - the server
                  independently enforces this via AuthController's own IsOwnerAsync()/Forbid(). -->
             <SetupInvitesCard />
+            <!-- Add-on approvals (2026-11-16 audit M5): other users' OAuth client registrations
+                 wait here until the owner approves them. The server enforces owner-only itself
+                 (OAuthClientReviewService). See SetupClientReviewCard. -->
+            <SetupClientReviewCard />
         }
 
         <!-- Backup & export. "Export my data" (the JSON export, GDPR Art. 15/20) is there for EVERY
@@ -542,12 +535,6 @@
     // at the bottom of the page, deliberately not an app-wide footer (would permanently take up
     // space on mobile).
     private string? _appVersion;
-
-    private string _icsUrl = "";
-    private bool _icsCopied;
-    // Manual "regenerate now" for the permanent calendar token (SetupCalendarSubscriptionCard).
-    private bool _icsRegenerating;
-    private bool _icsRegenerateSuccess;
 
     // Programme switcher: built-in programme (Id null) + user-created ones from the DB.
     private List<StudyProgramSummaryDto> _programs = new();
@@ -840,30 +827,6 @@
         if (_programs.Count == 0)
             _programs = new() { new StudyProgramSummaryDto { Id = null, Name = _settings.DefaultProgramme, IsBuiltIn = true } };
 
-        // Session-authenticated, only set when a token already exists (see SetupOverviewDto's
-        // CalendarToken doc) - a user who has never subscribed yet still falls back to GET
-        // api/system/calendar-token below, which lazily creates one.
-        string? calendarToken = overview?.CalendarToken;
-        if (calendarToken is null)
-        {
-            try
-            {
-                // Session-authenticated fetch (replaces the former bootstrap-key endpoint,
-                // which was removed together with the global API key).
-                var tokenDto = await Http.GetFromJsonAsync<CalendarTokenResponseDto>("api/system/calendar-token");
-                calendarToken = tokenDto?.CalendarToken;
-            }
-            catch { /* offline: subscription URL stays without a token, card shows the base URL */ }
-        }
-        // ?calendarToken= on the subscription URL: a dedicated, PERMANENT token per user
-        // (AuthUserEntity.CalendarToken). Calendar clients can't set custom headers and
-        // can't go through a login - so the token never rotates, the URL stays valid until
-        // it's manually regenerated via the card's button.
-        // IServerLinks instead of Nav.BaseUri: identical in the browser, but in the native app
-        // Nav.BaseUri is the virtual WebView host (app://0.0.0.1/) - a subscription URL built
-        // with that couldn't be fetched by any calendar client in the world.
-        _icsUrl = Links.Absolute("api/sessions/ics");
-        if (!string.IsNullOrEmpty(calendarToken)) _icsUrl += $"?calendarToken={calendarToken}";
 
         if (overview?.Version is { } bundledVersion)
         {
@@ -1022,42 +985,6 @@
     {
         _settings.AccentColor = accentColor;
         await State.SaveSettingsAsync(_settings);
-    }
-
-    private async Task CopyIcsUrl()
-    {
-        await JS.InvokeVoidAsync("navigator.clipboard.writeText", _icsUrl);
-        _icsCopied = true;
-        StateHasChanged();
-        await Task.Delay(2000);
-        _icsCopied = false;
-        StateHasChanged();
-    }
-
-    // Manual "regenerate now" for the permanent calendar token - only visible as part of the
-    // ICS subscription URL. Immediately breaks every existing calendar subscription for this user.
-    private async Task RegenerateCalendarToken()
-    {
-        _icsRegenerating = true;
-        StateHasChanged();
-        try
-        {
-            State.NoteOwnWrite("system");
-            var response = await Http.PostAsync("api/system/regenerate-calendar-token", null);
-            if (!response.IsSuccessStatusCode) return;
-            var dto = await response.Content.ReadFromJsonAsync<RegenerateCalendarTokenResponseDto>();
-            if (string.IsNullOrEmpty(dto?.CalendarToken)) return;
-            _icsUrl = Links.Absolute($"api/sessions/ics?calendarToken={dto.CalendarToken}");
-            _icsRegenerateSuccess = true;
-            StateHasChanged();
-            await Task.Delay(2000);
-            _icsRegenerateSuccess = false;
-        }
-        finally
-        {
-            _icsRegenerating = false;
-            StateHasChanged();
-        }
     }
 
     private async Task LoadGoals()

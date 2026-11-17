@@ -20,5 +20,13 @@
   "ConnectClientPageTitle": "StudyAtrium — Qabbad",
   "ConnectClientHeading": "Qabbad l-add-on",
   "ConnectClientNotRegistered": "Dan l-add-on għadu mhux irreġistrat fuq l-istanza StudyAtrium tiegħek.",
-  "ConnectRedirectTarget": "Wara li tikkonnettja tintbagħat lejn: {0}"
+  "ConnectRedirectTarget": "Wara li tikkonnettja tintbagħat lejn: {0}",
+  "ConnectKeyRecipient": "Iċ-ċavetta tal-aċċess tiegħek se tingħata lil:",
+  "ConnectRequestedAccess": "Aċċess mitlub:",
+  "ConnectRegisteredBy": "Irreġistrat fuq dan is-server minn {0}.",
+  "ConnectRegisteredByOwner": "Irreġistrat fuq dan is-server minn {0}, is-sid tas-server.",
+  "ConnectRegistrantUnknown": "Irreġistrat minn kont li m'għadux jeżisti.",
+  "ConnectBuiltInClient": "Mibni ġewwa StudyAtrium, mhux irreġistrat minn utent.",
+  "ConnectClientPendingApproval": "Din iż-żieda qed tistenna l-approvazzjoni tas-sid tas-server. Tista' tqabbadha ladarba tiġi approvata.",
+  "ConnectClientRejected": "Is-sid tas-server ma approvax din iż-żieda, għalhekk ma tistax titqabbad."
 }
