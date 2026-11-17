@@ -16,5 +16,7 @@
   "SignedOutNotStudyLife": "{0} neatbild kā StudyAtrium serveris. Ja adrese ir nepareiza, maini serveri.",
   "SignedOutNoNetwork": "Nav tīkla savienojuma – Wi-Fi un mobilie dati ir izslēgti.",
   "PasskeyDomainHint": "Piekļuves atslēgas darbojas tikai adresē {0}.",
-  "UsePasskeyAddress": "Izmantot šo adresi"
+  "UsePasskeyAddress": "Izmantot šo adresi",
+  "CleartextServer": "Šī adrese nav šifrēta (http://). Pierakstīšanās un dati tiktu pārsūtīti salasāmā veidā. Izmantojiet https:// vai pieskarieties vēlreiz, lai to tomēr izmantotu.",
+  "SharedTextConfirm": "Saglabāt kopīgoto tekstu kā jaunu piezīmi?"
 }

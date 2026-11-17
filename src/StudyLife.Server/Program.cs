@@ -72,10 +72,15 @@ if (metricsPort is not null || !string.IsNullOrEmpty(otlpEndpoint))
     if (!string.IsNullOrEmpty(otlpEndpoint))
     {
         openTelemetry.WithTracing(tracing => tracing
-            .AddAspNetCoreInstrumentation(options => options.Filter = context =>
-                context.Request.Path.StartsWithSegments("/api")
-                && !context.Request.Path.StartsWithSegments("/api/events")
-                && !context.Request.Path.StartsWithSegments("/api/telemetry"))
+            .AddAspNetCoreInstrumentation(options =>
+            {
+                options.Filter = context =>
+                    context.Request.Path.StartsWithSegments("/api")
+                    && !context.Request.Path.StartsWithSegments("/api/events")
+                    && !context.Request.Path.StartsWithSegments("/api/telemetry");
+                // A credential in the URL path (progress share link) never reaches the trace store.
+                options.EnrichWithHttpRequest = StudyLife.Server.Diagnostics.TracePathRedaction.Enrich;
+            })
             .AddHttpClientInstrumentation()
             .AddNpgsql()
             .SetSampler(new ParentBasedSampler(new TraceIdRatioBasedSampler(traceSampleRatio)))
@@ -236,6 +241,9 @@ if (isRedisCache)
     // between writes.
     builder.Services.AddSingleton<IChangeSignal>(sp => new RedisChangeSignal(
         sp.GetRequiredService<StackExchange.Redis.IConnectionMultiplexer>()));
+    // Session revocations reach every pod's AuthSessionCache at once (see ISessionRevocationSignal).
+    builder.Services.AddSingleton<ISessionRevocationSignal>(sp => new RedisSessionRevocationSignal(
+        sp.GetRequiredService<StackExchange.Redis.IConnectionMultiplexer>()));
     builder.Services.AddSingleton(sp => new SessionHistoryCacheVersion(
         new SignalInvalidatedVersionCounter(
             new RedisVersionCounter(sp.GetRequiredService<StackExchange.Redis.IConnectionMultiplexer>(), "version:sessionhistory"),
@@ -291,6 +299,7 @@ else
     // fan-out - still wired so the SSE stream (EventsController) works on the single-instance
     // and demo hosts exactly like in multi-pod mode.
     builder.Services.AddSingleton<IChangeSignal>(new InMemoryChangeSignal());
+    builder.Services.AddSingleton<ISessionRevocationSignal>(new InMemorySessionRevocationSignal());
     builder.Services.AddSingleton(sp => new SessionHistoryCacheVersion(new InMemoryVersionCounter(), sp.GetRequiredService<IChangeSignal>()));
     builder.Services.AddSingleton(sp => new SettingsCacheVersion(new InMemoryVersionCounter(), sp.GetRequiredService<IChangeSignal>()));
     builder.Services.AddSingleton(new ChangeSequence(new InMemoryVersionCounter()));
