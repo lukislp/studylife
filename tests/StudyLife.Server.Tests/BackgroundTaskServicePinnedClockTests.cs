@@ -60,7 +60,8 @@ internal static class PinnedClock
         factory.Services.GetRequiredService<ILogger<BackgroundTaskService>>(),
         apnsSender ?? factory.Services.GetRequiredService<ApnsSender>(),
         backupService: factory.Services.GetRequiredService<DatabaseBackupService>(),
-        timeProvider: new FixedTimeProvider(Instant));
+        timeProvider: new FixedTimeProvider(Instant),
+        webPush: factory.Services.GetRequiredService<WebPushDelivery>());
 }
 
 /// <summary>

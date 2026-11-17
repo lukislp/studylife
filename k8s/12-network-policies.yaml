@@ -357,7 +357,10 @@ spec:
 #     address: APNs (api.push.apple.com / api.sandbox.push.apple.com, HTTP/2 on 443, see
 #     ApnsSender), Web Push (the WebPush package posts to whatever endpoint each browser push
 #     service handed out - FCM, Mozilla, Apple), and Sign in with Apple key fetches. This is the
-#     same deliberately wide rule claude-queue's api-egress uses for the Anthropic API.
+#     same deliberately wide rule claude-queue's api-egress uses for the Anthropic API, minus the
+#     private ranges: a Web Push endpoint is user input, so a name resolving to 10.x, the node
+#     LAN or 169.254.169.254 must not be reachable from here even if the app-level check
+#     (UserSuppliedUrlHttp, audit M4) were bypassed.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -407,7 +410,14 @@ spec:
         - { protocol: TCP, port: 8443 }
         - { protocol: TCP, port: 8000 }
     - to:
-        - ipBlock: { cidr: 0.0.0.0/0 }
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            # Internet only (audit M4): no private, CGNAT or link-local range - that covers this
+            # cluster's pod (10.42.0.0/16) and Service (10.43.0.0/16) networks, the node LAN
+            # (192.168.20.0/24), Tailscale and the metadata address. Every in-cluster and LAN
+            # destination these pods need has its own explicit rule (podSelector or /32 ipBlock),
+            # and NetworkPolicy rules are OR-ed, so this except removes nothing they use.
+            except: ["10.0.0.0/8", "100.64.0.0/10", "169.254.0.0/16", "172.16.0.0/12", "192.168.0.0/16"]
       ports:
         - { protocol: TCP, port: 443 }
 ---
@@ -489,7 +499,14 @@ spec:
       ports:
         - { protocol: TCP, port: 6443 }
     - to:
-        - ipBlock: { cidr: 0.0.0.0/0 }
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            # Internet only (audit M4): no private, CGNAT or link-local range - that covers this
+            # cluster's pod (10.42.0.0/16) and Service (10.43.0.0/16) networks, the node LAN
+            # (192.168.20.0/24), Tailscale and the metadata address. Every in-cluster and LAN
+            # destination these pods need has its own explicit rule (podSelector or /32 ipBlock),
+            # and NetworkPolicy rules are OR-ed, so this except removes nothing they use.
+            except: ["10.0.0.0/8", "100.64.0.0/10", "169.254.0.0/16", "172.16.0.0/12", "192.168.0.0/16"]
       ports:
         - { protocol: TCP, port: 443 }
 ---
