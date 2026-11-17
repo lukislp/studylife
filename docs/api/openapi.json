@@ -8779,6 +8779,16 @@
               "null",
               "string"
             ]
+          },
+          "legal": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/LegalLinksDto"
+              }
+            ]
           }
         }
       },
@@ -8812,6 +8822,23 @@
               "string"
             ],
             "format": "date-time"
+          }
+        }
+      },
+      "LegalLinksDto": {
+        "type": "object",
+        "properties": {
+          "privacyUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "imprintUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

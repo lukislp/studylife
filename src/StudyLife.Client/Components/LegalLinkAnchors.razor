@@ -1,0 +1,37 @@
+@*
+  SPDX-FileCopyrightText: 2026 Lukas Körber
+  SPDX-License-Identifier: AGPL-3.0-only
+*@
+@using StudyLife.Client.I18nText
+
+@* The privacy-policy and imprint links, shared by the sign-in/registration pages and the About
+   section. Without an operator policy: one "Privacy policy" link (the publisher's) and the imprint.
+   With one: "Operator privacy policy", "App privacy policy" and the imprint. All open outside the
+   app (target=_blank, the mechanism the native shells already handle for the privacy link). *@
+
+@if (Links is not null && Texts is not null)
+{
+    @if (Links.HasOperatorPrivacy)
+    {
+        <a href="@Links.OperatorPrivacyUrl" target="_blank" rel="noopener noreferrer"
+           aria-label="@Label(Texts.OperatorPrivacyPolicy)">@Texts.OperatorPrivacyPolicy</a>
+        <span aria-hidden="true"> · </span>
+        <a href="@Links.AppPrivacyUrl" target="_blank" rel="noopener noreferrer"
+           aria-label="@Label(Texts.AppPrivacyPolicy)">@Texts.AppPrivacyPolicy</a>
+    }
+    else
+    {
+        <a href="@Links.AppPrivacyUrl" target="_blank" rel="noopener noreferrer"
+           aria-label="@Label(Texts.PrivacyPolicy)">@Texts.PrivacyPolicy</a>
+    }
+    <span aria-hidden="true"> · </span>
+    <a href="@Links.ImprintUrl" target="_blank" rel="noopener noreferrer"
+       aria-label="@Label(Texts.Imprint)">@Texts.Imprint</a>
+}
+
+@code {
+    [Parameter] public LegalLinks Links { get; set; } = default!;
+    [Parameter] public AboutText Texts { get; set; } = default!;
+
+    private string Label(string text) => $"{text} ({Texts.NewTab})";
+}

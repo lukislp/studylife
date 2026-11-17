@@ -743,6 +743,18 @@ public class InstanceInfoDto
     /// null when none is pinned. The address the app suggests when the configured one is outside
     /// <see cref="PasskeyRpId"/>.</summary>
     public string? PasskeyOrigin { get; set; }
+
+    /// <summary>The operator's own legal pages (Legal:PrivacyUrl / Legal:ImprintUrl); each is null while the
+    /// operator left it unset, in which case the client shows the publisher's page.</summary>
+    public LegalLinksDto? Legal { get; set; }
+}
+
+/// <summary>The legal pages an operator configured for this installation (public, they are links on
+/// the sign-in page anyway). A null entry means "not set, use the publisher's".</summary>
+public class LegalLinksDto
+{
+    public string? PrivacyUrl { get; set; }
+    public string? ImprintUrl { get; set; }
 }
 
 /// <summary>Body of POST /api/auth/register/begin (phase 2, passkey login).</summary>

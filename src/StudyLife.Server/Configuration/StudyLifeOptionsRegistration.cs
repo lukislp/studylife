@@ -79,6 +79,13 @@ public static class StudyLifeOptionsRegistration
             .BindConfiguration(MdnsOptions.SectionName)
             .ValidateOnStart();
 
+        // Operator-configurable legal pages (docs/operator-privacy-template.md): a set but invalid
+        // address stops the start instead of silently showing the publisher's page.
+        services.AddSingleton<Microsoft.Extensions.Options.IValidateOptions<LegalOptions>, LegalOptionsValidator>();
+        services.AddOptions<LegalOptions>()
+            .BindConfiguration(LegalOptions.SectionName)
+            .ValidateOnStart();
+
         return services;
     }
 

@@ -71,9 +71,36 @@ public class StoreReviewVisibilityTests : ConsentBunitTest
     {
         Ctx.JSInterop.Mode = JSRuntimeMode.Loose;
         Services.AddI18nText();
+        var server = new ScriptedServer().OnJson("GET api/instance", new InstanceInfoDto { Id = "x" });
+        Services.AddSingleton(new HttpClient(server) { BaseAddress = new Uri("https://studylife.test/") });
         var cut = Render<PrivacyPolicyNote>();
         cut.WaitForAssertion(() =>
-            Assert.StartsWith("https://legal.lktec.org/", cut.Find("a").GetAttribute("href")));
+        {
+            var hrefs = cut.FindAll("a").Select(a => a.GetAttribute("href")).ToList();
+            Assert.StartsWith("https://legal.lktec.org/", hrefs[0]);
+            Assert.Equal(LegalLinks.PublisherImprint, hrefs[1]);
+        });
+    }
+
+    [Fact]
+    public void Privacy_policy_note_shows_the_operator_policy_next_to_the_app_policy()
+    {
+        Ctx.JSInterop.Mode = JSRuntimeMode.Loose;
+        Services.AddI18nText();
+        var server = new ScriptedServer().OnJson("GET api/instance", new InstanceInfoDto
+        {
+            Id = "x",
+            Legal = new LegalLinksDto { PrivacyUrl = "https://op.example.org/privacy" },
+        });
+        Services.AddSingleton(new HttpClient(server) { BaseAddress = new Uri("https://studylife.test/") });
+        var cut = Render<PrivacyPolicyNote>();
+        cut.WaitForAssertion(() =>
+        {
+            var hrefs = cut.FindAll("a").Select(a => a.GetAttribute("href")).ToList();
+            Assert.Equal(["https://op.example.org/privacy"], hrefs.Take(1));
+            Assert.StartsWith("https://legal.lktec.org/", hrefs[1]);
+            Assert.Equal(LegalLinks.PublisherImprint, hrefs[2]);
+        });
     }
 
     [Fact]

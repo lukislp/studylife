@@ -34,6 +34,11 @@ public partial class SetupAboutCard : ComponentBase, IDisposable
     /// i18n language); component tests pass one.</summary>
     [Parameter] public string? Language { get; set; }
 
+    /// <summary>The legal links to show. Left null in the app (read from the server's api/instance,
+    /// publisher pages as fallback); component tests pass them in directly.</summary>
+    [Parameter] public LegalLinks? Legal { get; set; }
+
+    private LegalLinks? _legal;
     private readonly CancellationTokenSource _cts = new();
     private AboutText? T;
     private AboutState? _state;
@@ -53,6 +58,7 @@ public partial class SetupAboutCard : ComponentBase, IDisposable
                 : null;
         _state = State ?? new AboutState(Http, Platform);
         _builds = await _state.LoadBuildsAsync(_cts.Token);
+        _legal = Legal ?? await new LegalLinksSource(Http).LoadAsync(Language, _cts.Token);
     }
 
     protected override void OnParametersSet()
@@ -94,10 +100,6 @@ public partial class SetupAboutCard : ComponentBase, IDisposable
         $"{T!.SourceLink}: {BuildLabel(build)} {VersionText(build)}, {SourceTitle(build)} ({T.NewTab})";
 
     private string LicenceAriaLabel => $"{T!.LicenceLabel}: {LicenceName} ({T.NewTab})";
-
-    private string PrivacyUrl => PrivacyPolicyLink.For(Language);
-
-    private string PrivacyAriaLabel => $"{T!.PrivacyPolicy} ({T.NewTab})";
 
     private string ExpandedValue => _open ? "true" : "false";
 
