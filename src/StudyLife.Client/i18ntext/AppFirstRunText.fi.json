@@ -16,5 +16,7 @@
   "SignedOutNotStudyLife": "{0} ei vastaa kuin StudyAtrium-palvelin. Jos osoite on väärä, vaihda palvelinta.",
   "SignedOutNoNetwork": "Ei verkkoyhteyttä – Wi-Fi ja mobiilidata ovat pois päältä.",
   "PasskeyDomainHint": "Pääsyavaimet toimivat vain osoitteessa {0}.",
-  "UsePasskeyAddress": "Käytä tätä osoitetta"
+  "UsePasskeyAddress": "Käytä tätä osoitetta",
+  "CleartextServer": "Tätä osoitetta ei ole salattu (http://). Kirjautumisesi ja tietosi kulkisivat luettavina. Käytä https://-osoitetta tai napauta uudelleen käyttääksesi sitä silti.",
+  "SharedTextConfirm": "Tallennetaanko jaettu teksti uutena muistiinpanona?"
 }
