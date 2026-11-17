@@ -43,6 +43,8 @@ public static class StudyLifeOptionsRegistration
         services.AddOptions<TtsOptions>().BindConfiguration(TtsOptions.SectionName);
         services.AddOptions<SttOptions>().BindConfiguration(SttOptions.SectionName);
         services.AddOptions<Fido2Options>().BindConfiguration(Fido2Options.SectionName);
+        // Not a validation failure (yet): a missing pinned passkey domain only warns at startup.
+        services.AddHostedService<Fido2DomainStartupCheck>();
         services.AddOptions<ConsentOptions>().BindConfiguration(ConsentOptions.SectionName);
         services.AddOptions<RegistrationOptions>().BindConfiguration(RegistrationOptions.SectionName);
         services.AddOptions<PasswordSignInOptions>().BindConfiguration(PasswordSignInOptions.SectionName);
