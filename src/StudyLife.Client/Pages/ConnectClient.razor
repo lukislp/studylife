@@ -80,11 +80,11 @@
         _redirectUri = query["redirect_uri"] ?? "";
         _state = query["state"] ?? "";
         // PKCE, passed through untouched to AuthController.Connect (which validates the shape
-        // and later demands the matching verifier at assertion-exchange). Optional until every
-        // dynamic client sends it; a half-sent pair is a malformed request, not a missing one.
+        // and later demands the matching verifier at assertion-exchange). Mandatory for dynamic
+        // clients: a request without the full S256 pair is invalid (the server is authoritative).
         _codeChallenge = query["code_challenge"];
         _codeChallengeMethod = query["code_challenge_method"];
-        if ((_codeChallenge is null) != (_codeChallengeMethod is null))
+        if (string.IsNullOrEmpty(_codeChallenge) || string.IsNullOrEmpty(_codeChallengeMethod))
         {
             _invalidRequest = true;
             return;
@@ -102,8 +102,7 @@
         if (string.IsNullOrEmpty(TokenStore.Token))
         {
             var self = $"/connect/client/{Uri.EscapeDataString(ClientId)}?redirect_uri={Uri.EscapeDataString(_redirectUri)}&state={Uri.EscapeDataString(_state)}";
-            if (_codeChallenge is not null)
-                self += $"&code_challenge={Uri.EscapeDataString(_codeChallenge)}&code_challenge_method={Uri.EscapeDataString(_codeChallengeMethod!)}";
+            self += $"&code_challenge={Uri.EscapeDataString(_codeChallenge)}&code_challenge_method={Uri.EscapeDataString(_codeChallengeMethod)}";
             Nav.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(self)}", forceLoad: true);
             return;
         }
