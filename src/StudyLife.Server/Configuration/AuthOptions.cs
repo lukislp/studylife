@@ -31,7 +31,8 @@ public sealed class ConsentOptions
     /// whatever this says. When false, a fixed-audience connect that offers no challenge is still
     /// accepted (and logged as a warning): the bounded compatibility path for released first-party
     /// clients that predate PKCE. A challenge that IS offered is always validated and enforced.
-    /// Turn it on once those clients are updated (audit M5).
+    /// On by default; an explicitly configured false is honoured, as a temporary escape hatch while
+    /// such a release is still in use (audit M5).
     /// </summary>
     public bool RequirePkce { get; set; } = true;
 
