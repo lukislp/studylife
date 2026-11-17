@@ -14,16 +14,22 @@ namespace StudyLife.Server.Services;
 /// limiter in particular) is only as good as this trust decision: anything on the trusted list
 /// can forge a fresh client IP per request and get a fresh limiter bucket every time.
 ///
-/// Defaults (nothing configured) are the RFC1918 + loopback ranges the single-container
-/// docker-compose/Pi deployment has always used, unchanged. Where the topology is known, the
-/// operator narrows it via configuration (env form in parentheses):
+/// Defaults (nothing configured, 2026-11-16 audit M8): loopback plus the container's own default
+/// gateway (<see cref="DefaultGateways"/>) - a reverse proxy on the same host reaches a published
+/// Docker port through the bridge gateway. Everything else must be configured; trusting all of
+/// RFC1918, as before, let anything on the LAN or a sibling container mint a fresh rate-limit
+/// bucket per request. A reverse proxy on another machine (Nginx Proxy Manager, a Kubernetes
+/// gateway) is listed explicitly (env form in parentheses):
 ///
-///   ForwardedHeaders:KnownNetworks:N  (ForwardedHeaders__KnownNetworks__N)  CIDR, e.g. 10.42.3.0/24
+///   ForwardedHeaders:KnownNetworks:N  (ForwardedHeaders__KnownNetworks__N)  CIDR, e.g. 10.42.0.0/16
 ///   ForwardedHeaders:KnownProxies:N   (ForwardedHeaders__KnownProxies__N)   single IP
 ///   ForwardedHeaders:ForwardLimit     (ForwardedHeaders__ForwardLimit)      hops to walk, default 1
+///   ForwardedHeaders:ForwardHost      (ForwardedHeaders__ForwardHost)       also X-Forwarded-Host, default false
 ///
-/// Listing either networks or proxies REPLACES the defaults entirely (no silent union with
-/// RFC1918 - that would defeat the point of narrowing). ForwardLimit &gt; 1 is for a proxy chain
+/// Listing either networks or proxies REPLACES the defaults entirely (no silent union - that
+/// would defeat the point of narrowing). An untrusted proxy is visible: its X-Forwarded-Proto is
+/// ignored, so the HTTPS redirection answers every request with a redirect, and
+/// <see cref="UntrustedForwardedHeadersWarning"/> logs the address to add once. ForwardLimit &gt; 1 is for a proxy chain
 /// such as Cloudflare -&gt; nginx -&gt; Kestrel: each hop walked must itself be on the trusted list,
 /// so the public demo host adds Cloudflare's published ranges as KnownNetworks and sets 2.
 ///
@@ -40,21 +46,22 @@ public static class ForwardedHeadersConfig
     private static readonly (string Address, int PrefixLength)[] DefaultKnownNetworks =
     [
         ("127.0.0.0", 8),      // loopback
-        ("10.0.0.0", 8),       // RFC1918
-        ("172.16.0.0", 12),    // RFC1918 (covers Docker's default bridge range)
-        ("192.168.0.0", 16),   // RFC1918
+        ("::1", 128),          // loopback
     ];
 
-    public static ForwardedHeadersOptions Build(TrustedProxyOptions trustedProxies)
+    /// <param name="defaultGateways">The container's default gateways (<see cref="DefaultGateways.Discover"/>),
+    /// trusted only while nothing is configured.</param>
+    public static ForwardedHeadersOptions Build(TrustedProxyOptions trustedProxies, IEnumerable<IPAddress> defaultGateways)
     {
         var options = new ForwardedHeadersOptions
         {
-            // X-Forwarded-Host as well: a proxy that rewrites the Host header on the way in (GitHub
-            // Codespaces' port forwarder sends Host: localhost:<port>) would otherwise make the
-            // passkey relying-party id and origin, both derived from Request.Host in
-            // AuthController.CreateFido2, come out as "localhost", and the browser refuses the
-            // credential. Honoured only from the same trusted upstreams as the other two headers.
-            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost,
+            // X-Forwarded-Host only on request (ForwardHost): a proxy that rewrites the Host header on
+            // the way in (GitHub Codespaces' port forwarder sends Host: localhost:<port>) would
+            // otherwise make the passkey relying-party id and origin, both derived from
+            // Request.Host in AuthController.CreateFido2, come out as "localhost". Everywhere else
+            // the gateway keeps the original Host, and a forwarded one is only an extra lever.
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+                               | (trustedProxies.ForwardHost ? ForwardedHeaders.XForwardedHost : ForwardedHeaders.None),
         };
         options.KnownIPNetworks.Clear();
         options.KnownProxies.Clear();
@@ -66,6 +73,8 @@ public static class ForwardedHeadersConfig
         {
             foreach (var (address, prefixLength) in DefaultKnownNetworks)
                 options.KnownIPNetworks.Add(new System.Net.IPNetwork(IPAddress.Parse(address), prefixLength));
+            foreach (var gateway in defaultGateways)
+                options.KnownProxies.Add(gateway);
         }
         else
         {
