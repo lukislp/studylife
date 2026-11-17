@@ -25,8 +25,14 @@ public sealed class ConsentOptions
 {
     public const string SectionName = "Consent";
 
-    /// <summary>Flips the generic OAuth-client flow from "PKCE enforced when offered" to
-    /// "PKCE mandatory" (2026-09-11 audit, finding 6).</summary>
+    /// <summary>
+    /// Also require PKCE (S256) from the built-in, fixed-audience clients (mcp, capture, focusguard,
+    /// focustunes, tray) - env <c>Consent__RequirePkce</c>. Dynamic OAuth clients always need PKCE,
+    /// whatever this says. While false, a fixed-audience connect that offers no challenge is still
+    /// accepted (and logged as a warning): the bounded compatibility path for released first-party
+    /// clients that predate PKCE. A challenge that IS offered is always validated and enforced.
+    /// Turn it on once those clients are updated (audit M5).
+    /// </summary>
     public bool RequirePkce { get; set; }
 
     /// <summary>
@@ -36,6 +42,15 @@ public sealed class ConsentOptions
     /// key now, so no configuration path is assembled from user input any more.
     /// </summary>
     public Dictionary<string, string[]> AllowedRedirectUris { get; set; } = [];
+
+    /// <summary>
+    /// Additional Chrome extension IDs per browser-extension audience (capture, focusguard,
+    /// focustunes; env Consent__ChromeExtensionIds__&lt;audience&gt;__0). MERGED with the built-in
+    /// defaults (Services.ConsentRedirectCatalogue) - configuration adds, never removes. Needed
+    /// for unpacked builds, whose ID differs from the store/manifest-key ID. Malformed IDs
+    /// (not exactly 32 characters a-p) are ignored with a warning.
+    /// </summary>
+    public Dictionary<string, string[]> ChromeExtensionIds { get; set; } = [];
 }
 
 /// <summary>Self-registration gate (audit A10). See

@@ -65,6 +65,10 @@
     private bool _invalidRequest;
     private string _redirectUri = "";
     private string _state = "";
+    // PKCE (RFC 7636, S256), passed through untouched to the connect action. Optional here: the
+    // server decides whether a built-in client without PKCE is still tolerated (Consent:RequirePkce).
+    private string? _codeChallenge;
+    private string? _codeChallengeMethod;
     /// <summary>Host (plus port when non-default) of the redirect target, shown on the consent
     /// card so the user can see WHERE the connection hands off to before clicking Connect - the
     /// server-side allow-list (ConsentRedirectPolicy) is the real guard, this is the human-visible
@@ -108,6 +112,14 @@
         var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
         _redirectUri = query["redirect_uri"] ?? "";
         _state = query["state"] ?? "";
+        _codeChallenge = query["code_challenge"];
+        _codeChallengeMethod = query["code_challenge_method"];
+        // A half-sent pair is a malformed request, not a missing one.
+        if (string.IsNullOrEmpty(_codeChallenge) != string.IsNullOrEmpty(_codeChallengeMethod))
+        {
+            _invalidRequest = true;
+            return Task.CompletedTask;
+        }
         // Only a client-side "don't even show the consent screen" shortcut - the authoritative
         // check is server-side in AuthController.IsAllowedRedirectUri (https, or the RFC 8252
         // loopback exception for the mcp audience's stdio `mcp --login` consumer).
@@ -123,6 +135,8 @@
             // Same-origin relative path+query as ONE query value on /login - Login.razor decodes
             // and validates it via ReturnUrlPolicy before using it as the post-login redirect.
             var self = $"/connect/{Audience}?redirect_uri={Uri.EscapeDataString(_redirectUri)}&state={Uri.EscapeDataString(_state)}";
+            if (!string.IsNullOrEmpty(_codeChallenge))
+                self += $"&code_challenge={Uri.EscapeDataString(_codeChallenge)}&code_challenge_method={Uri.EscapeDataString(_codeChallengeMethod!)}";
             Nav.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(self)}", forceLoad: true);
         }
         return Task.CompletedTask;
@@ -150,7 +164,7 @@
             if (Audience == "capture")
             {
                 var response = await Http.PostAsJsonAsync("api/auth/capture-connect",
-                    new CaptureConnectRequestDto { RedirectUri = _redirectUri, State = _state });
+                    new CaptureConnectRequestDto { RedirectUri = _redirectUri, State = _state, CodeChallenge = _codeChallenge, CodeChallengeMethod = _codeChallengeMethod });
                 if (!response.IsSuccessStatusCode) { _error = T.ConnectFailed; return; }
                 var result = await response.Content.ReadFromJsonAsync<CaptureConnectResponseDto>();
                 redirectTo = result?.RedirectTo;
@@ -158,7 +172,7 @@
             else if (Audience == "focusguard")
             {
                 var response = await Http.PostAsJsonAsync("api/auth/focusguard-connect",
-                    new FocusGuardConnectRequestDto { RedirectUri = _redirectUri, State = _state });
+                    new FocusGuardConnectRequestDto { RedirectUri = _redirectUri, State = _state, CodeChallenge = _codeChallenge, CodeChallengeMethod = _codeChallengeMethod });
                 if (!response.IsSuccessStatusCode) { _error = T.ConnectFailed; return; }
                 var result = await response.Content.ReadFromJsonAsync<FocusGuardConnectResponseDto>();
                 redirectTo = result?.RedirectTo;
@@ -166,7 +180,7 @@
             else if (Audience == "focustunes")
             {
                 var response = await Http.PostAsJsonAsync("api/auth/focustunes-connect",
-                    new FocusTunesConnectRequestDto { RedirectUri = _redirectUri, State = _state });
+                    new FocusTunesConnectRequestDto { RedirectUri = _redirectUri, State = _state, CodeChallenge = _codeChallenge, CodeChallengeMethod = _codeChallengeMethod });
                 if (!response.IsSuccessStatusCode) { _error = T.ConnectFailed; return; }
                 var result = await response.Content.ReadFromJsonAsync<FocusTunesConnectResponseDto>();
                 redirectTo = result?.RedirectTo;
@@ -174,7 +188,7 @@
             else if (Audience == "tray")
             {
                 var response = await Http.PostAsJsonAsync("api/auth/tray-connect",
-                    new TrayConnectRequestDto { RedirectUri = _redirectUri, State = _state });
+                    new TrayConnectRequestDto { RedirectUri = _redirectUri, State = _state, CodeChallenge = _codeChallenge, CodeChallengeMethod = _codeChallengeMethod });
                 if (!response.IsSuccessStatusCode) { _error = T.ConnectFailed; return; }
                 var result = await response.Content.ReadFromJsonAsync<TrayConnectResponseDto>();
                 redirectTo = result?.RedirectTo;
@@ -182,7 +196,7 @@
             else
             {
                 var response = await Http.PostAsJsonAsync("api/auth/mcp-connect",
-                    new McpConnectRequestDto { RedirectUri = _redirectUri, State = _state });
+                    new McpConnectRequestDto { RedirectUri = _redirectUri, State = _state, CodeChallenge = _codeChallenge, CodeChallengeMethod = _codeChallengeMethod });
                 if (!response.IsSuccessStatusCode) { _error = T.ConnectFailed; return; }
                 var result = await response.Content.ReadFromJsonAsync<McpConnectResponseDto>();
                 redirectTo = result?.RedirectTo;

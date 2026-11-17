@@ -155,13 +155,13 @@ public class ClientKeyManagementTests : IClassFixture<CustomWebApplicationFactor
     private async Task<string> ConnectAsync(HttpClient session, string clientId)
     {
         var connect = await session.PostAsJsonAsync("/api/auth/connect",
-            new GenericConnectRequestDto { ClientId = clientId, RedirectUri = RedirectUri, State = "s", Scopes = new List<string> { "Courses.GetAll" } });
+            new GenericConnectRequestDto { ClientId = clientId, RedirectUri = RedirectUri, State = "s", CodeChallenge = TestPkce.Challenge, CodeChallengeMethod = "S256", Scopes = new List<string> { "Courses.GetAll" } });
         Assert.Equal(HttpStatusCode.OK, connect.StatusCode);
         var redirectTo = (await connect.Content.ReadFromJsonAsync<GenericConnectResponseDto>())!.RedirectTo;
         var assertion = System.Web.HttpUtility.ParseQueryString(new Uri(redirectTo).Query)["assertion"]!;
         using var anon = ApiKeyTestHelpers.CreateClientWithKey(_factory, null);
         var exchange = await anon.PostAsJsonAsync("/api/auth/assertion-exchange",
-            new GenericAssertionExchangeRequestDto { ClientId = clientId, Assertion = assertion });
+            new GenericAssertionExchangeRequestDto { ClientId = clientId, Assertion = assertion, CodeVerifier = TestPkce.Verifier });
         Assert.Equal(HttpStatusCode.OK, exchange.StatusCode);
         return (await exchange.Content.ReadFromJsonAsync<GenericAssertionExchangeResponseDto>())!.ApiKey;
     }
