@@ -845,6 +845,19 @@ public class UserSettingsEntity
     /// </summary>
     public bool? TelemetryConsent { get; set; }
     /// <summary>
+    /// When <see cref="TelemetryConsent"/> last changed (UTC) - the proof of the answer the
+    /// GDPR asks for (Art. 7(1)), for a grant as much as for a decline or a withdrawal. Null
+    /// together with TelemetryConsent (never asked) and for answers given before this column
+    /// existed. Written only through <c>TelemetryConsentRecord.Apply</c>.
+    /// </summary>
+    public DateTime? TelemetryConsentAt { get; set; }
+    /// <summary>
+    /// Version of the consent text the answer was given to
+    /// (<c>TelemetryConsentRecord.CurrentVersion</c> at that moment). Null exactly when
+    /// <see cref="TelemetryConsentAt"/> is null.
+    /// </summary>
+    public int? TelemetryConsentVersion { get; set; }
+    /// <summary>
     /// When the user explicitly agreed to let this installation send their notes, courses,
     /// sessions and goals to an AI provider (AiConsentService.GrantAsync). Null = no consent
     /// recorded: a new user who has not been asked, a user who declined or withdrew, or an

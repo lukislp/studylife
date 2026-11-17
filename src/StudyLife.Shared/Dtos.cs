@@ -1554,12 +1554,11 @@ public class CustomCourseExportDto
 /// tolerant JSON binding) - BackupController.ImportJson accepts both: a v1 file simply leaves the
 /// newer collections (StudyPrograms/CourseGroups/CustomCourses/SessionTemplates) at their default
 /// empty list, so those tables just import nothing instead of failing the whole request.
-/// Deliberately excluded from every table below: PushSubscriptions (this browser's endpoint
-/// registrations, not transferable), SentReminders (internal dedup bookkeeping), TimerState
-/// (transient live state), and everything under AuthUserEntity/PasskeyCredentialEntity/
-/// AuthSessionEntity/RecoveryCodeEntity/SystemSecretsEntity/AiKeyOutboxEntity (auth/session/
-/// infrastructure rows, not user data - importing these would either be meaningless across
-/// accounts or a security hole, e.g. re-planting a session token hash).
+/// Only study content is importable. The account data (sign-in methods, sessions, devices,
+/// consents, keys, timer state) is personal data too and is exported for reading in
+/// PersonalDataExportDto.Account, but it is never imported: re-importing it would be meaningless
+/// across accounts or a security hole (e.g. re-planting a passkey or a consent). This class has
+/// no such properties, so the import ignores those blocks.
 /// </summary>
 public class BackupExportDto
 {

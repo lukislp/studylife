@@ -1036,6 +1036,12 @@ namespace StudyLife.Server.Migrations
                     b.Property<bool?>("TelemetryConsent")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime?>("TelemetryConsentAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("TelemetryConsentVersion")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Theme")
                         .IsRequired()
                         .HasColumnType("TEXT");

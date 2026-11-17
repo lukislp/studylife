@@ -556,6 +556,9 @@ builder.Services.AddScoped<IAiConsentService>(sp => new AiConsentService(
     () => sp.GetRequiredService<IApiKeyService>()));
 builder.Services.AddScoped<IPushService, PushService>();
 builder.Services.AddScoped<IBackupDataService, BackupDataService>();
+// The account and about blocks of the personal data export (GDPR Art. 15), see BackupDataService.
+builder.Services.AddScoped<StudyLife.Server.Services.Account.IAccountExportBuilder, StudyLife.Server.Services.Account.AccountExportBuilder>();
+builder.Services.AddScoped<StudyLife.Server.Services.Account.IExportAboutBuilder, StudyLife.Server.Services.Account.ExportAboutBuilder>();
 builder.Services.AddScoped<ICalendarTokenService, CalendarTokenService>();
 builder.Services.AddScoped<IDeveloperClientService, DeveloperClientService>();
 builder.Services.AddScoped<IOAuthClientReviewService, OAuthClientReviewService>();
