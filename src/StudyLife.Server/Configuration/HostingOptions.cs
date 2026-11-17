@@ -161,8 +161,8 @@ public sealed class TrustedProxyOptions
 {
     public const string SectionName = Services.ForwardedHeadersConfig.SectionName;
 
-    /// <summary>CIDRs, e.g. 10.42.3.0/24. Listing any network or proxy REPLACES the RFC1918 +
-    /// loopback defaults entirely.</summary>
+    /// <summary>CIDRs, e.g. 10.42.3.0/24. Listing any network or proxy REPLACES the loopback +
+    /// container-gateway defaults entirely.</summary>
     public string[] KnownNetworks { get; set; } = [];
 
     /// <summary>Single IP addresses.</summary>
@@ -170,4 +170,11 @@ public sealed class TrustedProxyOptions
 
     /// <summary>Hops to walk; null keeps ASP.NET Core's own default of 1.</summary>
     public int? ForwardLimit { get; set; }
+
+    /// <summary>Also honour X-Forwarded-Host from the trusted upstreams. Off by default
+    /// (2026-11-16 audit M8): only a proxy that rewrites Host needs it (GitHub Codespaces' port
+    /// forwarder, see launchSettings.json); the gateways in front of a normal deployment keep the
+    /// original Host, and a forged host would otherwise steer the passkey origin and the links the
+    /// server builds.</summary>
+    public bool ForwardHost { get; set; }
 }
