@@ -21,6 +21,9 @@ modules:
     merge-ready: true
     # Dependency names (exact, case-insensitive) that are never approved or armed.
     exclude: []
+    # Renovate pull requests (renovate[bot], renovate/ branches) are treated like Dependabot
+    # ones: minor, patch and digest updates are armed.
+    renovate: true
 
   # Commits the lock files that the lockfiles workflow regenerated for a Dependabot pull request
   # (see docs/modules/lockfiles.md in lukislp/lktec-bot).
