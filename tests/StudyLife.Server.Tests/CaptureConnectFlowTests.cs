@@ -26,7 +26,7 @@ public class CaptureConnectFlowTests : IClassFixture<CustomWebApplicationFactory
 
     // A real chrome.identity.launchWebAuthFlow-style redirect_uri - a perfectly ordinary https
     // origin, no special-casing needed by the server for this audience.
-    private const string RedirectUri = "https://abcdefghijklmnopqrstuvwxyzabcdef.chromiumapp.org/";
+    private const string RedirectUri = "https://glhegeoapkifmhodpnbfjgijlflkdglh.chromiumapp.org/";
 
     private static (string Assertion, string State) ParseRedirectTo(string redirectTo)
     {

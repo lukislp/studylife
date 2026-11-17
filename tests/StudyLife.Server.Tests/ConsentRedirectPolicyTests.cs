@@ -19,17 +19,121 @@ public class ConsentRedirectPolicyTests
 
     [Theory]
     [InlineData("mcp", "http://127.0.0.1:8765/callback")]
-    [InlineData("mcp", "http://localhost:1/x")]
+    [InlineData("mcp", "http://localhost:1/callback")]
+    [InlineData("mcp", "http://LOCALHOST:65535/callback")]
     [InlineData("tray", "http://127.0.0.1:51823/callback")]
-    public void LoopbackAudiences_AcceptLoopback_WithoutConfig(string audience, string uri) =>
+    public void LoopbackAudiences_AcceptLoopbackCallback_WithoutConfig(string audience, string uri) =>
         Assert.True(Build().IsAllowed(audience, uri));
 
     [Theory]
-    [InlineData("capture")]
-    [InlineData("focusguard")]
-    [InlineData("focustunes")]
-    public void ExtensionAudiences_AcceptChromiumappCallback_WithoutConfig(string audience) =>
-        Assert.True(Build().IsAllowed(audience, "https://abcdefghijklmnopqrstuvwxyzabcdef.chromiumapp.org/"));
+    [InlineData("mcp", "http://127.0.0.1:8765/callback/")] // trailing slash is a different path
+    [InlineData("mcp", "http://127.0.0.1:8765/")]
+    [InlineData("mcp", "http://127.0.0.1:8765/other")]
+    [InlineData("mcp", "http://localhost:1/x")]
+    [InlineData("tray", "http://127.0.0.1:51823/callbackx")]
+    [InlineData("tray", "http://127.0.0.1:51823/cb")]
+    [InlineData("tray", "http://[::1]:51823/callback")] // only the literal hosts are accepted
+    [InlineData("tray", "https://127.0.0.1:51823/callback")]
+    [InlineData("mcp", "http://127.0.0.1:8765@evil.com/callback")]
+    public void LoopbackAudiences_RefuseOtherPathsAndShapes(string audience, string uri) =>
+        Assert.False(Build().IsAllowed(audience, uri));
+
+    private const string CaptureId = "glhegeoapkifmhodpnbfjgijlflkdglh";
+    private const string FocusId = "hhgnenpnafffiadgabcclncnbfdopnlp";
+    private const string OtherId = "abcdefghijklmnopabcdefghijklmnop";
+
+    [Theory]
+    [InlineData("capture", CaptureId)]
+    [InlineData("focusguard", FocusId)]
+    [InlineData("focustunes", FocusId)]
+    public void ExtensionAudiences_AcceptPinnedId_WithoutConfig(string audience, string id)
+    {
+        Assert.True(Build().IsAllowed(audience, $"https://{id}.chromiumapp.org/"));
+        Assert.True(Build().IsAllowed(audience, $"https://{id.ToUpperInvariant()}.chromiumapp.org/")); // ID matched case-insensitively
+        Assert.True(Build().IsAllowed(audience, $"https://{id}.chromiumapp.org")); // empty path normalizes to /
+    }
+
+    [Theory]
+    [InlineData("capture", FocusId)] // another audience's ID
+    [InlineData("focusguard", CaptureId)]
+    [InlineData("capture", OtherId)] // well-formed but unknown
+    public void ExtensionAudiences_RefuseUnpinnedId(string audience, string id) =>
+        Assert.False(Build().IsAllowed(audience, $"https://{id}.chromiumapp.org/"));
+
+    [Theory]
+    [InlineData("https://glhegeoapkifmhodpnbfjgijlflkdglh.chromiumapp.org/cb")] // sub-path
+    [InlineData("https://glhegeoapkifmhodpnbfjgijlflkdglh.chromiumapp.org/?x=1")] // only the root URL chrome.identity returns
+    [InlineData("http://glhegeoapkifmhodpnbfjgijlflkdglh.chromiumapp.org/")] // not https
+    [InlineData("https://glhegeoapkifmhodpnbfjgijlflkdglh.chromiumapp.org:8443/")] // odd port
+    [InlineData("https://user@glhegeoapkifmhodpnbfjgijlflkdglh.chromiumapp.org/")] // userinfo
+    [InlineData("https://glhegeoapkifmhodpnbfjgijlflkdglh.chromiumapp.org.evil.com/")] // look-alike host
+    [InlineData("https://evilglhegeoapkifmhodpnbfjgijlflkdglh.chromiumapp.org/")] // prefix look-alike
+    [InlineData("https://x.glhegeoapkifmhodpnbfjgijlflkdglh.chromiumapp.org/")] // sub-domain
+    [InlineData("https://glhegeoapkifmhodpnbfjgijlflkdglh.chromiumapp.org@evil.com/")] // userinfo confusion
+    public void Capture_RefusesMalformedShapes_EvenForPinnedId(string uri) =>
+        Assert.False(Build().IsAllowed("capture", uri));
+
+    [Fact]
+    public void ConfiguredExtensionId_IsAdded_AndDefaultsStay()
+    {
+        var policy = Build(("Consent:ChromeExtensionIds:capture:0", OtherId));
+
+        Assert.True(policy.IsAllowed("capture", $"https://{OtherId}.chromiumapp.org/"));
+        Assert.True(policy.IsAllowed("capture", $"https://{CaptureId}.chromiumapp.org/")); // never silently removed
+        Assert.False(policy.IsAllowed("focusguard", $"https://{OtherId}.chromiumapp.org/")); // per audience
+    }
+
+    [Fact]
+    public void ConfiguredExtensionId_IsNormalized_AndMalformedOnesAreIgnored()
+    {
+        var policy = Build(
+            ("Consent:ChromeExtensionIds:capture:0", $" {OtherId.ToUpperInvariant()} "),
+            ("Consent:ChromeExtensionIds:capture:1", "short"),
+            ("Consent:ChromeExtensionIds:capture:2", new string('z', 32))); // outside a-p
+
+        Assert.True(policy.IsAllowed("capture", $"https://{OtherId}.chromiumapp.org/"));
+        Assert.Equal(2, policy.ChromeExtensionIdsFor("capture").Count); // default + the one valid addition
+    }
+
+    [Fact]
+    public void RejectionMessage_ForUnpinnedExtension_NamesTheConfigKey()
+    {
+        Assert.Contains("Consent:ChromeExtensionIds:capture",
+            Build().RejectionMessage("capture", $"https://{OtherId}.chromiumapp.org/"));
+        Assert.DoesNotContain("Consent:ChromeExtensionIds",
+            Build().RejectionMessage("mcp", "https://attacker.example/cb"));
+    }
+
+    [Theory]
+    [InlineData("http://127.0.0.1:9999/callback", true)] // other port, same path
+    [InlineData("http://127.0.0.1:1/callback", true)]
+    [InlineData("http://127.0.0.1:8765/callback", true)] // exact
+    [InlineData("http://127.0.0.1:9999/other", false)] // different path
+    [InlineData("http://127.0.0.1:9999/callback?x=1", false)] // query differs
+    [InlineData("http://localhost:9999/callback", false)] // different host
+    [InlineData("https://127.0.0.1:9999/callback", false)]
+    [InlineData("http://127.0.0.1:9999@evil.com/callback", false)]
+    [InlineData("http://127.0.0.1:9999/callback#frag", false)]
+    [InlineData("https://example-addon.test/callback", true)]
+    [InlineData("https://example-addon.test:8443/callback", false)] // non-loopback stays exact
+    [InlineData("https://example-addon.test/callback/", false)]
+    public void RegisteredMatch_LoopbackIgnoresPortOnly(string requested, bool expected) =>
+        Assert.Equal(expected, ConsentRedirectPolicy.MatchesRegisteredRedirectUri(
+            ["https://example-addon.test/callback", "http://127.0.0.1:8765/callback"], requested));
+
+    [Fact]
+    public void RegisteredMatch_ClientWithoutLoopbackRegistration_NeverGetsLoopback() =>
+        Assert.False(ConsentRedirectPolicy.MatchesRegisteredRedirectUri(
+            ["https://example-addon.test/callback"], "http://127.0.0.1:9999/callback"));
+
+    [Fact]
+    public void RegisteredMatch_QueryOnRegisteredLoopback_MustMatch()
+    {
+        string[] registered = ["http://127.0.0.1:8765/cb?client=a"];
+        Assert.True(ConsentRedirectPolicy.MatchesRegisteredRedirectUri(registered, "http://127.0.0.1:1/cb?client=a"));
+        Assert.False(ConsentRedirectPolicy.MatchesRegisteredRedirectUri(registered, "http://127.0.0.1:1/cb?client=b"));
+        Assert.False(ConsentRedirectPolicy.MatchesRegisteredRedirectUri(registered, "http://127.0.0.1:1/cb"));
+    }
 
     [Theory]
     [InlineData("mcp", "https://mcp.example.com/auth/studylife/callback")] // the open-redirect shape that used to pass

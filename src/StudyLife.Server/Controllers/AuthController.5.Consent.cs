@@ -78,7 +78,7 @@ public partial class AuthController
         if (!ConsentRedirectPolicy.IsAllowedRedirectUri(redirectUri))
             return (null, BadRequest("redirectUri must be an absolute https URL, or an http://127.0.0.1|localhost loopback URL (RFC 8252)."));
         if (!_consentRedirects.IsAllowed(audience, redirectUri))
-            return (null, BadRequest("redirectUri is not an allowed callback for this audience (see Consent:AllowedRedirectUris)."));
+            return (null, BadRequest(_consentRedirects.RejectionMessage(audience, redirectUri)));
 
         var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)] on both callers
         var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
