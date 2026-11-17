@@ -1,0 +1,23 @@
+{
+  "Title": "Conferma che sei tu",
+  "Intro": "Questa azione protegge il tuo account. Conferma con una passkey di questo account per continuare.",
+  "BrowserSignInIntro": "Accedi di nuovo per confermare che sei tu. L’azione prosegue subito dopo.",
+  "PasskeyButton": "Conferma con passkey",
+  "BrowserSignInButton": "Accedi di nuovo",
+  "PasswordToggle": "Usa la mia password",
+  "PasswordLabel": "La tua password",
+  "PasswordButton": "Conferma con password",
+  "RecoveryToggle": "Usa un codice di recupero",
+  "RecoveryLabel": "Codice di recupero",
+  "RecoveryButton": "Conferma con codice di recupero",
+  "Working": "Operazione in corso…",
+  "PasskeyFailed": "La richiesta della passkey non è stata completata. Riprova o conferma in un altro modo.",
+  "CancelButton": "Annulla",
+  "CloseDialog": "Chiudi finestra",
+  "ErrorRejected": "Questa conferma non è stata accettata.",
+  "ErrorMissing": "Conferma con una passkey, la tua password o un codice di recupero.",
+  "ErrorTooMany": "Troppi tentativi. Attendi qualche minuto.",
+  "ErrorNetwork": "Impossibile raggiungere il server.",
+  "ErrorGeneric": "Qualcosa è andato storto. Riprova.",
+  "ApprovalOtherSession": "Una nuova passkey non può essere approvata dalla sessione che l’ha aggiunta. Approvala su un altro dispositivo connesso, oppure esci e accedi di nuovo con una passkey esistente o la tua password, quindi approvala qui."
+}

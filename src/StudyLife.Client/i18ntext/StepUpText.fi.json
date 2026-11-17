@@ -1,0 +1,23 @@
+{
+  "Title": "Vahvista, että se olet sinä",
+  "Intro": "Tämä toiminto suojaa tiliäsi. Jatka vahvistamalla tämän tilin pääsyavaimella.",
+  "BrowserSignInIntro": "Kirjaudu uudelleen vahvistaaksesi, että se olet sinä. Toiminto jatkuu heti sen jälkeen.",
+  "PasskeyButton": "Vahvista pääsyavaimella",
+  "BrowserSignInButton": "Kirjaudu uudelleen",
+  "PasswordToggle": "Käytä salasanaani",
+  "PasswordLabel": "Salasanasi",
+  "PasswordButton": "Vahvista salasanalla",
+  "RecoveryToggle": "Käytä palautuskoodia",
+  "RecoveryLabel": "Palautuskoodi",
+  "RecoveryButton": "Vahvista palautuskoodilla",
+  "Working": "Käsitellään…",
+  "PasskeyFailed": "Pääsyavainpyyntö ei valmistunut. Yritä uudelleen tai vahvista toisella tavalla.",
+  "CancelButton": "Peruuta",
+  "CloseDialog": "Sulje ikkuna",
+  "ErrorRejected": "Vahvistusta ei hyväksytty.",
+  "ErrorMissing": "Vahvista pääsyavaimella, salasanallasi tai palautuskoodilla.",
+  "ErrorTooMany": "Liian monta yritystä. Odota muutama minuutti.",
+  "ErrorNetwork": "Palvelimeen ei saatu yhteyttä.",
+  "ErrorGeneric": "Jokin meni vikaan. Yritä uudelleen.",
+  "ApprovalOtherSession": "Uutta pääsyavainta ei voi hyväksyä istunnosta, jossa se lisättiin. Hyväksy se toisella kirjautuneella laitteella, tai kirjaudu ulos ja uudelleen sisään olemassa olevalla pääsyavaimella tai salasanallasi ja hyväksy se täällä."
+}

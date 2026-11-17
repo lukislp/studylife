@@ -1,0 +1,23 @@
+{
+  "Title": "Bevestig dat jij het bent",
+  "Intro": "Deze actie beschermt je account. Bevestig met een passkey van dit account om verder te gaan.",
+  "BrowserSignInIntro": "Meld je opnieuw aan om te bevestigen dat jij het bent. Daarna gaat de actie meteen verder.",
+  "PasskeyButton": "Bevestigen met passkey",
+  "BrowserSignInButton": "Opnieuw aanmelden",
+  "PasswordToggle": "Mijn wachtwoord gebruiken",
+  "PasswordLabel": "Je wachtwoord",
+  "PasswordButton": "Bevestigen met wachtwoord",
+  "RecoveryToggle": "Een herstelcode gebruiken",
+  "RecoveryLabel": "Herstelcode",
+  "RecoveryButton": "Bevestigen met herstelcode",
+  "Working": "Bezig…",
+  "PasskeyFailed": "De passkey-aanvraag is niet voltooid. Probeer het opnieuw of bevestig op een andere manier.",
+  "CancelButton": "Annuleren",
+  "CloseDialog": "Dialoogvenster sluiten",
+  "ErrorRejected": "Die bevestiging is niet geaccepteerd.",
+  "ErrorMissing": "Bevestig met een passkey, je wachtwoord of een herstelcode.",
+  "ErrorTooMany": "Te veel pogingen. Wacht een paar minuten.",
+  "ErrorNetwork": "De server is niet bereikbaar.",
+  "ErrorGeneric": "Er ging iets mis. Probeer het opnieuw.",
+  "ApprovalOtherSession": "Een nieuwe passkey kan niet worden goedgekeurd vanuit de sessie die hem heeft toegevoegd. Keur hem goed op een ander aangemeld apparaat, of meld je af en opnieuw aan met een bestaande passkey of je wachtwoord en keur hem hier goed."
+}
