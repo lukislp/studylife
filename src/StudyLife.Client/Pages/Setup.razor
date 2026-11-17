@@ -409,28 +409,28 @@
             <SetupInvitesCard />
         }
 
-        @if (_rawBackupSupported)
-        {
-            <!-- Backup & export. DownloadDatabaseButtonText/PasswordPlaceholder/-Hint only apply to
-                 the raw .db (owner-only) - the card hides them itself when IsOwner=false.
-                 On Postgres (api/system/capabilities: rawBackupSupported=false), both the
-                 backup AND restore card disappear entirely - backups run externally there (e.g. R2),
-                 so the JSON export is deliberately no longer offered either. -->
-            <SetupBackupCard IsOwner="_isOwner" Label="@T.BackupHeading" Desc="@T.BackupDesc"
-                             DownloadDatabaseButtonText="@T.BackupDownloadDatabaseButton"
-                             ExportJsonButtonText="@T.BackupExportJsonButton"
-                             PasswordPlaceholder="@T.BackupPasswordPlaceholder"
-                             PasswordHint="@T.BackupPasswordHint"
-                             EncryptedDownloadErrorText="@T.BackupEncryptedDownloadError" />
+        <!-- Backup & export. "Export my data" (the JSON export, GDPR Art. 15/20) is there for EVERY
+             user on EVERY database provider - it only ever contains the caller's own rows. The raw
+             database download (plain or encrypted) is owner-only and needs a single SQLite file
+             (api/system/capabilities: rawBackupSupported); the card hides it itself otherwise. On
+             Postgres, backups of the whole installation run externally (e.g. R2). -->
+        <SetupBackupCard IsOwner="_isOwner" RawBackupSupported="_rawBackupSupported"
+                         Label="@T.BackupHeading"
+                         Desc="@(_isOwner && _rawBackupSupported ? T.BackupDesc : T.ExportOwnDataDesc)"
+                         DownloadDatabaseButtonText="@T.BackupDownloadDatabaseButton"
+                         ExportJsonButtonText="@T.BackupExportJsonButton"
+                         PasswordPlaceholder="@T.BackupPasswordPlaceholder"
+                         PasswordHint="@T.BackupPasswordHint"
+                         EncryptedDownloadErrorText="@T.BackupEncryptedDownloadError"
+                         DownloadErrorText="@T.BackupDownloadError" />
 
-            @if (_isOwner)
-            {
-                <!-- Restore from a downloaded .db backup (staged, applied on next server restart).
-                     Self-contained card (own SetupText table + HTTP calls), see SetupRestoreCard.
-                     Entirely owner-only (BackupController.IsOwnerAsync) - unlike the download,
-                     there's no meaningful partial functionality here for other users. -->
-                <SetupRestoreCard />
-            }
+        @if (_rawBackupSupported && _isOwner)
+        {
+            <!-- Restore from a downloaded .db backup (staged, applied on next server restart).
+                 Self-contained card (own SetupText table + HTTP calls), see SetupRestoreCard.
+                 Entirely owner-only (BackupController.IsOwnerAsync) and SQLite-only - unlike the
+                 export, there's no meaningful partial functionality here for other users. -->
+            <SetupRestoreCard />
         }
 
         <!-- Danger area (App Store guideline 5.1.1(v)): delete your own account with all its data

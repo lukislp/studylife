@@ -4,10 +4,8 @@
 using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
-using StudyLife.Server.Services.Outbound;
 using StudyLife.Server.Texts;
 using StudyLife.Shared;
-using WebPush;
 
 namespace StudyLife.Server.Services;
 
@@ -72,25 +70,22 @@ public class SessionService : ISessionService
 
     private readonly StudyLifeDb _db;
     private readonly SessionHistoryCacheVersion _historyCacheVersion;
-    private readonly VapidKeys _vapidKeys;
+    private readonly WebPushDelivery _webPush;
     private readonly ICurrentUserAccessor _currentUser;
     private readonly ICourseResolver _courseResolver;
     private readonly ApnsSender _apnsSender;
     private readonly WebhooksProxyClient _webhooks;
-    private readonly UserSuppliedUrlHttpClient _userUrlHttp;
 
-    public SessionService(StudyLifeDb db, SessionHistoryCacheVersion historyCacheVersion, VapidKeysHolder vapidKeysHolder,
-        ICurrentUserAccessor currentUser, ApnsSender apnsSender, ICourseResolver courseResolver, WebhooksProxyClient webhooks,
-        UserSuppliedUrlHttpClient userUrlHttp)
+    public SessionService(StudyLifeDb db, SessionHistoryCacheVersion historyCacheVersion, WebPushDelivery webPush,
+        ICurrentUserAccessor currentUser, ApnsSender apnsSender, ICourseResolver courseResolver, WebhooksProxyClient webhooks)
     {
         _db = db;
         _historyCacheVersion = historyCacheVersion;
-        _vapidKeys = vapidKeysHolder.Keys!; // always set - see VapidKeysHolder comment
+        _webPush = webPush;
         _currentUser = currentUser;
         _apnsSender = apnsSender;
         _courseResolver = courseResolver;
         _webhooks = webhooks;
-        _userUrlHttp = userUrlHttp;
     }
 
     /// <summary>
@@ -397,7 +392,10 @@ public class SessionService : ISessionService
     // feedback case, a lean, self-contained variant is enough.
     private async Task SendNewRecordPushAsync(TimeSpan duration)
     {
-        var subscriptions = await _db.PushSubscriptions.ToListAsync();
+        var subscriptions = await _db.PushSubscriptions
+            .OrderByDescending(s => s.CreatedAt).ThenByDescending(s => s.Id)
+            .Take(PushService.MaxSubscriptionsPerUser)
+            .ToListAsync();
         if (subscriptions.Count == 0) return;
 
         var language = await _db.Settings.AsNoTracking().Select(s => s.Language).FirstOrDefaultAsync();
@@ -405,10 +403,6 @@ public class SessionService : ISessionService
         var title = t.T("record.title");
         var body = t.T("record.body", duration.TotalHours);
         var payload = System.Text.Json.JsonSerializer.Serialize(new { title, body });
-
-        // User-supplied endpoints: only through the vetted client (audit M4, UserSuppliedUrlHttp).
-        var client = new WebPushClient(_userUrlHttp.Http);
-        client.SetVapidDetails(_vapidKeys.Subject, _vapidKeys.PublicKey, _vapidKeys.PrivateKey);
 
         var expired = new List<PushSubscriptionEntity>();
         await Task.WhenAll(subscriptions.Select(async sub =>
@@ -424,20 +418,13 @@ public class SessionService : ISessionService
                 return;
             }
 
-            try
-            {
-                var pushSub = new PushSubscription(sub.Endpoint, sub.P256dh, sub.Auth);
-                await client.SendNotificationAsync(pushSub, payload);
-            }
-            catch (WebPushException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Gone)
-            {
+            // Best effort, like BackgroundTaskService.SendPushAsync - a single failed delivery must
+            // not abort the instant feedback for other devices. The shared transport bounds each
+            // delivery (WebPushDelivery.RequestTimeout), so the request that saved the session
+            // never waits long on a slow push service.
+            var (pushOutcome, _) = await _webPush.SendAsync(sub, payload, CancellationToken.None);
+            if (pushOutcome == WebPushOutcome.Expired)
                 lock (expired) expired.Add(sub);
-            }
-            catch (Exception)
-            {
-                // Best effort, like BackgroundTaskService.SendPushAsync - a single failed
-                // delivery must not abort the instant feedback for other devices.
-            }
         }));
 
         if (expired.Count > 0)

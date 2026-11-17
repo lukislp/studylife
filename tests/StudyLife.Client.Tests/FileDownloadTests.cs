@@ -10,6 +10,7 @@ using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.JSInterop;
+using StudyLife.Client.Components;
 using StudyLife.Client.Components.Setup;
 using StudyLife.Client.Services;
 using StudyLife.Client.Shared;
@@ -193,16 +194,20 @@ public class SetupBackupCardDownloadTests : ConsentBunitTest
 {
     private readonly RecordingFileDownloads _downloads = new();
 
-    private (IRenderedComponent<SetupBackupCard> Cut, ScriptedServer Server) Render(bool isOwner = false)
+    private (IRenderedComponent<SetupBackupCard> Cut, ScriptedServer Server) Render(bool isOwner = false, bool rawBackupSupported = true)
     {
         var server = new ScriptedServer();
         Services.AddSingleton(new HttpClient(server) { BaseAddress = new Uri("https://studylife.test/") });
         Services.AddSingleton<IFileDownloadService>(_downloads);
+        // These tests cover the download path; the step-up dialog has its own tests (StepUpTests).
+        Ctx.ComponentFactories.AddStub<StepUpDialog>();
         var cut = Render<SetupBackupCard>(p => p
             .Add(c => c.IsOwner, isOwner)
+            .Add(c => c.RawBackupSupported, rawBackupSupported)
             .Add(c => c.ExportJsonButtonText, "ExportJson")
             .Add(c => c.DownloadDatabaseButtonText, "DownloadDb")
-            .Add(c => c.EncryptedDownloadErrorText, "DownloadFailed"));
+            .Add(c => c.DownloadErrorText, "DownloadFailed")
+            .Add(c => c.EncryptedDownloadErrorText, "EncryptedDownloadFailed"));
         return (cut, server);
     }
 
@@ -210,6 +215,33 @@ public class SetupBackupCardDownloadTests : ConsentBunitTest
     {
         cut.FindAll("button").Single(b => b.TextContent.Trim() == text).Click();
         return cut;
+    }
+
+    [Theory]
+    [InlineData(true, true, true)]    // owner on SQLite: database download and export
+    [InlineData(true, false, false)]  // owner on Postgres: export only
+    [InlineData(false, true, false)]  // other user on SQLite: export only
+    [InlineData(false, false, false)] // other user on Postgres: export only
+    public void ExportMyData_IsOfferedToEveryUserOnEveryProvider_TheDatabaseDownloadOnlyToTheOwnerOnSqlite(
+        bool isOwner, bool rawBackupSupported, bool showsDatabase)
+    {
+        var (cut, _) = Render(isOwner, rawBackupSupported);
+
+        Assert.Single(cut.FindAll("button"), b => b.TextContent.Trim() == "ExportJson");
+        Assert.Equal(showsDatabase, cut.FindAll("button").Any(b => b.TextContent.Trim() == "DownloadDb"));
+        Assert.Equal(showsDatabase, cut.FindAll("input[type=password]").Count == 1);
+    }
+
+    [Fact]
+    public void ExportMyData_WorksOnPostgres()
+    {
+        var (cut, server) = Render(isOwner: false, rawBackupSupported: false);
+        server.On("GET api/backup/export", _ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{}") });
+
+        Click(cut, "ExportJson");
+
+        cut.WaitForAssertion(() => Assert.Single(_downloads.Saved), ChainTimeout);
+        Assert.Equal(0, server.Count("GET api/backup/database"));
     }
 
     [Fact]
@@ -242,6 +274,29 @@ public class SetupBackupCardDownloadTests : ConsentBunitTest
         cut.WaitForAssertion(() => Assert.Equal("studyatrium-backup-20261116.db", Assert.Single(_downloads.Saved).FileName), ChainTimeout);
     }
 
+    // The header exactly as ASP.NET Core's File(bytes, type, name) sends it (BackupController).
+    private static HttpResponseMessage ServerFile(byte[] body, string name)
+    {
+        var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(body) };
+        response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+        response.Content.Headers.ContentDisposition = ContentDispositionHeaderValue.Parse($"attachment; filename={name}; filename*=UTF-8''{name}");
+        return response;
+    }
+
+    [Theory]
+    [InlineData("", "GET api/backup/database", "studyatrium-backup-20261116.db")]
+    [InlineData("secret", "POST api/backup/database/encrypted", "studyatrium-backup-20261116.db.enc")]
+    public void TheDatabaseDownloads_KeepTheServersFullName_IncludingBothExtensions(string password, string route, string name)
+    {
+        var (cut, server) = Render(isOwner: true);
+        server.On(route, _ => ServerFile([1, 2], name));
+        if (password.Length > 0) cut.Find("input[type=password]").Input(password);
+
+        Click(cut, "DownloadDb");
+
+        cut.WaitForAssertion(() => Assert.Equal(name, Assert.Single(_downloads.Saved).FileName), ChainTimeout);
+    }
+
     [Fact]
     public void TheEncryptedDatabaseDownload_PostsThePasswordAndOffersTheFile()
     {
@@ -265,6 +320,31 @@ public class SetupBackupCardDownloadTests : ConsentBunitTest
         Click(cut, "ExportJson");
 
         cut.WaitForAssertion(() => Assert.Contains("DownloadFailed", cut.Markup), ChainTimeout);
+        Assert.DoesNotContain("EncryptedDownloadFailed", cut.Markup);
+    }
+
+    [Fact]
+    public void AFailedEncryptedDownload_ShowsTheEncryptionErrorText()
+    {
+        var (cut, server) = Render(isOwner: true);
+        server.On("POST api/backup/database/encrypted", _ => new HttpResponseMessage(HttpStatusCode.InternalServerError));
+        cut.Find("input[type=password]").Input("secret");
+
+        Click(cut, "DownloadDb");
+
+        cut.WaitForAssertion(() => Assert.Contains("EncryptedDownloadFailed", cut.Markup), ChainTimeout);
+    }
+
+    [Fact]
+    public void AFailedUnencryptedDatabaseDownload_DoesNotMentionEncryption()
+    {
+        var (cut, server) = Render(isOwner: true);
+        server.On("GET api/backup/database", _ => new HttpResponseMessage(HttpStatusCode.InternalServerError));
+
+        Click(cut, "DownloadDb");
+
+        cut.WaitForAssertion(() => Assert.Contains("DownloadFailed", cut.Markup), ChainTimeout);
+        Assert.DoesNotContain("EncryptedDownloadFailed", cut.Markup);
     }
 
     [Fact]
@@ -295,6 +375,8 @@ public class PasskeyDeviceManagerRecoveryCodesDownloadTests : ConsentBunitTest
         Services.AddSingleton(new SessionTokenStore(new StubJSRuntime()));
         Services.AddSingleton<IFileDownloadService>(_downloads);
         Services.AddI18nText();
+        // These tests cover the download path; the step-up dialog has its own tests (StepUpTests).
+        Ctx.ComponentFactories.AddStub<StepUpDialog>();
         var cut = Render<PasskeyDeviceManager>(p => p.Add(c => c.Open, true));
         cut.WaitForAssertion(() => cut.FindAll("button").Single(b => b.TextContent.Trim() == "RecoveryCodesButton"), ChainTimeout);
         cut.FindAll("button").Single(b => b.TextContent.Trim() == "RecoveryCodesButton").Click();

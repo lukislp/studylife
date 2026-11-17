@@ -44,6 +44,21 @@ public sealed record FreshProof(string? OptionsId = null, string? AssertionJson 
     string? RecoveryCode = null, string? CurrentPassword = null)
 {
     public bool IsFreshSession => OptionsId is null && AssertionJson is null && RecoveryCode is null && CurrentPassword is null;
+
+    /// <summary>The request body the server's FreshProofRequest reads (account deletion, password
+    /// changes, POST api/auth/account/reauth). Members left out are simply absent.</summary>
+    public string ToRequestJson()
+    {
+        var body = new System.Text.Json.Nodes.JsonObject();
+        if (!string.IsNullOrWhiteSpace(RecoveryCode)) body["recoveryCode"] = RecoveryCode.Trim();
+        if (!string.IsNullOrEmpty(CurrentPassword)) body["currentPassword"] = CurrentPassword;
+        if (OptionsId is not null && AssertionJson is not null)
+        {
+            body["optionsId"] = OptionsId;
+            body["response"] = System.Text.Json.Nodes.JsonNode.Parse(AssertionJson);
+        }
+        return body.ToJsonString();
+    }
 }
 
 /// <summary>The texts of a FreshProofPicker, taken from the host's own i18n table.</summary>

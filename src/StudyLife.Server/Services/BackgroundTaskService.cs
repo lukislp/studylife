@@ -43,11 +43,30 @@ public partial class BackgroundTaskService : BackgroundService
     // Null in Postgres mode (not registered there, see Program.cs) - the raw SQLite backup
     // is deliberately a single-instance feature (see RunBackupDumpAsync/RunDatabaseMaintenanceAsync).
     private readonly DatabaseBackupService? _backupService;
-    private WebPushClient? _pushClient;
-    // The vetted client for user-supplied Web Push endpoints (audit M4). Optional constructor
-    // param like _aiProxyClient so the direct-construction tests that never push need no update;
-    // "not passed" falls back to a production-vetted instance, never to an unvetted client.
-    private readonly UserSuppliedUrlHttpClient _userUrlHttp;
+    // The shared Web Push transport (short timeouts, one connection pool) - see WebPushDelivery.
+    private readonly WebPushDelivery _webPush;
+
+    /// <summary>Default for <see cref="PerUserPushBudget"/>.</summary>
+    internal static readonly TimeSpan DefaultPerUserPushBudget = TimeSpan.FromSeconds(30);
+
+    /// <summary>How long one tick may spend delivering pushes to one user (2026-11-16 audit M9).
+    /// Users are processed one after another; without a cap, one account with many slow or dead
+    /// endpoints held up every later user's reminders. What is left over when the budget runs
+    /// out is skipped for this tick (logged once). Tests shorten it.</summary>
+    internal TimeSpan PerUserPushBudget { get; init; } = DefaultPerUserPushBudget;
+
+    // The running user's budget, set per user by RunPerUserSubtasksAsync (users run sequentially).
+    // The clock starts with the user's first delivery, so slow non-push work (AI enrichment) does
+    // not eat into it.
+    private CancellationTokenSource? _pushBudgetSource;
+    private int _pushBudgetStarted;
+    private CancellationToken PushBudget => _pushBudgetSource?.Token ?? CancellationToken.None;
+
+    private void StartPushBudget()
+    {
+        if (_pushBudgetSource is { } source && Interlocked.Exchange(ref _pushBudgetStarted, 1) == 0)
+            source.CancelAfter(PerUserPushBudget);
+    }
 
     // What a tick actually dispatches: one descriptor per subtask (name, interval, per-user vs
     // once-per-tick, the delegate) instead of one "_next<Subtask>Run" field plus one
@@ -126,31 +145,26 @@ public partial class BackgroundTaskService : BackgroundService
         TimeProvider? timeProvider = null,
         AiProxyClient? aiProxyClient = null,
         IConfiguration? configuration = null,
-        UserSuppliedUrlHttpClient? userUrlHttp = null)
+        WebPushDelivery? webPush = null)
     {
         _services = services;
         _vapidKeys = vapidKeysHolder.Keys!; // always set - see VapidKeysHolder comment
+        // The DI singleton in the app; tests that build the service by hand get their own.
+        // Not passed (direct-construction tests): a production-vetted transport, never an unvetted one.
+        _webPush = webPush ?? new WebPushDelivery(vapidKeysHolder, new UserSuppliedUrlHttpClient());
         _logger = logger;
         _apnsSender = apnsSender;
         _backupService = backupService;
         _shardClaim = shardClaim ?? new StaticWorkerShardClaim();
         _time = timeProvider ?? TimeProvider.System;
         _aiProxyClient = aiProxyClient;
-        _userUrlHttp = userUrlHttp ?? new UserSuppliedUrlHttpClient();
         _demoReadOnly = configuration is not null && DemoModeGuard.IsEnabled(configuration);
         // Last: the table's delegates are method groups over this instance, so every field they
         // close over is already assigned.
         _subtasks = BuildSubtasks();
     }
 
-    private WebPushClient GetPushClient()
-    {
-        if (_pushClient != null) return _pushClient;
-        // User-supplied endpoints: only through the vetted client (audit M4, UserSuppliedUrlHttp).
-        _pushClient = new WebPushClient(_userUrlHttp.Http);
-        _pushClient.SetVapidDetails(_vapidKeys.Subject, _vapidKeys.PublicKey, _vapidKeys.PrivateKey);
-        return _pushClient;
-    }
+    internal WebPushDelivery GetPushClient() => _webPush;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -207,12 +221,19 @@ public partial class BackgroundTaskService : BackgroundService
         }
     }
 
-    private readonly record struct PushSendResult(PushSubscriptionEntity Subscription, bool Expired);
+    internal readonly record struct PushSendResult(PushSubscriptionEntity Subscription, bool Expired);
 
     // Sends to a single subscription; error handling per task so that parallel sending
     // (Task.WhenAll) doesn't mutate shared state - aggregation happens afterward in the caller.
-    private async Task<PushSendResult> SendPushAsync(WebPushClient client, PushSubscriptionEntity sub, string payload, string warningTemplate)
+    // internal for the budget tests (WebPushFanOutTests), like the other Run*Async entry points.
+    internal async Task<PushSendResult> SendPushAsync(WebPushDelivery client, PushSubscriptionEntity sub, string payload, string warningTemplate)
     {
+        // This user's push time for the tick is used up (PerUserPushBudget): skip, keep the subscription.
+        StartPushBudget();
+        var budget = PushBudget;
+        if (budget.IsCancellationRequested)
+            return new PushSendResult(sub, false);
+
         // APNs channel (native app shell): same payload, different envelope. Without a
         // configured ApnsSender (free tier/no p8 key) this is a silent no-op -
         // the subscription remains and becomes active as soon as the channel is configured.
@@ -224,20 +245,10 @@ public partial class BackgroundTaskService : BackgroundService
             return new PushSendResult(sub, outcome == ApnsSendOutcome.ExpiredToken);
         }
 
-        try
-        {
-            var pushSub = new PushSubscription(sub.Endpoint, sub.P256dh, sub.Auth);
-            await client.SendNotificationAsync(pushSub, payload);
-            return new PushSendResult(sub, false);
-        }
-        catch (WebPushException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Gone)
-        {
-            return new PushSendResult(sub, true);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, warningTemplate, sub.Endpoint);
-            return new PushSendResult(sub, false);
-        }
+        var (pushOutcome, error) = await client.SendAsync(sub, payload, budget);
+        // A delivery cut off by the budget is reported once per user (RunPerUserSubtasksAsync), not per endpoint.
+        if (pushOutcome == WebPushOutcome.Failed && !budget.IsCancellationRequested)
+            _logger.LogWarning(error, warningTemplate, sub.Endpoint);
+        return new PushSendResult(sub, pushOutcome == WebPushOutcome.Expired);
     }
 }

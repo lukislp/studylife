@@ -50,7 +50,8 @@ public sealed class SessionHandler : DelegatingHandler
         var isOwnApi = request.RequestUri is { } uri && _baseAddress.IsBaseOf(uri);
         var isAuthPath = isOwnApi && request.RequestUri!.AbsolutePath.Contains("/api/auth/", StringComparison.OrdinalIgnoreCase);
 
-        if (isOwnApi && _tokenStore.Token is { Length: > 0 } token)
+        // A request that already names its session (the native app handoff, AppReturnContext) keeps it.
+        if (isOwnApi && _tokenStore.Token is { Length: > 0 } token && !request.Headers.Contains("X-Session-Token"))
             request.Headers.TryAddWithoutValidation("X-Session-Token", token);
 
         var stopwatch = isOwnApi ? Stopwatch.StartNew() : null;

@@ -8,7 +8,7 @@ namespace StudyLife.Server.Services.Outbound;
 /// <summary>
 /// The one way the server builds an HttpClient for a URL that came from a USER rather than from the
 /// operator's configuration (2026-11-16 audit M4). Today that is the Web Push endpoint a browser
-/// hands PushService; any future feature that fetches or posts to a user-given URL uses the same
+/// hands PushService, delivered by WebPushDelivery; any future feature that fetches or posts to a user-given URL uses the same
 /// client. Every connection goes through <see cref="VettedConnector"/> (resolve, vet, connect to the
 /// vetted address only), redirects are never followed (a 3xx from a public host must not lead to a
 /// private one), no system proxy is used (a proxy would make the vetted connect pointless) and the
@@ -27,10 +27,8 @@ public static class UserSuppliedUrlHttp
     /// <summary>Name resolution plus TCP connect (and TLS) of one connection.</summary>
     public static readonly TimeSpan ConnectTimeout = TimeSpan.FromSeconds(5);
 
-    /// <summary>
-    /// The primary handler. Public so a component that owns its HttpClient (for example a shared
-    /// Web Push transport) can build on exactly the same vetted connect instead of its own.
-    /// </summary>
+    /// <summary>The primary handler. <see cref="UserSuppliedUrlHttpClient"/> holds the one shared
+    /// instance; consumers get clients on it through <see cref="UserSuppliedUrlHttpClient.CreateClient"/>.</summary>
     public static SocketsHttpHandler CreateHandler(IHostAddressResolver resolver, IOutboundAddressFilter filter)
     {
         var connector = new VettedConnector(resolver, filter);
@@ -68,16 +66,31 @@ public static class UserSuppliedUrlHttp
 /// </summary>
 public sealed class UserSuppliedUrlHttpClient : IDisposable
 {
+    private readonly SocketsHttpHandler _handler;
+
+    /// <summary>Client with the default <see cref="UserSuppliedUrlHttp.RequestTimeout"/>.</summary>
     public HttpClient Http { get; }
 
-    public UserSuppliedUrlHttpClient(IHostAddressResolver resolver, IOutboundAddressFilter filter) =>
-        Http = new HttpClient(UserSuppliedUrlHttp.CreateHandler(resolver, filter), disposeHandler: true)
-        {
-            Timeout = UserSuppliedUrlHttp.RequestTimeout,
-        };
+    public UserSuppliedUrlHttpClient(IHostAddressResolver resolver, IOutboundAddressFilter filter)
+    {
+        _handler = UserSuppliedUrlHttp.CreateHandler(resolver, filter);
+        Http = CreateClient(UserSuppliedUrlHttp.RequestTimeout);
+    }
 
     /// <summary>Production resolver and filter.</summary>
     public UserSuppliedUrlHttpClient() : this(DnsHostAddressResolver.Instance, PublicAddressFilter.Instance) { }
 
-    public void Dispose() => Http.Dispose();
+    /// <summary>
+    /// A client with its own request timeout on the SAME vetted handler (one connection pool, one
+    /// connect path). For a consumer such as WebPushDelivery that needs a different timeout; it
+    /// does not own the handler, so disposing it leaves the shared handler alive.
+    /// </summary>
+    public HttpClient CreateClient(TimeSpan requestTimeout) =>
+        new(_handler, disposeHandler: false) { Timeout = requestTimeout };
+
+    public void Dispose()
+    {
+        Http.Dispose();
+        _handler.Dispose();
+    }
 }
