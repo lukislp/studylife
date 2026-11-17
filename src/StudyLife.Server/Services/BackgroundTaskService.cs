@@ -4,6 +4,7 @@
 using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
+using StudyLife.Server.Services.Outbound;
 using WebPush;
 
 namespace StudyLife.Server.Services;
@@ -149,7 +150,8 @@ public partial class BackgroundTaskService : BackgroundService
         _services = services;
         _vapidKeys = vapidKeysHolder.Keys!; // always set - see VapidKeysHolder comment
         // The DI singleton in the app; tests that build the service by hand get their own.
-        _webPush = webPush ?? new WebPushDelivery(vapidKeysHolder);
+        // Not passed (direct-construction tests): a production-vetted transport, never an unvetted one.
+        _webPush = webPush ?? new WebPushDelivery(vapidKeysHolder, new UserSuppliedUrlHttpClient());
         _logger = logger;
         _apnsSender = apnsSender;
         _backupService = backupService;
