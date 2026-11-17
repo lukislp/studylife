@@ -302,6 +302,8 @@
   "MarketplaceByDeveloper": "od {0}",
   "MarketplaceViewSource": "Zobraziť zdrojový kód",
   "MarketplaceDemoNotice": "Inštalácia doplnkov je na tejto demo inštancii zakázaná.",
+  "MarketplaceManualSetupNotice": "Doplnok hostovaný vlastnými silami: nemá pevnú adresu, preto ho nemožno nainštalovať jedným kliknutím. Zaregistrujte ho ako vývojársku aplikáciu s presmerovacím URI z jeho návodu na nastavenie a potom ho pripojte priamo z doplnku.",
+  "MarketplaceManualSetupLink": "Otvoriť návod na nastavenie",
   "ClientKeysHeading": "Pripojené doplnky",
   "TelemetryHeading": "Hlásenia o používaní a chybách",
   "TelemetryDesc": "Pomáha nám odhaliť chyby a spomalenia odosielaním anonymných údajov o výkone a chybách — nikdy tvoje poznámky, session ani zdravotné údaje. Kedykoľvek to môžeš vypnúť.",

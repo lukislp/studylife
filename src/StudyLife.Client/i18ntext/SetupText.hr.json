@@ -302,6 +302,8 @@
   "MarketplaceByDeveloper": "autora {0}",
   "MarketplaceViewSource": "Prikaži izvorni kod",
   "MarketplaceDemoNotice": "Instaliranje dodataka onemogućeno je na ovoj demo instanci.",
+  "MarketplaceManualSetupNotice": "Dodatak koji sami hostate: nema fiksnu adresu pa se ne može instalirati jednim klikom. Registrirajte ga kao razvojnu aplikaciju s URI-jem za preusmjeravanje iz njegovih uputa za postavljanje, a zatim ga povežite iz samog dodatka.",
+  "MarketplaceManualSetupLink": "Otvori upute za postavljanje",
   "ClientKeysHeading": "Povezani dodaci",
   "TelemetryHeading": "Izvještaji o korištenju i pogreškama",
   "TelemetryDesc": "Pomaže nam pronaći greške i spora mjesta slanjem anonimnih podataka o performansama i pogreškama — nikad tvoje bilješke, sesije ili zdravstvene podatke. To možeš isključiti bilo kad.",

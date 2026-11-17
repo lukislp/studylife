@@ -302,6 +302,8 @@
   "MarketplaceByDeveloper": "izstrādātājs {0}",
   "MarketplaceViewSource": "Skatīt pirmkodu",
   "MarketplaceDemoNotice": "Papildinājumu instalēšana šajā demonstrācijas versijā ir atspējota.",
+  "MarketplaceManualSetupNotice": "Pašmitināms papildinājums: tam nav fiksētas adreses, tāpēc to nevar instalēt ar vienu klikšķi. Reģistrējiet to kā izstrādātāja lietotni ar pāradresācijas URI no tā iestatīšanas rokasgrāmatas un pēc tam savienojiet no paša papildinājuma.",
+  "MarketplaceManualSetupLink": "Atvērt iestatīšanas rokasgrāmatu",
   "ClientKeysHeading": "Pievienotie papildinājumi",
   "TelemetryHeading": "Lietošanas un kļūdu pārskati",
   "TelemetryDesc": "Palīdz mums atrast kļūdas un lēnās vietas, sūtot anonīmus veiktspējas un kļūdu datus — nekad tavas piezīmes, sesijas vai veselības datus. To vari izslēgt jebkurā laikā.",

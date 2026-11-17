@@ -302,6 +302,8 @@
   "MarketplaceByDeveloper": "par {0}",
   "MarketplaceViewSource": "Voir le code source",
   "MarketplaceDemoNotice": "L'installation d'extensions est désactivée sur cette instance de démonstration.",
+  "MarketplaceManualSetupNotice": "Module complémentaire auto-hébergé : il n'a pas d'adresse fixe et ne peut donc pas être installé en un clic. Enregistrez-le comme application développeur avec l'URI de redirection indiqué dans son guide de configuration, puis connectez-le depuis le module lui-même.",
+  "MarketplaceManualSetupLink": "Ouvrir le guide de configuration",
   "ClientKeysHeading": "Extensions connectées",
   "TelemetryHeading": "Rapports d'utilisation et d'erreurs",
   "TelemetryDesc": "Nous aide à repérer les bugs et les ralentissements en envoyant des données anonymes de performance et d'erreurs — jamais tes notes, séances ou données de santé. Tu peux désactiver cela à tout moment.",

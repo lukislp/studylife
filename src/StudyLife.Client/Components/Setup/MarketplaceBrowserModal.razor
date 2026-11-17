@@ -64,12 +64,25 @@
                                 <a href="@listing.Repository" target="_blank" rel="noopener noreferrer" class="ss-desc">@T.MarketplaceViewSource</a>
                             }
                         </div>
-                        <div class="toggle-row" style="gap:0.5rem;flex-shrink:0">
-                            <button type="button" class="btn-secondary" disabled="@(_busyClientId != null || _isDemo)"
-                                    @onclick="() => InstallAsync(listing)">
-                                @(_busyClientId == listing.Id ? "…" : T.MarketplaceInstallButton)
-                            </button>
-                        </div>
+                        @if (listing.RequiresManualSetup)
+                        {
+                            <div style="flex-basis:100%">
+                                <p class="ss-desc" style="margin:4px 0 0">@T.MarketplaceManualSetupNotice</p>
+                                @if (listing.SafeSetupUrl is { } setupUrl)
+                                {
+                                    <a href="@setupUrl" target="_blank" rel="noopener noreferrer" class="ss-desc">@T.MarketplaceManualSetupLink</a>
+                                }
+                            </div>
+                        }
+                        else if (listing.CanInstallOneClick)
+                        {
+                            <div class="toggle-row" style="gap:0.5rem;flex-shrink:0">
+                                <button type="button" class="btn-secondary" disabled="@(_busyClientId != null || _isDemo)"
+                                        @onclick="() => InstallAsync(listing)">
+                                    @(_busyClientId == listing.Id ? "…" : T.MarketplaceInstallButton)
+                                </button>
+                            </div>
+                        }
                     </div>
                     @if (_installError != null && _installErrorClientId == listing.Id)
                     {

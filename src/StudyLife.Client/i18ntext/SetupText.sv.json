@@ -302,6 +302,8 @@
   "MarketplaceByDeveloper": "av {0}",
   "MarketplaceViewSource": "Visa källkod",
   "MarketplaceDemoNotice": "Det går inte att installera tillägg på den här demoinstansen.",
+  "MarketplaceManualSetupNotice": "Egenhostat tillägg: det har ingen fast adress och kan därför inte installeras med ett klick. Registrera det som en utvecklarapp med omdirigerings-URI:n från installationsguiden och anslut det sedan från tillägget självt.",
+  "MarketplaceManualSetupLink": "Öppna installationsguiden",
   "ClientKeysHeading": "Anslutna tillägg",
   "TelemetryHeading": "Användnings- och felrapporter",
   "TelemetryDesc": "Hjälper oss att hitta buggar och långsamma delar genom att skicka anonym prestanda- och felinformation — aldrig dina anteckningar, sessioner eller hälsodata. Du kan stänga av detta när som helst.",
