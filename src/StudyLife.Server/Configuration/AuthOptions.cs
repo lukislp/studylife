@@ -25,8 +25,14 @@ public sealed class ConsentOptions
 {
     public const string SectionName = "Consent";
 
-    /// <summary>Flips the generic OAuth-client flow from "PKCE enforced when offered" to
-    /// "PKCE mandatory" (2026-09-11 audit, finding 6).</summary>
+    /// <summary>
+    /// Also require PKCE (S256) from the built-in, fixed-audience clients (mcp, capture, focusguard,
+    /// focustunes, tray) - env <c>Consent__RequirePkce</c>. Dynamic OAuth clients always need PKCE,
+    /// whatever this says. While false, a fixed-audience connect that offers no challenge is still
+    /// accepted (and logged as a warning): the bounded compatibility path for released first-party
+    /// clients that predate PKCE. A challenge that IS offered is always validated and enforced.
+    /// Turn it on once those clients are updated (audit M5).
+    /// </summary>
     public bool RequirePkce { get; set; }
 
     /// <summary>

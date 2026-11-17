@@ -35,27 +35,10 @@ public partial class AuthController
     /// checks it against the endpoint actually hit, so an mcp-connect assertion can never be
     /// redeemed at capture-assertion-exchange or vice versa, even though both audiences share this
     /// exact same cache entry shape/key namespace.</summary>
-    /// <param name="CodeChallenge">PKCE challenge the dynamic-client flow (AuthController.10)
-    /// started with, null for the five hardcoded audiences and for dynamic clients that did not
-    /// send one - see RedeemConsentAssertionAsync for how it gates redemption.</param>
+    /// <param name="CodeChallenge">S256 PKCE challenge the flow started with (always set for
+    /// dynamic clients; for the five fixed audiences null only while Consent:RequirePkce is off
+    /// and the client predates PKCE) - see RedeemConsentAssertionAsync for how it gates redemption.</param>
     private sealed record PendingConsentAssertion(int UserId, string Audience, string ApiKey, string? CodeChallenge = null);
-
-    /// <summary>RFC 7636 §4.1 unreserved-character shape shared by code_verifier and the base64url
-    /// S256 challenge (43 = base64url of 32 bytes, 128 = the spec's upper bound).</summary>
-    private static readonly System.Text.RegularExpressions.Regex PkceShape =
-        new("^[A-Za-z0-9\\-._~]{43,128}$", System.Text.RegularExpressions.RegexOptions.Compiled);
-
-    internal static bool IsValidPkceChallenge(string? challenge) => challenge is not null && PkceShape.IsMatch(challenge);
-
-    /// <summary>base64url(SHA-256(verifier)) == challenge, compared in constant time.</summary>
-    internal static bool PkceMatches(string challenge, string? verifier)
-    {
-        if (verifier is null || !PkceShape.IsMatch(verifier)) return false;
-        var computed = Microsoft.AspNetCore.WebUtilities.WebEncoders.Base64UrlEncode(
-            System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.ASCII.GetBytes(verifier)));
-        return System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
-            System.Text.Encoding.ASCII.GetBytes(computed), System.Text.Encoding.ASCII.GetBytes(challenge));
-    }
 
     /// <summary>
     /// Shared core of every consent "connect" action (step 3 of the flow): validates redirect_uri
@@ -68,7 +51,8 @@ public partial class AuthController
     /// two thin actions below translate success into their own audience-specific response DTO.
     /// </summary>
     private async Task<(string? RedirectTo, ActionResult? Error)> BuildConnectRedirectAsync(
-        string audience, string redirectUri, string state, Func<AuthUserEntity, DateTime, string> rotateKey)
+        string audience, string redirectUri, string state, string? codeChallenge, string? codeChallengeMethod,
+        Func<AuthUserEntity, DateTime, string> rotateKey)
     {
         // Two-stage check. The syntactic gate alone is not enough: the exchange endpoints below
         // are anonymous and take nothing but the assertion, so ANY party receiving the browser
@@ -80,6 +64,21 @@ public partial class AuthController
         if (!_consentRedirects.IsAllowed(audience, redirectUri))
             return (null, BadRequest(_consentRedirects.RejectionMessage(audience, redirectUri)));
 
+        // PKCE (audit M5): offered -> validated and bound to the assertion; half a pair or a method
+        // other than S256 -> 400; not offered -> only tolerated while Consent:RequirePkce is false
+        // (the bounded compatibility path for released first-party clients that predate PKCE).
+        var pkce = ConsentPkce.Evaluate(codeChallenge, codeChallengeMethod);
+        if (pkce.State == ConsentPkce.OfferState.Invalid)
+            return (null, BadRequest(ConsentPkce.InvalidOfferMessage));
+        if (pkce.State == ConsentPkce.OfferState.None)
+        {
+            if (_consentOptions.CurrentValue.RequirePkce)
+                return (null, BadRequest("PKCE is required: send codeChallenge and codeChallengeMethod=S256."));
+            HttpContext.RequestServices.GetRequiredService<ILogger<AuthController>>().LogWarning(
+                "Consent connect for audience {Audience} arrived without PKCE; accepted only because Consent:RequirePkce is off. Update that client.",
+                audience);
+        }
+
         var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)] on both callers
         var user = await _db.AuthUsers.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return (null, Unauthorized());
@@ -88,7 +87,7 @@ public partial class AuthController
         await _db.SaveChangesAsync();
 
         var assertion = GenerateHandoffCode(); // same 256-bit CSPRNG base64url shape as the PKCE handoff code
-        await CacheSetAsync(ConsentAssertionCacheKey(assertion), new PendingConsentAssertion(userId, audience, apiKey), McpAssertionLifetime);
+        await CacheSetAsync(ConsentAssertionCacheKey(assertion), new PendingConsentAssertion(userId, audience, apiKey, pkce.Challenge), McpAssertionLifetime);
 
         var separator = redirectUri.Contains('?') ? "&" : "?";
         var redirectTo = $"{redirectUri}{separator}assertion={Uri.EscapeDataString(assertion)}&state={Uri.EscapeDataString(state)}";
@@ -119,7 +118,7 @@ public partial class AuthController
         // mismatch is not consumed either - the party that merely observed the assertion in the
         // redirect must be unable to both redeem it AND burn it for the legitimate client
         // (2026-09-11 audit, finding 6); guessing a 256-bit verifier within 120s is not a risk.
-        if (pending.CodeChallenge is not null && !PkceMatches(pending.CodeChallenge, codeVerifier)) return null;
+        if (pending.CodeChallenge is not null && !ConsentPkce.Matches(pending.CodeChallenge, codeVerifier)) return null;
 
         await _cache.RemoveAsync(key); // single-use: consumed on first successful (matching) exchange only
         return (pending.UserId, pending.ApiKey);
@@ -135,7 +134,7 @@ public partial class AuthController
     [HttpPost("mcp-connect")]
     public async Task<ActionResult<McpConnectResponseDto>> McpConnect([FromBody] McpConnectRequestDto request)
     {
-        var (redirectTo, error) = await BuildConnectRedirectAsync(AudienceMcp, request.RedirectUri, request.State, ApiKeyService.RotateMcpKey);
+        var (redirectTo, error) = await BuildConnectRedirectAsync(AudienceMcp, request.RedirectUri, request.State, request.CodeChallenge, request.CodeChallengeMethod, ApiKeyService.RotateMcpKey);
         if (error is not null) return error;
         return new McpConnectResponseDto { RedirectTo = redirectTo! };
     }
@@ -153,7 +152,7 @@ public partial class AuthController
     [HttpPost("mcp-assertion-exchange")]
     public async Task<ActionResult<McpAssertionExchangeResponseDto>> McpAssertionExchange([FromBody] McpAssertionExchangeRequestDto request)
     {
-        var result = await RedeemConsentAssertionAsync(AudienceMcp, request.Assertion);
+        var result = await RedeemConsentAssertionAsync(AudienceMcp, request.Assertion, request.CodeVerifier);
         if (result is null) return Unauthorized();
         return new McpAssertionExchangeResponseDto { UserId = result.Value.UserId, McpApiKey = result.Value.ApiKey };
     }
@@ -169,7 +168,7 @@ public partial class AuthController
     [HttpPost("capture-connect")]
     public async Task<ActionResult<CaptureConnectResponseDto>> CaptureConnect([FromBody] CaptureConnectRequestDto request)
     {
-        var (redirectTo, error) = await BuildConnectRedirectAsync(AudienceCapture, request.RedirectUri, request.State, ApiKeyService.RotateCaptureKey);
+        var (redirectTo, error) = await BuildConnectRedirectAsync(AudienceCapture, request.RedirectUri, request.State, request.CodeChallenge, request.CodeChallengeMethod, ApiKeyService.RotateCaptureKey);
         if (error is not null) return error;
         return new CaptureConnectResponseDto { RedirectTo = redirectTo! };
     }
@@ -184,7 +183,7 @@ public partial class AuthController
     [HttpPost("capture-assertion-exchange")]
     public async Task<ActionResult<CaptureAssertionExchangeResponseDto>> CaptureAssertionExchange([FromBody] CaptureAssertionExchangeRequestDto request)
     {
-        var result = await RedeemConsentAssertionAsync(AudienceCapture, request.Assertion);
+        var result = await RedeemConsentAssertionAsync(AudienceCapture, request.Assertion, request.CodeVerifier);
         if (result is null) return Unauthorized();
         return new CaptureAssertionExchangeResponseDto { UserId = result.Value.UserId, CaptureApiKey = result.Value.ApiKey };
     }
@@ -199,7 +198,7 @@ public partial class AuthController
     [HttpPost("focusguard-connect")]
     public async Task<ActionResult<FocusGuardConnectResponseDto>> FocusGuardConnect([FromBody] FocusGuardConnectRequestDto request)
     {
-        var (redirectTo, error) = await BuildConnectRedirectAsync(AudienceFocusGuard, request.RedirectUri, request.State, ApiKeyService.RotateFocusGuardKey);
+        var (redirectTo, error) = await BuildConnectRedirectAsync(AudienceFocusGuard, request.RedirectUri, request.State, request.CodeChallenge, request.CodeChallengeMethod, ApiKeyService.RotateFocusGuardKey);
         if (error is not null) return error;
         return new FocusGuardConnectResponseDto { RedirectTo = redirectTo! };
     }
@@ -215,7 +214,7 @@ public partial class AuthController
     [HttpPost("focusguard-assertion-exchange")]
     public async Task<ActionResult<FocusGuardAssertionExchangeResponseDto>> FocusGuardAssertionExchange([FromBody] FocusGuardAssertionExchangeRequestDto request)
     {
-        var result = await RedeemConsentAssertionAsync(AudienceFocusGuard, request.Assertion);
+        var result = await RedeemConsentAssertionAsync(AudienceFocusGuard, request.Assertion, request.CodeVerifier);
         if (result is null) return Unauthorized();
         return new FocusGuardAssertionExchangeResponseDto { UserId = result.Value.UserId, FocusGuardApiKey = result.Value.ApiKey };
     }
@@ -229,7 +228,7 @@ public partial class AuthController
     [HttpPost("focustunes-connect")]
     public async Task<ActionResult<FocusTunesConnectResponseDto>> FocusTunesConnect([FromBody] FocusTunesConnectRequestDto request)
     {
-        var (redirectTo, error) = await BuildConnectRedirectAsync(AudienceFocusTunes, request.RedirectUri, request.State, ApiKeyService.RotateFocusTunesKey);
+        var (redirectTo, error) = await BuildConnectRedirectAsync(AudienceFocusTunes, request.RedirectUri, request.State, request.CodeChallenge, request.CodeChallengeMethod, ApiKeyService.RotateFocusTunesKey);
         if (error is not null) return error;
         return new FocusTunesConnectResponseDto { RedirectTo = redirectTo! };
     }
@@ -244,7 +243,7 @@ public partial class AuthController
     [HttpPost("focustunes-assertion-exchange")]
     public async Task<ActionResult<FocusTunesAssertionExchangeResponseDto>> FocusTunesAssertionExchange([FromBody] FocusTunesAssertionExchangeRequestDto request)
     {
-        var result = await RedeemConsentAssertionAsync(AudienceFocusTunes, request.Assertion);
+        var result = await RedeemConsentAssertionAsync(AudienceFocusTunes, request.Assertion, request.CodeVerifier);
         if (result is null) return Unauthorized();
         return new FocusTunesAssertionExchangeResponseDto { UserId = result.Value.UserId, FocusTunesApiKey = result.Value.ApiKey };
     }
@@ -261,7 +260,7 @@ public partial class AuthController
     [HttpPost("tray-connect")]
     public async Task<ActionResult<TrayConnectResponseDto>> TrayConnect([FromBody] TrayConnectRequestDto request)
     {
-        var (redirectTo, error) = await BuildConnectRedirectAsync(AudienceTray, request.RedirectUri, request.State, ApiKeyService.RotateTrayKey);
+        var (redirectTo, error) = await BuildConnectRedirectAsync(AudienceTray, request.RedirectUri, request.State, request.CodeChallenge, request.CodeChallengeMethod, ApiKeyService.RotateTrayKey);
         if (error is not null) return error;
         return new TrayConnectResponseDto { RedirectTo = redirectTo! };
     }
@@ -276,7 +275,7 @@ public partial class AuthController
     [HttpPost("tray-assertion-exchange")]
     public async Task<ActionResult<TrayAssertionExchangeResponseDto>> TrayAssertionExchange([FromBody] TrayAssertionExchangeRequestDto request)
     {
-        var result = await RedeemConsentAssertionAsync(AudienceTray, request.Assertion);
+        var result = await RedeemConsentAssertionAsync(AudienceTray, request.Assertion, request.CodeVerifier);
         if (result is null) return Unauthorized();
         return new TrayAssertionExchangeResponseDto { UserId = result.Value.UserId, TrayApiKey = result.Value.ApiKey };
     }

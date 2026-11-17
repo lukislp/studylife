@@ -122,22 +122,37 @@ public class GenericOAuthConnectPkceTests : IClassFixture<CustomWebApplicationFa
     }
 
     [Fact]
-    public async Task Connect_WithoutChallenge_StillWorksWhilePkceIsOptional()
+    public async Task Connect_WithoutChallenge_IsRejected_RegardlessOfConfiguration()
     {
-        // Consent:RequirePkce is unset in the test host - the two existing dynamic clients
-        // (studylife-cli, studylife-alexa) do not send a challenge yet.
-        await SeedClientAsync("pkce-optional");
-        var assertion = await ConnectAsync("pkce-optional", null);
-        Assert.Equal(HttpStatusCode.OK, (await ExchangeAsync("pkce-optional", assertion, null)).StatusCode);
-        await CleanupAsync("pkce-optional");
+        // PKCE is always mandatory for dynamic clients (audit M5); Consent:RequirePkce is unset here
+        // and must make no difference.
+        await SeedClientAsync("pkce-missing");
+        await ConnectAsync("pkce-missing", null, expected: HttpStatusCode.BadRequest);
+        await CleanupAsync("pkce-missing");
+    }
+
+    [Fact]
+    public async Task Connect_WithMethodButNoChallenge_IsRejected()
+    {
+        await SeedClientAsync("pkce-half");
+        var response = await _factory.CreateClient().PostAsJsonAsync("/api/auth/connect", new GenericConnectRequestDto
+        {
+            ClientId = "pkce-half",
+            RedirectUri = RedirectUri,
+            State = "s",
+            CodeChallengeMethod = "S256",
+            Scopes = Scopes,
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await CleanupAsync("pkce-half");
     }
 
     [Fact]
     public async Task Connect_WithScopesThatDifferFromTheRegistration_ReturnsConflict()
     {
         await SeedClientAsync("scope-echo");
-        await ConnectAsync("scope-echo", null, scopes: new List<string> { "WebhooksProxy.List", "Notes.GetAll" }, expected: HttpStatusCode.Conflict);
-        await ConnectAsync("scope-echo", null, scopes: new List<string>(), expected: HttpStatusCode.Conflict);
+        await ConnectAsync("scope-echo", NewPkce().Challenge, scopes: new List<string> { "WebhooksProxy.List", "Notes.GetAll" }, expected: HttpStatusCode.Conflict);
+        await ConnectAsync("scope-echo", NewPkce().Challenge, scopes: new List<string>(), expected: HttpStatusCode.Conflict);
         await CleanupAsync("scope-echo");
     }
 
@@ -145,12 +160,12 @@ public class GenericOAuthConnectPkceTests : IClassFixture<CustomWebApplicationFa
     public async Task Reconnect_SupersedesThePreviousKey()
     {
         await SeedClientAsync("supersede");
-        var first = await (await ExchangeAsync("supersede", await ConnectAsync("supersede", null), null))
+        var first = await (await ExchangeAsync("supersede", await ConnectAsync("supersede", TestPkce.Challenge), TestPkce.Verifier))
             .Content.ReadFromJsonAsync<GenericAssertionExchangeResponseDto>();
         using (var firstKey = ApiKeyTestHelpers.CreateClientWithKey(_factory, first!.ApiKey))
             Assert.Equal(HttpStatusCode.OK, (await firstKey.GetAsync("/api/auth/whoami")).StatusCode);
 
-        var second = await (await ExchangeAsync("supersede", await ConnectAsync("supersede", null), null))
+        var second = await (await ExchangeAsync("supersede", await ConnectAsync("supersede", TestPkce.Challenge), TestPkce.Verifier))
             .Content.ReadFromJsonAsync<GenericAssertionExchangeResponseDto>();
 
         using var oldKey = ApiKeyTestHelpers.CreateClientWithKey(_factory, first.ApiKey);
