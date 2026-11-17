@@ -904,7 +904,7 @@ public class SettingsControllerProgressShareTokenLeakTests : IClassFixture<Custo
     }
 
     [Fact]
-    public async Task Put_ApiKeySeesNull_SessionSeesRealToken()
+    public async Task Put_NeitherApiKeyNorSessionSeesTheToken()
     {
         // Audit 2026-11-16 L3: PUT /api/settings echoes the saved row back, and the "ha" slot
         // may call it - the share token must be masked there exactly like on GET.
@@ -926,7 +926,9 @@ public class SettingsControllerProgressShareTokenLeakTests : IClassFixture<Custo
         var latest = await _client.GetFromJsonAsync<UserSettingsDto>("/api/settings");
         var sessionPut = await _client.PutAsJsonAsync("/api/settings", latest);
         var sessionSaved = await sessionPut.Content.ReadFromJsonAsync<UserSettingsDto>();
-        Assert.Equal(enabled.ProgressShareToken, sessionSaved!.ProgressShareToken);
+        // Stored as a hash only since L5: nothing but the enable/regenerate responses has it.
+        Assert.True(sessionSaved!.ProgressShareEnabled);
+        Assert.Null(sessionSaved.ProgressShareToken);
     }
 }
 
