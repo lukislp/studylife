@@ -4,6 +4,7 @@
 using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
+using StudyLife.Server.Services.Outbound;
 using WebPush;
 
 namespace StudyLife.Server.Services;
@@ -43,6 +44,10 @@ public partial class BackgroundTaskService : BackgroundService
     // is deliberately a single-instance feature (see RunBackupDumpAsync/RunDatabaseMaintenanceAsync).
     private readonly DatabaseBackupService? _backupService;
     private WebPushClient? _pushClient;
+    // The vetted client for user-supplied Web Push endpoints (audit M4). Optional constructor
+    // param like _aiProxyClient so the direct-construction tests that never push need no update;
+    // "not passed" falls back to a production-vetted instance, never to an unvetted client.
+    private readonly UserSuppliedUrlHttpClient _userUrlHttp;
 
     // What a tick actually dispatches: one descriptor per subtask (name, interval, per-user vs
     // once-per-tick, the delegate) instead of one "_next<Subtask>Run" field plus one
@@ -120,7 +125,8 @@ public partial class BackgroundTaskService : BackgroundService
         DatabaseBackupService? backupService = null,
         TimeProvider? timeProvider = null,
         AiProxyClient? aiProxyClient = null,
-        IConfiguration? configuration = null)
+        IConfiguration? configuration = null,
+        UserSuppliedUrlHttpClient? userUrlHttp = null)
     {
         _services = services;
         _vapidKeys = vapidKeysHolder.Keys!; // always set - see VapidKeysHolder comment
@@ -130,6 +136,7 @@ public partial class BackgroundTaskService : BackgroundService
         _shardClaim = shardClaim ?? new StaticWorkerShardClaim();
         _time = timeProvider ?? TimeProvider.System;
         _aiProxyClient = aiProxyClient;
+        _userUrlHttp = userUrlHttp ?? new UserSuppliedUrlHttpClient();
         _demoReadOnly = configuration is not null && DemoModeGuard.IsEnabled(configuration);
         // Last: the table's delegates are method groups over this instance, so every field they
         // close over is already assigned.
@@ -139,7 +146,8 @@ public partial class BackgroundTaskService : BackgroundService
     private WebPushClient GetPushClient()
     {
         if (_pushClient != null) return _pushClient;
-        _pushClient = new WebPushClient();
+        // User-supplied endpoints: only through the vetted client (audit M4, UserSuppliedUrlHttp).
+        _pushClient = new WebPushClient(_userUrlHttp.Http);
         _pushClient.SetVapidDetails(_vapidKeys.Subject, _vapidKeys.PublicKey, _vapidKeys.PrivateKey);
         return _pushClient;
     }

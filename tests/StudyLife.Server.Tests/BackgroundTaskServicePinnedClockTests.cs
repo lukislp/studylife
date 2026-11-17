@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using StudyLife.Server.Controllers;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
+using StudyLife.Server.Services.Outbound;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Tests;
@@ -60,7 +61,8 @@ internal static class PinnedClock
         factory.Services.GetRequiredService<ILogger<BackgroundTaskService>>(),
         apnsSender ?? factory.Services.GetRequiredService<ApnsSender>(),
         backupService: factory.Services.GetRequiredService<DatabaseBackupService>(),
-        timeProvider: new FixedTimeProvider(Instant));
+        timeProvider: new FixedTimeProvider(Instant),
+        userUrlHttp: factory.Services.GetRequiredService<UserSuppliedUrlHttpClient>());
 }
 
 /// <summary>

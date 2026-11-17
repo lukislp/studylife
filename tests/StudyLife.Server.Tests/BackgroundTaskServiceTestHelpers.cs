@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using StudyLife.Server.Controllers;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
+using StudyLife.Server.Services.Outbound;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Tests;
@@ -38,7 +39,10 @@ internal static class BackgroundTaskServiceTestFactory
         factory.Services.GetRequiredService<ILogger<BackgroundTaskService>>(),
         apnsSender ?? factory.Services.GetRequiredService<ApnsSender>(),
         backupService: factory.Services.GetRequiredService<DatabaseBackupService>(),
-        aiProxyClient: aiProxyClient ?? factory.Services.GetRequiredService<AiProxyClient>());
+        aiProxyClient: aiProxyClient ?? factory.Services.GetRequiredService<AiProxyClient>(),
+        // The host's vetted client, whose filter CustomWebApplicationFactory widens to loopback
+        // for the fake push servers.
+        userUrlHttp: factory.Services.GetRequiredService<UserSuppliedUrlHttpClient>());
 }
 
 /// <summary>

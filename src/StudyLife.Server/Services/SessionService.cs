@@ -4,6 +4,7 @@
 using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
+using StudyLife.Server.Services.Outbound;
 using StudyLife.Server.Texts;
 using StudyLife.Shared;
 using WebPush;
@@ -76,9 +77,11 @@ public class SessionService : ISessionService
     private readonly ICourseResolver _courseResolver;
     private readonly ApnsSender _apnsSender;
     private readonly WebhooksProxyClient _webhooks;
+    private readonly UserSuppliedUrlHttpClient _userUrlHttp;
 
     public SessionService(StudyLifeDb db, SessionHistoryCacheVersion historyCacheVersion, VapidKeysHolder vapidKeysHolder,
-        ICurrentUserAccessor currentUser, ApnsSender apnsSender, ICourseResolver courseResolver, WebhooksProxyClient webhooks)
+        ICurrentUserAccessor currentUser, ApnsSender apnsSender, ICourseResolver courseResolver, WebhooksProxyClient webhooks,
+        UserSuppliedUrlHttpClient userUrlHttp)
     {
         _db = db;
         _historyCacheVersion = historyCacheVersion;
@@ -87,6 +90,7 @@ public class SessionService : ISessionService
         _apnsSender = apnsSender;
         _courseResolver = courseResolver;
         _webhooks = webhooks;
+        _userUrlHttp = userUrlHttp;
     }
 
     /// <summary>
@@ -402,7 +406,8 @@ public class SessionService : ISessionService
         var body = t.T("record.body", duration.TotalHours);
         var payload = System.Text.Json.JsonSerializer.Serialize(new { title, body });
 
-        var client = new WebPushClient();
+        // User-supplied endpoints: only through the vetted client (audit M4, UserSuppliedUrlHttp).
+        var client = new WebPushClient(_userUrlHttp.Http);
         client.SetVapidDetails(_vapidKeys.Subject, _vapidKeys.PublicKey, _vapidKeys.PrivateKey);
 
         var expired = new List<PushSubscriptionEntity>();

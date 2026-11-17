@@ -19,6 +19,7 @@ using StudyLife.Server.Diagnostics;
 using StudyLife.Server.Discovery;
 using StudyLife.Server.OpenApi;
 using StudyLife.Server.Services;
+using StudyLife.Server.Services.Outbound;
 
 // Run-time assertions (docs/SECURITY-ASSURANCE.md 8.5): in a Debug build, failed Debug.Assert
 // calls are reported on stderr instead of killing the process; compiled away in Release.
@@ -592,6 +593,9 @@ if (!isPostgres)
 builder.Services.AddScoped<SystemSecretsService>();
 builder.Services.AddSingleton<IInstanceIdProvider, InstanceIdProvider>();
 builder.Services.AddSingleton<VapidKeysHolder>();
+// HttpClient for URLs that come from users (Web Push endpoints): resolve, vet, connect to the
+// vetted public address only, no redirects (audit M4, see UserSuppliedUrlHttp).
+builder.Services.AddUserSuppliedUrlHttpClient();
 // Speech:Enabled gates TTS (PiperVoiceRegistry/EspeakPhonemizer) and STT (WhisperTranscriber)
 // registration entirely - default true, unchanged behavior for the single-container Pi,
 // docker-compose, and the k8s WEB Deployment. Only the k8s WORKER Deployment
