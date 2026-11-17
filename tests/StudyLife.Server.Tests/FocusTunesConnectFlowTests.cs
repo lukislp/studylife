@@ -4,6 +4,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
+using StudyLife.Server.Services;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Tests;
@@ -27,7 +28,7 @@ public class FocusTunesConnectFlowTests : IClassFixture<CustomWebApplicationFact
 
     // A real chrome.identity.launchWebAuthFlow-style redirect_uri - a perfectly ordinary https
     // origin, no special-casing needed by the server for this audience.
-    private const string RedirectUri = "https://abcdefghijklmnopqrstuvwxyzabcdef.chromiumapp.org/";
+    private const string RedirectUri = "https://" + ConsentRedirectCatalogue.FocusUnpackedExtensionId + ".chromiumapp.org/";
 
     private static (string Assertion, string State) ParseRedirectTo(string redirectTo)
     {

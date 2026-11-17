@@ -57,24 +57,18 @@ public partial class AuthController
             return ServiceResultExtensions.ProblemResult(this, ClientNotApprovedProblem);
 
         var allowedUris = client.AllowedRedirectUris.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        if (!allowedUris.Contains(request.RedirectUri, StringComparer.Ordinal))
+        if (!ConsentRedirectPolicy.MatchesRegisteredRedirectUri(allowedUris, request.RedirectUri))
             return BadRequest("redirectUri must exactly match one of this client's registered redirect URIs.");
 
-        // PKCE (2026-09-11 audit, finding 6): the assertion travels in a redirect URL, so without
-        // a verifier anyone who sees that URL can redeem it at the anonymous exchange endpoint.
-        // Consent:RequirePkce flips this from "enforced when offered" to "mandatory" - off until
-        // the two existing dynamic clients (studylife-cli, studylife-alexa) send a challenge.
-        string? codeChallenge = null;
-        if (!string.IsNullOrEmpty(request.CodeChallenge) || !string.IsNullOrEmpty(request.CodeChallengeMethod))
-        {
-            if (!string.Equals(request.CodeChallengeMethod, "S256", StringComparison.Ordinal) || !IsValidPkceChallenge(request.CodeChallenge))
-                return BadRequest("codeChallenge must be a base64url S256 challenge (43-128 characters) with codeChallengeMethod=S256.");
-            codeChallenge = request.CodeChallenge;
-        }
-        else if (_consentOptions.CurrentValue.RequirePkce)
-        {
+        // PKCE (2026-09-11 audit, finding 6; audit M5): the assertion travels in a redirect URL, so
+        // without a verifier anyone who sees that URL can redeem it at the anonymous exchange
+        // endpoint. Always mandatory for dynamic clients (S256 only), independent of configuration.
+        var pkce = ConsentPkce.Evaluate(request.CodeChallenge, request.CodeChallengeMethod);
+        if (pkce.State == ConsentPkce.OfferState.None)
             return BadRequest("PKCE is required: send codeChallenge and codeChallengeMethod=S256.");
-        }
+        if (pkce.State == ConsentPkce.OfferState.Invalid)
+            return BadRequest(ConsentPkce.InvalidOfferMessage);
+        var codeChallenge = pkce.Challenge;
 
         // The grant is exactly what the user SAW: the consent page echoes the scope list it
         // rendered, and a registration that changed in between (developer widening scopes after
