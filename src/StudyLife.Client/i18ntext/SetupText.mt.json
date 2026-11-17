@@ -288,6 +288,8 @@
   "MarketplaceByDeveloper": "minn {0}",
   "MarketplaceViewSource": "Ara l-kodiċi sors",
   "MarketplaceDemoNotice": "L-installazzjoni tal-add-ons hija diżattivata fuq din l-istanza tad-demo.",
+  "MarketplaceManualSetupNotice": "Add-on ospitat minnek innifsek: m'għandux indirizz fiss, għalhekk ma jistax jiġi installat b'click wieħed. Irreġistrah bħala app tal-iżviluppatur bl-URI tal-ridirezzjoni mill-gwida tal-konfigurazzjoni tiegħu, imbagħad qabbdu mill-add-on innifsu.",
+  "MarketplaceManualSetupLink": "Iftaħ il-gwida tal-konfigurazzjoni",
   "ClientKeysHeading": "Add-ons konnessi",
   "TelemetryHeading": "Rapporti ta' Użu u Żbalji",
   "TelemetryDesc": "Jgħinna nsibu bugs u postijiet bil-mod billi jintbagħtu dejta anonima dwar il-prestazzjoni u l-iżbalji — qatt in-noti, is-sessjonijiet, jew id-dejta tas-saħħa tiegħek. Tista' tiddiżattivah fi kwalunkwe ħin.",

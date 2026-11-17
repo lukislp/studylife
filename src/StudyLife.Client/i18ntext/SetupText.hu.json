@@ -288,6 +288,8 @@
   "MarketplaceByDeveloper": "készítette: {0}",
   "MarketplaceViewSource": "Forráskód megtekintése",
   "MarketplaceDemoNotice": "A bővítmények telepítése le van tiltva ezen a demó példányon.",
+  "MarketplaceManualSetupNotice": "Saját üzemeltetésű bővítmény: nincs fix címe, ezért nem telepíthető egy kattintással. Regisztráld fejlesztői alkalmazásként a beállítási útmutatójában megadott átirányítási URI-val, majd csatlakoztasd magából a bővítményből.",
+  "MarketplaceManualSetupLink": "Beállítási útmutató megnyitása",
   "ClientKeysHeading": "Csatlakoztatott kiegészítők",
   "TelemetryHeading": "Használati és hibajelentések",
   "TelemetryDesc": "Segít nekünk megtalálni a hibákat és a lassú részeket névtelen teljesítmény- és hibaadatok küldésével — soha nem a jegyzeteidet, munkameneteidet vagy egészségügyi adataidat. Ezt bármikor kikapcsolhatod.",

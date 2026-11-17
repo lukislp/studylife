@@ -288,6 +288,8 @@
   "MarketplaceByDeveloper": "von {0}",
   "MarketplaceViewSource": "Quellcode ansehen",
   "MarketplaceDemoNotice": "Das Installieren von Add-ons ist auf dieser Demo-Instanz deaktiviert.",
+  "MarketplaceManualSetupNotice": "Selbst gehostetes Add-on: Es hat keine feste Adresse und lässt sich deshalb nicht mit einem Klick installieren. Registriere es als Entwickler-App mit der Redirect-URI aus seiner Einrichtungsanleitung und verbinde es anschließend im Add-on selbst.",
+  "MarketplaceManualSetupLink": "Einrichtungsanleitung öffnen",
   "ClientKeysHeading": "Verbundene Add-ons",
   "TelemetryHeading": "Nutzungs- und Fehlerberichte",
   "TelemetryDesc": "Hilft uns, Bugs und langsame Stellen zu finden, indem anonyme Performance- und Fehlerdaten gesendet werden — nie deine Notizen, Sessions oder Gesundheitsdaten. Du kannst das jederzeit deaktivieren.",
