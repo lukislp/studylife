@@ -196,7 +196,7 @@ public class OutboundUrlPolicyTests
     [InlineData("2606:4700::1111", true)]
     [InlineData("::ffff:10.0.0.1", false)] // IPv4-mapped private
     public void IsPublicAddress_ClassifiesRanges(string ip, bool expected) =>
-        Assert.Equal(expected, Services.OutboundUrlPolicy.IsPublicAddress(System.Net.IPAddress.Parse(ip)));
+        Assert.Equal(expected, Services.Outbound.OutboundAddressClassifier.IsPublic(System.Net.IPAddress.Parse(ip)));
 
     [Fact]
     public void IsAcceptablePushEndpoint_RejectsOverlongUrl() =>

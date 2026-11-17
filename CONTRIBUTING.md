@@ -191,7 +191,7 @@ checks. A reviewer (today: the maintainer, see [GOVERNANCE.md](GOVERNANCE.md)) l
    reason why it is exempt, see above)?
 2. **Security** - authentication/authorization on new endpoints (`ApiAccess` fallback,
    `ApiKeyScopes` entries), input validation and size limits, no secrets in code or logs, user
-   data scoped by `AuthUserId`, outbound URLs through `OutboundUrlPolicy`. Changes to a trust
+   data scoped by `AuthUserId`, user-supplied outbound URLs through `OutboundUrlPolicy` and the `UserSuppliedUrlHttp` client. Changes to a trust
    boundary update [`docs/SECURITY-ASSURANCE.md`](docs/SECURITY-ASSURANCE.md).
 3. **Compatibility** - OpenAPI contract, EF migrations, add-ons and self-hosters; breaking
    changes are marked `feat!:`.

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 using StudyLife.Server.Data;
+using StudyLife.Server.Services.Outbound;
 using WebPush;
 
 namespace StudyLife.Server.Services;
@@ -23,7 +24,9 @@ public enum WebPushOutcome
 /// a new HttpClient and connection pool) per call and the default 100-second timeout. A push service
 /// that answers slowly, or an endpoint that never answers, now costs at most
 /// <see cref="RequestTimeout"/> per delivery; the worker additionally caps the time it spends on one
-/// user (BackgroundTaskService.PerUserPushBudget).
+/// user (BackgroundTaskService.PerUserPushBudget). The HttpClient sits on the shared vetted handler
+/// of UserSuppliedUrlHttp (2026-11-16 audit M4): a push endpoint is user input, so its host is
+/// resolved, non-public addresses are refused, and the socket only reaches the vetted address.
 ///
 /// Registered as a singleton. The VAPID keys are read on first use: VapidKeysHolder is filled after
 /// the container is built (see its remarks).
@@ -33,30 +36,22 @@ public sealed class WebPushDelivery : IDisposable
     /// <summary>Whole request, including the push service's answer.</summary>
     public static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
 
-    /// <summary>TCP and TLS connect.</summary>
-    public static readonly TimeSpan ConnectTimeout = TimeSpan.FromSeconds(5);
-
     private readonly VapidKeysHolder _vapidKeys;
     private readonly HttpClient _http;
     private readonly Lazy<WebPushClient> _client;
 
-    public WebPushDelivery(VapidKeysHolder vapidKeys) : this(vapidKeys, RequestTimeout) { }
+    public WebPushDelivery(VapidKeysHolder vapidKeys, UserSuppliedUrlHttpClient userUrls)
+        : this(vapidKeys, userUrls, RequestTimeout) { }
 
     /// <summary>Tests shorten the timeout to prove it holds without waiting ten seconds.</summary>
-    internal WebPushDelivery(VapidKeysHolder vapidKeys, TimeSpan requestTimeout)
+    internal WebPushDelivery(VapidKeysHolder vapidKeys, UserSuppliedUrlHttpClient userUrls, TimeSpan requestTimeout)
     {
         _vapidKeys = vapidKeys;
-        _http = new HttpClient(new SocketsHttpHandler
-        {
-            ConnectTimeout = ConnectTimeout,
-            // Push services are a handful of hosts; rotating the pool picks up their DNS changes.
-            PooledConnectionLifetime = TimeSpan.FromMinutes(5),
-            // A push service answers; it never needs to send the worker somewhere else.
-            AllowAutoRedirect = false,
-        })
-        {
-            Timeout = requestTimeout,
-        };
+        // A push endpoint is user input (2026-11-16 audit M4): the client runs on the shared vetted
+        // handler of UserSuppliedUrlHttp - resolve, refuse non-public addresses, connect only to the
+        // vetted one, no redirects, no proxy, 5-second connect timeout. Only the request timeout
+        // is this transport's own.
+        _http = userUrls.CreateClient(requestTimeout);
         _client = new Lazy<WebPushClient>(CreateClient);
     }
 

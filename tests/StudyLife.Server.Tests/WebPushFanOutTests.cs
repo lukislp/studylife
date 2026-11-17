@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
+using StudyLife.Server.Services.Outbound;
 
 namespace StudyLife.Server.Tests;
 
@@ -75,7 +76,7 @@ public class WebPushFanOutTests : IClassFixture<CustomWebApplicationFactory>
     public async Task AnEndpointThatNeverAnswers_FailsWithinTheRequestTimeout()
     {
         using var hanging = new HangingEndpoint();
-        using var delivery = new WebPushDelivery(_factory.Services.GetRequiredService<VapidKeysHolder>(), TimeSpan.FromMilliseconds(500));
+        using var delivery = new WebPushDelivery(_factory.Services.GetRequiredService<VapidKeysHolder>(), _factory.Services.GetRequiredService<UserSuppliedUrlHttpClient>(), TimeSpan.FromMilliseconds(500));
 
         var watch = Stopwatch.StartNew();
         var (outcome, _) = await delivery.SendAsync(Subscription(hanging.Url), "{}", CancellationToken.None);
@@ -84,11 +85,26 @@ public class WebPushFanOutTests : IClassFixture<CustomWebApplicationFactory>
         Assert.True(watch.Elapsed < TimeSpan.FromSeconds(5), $"took {watch.Elapsed}");
     }
 
+    /// <summary>Audit M4: the transport runs on the vetted user-URL handler, so an endpoint whose
+    /// name resolves to a private address is refused before any connection is opened.</summary>
+    [Fact]
+    public async Task AnEndpointResolvingToAPrivateAddress_IsRefusedBeforeConnecting()
+    {
+        using var userUrls = new UserSuppliedUrlHttpClient(
+            FakeHostResolver.Of("push.studylife.invalid", "10.43.0.10"), PublicAddressFilter.Instance);
+        using var delivery = new WebPushDelivery(_factory.Services.GetRequiredService<VapidKeysHolder>(), userUrls);
+
+        var (outcome, error) = await delivery.SendAsync(Subscription("https://push.studylife.invalid/send/abc"), "{}", CancellationToken.None);
+
+        Assert.Equal(WebPushOutcome.Failed, outcome);
+        Assert.IsType<OutboundAddressRejectedException>(Assert.IsType<HttpRequestException>(error).InnerException);
+    }
+
     [Fact]
     public void TheProductionLimits_AreShort()
     {
         Assert.True(WebPushDelivery.RequestTimeout <= TimeSpan.FromSeconds(10));
-        Assert.True(WebPushDelivery.ConnectTimeout <= TimeSpan.FromSeconds(5));
+        Assert.True(UserSuppliedUrlHttp.ConnectTimeout <= TimeSpan.FromSeconds(5));
         Assert.True(BackgroundTaskService.DefaultPerUserPushBudget <= TimeSpan.FromSeconds(30));
         // The app shares one transport: DI hands every consumer the same instance.
         Assert.Same(_factory.Services.GetRequiredService<WebPushDelivery>(), _factory.Services.GetRequiredService<WebPushDelivery>());
@@ -105,7 +121,7 @@ public class WebPushFanOutTests : IClassFixture<CustomWebApplicationFactory>
             _factory.Services.GetRequiredService<VapidKeysHolder>(),
             _factory.Services.GetRequiredService<ILogger<BackgroundTaskService>>(),
             _factory.Services.GetRequiredService<ApnsSender>(),
-            webPush: new WebPushDelivery(_factory.Services.GetRequiredService<VapidKeysHolder>(), TimeSpan.FromSeconds(60)))
+            webPush: new WebPushDelivery(_factory.Services.GetRequiredService<VapidKeysHolder>(), _factory.Services.GetRequiredService<UserSuppliedUrlHttpClient>(), TimeSpan.FromSeconds(60)))
         {
             PerUserPushBudget = TimeSpan.FromMilliseconds(500),
         };
