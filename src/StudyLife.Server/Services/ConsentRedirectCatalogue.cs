@@ -11,12 +11,18 @@ namespace StudyLife.Server.Services;
 /// </summary>
 public static class ConsentRedirectCatalogue
 {
-    /// <summary>studylife-capture's Chrome Web Store listing.</summary>
-    public const string CaptureExtensionId = "glhegeoapkifmhodpnbfjgijlflkdglh";
+    /// <summary>studylife-capture's Chrome Web Store listing (the README's store links). Capture
+    /// has no manifest key, so an unpacked build gets a path-derived ID that operators add via
+    /// configuration.</summary>
+    public const string CaptureStoreExtensionId = "glhegeoapkifmhodpnbfjgijlflkdglh";
 
-    /// <summary>The stable ID studylife-focus gets from the key in its manifest
-    /// (lukislp/studylife-focus#151); serves both the focusguard and focustunes audiences.</summary>
-    public const string FocusExtensionId = "hhgnenpnafffiadgabcclncnbfdopnlp";
+    /// <summary>studylife-focus's Chrome Web Store listing.</summary>
+    public const string FocusStoreExtensionId = "bhjoeghhdmaoepmbklbcbdkfnjbgclbh";
+
+    /// <summary>The stable ID unpacked studylife-focus builds get from the key in their manifest
+    /// (lukislp/studylife-focus#151). The store package is published without that key and keeps
+    /// <see cref="FocusStoreExtensionId"/>.</summary>
+    public const string FocusUnpackedExtensionId = "hhgnenpnafffiadgabcclncnbfdopnlp";
 
     /// <summary>Audiences whose callback is a loopback URL of a native app (RFC 8252 §7.3).</summary>
     public static readonly IReadOnlySet<string> LoopbackAudiences =
@@ -29,8 +35,8 @@ public static class ConsentRedirectCatalogue
     public static readonly IReadOnlyDictionary<string, string[]> DefaultChromeExtensionIds =
         new Dictionary<string, string[]>(StringComparer.Ordinal)
         {
-            ["capture"] = [CaptureExtensionId],
-            ["focusguard"] = [FocusExtensionId],
-            ["focustunes"] = [FocusExtensionId],
+            ["capture"] = [CaptureStoreExtensionId],
+            ["focusguard"] = [FocusStoreExtensionId, FocusUnpackedExtensionId],
+            ["focustunes"] = [FocusStoreExtensionId, FocusUnpackedExtensionId],
         };
 }

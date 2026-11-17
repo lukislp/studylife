@@ -47,6 +47,22 @@ public class FocusGuardConnectFlowTests : IClassFixture<CustomWebApplicationFact
         });
     }
 
+    /// <summary>Both published shapes of studylife-focus reach consent: the Chrome Web Store
+    /// package (store ID, no manifest key) and unpacked builds (ID from the manifest key).</summary>
+    [Theory]
+    [InlineData("https://bhjoeghhdmaoepmbklbcbdkfnjbgclbh.chromiumapp.org/")]
+    [InlineData("https://hhgnenpnafffiadgabcclncnbfdopnlp.chromiumapp.org/")]
+    public async Task Connect_AcceptsTheStoreAndTheUnpackedExtensionId(string redirectUri)
+    {
+        var sessionClient = _factory.CreateClient();
+
+        var connectResponse = await sessionClient.PostAsJsonAsync("/api/auth/focusguard-connect",
+            new FocusGuardConnectRequestDto { RedirectUri = redirectUri, State = "s" });
+
+        Assert.Equal(HttpStatusCode.OK, connectResponse.StatusCode);
+        await ClearFocusGuardKeyAsync(_factory);
+    }
+
     [Fact]
     public async Task ConnectThenExchange_HappyPath_ReturnsRealUserIdAndRotatesTheFocusGuardKey()
     {

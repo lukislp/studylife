@@ -39,13 +39,16 @@ public class ConsentRedirectPolicyTests
         Assert.False(Build().IsAllowed(audience, uri));
 
     private const string CaptureId = "glhegeoapkifmhodpnbfjgijlflkdglh";
-    private const string FocusId = "hhgnenpnafffiadgabcclncnbfdopnlp";
+    private const string FocusId = "hhgnenpnafffiadgabcclncnbfdopnlp"; // unpacked builds (manifest key)
+    private const string FocusStoreId = "bhjoeghhdmaoepmbklbcbdkfnjbgclbh"; // Chrome Web Store package
     private const string OtherId = "abcdefghijklmnopabcdefghijklmnop";
 
     [Theory]
     [InlineData("capture", CaptureId)]
     [InlineData("focusguard", FocusId)]
     [InlineData("focustunes", FocusId)]
+    [InlineData("focusguard", FocusStoreId)]
+    [InlineData("focustunes", FocusStoreId)]
     public void ExtensionAudiences_AcceptPinnedId_WithoutConfig(string audience, string id)
     {
         Assert.True(Build().IsAllowed(audience, $"https://{id}.chromiumapp.org/"));
@@ -55,6 +58,7 @@ public class ConsentRedirectPolicyTests
 
     [Theory]
     [InlineData("capture", FocusId)] // another audience's ID
+    [InlineData("capture", FocusStoreId)]
     [InlineData("focusguard", CaptureId)]
     [InlineData("capture", OtherId)] // well-formed but unknown
     public void ExtensionAudiences_RefuseUnpinnedId(string audience, string id) =>
