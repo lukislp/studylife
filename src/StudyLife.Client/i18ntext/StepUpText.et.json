@@ -1,0 +1,23 @@
+{
+  "Title": "Kinnita, et see oled sina",
+  "Intro": "See toiming kaitseb sinu kontot. Jätkamiseks kinnita selle konto pääsuvõtmega.",
+  "BrowserSignInIntro": "Logi uuesti sisse, et kinnitada, et see oled sina. Toiming jätkub kohe pärast seda.",
+  "PasskeyButton": "Kinnita pääsuvõtmega",
+  "BrowserSignInButton": "Logi uuesti sisse",
+  "PasswordToggle": "Kasuta minu parooli",
+  "PasswordLabel": "Sinu parool",
+  "PasswordButton": "Kinnita parooliga",
+  "RecoveryToggle": "Kasuta taastekoodi",
+  "RecoveryLabel": "Taastekood",
+  "RecoveryButton": "Kinnita taastekoodiga",
+  "Working": "Töötlen…",
+  "PasskeyFailed": "Pääsuvõtme päring ei lõppenud. Proovi uuesti või kinnita muul viisil.",
+  "CancelButton": "Tühista",
+  "CloseDialog": "Sulge dialoog",
+  "ErrorRejected": "Seda kinnitust ei aktsepteeritud.",
+  "ErrorMissing": "Kinnita pääsuvõtme, parooli või taastekoodiga.",
+  "ErrorTooMany": "Liiga palju katseid. Oota mõni minut.",
+  "ErrorNetwork": "Serveriga ei saadud ühendust.",
+  "ErrorGeneric": "Midagi läks valesti. Proovi uuesti.",
+  "ApprovalOtherSession": "Uut pääsuvõtit ei saa kinnitada seansist, mis selle lisas. Kinnita see teises sisselogitud seadmes või logi välja ja uuesti sisse olemasoleva pääsuvõtme või parooliga ning kinnita see siin."
+}

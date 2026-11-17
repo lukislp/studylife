@@ -29,7 +29,11 @@ public partial class AuthController
     /// validated one (Registration:Mode=invite, past bootstrap) - carried forward to Complete so
     /// TryConsumeInviteAsync consumes the SAME token that was validated at Begin, atomically with
     /// user/credential creation, never at Begin itself (see RegisterComplete).</summary>
-    private sealed record PendingRegistration(CredentialCreateOptions Options, string DisplayName, int? ForAuthUserId, bool RequiresSessionAtComplete, string? LinkCode = null, string? InviteToken = null);
+    // InstanceClaimedAtBegin: for a self-registration, whether the instance was already claimed
+    // when Begin ran (and so which gate it passed: setup code vs. registration mode/invite).
+    // Complete refuses when that changed in between (audit 2026-11-16 L8). Null on the
+    // additional-device paths, and on challenges cached by an older build (5-minute lifetime).
+    private sealed record PendingRegistration(CredentialCreateOptions Options, string DisplayName, int? ForAuthUserId, bool RequiresSessionAtComplete, string? LinkCode = null, string? InviteToken = null, bool? InstanceClaimedAtBegin = null);
 
     public class PasskeyRegisterCompleteRequest
     {
@@ -80,7 +84,7 @@ public partial class AuthController
         }
 
         return await BeginRegistration(displayName, forAuthUserId: null, requiresSessionAtComplete: true,
-            excludeCredentials: [], inviteToken: inviteToken);
+            excludeCredentials: [], inviteToken: inviteToken, instanceClaimedAtBegin: anyPasskeyExists);
     }
 
     /// <summary>
@@ -142,7 +146,8 @@ public partial class AuthController
 
     private async Task<ActionResult<PasskeyBeginResponseDto>> BeginRegistration(
         string displayName, int? forAuthUserId, bool requiresSessionAtComplete,
-        IReadOnlyList<PublicKeyCredentialDescriptor> excludeCredentials, string? linkCode = null, string? inviteToken = null)
+        IReadOnlyList<PublicKeyCredentialDescriptor> excludeCredentials, string? linkCode = null, string? inviteToken = null,
+        bool? instanceClaimedAtBegin = null)
     {
         // The user handle is an opaque random handle ONLY for the browser's WebAuthn dialog.
         // Account resolution at login relies exclusively on the (unique) CredentialId,
@@ -174,7 +179,7 @@ public partial class AuthController
 
         var optionsId = Guid.NewGuid().ToString("N");
         await CacheSetAsync(RegistrationCacheKey(optionsId),
-            new PendingRegistration(options, displayName, forAuthUserId, requiresSessionAtComplete, linkCode, inviteToken), ChallengeLifetime);
+            new PendingRegistration(options, displayName, forAuthUserId, requiresSessionAtComplete, linkCode, inviteToken, instanceClaimedAtBegin), ChallengeLifetime);
 
         return new PasskeyBeginResponseDto { OptionsId = optionsId, OptionsJson = options.ToJson() };
     }
@@ -237,6 +242,17 @@ public partial class AuthController
         // RegisterBegin used to decide whether its RegistrationGateService check even ran.
         var anyPasskeyExists = await InstanceBootstrap.IsClaimedAsync(_db);
 
+        // The claim state Begin gated on must still hold (audit 2026-11-16 L8): a family signup
+        // begun on a claimed instance must not complete as the owner-claiming first registration
+        // after the installation was reset in between (it never presented the setup code), and
+        // a first registration must not turn into a family signup that skipped the invite gate.
+        if (pending.ForAuthUserId is null && pending.InstanceClaimedAtBegin is bool claimedAtBegin
+            && claimedAtBegin != anyPasskeyExists)
+        {
+            await transaction.RollbackAsync();
+            return BadRequest("Registration challenge unknown or expired.");
+        }
+
         AuthUserEntity targetUser;
         if (pending.ForAuthUserId is int ownUserId)
         {
@@ -287,6 +303,9 @@ public partial class AuthController
             SignCount = credential.SignCount,
             CreatedAt = now,
             ApprovedAt = isAdditionalDevice ? null : now,
+            // The session that ran this ceremony (begin-additional) may not approve the result
+            // itself (ApproveCredentialAsync, 2026-11-16 audit M1). The link-code path has none.
+            CreatedBySessionId = isAdditionalDevice && pending.RequiresSessionAtComplete ? CurrentSessionId : null,
         });
 
         // Issue a session only directly at the open first registration (instead of forcing a

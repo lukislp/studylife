@@ -1,0 +1,23 @@
+{
+  "Title": "Confirmă că ești tu",
+  "Intro": "Această acțiune îți protejează contul. Confirmă cu o cheie de acces a acestui cont pentru a continua.",
+  "BrowserSignInIntro": "Conectează-te din nou pentru a confirma că ești tu. Acțiunea continuă imediat după.",
+  "PasskeyButton": "Confirmă cu cheia de acces",
+  "BrowserSignInButton": "Conectează-te din nou",
+  "PasswordToggle": "Folosește parola mea",
+  "PasswordLabel": "Parola ta",
+  "PasswordButton": "Confirmă cu parola",
+  "RecoveryToggle": "Folosește un cod de recuperare",
+  "RecoveryLabel": "Cod de recuperare",
+  "RecoveryButton": "Confirmă cu codul de recuperare",
+  "Working": "Se procesează…",
+  "PasskeyFailed": "Solicitarea cheii de acces nu s-a finalizat. Încearcă din nou sau confirmă în alt mod.",
+  "CancelButton": "Anulează",
+  "CloseDialog": "Închide dialogul",
+  "ErrorRejected": "Această confirmare nu a fost acceptată.",
+  "ErrorMissing": "Confirmă cu o cheie de acces, parola ta sau un cod de recuperare.",
+  "ErrorTooMany": "Prea multe încercări. Te rugăm să aștepți câteva minute.",
+  "ErrorNetwork": "Serverul nu poate fi accesat.",
+  "ErrorGeneric": "Ceva nu a funcționat. Încearcă din nou.",
+  "ApprovalOtherSession": "O cheie de acces nouă nu poate fi aprobată din sesiunea care a adăugat-o. Aprob-o pe alt dispozitiv conectat sau deconectează-te și conectează-te din nou cu o cheie de acces existentă sau cu parola, apoi aprob-o aici."
+}

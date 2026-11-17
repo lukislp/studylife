@@ -16,5 +16,7 @@
   "SignedOutNotStudyLife": "{0} ma jwieġibx bħal server ta' StudyAtrium. Jekk l-indirizz huwa ħażin, biddel is-server.",
   "SignedOutNoNetwork": "M'hemmx konnessjoni man-netwerk – il-Wi-Fi u d-data mobbli huma mitfija.",
   "PasskeyDomainHint": "Il-passkeys jaħdmu biss fuq {0}.",
-  "UsePasskeyAddress": "Uża dan l-indirizz"
+  "UsePasskeyAddress": "Uża dan l-indirizz",
+  "CleartextServer": "Dan l-indirizz mhuwiex kriptat (http://). Id-dħul u d-data tiegħek jivvjaġġaw jinqraw. Uża https://, jew erġa' agħfas biex tużah xorta waħda.",
+  "SharedTextConfirm": "Tissejvja t-test kondiviż bħala nota ġdida?"
 }

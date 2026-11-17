@@ -58,19 +58,25 @@ public partial class AuthController
     /// Approves a passkey created via register/begin-additional that has not yet been
     /// approved - callable ONLY from an already logged-in device of the same account
     /// (SessionAuthUserId must match the target credential). Afterward the new device can log
-    /// in normally via login/begin+complete.
+    /// in normally via login/begin+complete. Needs a confirmed session ([RequireStepUp]) that is
+    /// not the one that registered the passkey (403 approval-needs-other-session) - 2026-11-16
+    /// audit M1: a stolen token alone must not be able to plant and approve its own passkey.
     /// </summary>
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [RequireStepUp]
     [HttpPost("credentials/{id:int}/approve")]
     public async Task<IActionResult> ApproveCredential(int id) =>
-        (await _account.ApproveCredentialAsync(SessionUserId, id)).ToNoContentResult(this);
+        (await _account.ApproveCredentialAsync(SessionUserId, id, CurrentSessionId)).ToNoContentResult(this);
 
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPut("credentials/{id:int}/label")]
     public async Task<IActionResult> RenameCredential(int id, [FromBody] PasskeyRenameRequestDto request) =>
         (await _account.RenameCredentialAsync(SessionUserId, id, request.Label)).ToNoContentResult(this);
 
+    /// <summary>Removes a passkey (and signs out the other devices, see the service). Needs a
+    /// confirmed session ([RequireStepUp]): a stolen token must not remove the owner's own way in.</summary>
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [RequireStepUp]
     [HttpDelete("credentials/{id:int}")]
     public async Task<IActionResult> DeleteCredential(int id) =>
         (await _account.DeleteCredentialAsync(SessionUserId, id, CurrentSessionId)).ToNoContentResult(this);
@@ -79,9 +85,11 @@ public partial class AuthController
     /// "Sign out everywhere else": deletes every session of the account except the one making
     /// this call, so a device the user no longer controls loses access immediately instead of
     /// at its sliding expiry. The current session stays - the user is acting from a device they
-    /// evidently still hold.
+    /// evidently still hold. Needs a confirmed session ([RequireStepUp]): otherwise a stolen token
+    /// could sign the real user out everywhere and keep the account to itself.
     /// </summary>
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [RequireStepUp]
     [HttpPost("sessions/revoke-others")]
     public async Task<IActionResult> RevokeOtherSessions()
     {

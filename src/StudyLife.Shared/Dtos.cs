@@ -811,11 +811,32 @@ public class PasskeyCompleteResponseDto
 /// AppReturnContext.BuildTokenReturnRedirectAsync): exchanges a real session token for a
 /// short-lived, single-use code bound to a code_challenge, so the token itself never has to
 /// travel through a custom-URL-scheme/loopback redirect that a different process could
-/// potentially intercept.</summary>
+/// potentially intercept. The token handed off is the one the request is authenticated with
+/// (X-Session-Token) - never a body field, so only a holder of a live session can store anything
+/// (2026-11-16 audit M3).</summary>
 public class AuthHandoffRequestDto
 {
-    public string Token { get; set; } = "";
+    /// <summary>S256 code_challenge: base64url of a SHA-256 digest, exactly 43 characters.</summary>
+    [Required]
+    [RegularExpression(PkceShape.ChallengePattern)]
     public string CodeChallenge { get; set; } = "";
+}
+
+/// <summary>The shapes RFC 7636 allows for the native app handoff, shared by the server's validation
+/// and the client's AppReturnContext so both refuse the same input.</summary>
+public static class PkceShape
+{
+    /// <summary>S256 challenge: base64url (no padding) of a 32-byte SHA-256 digest.</summary>
+    public const string ChallengePattern = "^[A-Za-z0-9_-]{43}$";
+
+    /// <summary>code_verifier: 43 to 128 unreserved characters (RFC 7636 section 4.1).</summary>
+    public const string VerifierPattern = "^[A-Za-z0-9._~-]{43,128}$";
+
+    /// <summary>Handoff code: base64url of 32 random bytes (43 characters).</summary>
+    public const string CodePattern = "^[A-Za-z0-9_-]{43}$";
+
+    /// <summary>The app's own anti-forgery state, echoed back unchanged in the return redirect.</summary>
+    public const string StatePattern = "^[A-Za-z0-9_-]{16,128}$";
 }
 
 /// <summary>Response of POST /api/auth/handoff.</summary>
@@ -829,7 +850,9 @@ public class AuthHandoffResponseDto
 /// code_challenge given at handoff time - see AuthController.Exchange.</summary>
 public class AuthExchangeRequestDto
 {
+    [MaxLength(64)]
     public string Code { get; set; } = "";
+    [MaxLength(128)]
     public string CodeVerifier { get; set; } = "";
 }
 

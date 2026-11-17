@@ -16,5 +16,7 @@
   "SignedOutNotStudyLife": "Ní fhreagraíonn {0} mar fhreastalaí StudyAtrium. Má tá an seoladh mícheart, athraigh an freastalaí.",
   "SignedOutNoNetwork": "Níl aon nasc líonra ann – tá Wi-Fi agus sonraí móibíleacha múchta.",
   "PasskeyDomainHint": "Ní oibríonn eochracha pasfhocail ach ag {0}.",
-  "UsePasskeyAddress": "Úsáid an seoladh seo"
+  "UsePasskeyAddress": "Úsáid an seoladh seo",
+  "CleartextServer": "Níl an seoladh seo criptithe (http://). Bheadh do shíniú isteach agus do shonraí le léamh agus iad ag taisteal. Úsáid https://, nó tapáil arís chun é a úsáid mar sin féin.",
+  "SharedTextConfirm": "An bhfuil tú ag iarraidh an téacs comhroinnte a shábháil mar nóta nua?"
 }
