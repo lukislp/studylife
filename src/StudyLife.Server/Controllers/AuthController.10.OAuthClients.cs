@@ -57,7 +57,7 @@ public partial class AuthController
             return ServiceResultExtensions.ProblemResult(this, ClientNotApprovedProblem);
 
         var allowedUris = client.AllowedRedirectUris.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        if (!allowedUris.Contains(request.RedirectUri, StringComparer.Ordinal))
+        if (!ConsentRedirectPolicy.MatchesRegisteredRedirectUri(allowedUris, request.RedirectUri))
             return BadRequest("redirectUri must exactly match one of this client's registered redirect URIs.");
 
         // PKCE (2026-09-11 audit, finding 6; audit M5): the assertion travels in a redirect URL, so

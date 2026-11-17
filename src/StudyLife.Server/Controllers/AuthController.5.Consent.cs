@@ -62,7 +62,7 @@ public partial class AuthController
         if (!ConsentRedirectPolicy.IsAllowedRedirectUri(redirectUri))
             return (null, BadRequest("redirectUri must be an absolute https URL, or an http://127.0.0.1|localhost loopback URL (RFC 8252)."));
         if (!_consentRedirects.IsAllowed(audience, redirectUri))
-            return (null, BadRequest("redirectUri is not an allowed callback for this audience (see Consent:AllowedRedirectUris)."));
+            return (null, BadRequest(_consentRedirects.RejectionMessage(audience, redirectUri)));
 
         // PKCE (audit M5): offered -> validated and bound to the assertion; half a pair or a method
         // other than S256 -> 400; not offered -> only tolerated while Consent:RequirePkce is false

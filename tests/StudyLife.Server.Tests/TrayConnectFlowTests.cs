@@ -169,6 +169,7 @@ public class TrayConnectFlowTests : IClassFixture<CustomWebApplicationFactory>
 
     [Theory]
     [InlineData("http://tray.example.com/callback")] // not https, not loopback
+    [InlineData("http://127.0.0.1:51823/other")] // loopback, but not the pinned /callback path (audit M5)
     [InlineData("not-a-url")]
     [InlineData("")]
     public async Task Connect_WithInvalidRedirectUri_ReturnsBadRequest(string redirectUri)

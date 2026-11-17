@@ -42,6 +42,15 @@ public sealed class ConsentOptions
     /// key now, so no configuration path is assembled from user input any more.
     /// </summary>
     public Dictionary<string, string[]> AllowedRedirectUris { get; set; } = [];
+
+    /// <summary>
+    /// Additional Chrome extension IDs per browser-extension audience (capture, focusguard,
+    /// focustunes; env Consent__ChromeExtensionIds__&lt;audience&gt;__0). MERGED with the built-in
+    /// defaults (Services.ConsentRedirectCatalogue) - configuration adds, never removes. Needed
+    /// for unpacked builds, whose ID differs from the store/manifest-key ID. Malformed IDs
+    /// (not exactly 32 characters a-p) are ignored with a warning.
+    /// </summary>
+    public Dictionary<string, string[]> ChromeExtensionIds { get; set; } = [];
 }
 
 /// <summary>Self-registration gate (audit A10). See
