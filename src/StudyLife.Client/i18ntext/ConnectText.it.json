@@ -20,5 +20,13 @@
   "ConnectClientPageTitle": "StudyAtrium — Connetti",
   "ConnectClientHeading": "Connetti componente aggiuntivo",
   "ConnectClientNotRegistered": "Questo componente aggiuntivo non è ancora registrato sulla tua istanza StudyAtrium.",
-  "ConnectRedirectTarget": "Dopo la connessione verrai reindirizzato a: {0}"
+  "ConnectRedirectTarget": "Dopo la connessione verrai reindirizzato a: {0}",
+  "ConnectKeyRecipient": "La tua chiave di accesso verrà consegnata a:",
+  "ConnectRequestedAccess": "Accesso richiesto:",
+  "ConnectRegisteredBy": "Registrato su questo server da {0}.",
+  "ConnectRegisteredByOwner": "Registrato su questo server da {0}, il proprietario del server.",
+  "ConnectRegistrantUnknown": "Registrato da un account che non esiste più.",
+  "ConnectBuiltInClient": "Integrato in StudyAtrium, non registrato da un utente.",
+  "ConnectClientPendingApproval": "Questo componente aggiuntivo è in attesa dell'approvazione del proprietario del server. Potrai collegarlo una volta approvato.",
+  "ConnectClientRejected": "Il proprietario del server non ha approvato questo componente aggiuntivo, quindi non può essere collegato."
 }

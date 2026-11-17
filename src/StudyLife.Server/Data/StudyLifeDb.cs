@@ -1007,6 +1007,24 @@ public class OAuthClientEntity
     /// client via DeveloperController; only they may edit/delete it.</summary>
     public int OwnerAuthUserId { get; set; }
     public DateTime CreatedAt { get; set; }
+    /// <summary>Instance-wide review state (2026-11-16 audit M5): a registration is visible to
+    /// every user's consent screen, so one made by anyone but the instance owner stays Pending
+    /// until the owner approves it, and drops back to Pending whenever its registrant changes
+    /// what the consent screen shows. Only Approved clients can be connected. Rows that existed
+    /// before this column were grandfathered as Approved by the AddOAuthClientApproval migration,
+    /// and this initializer mirrors that column default. It never decides a real registration:
+    /// DeveloperClientService, the only place that creates or edits clients, always sets the
+    /// state through OAuthClientApprovalPolicy.
+    /// </summary>
+    public OAuthClientApproval Approval { get; set; } = OAuthClientApproval.Approved;
+}
+
+/// <summary>Review state of an <see cref="OAuthClientEntity"/>; stored as its integer value.</summary>
+public enum OAuthClientApproval
+{
+    Pending = 0,
+    Approved = 1,
+    Rejected = 2,
 }
 
 /// <summary>

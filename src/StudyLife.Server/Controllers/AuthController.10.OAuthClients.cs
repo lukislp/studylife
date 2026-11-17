@@ -24,18 +24,18 @@ public partial class AuthController
     // the 5 hardcoded flows never needed this, their consent copy is baked into the client-side
     // Razor component per audience.
 
+    /// <summary>403 problem code of a Connect against a client the owner has not approved.</summary>
+    public const string ClientNotApprovedProblem = "client-not-approved";
+
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpGet("oauth-clients/{clientId}")]
-    public async Task<ActionResult<OAuthClientInfoDto>> GetOAuthClientInfo(string clientId)
+    public async Task<ActionResult<OAuthClientInfoDto>> GetOAuthClientInfo(string clientId,
+        [FromServices] IOAuthClientReviewService reviews)
     {
-        var client = await _db.OAuthClients.AsNoTracking().FirstOrDefaultAsync(c => c.ClientId == clientId);
-        if (client is null) return NotFound();
-        return new OAuthClientInfoDto
-        {
-            Name = client.Name,
-            Description = client.Description,
-            RequestedScopes = ApiKeyScopes.Parse(client.RequestedScopes).Select(e => $"{e.Controller}.{e.Action}").ToList(),
-        };
+        // Name, scopes, registrant, review state and redirect URIs (2026-11-16 audit M5): the
+        // consent screen has to say who stands behind the client and where the key goes.
+        var info = await reviews.GetConsentInfoAsync(clientId);
+        return info is null ? NotFound() : info;
     }
 
     /// <summary>
@@ -51,6 +51,10 @@ public partial class AuthController
     {
         var client = await _db.OAuthClients.AsNoTracking().FirstOrDefaultAsync(c => c.ClientId == request.ClientId);
         if (client is null) return NotFound();
+        // Only registrations the instance owner made or approved can receive a user's key
+        // (2026-11-16 audit M5, see OAuthClientApprovalPolicy).
+        if (client.Approval != OAuthClientApproval.Approved)
+            return ServiceResultExtensions.ProblemResult(this, ClientNotApprovedProblem);
 
         var allowedUris = client.AllowedRedirectUris.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (!allowedUris.Contains(request.RedirectUri, StringComparer.Ordinal))

@@ -20,5 +20,13 @@
   "ConnectClientPageTitle": "StudyAtrium — Ceangail",
   "ConnectClientHeading": "Ceangail breiseán",
   "ConnectClientNotRegistered": "Níl an breiseán seo cláraithe ar do chuid StudyAtrium fós.",
-  "ConnectRedirectTarget": "Tar éis ceangal a dhéanamh, seolfar ar aghaidh thú chuig: {0}"
+  "ConnectRedirectTarget": "Tar éis ceangal a dhéanamh, seolfar ar aghaidh thú chuig: {0}",
+  "ConnectKeyRecipient": "Tabharfar d'eochair rochtana do:",
+  "ConnectRequestedAccess": "Rochtain iarrtha:",
+  "ConnectRegisteredBy": "Cláraithe ar an bhfreastalaí seo ag {0}.",
+  "ConnectRegisteredByOwner": "Cláraithe ar an bhfreastalaí seo ag {0}, úinéir an fhreastalaí.",
+  "ConnectRegistrantUnknown": "Cláraithe ag cuntas nach ann dó a thuilleadh.",
+  "ConnectBuiltInClient": "Ionsuite in StudyAtrium, níor chláraigh úsáideoir é.",
+  "ConnectClientPendingApproval": "Tá an breiseán seo ag fanacht le ceadú ó úinéir an fhreastalaí. Is féidir leat é a nascadh nuair a cheadófar é.",
+  "ConnectClientRejected": "Níor cheadaigh úinéir an fhreastalaí an breiseán seo, mar sin ní féidir é a nascadh."
 }

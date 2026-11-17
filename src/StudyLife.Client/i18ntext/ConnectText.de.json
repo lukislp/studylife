@@ -20,5 +20,13 @@
   "ConnectClientPageTitle": "StudyAtrium — Verbinden",
   "ConnectClientHeading": "Add-on verbinden",
   "ConnectClientNotRegistered": "Dieses Add-on ist auf deiner StudyAtrium-Instanz noch nicht registriert.",
-  "ConnectRedirectTarget": "Nach dem Verbinden wirst du weitergeleitet zu: {0}"
+  "ConnectRedirectTarget": "Nach dem Verbinden wirst du weitergeleitet zu: {0}",
+  "ConnectKeyRecipient": "Dein Zugangsschlüssel geht an:",
+  "ConnectRequestedAccess": "Angefragter Zugriff:",
+  "ConnectRegisteredBy": "Auf diesem Server registriert von {0}.",
+  "ConnectRegisteredByOwner": "Auf diesem Server registriert von {0}, dem Server-Besitzer.",
+  "ConnectRegistrantUnknown": "Registriert von einem Konto, das es nicht mehr gibt.",
+  "ConnectBuiltInClient": "In StudyAtrium eingebaut, nicht von einer Person registriert.",
+  "ConnectClientPendingApproval": "Dieses Add-on wartet auf die Freigabe durch den Server-Besitzer. Du kannst es verbinden, sobald es freigegeben ist.",
+  "ConnectClientRejected": "Der Server-Besitzer hat dieses Add-on nicht freigegeben, deshalb lässt es sich nicht verbinden."
 }

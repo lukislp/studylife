@@ -519,6 +519,9 @@ namespace StudyLife.Server.Migrations.Postgres
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("Approval")
+                        .HasColumnType("integer");
+
                     b.Property<string>("ClientId")
                         .IsRequired()
                         .HasColumnType("text");

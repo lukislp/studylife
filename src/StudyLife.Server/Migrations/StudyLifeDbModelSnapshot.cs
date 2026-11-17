@@ -492,6 +492,9 @@ namespace StudyLife.Server.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("Approval")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("ClientId")
                         .IsRequired()
                         .HasColumnType("TEXT");

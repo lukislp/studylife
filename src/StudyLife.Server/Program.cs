@@ -558,6 +558,7 @@ builder.Services.AddScoped<IPushService, PushService>();
 builder.Services.AddScoped<IBackupDataService, BackupDataService>();
 builder.Services.AddScoped<ICalendarTokenService, CalendarTokenService>();
 builder.Services.AddScoped<IDeveloperClientService, DeveloperClientService>();
+builder.Services.AddScoped<IOAuthClientReviewService, OAuthClientReviewService>();
 builder.Services.AddScoped<IAuthInviteService, AuthInviteService>();
 builder.Services.AddScoped<IAuthRecoveryService, AuthRecoveryService>();
 builder.Services.AddScoped<IAuthAccountService, AuthAccountService>();

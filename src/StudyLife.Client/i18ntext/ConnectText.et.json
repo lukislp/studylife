@@ -20,5 +20,13 @@
   "ConnectClientPageTitle": "StudyAtrium — Ühenda",
   "ConnectClientHeading": "Ühenda lisandmoodul",
   "ConnectClientNotRegistered": "Seda lisandmoodulit pole sinu StudyAtrium'i eksemplaris veel registreeritud.",
-  "ConnectRedirectTarget": "Pärast ühendamist suunatakse sind edasi aadressile: {0}"
+  "ConnectRedirectTarget": "Pärast ühendamist suunatakse sind edasi aadressile: {0}",
+  "ConnectKeyRecipient": "Sinu juurdepääsuvõti antakse üle:",
+  "ConnectRequestedAccess": "Taotletud juurdepääs:",
+  "ConnectRegisteredBy": "Selles serveris registreeris {0}.",
+  "ConnectRegisteredByOwner": "Selles serveris registreeris {0}, serveri omanik.",
+  "ConnectRegistrantUnknown": "Registreeris konto, mida enam ei ole.",
+  "ConnectBuiltInClient": "StudyAtriumi sisse ehitatud, mitte kasutaja registreeritud.",
+  "ConnectClientPendingApproval": "See lisandmoodul ootab serveri omaniku kinnitust. Saad selle ühendada, kui see on kinnitatud.",
+  "ConnectClientRejected": "Serveri omanik ei ole seda lisandmoodulit kinnitanud, seega ei saa seda ühendada."
 }

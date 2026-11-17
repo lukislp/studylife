@@ -1,0 +1,109 @@
+@*
+  SPDX-FileCopyrightText: 2026 Lukas Körber
+  SPDX-License-Identifier: AGPL-3.0-only
+*@
+@using StudyLife.Shared
+@using StudyLife.Client.Services
+@inject HttpClient Http
+@inject AppStateService State
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+@* Add-on approvals (2026-11-16 audit M5): an OAuth client registration is instance-wide - every
+   user's consent screen trusts it - so one made by anyone but the owner waits here until the
+   owner approves it (OAuthClientApprovalPolicy). Shows what the consent screen would show:
+   name, registrant, the hosts keys are handed to, and the requested access. Setup.razor renders
+   this only behind "@if (_isOwner)"; the server enforces owner-only on every call itself
+   (OAuthClientReviewService), so hiding it here is UX, not access control. Self-contained card
+   (own SetupText table + HTTP calls), modeled after SetupInvitesCard. *@
+
+<div class="setup-section">
+    <div class="ss-label">@T.ClientReviewHeading</div>
+    <p class="ss-desc">@T.ClientReviewDesc</p>
+
+    @if (_clients.Count > 0)
+    {
+        <div class="pdm-list" style="margin-top:0.75rem;">
+            @foreach (var client in _clients)
+            {
+                <div class="pdm-row" data-testid="client-review-row">
+                    <div class="pdm-row-main">
+                        <div class="pdm-row-label">
+                            <span>@client.Name</span>
+                            <span class="pdm-pending-badge">@ApprovalLabel(client.Approval)</span>
+                        </div>
+                        <div class="pdm-row-meta">@client.ClientId · @string.Format(T.ClientReviewRegisteredBy ?? "", client.RegisteredBy ?? "?")</div>
+                        <div class="pdm-row-meta">@string.Format(T.ClientReviewRedirectHosts ?? "", string.Join(", ", RedirectHosts(client)))</div>
+                        @if (client.RequestedScopes.Count > 0)
+                        {
+                            <div class="pdm-row-meta">@string.Join(", ", client.RequestedScopes.Select(MarketplaceScopeLabels.Describe))</div>
+                        }
+                    </div>
+                    <div style="display:flex; gap:0.4rem; flex-shrink:0;">
+                        @if (client.Approval != OAuthClientApprovalStates.Approved)
+                        {
+                            <button type="button" class="btn-secondary" @onclick="() => DecideAsync(client, approve: true)" disabled="@_busy">@T.ClientReviewApprove</button>
+                        }
+                        @if (client.Approval != OAuthClientApprovalStates.Rejected)
+                        {
+                            <button type="button" class="btn-danger" @onclick="() => DecideAsync(client, approve: false)" disabled="@_busy">@T.ClientReviewReject</button>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else if (!_loading)
+    {
+        <p class="ss-desc">@T.ClientReviewEmpty</p>
+    }
+</div>
+
+@code {
+    private I18nText.SetupText T = new();
+
+    private readonly List<OAuthClientReviewDto> _clients = new();
+    private bool _loading = true;
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
+        try
+        {
+            var clients = await Http.GetFromJsonAsync<List<OAuthClientReviewDto>>("api/oauth-client-reviews");
+            if (clients != null) _clients.AddRange(clients);
+        }
+        catch { /* offline/non-owner: card just shows the empty state */ }
+        finally { _loading = false; }
+    }
+
+    private string ApprovalLabel(string approval) => approval switch
+    {
+        OAuthClientApprovalStates.Approved => T.ClientReviewApprovedLabel,
+        OAuthClientApprovalStates.Rejected => T.ClientReviewRejectedLabel,
+        _ => T.ClientReviewPendingLabel,
+    };
+
+    private static IEnumerable<string> RedirectHosts(OAuthClientReviewDto client) =>
+        client.RedirectUris
+            .Select(u => Uri.TryCreate(u, UriKind.Absolute, out var uri) ? uri.Host : u)
+            .Distinct(StringComparer.OrdinalIgnoreCase);
+
+    private async Task DecideAsync(OAuthClientReviewDto client, bool approve)
+    {
+        _busy = true;
+        try
+        {
+            State.NoteOwnWrite("auth");
+            var action = approve ? "approve" : "reject";
+            var response = await Http.PostAsync($"api/oauth-client-reviews/{Uri.EscapeDataString(client.ClientId)}/{action}", null);
+            if (!response.IsSuccessStatusCode) return;
+            var updated = await response.Content.ReadFromJsonAsync<OAuthClientReviewDto>();
+            if (updated is null) return;
+            var index = _clients.FindIndex(c => c.ClientId == client.ClientId);
+            if (index >= 0) _clients[index] = updated;
+        }
+        catch (HttpRequestException) { /* the row keeps its old state; the owner can retry */ }
+        finally { _busy = false; }
+    }
+}

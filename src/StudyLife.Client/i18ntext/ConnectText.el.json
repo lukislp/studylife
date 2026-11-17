@@ -20,5 +20,13 @@
   "ConnectClientPageTitle": "StudyAtrium — Σύνδεση",
   "ConnectClientHeading": "Σύνδεση προσθέτου",
   "ConnectClientNotRegistered": "Αυτό το πρόσθετο δεν έχει καταχωριστεί ακόμη στην εγκατάστασή σας StudyAtrium.",
-  "ConnectRedirectTarget": "Μετά τη σύνδεση θα μεταφερθείς στο: {0}"
+  "ConnectRedirectTarget": "Μετά τη σύνδεση θα μεταφερθείς στο: {0}",
+  "ConnectKeyRecipient": "Το κλειδί πρόσβασής σου θα παραδοθεί σε:",
+  "ConnectRequestedAccess": "Ζητούμενη πρόσβαση:",
+  "ConnectRegisteredBy": "Καταχωρίστηκε σε αυτόν τον διακομιστή από {0}.",
+  "ConnectRegisteredByOwner": "Καταχωρίστηκε σε αυτόν τον διακομιστή από {0}, τον κάτοχο του διακομιστή.",
+  "ConnectRegistrantUnknown": "Καταχωρίστηκε από λογαριασμό που δεν υπάρχει πια.",
+  "ConnectBuiltInClient": "Ενσωματωμένο στο StudyAtrium, δεν καταχωρίστηκε από χρήστη.",
+  "ConnectClientPendingApproval": "Αυτό το πρόσθετο περιμένει έγκριση από τον κάτοχο του διακομιστή. Μπορείς να το συνδέσεις μόλις εγκριθεί.",
+  "ConnectClientRejected": "Ο κάτοχος του διακομιστή δεν έχει εγκρίνει αυτό το πρόσθετο, οπότε δεν μπορεί να συνδεθεί."
 }
