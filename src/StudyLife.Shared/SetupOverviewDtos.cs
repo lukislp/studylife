@@ -18,11 +18,7 @@ namespace StudyLife.Shared;
 /// including access control: a section the individual endpoint would deny (401/403/404/503 -
 /// not the owner, demo restrictions, no such user) comes back null rather than any data the
 /// caller could not already get today, and the corresponding card/page fetch then falls back to
-/// its own request exactly as before. CalendarToken is the one write-avoidance case: the real
-/// endpoint lazily GENERATES a token on first fetch (a GET with a side effect - see
-/// SystemController.GetCalendarToken), which this bundle must never do, so it only ever reports
-/// an ALREADY existing token; a user without one yet sees null here and the page falls back to
-/// the real endpoint, same as any other missing section.
+/// its own request exactly as before.
 /// </summary>
 public class SetupOverviewDto
 {
@@ -30,9 +26,11 @@ public class SetupOverviewDto
     public SystemCapabilitiesResponseDto? Capabilities { get; set; }
     public VersionResponseDto? Version { get; set; }
 
-    /// <summary>Only set when a calendar token already exists - see class summary. Null means
-    /// "ask GET api/system/calendar-token", not "the token is empty".</summary>
-    public string? CalendarToken { get; set; }
+    /// <summary>Same as GET api/system/calendar-token: whether a calendar link exists. Never the
+    /// token itself - it is stored only as a hash (audit 2026-11-16 L5). Servers before that
+    /// sent a plaintext <c>CalendarToken</c> field here instead; a client that finds this
+    /// section null asks the endpoint, which such a server answers with the plaintext.</summary>
+    public CalendarTokenResponseDto? CalendarLink { get; set; }
 
     public List<StudyProgramSummaryDto>? StudyPrograms { get; set; }
     public List<CourseGoalDto>? CourseGoals { get; set; }

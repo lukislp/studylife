@@ -171,10 +171,10 @@ public class SettingsService(
     {
         var entity = await db.Settings.GetOrCreateAsync(db);
         entity.ProgressShareEnabled = true;
-        entity.ProgressShareToken = GenerateShareToken();
+        var token = IssueShareToken(entity);
         await db.SaveChangesAsync();
         await settingsCacheVersion.BumpAsync(currentUser.AuthUserId);
-        return ToDto(entity);
+        return WithShareToken(ToDto(entity), token);
     }
 
     /// <summary>
@@ -190,7 +190,7 @@ public class SettingsService(
         var entity = await db.Settings.FirstOrDefaultAsync();
         if (entity == null) return ServiceResult<UserSettingsDto>.NotFound();
         entity.ProgressShareEnabled = false;
-        entity.ProgressShareToken = null;
+        entity.ProgressShareTokenHash = null;
         await db.SaveChangesAsync();
         await settingsCacheVersion.BumpAsync(currentUser.AuthUserId);
         return ServiceResult<UserSettingsDto>.Success(ToDto(entity));
@@ -206,11 +206,11 @@ public class SettingsService(
     {
         var entity = await db.Settings.FirstOrDefaultAsync();
         if (entity == null) return ServiceResult<UserSettingsDto>.NotFound();
-        entity.ProgressShareToken = GenerateShareToken();
+        var token = IssueShareToken(entity);
         entity.ProgressShareEnabled = true;
         await db.SaveChangesAsync();
         await settingsCacheVersion.BumpAsync(currentUser.AuthUserId);
-        return ServiceResult<UserSettingsDto>.Success(ToDto(entity));
+        return ServiceResult<UserSettingsDto>.Success(WithShareToken(ToDto(entity), token));
     }
 
     /// <summary>
@@ -268,6 +268,23 @@ public class SettingsService(
         Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
             .Replace('+', '-').Replace('/', '_').TrimEnd('=');
 
+    /// <summary>Puts a fresh share token on the row - only its hash is stored (audit 2026-11-16
+    /// L5) - and returns the plaintext, the one moment it exists.</summary>
+    private static string IssueShareToken(UserSettingsEntity entity)
+    {
+        var token = GenerateShareToken();
+        entity.ProgressShareTokenHash = AuthSessionService.HashToken(token);
+        return token;
+    }
+
+    /// <summary>The enable/regenerate responses are the only DTOs that carry the share token:
+    /// <see cref="ToDto"/> cannot, since the row holds only the hash.</summary>
+    private static UserSettingsDto WithShareToken(UserSettingsDto dto, string token)
+    {
+        dto.ProgressShareToken = token;
+        return dto;
+    }
+
     // internal instead of private: reused by BackupDataService (JSON export), so the export
     // projection doesn't have to duplicate the same mapping a second time.
     internal static UserSettingsDto ToDto(UserSettingsEntity e) => new()
@@ -314,6 +331,8 @@ public class SettingsService(
         BuiltInProgramDismissed = e.BuiltInProgramDismissed,
         Language = e.Language,
         ProgressShareEnabled = e.ProgressShareEnabled,
-        ProgressShareToken = e.ProgressShareToken,
+        // Never read from the row, which holds only the hash (audit 2026-11-16 L5); the
+        // enable/regenerate responses add the fresh token themselves (WithShareToken).
+        ProgressShareToken = null,
     };
 }

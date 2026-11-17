@@ -20,5 +20,13 @@
   "ConnectClientPageTitle": "StudyAtrium — Verbinden",
   "ConnectClientHeading": "Add-on verbinden",
   "ConnectClientNotRegistered": "Deze add-on is nog niet geregistreerd op jouw StudyAtrium-instantie.",
-  "ConnectRedirectTarget": "Na het verbinden word je doorgestuurd naar: {0}"
+  "ConnectRedirectTarget": "Na het verbinden word je doorgestuurd naar: {0}",
+  "ConnectKeyRecipient": "Je toegangssleutel wordt overgedragen aan:",
+  "ConnectRequestedAccess": "Gevraagde toegang:",
+  "ConnectRegisteredBy": "Op deze server geregistreerd door {0}.",
+  "ConnectRegisteredByOwner": "Op deze server geregistreerd door {0}, de eigenaar van de server.",
+  "ConnectRegistrantUnknown": "Geregistreerd door een account dat niet meer bestaat.",
+  "ConnectBuiltInClient": "Ingebouwd in StudyAtrium, niet door een gebruiker geregistreerd.",
+  "ConnectClientPendingApproval": "Deze add-on wacht op goedkeuring van de eigenaar van de server. Je kunt hem koppelen zodra hij is goedgekeurd.",
+  "ConnectClientRejected": "De eigenaar van de server heeft deze add-on niet goedgekeurd, dus hij kan niet worden gekoppeld."
 }

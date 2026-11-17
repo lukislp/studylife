@@ -20,5 +20,13 @@
   "ConnectClientPageTitle": "StudyAtrium — Yhdistä",
   "ConnectClientHeading": "Yhdistä lisäosa",
   "ConnectClientNotRegistered": "Tätä lisäosaa ei ole vielä rekisteröity StudyAtrium-instanssiisi.",
-  "ConnectRedirectTarget": "Yhdistämisen jälkeen sinut ohjataan osoitteeseen: {0}"
+  "ConnectRedirectTarget": "Yhdistämisen jälkeen sinut ohjataan osoitteeseen: {0}",
+  "ConnectKeyRecipient": "Pääsyavaimesi luovutetaan kohteeseen:",
+  "ConnectRequestedAccess": "Pyydetty käyttöoikeus:",
+  "ConnectRegisteredBy": "Tälle palvelimelle rekisteröinyt {0}.",
+  "ConnectRegisteredByOwner": "Tälle palvelimelle rekisteröinyt {0}, palvelimen omistaja.",
+  "ConnectRegistrantUnknown": "Rekisteröinyt tili, jota ei enää ole.",
+  "ConnectBuiltInClient": "Sisäänrakennettu StudyAtriumiin, ei käyttäjän rekisteröimä.",
+  "ConnectClientPendingApproval": "Tämä lisäosa odottaa palvelimen omistajan hyväksyntää. Voit yhdistää sen, kun se on hyväksytty.",
+  "ConnectClientRejected": "Palvelimen omistaja ei ole hyväksynyt tätä lisäosaa, joten sitä ei voi yhdistää."
 }

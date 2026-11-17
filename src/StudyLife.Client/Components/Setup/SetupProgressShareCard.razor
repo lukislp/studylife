@@ -12,8 +12,9 @@
 
 @* Read-only progress link for sharing with parents/mentors/study advisors, without login -
    analogous to SetupCalendarSubscriptionCard, but with its own token (ProgressController/
-   UserSettingsEntity.ProgressShareToken instead of AuthUserEntity.CalendarToken): semantically
-   separate (appointments vs. progress snapshot). Self-contained component modeled after
+   UserSettingsEntity.ProgressShareTokenHash instead of AuthUserEntity.CalendarTokenHash): semantically
+   separate (appointments vs. progress snapshot). Only the hash is stored (audit 2026-11-16 L5),
+   so the link is shown once, right after enable/regenerate; OneTimeLink decides the state. Self-contained component modeled after
    SetupRestoreCard: its own SetupText instance + its own HttpClient, Setup.razor just wires
    it in - keeps changes to the (concurrently used by several feature batches)
    Setup.razor down to a single line. Enable/Disable/Regenerate go through dedicated
@@ -23,7 +24,7 @@
     <div class="ss-label">@T.ProgressShareHeading</div>
     <p class="ss-desc">@T.ProgressShareDesc</p>
 
-    @if (_enabled && !string.IsNullOrEmpty(_token))
+    @if (View == OneTimeLinkView.Shown)
     {
         <div class="field-row" style="flex-wrap:wrap">
             <input class="input" readonly value="@ShareUrl" />
@@ -35,6 +36,19 @@
             </button>
             <button type="button" class="btn-danger" @onclick="() => _confirming = true" disabled="@_busy" style="flex-shrink:0">
                 @(_regenerateSuccess ? $"✓ {T.ProgressShareRegenerateSuccess}" : T.ProgressShareRegenerateButton)
+            </button>
+        </div>
+        <p class="ss-desc" role="status">@T.LinkShownOnceNotice</p>
+    }
+    else if (View == OneTimeLinkView.Hidden)
+    {
+        <p class="ss-desc">@T.LinkHiddenNotice</p>
+        <div class="field-row" style="flex-wrap:wrap">
+            <button type="button" class="btn-secondary" @onclick="Disable" disabled="@_busy">
+                @T.ProgressShareDisableButton
+            </button>
+            <button type="button" class="btn-danger" @onclick="() => _confirming = true" disabled="@_busy">
+                @T.ProgressShareRegenerateButton
             </button>
         </div>
     }
@@ -88,6 +102,8 @@
     private bool _regenerating;
     private bool _regenerateSuccess;
 
+    private OneTimeLinkView View => OneTimeLink.Of(_enabled, _token);
+
     private string ShareUrl => string.IsNullOrEmpty(_token) ? "" : Links.Absolute($"shared/{_token}");
 
     // The Overview instance last applied to this card's fields - lets OnParametersSet tell a
@@ -107,8 +123,7 @@
         try
         {
             var dto = await Http.GetFromJsonAsync<UserSettingsDto>("api/settings");
-            _enabled = dto?.ProgressShareEnabled ?? false;
-            _token = dto?.ProgressShareToken;
+            if (dto is not null) ApplyOverview(dto);
         }
         catch { /* offline: card shows the disabled default */ }
     }
@@ -127,7 +142,12 @@
     private void ApplyOverview(UserSettingsDto bundled)
     {
         _enabled = bundled.ProgressShareEnabled;
-        _token = bundled.ProgressShareToken;
+        // The server stores only the token's hash (audit 2026-11-16 L5), so a refreshed bundle
+        // never carries it: keep the link this card was just handed by enable/regenerate while
+        // the share stays enabled, instead of hiding it again on the next background refresh.
+        // A server from before L5 still sends the token, which is shown as before.
+        if (!string.IsNullOrEmpty(bundled.ProgressShareToken)) _token = bundled.ProgressShareToken;
+        else if (!_enabled) _token = null;
     }
 
     private async Task Enable()
@@ -154,7 +174,11 @@
         {
             State.NoteOwnWrite("settings");
             var response = await Http.PostAsync("api/settings/progress-share/disable", null);
-            if (response.IsSuccessStatusCode) _enabled = false;
+            if (response.IsSuccessStatusCode)
+            {
+                _enabled = false;
+                _token = null;
+            }
         }
         finally { _busy = false; }
     }
