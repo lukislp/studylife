@@ -38,7 +38,10 @@ internal static class BackgroundTaskServiceTestFactory
         factory.Services.GetRequiredService<ILogger<BackgroundTaskService>>(),
         apnsSender ?? factory.Services.GetRequiredService<ApnsSender>(),
         backupService: factory.Services.GetRequiredService<DatabaseBackupService>(),
-        aiProxyClient: aiProxyClient ?? factory.Services.GetRequiredService<AiProxyClient>());
+        aiProxyClient: aiProxyClient ?? factory.Services.GetRequiredService<AiProxyClient>(),
+        // The host's Web Push transport: vetted client, whose filter CustomWebApplicationFactory
+        // widens to loopback for the fake push servers.
+        webPush: factory.Services.GetRequiredService<WebPushDelivery>());
 }
 
 /// <summary>

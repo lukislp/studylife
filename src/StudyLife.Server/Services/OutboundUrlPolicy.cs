@@ -7,16 +7,17 @@ using System.Net;
 namespace StudyLife.Server.Services;
 
 /// <summary>
-/// Validation for URLs the SERVER will later connect to on a user's behalf - today the Web Push
-/// endpoint a browser hands PushService.SubscribeAsync. Such a URL used to be stored verbatim and
-/// POSTed to from the worker on every reminder cycle, so a caller could point it at
-/// http://10.0.0.5:8080/... or a cloud metadata address and use the server as a blind
-/// request proxy into the cluster network (2026-09 audit S4). Push services are always public
-/// https origins, so the rule is: absolute https, bounded length, and no host that is a literal
-/// loopback/private/link-local address or an obviously internal name. Hostnames are NOT resolved
-/// here (a DNS lookup on the request path would add latency and a flaky dependency to every
-/// subscribe) - DNS-rebinding to a private address is an accepted residual risk given that the
-/// worker's only outbound action is a signed, opaque push payload with no response body exposed.
+/// Registration-time validation for URLs the server (or an add-on) will later connect to on a
+/// user's behalf - the Web Push endpoint a browser hands PushService.SubscribeAsync and the webhook
+/// target registered through WebhooksProxyController. Such a URL used to be stored verbatim and
+/// POSTed to unattended, so a caller could point it at http://10.0.0.5:8080/... or a cloud metadata
+/// address and use the server as a blind request proxy into the cluster network (2026-09 audit S4).
+/// The rule here is syntactic: absolute http(s), bounded length, no credentials, and no host that is
+/// a literal non-public address or an obviously internal name. It gives the user a clear error up
+/// front; it is NOT the enforcement point, because a public name can resolve to a private address
+/// (2026-11-16 audit M4). The enforcement is at connect time: the server sends Web Push only through
+/// UserSuppliedUrlHttp (resolve, vet, connect to the vetted address), and studylife-webhooks does
+/// the same for webhook deliveries.
 /// </summary>
 public static class OutboundUrlPolicy
 {
@@ -58,7 +59,7 @@ public static class OutboundUrlPolicy
         var host = uri.Host;
         if (string.IsNullOrEmpty(host)) return false;
         if (uri.HostNameType == UriHostNameType.IPv4 || uri.HostNameType == UriHostNameType.IPv6)
-            return IPAddress.TryParse(uri.IdnHost.Trim('[', ']'), out var ip) && IsPublicAddress(ip);
+            return IPAddress.TryParse(uri.IdnHost.Trim('[', ']'), out var ip) && Outbound.OutboundAddressClassifier.IsPublic(ip);
 
         if (string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase)) return false;
         if (host.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase)) return false;
@@ -68,37 +69,5 @@ public static class OutboundUrlPolicy
         if (host.Contains(".svc.", StringComparison.OrdinalIgnoreCase) || host.EndsWith(".svc", StringComparison.OrdinalIgnoreCase)) return false;
         // A bare single-label name ("redis", "postgres") only ever resolves inside a private network.
         return host.Contains('.');
-    }
-
-    public static bool IsPublicAddress(IPAddress ip)
-    {
-        if (ip.IsIPv4MappedToIPv6) ip = ip.MapToIPv4();
-        // After unmapping only plain IPv4 or IPv6 can remain; the byte checks below assume it.
-        Debug.Assert(ip.AddressFamily is System.Net.Sockets.AddressFamily.InterNetwork or System.Net.Sockets.AddressFamily.InterNetworkV6,
-            "only IPv4/IPv6 addresses can be classified");
-        if (IPAddress.IsLoopback(ip) || ip.Equals(IPAddress.Any) || ip.Equals(IPAddress.IPv6Any)) return false;
-        if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
-        {
-            // fc00::/7 (unique local), fe80::/10 (link-local), plus multicast and unspecified.
-            var b = ip.GetAddressBytes();
-            if ((b[0] & 0xFE) == 0xFC) return false;
-            if (b[0] == 0xFE && (b[1] & 0xC0) == 0x80) return false;
-            if (b[0] == 0xFF) return false;
-            return true;
-        }
-        var o = ip.GetAddressBytes();
-        Debug.Assert(o.Length == 4, "an IPv4 address has four octets");
-        return o[0] switch
-        {
-            0 => false,                                    // 0.0.0.0/8
-            10 => false,                                   // RFC1918
-            127 => false,                                  // loopback
-            100 when o[1] >= 64 && o[1] <= 127 => false,   // 100.64.0.0/10 carrier-grade NAT (Tailscale lives here)
-            169 when o[1] == 254 => false,                 // link-local incl. cloud metadata 169.254.169.254
-            172 when o[1] >= 16 && o[1] <= 31 => false,    // RFC1918
-            192 when o[1] == 168 => false,                 // RFC1918
-            >= 224 => false,                               // multicast + reserved + broadcast
-            _ => true,
-        };
     }
 }
