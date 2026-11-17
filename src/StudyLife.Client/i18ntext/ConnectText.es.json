@@ -20,5 +20,13 @@
   "ConnectClientPageTitle": "StudyAtrium — Conectar",
   "ConnectClientHeading": "Conectar complemento",
   "ConnectClientNotRegistered": "Este complemento aún no está registrado en tu instancia de StudyAtrium.",
-  "ConnectRedirectTarget": "Después de conectar se te redirigirá a: {0}"
+  "ConnectRedirectTarget": "Después de conectar se te redirigirá a: {0}",
+  "ConnectKeyRecipient": "Tu clave de acceso se entregará a:",
+  "ConnectRequestedAccess": "Acceso solicitado:",
+  "ConnectRegisteredBy": "Registrado en este servidor por {0}.",
+  "ConnectRegisteredByOwner": "Registrado en este servidor por {0}, el propietario del servidor.",
+  "ConnectRegistrantUnknown": "Registrado por una cuenta que ya no existe.",
+  "ConnectBuiltInClient": "Integrado en StudyAtrium, no registrado por un usuario.",
+  "ConnectClientPendingApproval": "Este complemento está esperando la aprobación del propietario del servidor. Podrás conectarlo cuando esté aprobado.",
+  "ConnectClientRejected": "El propietario del servidor no ha aprobado este complemento, así que no se puede conectar."
 }

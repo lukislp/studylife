@@ -14,6 +14,23 @@ function keyIsBlocked() {
     return !!document.querySelector(DIALOG);
 }
 
+// The page's declared interest in the bare Left/Right arrow keys, as an attribute on <html>
+// (data-page-arrow-keys="horizontal") while the calendar is shown and no text field or dialog
+// has them. The browser ignores it. The native app reads it: on the iPad, UIKit keeps the
+// hardware arrow keys for itself (system keyboard navigation) before they reach the WebView's
+// page, while letters such as T arrive; the app therefore claims Left/Right only while a page
+// declares this and hands them to the page as keydown events (studylife-app, HardwareArrowKeys).
+const ARROW_INTENT = 'pageArrowKeys';
+
+function declareArrowIntent() {
+    if (keyIsBlocked()) delete document.documentElement.dataset[ARROW_INTENT];
+    else document.documentElement.dataset[ARROW_INTENT] = 'horizontal';
+}
+
+function withdrawArrowIntent() {
+    delete document.documentElement.dataset[ARROW_INTENT];
+}
+
 // A page is only ever mounted once, but the module instance is shared between visits, so
 // the listeners are tracked here and removed on dispose.
 let cleanup = null;
@@ -58,13 +75,31 @@ export function attach(dotnetRef, scrollerId, wheelThreshold) {
         dotnetRef.invokeMethodAsync('OnHorizontalGesture', dx, dy).catch(() => { });
     };
 
+    // Keep the declared arrow-key interest in step with focus and dialogs: re-evaluated once per
+    // frame after a focus change or a DOM change (a dialog opening or closing), never per key.
+    let intentFrame = 0;
+    const scheduleIntent = () => {
+        if (intentFrame) return;
+        intentFrame = requestAnimationFrame(() => { intentFrame = 0; declareArrowIntent(); });
+    };
+    const dialogWatch = new MutationObserver(scheduleIntent);
+    dialogWatch.observe(document.body, { childList: true, subtree: true });
+
     document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('focusin', scheduleIntent);
+    document.addEventListener('focusout', scheduleIntent);
     const target = scroller ?? document;
     target.addEventListener('wheel', onWheel, { passive: true });
+    declareArrowIntent();
     cleanup = () => {
         document.removeEventListener('keydown', onKeyDown);
+        document.removeEventListener('focusin', scheduleIntent);
+        document.removeEventListener('focusout', scheduleIntent);
         target.removeEventListener('wheel', onWheel);
+        dialogWatch.disconnect();
+        cancelAnimationFrame(intentFrame);
         clearTimeout(quietTimer);
+        withdrawArrowIntent();
     };
 }
 

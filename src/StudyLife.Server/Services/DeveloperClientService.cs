@@ -17,6 +17,12 @@ namespace StudyLife.Server.Services;
 /// is enforced here instead - the same "user-specific accesses filter explicitly" pattern as
 /// WebhookApiKeyEntity. <see cref="DeveloperController"/> keeps route binding and status-code
 /// mapping.
+///
+/// Review state (2026-11-16 audit M5): a registration is instance-wide - every user's consent
+/// screen trusts it - so <see cref="OAuthClientApprovalPolicy"/> decides it here: the owner's own
+/// registrations are approved directly, anyone else's wait for the owner
+/// (<see cref="OAuthClientReviewService"/>), and an edit by a non-owner sends an approved client
+/// back to review.
 /// </summary>
 public interface IDeveloperClientService
 {
@@ -26,7 +32,7 @@ public interface IDeveloperClientService
     Task<ServiceResult> DeleteAsync(string clientId);
 }
 
-public class DeveloperClientService(StudyLifeDb db, ICurrentUserAccessor currentUser) : IDeveloperClientService
+public class DeveloperClientService(StudyLifeDb db, ICurrentUserAccessor currentUser, IOwnershipService ownership) : IDeveloperClientService
 {
     public async Task<List<DeveloperClientDto>> GetAllAsync()
     {
@@ -56,6 +62,7 @@ public class DeveloperClientService(StudyLifeDb db, ICurrentUserAccessor current
             RequestedScopes = SerializeScopeStrings(request.RequestedScopes),
             OwnerAuthUserId = userId,
             CreatedAt = DateTime.UtcNow,
+            Approval = OAuthClientApprovalPolicy.ForNewRegistration(await ownership.IsOwnerAsync(userId)),
         };
         db.OAuthClients.Add(entity);
         await db.SaveChangesAsync();
@@ -76,10 +83,18 @@ public class DeveloperClientService(StudyLifeDb db, ICurrentUserAccessor current
         var error = Validate(clientId, request.Name, request.AllowedRedirectUris, request.RequestedScopes);
         if (error != null) return ServiceResult<DeveloperClientDto>.Invalid(error);
 
-        entity.Name = request.Name.Trim();
-        entity.Description = request.Description?.Trim() ?? "";
-        entity.AllowedRedirectUris = string.Join(',', request.AllowedRedirectUris);
-        entity.RequestedScopes = SerializeScopeStrings(request.RequestedScopes);
+        var name = request.Name.Trim();
+        var description = request.Description?.Trim() ?? "";
+        var redirectUris = string.Join(',', request.AllowedRedirectUris);
+        var scopes = SerializeScopeStrings(request.RequestedScopes);
+        var changed = entity.Name != name || entity.Description != description
+            || entity.AllowedRedirectUris != redirectUris || entity.RequestedScopes != scopes;
+
+        entity.Approval = OAuthClientApprovalPolicy.AfterEdit(entity.Approval, changed, await ownership.IsOwnerAsync(userId));
+        entity.Name = name;
+        entity.Description = description;
+        entity.AllowedRedirectUris = redirectUris;
+        entity.RequestedScopes = scopes;
         await db.SaveChangesAsync();
         return ServiceResult<DeveloperClientDto>.Success(ToDto(entity));
     }
@@ -140,5 +155,6 @@ public class DeveloperClientService(StudyLifeDb db, ICurrentUserAccessor current
         AllowedRedirectUris = e.AllowedRedirectUris.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList(),
         RequestedScopes = ApiKeyScopes.Parse(e.RequestedScopes).Select(x => $"{x.Controller}.{x.Action}").ToList(),
         CreatedAt = e.CreatedAt,
+        Approval = OAuthClientApprovalPolicy.ToWire(e.Approval),
     };
 }

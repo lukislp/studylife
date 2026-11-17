@@ -514,6 +514,58 @@
         }
       }
     },
+    "/api/auth/account/reauth": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/FreshProofRequest"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/FreshProofRequest"
+                  }
+                ]
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/FreshProofRequest"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/auth/account": {
       "delete": {
         "tags": [
@@ -3311,6 +3363,122 @@
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/oauth-client-reviews": {
+      "get": {
+        "tags": [
+          "OAuthClientReview"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OAuthClientReviewDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OAuthClientReviewDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OAuthClientReviewDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/oauth-client-reviews/{clientId}/approve": {
+      "post": {
+        "tags": [
+          "OAuthClientReview"
+        ],
+        "parameters": [
+          {
+            "name": "clientId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthClientReviewDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthClientReviewDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthClientReviewDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/oauth-client-reviews/{clientId}/reject": {
+      "post": {
+        "tags": [
+          "OAuthClientReview"
+        ],
+        "parameters": [
+          {
+            "name": "clientId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthClientReviewDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthClientReviewDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthClientReviewDto"
+                }
+              }
+            }
           }
         }
       }
@@ -6180,9 +6348,11 @@
         "type": "object",
         "properties": {
           "code": {
+            "maxLength": 64,
             "type": "string"
           },
           "codeVerifier": {
+            "maxLength": 128,
             "type": "string"
           }
         }
@@ -6200,15 +6370,12 @@
       },
       "AuthHandoffRequestDto": {
         "required": [
-          "token",
           "codeChallenge"
         ],
         "type": "object",
         "properties": {
-          "token": {
-            "type": "string"
-          },
           "codeChallenge": {
+            "pattern": "^[A-Za-z0-9_-]{43}$",
             "type": "string"
           }
         }
@@ -6353,12 +6520,25 @@
       },
       "CalendarTokenResponseDto": {
         "required": [
-          "calendarToken"
+          "exists"
         ],
         "type": "object",
         "properties": {
           "calendarToken": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "exists": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -8059,7 +8239,8 @@
           "description",
           "allowedRedirectUris",
           "requestedScopes",
-          "createdAt"
+          "createdAt",
+          "approval"
         ],
         "type": "object",
         "properties": {
@@ -8092,6 +8273,10 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "approval": {
+            "maxLength": 20,
+            "type": "string"
           }
         }
       },
@@ -9515,7 +9700,10 @@
         "required": [
           "name",
           "description",
-          "requestedScopes"
+          "requestedScopes",
+          "registeredByOwner",
+          "approval",
+          "redirectUris"
         ],
         "type": "object",
         "properties": {
@@ -9530,6 +9718,72 @@
             "items": {
               "type": "string"
             }
+          },
+          "registeredBy": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "registeredByOwner": {
+            "type": "boolean"
+          },
+          "approval": {
+            "type": "string"
+          },
+          "redirectUris": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "OAuthClientReviewDto": {
+        "required": [
+          "clientId",
+          "name",
+          "description",
+          "redirectUris",
+          "requestedScopes",
+          "approval",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "redirectUris": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "requestedScopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "registeredBy": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "approval": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -10358,10 +10612,14 @@
               }
             ]
           },
-          "calendarToken": {
-            "type": [
-              "null",
-              "string"
+          "calendarLink": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CalendarTokenResponseDto"
+              }
             ]
           },
           "studyPrograms": {
@@ -13451,6 +13709,9 @@
     },
     {
       "name": "Notes"
+    },
+    {
+      "name": "OAuthClientReview"
     },
     {
       "name": "Planner"

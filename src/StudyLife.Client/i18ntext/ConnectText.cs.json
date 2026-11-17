@@ -20,5 +20,13 @@
   "ConnectClientPageTitle": "StudyAtrium — Připojení",
   "ConnectClientHeading": "Připojit doplněk",
   "ConnectClientNotRegistered": "Tento doplněk zatím není ve vaší instanci StudyAtrium registrován.",
-  "ConnectRedirectTarget": "Po připojení budeš přesměrován na: {0}"
+  "ConnectRedirectTarget": "Po připojení budeš přesměrován na: {0}",
+  "ConnectKeyRecipient": "Tvůj přístupový klíč bude předán:",
+  "ConnectRequestedAccess": "Požadovaný přístup:",
+  "ConnectRegisteredBy": "Na tomto serveru zaregistroval(a) {0}.",
+  "ConnectRegisteredByOwner": "Na tomto serveru zaregistroval(a) {0}, vlastník serveru.",
+  "ConnectRegistrantUnknown": "Zaregistrováno účtem, který už neexistuje.",
+  "ConnectBuiltInClient": "Součást StudyAtrium, nezaregistroval ho uživatel.",
+  "ConnectClientPendingApproval": "Tento doplněk čeká na schválení vlastníkem serveru. Připojit ho můžeš, jakmile bude schválen.",
+  "ConnectClientRejected": "Vlastník serveru tento doplněk neschválil, proto ho nelze připojit."
 }

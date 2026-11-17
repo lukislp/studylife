@@ -19,6 +19,7 @@ using StudyLife.Server.Diagnostics;
 using StudyLife.Server.Discovery;
 using StudyLife.Server.OpenApi;
 using StudyLife.Server.Services;
+using StudyLife.Server.Services.Outbound;
 
 // Run-time assertions (docs/SECURITY-ASSURANCE.md 8.5): in a Debug build, failed Debug.Assert
 // calls are reported on stderr instead of killing the process; compiled away in Release.
@@ -371,12 +372,11 @@ builder.Services.AddRateLimiter(options =>
         if (IsPasswordManagement(context.Request))
             return FixedWindow(context, $"password-manage|{clientIp}", permitLimit: 20, TimeSpan.FromMinutes(15));
 
-        // Account deletion accepts a one-time recovery code as its proof, so it gets its own
-        // strict partition like the recovery login (a stolen session must not be able to
-        // brute-force the 12-character code at the generic 300/min).
-        if (HttpMethods.IsDelete(context.Request.Method)
-            && (context.Request.Path.StartsWithSegments("/api/auth/account")
-                || context.Request.Path.StartsWithSegments("/api/auth/users")))
+        // Account deletion and the "confirm it's you" step (POST account/reauth) accept a one-time
+        // recovery code as their proof, so they get their own strict partition like the recovery
+        // login (a stolen session must not be able to brute-force the 12-character code at the
+        // generic 300/min).
+        if (IsProofSpending(context.Request))
             return FixedWindow(context, $"account-deletion|{clientIp}", permitLimit: 10, TimeSpan.FromMinutes(15));
 
         return FixedWindow(context, $"api|{clientIp}", permitLimit: 300, TimeSpan.FromSeconds(60));
@@ -405,12 +405,32 @@ builder.Services.AddRateLimiter(options =>
             // bounds what forged client IPs can try across all accounts together.
             : context.Request.Path.StartsWithSegments("/api/auth/password/login")
             ? FixedWindow(context, "password-login|global", permitLimit: 300, TimeSpan.FromMinutes(15))
-            : HttpMethods.IsDelete(context.Request.Method)
-              && (context.Request.Path.StartsWithSegments("/api/auth/account")
-                  || context.Request.Path.StartsWithSegments("/api/auth/users"))
+            : IsProofSpending(context.Request)
                 ? FixedWindow(context, "account-deletion|global", permitLimit: 30, TimeSpan.FromMinutes(15))
+            // Setup-code and link-code guessing (2026-11-16 audit M8): both codes are short, and the
+            // per-IP buckets are only as good as the forwarded-header trust. Generous for real use
+            // (a household registering after a reset), tight against guessing across forged IPs.
+            : IsRegistration(context.Request)
+                ? FixedWindow(context, "registration|global", permitLimit: 60, TimeSpan.FromMinutes(15))
+            : IsDeviceLink(context.Request)
+                ? FixedWindow(context, "device-link|global", permitLimit: 60, TimeSpan.FromMinutes(15))
                 : RateLimitPartition.GetNoLimiter("no-limit"));
     options.GlobalLimiter = PartitionedRateLimiter.CreateChained(perClientLimiter, globalRecoveryLimiter);
+
+    // register/begin and password/register check the setup code while the installation is
+    // unclaimed, and the invite afterwards; begin-linked checks a device-link code.
+    static bool IsRegistration(HttpRequest request) =>
+        HttpMethods.IsPost(request.Method)
+        && (request.Path.Equals("/api/auth/register/begin", StringComparison.OrdinalIgnoreCase)
+            || request.Path.Equals("/api/auth/password/register", StringComparison.OrdinalIgnoreCase));
+
+    static bool IsDeviceLink(HttpRequest request) =>
+        HttpMethods.IsPost(request.Method) && request.Path.Equals("/api/auth/register/begin-linked", StringComparison.OrdinalIgnoreCase);
+
+    static bool IsProofSpending(HttpRequest request) =>
+        (HttpMethods.IsDelete(request.Method)
+         && (request.Path.StartsWithSegments("/api/auth/account") || request.Path.StartsWithSegments("/api/auth/users")))
+        || (HttpMethods.IsPost(request.Method) && request.Path.Equals("/api/auth/account/reauth", StringComparison.OrdinalIgnoreCase));
 
     static bool IsPasswordManagement(HttpRequest request) =>
         !HttpMethods.IsGet(request.Method)
@@ -538,9 +558,12 @@ builder.Services.AddScoped<IPushService, PushService>();
 builder.Services.AddScoped<IBackupDataService, BackupDataService>();
 builder.Services.AddScoped<ICalendarTokenService, CalendarTokenService>();
 builder.Services.AddScoped<IDeveloperClientService, DeveloperClientService>();
+builder.Services.AddScoped<IOAuthClientReviewService, OAuthClientReviewService>();
 builder.Services.AddScoped<IAuthInviteService, AuthInviteService>();
 builder.Services.AddScoped<IAuthRecoveryService, AuthRecoveryService>();
 builder.Services.AddScoped<IAuthAccountService, AuthAccountService>();
+// "Confirm it's you" mark for the guarded account and backup actions (RequireStepUpAttribute).
+builder.Services.AddScoped<StudyLife.Server.Services.Account.ISessionStepUpService, StudyLife.Server.Services.Account.SessionStepUpService>();
 // Sign-in methods (docs/ARCHITECTURE.md "Password sign-in"): one ISignInMethod per method, summed by
 // the catalog for the "never remove the last way in" rule; the password use cases behind
 // IPasswordCredentialService and the hashing port behind IPasswordHashing (stateless, singleton).
@@ -601,6 +624,11 @@ if (!isPostgres)
 builder.Services.AddScoped<SystemSecretsService>();
 builder.Services.AddSingleton<IInstanceIdProvider, InstanceIdProvider>();
 builder.Services.AddSingleton<VapidKeysHolder>();
+// HttpClient for URLs that come from users (Web Push endpoints): resolve, vet, connect to the
+// vetted public address only, no redirects (audit M4, see UserSuppliedUrlHttp).
+builder.Services.AddUserSuppliedUrlHttpClient();
+// The one Web Push transport (shared HttpClient, short timeouts) for the worker and SessionService.
+builder.Services.AddSingleton<WebPushDelivery>();
 // Speech:Enabled gates TTS (PiperVoiceRegistry/EspeakPhonemizer) and STT (WhisperTranscriber)
 // registration entirely - default true, unchanged behavior for the single-container Pi,
 // docker-compose, and the k8s WEB Deployment. Only the k8s WORKER Deployment
@@ -716,6 +744,8 @@ if (!EF.IsDesignTime)
     if (shouldMigrate)
     {
         db.Database.Migrate();
+        // Audit 2026-11-16 L5: hash calendar/share tokens still stored in plaintext (idempotent).
+        await PlaintextLinkTokenUpgrade.RunAsync(db);
     }
     else
     {
@@ -768,11 +798,15 @@ if (!EF.IsDesignTime)
 // request as HTTP, regardless of whether the browser actually talks to nginx over HTTPS.
 // WHICH upstreams may set X-Forwarded-For/-Proto is the whole security question here (a
 // trusted sender can forge a fresh client IP per request and thereby defeat the IP-partitioned
-// rate limiter above) - see ForwardedHeadersConfig for the default RFC1918 trust, the
+// rate limiter above) - see ForwardedHeadersConfig for the default loopback + gateway trust, the
 // ForwardedHeaders:KnownNetworks/KnownProxies/ForwardLimit configuration that narrows it per
 // deployment, and the documented flat-pod-network limitation on Kubernetes.
 app.UseForwardedHeaders(ForwardedHeadersConfig.Build(
-    builder.Configuration.Bind<TrustedProxyOptions>(TrustedProxyOptions.SectionName)));
+    builder.Configuration.Bind<TrustedProxyOptions>(TrustedProxyOptions.SectionName),
+    DefaultGateways.Discover()));
+// Says once, in the log, which upstream sent X-Forwarded-* without being trusted - the one line an
+// operator needs after the 2026-11-16 default change (ForwardedHeadersConfig).
+app.UseMiddleware<UntrustedForwardedHeadersWarning>();
 
 // Metrics scrape surface (see Telemetry:MetricsPort at the top): GET /metrics is answered only
 // on the dedicated listener, and that listener answers nothing else - a request for the app or

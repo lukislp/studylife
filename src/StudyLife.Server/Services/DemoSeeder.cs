@@ -21,8 +21,10 @@ namespace StudyLife.Server.Services;
 /// straight from CourseCatalog.AppliedAICourses - real names, colors, and topic lists, no
 /// invented placeholder strings.
 ///
-/// The demo user gets a CalendarToken (the ICS feed is a deliberately shown-off feature;
-/// the token only ever grants GET /api/sessions/ics - verified against the gate) but NO
+/// The demo user gets a calendar link (CalendarTokenHash of a random token nobody is shown -
+/// tokens are stored only as hashes, so the setup card shows the "link active, regenerate to
+/// get a new one" state, and regenerating is a POST the write-block refuses; the token would
+/// only ever grant GET /api/sessions/ics - verified against the gate) but NO
 /// ApiKeyHash/AiApiKeyHash/McpApiKeyHash: API keys (any slot) are meant to be completely
 /// unusable on a demo instance, and with a null hash every submitted key fails the gate with
 /// 401. Generating one is a POST and therefore blocked by the demo write-block middleware anyway.
@@ -67,7 +69,7 @@ public static class DemoSeeder
         {
             DisplayName = "Demo",
             CreatedAt = today.AddMonths(-8),
-            CalendarToken = AuthSessionService.GenerateToken(),
+            CalendarTokenHash = AuthSessionService.HashToken(AuthSessionService.GenerateToken()),
             CalendarTokenCreatedAt = now,
             ApiKeyHash = null, // see class summary - API keys must stay unusable on the demo
             AiApiKeyHash = null,

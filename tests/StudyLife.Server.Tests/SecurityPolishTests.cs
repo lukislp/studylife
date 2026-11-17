@@ -97,7 +97,7 @@ public class SecurityPolishTests : IClassFixture<CustomWebApplicationFactory>
         });
         Assert.Equal(HttpStatusCode.OK, create.StatusCode);
 
-        var token = await _client.GetFromJsonAsync<CalendarTokenResponseDto>("/api/system/calendar-token");
+        var token = await (await _client.PostAsync("/api/system/regenerate-calendar-token", null)).Content.ReadFromJsonAsync<RegenerateCalendarTokenResponseDto>();
         using var anon = ApiKeyTestHelpers.CreateClientWithKey(_factory, null);
         var ics = await anon.GetStringAsync($"/api/sessions/ics?calendarToken={token!.CalendarToken}");
 

@@ -106,6 +106,13 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             services.RemoveAll(typeof(DatabaseRestoreService));
             services.AddSingleton(new DatabaseRestoreService(DbPath));
 
+            // The push delivery tests point subscriptions at fake push servers on 127.0.0.1
+            // (PushTestSubscriptions). The vetted user-URL client refuses loopback in production;
+            // here the filter additionally lets loopback through, nothing else. The vetting
+            // itself is covered without a host in OutboundAddressVettingTests.
+            services.RemoveAll<StudyLife.Server.Services.Outbound.IOutboundAddressFilter>();
+            services.AddSingleton<StudyLife.Server.Services.Outbound.IOutboundAddressFilter>(new LoopbackOrPublicAddressFilter());
+
             // SystemSecretsService (VAPID keys/setup code) needs NO rerouting anymore - since
             // the scalability branch it's DB-backed instead of file-based, so it automatically
             // lands in this factory instance's temp DB (already rerouted above), with no

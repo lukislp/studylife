@@ -20,5 +20,13 @@
   "ConnectClientPageTitle": "StudyAtrium — Anslut",
   "ConnectClientHeading": "Anslut tillägg",
   "ConnectClientNotRegistered": "Det här tillägget är ännu inte registrerat på din StudyAtrium-instans.",
-  "ConnectRedirectTarget": "Efter anslutningen skickas du vidare till: {0}"
+  "ConnectRedirectTarget": "Efter anslutningen skickas du vidare till: {0}",
+  "ConnectKeyRecipient": "Din åtkomstnyckel lämnas över till:",
+  "ConnectRequestedAccess": "Begärd åtkomst:",
+  "ConnectRegisteredBy": "Registrerat på den här servern av {0}.",
+  "ConnectRegisteredByOwner": "Registrerat på den här servern av {0}, serverns ägare.",
+  "ConnectRegistrantUnknown": "Registrerat av ett konto som inte längre finns.",
+  "ConnectBuiltInClient": "Inbyggt i StudyAtrium, inte registrerat av en användare.",
+  "ConnectClientPendingApproval": "Det här tillägget väntar på godkännande från serverns ägare. Du kan ansluta det när det har godkänts.",
+  "ConnectClientRejected": "Serverns ägare har inte godkänt det här tillägget, så det kan inte anslutas."
 }

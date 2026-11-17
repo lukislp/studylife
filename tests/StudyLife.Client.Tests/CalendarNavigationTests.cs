@@ -66,7 +66,11 @@ public class CalendarKeyboardNavigationTests : ConsentBunitTest
         AiConsentFixtures.Register(Ctx, server);
         Services.AddSingleton<INativeIcsIntake>(new NoNativeIcsIntake());
         var cut = Render<Calendar>();
-        cut.WaitForAssertion(() => cut.Find(".cal-header h2"));
+        // The header renders before the page has finished loading; its title stays "" until
+        // Calendar.UpdateLabel runs at the end of the asynchronous initialisation. Waiting for the
+        // element alone let a test capture "" as "today" and compare it with the loaded title
+        // (flaky in CI: Expected "" Actual "16.11. - 22.11.2026"). Wait for the loaded title.
+        cut.WaitForAssertion(() => Assert.False(string.IsNullOrEmpty(Title(cut))), ChainTimeout);
         return cut;
     }
 
@@ -135,5 +139,40 @@ public class CalendarKeyboardNavigationTests : ConsentBunitTest
         Assert.NotEqual(day, Title(cut));
         await cut.InvokeAsync(() => cut.Instance.OnShortcutKey("ArrowLeft", false, false, false, false, false));
         Assert.Equal(day, Title(cut));
+    }
+}
+
+/// <summary>
+/// The calendar's contract with the native app (studylife-app, HardwareArrowKeys): on the iPad the
+/// app only hands the hardware Left/Right arrow keys to the page while the page declares
+/// data-page-arrow-keys="horizontal" on &lt;html&gt;. Renaming or dropping the attribute here would
+/// silently break the arrow keys in the app, so the module's source is pinned.
+/// </summary>
+public class CalendarArrowKeyIntentContractTests
+{
+    private static string Module()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "StudyLife.sln"))) dir = dir.Parent;
+        Assert.NotNull(dir);
+        return File.ReadAllText(Path.Combine(dir!.FullName, "src", "StudyLife.Client", "Pages", "Calendar.razor.js"));
+    }
+
+    [Fact]
+    public void The_calendar_declares_its_arrow_key_interest_as_the_attribute_the_app_reads()
+    {
+        var js = Module();
+        // dataset.pageArrowKeys is the data-page-arrow-keys attribute.
+        Assert.Contains("const ARROW_INTENT = 'pageArrowKeys';", js);
+        Assert.Contains("document.documentElement.dataset[ARROW_INTENT] = 'horizontal';", js);
+    }
+
+    [Fact]
+    public void The_interest_is_withdrawn_for_text_fields_dialogs_and_when_the_page_goes()
+    {
+        var js = Module();
+        Assert.Contains("if (keyIsBlocked()) delete document.documentElement.dataset[ARROW_INTENT];", js);
+        var cleanup = js[js.IndexOf("cleanup = () => {", StringComparison.Ordinal)..];
+        Assert.Contains("withdrawArrowIntent();", cleanup);
     }
 }

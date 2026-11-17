@@ -4,17 +4,20 @@
 using System.Text.RegularExpressions;
 using AngleSharp.Dom;
 using Bunit;
+using Microsoft.Extensions.DependencyInjection;
 using StudyLife.Client.Components.Setup;
+using StudyLife.Client.Services;
+using StudyLife.Shared;
 
 namespace StudyLife.Client.Tests;
 
 /// <summary>
 /// Accessibility contract of the modal markup, checked against two representative components:
 /// SetupCompletionModal (always-open modal) and SetupCalendarSubscriptionCard (modal behind a
-/// confirmation step). Both take their texts as plain parameters, so they render without the
-/// I18nText table loader and stand in for the ~27 dialogs that share this markup shape.
+/// confirmation step). They stand in for the ~27 dialogs that share this markup shape. The calendar
+/// card loads its own texts (rendered as their i18n keys here, see AiConsentFixtures.Register).
 /// </summary>
-public class DialogSemanticsTests : BunitContext
+public class DialogSemanticsTests : ConsentBunitTest
 {
     private const string CloseLabel = "Close dialog";
 
@@ -26,13 +29,13 @@ public class DialogSemanticsTests : BunitContext
 
     private IElement RenderCalendarSubscriptionModal()
     {
-        var cut = Render<SetupCalendarSubscriptionCard>(p => p
-            .Add(c => c.Label, "Calendar subscription")
-            .Add(c => c.RegenerateButtonText, "Regenerate")
-            .Add(c => c.RegenerateConfirmTitle, "Regenerate calendar link?")
-            .Add(c => c.CloseLabel, CloseLabel));
-        cut.Find("button.btn-danger").Click(); // opens the confirmation dialog
-        return cut.Find("[role=dialog]");
+        var server = new ScriptedServer();
+        AiConsentFixtures.Register(Ctx, server);
+        Services.AddSingleton<IServerLinks>(new HttpServerLinks(new HttpClient { BaseAddress = new Uri("https://studylife.test/") }));
+        server.OnJson("GET api/system/calendar-token", new CalendarTokenResponseDto { Exists = true });
+        var cut = Render<SetupCalendarSubscriptionCard>();
+        cut.WaitForElement("button.btn-danger").Click(); // opens the confirmation dialog
+        return cut.WaitForElement("[role=dialog]");
     }
 
     public static TheoryData<string> Components => new() { "completion", "calendar-subscription" };

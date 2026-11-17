@@ -146,11 +146,11 @@ namespace StudyLife.Server.Migrations.Postgres
                     b.Property<string>("ApiKeyHash")
                         .HasColumnType("text");
 
-                    b.Property<string>("CalendarToken")
-                        .HasColumnType("text");
-
                     b.Property<DateTime?>("CalendarTokenCreatedAt")
                         .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("CalendarTokenHash")
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("CaptureApiKeyCreatedAt")
                         .HasColumnType("timestamp without time zone");
@@ -186,6 +186,10 @@ namespace StudyLife.Server.Migrations.Postgres
                     b.Property<bool>("IsOwner")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("LegacyCalendarToken")
+                        .HasColumnType("text")
+                        .HasColumnName("CalendarToken");
+
                     b.Property<DateTime?>("McpApiKeyCreatedAt")
                         .HasColumnType("timestamp without time zone");
 
@@ -206,7 +210,7 @@ namespace StudyLife.Server.Migrations.Postgres
                     b.HasIndex("ApiKeyHash")
                         .IsUnique();
 
-                    b.HasIndex("CalendarToken")
+                    b.HasIndex("CalendarTokenHash")
                         .IsUnique();
 
                     b.HasIndex("CaptureApiKeyHash")
@@ -515,6 +519,9 @@ namespace StudyLife.Server.Migrations.Postgres
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("Approval")
+                        .HasColumnType("integer");
+
                     b.Property<string>("ClientId")
                         .IsRequired()
                         .HasColumnType("text");
@@ -563,6 +570,9 @@ namespace StudyLife.Server.Migrations.Postgres
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone");
+
+                    b.Property<int?>("CreatedBySessionId")
+                        .HasColumnType("integer");
 
                     b.Property<byte[]>("CredentialId")
                         .IsRequired()
@@ -699,6 +709,9 @@ namespace StudyLife.Server.Migrations.Postgres
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone");
+
+                    b.Property<int?>("CreatedBySessionId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("UsedAt")
                         .HasColumnType("timestamp without time zone");
@@ -1013,6 +1026,10 @@ namespace StudyLife.Server.Migrations.Postgres
                     b.Property<DateTime?>("LastBackupDownloadAt")
                         .HasColumnType("timestamp without time zone");
 
+                    b.Property<string>("LegacyProgressShareToken")
+                        .HasColumnType("text")
+                        .HasColumnName("ProgressShareToken");
+
                     b.Property<int>("MonthlyGoalMaxHours")
                         .HasColumnType("integer");
 
@@ -1035,7 +1052,7 @@ namespace StudyLife.Server.Migrations.Postgres
                     b.Property<bool>("ProgressShareEnabled")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("ProgressShareToken")
+                    b.Property<string>("ProgressShareTokenHash")
                         .HasColumnType("text");
 
                     b.Property<string>("SelectedCourseIds")
@@ -1091,6 +1108,8 @@ namespace StudyLife.Server.Migrations.Postgres
 
                     b.HasIndex("AuthUserId")
                         .IsUnique();
+
+                    b.HasIndex("ProgressShareTokenHash");
 
                     b.ToTable("Settings");
                 });

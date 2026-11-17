@@ -26,10 +26,9 @@ public class SetupOverviewEndpointTests
         using var factory = new CustomWebApplicationFactory();
         var client = factory.CreateClient();
 
-        // Pre-create the calendar token via the real endpoint (which lazily generates it) so the
-        // bundle's "only when it already exists" contract is exercised against a token that
-        // genuinely already exists, not the generate-on-first-fetch path.
-        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/system/calendar-token")).StatusCode);
+        // Create the calendar link through the real endpoint, so the bundle reports an existing
+        // link (and, like GET api/system/calendar-token, never its token).
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsync("/api/system/regenerate-calendar-token", null)).StatusCode);
 
         // One key per slot - same generate endpoints the setup cards themselves call.
         foreach (var slot in new[] { "ha", "ai", "mcp", "capture", "focusguard", "focustunes", "tray", "developer" })
@@ -93,7 +92,7 @@ public class SetupOverviewEndpointTests
         AssertJsonEqual(settings, overview!.Settings);
         AssertJsonEqual(capabilities, overview.Capabilities);
         AssertJsonEqual(version, overview.Version);
-        Assert.Equal(calendarToken!.CalendarToken, overview.CalendarToken);
+        AssertJsonEqual(calendarToken, overview.CalendarLink);
         AssertJsonEqual(studyPrograms, overview.StudyPrograms);
         AssertJsonEqual(courseGoals, overview.CourseGoals);
         AssertJsonEqual(haKey, overview.HaApiKey);
@@ -117,7 +116,8 @@ public class SetupOverviewEndpointTests
         Assert.Single(overview.WebhookApiKeys!);
         Assert.Single(overview.Invites!);
         Assert.Contains(overview.CourseGoals!, g => g.CourseId == 1);
-        Assert.NotNull(overview.CalendarToken);
+        Assert.True(overview.CalendarLink!.Exists);
+        Assert.Null(overview.CalendarLink.CalendarToken); // stored as a hash only, never sent back
     }
 
     /// <summary>
@@ -164,7 +164,7 @@ public class SetupOverviewEndpointTests
     /// <summary>
     /// The bundle must never perform the calendar token's lazy-create write (a GET with a side
     /// effect, see CalendarTokenService.GetOrCreateAsync/SetupController's class doc): a user who
-    /// never touched the calendar feature gets CalendarToken == null from the bundle, and the DB
+    /// never touched the calendar feature gets CalendarLink.Exists == false from the bundle, and the DB
     /// still has no token afterward.
     /// </summary>
     [Fact]
@@ -177,12 +177,12 @@ public class SetupOverviewEndpointTests
         Assert.Equal(HttpStatusCode.OK, overviewResponse.StatusCode);
         var overview = await overviewResponse.Content.ReadFromJsonAsync<SetupOverviewDto>();
         Assert.NotNull(overview);
-        Assert.Null(overview!.CalendarToken);
+        Assert.False(overview!.CalendarLink!.Exists);
 
         var stillNoToken = await factory.WithDbAsync(async db =>
         {
             var user = await db.AuthUsers.SingleAsync(u => u.Id == 1);
-            return user.CalendarToken;
+            return user.CalendarTokenHash;
         });
         Assert.Null(stillNoToken);
     }
@@ -243,10 +243,10 @@ public class SetupOverviewEndpointTests
         Assert.True(overview!.IsDemo);
         Assert.False(haKey!.HasKey);
         AssertJsonEqual(haKey, overview.HaApiKey);
-        // DemoSeeder pre-seeds a calendar token for the demo user - already exists, so the bundle
-        // reports it exactly like the individual (non-generating, since it already exists) fetch.
-        Assert.NotNull(calendarToken!.CalendarToken);
-        Assert.Equal(calendarToken.CalendarToken, overview.CalendarToken);
+        // DemoSeeder pre-seeds a calendar link for the demo user - the bundle reports it exactly
+        // like the individual fetch: it exists, and its token is never sent back.
+        Assert.True(calendarToken!.Exists);
+        AssertJsonEqual(calendarToken, overview.CalendarLink);
         // Blocked on the real endpoint (middleware) => null in the bundle, never data.
         Assert.Null(overview.RestoreStatus);
 
