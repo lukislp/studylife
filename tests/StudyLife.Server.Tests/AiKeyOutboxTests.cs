@@ -8,10 +8,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using StudyLife.Server.Configuration;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
+using StudyLife.Server.Services.Account;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Tests;
@@ -275,6 +277,141 @@ public class AiKeyOutboxDrainTests : IClassFixture<CustomWebApplicationFactory>
             // A second drain tick must not retry it again - it has given up.
             await _factory.WithDbAsync(db => service.RunAiKeyOutboxAsync(db));
             Assert.Single(handler.Requests); // still just the one request from the first tick
+        }
+        finally
+        {
+            await ClearOutboxAsync();
+        }
+    }
+
+    // ---- Revokes and purges never give up (audit F-15) ------------------------------------------
+
+    private sealed class WarningLog : ILogger<BackgroundTaskService>
+    {
+        public List<string> Warnings { get; } = [];
+        public List<string> Errors { get; } = [];
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public bool IsEnabled(LogLevel logLevel) => true;
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        {
+            if (logLevel == LogLevel.Warning) Warnings.Add(formatter(state, exception));
+            if (logLevel == LogLevel.Error) Errors.Add(formatter(state, exception));
+        }
+    }
+
+    /// <summary>A drain whose studylife-ai and studylife-mcp both answer 503.</summary>
+    private (BackgroundTaskService Service, AiKeyOutboxTestStubHandler Ai, AiKeyOutboxTestStubHandler Mcp, WarningLog Log) CreateFailingPurgeService()
+    {
+        var ai = new AiKeyOutboxTestStubHandler(_ => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+        var mcp = new AiKeyOutboxTestStubHandler(_ => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+        var aiClient = new AiProxyClient(
+            TestOptions.For<StudyLifeAiOptions>(("StudyLifeAi:BaseUrl", "https://ai-outbox-drain-test.invalid"), ("StudyLifeAi:SharedSecret", "s")),
+            NullLogger<AiProxyClient>.Instance, new HttpClient(ai));
+        var purges = new AddonPurgeClients([new AddonPurgeClient(AddonPurgeTarget.Mcp,
+            new AddonPurgeOptions { BaseUrl = "https://mcp-outbox-drain-test.invalid", SharedSecret = "s" },
+            NullLogger<AddonPurgeClient>.Instance, new HttpClient(mcp))]);
+        var log = new WarningLog();
+        var service = new BackgroundTaskService(
+            new ServiceCollection().AddSingleton(purges).BuildServiceProvider(),
+            _factory.Services.GetRequiredService<VapidKeysHolder>(), log,
+            _factory.Services.GetRequiredService<ApnsSender>(), aiProxyClient: aiClient);
+        return (service, ai, mcp, log);
+    }
+
+    private Task MakeDueAsync() => _factory.WithDbAsync(db =>
+        db.AiKeyOutbox.ExecuteUpdateAsync(s => s.SetProperty(o => o.LastAttemptAt, DateTime.UtcNow.AddHours(-2))));
+
+    [Fact]
+    public async Task RunAiKeyOutboxAsync_RevokeAndPurgeRows_AreRetriedPastTheRegisterLimit()
+    {
+        await ClearOutboxAsync();
+        try
+        {
+            var created = DateTime.UtcNow.AddDays(-10);
+            await SeedRowAsync(AiKeyOutboxEntity.ActionRevoke, null, created, attempts: 150, lastAttemptAt: DateTime.UtcNow.AddHours(-2));
+            await SeedRowAsync(AiKeyOutboxEntity.ActionPurgeMcp, null, created, attempts: 99, lastAttemptAt: DateTime.UtcNow.AddHours(-2));
+            var (service, ai, mcp, log) = CreateFailingPurgeService();
+
+            await _factory.WithDbAsync(db => service.RunAiKeyOutboxAsync(db));
+            await MakeDueAsync();
+            await _factory.WithDbAsync(db => service.RunAiKeyOutboxAsync(db));
+
+            Assert.Equal(2, ai.Requests.Count);
+            Assert.Equal(2, mcp.Requests.Count);
+            var rows = await LoadRowsAsync();
+            Assert.Equal(152, rows.Single(r => r.Action == AiKeyOutboxEntity.ActionRevoke).Attempts);
+            Assert.Equal(101, rows.Single(r => r.Action == AiKeyOutboxEntity.ActionPurgeMcp).Attempts);
+            Assert.Empty(log.Errors); // nothing "gave up"
+        }
+        finally
+        {
+            await ClearOutboxAsync();
+        }
+    }
+
+    [Fact]
+    public async Task RunAiKeyOutboxAsync_StuckPurge_WarnsAtTheThreshold_ThenAtMostOncePerDay()
+    {
+        await ClearOutboxAsync();
+        try
+        {
+            var id = await SeedRowAsync(AiKeyOutboxEntity.ActionPurgeMcp, null, DateTime.UtcNow.AddDays(-1),
+                attempts: AddonOutbox.WarnAfterAttempts - 2, lastAttemptAt: DateTime.UtcNow.AddHours(-2));
+            var hash = AuthSessionService.HashToken("never-logged-key");
+            await _factory.WithDbAsync(db => db.AiKeyOutbox.Where(o => o.Id == id)
+                .ExecuteUpdateAsync(s => s.SetProperty(o => o.KeyHashes, hash)));
+            var (service, _, mcp, log) = CreateFailingPurgeService();
+
+            // Attempt 9: below the threshold, no warning.
+            await _factory.WithDbAsync(db => service.RunAiKeyOutboxAsync(db));
+            Assert.Empty(log.Warnings);
+
+            // Attempt 10: the threshold - one warning with ids and the count, never the hash.
+            await MakeDueAsync();
+            await _factory.WithDbAsync(db => service.RunAiKeyOutboxAsync(db));
+            var warning = Assert.Single(log.Warnings);
+            Assert.Contains($"row {id}", warning, StringComparison.Ordinal);
+            Assert.Contains(AiKeyOutboxEntity.ActionPurgeMcp, warning, StringComparison.Ordinal);
+            Assert.Contains($"after {AddonOutbox.WarnAfterAttempts} attempts", warning, StringComparison.Ordinal);
+            Assert.DoesNotContain(hash, warning, StringComparison.Ordinal);
+            Assert.NotNull((await LoadRowsAsync()).Single().FailureWarnedAt);
+
+            // Attempt 11 on the same day: retried, but not reported again.
+            await MakeDueAsync();
+            await _factory.WithDbAsync(db => service.RunAiKeyOutboxAsync(db));
+            Assert.Single(log.Warnings);
+
+            // A day after the last warning: reported again.
+            await MakeDueAsync();
+            await _factory.WithDbAsync(db => db.AiKeyOutbox.ExecuteUpdateAsync(s =>
+                s.SetProperty(o => o.FailureWarnedAt, DateTime.UtcNow.AddDays(-1).AddMinutes(-1))));
+            await _factory.WithDbAsync(db => service.RunAiKeyOutboxAsync(db));
+            Assert.Equal(2, log.Warnings.Count);
+
+            Assert.Equal(4, mcp.Requests.Count);
+            Assert.All(mcp.Requests, r => Assert.Contains(hash, r.Body, StringComparison.Ordinal));
+        }
+        finally
+        {
+            await ClearOutboxAsync();
+        }
+    }
+
+    [Fact]
+    public async Task RunAiKeyOutboxAsync_PurgeRowForAnAddonThatIsNotConfigured_CountsAsDelivered()
+    {
+        await ClearOutboxAsync();
+        try
+        {
+            // The test host has no AddonPurge:* settings: studylife-telegram is not part of this
+            // installation, so there is nothing to purge and the row goes without a request.
+            await SeedRowAsync(AiKeyOutboxEntity.ActionPurgeTelegram, null, DateTime.UtcNow.AddMinutes(-5));
+            var (service, handler) = CreateService();
+
+            await _factory.WithDbAsync(db => service.RunAiKeyOutboxAsync(db));
+
+            Assert.Empty(await LoadRowsAsync());
+            Assert.Empty(handler.Requests);
         }
         finally
         {

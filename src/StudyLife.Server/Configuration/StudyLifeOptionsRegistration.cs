@@ -58,6 +58,11 @@ public static class StudyLifeOptionsRegistration
         services.AddOptions<AddonTlsOptions>()
             .BindConfiguration(AddonTlsOptions.SectionName)
             .ValidateOnStart();
+        // Account-deletion purge of the add-ons with per-user data (AddonPurgeOptions): one named
+        // instance per add-on; a half-configured one stops the start (AddonPurgeOptionsValidator).
+        services.AddSingleton<Microsoft.Extensions.Options.IValidateOptions<AddonPurgeOptions>, AddonPurgeOptionsValidator>();
+        foreach (var target in Services.Account.AddonPurgeTarget.All)
+            services.AddOptions<AddonPurgeOptions>(target.Name).BindConfiguration(target.SectionPath).ValidateOnStart();
         services.AddOptions<ApnsOptions>().BindConfiguration(ApnsOptions.SectionName);
         services.AddOptions<AppleOptions>().BindConfiguration(AppleOptions.SectionName);
 

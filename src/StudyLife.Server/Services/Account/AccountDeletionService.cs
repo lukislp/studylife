@@ -39,11 +39,13 @@ public sealed record AccountDeletionResult(AccountDeletionOutcome Outcome, Accou
 ///
 /// <b>Order and failure behaviour.</b> One database transaction removes every local row and, in the
 /// same transaction, queues the add-on clean-ups (studylife-ai revoke, studylife-webhooks purge,
-/// studylife-developers revoke) in the existing outbox table. So either everything local is gone
-/// AND the retries are durably queued, or nothing changed - there is no half-deleted account and
-/// no way to lose the add-on work. Delivery is attempted immediately after the commit; whatever
-/// fails stays in the outbox and BackgroundTaskService retries it with backoff (it holds only the
-/// user id and an action name, no personal data, which is why it may outlive the account). An
+/// studylife-developers revoke, the studylife-mcp/-alexa/-telegram purge) in the existing outbox
+/// table. So either everything local is gone AND the retries are durably queued, or nothing changed
+/// - there is no half-deleted account and no way to lose the add-on work. Delivery is attempted
+/// immediately after the commit; whatever fails stays in the outbox and BackgroundTaskService
+/// retries it with backoff until it is delivered (it holds the user id, an action name and, for the
+/// purges, the hashes of keys that no longer exist - nothing that names the person - which is why
+/// it may outlive the account). An
 /// add-on outage therefore never blocks a deletion, and the response says how many clean-ups are
 /// still pending. The alternative (add-ons first, then local data) would let an unreachable add-on
 /// stop the user from deleting their account at all.
@@ -75,6 +77,7 @@ public sealed class AccountDeletionService(
     AiProxyClient aiProxy,
     WebhooksProxyClient webhooks,
     DeveloperProxyClient developers,
+    AddonPurgeClients purges,
     SettingsCacheVersion settingsVersion,
     SessionHistoryCacheVersion sessionsVersion,
     ILogger<AccountDeletionService> logger) : IAccountDeletionService
@@ -160,6 +163,9 @@ public sealed class AccountDeletionService(
                 queued.Add(NewOutboxRow(userId, AiKeyOutboxEntity.ActionPurgeWebhooks, now));
             if (developers.Enabled && user.DeveloperApiKeyHash is not null)
                 queued.Add(NewOutboxRow(userId, AiKeyOutboxEntity.ActionRevokeDeveloper, now));
+            // studylife-mcp/-alexa/-telegram: the key hashes they find the user's data by are read
+            // here, before step 2 deletes the rows that hold them.
+            queued.AddRange(await AddonPurgeQueue.RowsForAsync(db, purges, user, now, ct));
             db.AiKeyOutbox.AddRange(queued);
             await db.SaveChangesAsync(ct);
 
@@ -234,9 +240,10 @@ public sealed class AccountDeletionService(
     private async Task<int> DeliverQueuedAsync(List<AiKeyOutboxEntity> rows)
     {
         var pending = 0;
+        var delivery = new AddonOutboxDelivery(aiProxy, webhooks, developers, purges);
         foreach (var row in rows)
         {
-            var delivered = await AddonOutbox.TryDeliverAsync(row, aiProxy, webhooks, developers, CancellationToken.None);
+            var delivered = await delivery.TryDeliverAsync(row, CancellationToken.None);
             if (delivered == true)
             {
                 await db.AiKeyOutbox.Where(o => o.Id == row.Id).ExecuteDeleteAsync(CancellationToken.None);
