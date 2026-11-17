@@ -1,0 +1,23 @@
+{
+  "Title": "Deimhnigh gur tusa atá ann",
+  "Intro": "Cosnaíonn an gníomh seo do chuntas. Deimhnigh le heochair rochtana an chuntais seo chun leanúint ar aghaidh.",
+  "BrowserSignInIntro": "Sínigh isteach arís chun a dheimhniú gur tusa atá ann. Leanfaidh an gníomh ar aghaidh díreach ina dhiaidh sin.",
+  "PasskeyButton": "Deimhnigh le heochair rochtana",
+  "BrowserSignInButton": "Sínigh isteach arís",
+  "PasswordToggle": "Úsáid mo phasfhocal",
+  "PasswordLabel": "Do phasfhocal",
+  "PasswordButton": "Deimhnigh le pasfhocal",
+  "RecoveryToggle": "Úsáid cód aisghabhála",
+  "RecoveryLabel": "Cód aisghabhála",
+  "RecoveryButton": "Deimhnigh le cód aisghabhála",
+  "Working": "Ag obair…",
+  "PasskeyFailed": "Níor críochnaíodh an iarratas ar eochair rochtana. Bain triail eile as, nó deimhnigh ar bhealach eile.",
+  "CancelButton": "Cealaigh",
+  "CloseDialog": "Dún an dialóg",
+  "ErrorRejected": "Níor glacadh leis an deimhniú sin.",
+  "ErrorMissing": "Deimhnigh le heochair rochtana, le do phasfhocal nó le cód aisghabhála.",
+  "ErrorTooMany": "An iomarca iarrachtaí. Fan cúpla nóiméad.",
+  "ErrorNetwork": "Níorbh fhéidir teagmháil a dhéanamh leis an bhfreastalaí.",
+  "ErrorGeneric": "Chuaigh rud éigin mícheart. Bain triail eile as.",
+  "ApprovalOtherSession": "Ní féidir eochair rochtana nua a cheadú ón seisiún a chuir leis í. Ceadaigh í ar ghléas eile atá sínithe isteach, nó sínigh amach agus isteach arís le heochair rochtana atá ann cheana nó le do phasfhocal, agus ceadaigh anseo í."
+}

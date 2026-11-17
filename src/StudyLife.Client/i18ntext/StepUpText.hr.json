@@ -1,0 +1,23 @@
+{
+  "Title": "Potvrdite da ste to vi",
+  "Intro": "Ova radnja štiti vaš račun. Za nastavak potvrdite pristupnim ključem ovog računa.",
+  "BrowserSignInIntro": "Ponovno se prijavite kako biste potvrdili da ste to vi. Radnja se nastavlja odmah nakon toga.",
+  "PasskeyButton": "Potvrdi pristupnim ključem",
+  "BrowserSignInButton": "Ponovno se prijavi",
+  "PasswordToggle": "Koristi moju lozinku",
+  "PasswordLabel": "Vaša lozinka",
+  "PasswordButton": "Potvrdi lozinkom",
+  "RecoveryToggle": "Koristi kod za oporavak",
+  "RecoveryLabel": "Kod za oporavak",
+  "RecoveryButton": "Potvrdi kodom za oporavak",
+  "Working": "Obrada…",
+  "PasskeyFailed": "Zahtjev za pristupni ključ nije dovršen. Pokušajte ponovno ili potvrdite na drugi način.",
+  "CancelButton": "Odustani",
+  "CloseDialog": "Zatvori dijalog",
+  "ErrorRejected": "Ta potvrda nije prihvaćena.",
+  "ErrorMissing": "Potvrdite pristupnim ključem, lozinkom ili kodom za oporavak.",
+  "ErrorTooMany": "Previše pokušaja. Pričekajte nekoliko minuta.",
+  "ErrorNetwork": "Poslužitelj nije dostupan.",
+  "ErrorGeneric": "Nešto je pošlo po zlu. Pokušajte ponovno.",
+  "ApprovalOtherSession": "Novi pristupni ključ ne može se odobriti iz sesije koja ga je dodala. Odobrite ga na drugom prijavljenom uređaju ili se odjavite i ponovno prijavite postojećim pristupnim ključem ili lozinkom te ga odobrite ovdje."
+}
