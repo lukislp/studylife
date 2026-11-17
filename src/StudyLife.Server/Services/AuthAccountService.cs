@@ -30,8 +30,11 @@ public interface IAuthAccountService
     Task<List<PasskeyListItemDto>> ListCredentialsAsync(int userId);
 
     /// <summary>Approves a passkey created via register/begin-additional - idempotent, so an
-    /// already-approved credential is a no-op success rather than an error.</summary>
-    Task<ServiceResult> ApproveCredentialAsync(int userId, int credentialId);
+    /// already-approved credential is a no-op success rather than an error. Refused
+    /// (<see cref="ApprovalNeedsOtherSession"/>) when <paramref name="currentSessionId"/> is the
+    /// session that registered the passkey: a stolen token must not add and approve its own
+    /// passkey (2026-11-16 audit M1).</summary>
+    Task<ServiceResult> ApproveCredentialAsync(int userId, int credentialId, int currentSessionId);
 
     Task<ServiceResult> RenameCredentialAsync(int userId, int credentialId, string? label);
 
@@ -80,11 +83,16 @@ public class AuthAccountService(StudyLifeDb db, AuthSessionCache sessionCache, S
             })
             .ToListAsync();
 
-    public async Task<ServiceResult> ApproveCredentialAsync(int userId, int credentialId)
+    /// <summary>Problem type of a self-approval attempt; the client explains that the approval
+    /// has to come from another signed-in device or a new sign-in.</summary>
+    public const string ApprovalNeedsOtherSession = "approval-needs-other-session";
+
+    public async Task<ServiceResult> ApproveCredentialAsync(int userId, int credentialId, int currentSessionId)
     {
         var credential = await db.PasskeyCredentials.FirstOrDefaultAsync(c => c.Id == credentialId && c.AuthUserId == userId);
         if (credential is null) return ServiceResult.NotFound();
         if (credential.ApprovedAt is not null) return ServiceResult.Success(); // already approved, idempotent
+        if (credential.CreatedBySessionId == currentSessionId) return ServiceResult.Forbidden(ApprovalNeedsOtherSession);
 
         credential.ApprovedAt = DateTime.UtcNow;
         await db.SaveChangesAsync();

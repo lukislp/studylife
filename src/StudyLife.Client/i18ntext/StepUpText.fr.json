@@ -1,0 +1,23 @@
+{
+  "Title": "Confirmez qu’il s’agit bien de vous",
+  "Intro": "Cette action protège votre compte. Confirmez avec une clé d’accès de ce compte pour continuer.",
+  "BrowserSignInIntro": "Reconnectez-vous pour confirmer qu’il s’agit bien de vous. L’action se poursuit juste après.",
+  "PasskeyButton": "Confirmer avec une clé d’accès",
+  "BrowserSignInButton": "Se reconnecter",
+  "PasswordToggle": "Utiliser mon mot de passe",
+  "PasswordLabel": "Votre mot de passe",
+  "PasswordButton": "Confirmer avec le mot de passe",
+  "RecoveryToggle": "Utiliser un code de récupération",
+  "RecoveryLabel": "Code de récupération",
+  "RecoveryButton": "Confirmer avec le code de récupération",
+  "Working": "En cours…",
+  "PasskeyFailed": "La demande de clé d’accès n’a pas abouti. Réessayez ou utilisez un autre moyen de confirmation.",
+  "CancelButton": "Annuler",
+  "CloseDialog": "Fermer la boîte de dialogue",
+  "ErrorRejected": "Cette confirmation n’a pas été acceptée.",
+  "ErrorMissing": "Veuillez confirmer avec une clé d’accès, votre mot de passe ou un code de récupération.",
+  "ErrorTooMany": "Trop de tentatives. Veuillez patienter quelques minutes.",
+  "ErrorNetwork": "Le serveur est injoignable.",
+  "ErrorGeneric": "Une erreur s’est produite. Veuillez réessayer.",
+  "ApprovalOtherSession": "Une nouvelle clé d’accès ne peut pas être approuvée depuis la session qui l’a ajoutée. Approuvez-la sur un autre appareil connecté, ou déconnectez-vous puis reconnectez-vous avec une clé d’accès existante ou votre mot de passe, puis approuvez-la ici."
+}

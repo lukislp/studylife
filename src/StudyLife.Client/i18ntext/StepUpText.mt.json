@@ -1,0 +1,23 @@
+{
+  "Title": "Ikkonferma li int",
+  "Intro": "Din l-azzjoni tipproteġi l-kont tiegħek. Ikkonferma b’passkey ta’ dan il-kont biex tkompli.",
+  "BrowserSignInIntro": "Erġa’ idħol biex tikkonferma li int. L-azzjoni tkompli eżatt wara.",
+  "PasskeyButton": "Ikkonferma b’passkey",
+  "BrowserSignInButton": "Erġa’ idħol",
+  "PasswordToggle": "Uża l-password tiegħi",
+  "PasswordLabel": "Il-password tiegħek",
+  "PasswordButton": "Ikkonferma bil-password",
+  "RecoveryToggle": "Uża kodiċi ta’ rkupru",
+  "RecoveryLabel": "Kodiċi ta’ rkupru",
+  "RecoveryButton": "Ikkonferma bil-kodiċi ta’ rkupru",
+  "Working": "Qed jaħdem…",
+  "PasskeyFailed": "It-talba tal-passkey ma tlestietx. Erġa’ pprova jew ikkonferma b’mod ieħor.",
+  "CancelButton": "Ikkanċella",
+  "CloseDialog": "Agħlaq id-djalogu",
+  "ErrorRejected": "Din il-konferma ma ġietx aċċettata.",
+  "ErrorMissing": "Ikkonferma b’passkey, il-password tiegħek jew kodiċi ta’ rkupru.",
+  "ErrorTooMany": "Wisq tentattivi. Stenna ftit minuti.",
+  "ErrorNetwork": "Is-server ma setax jintlaħaq.",
+  "ErrorGeneric": "Xi ħaġa marret ħażin. Erġa’ pprova.",
+  "ApprovalOtherSession": "Passkey ġdid ma jistax jiġi approvat mis-sessjoni li żiditu. Approvah fuq apparat ieħor li fih int dħalt, jew oħroġ u erġa’ idħol b’passkey eżistenti jew bil-password tiegħek, imbagħad approvah hawn."
+}

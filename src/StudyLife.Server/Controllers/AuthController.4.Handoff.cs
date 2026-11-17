@@ -4,6 +4,8 @@
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using StudyLife.Server.Auth;
+using StudyLife.Server.Services;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Controllers;
@@ -14,14 +16,19 @@ public partial class AuthController
 
     private static readonly TimeSpan HandoffLifetime = TimeSpan.FromSeconds(60);
 
+    /// <summary>Both handoff bodies are a few dozen characters; anything bigger is refused before
+    /// it is read (2026-11-16 audit M3: the cache behind it also holds the WebAuthn challenges).</summary>
+    private const long HandoffMaxBodyBytes = 4 * 1024;
+
     /// <summary>Token bound to the code_challenge given at handoff time - the token itself is
     /// only ever released again to whoever proves possession of the matching code_verifier.</summary>
     private sealed record PendingHandoff(string Token, string CodeChallenge);
 
     /// <summary>
-    /// PKCE handoff (unauthenticated like the rest of /api/auth - the caller has just proven
-    /// possession of a real token from register/login/recovery complete, that IS the
-    /// authorization here): stores the token server-side under a fresh, single-use code bound
+    /// PKCE handoff, session-only: the token handed off is the one this request authenticates
+    /// with (X-Session-Token, just issued by register/login/recovery complete), so an anonymous
+    /// caller can no longer fill the cache with arbitrary data (2026-11-16 audit M3), and the
+    /// challenge must have the S256 shape. Stores the token server-side under a fresh, single-use code bound
     /// to the app's code_challenge, so a native app shell's studylife:// custom-scheme redirect
     /// (or the Windows loopback listener) only ever has to carry the opaque code, never the
     /// bearer token itself - see AppReturnContext.BuildTokenReturnRedirectAsync for why this
@@ -29,15 +36,16 @@ public partial class AuthController
     /// loopback port, could otherwise turn interception of the redirect into a full account
     /// takeover with no further step needed).
     /// </summary>
-    [AllowAnonymous]
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("handoff")]
+    [RequestSizeLimit(HandoffMaxBodyBytes)]
+    [RejectOversizedBody(HandoffMaxBodyBytes)]
     public async Task<ActionResult<AuthHandoffResponseDto>> Handoff([FromBody] AuthHandoffRequestDto request)
     {
-        if (string.IsNullOrEmpty(request.Token) || string.IsNullOrEmpty(request.CodeChallenge))
-            return BadRequest();
-
+        // SessionOnly guarantees the header carried a valid session token; that token is the one handed off.
+        var token = Request.Headers[AuthSessionService.TokenHeaderName].ToString();
         var code = GenerateHandoffCode();
-        await CacheSetAsync(HandoffCacheKey(code), new PendingHandoff(request.Token, request.CodeChallenge), HandoffLifetime);
+        await CacheSetAsync(HandoffCacheKey(code), new PendingHandoff(token, request.CodeChallenge), HandoffLifetime);
         return new AuthHandoffResponseDto { Code = code };
     }
 
@@ -58,6 +66,8 @@ public partial class AuthController
     /// </summary>
     [AllowAnonymous]
     [HttpPost("exchange")]
+    [RequestSizeLimit(HandoffMaxBodyBytes)]
+    [RejectOversizedBody(HandoffMaxBodyBytes)]
     public async Task<ActionResult<AuthExchangeResponseDto>> Exchange([FromBody] AuthExchangeRequestDto request)
     {
         if (string.IsNullOrEmpty(request.Code) || string.IsNullOrEmpty(request.CodeVerifier))

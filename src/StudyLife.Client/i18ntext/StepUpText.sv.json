@@ -1,0 +1,23 @@
+{
+  "Title": "Bekräfta att det är du",
+  "Intro": "Den här åtgärden skyddar ditt konto. Bekräfta med en nyckel för det här kontot för att fortsätta.",
+  "BrowserSignInIntro": "Logga in igen för att bekräfta att det är du. Åtgärden fortsätter direkt efteråt.",
+  "PasskeyButton": "Bekräfta med nyckel",
+  "BrowserSignInButton": "Logga in igen",
+  "PasswordToggle": "Använd mitt lösenord",
+  "PasswordLabel": "Ditt lösenord",
+  "PasswordButton": "Bekräfta med lösenord",
+  "RecoveryToggle": "Använd en återställningskod",
+  "RecoveryLabel": "Återställningskod",
+  "RecoveryButton": "Bekräfta med återställningskod",
+  "Working": "Arbetar…",
+  "PasskeyFailed": "Nyckelförfrågan slutfördes inte. Försök igen eller bekräfta på ett annat sätt.",
+  "CancelButton": "Avbryt",
+  "CloseDialog": "Stäng dialogen",
+  "ErrorRejected": "Bekräftelsen godtogs inte.",
+  "ErrorMissing": "Bekräfta med en nyckel, ditt lösenord eller en återställningskod.",
+  "ErrorTooMany": "För många försök. Vänta några minuter.",
+  "ErrorNetwork": "Det gick inte att nå servern.",
+  "ErrorGeneric": "Något gick fel. Försök igen.",
+  "ApprovalOtherSession": "En ny nyckel kan inte godkännas från den session som lade till den. Godkänn den på en annan inloggad enhet, eller logga ut och logga in igen med en befintlig nyckel eller ditt lösenord och godkänn den här."
+}
