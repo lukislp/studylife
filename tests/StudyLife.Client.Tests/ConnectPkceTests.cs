@@ -23,7 +23,15 @@ public class ConnectPkceTests : ConsentBunitTest
     {
         var server = new ScriptedServer();
         server.OnJson("POST api/auth/mcp-connect", new McpConnectResponseDto { RedirectTo = Redirect + "?assertion=a&state=s" });
-        server.OnJson("GET api/auth/oauth-clients/c1", new OAuthClientInfoDto { Name = "C", Description = "d" });
+        // Approved (since #559 the consent button only appears for approved clients) and with the
+        // redirect URI these tests request registered.
+        server.OnJson("GET api/auth/oauth-clients/c1", new OAuthClientInfoDto
+        {
+            Name = "C",
+            Description = "d",
+            Approval = OAuthClientApprovalStates.Approved,
+            RedirectUris = [Redirect],
+        });
         var store = new SessionTokenStore(new StubJSRuntime());
         if (signedIn) await store.SetTokenAsync("session-token");
         Ctx.JSInterop.Mode = JSRuntimeMode.Loose;
