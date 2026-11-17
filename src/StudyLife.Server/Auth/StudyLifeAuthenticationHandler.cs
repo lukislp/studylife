@@ -98,7 +98,8 @@ public class StudyLifeAuthenticationHandler : AuthenticationHandler<StudyLifeAut
     {
         var request = Context.Request;
 
-        // ICS calendar feed: own permanent per-user token (AuthUserEntity.CalendarToken),
+        // ICS calendar feed: own permanent per-user token (AuthUserEntity.CalendarTokenHash,
+        // compared by hash only - audit 2026-11-16 L5),
         // because subscribing calendar apps can neither set headers nor go through a login.
         // Deliberately limited to GET + exact path (like the former gate), so no other
         // /api/sessions/... endpoint is accidentally reachable via a stray ?calendarToken=
@@ -112,8 +113,9 @@ public class StudyLifeAuthenticationHandler : AuthenticationHandler<StudyLifeAut
             if (string.IsNullOrEmpty(calendarToken))
                 return AuthenticateResult.Fail("Missing calendar token.");
 
+            var calendarTokenHash = AuthSessionService.HashToken(calendarToken);
             var calendarOwner = await _db.AuthUsers.AsNoTracking()
-                .FirstOrDefaultAsync(u => u.CalendarToken == calendarToken);
+                .FirstOrDefaultAsync(u => u.CalendarTokenHash == calendarTokenHash);
             if (calendarOwner is null)
                 return AuthenticateResult.Fail("Invalid calendar token.");
 

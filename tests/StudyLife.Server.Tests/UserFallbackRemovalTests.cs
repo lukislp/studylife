@@ -41,7 +41,7 @@ public class UserFallbackRemovalTests : IClassFixture<CustomWebApplicationFactor
             var entity = await db.Settings.FirstOrDefaultAsync() ?? new UserSettingsEntity();
             if (entity.Id == 0) db.Settings.Add(entity);
             entity.ProgressShareEnabled = true;
-            entity.ProgressShareToken = "a2-regression-token";
+            entity.ProgressShareTokenHash = AuthSessionService.HashToken("a2-regression-token");
             entity.SelectedCourseIds = "";
             entity.CompletedCourseIds = "";
             await db.SaveChangesAsync();
