@@ -194,6 +194,26 @@ spec:
               value: https://studylife-webhooks.studylife-webhooks.svc.cluster.local:8443
             - name: StudyLifeDevelopers__BaseUrl
               value: https://studylife-developers.studylife-developers.svc.cluster.local:8443
+            # Account-deletion purge of the add-ons with per-user data (AddonPurgeClient,
+            # docs/ARCHITECTURE.md "Account deletion"). Web makes the immediate attempt right
+            # after a deletion, the worker retries (k8s/05-worker.yaml has the same values).
+            # These three do not serve TLS yet, so each is exempted from RequireHttps explicitly
+            # (AllowPlainHttp, docs/SECURITY-ASSURANCE.md 8.3); switch to https:// and drop the
+            # exemption once they do. The secrets (AddonPurge__<Addon>__SharedSecret) belong in
+            # the studylife-secrets Secret (k8s/dev/README.md); until they are set, purges are
+            # queued and retried, never dropped.
+            - name: AddonPurge__Mcp__BaseUrl
+              value: http://studylife-mcp.studylife-mcp.svc.cluster.local:8000
+            - name: AddonPurge__Mcp__AllowPlainHttp
+              value: "true"
+            - name: AddonPurge__Alexa__BaseUrl
+              value: http://studylife-alexa.studylife-alexa.svc.cluster.local:8000
+            - name: AddonPurge__Alexa__AllowPlainHttp
+              value: "true"
+            - name: AddonPurge__Telegram__BaseUrl
+              value: http://studylife-telegram.studylife-telegram.svc.cluster.local:8000
+            - name: AddonPurge__Telegram__AllowPlainHttp
+              value: "true"
             # DataProtection key-ring-at-rest encryption (Program.cs, ProtectKeysWithCertificate)
             # - required whenever Cache__Provider=Redis is set below, same as
             # Cache__ConnectionString.
