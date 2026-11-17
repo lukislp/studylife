@@ -600,7 +600,7 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
     }
 
     // ---------- GET /api/sessions/ics ----------
-    // Own, permanent token per user (AuthUserEntity.CalendarToken, see SystemController
+    // Own, permanent token per user (AuthUserEntity.CalendarTokenHash, see SystemController
     // and the middleware exception in Program.cs) instead of the rotating API key - _client
     // does already carry a valid X-Api-Key header via ConfigureClient, but it's
     // irrelevant for this route.
@@ -616,9 +616,9 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
         var created = await CreateAsync(ValidSession(courseId: 7, courseName: "ICS-Kurs", start: DateTime.UtcNow.AddDays(18)));
         var expectedName = ExpectedCourse(7).Name;
 
-        var tokenResponse = await _client.GetAsync("/api/system/calendar-token");
+        var tokenResponse = await _client.PostAsync("/api/system/regenerate-calendar-token", null);
         Assert.Equal(HttpStatusCode.OK, tokenResponse.StatusCode);
-        var tokenDto = await tokenResponse.Content.ReadFromJsonAsync<CalendarTokenResponseDto>();
+        var tokenDto = await tokenResponse.Content.ReadFromJsonAsync<RegenerateCalendarTokenResponseDto>();
 
         var response = await _client.GetAsync($"/api/sessions/ics?calendarToken={tokenDto!.CalendarToken}");
 
@@ -729,7 +729,7 @@ public class SessionsControllerTests : IClassFixture<CustomWebApplicationFactory
 
 /// <summary>
 /// Security regression test: the ICS calendar token must resolve its REAL owner
-/// (AuthUserEntity.CalendarToken), not the phase 1 fallback user ambiently resolved by the gate
+/// (AuthUserEntity.CalendarTokenHash), not the phase 1 fallback user ambiently resolved by the gate
 /// (always the first AuthUser) - the former global CalendarTokenProvider would have shown every
 /// caller the same (the first) calendar, regardless of which user the token
 /// actually belongs to. Own factory (fresh DB), because a real two-user situation is needed
@@ -784,11 +784,11 @@ public class SessionsControllerCalendarMultiUserTests : IClassFixture<CustomWebA
             Assert.Equal(HttpStatusCode.OK, (await _client.SendAsync(annaCreate)).StatusCode);
         }
 
-        using var annaTokenRequest = new HttpRequestMessage(HttpMethod.Get, "/api/system/calendar-token");
+        using var annaTokenRequest = new HttpRequestMessage(HttpMethod.Post, "/api/system/regenerate-calendar-token");
         annaTokenRequest.Headers.Add("X-Session-Token", annaToken);
         var annaCalendarTokenResponse = await _client.SendAsync(annaTokenRequest);
         Assert.Equal(HttpStatusCode.OK, annaCalendarTokenResponse.StatusCode);
-        var annaCalendarToken = (await annaCalendarTokenResponse.Content.ReadFromJsonAsync<CalendarTokenResponseDto>())!.CalendarToken;
+        var annaCalendarToken = (await annaCalendarTokenResponse.Content.ReadFromJsonAsync<RegenerateCalendarTokenResponseDto>())!.CalendarToken;
 
         var anonymousClient = ApiKeyTestHelpers.CreateClientWithKey(_factory, null);
         var icsResponse = await anonymousClient.GetAsync($"/api/sessions/ics?calendarToken={annaCalendarToken}");
@@ -968,7 +968,7 @@ public class SessionsControllerIcsWindowBoundaryTests : IClassFixture<CustomWebA
         var justInsideId = await CreateAsync(1, "Ics-Inside", now.AddHours(-167)); // 1h inside the 7-day edge
         var justOutsideId = await CreateAsync(2, "Ics-Outside", now.AddHours(-169)); // 1h beyond the 7-day edge
 
-        var tokenDto = await _client.GetFromJsonAsync<CalendarTokenResponseDto>("/api/system/calendar-token");
+        var tokenDto = await (await _client.PostAsync("/api/system/regenerate-calendar-token", null)).Content.ReadFromJsonAsync<RegenerateCalendarTokenResponseDto>();
         var response = await _client.GetAsync($"/api/sessions/ics?calendarToken={tokenDto!.CalendarToken}");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

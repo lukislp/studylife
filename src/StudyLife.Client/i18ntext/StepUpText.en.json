@@ -1,0 +1,23 @@
+{
+  "Title": "Confirm it is you",
+  "Intro": "This action protects your account. Confirm with a passkey of this account to continue.",
+  "BrowserSignInIntro": "Sign in again to confirm it is you. The action continues right after.",
+  "PasskeyButton": "Confirm with passkey",
+  "BrowserSignInButton": "Sign in again",
+  "PasswordToggle": "Use my password instead",
+  "PasswordLabel": "Your password",
+  "PasswordButton": "Confirm with password",
+  "RecoveryToggle": "Use a recovery code instead",
+  "RecoveryLabel": "Recovery code",
+  "RecoveryButton": "Confirm with recovery code",
+  "Working": "Working…",
+  "PasskeyFailed": "The passkey prompt did not complete. Try again, or use another way to confirm.",
+  "CancelButton": "Cancel",
+  "CloseDialog": "Close dialog",
+  "ErrorRejected": "That confirmation was not accepted.",
+  "ErrorMissing": "Please confirm with a passkey, your password or a recovery code.",
+  "ErrorTooMany": "Too many attempts. Please wait a few minutes.",
+  "ErrorNetwork": "The server could not be reached.",
+  "ErrorGeneric": "Something went wrong. Please try again.",
+  "ApprovalOtherSession": "A new passkey cannot be approved from the session that added it. Approve it on another signed-in device, or sign out and sign in again with an existing passkey or your password, then approve it here."
+}

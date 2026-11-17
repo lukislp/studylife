@@ -20,5 +20,13 @@
   "ConnectClientPageTitle": "StudyAtrium — Savienot",
   "ConnectClientHeading": "Savienot papildinājumu",
   "ConnectClientNotRegistered": "Šis papildinājums vēl nav reģistrēts jūsu StudyAtrium instancē.",
-  "ConnectRedirectTarget": "Pēc savienošanas tu tiksi novirzīts uz: {0}"
+  "ConnectRedirectTarget": "Pēc savienošanas tu tiksi novirzīts uz: {0}",
+  "ConnectKeyRecipient": "Tava piekļuves atslēga tiks nodota:",
+  "ConnectRequestedAccess": "Pieprasītā piekļuve:",
+  "ConnectRegisteredBy": "Šajā serverī reģistrēja {0}.",
+  "ConnectRegisteredByOwner": "Šajā serverī reģistrēja {0}, servera īpašnieks.",
+  "ConnectRegistrantUnknown": "Reģistrēja konts, kas vairs nepastāv.",
+  "ConnectBuiltInClient": "Iebūvēts StudyAtrium, nav lietotāja reģistrēts.",
+  "ConnectClientPendingApproval": "Šis papildinājums gaida servera īpašnieka apstiprinājumu. Varēsi to savienot, kad tas būs apstiprināts.",
+  "ConnectClientRejected": "Servera īpašnieks nav apstiprinājis šo papildinājumu, tāpēc to nevar savienot."
 }

@@ -13,7 +13,7 @@ namespace StudyLife.Server.Tests;
 /// AuthControllerDemoModeTests: the endpoint families the middleware must block (OAuth-client
 /// registry, developer CRUD, backup GETs, DELETE verb), the two deliberate exemptions
 /// (demo-login exact path, dictate), and the two GET endpoints that CAN persist on a normal
-/// instance but must never do so on a demo (calendar-token lazy create, ownership self-heal).
+/// instance but must never do so on a demo (ownership self-heal; the calendar link is only reported, never created on GET).
 /// Own factory instance (fresh DB) so the destructive AuthControllerDemoModeTests - which
 /// deletes all AuthUsers - can never race this class's demo-login dependency.
 /// </summary>
@@ -150,41 +150,30 @@ public class DemoModeWriteBlockTests : IClassFixture<AuthControllerDemoModeTests
     }
 
     /// <summary>
-    /// GET /api/system/calendar-token lazily creates+persists a token on a normal instance -
-    /// on a demo it must never write. Normally unreachable there (DemoSeeder pre-seeds the
-    /// token, verified by the first half), but the second half proves the explicit guard holds
-    /// even if the seeded token is gone, instead of relying on the seeder line alone.
+    /// GET /api/system/calendar-token only reports the seeded link (stored as a hash, audit
+    /// 2026-11-16 L5) and never writes; replacing it is a POST, which the demo write-block refuses,
+    /// so the seeded hash stays as it is.
     /// </summary>
     [Fact]
-    public async Task CalendarToken_NeverLazilyPersistsOnDemoInstance()
+    public async Task CalendarLink_IsReportedButNeverWrittenOnDemoInstance()
     {
         var token = await DemoLoginAsync();
-
-        // Seeded path: returns the pre-seeded token unchanged, twice.
-        var first = await SendWithTokenAsync(HttpMethod.Get, "/api/system/calendar-token", token);
-        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
-        var firstDto = await first.Content.ReadFromJsonAsync<CalendarTokenResponseDto>();
         var seeded = await _factory.WithDbAsync(db =>
-            db.AuthUsers.OrderBy(u => u.Id).Select(u => u.CalendarToken).FirstAsync());
-        Assert.Equal(seeded, firstDto!.CalendarToken);
+            db.AuthUsers.OrderBy(u => u.Id).Select(u => u.CalendarTokenHash).FirstAsync());
+        Assert.NotNull(seeded);
 
-        // Un-seeded path: no lazy create on demo - 503, and the DB row stays untouched.
-        await _factory.WithDbAsync(db => db.AuthUsers
-            .ExecuteUpdateAsync(s => s.SetProperty(u => u.CalendarToken, (string?)null)));
-        try
-        {
-            var second = await SendWithTokenAsync(HttpMethod.Get, "/api/system/calendar-token", token);
-            Assert.Equal(HttpStatusCode.ServiceUnavailable, second.StatusCode);
-            var still = await _factory.WithDbAsync(db =>
-                db.AuthUsers.OrderBy(u => u.Id).Select(u => u.CalendarToken).FirstAsync());
-            Assert.Null(still);
-        }
-        finally
-        {
-            // Restore the seeded token so sibling tests (arbitrary order) see normal demo state.
-            await _factory.WithDbAsync(db => db.AuthUsers
-                .ExecuteUpdateAsync(s => s.SetProperty(u => u.CalendarToken, seeded)));
-        }
+        var status = await SendWithTokenAsync(HttpMethod.Get, "/api/system/calendar-token", token);
+        Assert.Equal(HttpStatusCode.OK, status.StatusCode);
+        var dto = await status.Content.ReadFromJsonAsync<CalendarTokenResponseDto>();
+        Assert.True(dto!.Exists);
+        Assert.Null(dto.CalendarToken);
+
+        var regenerate = await SendWithTokenAsync(HttpMethod.Post, "/api/system/regenerate-calendar-token", token);
+        Assert.False(regenerate.IsSuccessStatusCode);
+
+        var after = await _factory.WithDbAsync(db =>
+            db.AuthUsers.OrderBy(u => u.Id).Select(u => u.CalendarTokenHash).FirstAsync());
+        Assert.Equal(seeded, after);
     }
 
     /// <summary>

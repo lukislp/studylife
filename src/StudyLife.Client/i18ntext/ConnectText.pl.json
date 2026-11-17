@@ -20,5 +20,13 @@
   "ConnectClientPageTitle": "StudyAtrium — Połącz",
   "ConnectClientHeading": "Połącz dodatek",
   "ConnectClientNotRegistered": "Ten dodatek nie jest jeszcze zarejestrowany w Twojej instancji StudyAtrium.",
-  "ConnectRedirectTarget": "Po połączeniu zostaniesz przekierowany do: {0}"
+  "ConnectRedirectTarget": "Po połączeniu zostaniesz przekierowany do: {0}",
+  "ConnectKeyRecipient": "Twój klucz dostępu zostanie przekazany do:",
+  "ConnectRequestedAccess": "Żądany dostęp:",
+  "ConnectRegisteredBy": "Zarejestrowane na tym serwerze przez {0}.",
+  "ConnectRegisteredByOwner": "Zarejestrowane na tym serwerze przez {0}, właściciela serwera.",
+  "ConnectRegistrantUnknown": "Zarejestrowane przez konto, które już nie istnieje.",
+  "ConnectBuiltInClient": "Wbudowane w StudyAtrium, niezarejestrowane przez użytkownika.",
+  "ConnectClientPendingApproval": "Ten dodatek czeka na zatwierdzenie przez właściciela serwera. Możesz go połączyć, gdy zostanie zatwierdzony.",
+  "ConnectClientRejected": "Właściciel serwera nie zatwierdził tego dodatku, więc nie można go połączyć."
 }

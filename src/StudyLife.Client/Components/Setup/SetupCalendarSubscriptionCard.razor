@@ -2,22 +2,52 @@
   SPDX-FileCopyrightText: 2026 Lukas Körber
   SPDX-License-Identifier: AGPL-3.0-only
 *@
-@* Regenerate button + two-step confirmation modal for the permanent calendar token
-   (same .modal-overlay/.modal/.modal-footer pattern as SetupRestoreCard/SetupApiKeyCard):
-   immediately breaks any existing calendar subscription, hence no native confirm(). The HTTP
-   call lives in Setup.razor (OnRegenerateConfirmed), this card is pure display/modal UI. *@
+@using StudyLife.Shared
+@using StudyLife.Client.Services
+@inject HttpClient Http
+@inject IServerLinks Links
+@inject IJSRuntime JS
+@inject AppStateService State
+@inject Toolbelt.Blazor.I18nText.I18nText I18nText
+
+@* Subscribable ICS calendar feed (GET api/sessions/ics?calendarToken=...). The token is stored on
+   the server only as a hash (audit 2026-11-16 L5), so the subscription URL exists in this card
+   exactly once: right after "Create" or "Regenerate" (POST api/system/regenerate-calendar-token).
+   Afterwards the card can only say that a link is active (OneTimeLink decides the state).
+   Self-contained like SetupProgressShareCard: own SetupText instance and own HTTP calls.
+   Regenerating replaces the link and breaks every existing subscription, hence the two-step
+   confirmation modal (same .modal-overlay/.modal/.modal-footer pattern as SetupRestoreCard). *@
+
 <div class="setup-section">
-    <div class="ss-label">@Label</div>
-    <p class="ss-desc">@Desc</p>
-    <div class="field-row">
-        <input class="input" readonly value="@IcsUrl" />
-        <button class="btn-secondary" @onclick="() => OnCopyClick.InvokeAsync()" style="flex-shrink:0">
-            @(IcsCopied ? $"✓ {CopiedText}" : CopyText)
-        </button>
-        <button class="btn-danger" @onclick="() => _confirming = true" style="flex-shrink:0">
-            @(RegenerateSuccess ? $"✓ {RegenerateSuccessText}" : RegenerateButtonText)
-        </button>
-    </div>
+    <div class="ss-label">@T.CalendarSubscriptionHeading</div>
+    <p class="ss-desc">@T.CalendarSubscriptionDesc</p>
+
+    @switch (View)
+    {
+        case OneTimeLinkView.Shown:
+            <div class="field-row">
+                <input class="input" readonly value="@IcsUrl" />
+                <button type="button" class="btn-secondary" @onclick="CopyUrl" style="flex-shrink:0">
+                    @(_copied ? $"✓ {T.Copied}" : T.Copy)
+                </button>
+                <button type="button" class="btn-danger" @onclick="() => _confirming = true" disabled="@_busy" style="flex-shrink:0">
+                    @(_regenerateSuccess ? $"✓ {T.CalendarRegenerateSuccess}" : T.CalendarRegenerateButton)
+                </button>
+            </div>
+            <p class="ss-desc" role="status">@T.LinkShownOnceNotice</p>
+            break;
+        case OneTimeLinkView.Hidden:
+            <p class="ss-desc">@T.LinkHiddenNotice</p>
+            <button type="button" class="btn-danger" @onclick="() => _confirming = true" disabled="@_busy">
+                @T.CalendarRegenerateButton
+            </button>
+            break;
+        default:
+            <button type="button" class="btn-secondary" @onclick="Create" disabled="@_busy">
+                @T.CalendarLinkCreateButton
+            </button>
+            break;
+    }
 </div>
 
 @if (_confirming)
@@ -25,18 +55,18 @@
     <div class="modal-overlay" @onclick="() => _confirming = false">
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="calendar-subscription-regenerate-title" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h3 id="calendar-subscription-regenerate-title">@RegenerateConfirmTitle</h3>
-                <button type="button" class="modal-close" aria-label="@CloseLabel" @onclick="() => _confirming = false">✕</button>
+                <h3 id="calendar-subscription-regenerate-title">@T.CalendarRegenerateConfirmTitle</h3>
+                <button type="button" class="modal-close" aria-label="@T.AriaCloseDialog" @onclick="() => _confirming = false">✕</button>
             </div>
             <div class="modal-body">
-                <p>⚠️ @RegenerateConfirmWarning</p>
+                <p>⚠️ @T.CalendarRegenerateConfirmWarning</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn-secondary" @onclick="() => _confirming = false" disabled="@Regenerating">
-                    @RegenerateConfirmCancel
+                <button type="button" class="btn-secondary" @onclick="() => _confirming = false" disabled="@_busy">
+                    @T.CalendarRegenerateConfirmCancel
                 </button>
-                <button type="button" class="btn-danger" @onclick="ConfirmRegenerate" disabled="@Regenerating">
-                    @(Regenerating ? "…" : RegenerateConfirmYes)
+                <button type="button" class="btn-danger" @onclick="ConfirmRegenerate" disabled="@_busy">
+                    @(_busy ? "…" : T.CalendarRegenerateConfirmYes)
                 </button>
             </div>
         </div>
@@ -44,30 +74,105 @@
 }
 
 @code {
-    [Parameter] public string Label { get; set; } = "";
-    [Parameter] public string CloseLabel { get; set; } = "";
-    [Parameter] public string Desc { get; set; } = "";
-    [Parameter] public string IcsUrl { get; set; } = "";
-    [Parameter] public string CopyText { get; set; } = "";
-    [Parameter] public string CopiedText { get; set; } = "";
-    [Parameter] public bool IcsCopied { get; set; }
-    [Parameter] public EventCallback OnCopyClick { get; set; }
+    private I18nText.SetupText T = new();
 
-    [Parameter] public string RegenerateButtonText { get; set; } = "";
-    [Parameter] public string RegenerateConfirmTitle { get; set; } = "";
-    [Parameter] public string RegenerateConfirmWarning { get; set; } = "";
-    [Parameter] public string RegenerateConfirmCancel { get; set; } = "";
-    [Parameter] public string RegenerateConfirmYes { get; set; } = "";
-    [Parameter] public string RegenerateSuccessText { get; set; } = "";
-    [Parameter] public bool Regenerating { get; set; }
-    [Parameter] public bool RegenerateSuccess { get; set; }
-    [Parameter] public EventCallback OnRegenerateConfirmed { get; set; }
+    [CascadingParameter]
+    public SetupOverviewDto? Overview { get; set; }
+    /// <summary>The in-flight bundle request (see SetupProgressShareCard.OverviewTask).</summary>
+    [CascadingParameter(Name = "OverviewTask")]
+    public Task<SetupOverviewDto?>? OverviewTask { get; set; }
 
+    private bool _exists;
+    private string? _token;
+    private bool _copied;
+    private bool _busy;
     private bool _confirming;
+    private bool _regenerateSuccess;
+
+    private OneTimeLinkView View => OneTimeLink.Of(_exists, _token);
+
+    // IServerLinks instead of Nav.BaseUri: identical in the browser, but in the native app
+    // Nav.BaseUri is the virtual WebView host (app://0.0.0.1/) - a subscription URL built with
+    // that couldn't be fetched by any calendar client in the world.
+    private string IcsUrl => string.IsNullOrEmpty(_token)
+        ? ""
+        : Links.Absolute($"api/sessions/ics?calendarToken={Uri.EscapeDataString(_token)}");
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (OverviewTask is not null) Overview = await OverviewTask;
+        T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
+        if (Overview?.CalendarLink is { } bundled)
+        {
+            Apply(bundled);
+            return;
+        }
+        try
+        {
+            // Also the path against a server from before L5: it has no CalendarLink section and
+            // answers this endpoint with the plaintext token, which Apply then shows.
+            var dto = await Http.GetFromJsonAsync<CalendarTokenResponseDto>("api/system/calendar-token");
+            if (dto is not null) Apply(dto);
+        }
+        catch { /* offline: the card offers to create a link */ }
+    }
+
+    private void Apply(CalendarTokenResponseDto status)
+    {
+        _token = status.CalendarToken;
+        _exists = status.Exists || !string.IsNullOrEmpty(status.CalendarToken);
+    }
+
+    /// <summary>Creates or replaces the link; on success the new token is in hand (shown once).</summary>
+    private async Task<bool> IssueAsync()
+    {
+        State.NoteOwnWrite("system");
+        var response = await Http.PostAsync("api/system/regenerate-calendar-token", null);
+        if (!response.IsSuccessStatusCode) return false;
+        var dto = await response.Content.ReadFromJsonAsync<RegenerateCalendarTokenResponseDto>();
+        if (string.IsNullOrEmpty(dto?.CalendarToken)) return false;
+        _token = dto.CalendarToken;
+        _exists = true;
+        return true;
+    }
+
+    private async Task Create()
+    {
+        _busy = true;
+        try { await IssueAsync(); }
+        finally { _busy = false; }
+    }
+
+    private async Task CopyUrl()
+    {
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", IcsUrl);
+        _copied = true;
+        StateHasChanged();
+        await Task.Delay(2000);
+        _copied = false;
+        StateHasChanged();
+    }
 
     private async Task ConfirmRegenerate()
     {
-        _confirming = false;
-        await OnRegenerateConfirmed.InvokeAsync();
+        _busy = true;
+        StateHasChanged();
+        bool issued;
+        try
+        {
+            issued = await IssueAsync();
+        }
+        finally
+        {
+            _confirming = false;
+            _busy = false;
+            StateHasChanged();
+        }
+        if (!issued) return;
+        _regenerateSuccess = true;
+        StateHasChanged();
+        await Task.Delay(2000);
+        _regenerateSuccess = false;
+        StateHasChanged();
     }
 }

@@ -16,7 +16,7 @@ namespace StudyLife.Server.Controllers;
 /// without login/API key. Deliberately its OWN token per settings row instead of the
 /// calendar token: semantically separate (the calendar shows appointments, this link shows a
 /// progress snapshot) and independently regenerable. The token lives in
-/// UserSettingsEntity.ProgressShareToken, because it needs to be toggleable together with an
+/// UserSettingsEntity.ProgressShareTokenHash (hash only), because it needs to be toggleable together with an
 /// Enabled flag per user/settings row (setup UI: toggle instead of pure rotation).
 /// GET /api/progress/shared/{token} is exempt from the normal API-key check in Program.cs
 /// (like /api/sessions/ics) - the token check happens here in the controller itself, because
@@ -51,8 +51,10 @@ public class ProgressController : ControllerBase
     [HttpGet("shared/{token}")]
     public async Task<ActionResult<ProgressShareDto>> GetShared(string token)
     {
+        // Compared by hash only - the token is never stored in plaintext (audit 2026-11-16 L5).
+        var tokenHash = AuthSessionService.HashToken(token);
         var settings = await _db.Settings.IgnoreQueryFilters().AsNoTracking()
-            .FirstOrDefaultAsync(s => s.ProgressShareEnabled && s.ProgressShareToken == token);
+            .FirstOrDefaultAsync(s => s.ProgressShareEnabled && s.ProgressShareTokenHash == tokenHash);
         if (settings == null)
             return NotFound();
 

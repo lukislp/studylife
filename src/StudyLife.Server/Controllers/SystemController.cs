@@ -13,7 +13,7 @@ using StudyLife.Shared;
 namespace StudyLife.Server.Controllers;
 
 /// <summary>
-/// Per-user token for the subscribable ICS calendar feed (AuthUserEntity.CalendarToken).
+/// Per-user token for the subscribable ICS calendar feed (AuthUserEntity.CalendarTokenHash).
 /// Replaces the former global CalendarTokenProvider (a single, process-wide token for
 /// all users) - which, in multi-user operation, would have shown every caller the same
 /// calendar (that of the first registered user), regardless of who is actually fetching
@@ -90,30 +90,23 @@ public class SystemController : ControllerBase
     }
 
     /// <summary>
-    /// Returns the setup page's permanent calendar token - lazily created on first fetch,
-    /// so a user who never uses the feature doesn't have a token sitting in the DB either.
+    /// Whether the user has a calendar link, and since when. Read-only (no lazy creation any
+    /// more) and never the token: it is stored only as a hash (audit 2026-11-16 L5).
     /// </summary>
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpGet("calendar-token")]
     public async Task<ActionResult<CalendarTokenResponseDto>> GetCalendarToken()
     {
         var userId = HttpContext.SessionAuthUserId()!.Value; // guaranteed by [Authorize(SessionOnly)]
-        var result = await _calendarTokens.GetOrCreateAsync(userId);
-        return result.Outcome switch
-        {
-            CalendarTokenOutcome.UnknownUser => Unauthorized(),
-            // Demo instance whose seeder left no token: creating one here would be the demo's
-            // only visitor-reachable DB write - see CalendarTokenService.GetOrCreateAsync.
-            CalendarTokenOutcome.DemoNotSeeded => StatusCode(StatusCodes.Status503ServiceUnavailable,
-                new { error = "demo calendar token not seeded" }),
-            _ => new CalendarTokenResponseDto { CalendarToken = result.Token! },
-        };
+        var result = await _calendarTokens.GetStatusAsync(userId);
+        if (result.Outcome == CalendarTokenOutcome.UnknownUser) return Unauthorized();
+        return result.Status!;
     }
 
     /// <summary>
-    /// Manual "regenerate now" for the permanent calendar token (e.g. on suspicion of a
-    /// leak). Immediately breaks every existing calendar subscription of this user; the user
-    /// must resubscribe to the ICS URL afterward.
+    /// Creates the calendar link, or replaces it (e.g. on suspicion of a leak), and returns the
+    /// token - the only time it is shown. Replacing immediately breaks every existing calendar
+    /// subscription of this user; the user must resubscribe to the ICS URL afterward.
     /// </summary>
     [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
     [HttpPost("regenerate-calendar-token")]

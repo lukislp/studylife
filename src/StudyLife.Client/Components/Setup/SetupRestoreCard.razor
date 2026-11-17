@@ -91,6 +91,8 @@
     </div>
 }
 
+<StepUpDialog Open="_stepUpOpen" OnConfirmed="OnStepUpConfirmedAsync" OnCancel="() => _stepUpOpen = false" />
+
 @code {
     private I18nText.SetupText T = new();
 
@@ -186,7 +188,13 @@
 
             State.NoteOwnWrite("backup");
             var response = await Http.PostAsync("api/backup/restore", content);
-            if (response.IsSuccessStatusCode)
+            if (await StepUpState.IsStepUpRequiredAsync(response))
+            {
+                // A restore replaces every account's data: the server wants a fresh "it's me"
+                // first (audit M1). The confirmation modal stays open; the upload repeats after it.
+                _stepUpOpen = true;
+            }
+            else if (response.IsSuccessStatusCode)
             {
                 _pending = true;
                 _staged = true;
@@ -271,6 +279,14 @@
             // Server may already be gone - show the same message, the reload sorts out the rest.
             _restarting = true;
         }
+    }
+
+    private bool _stepUpOpen;
+
+    private async Task OnStepUpConfirmedAsync()
+    {
+        _stepUpOpen = false;
+        await ConfirmRestore();
     }
 
     private sealed record RestoreStatusResponse(bool Pending, DateTime? StagedAt);

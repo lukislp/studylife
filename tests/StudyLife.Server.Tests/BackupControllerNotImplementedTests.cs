@@ -90,3 +90,51 @@ public class BackupControllerNotImplementedTests : IClassFixture<BackupControlle
         Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
     }
 }
+
+/// <summary>
+/// "Export my data" (GDPR Art. 15/20) on a Postgres installation: the raw backup services are not
+/// registered there (same DI state as above), yet every signed-in user - not only the owner - gets
+/// the JSON export, and it carries only that user's own rows (per-user query filters).
+/// </summary>
+public class JsonExportWithoutRawBackupTests : IClassFixture<BackupControllerNotImplementedTests.NoRawBackupFactory>
+{
+    private readonly BackupControllerNotImplementedTests.NoRawBackupFactory _factory;
+    private readonly HttpClient _client;
+
+    public JsonExportWithoutRawBackupTests(BackupControllerNotImplementedTests.NoRawBackupFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient();
+    }
+
+    private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string path, string token, object? body = null)
+    {
+        using var request = new HttpRequestMessage(method, path);
+        request.Headers.Add("X-Session-Token", token);
+        if (body is not null) request.Content = JsonContent.Create(body);
+        return await _client.SendAsync(request);
+    }
+
+    [Fact]
+    public async Task EveryUser_ExportsOnlyTheirOwnData_WhileTheRawDownloadStaysUnavailable()
+    {
+        using var ownerKey = new FakePasskey();
+        var ownerToken = await PasskeyHttp.RegisterAsync(_factory, _client, "Alex", ownerKey);
+        using var userKey = new FakePasskey();
+        var userToken = await PasskeyHttp.RegisterAsync(_factory, _client, "Anna", userKey);
+        Assert.True((await SendAsync(HttpMethod.Post, "/api/notes", ownerToken, new { title = "owner-only-note", content = "x" })).IsSuccessStatusCode);
+        Assert.True((await SendAsync(HttpMethod.Post, "/api/notes", userToken, new { title = "anna-note", content = "y" })).IsSuccessStatusCode);
+
+        var userExport = await SendAsync(HttpMethod.Get, "/api/backup/export", userToken);
+        Assert.Equal(HttpStatusCode.OK, userExport.StatusCode);
+        var userJson = await userExport.Content.ReadAsStringAsync();
+        Assert.Contains("anna-note", userJson);
+        Assert.DoesNotContain("owner-only-note", userJson);
+
+        var ownerJson = await (await SendAsync(HttpMethod.Get, "/api/backup/export", ownerToken)).Content.ReadAsStringAsync();
+        Assert.Contains("owner-only-note", ownerJson);
+        Assert.DoesNotContain("anna-note", ownerJson);
+
+        Assert.Equal(HttpStatusCode.NotImplemented, (await SendAsync(HttpMethod.Get, "/api/backup/database", ownerToken)).StatusCode);
+    }
+}

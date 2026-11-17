@@ -690,18 +690,27 @@ public class AiConfirmRequestDto
 
 /// <summary>
 /// Response of GET /api/system/calendar-token (session-authenticated via the normal
-/// /api gate): the permanent calendar token for the ICS subscription URL on the setup page - replaces
-/// the former unauthenticated bootstrap-key endpoint, which additionally delivered the (by now
-/// abolished) global API key.
+/// /api gate): whether the user has a calendar link, and since when. The token itself is stored
+/// only as a hash (audit 2026-11-16 L5), so this endpoint cannot return it - the plaintext exists
+/// once, in the response of POST /api/system/regenerate-calendar-token.
 /// </summary>
 public class CalendarTokenResponseDto
 {
-    public string CalendarToken { get; set; } = "";
+    /// <summary>Always null from servers that hash the token. Servers before that returned the
+    /// plaintext here; the client still shows it when present, so a newer app keeps working
+    /// against an older server.</summary>
+    public string? CalendarToken { get; set; }
+
+    /// <summary>True when a calendar link exists (its token can no longer be shown).</summary>
+    public bool Exists { get; set; }
+
+    public DateTime? CreatedAt { get; set; }
 }
 
 /// <summary>
-/// Response of POST /api/system/regenerate-calendar-token (CalendarTokenProvider.Regenerate):
-/// the new permanent calendar token, the old one is invalid from now on - every existing
+/// Response of POST /api/system/regenerate-calendar-token (CalendarTokenService.RegenerateAsync):
+/// the new permanent calendar token - the only time it is ever shown, because only its hash is
+/// stored. Also creates the very first link. The old one is invalid from now on - every existing
 /// calendar subscription must be re-subscribed with this new URL afterward.
 /// </summary>
 public class RegenerateCalendarTokenResponseDto
@@ -802,11 +811,32 @@ public class PasskeyCompleteResponseDto
 /// AppReturnContext.BuildTokenReturnRedirectAsync): exchanges a real session token for a
 /// short-lived, single-use code bound to a code_challenge, so the token itself never has to
 /// travel through a custom-URL-scheme/loopback redirect that a different process could
-/// potentially intercept.</summary>
+/// potentially intercept. The token handed off is the one the request is authenticated with
+/// (X-Session-Token) - never a body field, so only a holder of a live session can store anything
+/// (2026-11-16 audit M3).</summary>
 public class AuthHandoffRequestDto
 {
-    public string Token { get; set; } = "";
+    /// <summary>S256 code_challenge: base64url of a SHA-256 digest, exactly 43 characters.</summary>
+    [Required]
+    [RegularExpression(PkceShape.ChallengePattern)]
     public string CodeChallenge { get; set; } = "";
+}
+
+/// <summary>The shapes RFC 7636 allows for the native app handoff, shared by the server's validation
+/// and the client's AppReturnContext so both refuse the same input.</summary>
+public static class PkceShape
+{
+    /// <summary>S256 challenge: base64url (no padding) of a 32-byte SHA-256 digest.</summary>
+    public const string ChallengePattern = "^[A-Za-z0-9_-]{43}$";
+
+    /// <summary>code_verifier: 43 to 128 unreserved characters (RFC 7636 section 4.1).</summary>
+    public const string VerifierPattern = "^[A-Za-z0-9._~-]{43,128}$";
+
+    /// <summary>Handoff code: base64url of 32 random bytes (43 characters).</summary>
+    public const string CodePattern = "^[A-Za-z0-9_-]{43}$";
+
+    /// <summary>The app's own anti-forgery state, echoed back unchanged in the return redirect.</summary>
+    public const string StatePattern = "^[A-Za-z0-9_-]{16,128}$";
 }
 
 /// <summary>Response of POST /api/auth/handoff.</summary>
@@ -820,7 +850,9 @@ public class AuthHandoffResponseDto
 /// code_challenge given at handoff time - see AuthController.Exchange.</summary>
 public class AuthExchangeRequestDto
 {
+    [MaxLength(64)]
     public string Code { get; set; } = "";
+    [MaxLength(128)]
     public string CodeVerifier { get; set; } = "";
 }
 
@@ -1029,6 +1061,38 @@ public class OAuthClientInfoDto
     public string Name { get; set; } = "";
     public string Description { get; set; } = "";
     public List<string> RequestedScopes { get; set; } = new();
+    /// <summary>Display name of the user who registered this client, so the consent screen can
+    /// say who stands behind it (2026-11-16 audit M5); null when that account no longer exists.</summary>
+    public string? RegisteredBy { get; set; }
+    /// <summary>True when the registrant is this instance's owner.</summary>
+    public bool RegisteredByOwner { get; set; }
+    /// <summary>One of <see cref="OAuthClientApprovalStates"/>; only "approved" clients can be connected.</summary>
+    public string Approval { get; set; } = OAuthClientApprovalStates.Pending;
+    /// <summary>The registered redirect URIs - not secret (they are the public callbacks), and
+    /// what lets the marketplace Install check that an existing registration under a listing's id
+    /// really is that listing's add-on before handing the user to consent.</summary>
+    public List<string> RedirectUris { get; set; } = new();
+}
+
+/// <summary>Wire values of an OAuth client registration's review state (2026-11-16 audit M5).</summary>
+public static class OAuthClientApprovalStates
+{
+    public const string Pending = "pending";
+    public const string Approved = "approved";
+    public const string Rejected = "rejected";
+}
+
+/// <summary>One registration in the owner's review list (GET /api/oauth-client-reviews).</summary>
+public class OAuthClientReviewDto
+{
+    public string ClientId { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string Description { get; set; } = "";
+    public List<string> RedirectUris { get; set; } = new();
+    public List<string> RequestedScopes { get; set; } = new();
+    public string? RegisteredBy { get; set; }
+    public string Approval { get; set; } = OAuthClientApprovalStates.Pending;
+    public DateTime CreatedAt { get; set; }
 }
 
 /// <summary>Body of POST /api/auth/connect - the generic, ClientId-parameterized counterpart to
@@ -1102,6 +1166,10 @@ public class DeveloperClientDto
     [MaxLength(100)]
     public List<string> RequestedScopes { get; set; } = new();
     public DateTime CreatedAt { get; set; }
+    /// <summary>One of <see cref="OAuthClientApprovalStates"/>: a registration by anyone but the
+    /// instance owner waits for the owner's approval before users can connect it.</summary>
+    [MaxLength(20)]
+    public string Approval { get; set; } = OAuthClientApprovalStates.Pending;
 }
 
 /// <summary>Body of POST /api/developer/clients - registers a new OAuthClientEntity. Every
