@@ -872,7 +872,10 @@ events and maps them onto a second meter, `StudyLife.Client` (`Services/ClientTe
 queried/dashboarded as its own group even though both export through the same Prometheus scrape
 surface. `error` events additionally produce a structured `ClientError` Information log (kind,
 type, stack hash, sanitized stack, platform, app version, session id — never a user id), kept in
-Loki for 14 days.
+Loki for 7 days (`retention_period: 168h` with compactor retention on, homelab-infra
+`monitoring/08-loki.yaml`; checked live 2026-11-18). The client and server meters themselves live
+in Prometheus for 30 days (`--storage.tsdb.retention.time=30d`, homelab-infra
+`monitoring/01-prometheus.yaml`); they carry no user id, IP or content.
 
 Consent: `UserSettingsEntity.TelemetryConsent` (`bool?`, threaded through the usual four settings
 layers) — `null` (undecided) and `false` (declined) both make the endpoint answer `204 No
