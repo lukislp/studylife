@@ -43,7 +43,7 @@
             </button>
             break;
         default:
-            <button type="button" class="btn-secondary" @onclick="Create" disabled="@_busy">
+            <button type="button" class="btn-secondary" @onclick="Create" disabled="@(_busy || !_loaded)">
                 @T.CalendarLinkCreateButton
             </button>
             break;
@@ -88,6 +88,9 @@
     private bool _busy;
     private bool _confirming;
     private bool _regenerateSuccess;
+    // False until the initial status is known. Until then "Create" stays disabled: a link issued
+    // before the initial status arrived would be overwritten by it and never shown.
+    private bool _loaded;
 
     private OneTimeLinkView View => OneTimeLink.Of(_exists, _token);
 
@@ -99,6 +102,12 @@
         : Links.Absolute($"api/sessions/ics?calendarToken={Uri.EscapeDataString(_token)}");
 
     protected override async Task OnInitializedAsync()
+    {
+        try { await LoadStatusAsync(); }
+        finally { _loaded = true; }
+    }
+
+    private async Task LoadStatusAsync()
     {
         if (OverviewTask is not null) Overview = await OverviewTask;
         T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
