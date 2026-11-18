@@ -1,4 +1,4 @@
-@*
+﻿@*
   SPDX-FileCopyrightText: 2026 Lukas Körber
   SPDX-License-Identifier: AGPL-3.0-only
 *@
@@ -6,6 +6,7 @@
 @using StudyLife.Client.Models
 @inject AppStateService State
 @inject NavigationManager Nav
+@implements IDisposable
 
 <Router AppAssembly="@typeof(App).Assembly">
     <Found Context="routeData">
@@ -22,6 +23,7 @@
 
 @code {
     private System.Threading.Timer? _watchTimer;
+    private int? _lastHandledSessionId;
 
     protected override void OnInitialized()
     {
@@ -36,25 +38,16 @@
             if (!settings.AutoSwitchFocus) return;
 
             var active = await State.GetActiveSessionAsync();
-            if (active != null)
-            {
-                var currentUri = Nav.Uri;
-                if (!currentUri.Contains("/focus"))
-                    await InvokeAsync(() => Nav.NavigateTo("/focus"));
-                return;
-            }
+            var upcoming = active is null ? await State.GetUpcomingSessionAsync() : null;
 
-            var upcoming = await State.GetUpcomingSessionAsync();
-            if (upcoming != null)
+            await InvokeAsync(() =>
             {
-                var minutesUntil = (upcoming.StartTime - DateTime.Now).TotalMinutes;
-                if (minutesUntil <= settings.AutoSwitchMinutesBefore && minutesUntil >= 0)
-                {
-                    var currentUri = Nav.Uri;
-                    if (!currentUri.Contains("/focus"))
-                        await InvokeAsync(() => Nav.NavigateTo("/focus"));
-                }
-            }
+                var decision = AutoFocusSwitchPolicy.Decide(
+                    settings, active, upcoming, DateTime.Now,
+                    "/" + Nav.ToBaseRelativePath(Nav.Uri), _lastHandledSessionId);
+                if (decision.HandledSessionId is { } id) _lastHandledSessionId = id;
+                if (decision.Navigate) Nav.NavigateTo(AutoFocusSwitchPolicy.FocusPath);
+            });
         }
         catch { }
     }
