@@ -46,6 +46,12 @@ namespace StudyLife.Server.Migrations.Postgres
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone");
 
+                    b.Property<DateTime?>("FailureWarnedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("KeyHashes")
+                        .HasColumnType("text");
+
                     b.Property<DateTime?>("LastAttemptAt")
                         .HasColumnType("timestamp without time zone");
 
@@ -1084,6 +1090,12 @@ namespace StudyLife.Server.Migrations.Postgres
 
                     b.Property<bool?>("TelemetryConsent")
                         .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("TelemetryConsentAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int?>("TelemetryConsentVersion")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Theme")
                         .IsRequired()

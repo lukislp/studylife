@@ -58,6 +58,11 @@ public static class StudyLifeOptionsRegistration
         services.AddOptions<AddonTlsOptions>()
             .BindConfiguration(AddonTlsOptions.SectionName)
             .ValidateOnStart();
+        // Account-deletion purge of the add-ons with per-user data (AddonPurgeOptions): one named
+        // instance per add-on; a half-configured one stops the start (AddonPurgeOptionsValidator).
+        services.AddSingleton<Microsoft.Extensions.Options.IValidateOptions<AddonPurgeOptions>, AddonPurgeOptionsValidator>();
+        foreach (var target in Services.Account.AddonPurgeTarget.All)
+            services.AddOptions<AddonPurgeOptions>(target.Name).BindConfiguration(target.SectionPath).ValidateOnStart();
         services.AddOptions<ApnsOptions>().BindConfiguration(ApnsOptions.SectionName);
         services.AddOptions<AppleOptions>().BindConfiguration(AppleOptions.SectionName);
 
@@ -77,6 +82,13 @@ public static class StudyLifeOptionsRegistration
         services.AddSingleton<Microsoft.Extensions.Options.IValidateOptions<MdnsOptions>, MdnsOptionsValidator>();
         services.AddOptions<MdnsOptions>()
             .BindConfiguration(MdnsOptions.SectionName)
+            .ValidateOnStart();
+
+        // Operator-configurable legal pages (docs/operator-privacy-template.md): a set but invalid
+        // address stops the start instead of silently showing the publisher's page.
+        services.AddSingleton<Microsoft.Extensions.Options.IValidateOptions<LegalOptions>, LegalOptionsValidator>();
+        services.AddOptions<LegalOptions>()
+            .BindConfiguration(LegalOptions.SectionName)
             .ValidateOnStart();
 
         return services;

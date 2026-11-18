@@ -94,7 +94,7 @@
   "ReminderCustomValuesLabel": "Pasirinktiniai: {0}",
   "BackupHeading": "Atsarginė kopija ir eksportas",
   "BackupDesc": "Atsisiųskite nuoseklią duomenų bazės kopiją arba eksportuokite duomenis kaip JSON. Be to, atsarginė kopija automatiškai kuriama kartą per savaitę — saugomos paskutinės 4.",
-  "ExportOwnDataDesc": "Atsisiųsk visų savo duomenų kopiją JSON failu — kursai, sesijos, užrašai, tikslai ir nustatymai. Joje yra tik tavo duomenys.",
+  "ExportOwnDataDesc": "Atsisiųsk visų savo duomenų kopiją JSON failu — kursai, sesijos, užrašai, tikslai ir nustatymai, taip pat paskyros duomenys (prisijungimo būdai, įrenginiai, sutikimai, prijungtos programėlės) ir informacija, kaip tvarkomi tavo duomenys. Joje yra tik tavo duomenys.",
   "BackupDownloadDatabaseButton": "Atsisiųsti duomenų bazės atsarginę kopiją",
   "BackupExportJsonButton": "Eksportuoti kaip JSON",
   "RestoreHeading": "Atkurti iš atsarginės kopijos",

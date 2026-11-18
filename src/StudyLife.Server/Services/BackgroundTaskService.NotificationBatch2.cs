@@ -67,12 +67,12 @@ public partial class BackgroundTaskService
         var body = t.T("comeback.body");
         var payload = System.Text.Json.JsonSerializer.Serialize(new { title, body });
 
-        _logger.LogInformation("Sende Comeback-Nudge '{Key}': {Body}", key, body);
+        _logger.LogInformation("Sende Comeback-Nudge '{Key}'", key);
 
         var client = GetPushClient();
         bool dbChanged = false;
 
-        var results = await Task.WhenAll(subscriptions.Select(sub => SendPushAsync(client, sub, payload, "Comeback nudge push failed for {Endpoint}")));
+        var results = await Task.WhenAll(subscriptions.Select(sub => SendPushAsync(client, sub, payload, "Comeback nudge push failed for subscription {SubscriptionId}")));
         foreach (var result in results)
         {
             if (!result.Expired) continue;
@@ -175,12 +175,12 @@ public partial class BackgroundTaskService
         }
         var payload = System.Text.Json.JsonSerializer.Serialize(new { title = t.T("monthly.title"), body });
 
-        _logger.LogInformation("Sende Monatsrückblick '{Key}': {Body}", key, body);
+        _logger.LogInformation("Sende Monatsrückblick '{Key}'", key);
 
         var client = GetPushClient();
         bool dbChanged = false;
 
-        var results = await Task.WhenAll(subscriptions.Select(sub => SendPushAsync(client, sub, payload, "Monthly recap push failed for {Endpoint}")));
+        var results = await Task.WhenAll(subscriptions.Select(sub => SendPushAsync(client, sub, payload, "Monthly recap push failed for subscription {SubscriptionId}")));
         foreach (var result in results)
         {
             if (!result.Expired) continue;

@@ -94,7 +94,7 @@
   "ReminderCustomValuesLabel": "Kohandatud: {0}",
   "BackupHeading": "Varukoopia ja eksport",
   "BackupDesc": "Laadi alla oma andmebaasi ühtne koopia või ekspordi oma andmed JSON-ina. Lisaks luuakse iga nädal automaatselt varukoopia — viimased 4 säilitatakse.",
-  "ExportOwnDataDesc": "Laadi kõik oma andmed alla JSON-failina — kursused, sessioonid, märkmed, eesmärgid ja seaded. See sisaldab ainult sinu enda andmeid.",
+  "ExportOwnDataDesc": "Laadi kõik oma andmed alla JSON-failina — kursused, sessioonid, märkmed, eesmärgid ja seaded, lisaks konto andmed (sisselogimisviisid, seadmed, nõusolekud, ühendatud rakendused) ja teave selle kohta, kuidas sinu andmeid töödeldakse. See sisaldab ainult sinu enda andmeid.",
   "BackupDownloadDatabaseButton": "Laadi alla andmebaasi varukoopia",
   "BackupExportJsonButton": "Ekspordi JSON-ina",
   "RestoreHeading": "Taasta varukoopiast",

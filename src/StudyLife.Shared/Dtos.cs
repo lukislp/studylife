@@ -743,6 +743,18 @@ public class InstanceInfoDto
     /// null when none is pinned. The address the app suggests when the configured one is outside
     /// <see cref="PasskeyRpId"/>.</summary>
     public string? PasskeyOrigin { get; set; }
+
+    /// <summary>The operator's own legal pages (Legal:PrivacyUrl / Legal:ImprintUrl); each is null while the
+    /// operator left it unset, in which case the client shows the publisher's page.</summary>
+    public LegalLinksDto? Legal { get; set; }
+}
+
+/// <summary>The legal pages an operator configured for this installation (public, they are links on
+/// the sign-in page anyway). A null entry means "not set, use the publisher's".</summary>
+public class LegalLinksDto
+{
+    public string? PrivacyUrl { get; set; }
+    public string? ImprintUrl { get; set; }
 }
 
 /// <summary>Body of POST /api/auth/register/begin (phase 2, passkey login).</summary>
@@ -1599,12 +1611,11 @@ public class CustomCourseExportDto
 /// tolerant JSON binding) - BackupController.ImportJson accepts both: a v1 file simply leaves the
 /// newer collections (StudyPrograms/CourseGroups/CustomCourses/SessionTemplates) at their default
 /// empty list, so those tables just import nothing instead of failing the whole request.
-/// Deliberately excluded from every table below: PushSubscriptions (this browser's endpoint
-/// registrations, not transferable), SentReminders (internal dedup bookkeeping), TimerState
-/// (transient live state), and everything under AuthUserEntity/PasskeyCredentialEntity/
-/// AuthSessionEntity/RecoveryCodeEntity/SystemSecretsEntity/AiKeyOutboxEntity (auth/session/
-/// infrastructure rows, not user data - importing these would either be meaningless across
-/// accounts or a security hole, e.g. re-planting a session token hash).
+/// Only study content is importable. The account data (sign-in methods, sessions, devices,
+/// consents, keys, timer state) is personal data too and is exported for reading in
+/// PersonalDataExportDto.Account, but it is never imported: re-importing it would be meaningless
+/// across accounts or a security hole (e.g. re-planting a passkey or a consent). This class has
+/// no such properties, so the import ignores those blocks.
 /// </summary>
 public class BackupExportDto
 {

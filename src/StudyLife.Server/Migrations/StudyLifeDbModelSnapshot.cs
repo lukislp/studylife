@@ -39,6 +39,12 @@ namespace StudyLife.Server.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("FailureWarnedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("KeyHashes")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("LastAttemptAt")
                         .HasColumnType("TEXT");
 
@@ -1034,6 +1040,12 @@ namespace StudyLife.Server.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<bool?>("TelemetryConsent")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("TelemetryConsentAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("TelemetryConsentVersion")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Theme")

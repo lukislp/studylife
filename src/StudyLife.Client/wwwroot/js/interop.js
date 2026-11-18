@@ -732,7 +732,7 @@ function studylifeGetConnectionType() {
 /// the phase marks themselves come from boot-loading.js (sl-html-ready/sl-boot-script-done),
 /// boot-start.js (sl-wasm-download-start/sl-runtime-ready, around the manual Blazor.start() call)
 /// and studylifeMarkFirstRender below (sl-first-render, MainLayout.OnAfterRenderAsync).
-function studylifeGetBootMarks() {
+function studylifeGetBootMarks(persistBootFlag) {
     function markTime(name) {
         var entries = performance.getEntriesByName(name, 'mark');
         return entries.length ? entries[0].startTime : null;
@@ -756,7 +756,12 @@ function studylifeGetBootMarks() {
     } catch (e) { /* Resource Timing unsupported */ }
 
     var cold = true;
-    try { cold = !sessionStorage.getItem('studylife-booted-before'); sessionStorage.setItem('studylife-booted-before', '1'); }
+    // The flag is a device-side telemetry record (TDDDG 25): written only when the caller
+    // passes persistBootFlag (= telemetry consent is a confirmed true), otherwise only read.
+    try {
+        cold = !sessionStorage.getItem('studylife-booted-before');
+        if (persistBootFlag === true) sessionStorage.setItem('studylife-booted-before', '1');
+    }
     catch (e) { /* private mode - default to reporting every boot as cold */ }
 
     return {

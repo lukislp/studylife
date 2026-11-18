@@ -45,11 +45,17 @@ public class OneTimeLinkCardTests : ConsentBunitTest
         server.OnJson("POST api/system/regenerate-calendar-token", new RegenerateCalendarTokenResponseDto { CalendarToken = "fresh" });
         var cut = Render<SetupCalendarSubscriptionCard>();
 
-        cut.WaitForElement("button.btn-secondary").Click();
+        // The button is disabled until the initial status has loaded (a click before that would be
+        // overwritten by the late answer); wait for the enabled one.
+        cut.WaitForElement("button.btn-secondary:not([disabled])").Click();
 
-        var link = cut.WaitForElement("input.input", ChainTimeout).GetAttribute("value");
-        Assert.EndsWith("api/sessions/ics?calendarToken=fresh", link);
-        Assert.Contains("LinkShownOnceNotice", cut.Markup);
+        // Find the input inside the assertion: the card re-renders after the POST, so a reference
+        // taken before that render would point at a removed element (flaky ElementRemovedFromDom).
+        cut.WaitForAssertion(() =>
+        {
+            Assert.EndsWith("api/sessions/ics?calendarToken=fresh", cut.Find("input.input").GetAttribute("value"));
+            Assert.Contains("LinkShownOnceNotice", cut.Markup);
+        }, ChainTimeout);
     }
 
     [Fact]
@@ -71,8 +77,8 @@ public class OneTimeLinkCardTests : ConsentBunitTest
         server.OnJson("GET api/system/calendar-token", new CalendarTokenResponseDto { CalendarToken = "plain" });
         var cut = Render<SetupCalendarSubscriptionCard>();
 
-        var link = cut.WaitForElement("input.input").GetAttribute("value");
-        Assert.EndsWith("calendarToken=plain", link);
+        cut.WaitForAssertion(() =>
+            Assert.EndsWith("calendarToken=plain", cut.Find("input.input").GetAttribute("value")), ChainTimeout);
     }
 
     [Fact]
@@ -96,10 +102,14 @@ public class OneTimeLinkCardTests : ConsentBunitTest
             new UserSettingsDto { ProgressShareEnabled = true, ProgressShareToken = "share" });
         var cut = Render<SetupProgressShareCard>();
 
-        cut.WaitForElement("button.btn-secondary").Click();
+        // The button is disabled until the initial status has loaded (a click before that would be
+        // overwritten by the late answer); wait for the enabled one.
+        cut.WaitForElement("button.btn-secondary:not([disabled])").Click();
 
-        var link = cut.WaitForElement("input.input", ChainTimeout).GetAttribute("value");
-        Assert.EndsWith("shared/share", link);
-        Assert.Contains("LinkShownOnceNotice", cut.Markup);
+        cut.WaitForAssertion(() =>
+        {
+            Assert.EndsWith("shared/share", cut.Find("input.input").GetAttribute("value"));
+            Assert.Contains("LinkShownOnceNotice", cut.Markup);
+        }, ChainTimeout);
     }
 }

@@ -118,9 +118,9 @@ public partial class BackgroundTaskService
 
             var payload = System.Text.Json.JsonSerializer.Serialize(new { title = t.T("achievement.title"), body });
 
-            _logger.LogInformation("Sende Achievement-Push '{Key}': {Body}", key, body);
+            _logger.LogInformation("Sende Achievement-Push '{Key}'", key);
 
-            var results = await Task.WhenAll(subscriptions.Select(sub => SendPushAsync(client, sub, payload, "Achievement push failed for {Endpoint}")));
+            var results = await Task.WhenAll(subscriptions.Select(sub => SendPushAsync(client, sub, payload, "Achievement push failed for subscription {SubscriptionId}")));
 
             foreach (var result in results)
             {
@@ -210,12 +210,12 @@ public partial class BackgroundTaskService
         }
         var payload = System.Text.Json.JsonSerializer.Serialize(new { title = t.T("weekly.title"), body });
 
-        _logger.LogInformation("Sende Wochenrückblick '{Key}': {Body}", key, body);
+        _logger.LogInformation("Sende Wochenrückblick '{Key}'", key);
 
         var client = GetPushClient();
         bool dbChanged = false;
 
-        var results = await Task.WhenAll(subscriptions.Select(sub => SendPushAsync(client, sub, payload, "Weekly recap push failed for {Endpoint}")));
+        var results = await Task.WhenAll(subscriptions.Select(sub => SendPushAsync(client, sub, payload, "Weekly recap push failed for subscription {SubscriptionId}")));
 
         foreach (var result in results)
         {

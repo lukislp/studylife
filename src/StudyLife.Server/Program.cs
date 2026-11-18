@@ -556,6 +556,9 @@ builder.Services.AddScoped<IAiConsentService>(sp => new AiConsentService(
     () => sp.GetRequiredService<IApiKeyService>()));
 builder.Services.AddScoped<IPushService, PushService>();
 builder.Services.AddScoped<IBackupDataService, BackupDataService>();
+// The account and about blocks of the personal data export (GDPR Art. 15), see BackupDataService.
+builder.Services.AddScoped<StudyLife.Server.Services.Account.IAccountExportBuilder, StudyLife.Server.Services.Account.AccountExportBuilder>();
+builder.Services.AddScoped<StudyLife.Server.Services.Account.IExportAboutBuilder, StudyLife.Server.Services.Account.ExportAboutBuilder>();
 builder.Services.AddScoped<ICalendarTokenService, CalendarTokenService>();
 builder.Services.AddScoped<IDeveloperClientService, DeveloperClientService>();
 builder.Services.AddScoped<IOAuthClientReviewService, OAuthClientReviewService>();
@@ -610,6 +613,12 @@ builder.Services.AddSingleton(sp => new DeveloperProxyClient(
     sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<StudyLifeDevelopersOptions>>(),
     sp.GetRequiredService<ILogger<DeveloperProxyClient>>(),
     sp.GetRequiredService<AddonTlsTrust>().CreateHttpClient()));
+// Account-deletion purge of studylife-mcp/-alexa/-telegram (AddonPurge:*) - same pattern, one
+// client per add-on; an unconfigured add-on has nothing to purge.
+builder.Services.AddSingleton(sp => AddonPurgeClients.Create(
+    sp.GetRequiredService<Microsoft.Extensions.Options.IOptionsMonitor<AddonPurgeOptions>>(),
+    sp.GetRequiredService<ILogger<AddonPurgeClient>>(),
+    () => sp.GetRequiredService<AddonTlsTrust>().CreateHttpClient(AddonPurgeClient.RequestTimeout)));
 // Raw DB backup/restore + the former file-based VAPID/setup-secret storage are bound to a
 // local single SQLite file (online backup API, PRAGMA integrity_check, file swap) -
 // deliberately NOT registered in Postgres mode (multiple pods, no guaranteed shared volume);

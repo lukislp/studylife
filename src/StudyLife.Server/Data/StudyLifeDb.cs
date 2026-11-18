@@ -845,6 +845,19 @@ public class UserSettingsEntity
     /// </summary>
     public bool? TelemetryConsent { get; set; }
     /// <summary>
+    /// When <see cref="TelemetryConsent"/> last changed (UTC) - the proof of the answer the
+    /// GDPR asks for (Art. 7(1)), for a grant as much as for a decline or a withdrawal. Null
+    /// together with TelemetryConsent (never asked) and for answers given before this column
+    /// existed. Written only through <c>TelemetryConsentRecord.Apply</c>.
+    /// </summary>
+    public DateTime? TelemetryConsentAt { get; set; }
+    /// <summary>
+    /// Version of the consent text the answer was given to
+    /// (<c>TelemetryConsentRecord.CurrentVersion</c> at that moment). Null exactly when
+    /// <see cref="TelemetryConsentAt"/> is null.
+    /// </summary>
+    public int? TelemetryConsentVersion { get; set; }
+    /// <summary>
     /// When the user explicitly agreed to let this installation send their notes, courses,
     /// sessions and goals to an AI provider (AiConsentService.GrantAsync). Null = no consent
     /// recorded: a new user who has not been asked, a user who declined or withdrew, or an
@@ -934,6 +947,11 @@ public class AiKeyOutboxEntity
     // BackgroundTaskService.RunAiKeyOutboxAsync). No schema change: these are just new values.
     public const string ActionPurgeWebhooks = "purge-webhooks";
     public const string ActionRevokeDeveloper = "revoke-developer";
+    // The account-deletion purge of the add-ons with per-user data (AddonPurgeClient,
+    // Services/Account/AddonPurgeTarget.cs). These rows carry KeyHashes.
+    public const string ActionPurgeMcp = "purge-mcp";
+    public const string ActionPurgeAlexa = "purge-alexa";
+    public const string ActionPurgeTelegram = "purge-telegram";
 
     public int Id { get; set; }
     /// <summary>No FK - same loose pattern as everywhere else in this file.</summary>
@@ -949,9 +967,21 @@ public class AiKeyOutboxEntity
     /// studylife-ai stays unreachable, instead of only existing in-memory for one request.
     /// </summary>
     public string? AiApiKeyPlaintext { get; set; }
+    /// <summary>
+    /// Only for the add-on purge actions (purge-mcp/-alexa/-telegram), null otherwise: the
+    /// lowercase hex SHA-256 hashes of the API keys the server had issued to that add-on for the
+    /// user, comma-separated (hex has no commas), at most 50 per row. Captured in the deletion
+    /// transaction BEFORE the key rows are deleted, because the add-on finds its data by these
+    /// hashes and the server cannot reconstruct them afterwards. Hashes only, never a key; the row
+    /// and with it the hashes are deleted once the add-on confirms (see AddonOutbox).
+    /// </summary>
+    public string? KeyHashes { get; set; }
     public DateTime CreatedAt { get; set; }
     public int Attempts { get; set; }
     public DateTime? LastAttemptAt { get; set; }
+    /// <summary>When the drain last logged a warning about this row still failing - limits that
+    /// warning to one per day per row (AddonOutbox.ShouldWarn), across restarts and pods.</summary>
+    public DateTime? FailureWarnedAt { get; set; }
 }
 
 /// <summary>

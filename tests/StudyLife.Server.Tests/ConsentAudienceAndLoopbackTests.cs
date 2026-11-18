@@ -82,7 +82,7 @@ public class ConsentAudienceAndLoopbackTests : IClassFixture<CustomWebApplicatio
     {
         var sessionClient = _factory.CreateClient();
         var connectResponse = await sessionClient.PostAsJsonAsync("/api/auth/capture-connect",
-            new CaptureConnectRequestDto { RedirectUri = "https://abc.chromiumapp.org/", State = "s" });
+            new CaptureConnectRequestDto { RedirectUri = "https://glhegeoapkifmhodpnbfjgijlflkdglh.chromiumapp.org/", State = "s" });
         Assert.Equal(HttpStatusCode.OK, connectResponse.StatusCode);
         var connectResult = await connectResponse.Content.ReadFromJsonAsync<CaptureConnectResponseDto>();
         var (assertion, _) = ParseRedirectTo(connectResult!.RedirectTo);
@@ -104,8 +104,8 @@ public class ConsentAudienceAndLoopbackTests : IClassFixture<CustomWebApplicatio
 
     [Theory]
     [InlineData("http://127.0.0.1:8765/callback")]
-    [InlineData("http://127.0.0.1:1/")] // any port
-    [InlineData("http://localhost:54321/oauth/callback")]
+    [InlineData("http://127.0.0.1:1/callback")] // any port
+    [InlineData("http://localhost:54321/callback")]
     [InlineData("http://LOCALHOST:8765/callback")] // host match is case-insensitive
     public async Task Connect_WithRfc8252LoopbackRedirectUri_IsAccepted(string redirectUri)
     {
@@ -170,6 +170,51 @@ public class ConsentAudienceAndLoopbackTests : IClassFixture<CustomWebApplicatio
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var hash = await _factory.WithDbAsync(db => db.AuthUsers.Where(u => u.Id == 1).Select(u => u.McpApiKeyHash).FirstAsync());
         Assert.Null(hash);
+    }
+
+    /// <summary>2026-11 audit M5: the loopback exception is pinned to /callback.</summary>
+    [Theory]
+    [InlineData("http://127.0.0.1:8765/steal")]
+    [InlineData("http://127.0.0.1:8765/")]
+    [InlineData("http://localhost:8765/callback/extra")]
+    public async Task McpConnect_WithLoopbackOtherPath_ReturnsBadRequest_AndDoesNotRotateKey(string redirectUri)
+    {
+        await ClearBothKeysAsync();
+        var sessionClient = _factory.CreateClient();
+
+        var response = await sessionClient.PostAsJsonAsync("/api/auth/mcp-connect",
+            new McpConnectRequestDto { RedirectUri = redirectUri, State = "s" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var hash = await _factory.WithDbAsync(db => db.AuthUsers.Where(u => u.Id == 1).Select(u => u.McpApiKeyHash).FirstAsync());
+        Assert.Null(hash);
+    }
+
+    /// <summary>2026-11 audit M5: an extension ID that is not pinned is refused, and the error
+    /// tells the operator which config key to set (unpacked builds).</summary>
+    [Fact]
+    public async Task CaptureConnect_WithUnpinnedExtensionId_ReturnsBadRequest_NamingTheConfigKey()
+    {
+        var sessionClient = _factory.CreateClient();
+
+        var response = await sessionClient.PostAsJsonAsync("/api/auth/capture-connect",
+            new CaptureConnectRequestDto { RedirectUri = "https://abcdefghijklmnopabcdefghijklmnop.chromiumapp.org/", State = "s" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("Consent:ChromeExtensionIds:capture", await response.Content.ReadAsStringAsync());
+    }
+
+    [Theory]
+    [InlineData("https://glhegeoapkifmhodpnbfjgijlflkdglh.chromiumapp.org/sub")]
+    [InlineData("https://glhegeoapkifmhodpnbfjgijlflkdglh.chromiumapp.org.evil.com/")]
+    public async Task CaptureConnect_WithPinnedIdButOtherShape_ReturnsBadRequest(string redirectUri)
+    {
+        var sessionClient = _factory.CreateClient();
+
+        var response = await sessionClient.PostAsJsonAsync("/api/auth/capture-connect",
+            new CaptureConnectRequestDto { RedirectUri = redirectUri, State = "s" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Theory]
