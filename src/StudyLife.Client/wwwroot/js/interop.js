@@ -422,35 +422,29 @@ function initGlobalSearchHotkey(dotnetRef) {
 
 function isNarrowViewport() { return window.matchMedia('(max-width: 768px)').matches; }
 
-function scrollElementToCurrentTime(scrollContainerId) {
-    // Scrolls the calendar scroll container (#cal-outer, survives week/day
-    // switching unchanged - see initCalendarSwipe) so that the "now" line
-    // (.cal-now-line) is directly visible instead of midnight. .cal-now-line only exists
-    // if today falls within the currently visible range (see CalendarDayColumn.razor);
-    // if it's not in the DOM, this is a no-op (not an error).
+function scrollElementToMinute(scrollContainerId, minute, viewportFraction) {
+    // Scrolls the calendar scroll container (#cal-outer, survives week/day switching unchanged -
+    // see initCalendarSwipe) so that the given minute of the day (the grid is 1px per minute)
+    // sits at viewportFraction of the visible height. The target minute is decided in C#
+    // (CalendarInitialScroll); this only does the geometry. A no-op if the grid isn't rendered.
     var container = document.getElementById(scrollContainerId);
     if (!container) return;
-    var nowLine = container.querySelector('.cal-now-line');
-    if (!nowLine) return;
+    var body = container.querySelector('.day-body');
+    if (!body) return;
 
-    // getBoundingClientRect() instead of hardcoded hour pixel values: returns the
-    // actual rendered position independent of row height, sticky header height,
-    // etc., so it stays correct even with future CSS adjustments to .cal-hours/.hour-label.
-    // Both rects already reflect the current scroll state, so the difference plus
+    // getBoundingClientRect() instead of hardcoded header/hour pixel values: stays correct with
+    // CSS changes. Both rects already reflect the current scroll state, so the difference plus
     // scrollTop gives the position within the scrollable content.
     var containerRect = container.getBoundingClientRect();
-    var lineRect = nowLine.getBoundingClientRect();
-    var lineOffsetInContent = (lineRect.top - containerRect.top) + container.scrollTop;
+    var bodyRect = body.getBoundingClientRect();
+    var offsetInContent = (bodyRect.top - containerRect.top) + container.scrollTop + minute;
 
-    // Goal: position the line at ~30% of the visible height, not at the very top -
-    // this keeps the context shortly before "now" visible instead of pinning the
-    // line to the edge.
-    var target = lineOffsetInContent - container.clientHeight * 0.3;
+    var target = offsetInContent - container.clientHeight * viewportFraction;
     var maxScroll = container.scrollHeight - container.clientHeight;
     container.scrollTop = Math.max(0, Math.min(target, maxScroll));
 }
 
-// Same geometry as scrollElementToCurrentTime above, generalized to an arbitrary selector
+// Same geometry as scrollElementToMinute above, generalized to an arbitrary selector
 // instead of hardcoding .cal-now-line - used by the planner's calendar preview (PlannerCalendarPreview.razor)
 // to open scrolled to the first proposed session instead of midnight. A no-op if either the
 // container or a matching element isn't in the DOM.
