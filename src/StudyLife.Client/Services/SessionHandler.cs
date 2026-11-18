@@ -24,6 +24,11 @@ namespace StudyLife.Client.Services;
 /// signature), not "your session is dead" - otherwise a failed login attempt would wrongly
 /// trigger the same redirect.
 ///
+/// A 401 only ends the session the request was SENT with (SessionInvalidationPolicy): a
+/// request that left without a token, or with an older one, and whose 401 arrives after a
+/// newer sign-in stored a fresh token is a stale answer and leaves that new session alone
+/// (first-start sign-in race, App Store screenshot run 2026-11-18).
+///
 /// Telemetry phase 2 (docs/ARCHITECTURE.md "Telemetry"): every own-API round trip is timed here
 /// and handed to TelemetryService - the one place that already sees EVERY request/response,
 /// instead of instrumenting each call site. TelemetryService is resolved lazily through
@@ -34,6 +39,8 @@ namespace StudyLife.Client.Services;
 /// </summary>
 public sealed class SessionHandler : DelegatingHandler
 {
+    private const string SessionTokenHeader = "X-Session-Token";
+
     private readonly SessionTokenStore _tokenStore;
     private readonly Uri _baseAddress;
     private readonly IServiceProvider _services;
@@ -48,18 +55,19 @@ public sealed class SessionHandler : DelegatingHandler
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         var isOwnApi = request.RequestUri is { } uri && _baseAddress.IsBaseOf(uri);
-        var isAuthPath = isOwnApi && request.RequestUri!.AbsolutePath.Contains("/api/auth/", StringComparison.OrdinalIgnoreCase);
 
         // A request that already names its session (the native app handoff, AppReturnContext) keeps it.
-        if (isOwnApi && _tokenStore.Token is { Length: > 0 } token && !request.Headers.Contains("X-Session-Token"))
-            request.Headers.TryAddWithoutValidation("X-Session-Token", token);
+        if (isOwnApi && _tokenStore.Token is { Length: > 0 } token && !request.Headers.Contains(SessionTokenHeader))
+            request.Headers.TryAddWithoutValidation(SessionTokenHeader, token);
+        var tokenSent = request.Headers.TryGetValues(SessionTokenHeader, out var sent) ? sent.FirstOrDefault() : null;
 
         var stopwatch = isOwnApi ? Stopwatch.StartNew() : null;
         var response = await base.SendAsync(request, cancellationToken);
 
         if (isOwnApi) RecordTelemetry(request, response, stopwatch!.Elapsed.TotalMilliseconds);
 
-        if (isOwnApi && !isAuthPath && response.StatusCode == HttpStatusCode.Unauthorized)
+        // Compared against the token stored NOW, after the round trip - a sign-in may have happened meanwhile.
+        if (SessionInvalidationPolicy.EndsSession(request.RequestUri, _baseAddress, response.StatusCode, tokenSent, _tokenStore.Token))
             _tokenStore.NotifySessionInvalidated();
 
         return response;
