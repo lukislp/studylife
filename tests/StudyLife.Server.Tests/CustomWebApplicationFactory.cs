@@ -62,6 +62,11 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         // The mcp audience's consent flow only accepts loopback or explicitly configured
         // callbacks (ConsentRedirectPolicy) - the https callback the mcp flow tests use has to be
         // on that list, exactly like a real HTTP-mode studylife-mcp deployment configures its own.
+        // The production default is Consent:RequirePkce=true (built-in clients must send PKCE). The
+        // pre-PKCE connect-flow tests (Mcp/Capture/FocusGuard/FocusTunes/TrayConnectFlowTests) do not
+        // send a challenge, so the shared host opts out; ConsentFixedAudiencePkceTests covers the
+        // enforced behaviour explicitly and ConfigurationOptionsBindingTests pins the default.
+        builder.UseSetting("Consent:RequirePkce", "false");
         builder.UseSetting("Consent:AllowedRedirectUris:mcp:0", "https://mcp.example.com/auth/studylife/callback");
 
         // Runs AFTER the registrations from Program.cs, but BEFORE the host starts - rerouting the
