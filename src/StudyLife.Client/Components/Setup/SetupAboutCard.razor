@@ -2,6 +2,7 @@
   SPDX-FileCopyrightText: 2026 Lukas Körber
   SPDX-License-Identifier: AGPL-3.0-only
 *@
+@using StudyLife.Client.I18nText
 @* "About" section of Setup: what is running (versions), under which licence, where the source code
    of exactly that build is (AGPL-3.0 section 13), and the third-party notices of the build in front
    of the user. Setup.razor merely places it; the data comes from AboutState / AboutSource and all
@@ -40,8 +41,7 @@
         </dl>
         <p class="ss-desc">@T.LicenceMeaning</p>
         <p class="ss-desc">
-            <a href="@PrivacyUrl" target="_blank" rel="noopener noreferrer"
-               aria-label="@PrivacyAriaLabel">@T.PrivacyPolicy</a>
+            <LegalLinkAnchors Links="_legal" Texts="T" />
         </p>
 
         <h3 class="about-sub" id="about-notices-title">@T.NoticesHeading</h3>
