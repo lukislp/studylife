@@ -65,6 +65,20 @@ public sealed class RegistrationOptions
     public string? Mode { get; set; }
 }
 
+/// <summary>Operator option: write the sample dataset into one existing account at startup
+/// (<see cref="Services.SampleData.SampleAccountSeeder"/>). Unset = off.</summary>
+public sealed class SampleDataOptions
+{
+    public const string SectionName = "SampleData";
+
+    /// <summary>Password sign-in username of the account to fill; blank or unset disables the feature.</summary>
+    public string? SeedUsername { get; set; }
+
+    /// <summary>"de" (default when unset) or "en": language of the sample dataset. Any other value
+    /// stops the start (SampleDataContent.ParseLanguage).</summary>
+    public string? Language { get; set; }
+}
+
 /// <summary>
 /// Optional operator-pinned VAPID key pair. When both keys are set they win over the DB-backed
 /// pair (<see cref="Services.SystemSecretsService"/>); otherwise this section is simply absent.
