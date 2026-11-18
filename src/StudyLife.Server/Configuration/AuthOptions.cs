@@ -28,12 +28,13 @@ public sealed class ConsentOptions
     /// <summary>
     /// Also require PKCE (S256) from the built-in, fixed-audience clients (mcp, capture, focusguard,
     /// focustunes, tray) - env <c>Consent__RequirePkce</c>. Dynamic OAuth clients always need PKCE,
-    /// whatever this says. While false, a fixed-audience connect that offers no challenge is still
+    /// whatever this says. When false, a fixed-audience connect that offers no challenge is still
     /// accepted (and logged as a warning): the bounded compatibility path for released first-party
     /// clients that predate PKCE. A challenge that IS offered is always validated and enforced.
-    /// Turn it on once those clients are updated (audit M5).
+    /// On by default; an explicitly configured false is honoured, as a temporary escape hatch while
+    /// such a release is still in use (audit M5).
     /// </summary>
-    public bool RequirePkce { get; set; }
+    public bool RequirePkce { get; set; } = true;
 
     /// <summary>
     /// Exact additional redirect URIs per audience (env
