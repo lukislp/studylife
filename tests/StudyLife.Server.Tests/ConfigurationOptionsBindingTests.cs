@@ -71,12 +71,12 @@ public class ConfigurationOptionsBindingTests
     public void ConsentSection_BindsRequirePkceAndThePerAudienceRedirectUris()
     {
         var consent = TestOptions.For<ConsentOptions>(
-            ("Consent:RequirePkce", "true"),
+            ("Consent:RequirePkce", "false"),
             ("Consent:AllowedRedirectUris:mcp:0", "https://mcp.example.com/auth/studylife/callback"),
             ("Consent:AllowedRedirectUris:mcp:1", "https://mcp2.example.com/cb"),
             ("Consent:AllowedRedirectUris:tray:0", "https://tray.example.com/cb")).Value;
 
-        Assert.True(consent.RequirePkce);
+        Assert.False(consent.RequirePkce);
         Assert.Equal(
             ["https://mcp.example.com/auth/studylife/callback", "https://mcp2.example.com/cb"],
             consent.AllowedRedirectUris["mcp"]);
@@ -85,11 +85,11 @@ public class ConfigurationOptionsBindingTests
     }
 
     [Fact]
-    public void ConsentSection_Absent_LeavesPkceOptionalAndNoConfiguredRedirectUris()
+    public void ConsentSection_Absent_RequiresPkceByDefaultAndHasNoConfiguredRedirectUris()
     {
         var consent = TestOptions.For<ConsentOptions>().Value;
 
-        Assert.False(consent.RequirePkce);
+        Assert.True(consent.RequirePkce);
         Assert.Empty(consent.AllowedRedirectUris);
     }
 }
