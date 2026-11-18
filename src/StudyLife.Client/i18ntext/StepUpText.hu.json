@@ -1,6 +1,8 @@
 {
   "Title": "Erősítsd meg, hogy te vagy az",
   "Intro": "Ez a művelet a fiókodat védi. A folytatáshoz erősítsd meg a fiók egyik hozzáférési kulcsával.",
+  "IntroPassword": "Ez a művelet a fiókodat védi. A folytatáshoz erősítsd meg a fiók jelszavával.",
+  "IntroRecovery": "Ez a művelet a fiókodat védi. A folytatáshoz erősítsd meg a fiók egyik helyreállítási kódjával.",
   "BrowserSignInIntro": "Jelentkezz be újra, hogy megerősítsd, te vagy az. A művelet utána azonnal folytatódik.",
   "PasskeyButton": "Megerősítés hozzáférési kulccsal",
   "BrowserSignInButton": "Újra bejelentkezés",

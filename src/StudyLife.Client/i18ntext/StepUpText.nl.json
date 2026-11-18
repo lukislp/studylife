@@ -1,6 +1,8 @@
 {
   "Title": "Bevestig dat jij het bent",
   "Intro": "Deze actie beschermt je account. Bevestig met een passkey van dit account om verder te gaan.",
+  "IntroPassword": "Deze actie beschermt je account. Bevestig met het wachtwoord van dit account om verder te gaan.",
+  "IntroRecovery": "Deze actie beschermt je account. Bevestig met een herstelcode van dit account om verder te gaan.",
   "BrowserSignInIntro": "Meld je opnieuw aan om te bevestigen dat jij het bent. Daarna gaat de actie meteen verder.",
   "PasskeyButton": "Bevestigen met passkey",
   "BrowserSignInButton": "Opnieuw aanmelden",

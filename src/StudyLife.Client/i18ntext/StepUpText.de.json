@@ -1,6 +1,8 @@
 {
   "Title": "Bestätige, dass du es bist",
   "Intro": "Diese Aktion schützt dein Konto. Bestätige mit einem Passkey dieses Kontos, um fortzufahren.",
+  "IntroPassword": "Diese Aktion schützt dein Konto. Bestätige mit dem Passwort dieses Kontos, um fortzufahren.",
+  "IntroRecovery": "Diese Aktion schützt dein Konto. Bestätige mit einem Wiederherstellungscode dieses Kontos, um fortzufahren.",
   "BrowserSignInIntro": "Melde dich erneut an, um zu bestätigen, dass du es bist. Danach geht es direkt weiter.",
   "PasskeyButton": "Mit Passkey bestätigen",
   "BrowserSignInButton": "Erneut anmelden",

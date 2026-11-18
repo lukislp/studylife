@@ -32,6 +32,8 @@
   "BackButton": "Späť",
   "ReauthTitle": "Potvrďte, že ste to vy",
   "ReauthText": "Potvrďte prístupovým kľúčom tohto účtu. Odstraňovanie sa začne hneď potom.",
+  "ReauthTextPassword": "Potvrďte heslom tohto účtu. Odstraňovanie sa začne hneď potom.",
+  "ReauthTextRecovery": "Potvrďte záložným kódom tohto účtu. Odstraňovanie sa začne hneď potom.",
   "PasskeyButton": "Potvrdiť prístupovým kľúčom a odstrániť",
   "RecoveryToggle": "Namiesto toho použiť záložný kód",
   "RecoveryLabel": "Záložný kód",

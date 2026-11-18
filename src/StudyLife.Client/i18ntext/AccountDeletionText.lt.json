@@ -32,6 +32,8 @@
   "BackButton": "Atgal",
   "ReauthTitle": "Patvirtinkite, kad tai jūs",
   "ReauthText": "Patvirtinkite šios paskyros prieigos raktu. Ištrynimas prasideda iškart po to.",
+  "ReauthTextPassword": "Patvirtinkite šios paskyros slaptažodžiu. Ištrynimas prasideda iškart po to.",
+  "ReauthTextRecovery": "Patvirtinkite šios paskyros atkūrimo kodu. Ištrynimas prasideda iškart po to.",
   "PasskeyButton": "Patvirtinti prieigos raktu ir ištrinti",
   "RecoveryToggle": "Vietoj to naudoti atkūrimo kodą",
   "RecoveryLabel": "Atkūrimo kodas",

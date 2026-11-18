@@ -32,6 +32,8 @@
   "BackButton": "Terug",
   "ReauthTitle": "Bevestig dat jij het bent",
   "ReauthText": "Bevestig met een passkey van dit account. De verwijdering begint direct daarna.",
+  "ReauthTextPassword": "Bevestig met het wachtwoord van dit account. De verwijdering begint direct daarna.",
+  "ReauthTextRecovery": "Bevestig met een herstelcode van dit account. De verwijdering begint direct daarna.",
   "PasskeyButton": "Bevestigen met passkey en verwijderen",
   "RecoveryToggle": "Gebruik in plaats daarvan een herstelcode",
   "RecoveryLabel": "Herstelcode",

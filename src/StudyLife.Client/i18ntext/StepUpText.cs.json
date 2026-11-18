@@ -1,6 +1,8 @@
 {
   "Title": "Potvrďte, že jste to vy",
   "Intro": "Tato akce chrání váš účet. Pro pokračování potvrďte přístupovým klíčem tohoto účtu.",
+  "IntroPassword": "Tato akce chrání váš účet. Pro pokračování potvrďte heslem tohoto účtu.",
+  "IntroRecovery": "Tato akce chrání váš účet. Pro pokračování potvrďte záložním kódem tohoto účtu.",
   "BrowserSignInIntro": "Přihlaste se znovu a potvrďte, že jste to vy. Akce pak hned pokračuje.",
   "PasskeyButton": "Potvrdit přístupovým klíčem",
   "BrowserSignInButton": "Přihlásit se znovu",

@@ -1,6 +1,8 @@
 {
   "Title": "Ikkonferma li int",
   "Intro": "Din l-azzjoni tipproteġi l-kont tiegħek. Ikkonferma b’passkey ta’ dan il-kont biex tkompli.",
+  "IntroPassword": "Din l-azzjoni tipproteġi l-kont tiegħek. Ikkonferma bil-password ta’ dan il-kont biex tkompli.",
+  "IntroRecovery": "Din l-azzjoni tipproteġi l-kont tiegħek. Ikkonferma b’kodiċi tal-irkupru ta’ dan il-kont biex tkompli.",
   "BrowserSignInIntro": "Erġa’ idħol biex tikkonferma li int. L-azzjoni tkompli eżatt wara.",
   "PasskeyButton": "Ikkonferma b’passkey",
   "BrowserSignInButton": "Erġa’ idħol",

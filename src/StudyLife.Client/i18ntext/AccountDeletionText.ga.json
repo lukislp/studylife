@@ -32,6 +32,8 @@
   "BackButton": "Ar ais",
   "ReauthTitle": "Deimhnigh gur tusa atá ann",
   "ReauthText": "Deimhnigh le saicearra rochtana den chuntas seo. Tosaíonn an scriosadh díreach ina dhiaidh.",
+  "ReauthTextPassword": "Deimhnigh le pasfhocal an chuntais seo. Tosaíonn an scriosadh díreach ina dhiaidh.",
+  "ReauthTextRecovery": "Deimhnigh le cód athshlánaithe den chuntas seo. Tosaíonn an scriosadh díreach ina dhiaidh.",
   "PasskeyButton": "Deimhnigh leis an saicearra rochtana agus scrios",
   "RecoveryToggle": "Úsáid cód athshlánaithe ina ionad",
   "RecoveryLabel": "Cód athshlánaithe",

@@ -32,6 +32,8 @@
   "BackButton": "Zurück",
   "ReauthTitle": "Bestätige, dass du es bist",
   "ReauthText": "Bestätige mit einem Passkey dieses Kontos. Die Löschung beginnt direkt danach.",
+  "ReauthTextPassword": "Bestätige mit dem Passwort dieses Kontos. Die Löschung beginnt direkt danach.",
+  "ReauthTextRecovery": "Bestätige mit einem Wiederherstellungscode dieses Kontos. Die Löschung beginnt direkt danach.",
   "PasskeyButton": "Mit Passkey bestätigen und löschen",
   "RecoveryToggle": "Stattdessen Wiederherstellungscode verwenden",
   "RecoveryLabel": "Wiederherstellungscode",

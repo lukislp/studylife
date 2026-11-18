@@ -32,6 +32,8 @@
   "BackButton": "Indietro",
   "ReauthTitle": "Conferma che sei tu",
   "ReauthText": "Conferma con una passkey di questo account. L'eliminazione inizia subito dopo.",
+  "ReauthTextPassword": "Conferma con la password di questo account. L'eliminazione inizia subito dopo.",
+  "ReauthTextRecovery": "Conferma con un codice di recupero di questo account. L'eliminazione inizia subito dopo.",
   "PasskeyButton": "Conferma con la passkey ed elimina",
   "RecoveryToggle": "Usa invece un codice di recupero",
   "RecoveryLabel": "Codice di recupero",

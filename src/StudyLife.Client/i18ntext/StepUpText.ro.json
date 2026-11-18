@@ -1,6 +1,8 @@
 {
   "Title": "Confirmă că ești tu",
   "Intro": "Această acțiune îți protejează contul. Confirmă cu o cheie de acces a acestui cont pentru a continua.",
+  "IntroPassword": "Această acțiune îți protejează contul. Confirmă cu parola acestui cont pentru a continua.",
+  "IntroRecovery": "Această acțiune îți protejează contul. Confirmă cu un cod de recuperare al acestui cont pentru a continua.",
   "BrowserSignInIntro": "Conectează-te din nou pentru a confirma că ești tu. Acțiunea continuă imediat după.",
   "PasskeyButton": "Confirmă cu cheia de acces",
   "BrowserSignInButton": "Conectează-te din nou",

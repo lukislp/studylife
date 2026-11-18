@@ -1,6 +1,8 @@
 {
   "Title": "Confirmez qu’il s’agit bien de vous",
   "Intro": "Cette action protège votre compte. Confirmez avec une clé d’accès de ce compte pour continuer.",
+  "IntroPassword": "Cette action protège votre compte. Confirmez avec le mot de passe de ce compte pour continuer.",
+  "IntroRecovery": "Cette action protège votre compte. Confirmez avec un code de récupération de ce compte pour continuer.",
   "BrowserSignInIntro": "Reconnectez-vous pour confirmer qu’il s’agit bien de vous. L’action se poursuit juste après.",
   "PasskeyButton": "Confirmer avec une clé d’accès",
   "BrowserSignInButton": "Se reconnecter",

@@ -32,6 +32,8 @@
   "BackButton": "Retour",
   "ReauthTitle": "Confirmez que c'est bien vous",
   "ReauthText": "Confirmez avec une clé d'accès de ce compte. La suppression commence juste après.",
+  "ReauthTextPassword": "Confirmez avec le mot de passe de ce compte. La suppression commence juste après.",
+  "ReauthTextRecovery": "Confirmez avec un code de récupération de ce compte. La suppression commence juste après.",
   "PasskeyButton": "Confirmer avec la clé d'accès et supprimer",
   "RecoveryToggle": "Utiliser plutôt un code de récupération",
   "RecoveryLabel": "Code de récupération",

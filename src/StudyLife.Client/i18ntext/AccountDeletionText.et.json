@@ -32,6 +32,8 @@
   "BackButton": "Tagasi",
   "ReauthTitle": "Kinnita, et see oled sina",
   "ReauthText": "Kinnita selle konto pääsuvõtmega. Kustutamine algab kohe pärast seda.",
+  "ReauthTextPassword": "Kinnita selle konto parooliga. Kustutamine algab kohe pärast seda.",
+  "ReauthTextRecovery": "Kinnita selle konto taastekoodiga. Kustutamine algab kohe pärast seda.",
   "PasskeyButton": "Kinnita pääsuvõtmega ja kustuta",
   "RecoveryToggle": "Kasuta selle asemel taastekoodi",
   "RecoveryLabel": "Taastekood",
