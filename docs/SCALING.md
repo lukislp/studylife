@@ -1478,6 +1478,12 @@ normal pod network bridge.
 
 ## Observability: Self-Hosted Prometheus + Grafana + Loki
 
+> **Current retention (checked live 2026-11-18).** This section records how the stack was first
+> built inside this repo. The monitoring manifests now live in homelab-infra `monitoring/`, and the
+> retention numbers below are historical. In force today: Prometheus 30 days
+> (`--storage.tsdb.retention.time=30d`, size cap 18 GB), Loki 7 days (`retention_period: 168h`,
+> compactor retention on), Tempo 7 days (`block_retention: 168h`).
+
 **Cloudflare has no suitable free option for this purpose** (checked): Cloudflare Web Analytics
 is pure frontend page-view analytics (no infrastructure/pod/DB metrics relevance), and Logpush
 for your own origin/app logs is tied to higher Cloudflare plans. So this is entirely self-hosted
