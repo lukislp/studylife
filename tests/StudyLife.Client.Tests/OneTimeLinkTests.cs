@@ -45,7 +45,9 @@ public class OneTimeLinkCardTests : ConsentBunitTest
         server.OnJson("POST api/system/regenerate-calendar-token", new RegenerateCalendarTokenResponseDto { CalendarToken = "fresh" });
         var cut = Render<SetupCalendarSubscriptionCard>();
 
-        cut.WaitForElement("button.btn-secondary").Click();
+        // The button is disabled until the initial status has loaded (a click before that would be
+        // overwritten by the late answer); wait for the enabled one.
+        cut.WaitForElement("button.btn-secondary:not([disabled])").Click();
 
         // Find the input inside the assertion: the card re-renders after the POST, so a reference
         // taken before that render would point at a removed element (flaky ElementRemovedFromDom).
@@ -100,7 +102,9 @@ public class OneTimeLinkCardTests : ConsentBunitTest
             new UserSettingsDto { ProgressShareEnabled = true, ProgressShareToken = "share" });
         var cut = Render<SetupProgressShareCard>();
 
-        cut.WaitForElement("button.btn-secondary").Click();
+        // The button is disabled until the initial status has loaded (a click before that would be
+        // overwritten by the late answer); wait for the enabled one.
+        cut.WaitForElement("button.btn-secondary:not([disabled])").Click();
 
         cut.WaitForAssertion(() =>
         {

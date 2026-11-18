@@ -54,7 +54,7 @@
     }
     else
     {
-        <button type="button" class="btn-secondary" @onclick="Enable" disabled="@_busy">
+        <button type="button" class="btn-secondary" @onclick="Enable" disabled="@(_busy || !_loaded)">
             @T.ProgressShareEnableButton
         </button>
     }
@@ -101,6 +101,9 @@
     private bool _confirming;
     private bool _regenerating;
     private bool _regenerateSuccess;
+    // False until the initial settings are known. Until then "Enable" stays disabled: a link issued
+    // before the initial settings arrived would be overwritten by them and never shown.
+    private bool _loaded;
 
     private OneTimeLinkView View => OneTimeLink.Of(_enabled, _token);
 
@@ -112,6 +115,12 @@
     private SetupOverviewDto? _appliedOverview;
 
     protected override async Task OnInitializedAsync()
+    {
+        try { await LoadSettingsAsync(); }
+        finally { _loaded = true; }
+    }
+
+    private async Task LoadSettingsAsync()
     {
         if (OverviewTask is not null) Overview = await OverviewTask;
         T = await I18nText.GetTextTableAsync<I18nText.SetupText>(this);
