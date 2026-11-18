@@ -79,7 +79,7 @@ else
     public void Dispose() => _disposed = true;
 
     private RenderFragment Body => @<text>
-        <p class="ss-desc">@(_options.Primary == FreshProofPrimary.BrowserSignIn ? Labels.BrowserSignInIntro : Labels.Intro)</p>
+        <p class="ss-desc">@Labels.IntroFor(_options.Primary, _passwordOpen, _recoveryOpen)</p>
         @if (_passwordOpen)
         {
             <label class="ss-desc" for="@PasswordInputId">@Labels.PasswordLabel</label>

@@ -32,6 +32,8 @@
   "BackButton": "Înapoi",
   "ReauthTitle": "Confirmă că ești tu",
   "ReauthText": "Confirmă cu o cheie de acces a acestui cont. Ștergerea începe imediat după aceea.",
+  "ReauthTextPassword": "Confirmă cu parola acestui cont. Ștergerea începe imediat după aceea.",
+  "ReauthTextRecovery": "Confirmă cu un cod de recuperare al acestui cont. Ștergerea începe imediat după aceea.",
   "PasskeyButton": "Confirmă cu cheia de acces și șterge",
   "RecoveryToggle": "Folosește în schimb un cod de recuperare",
   "RecoveryLabel": "Cod de recuperare",

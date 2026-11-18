@@ -32,6 +32,8 @@
   "BackButton": "Takaisin",
   "ReauthTitle": "Vahvista, että se olet sinä",
   "ReauthText": "Vahvista tämän tilin pääsyavaimella. Poisto alkaa heti sen jälkeen.",
+  "ReauthTextPassword": "Vahvista tämän tilin salasanalla. Poisto alkaa heti sen jälkeen.",
+  "ReauthTextRecovery": "Vahvista tämän tilin palautuskoodilla. Poisto alkaa heti sen jälkeen.",
   "PasskeyButton": "Vahvista pääsyavaimella ja poista",
   "RecoveryToggle": "Käytä sen sijaan palautuskoodia",
   "RecoveryLabel": "Palautuskoodi",

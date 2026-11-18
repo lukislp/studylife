@@ -32,6 +32,8 @@
   "BackButton": "Wstecz",
   "ReauthTitle": "Potwierdź, że to Ty",
   "ReauthText": "Potwierdź kluczem dostępu tego konta. Usuwanie rozpocznie się zaraz potem.",
+  "ReauthTextPassword": "Potwierdź hasłem tego konta. Usuwanie rozpocznie się zaraz potem.",
+  "ReauthTextRecovery": "Potwierdź kodem odzyskiwania tego konta. Usuwanie rozpocznie się zaraz potem.",
   "PasskeyButton": "Potwierdź kluczem dostępu i usuń",
   "RecoveryToggle": "Użyj zamiast tego kodu odzyskiwania",
   "RecoveryLabel": "Kod odzyskiwania",

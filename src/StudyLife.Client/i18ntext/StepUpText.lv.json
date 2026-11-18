@@ -1,6 +1,8 @@
 {
   "Title": "Apstipriniet, ka tas esat jūs",
   "Intro": "Šī darbība aizsargā jūsu kontu. Lai turpinātu, apstipriniet ar šī konta piekļuves atslēgu.",
+  "IntroPassword": "Šī darbība aizsargā jūsu kontu. Lai turpinātu, apstipriniet ar šī konta paroli.",
+  "IntroRecovery": "Šī darbība aizsargā jūsu kontu. Lai turpinātu, apstipriniet ar šī konta atkopšanas kodu.",
   "BrowserSignInIntro": "Pierakstieties vēlreiz, lai apstiprinātu, ka tas esat jūs. Darbība turpināsies uzreiz pēc tam.",
   "PasskeyButton": "Apstiprināt ar piekļuves atslēgu",
   "BrowserSignInButton": "Pierakstīties vēlreiz",

@@ -1,6 +1,8 @@
 {
   "Title": "Bekræft, at det er dig",
   "Intro": "Denne handling beskytter din konto. Bekræft med en adgangsnøgle til denne konto for at fortsætte.",
+  "IntroPassword": "Denne handling beskytter din konto. Bekræft med adgangskoden til denne konto for at fortsætte.",
+  "IntroRecovery": "Denne handling beskytter din konto. Bekræft med en gendannelseskode til denne konto for at fortsætte.",
   "BrowserSignInIntro": "Log ind igen for at bekræfte, at det er dig. Handlingen fortsætter lige bagefter.",
   "PasskeyButton": "Bekræft med adgangsnøgle",
   "BrowserSignInButton": "Log ind igen",

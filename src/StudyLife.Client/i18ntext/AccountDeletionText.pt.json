@@ -32,6 +32,8 @@
   "BackButton": "Voltar",
   "ReauthTitle": "Confirme que é você",
   "ReauthText": "Confirme com uma chave de acesso desta conta. A eliminação começa logo a seguir.",
+  "ReauthTextPassword": "Confirme com a palavra-passe desta conta. A eliminação começa logo a seguir.",
+  "ReauthTextRecovery": "Confirme com um código de recuperação desta conta. A eliminação começa logo a seguir.",
   "PasskeyButton": "Confirmar com chave de acesso e eliminar",
   "RecoveryToggle": "Usar antes um código de recuperação",
   "RecoveryLabel": "Código de recuperação",

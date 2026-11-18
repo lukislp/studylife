@@ -1,6 +1,8 @@
 {
   "Title": "Confirm it is you",
   "Intro": "This action protects your account. Confirm with a passkey of this account to continue.",
+  "IntroPassword": "This action protects your account. Confirm with this account's password to continue.",
+  "IntroRecovery": "This action protects your account. Confirm with a recovery code of this account to continue.",
   "BrowserSignInIntro": "Sign in again to confirm it is you. The action continues right after.",
   "PasskeyButton": "Confirm with passkey",
   "BrowserSignInButton": "Sign in again",

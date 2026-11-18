@@ -131,6 +131,18 @@ public class StepUpDialogTests : ConsentBunitTest
     }
 
     [Fact]
+    public void TheIntro_FollowsTheChosenMethod()
+    {
+        var (cut, _, _) = Render();
+        Assert.Contains("Intro", cut.Find(".modal-body p.ss-desc").TextContent);
+        Assert.DoesNotContain("IntroPassword", cut.Markup);
+
+        cut.FindAll(".modal-footer button").First(b => b.TextContent.Trim() == "PasswordToggle").Click();
+
+        cut.WaitForAssertion(() => Assert.Equal("IntroPassword", cut.Find(".modal-body p.ss-desc").TextContent.Trim()));
+    }
+
+    [Fact]
     public void ARejectedProof_ShowsAnAnnouncedError_AndDoesNotHandBack()
     {
         var (cut, server, confirmed) = Render();

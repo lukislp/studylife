@@ -277,7 +277,7 @@
     // ── re-authentication (FreshProofPicker), then deletion ─────────────────────────────────────
     private FreshProofLabels _labels => new(T!.ReauthText, T.BrowserSignInText, T.PasskeyButton, T.BrowserSignInButton,
         T.PasswordToggle, T.PasswordLabel, T.PasswordButton, T.RecoveryToggle, T.RecoveryLabel, T.RecoveryButton,
-        T.Working, T.ErrorPasskeyUnavailable);
+        T.Working, T.ErrorPasskeyUnavailable, T.ReauthTextPassword, T.ReauthTextRecovery);
 
     private void OnCeremonyFailed(string message) => _error = message;
 

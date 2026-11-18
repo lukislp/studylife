@@ -1,6 +1,8 @@
 {
   "Title": "Bekräfta att det är du",
   "Intro": "Den här åtgärden skyddar ditt konto. Bekräfta med en nyckel för det här kontot för att fortsätta.",
+  "IntroPassword": "Den här åtgärden skyddar ditt konto. Bekräfta med lösenordet för det här kontot för att fortsätta.",
+  "IntroRecovery": "Den här åtgärden skyddar ditt konto. Bekräfta med en återställningskod för det här kontot för att fortsätta.",
   "BrowserSignInIntro": "Logga in igen för att bekräfta att det är du. Åtgärden fortsätter direkt efteråt.",
   "PasskeyButton": "Bekräfta med nyckel",
   "BrowserSignInButton": "Logga in igen",

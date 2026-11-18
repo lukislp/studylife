@@ -1,6 +1,8 @@
 {
   "Title": "Patvirtinkite, kad tai jūs",
   "Intro": "Šis veiksmas saugo jūsų paskyrą. Norėdami tęsti, patvirtinkite šios paskyros prieigos raktu.",
+  "IntroPassword": "Šis veiksmas saugo jūsų paskyrą. Norėdami tęsti, patvirtinkite šios paskyros slaptažodžiu.",
+  "IntroRecovery": "Šis veiksmas saugo jūsų paskyrą. Norėdami tęsti, patvirtinkite šios paskyros atkūrimo kodu.",
   "BrowserSignInIntro": "Prisijunkite iš naujo, kad patvirtintumėte, jog tai jūs. Veiksmas tęsis iškart po to.",
   "PasskeyButton": "Patvirtinti prieigos raktu",
   "BrowserSignInButton": "Prisijungti iš naujo",

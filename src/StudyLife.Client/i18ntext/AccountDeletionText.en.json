@@ -32,6 +32,8 @@
   "BackButton": "Back",
   "ReauthTitle": "Confirm it is you",
   "ReauthText": "Confirm with a passkey of this account. The deletion starts right after.",
+  "ReauthTextPassword": "Confirm with this account's password. The deletion starts right after.",
+  "ReauthTextRecovery": "Confirm with a recovery code of this account. The deletion starts right after.",
   "PasskeyButton": "Confirm with passkey and delete",
   "RecoveryToggle": "Use a recovery code instead",
   "RecoveryLabel": "Recovery code",

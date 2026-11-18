@@ -32,6 +32,8 @@
   "BackButton": "Lura",
   "ReauthTitle": "Ikkonferma li int",
   "ReauthText": "Ikkonferma b'ċavetta tal-aċċess ta' dan il-kont. It-tħassir jibda eżatt wara.",
+  "ReauthTextPassword": "Ikkonferma bil-password ta' dan il-kont. It-tħassir jibda eżatt wara.",
+  "ReauthTextRecovery": "Ikkonferma b'kodiċi tal-irkupru ta' dan il-kont. It-tħassir jibda eżatt wara.",
   "PasskeyButton": "Ikkonferma biċ-ċavetta tal-aċċess u ħassar",
   "RecoveryToggle": "Uża kodiċi tal-irkupru minflok",
   "RecoveryLabel": "Kodiċi tal-irkupru",
