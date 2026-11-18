@@ -14,7 +14,8 @@ namespace StudyLife.Client.Services;
 ///
 /// "No pointless logout": the token is discarded EXCLUSIVELY via NotifySessionInvalidated,
 /// and the SessionHandler only calls that on an explicit 401 response from the app's own
-/// server - never on network errors, timeouts, or other status codes.
+/// server for the token that is still current (SessionInvalidationPolicy) - never on network
+/// errors, timeouts, other status codes, or a late 401 for a request sent before a newer sign-in.
 /// </summary>
 public sealed class SessionTokenStore
 {
