@@ -77,6 +77,14 @@ public static class StudyLifeOptionsRegistration
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        // Retention of expired/unused rows (GDPR audit F-15): daily cleanup in the worker.
+        services.AddOptions<RetentionOptions>()
+            .BindConfiguration(RetentionOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        services.AddSingleton(sp => new Services.DataRetentionCleaner(
+            sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<RetentionOptions>>().Value));
+
         // Opt-in mDNS announcement (docs/MDNS.md). Validated at startup, but only while the feature
         // is switched on (see MdnsOptionsValidator).
         services.AddSingleton<Microsoft.Extensions.Options.IValidateOptions<MdnsOptions>, MdnsOptionsValidator>();

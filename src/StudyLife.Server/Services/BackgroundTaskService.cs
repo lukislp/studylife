@@ -34,6 +34,7 @@ public partial class BackgroundTaskService : BackgroundService
     private static readonly TimeSpan BestStudyTimeReminderInterval = TimeSpan.FromHours(1);
     private static readonly TimeSpan ComebackNudgeInterval = TimeSpan.FromHours(1);
     private static readonly TimeSpan AchievementCheckInterval = TimeSpan.FromHours(1);
+    private static readonly TimeSpan DataRetentionInterval = TimeSpan.FromDays(1);
     private static readonly TimeSpan DatabaseMaintenanceInterval = TimeSpan.FromDays(7);
     private static readonly TimeSpan BackupDumpInterval = TimeSpan.FromDays(7);
 

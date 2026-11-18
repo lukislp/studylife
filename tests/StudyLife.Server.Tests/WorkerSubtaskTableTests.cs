@@ -49,8 +49,9 @@ public class WorkerSubtaskTableTests : IClassFixture<CustomWebApplicationFactory
         { 13, "MonthlyReport", nameof(WorkerSubtaskScope.PerUser), null },
         { 14, "DailyMotivation", nameof(WorkerSubtaskScope.PerUser), null },
         { 15, "AiKeyOutbox", nameof(WorkerSubtaskScope.OncePerTick), null },
-        { 16, "DatabaseMaintenance", nameof(WorkerSubtaskScope.OncePerTick), Weekly },
-        { 17, "BackupDump", nameof(WorkerSubtaskScope.OncePerTick), Weekly },
+        { 16, "DataRetention", nameof(WorkerSubtaskScope.OncePerTick), TimeSpan.FromDays(1) },
+        { 17, "DatabaseMaintenance", nameof(WorkerSubtaskScope.OncePerTick), Weekly },
+        { 18, "BackupDump", nameof(WorkerSubtaskScope.OncePerTick), Weekly },
     };
 
     [Theory]
