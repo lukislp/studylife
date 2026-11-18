@@ -2,12 +2,17 @@
   SPDX-FileCopyrightText: 2026 Lukas Körber
   SPDX-License-Identifier: AGPL-3.0-only
 *@
+@using StudyLife.Client.Services
 @implements IDisposable
 
 @* The sidebar clock owns its own 10-second timer so that ticking re-renders ONLY these two
    lines. It used to be driven by MainLayout's timer calling StateHasChanged() on the layout,
    which re-rendered the whole layout including @Body - every dashboard/stats card diffed
-   again every ten seconds for a clock nobody was looking at (2026-09 audit L7). *@
+   again every ten seconds for a clock nobody was looking at (2026-09 audit L7).
+   Because it takes no parameters, Blazor never re-renders it from the layout, so it listens to
+   LocalDate.NamesChanged itself: the weekday name (and the 12h/24h clock) follow the UI language
+   as soon as the localized names have arrived, instead of staying in the invariant English
+   fallback they were first rendered with. *@
 <div class="time-display">@LocalDate.Time(_now)</div>
 <div class="date-display">@($"{LocalDate.Weekday(_now, true)}, {LocalDate.DayMonth(_now)}")</div>
 
@@ -18,7 +23,10 @@
     protected override void OnInitialized()
     {
         _timer = new System.Threading.Timer(_ => _ = InvokeAsync(Tick), null, 10000, 10000);
+        LocalDate.NamesChanged += OnDateNamesChanged;
     }
+
+    private void OnDateNamesChanged() => _ = InvokeAsync(StateHasChanged);
 
     private void Tick()
     {
@@ -29,5 +37,9 @@
         StateHasChanged();
     }
 
-    public void Dispose() => _timer?.Dispose();
+    public void Dispose()
+    {
+        LocalDate.NamesChanged -= OnDateNamesChanged;
+        _timer?.Dispose();
+    }
 }

@@ -27,11 +27,10 @@ public partial class Calendar
     private List<CourseGoalDto> _goals = new();
     private string _weekLabel = "";
 
-    // Scroll-to-"now": fire once on initial load, not on every subsequent
-    // re-render (would constantly override the user's manual scrolling) - same
-    // gate pattern as _heatmapScrolled in Stats.razor.cs. GoToday() resets the flag
-    // so a deliberate jump to "today" re-centers again.
-    private bool _scrolledToNow;
+    // Initial scroll: armed on first load and on every navigation (view switch, paging, "today"),
+    // consumed once the grid is rendered - not on every re-render (would constantly override the
+    // user's manual scrolling), same gate pattern as _heatmapScrolled in Stats.razor.cs.
+    private bool _scrollPending = true;
 
     // Progressive render (2026-09): gates the cal-outer grid until settings+courses+sessions
     // have loaded and BuildWeek() has run - everything the grid needs to render correctly
@@ -172,6 +171,7 @@ public partial class Calendar
                 if (narrow && !_userChoseMode && _viewMode != "day")
                 {
                     _viewMode = "day";
+                    _scrollPending = true;
                     _currentDay = DateTime.Today;
                     UpdateLabel();
                     StateHasChanged();
@@ -179,29 +179,26 @@ public partial class Calendar
             }
         }
 
-        // Scrolls the hourly view so the "now" line (.cal-now-line) is visible,
-        // instead of letting the user land at midnight (scroll-top 0). Only when
-        // today actually lies within the visible range (week view: today in the
-        // displayed week; day view: _currentDay == today) - otherwise there's no
-        // .cal-now-line to scroll to at all (see CalendarDayColumn.razor: IsToday gate).
-        // Placed outside "if (firstRender)" so GoToday() can reset the flag
-        // and deliberately re-center, without firing on every other re-render.
-        // This also keeps the call from ever hitting the grid skeleton (progressive render):
-        // _days is empty until Phase 1's BuildWeek() runs, so VisibleDays.Any(...) is false
-        // on the pre-data render and this only fires once the real grid (with a possible
-        // .cal-now-line) is actually in the DOM.
-        if (!_scrolledToNow && VisibleDays.Any(d => d.Date == DateTime.Today))
+        // Positions the hourly view (instead of landing at midnight): the current time when today
+        // is visible, otherwise the first session of the visible days, otherwise 07:00 - see
+        // CalendarInitialScroll. Only once the real grid is in the DOM (never on the progressive
+        // render skeleton, where day view already reports a visible day but nothing can scroll),
+        // and only when a navigation (first load, view switch, paging, "today") asked for it, so
+        // ordinary re-renders never override the user's own scrolling.
+        if (_scrollPending && !_gridLoading)
         {
-            _scrolledToNow = true;
+            _scrollPending = false;
+            var target = CalendarInitialScroll.Resolve(
+                DateTime.Now, VisibleDays, VisibleDays.SelectMany(SessionsForDay));
             try
             {
-                await JS.InvokeVoidAsync("scrollElementToCurrentTime", "cal-outer");
+                await JS.InvokeVoidAsync("scrollElementToMinute", "cal-outer", target.Minute, target.ViewportFraction);
             }
             catch
             {
                 // Best-effort: same "stale cached index.html without this helper"
                 // degradation as initCalendarSwipe above - never show the error banner,
-                // the calendar just starts uncentered (default scroll position) instead.
+                // the calendar just starts at the default scroll position instead.
             }
         }
 
@@ -259,8 +256,8 @@ public partial class Calendar
     private static DateTime MondayOf(DateTime d) => d.Date.AddDays(-(((int)d.DayOfWeek + 6) % 7));
 
     // Mode-dependent navigation: day view ±1 day, week view ±7 days.
-    private void Prev() { if (_viewMode == "day") MoveDay(-1); else { _weekStart = _weekStart.AddDays(-7); BuildWeek(); } }
-    private void Next() { if (_viewMode == "day") MoveDay(1); else { _weekStart = _weekStart.AddDays(7); BuildWeek(); } }
+    private void Prev() { _scrollPending = true; if (_viewMode == "day") MoveDay(-1); else { _weekStart = _weekStart.AddDays(-7); BuildWeek(); } }
+    private void Next() { _scrollPending = true; if (_viewMode == "day") MoveDay(1); else { _weekStart = _weekStart.AddDays(7); BuildWeek(); } }
 
     private void MoveDay(int delta)
     {
@@ -283,15 +280,15 @@ public partial class Calendar
         _currentDay = DateTime.Today;
         _weekStart = MondayOf(DateTime.Today);
         BuildWeek();
-        // Deliberate jump to "today": re-center on the "now" line again, even though
-        // the initial scroll-to-now (first render) has already fired.
-        _scrolledToNow = false;
+        // Deliberate jump to "today": re-center on the "now" line again.
+        _scrollPending = true;
     }
 
     private void SetViewMode(string mode)
     {
         if (_viewMode == mode) return;
         _userChoseMode = true;
+        _scrollPending = true;
         _viewMode = mode;
         if (mode == "day")
         {
