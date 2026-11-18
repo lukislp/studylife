@@ -71,10 +71,10 @@ spec:
         # for probes/Uptime Kuma.
         - { protocol: TCP, port: 8443 }
 ---
-# studylife-ai calls StudyLife's own REST API server-to-server (ingestion, /agent tools) via
-# cluster-internal Service DNS on port 8443 (HTTPS, trusting StudyLife's own internal
+# studylife-ai calls StudyAtrium's own REST API server-to-server (ingestion, /agent tools) via
+# cluster-internal Service DNS on port 8443 (HTTPS, trusting StudyAtrium's own internal
 # cert-manager CA - see studylife-ai's own k8s/06-studylife-ca.yaml), not the public
-# https://studylife.heim.lan hostname - StudyLife's UseHttpsRedirection forces HTTPS even for
+# https://studylife.heim.lan hostname - StudyAtrium's UseHttpsRedirection forces HTTPS even for
 # internal traffic, so port 8080 alone isn't reachable either (found live: a bare port-8080
 # rule here produced ConnectTimeout on 8443, not a cert error - this rule was originally
 # written before the redirect discovery and only allowed 8080). See studylife-ai's own
@@ -96,8 +96,8 @@ spec:
         - { protocol: TCP, port: 8443 }
 ---
 # Same reasoning and same port as allow-studylife-ai-to-web above - studylife-mcp (an MCP
-# server exposing StudyLife to Claude/other MCP clients, separate repo/namespace) calls
-# StudyLife's REST API server-to-server the identical way: cluster-internal Service DNS on
+# server exposing StudyAtrium to Claude/other MCP clients, separate repo/namespace) calls
+# StudyAtrium's REST API server-to-server the identical way: cluster-internal Service DNS on
 # port 8443, trusting the same internal cert-manager CA (see studylife-mcp's own
 # k8s/03-studylife-ca.yaml and k8s/01-config.yaml's STUDYLIFE_BASE_URL).
 apiVersion: networking.k8s.io/v1
@@ -116,7 +116,7 @@ spec:
         - { protocol: TCP, port: 8443 }
 ---
 # Same reasoning and same port as allow-studylife-ai-to-web above - studylife-developers (the
-# add-on developer portal, separate repo/namespace) calls StudyLife's REST API server-to-server
+# add-on developer portal, separate repo/namespace) calls StudyAtrium's REST API server-to-server
 # the identical way: cluster-internal Service DNS on port 8443, trusting the same internal
 # cert-manager CA (see studylife-developers' own k8s/05-studylife-ca.yaml and
 # k8s/01-config.yaml's StudyLife__BaseUrl).

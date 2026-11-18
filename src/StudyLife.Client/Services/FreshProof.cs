@@ -67,4 +67,12 @@ public sealed record FreshProofLabels(
     string PasskeyButton, string BrowserSignInButton,
     string PasswordToggle, string PasswordLabel, string PasswordButton,
     string RecoveryToggle, string RecoveryLabel, string RecoveryButton,
-    string Working, string PasskeyFailed);
+    string Working, string PasskeyFailed,
+    string? PasswordIntro = null, string? RecoveryIntro = null)
+{
+    /// <summary>The intro line for the chosen route; a host without a variant keeps the passkey intro.</summary>
+    public string IntroFor(FreshProofPrimary primary, bool passwordOpen, bool recoveryOpen) =>
+        passwordOpen ? PasswordIntro ?? Intro
+        : recoveryOpen ? RecoveryIntro ?? Intro
+        : primary == FreshProofPrimary.BrowserSignIn ? BrowserSignInIntro : Intro;
+}

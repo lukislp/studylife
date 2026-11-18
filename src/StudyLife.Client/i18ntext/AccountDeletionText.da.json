@@ -32,6 +32,8 @@
   "BackButton": "Tilbage",
   "ReauthTitle": "Bekræft, at det er dig",
   "ReauthText": "Bekræft med en adgangsnøgle til denne konto. Sletningen starter lige derefter.",
+  "ReauthTextPassword": "Bekræft med adgangskoden til denne konto. Sletningen starter lige derefter.",
+  "ReauthTextRecovery": "Bekræft med en gendannelseskode til denne konto. Sletningen starter lige derefter.",
   "PasskeyButton": "Bekræft med adgangsnøgle og slet",
   "RecoveryToggle": "Brug i stedet en gendannelseskode",
   "RecoveryLabel": "Gendannelseskode",

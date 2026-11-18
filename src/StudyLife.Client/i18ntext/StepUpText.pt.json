@@ -1,6 +1,8 @@
 {
   "Title": "Confirme que é você",
   "Intro": "Esta ação protege a sua conta. Confirme com uma chave de acesso desta conta para continuar.",
+  "IntroPassword": "Esta ação protege a sua conta. Confirme com a palavra-passe desta conta para continuar.",
+  "IntroRecovery": "Esta ação protege a sua conta. Confirme com um código de recuperação desta conta para continuar.",
   "BrowserSignInIntro": "Inicie sessão novamente para confirmar que é você. A ação continua logo a seguir.",
   "PasskeyButton": "Confirmar com chave de acesso",
   "BrowserSignInButton": "Iniciar sessão novamente",

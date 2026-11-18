@@ -16,7 +16,7 @@ namespace StudyLife.Client.Shared;
 /// null. Every string.Format(T.SomeKey, ...) call in the codebase had to defensively write
 /// "T.SomeKey ?? """ to survive that split second (string.Format throws ArgumentNullException on
 /// a null format string) - easy to forget, and an audit found ~18 call sites across 6 pages that
-/// had (StudyLife audit hygiene sweep).
+/// had (StudyAtrium audit hygiene sweep).
 ///
 /// A component derived from this class never sees that gap: wrap its ENTIRE markup in
 /// "@if (IsTextLoaded) { ... }" (the exact shape MainLayout.razor already uses for its own

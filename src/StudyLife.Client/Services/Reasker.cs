@@ -10,7 +10,7 @@ public enum ReaskVerdict
     Done,
     /// <summary>Could not ask (offline, server down): ask again after the policy's next delay.</summary>
     Retry,
-    /// <summary>Answered, but the answer will not fix itself (wrong certificate, not a StudyLife server):
+    /// <summary>Answered, but the answer will not fix itself (wrong certificate, not a StudyAtrium server):
     /// do not poll, ask again only when poked (connectivity back, app resumed).</summary>
     WaitForPoke,
 }

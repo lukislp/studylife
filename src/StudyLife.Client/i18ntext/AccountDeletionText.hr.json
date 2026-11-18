@@ -32,6 +32,8 @@
   "BackButton": "Natrag",
   "ReauthTitle": "Potvrdite da ste to vi",
   "ReauthText": "Potvrdite pristupnim ključem ovog računa. Brisanje počinje odmah nakon toga.",
+  "ReauthTextPassword": "Potvrdite lozinkom ovog računa. Brisanje počinje odmah nakon toga.",
+  "ReauthTextRecovery": "Potvrdite kodom za oporavak ovog računa. Brisanje počinje odmah nakon toga.",
   "PasskeyButton": "Potvrdi pristupnim ključem i izbriši",
   "RecoveryToggle": "Umjesto toga upotrijebi kod za oporavak",
   "RecoveryLabel": "Kod za oporavak",

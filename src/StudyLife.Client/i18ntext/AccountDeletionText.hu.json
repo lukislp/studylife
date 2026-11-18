@@ -32,6 +32,8 @@
   "BackButton": "Vissza",
   "ReauthTitle": "Erősítsd meg, hogy te vagy az",
   "ReauthText": "Erősítsd meg ennek a fióknak egy hozzáférési kulcsával. A törlés közvetlenül ezután kezdődik.",
+  "ReauthTextPassword": "Erősítsd meg ennek a fióknak a jelszavával. A törlés közvetlenül ezután kezdődik.",
+  "ReauthTextRecovery": "Erősítsd meg ennek a fióknak egy helyreállítási kódjával. A törlés közvetlenül ezután kezdődik.",
   "PasskeyButton": "Megerősítés hozzáférési kulccsal és törlés",
   "RecoveryToggle": "Helyette helyreállítási kód használata",
   "RecoveryLabel": "Helyreállítási kód",

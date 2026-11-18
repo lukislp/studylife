@@ -11,7 +11,7 @@
   issuers, the shared Gateway, the monitoring stack), plus cert-manager and NGINX Gateway Fabric
   themselves per their own upstream docs (see homelab-infra/cluster/00c-nginx-gateway-fabric.md).
   This is the app-specific half of what used to be a single, combined bootstrap script - part of
-  the cluster-wide-infra split (see homelab-infra's README.md). Covers the StudyLife manifests
+  the cluster-wide-infra split (see homelab-infra's README.md). Covers the StudyAtrium manifests
   themselves (with your real Postgres password/image substituted in place of the test
   placeholders) and the Redis cluster bootstrap.
 
@@ -65,7 +65,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host ""
-Write-Host "=== [2/5] Applying StudyLife manifests (with your own values instead of the test placeholders) ==="
+Write-Host "=== [2/5] Applying StudyAtrium manifests (with your own values instead of the test placeholders) ==="
 # k8s/dev/01-secrets.yaml (the learning-cluster Postgres credentials) applied explicitly first,
 # same as the main loop below would do for a same-named file directly under k8s/ - it deliberately
 # lives in its OWN subfolder instead (see k8s/dev/README.md) so that a bulk "kubectl apply -f k8s/"

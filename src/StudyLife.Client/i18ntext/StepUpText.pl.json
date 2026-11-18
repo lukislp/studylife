@@ -1,6 +1,8 @@
 {
   "Title": "Potwierdź, że to Ty",
   "Intro": "Ta czynność chroni Twoje konto. Potwierdź kluczem dostępu tego konta, aby kontynuować.",
+  "IntroPassword": "Ta czynność chroni Twoje konto. Potwierdź hasłem tego konta, aby kontynuować.",
+  "IntroRecovery": "Ta czynność chroni Twoje konto. Potwierdź kodem odzyskiwania tego konta, aby kontynuować.",
   "BrowserSignInIntro": "Zaloguj się ponownie, aby potwierdzić, że to Ty. Czynność będzie kontynuowana zaraz potem.",
   "PasskeyButton": "Potwierdź kluczem dostępu",
   "BrowserSignInButton": "Zaloguj się ponownie",

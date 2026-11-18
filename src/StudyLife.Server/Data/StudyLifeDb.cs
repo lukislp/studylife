@@ -395,7 +395,7 @@ public class AuthUserEntity
     public DateTime? AiApiKeyCreatedAt { get; set; }
     /// <summary>
     /// SHA-256 hash of the per-user API key for the studylife-mcp integration (an MCP server
-    /// exposing StudyLife data to Claude Desktop and other MCP clients) - same shape and same
+    /// exposing StudyAtrium data to Claude Desktop and other MCP clients) - same shape and same
     /// reasoning as <see cref="ApiKeyHash"/> (long-lived, no rotation), but a SEPARATE
     /// credential/slot: generating or revoking this one must not affect Home Assistant's or
     /// studylife-ai's key and vice versa (independent blast radius if one integration's key
@@ -641,7 +641,7 @@ public class SystemSecretsEntity
 /// Tiny instance-wide key/value store, no AuthUserId and no query filter (like SystemSecretsEntity).
 /// Today it holds exactly one row, <see cref="InstanceIdKey"/>: the random id of this installation
 /// (= this database), generated once by InstanceIdProvider and never changed - what Home Assistant
-/// uses to recognise "the same StudyLife" regardless of which URL it was configured with. The
+/// uses to recognise "the same StudyAtrium" regardless of which URL it was configured with. The
 /// primary key doubles as the race lock: several pods starting at once all try to insert the row,
 /// exactly one wins and the others re-read the winner's value.
 /// </summary>
@@ -1098,7 +1098,7 @@ public class NoteEntity
     /// before.</summary>
     public bool IsMarkdown { get; set; }
     /// <summary>Origin URL for notes created from external capture (e.g. the studylife-capture
-    /// browser extension) - null for every note created directly in StudyLife itself. Purely
+    /// browser extension) - null for every note created directly in StudyAtrium itself. Purely
     /// informational (a "where did this come from" link), not used for any lookup/uniqueness.</summary>
     public string? SourceUrl { get; set; }
     /// <summary>Set once BackgroundTaskService.CaptureEnrichment has run studylife-ai's

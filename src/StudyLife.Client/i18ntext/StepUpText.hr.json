@@ -1,6 +1,8 @@
 {
   "Title": "Potvrdite da ste to vi",
   "Intro": "Ova radnja štiti vaš račun. Za nastavak potvrdite pristupnim ključem ovog računa.",
+  "IntroPassword": "Ova radnja štiti vaš račun. Za nastavak potvrdite lozinkom ovog računa.",
+  "IntroRecovery": "Ova radnja štiti vaš račun. Za nastavak potvrdite kodom za oporavak ovog računa.",
   "BrowserSignInIntro": "Ponovno se prijavite kako biste potvrdili da ste to vi. Radnja se nastavlja odmah nakon toga.",
   "PasskeyButton": "Potvrdi pristupnim ključem",
   "BrowserSignInButton": "Ponovno se prijavi",

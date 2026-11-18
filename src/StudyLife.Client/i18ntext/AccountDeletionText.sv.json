@@ -32,6 +32,8 @@
   "BackButton": "Tillbaka",
   "ReauthTitle": "Bekräfta att det är du",
   "ReauthText": "Bekräfta med en åtkomstnyckel för det här kontot. Raderingen börjar direkt efteråt.",
+  "ReauthTextPassword": "Bekräfta med lösenordet för det här kontot. Raderingen börjar direkt efteråt.",
+  "ReauthTextRecovery": "Bekräfta med en återställningskod för det här kontot. Raderingen börjar direkt efteråt.",
   "PasskeyButton": "Bekräfta med åtkomstnyckel och radera",
   "RecoveryToggle": "Använd i stället en återställningskod",
   "RecoveryLabel": "Återställningskod",

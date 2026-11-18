@@ -108,7 +108,7 @@ public static class ApiKeyScopes
 
     /// <summary>
     /// studylife-mcp (studylife-mcp/src/studylife_mcp/client.py, StudyLifeClient) - MCP tool
-    /// server exposing read/write StudyLife access to an LLM client (Claude Desktop etc.).
+    /// server exposing read/write StudyAtrium access to an LLM client (Claude Desktop etc.).
     /// exchange_mcp_assertion (POST /api/auth/mcp-assertion-exchange) is a separate, exempt
     /// server-to-server credential (the assertion itself), never an X-Api-Key request, so it
     /// has no entry here.
@@ -183,7 +183,7 @@ public static class ApiKeyScopes
     /// endpoints (WebhooksProxyController), never TimerState or anything else - it can register/
     /// list/delete webhook subscriptions FOR THE OWNING USER ONLY (WebhooksProxyController always
     /// resolves the target user_id from the authenticated caller, never from request input), but
-    /// cannot read or write any StudyLife data itself.
+    /// cannot read or write any StudyAtrium data itself.
     /// </summary>
     private static readonly HashSet<Endpoint> Webhooks =
     [

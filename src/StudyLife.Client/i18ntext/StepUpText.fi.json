@@ -1,6 +1,8 @@
 {
   "Title": "Vahvista, että se olet sinä",
   "Intro": "Tämä toiminto suojaa tiliäsi. Jatka vahvistamalla tämän tilin pääsyavaimella.",
+  "IntroPassword": "Tämä toiminto suojaa tiliäsi. Jatka vahvistamalla tämän tilin salasanalla.",
+  "IntroRecovery": "Tämä toiminto suojaa tiliäsi. Jatka vahvistamalla tämän tilin palautuskoodilla.",
   "BrowserSignInIntro": "Kirjaudu uudelleen vahvistaaksesi, että se olet sinä. Toiminto jatkuu heti sen jälkeen.",
   "PasskeyButton": "Vahvista pääsyavaimella",
   "BrowserSignInButton": "Kirjaudu uudelleen",

@@ -1,6 +1,8 @@
 {
   "Title": "Kinnita, et see oled sina",
   "Intro": "See toiming kaitseb sinu kontot. Jätkamiseks kinnita selle konto pääsuvõtmega.",
+  "IntroPassword": "See toiming kaitseb sinu kontot. Jätkamiseks kinnita selle konto parooliga.",
+  "IntroRecovery": "See toiming kaitseb sinu kontot. Jätkamiseks kinnita selle konto taastekoodiga.",
   "BrowserSignInIntro": "Logi uuesti sisse, et kinnitada, et see oled sina. Toiming jätkub kohe pärast seda.",
   "PasskeyButton": "Kinnita pääsuvõtmega",
   "BrowserSignInButton": "Logi uuesti sisse",

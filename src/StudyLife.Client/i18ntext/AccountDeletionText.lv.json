@@ -32,6 +32,8 @@
   "BackButton": "Atpakaļ",
   "ReauthTitle": "Apstipriniet, ka tas esat jūs",
   "ReauthText": "Apstipriniet ar šī konta piekļuves atslēgu. Dzēšana sākas uzreiz pēc tam.",
+  "ReauthTextPassword": "Apstipriniet ar šī konta paroli. Dzēšana sākas uzreiz pēc tam.",
+  "ReauthTextRecovery": "Apstipriniet ar šī konta atkopšanas kodu. Dzēšana sākas uzreiz pēc tam.",
   "PasskeyButton": "Apstiprināt ar piekļuves atslēgu un dzēst",
   "RecoveryToggle": "Tā vietā izmantot atkopšanas kodu",
   "RecoveryLabel": "Atkopšanas kods",

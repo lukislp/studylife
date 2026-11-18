@@ -1,6 +1,8 @@
 {
   "Title": "Deimhnigh gur tusa atá ann",
   "Intro": "Cosnaíonn an gníomh seo do chuntas. Deimhnigh le heochair rochtana an chuntais seo chun leanúint ar aghaidh.",
+  "IntroPassword": "Cosnaíonn an gníomh seo do chuntas. Deimhnigh le pasfhocal an chuntais seo chun leanúint ar aghaidh.",
+  "IntroRecovery": "Cosnaíonn an gníomh seo do chuntas. Deimhnigh le cód athshlánaithe den chuntas seo chun leanúint ar aghaidh.",
   "BrowserSignInIntro": "Sínigh isteach arís chun a dheimhniú gur tusa atá ann. Leanfaidh an gníomh ar aghaidh díreach ina dhiaidh sin.",
   "PasskeyButton": "Deimhnigh le heochair rochtana",
   "BrowserSignInButton": "Sínigh isteach arís",

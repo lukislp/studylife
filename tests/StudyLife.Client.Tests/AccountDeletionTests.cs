@@ -181,9 +181,11 @@ public class SetupDeleteAccountCardTests : ConsentBunitTest
     }
 
     private (IRenderedComponent<SetupDeleteAccountCard> Cut, ScriptedServer Server, FakeNativeAuth Native, SessionTokenStore Tokens)
-        Render(AccountDeletionPreviewDto preview, List<UserListItemDto>? users = null, FakeNativeAuth? native = null)
+        Render(AccountDeletionPreviewDto preview, List<UserListItemDto>? users = null, FakeNativeAuth? native = null, bool withPassword = false)
     {
         var server = new ScriptedServer();
+        if (withPassword)
+            server.OnJson("GET api/auth/password", new PasswordStatusDto { Enabled = true, HasPasskey = true, HasPassword = true });
         server.OnJson("GET api/auth/account/deletion-preview", preview);
         server.OnJson("GET api/auth/users", users ?? []);
         var js = new StubJSRuntime();
@@ -328,6 +330,29 @@ public class SetupDeleteAccountCardTests : ConsentBunitTest
         Assert.Contains("PasskeyButton", cut.Markup);
         Assert.Contains("RecoveryToggle", cut.Markup);
         Assert.Equal(0, server.Count("DELETE api/auth/account"));
+    }
+
+    [Fact]
+    public void TheReauthIntro_FollowsTheChosenMethod()
+    {
+        var (cut, _, _, _) = Render(Available(), withPassword: true);
+        ToReauth(cut);
+        cut.WaitForAssertion(() => Assert.Contains("PasswordToggle", cut.Markup));
+        Assert.Equal("ReauthText", cut.Find(".modal-body p.ss-desc").TextContent.Trim());
+
+        cut.FindAll(".modal-footer button").First(b => b.TextContent.Trim() == "PasswordToggle").Click();
+        cut.WaitForAssertion(() => Assert.Equal("ReauthTextPassword", cut.Find(".modal-body p.ss-desc").TextContent.Trim()));
+    }
+
+    [Fact]
+    public void TheReauthIntro_FollowsTheRecoveryCodeToo()
+    {
+        var (cut, _, _, _) = Render(Available());
+        ToReauth(cut);
+
+        cut.FindAll(".modal-footer button").First(b => b.TextContent.Trim() == "RecoveryToggle").Click();
+
+        cut.WaitForAssertion(() => Assert.Equal("ReauthTextRecovery", cut.Find(".modal-body p.ss-desc").TextContent.Trim()));
     }
 
     [Fact]

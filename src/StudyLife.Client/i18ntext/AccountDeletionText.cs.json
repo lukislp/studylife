@@ -32,6 +32,8 @@
   "BackButton": "Zpět",
   "ReauthTitle": "Potvrďte, že jste to vy",
   "ReauthText": "Potvrďte přístupovým klíčem tohoto účtu. Mazání začne hned poté.",
+  "ReauthTextPassword": "Potvrďte heslem tohoto účtu. Mazání začne hned poté.",
+  "ReauthTextRecovery": "Potvrďte záložním kódem tohoto účtu. Mazání začne hned poté.",
   "PasskeyButton": "Potvrdit přístupovým klíčem a smazat",
   "RecoveryToggle": "Místo toho použít záložní kód",
   "RecoveryLabel": "Záložní kód",

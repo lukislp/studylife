@@ -132,7 +132,7 @@ public class AiProxyClientTests
         var handler = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.InternalServerError));
         var client = CreateClient(handler);
 
-        // Must not throw - a studylife-ai outage must not fail StudyLife's own key generation.
+        // Must not throw - a studylife-ai outage must not fail StudyAtrium's own key generation.
         await client.RegisterKeyAsync(7, "key", CancellationToken.None);
     }
 

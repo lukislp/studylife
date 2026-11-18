@@ -269,7 +269,7 @@ restart.
   (`Telemetry__OtlpEndpoint`, port 4317). It carries traces and metrics, no credentials.
 - The Redis cluster bus (see 9).
 
-None of these carries the add-on secrets or user credentials from StudyLife.
+None of these carries the add-on secrets or user credentials from StudyAtrium.
 
 **Rollout order.** The add-on repositories ship first: their Flux-managed manifests add the
 Certificate, the TLS port and the TLS settings, and the release image starts the HTTPS listener

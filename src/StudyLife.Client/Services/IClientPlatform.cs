@@ -31,7 +31,7 @@ public interface IClientPlatform
 
     /// <summary>
     /// True when the UI language comes from the operating system's language setting for this app
-    /// (iOS/iPadOS/macOS: Settings, StudyLife, Language; Android 13+: per-app language; Windows: the
+    /// (iOS/iPadOS/macOS: Settings, StudyAtrium, Language; Android 13+: per-app language; Windows: the
     /// system language). The shared UI then shows no language picker but a hint with
     /// <see cref="OpenLanguageSettingsAsync"/> instead - this flag is the one place that decides it.
     /// False in the browser, where the picker stays. Default so older shells keep the picker.
