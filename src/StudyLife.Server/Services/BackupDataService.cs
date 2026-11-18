@@ -4,6 +4,7 @@
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
+using StudyLife.Server.Services.Account;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Services;
@@ -26,8 +27,9 @@ public interface IBackupDataService
     /// </summary>
     Task TouchLastBackupDownloadAsync();
 
-    /// <summary>Builds the "v2" export document; the caller serializes and sends it.</summary>
-    Task<BackupExportDto> BuildExportAsync();
+    /// <summary>Builds the personal data export of the current user (the importable "v2"
+    /// content plus the account and about blocks); the caller serializes and sends it.</summary>
+    Task<PersonalDataExportDto> BuildExportAsync();
 
     /// <summary>
     /// Imports a JSON export as a FULL REPLACE of the calling user's own data - see
@@ -38,7 +40,12 @@ public interface IBackupDataService
     Task<ServiceResult<BackupImportResponseDto>> ImportJsonAsync(BackupExportDto import, int authUserId);
 }
 
-public class BackupDataService(StudyLifeDb db, SettingsCacheVersion settingsCacheVersion) : IBackupDataService
+public class BackupDataService(
+    StudyLifeDb db,
+    SettingsCacheVersion settingsCacheVersion,
+    ICurrentUserAccessor currentUser,
+    IAccountExportBuilder accountExport,
+    IExportAboutBuilder aboutExport) : IBackupDataService
 {
     public async Task TouchLastBackupDownloadAsync()
     {
@@ -49,23 +56,22 @@ public class BackupDataService(StudyLifeDb db, SettingsCacheVersion settingsCach
     }
 
     /// <summary>
-    /// Human-readable JSON export of the actual user data ("v2" format, audit finding M4 - was
-    /// previously incomplete: only 5 of the now 9 user-owned tables, and serialized with a
-    /// manually constructed JsonSerializerOptions without a naming policy, so the nested DTOs
-    /// came out PascalCase instead of matching the rest of the API's camelCase wire format - see
-    /// docs/ARCHITECTURE.md). Deliberately still excluded: PushSubscriptions (this browser's
-    /// endpoint registrations, not transferable user data), SentReminders (internal dedup
-    /// bookkeeping), TimerState (transient live state of the focus timer), and every auth/
-    /// infrastructure table (AuthUsers/PasskeyCredentials/AuthSessions/RecoveryCodes/
-    /// SystemSecrets/AiKeyOutbox - not user data, and re-importing a session/passkey/setup-code
-    /// row would be either meaningless across accounts or a security hole). Uses the same ToDto
-    /// projections as the respective aggregate services (NoteService/CourseGoalService/
-    /// SessionService/SettingsService/CourseResourceService/SessionTemplateService), plus three
-    /// export-only DTOs for the tables that have no id-carrying API DTO of their own
-    /// (StudyProgramExportDto/CourseGroupExportDto/CustomCourseExportDto - see their doc comments),
-    /// so the export format doesn't drift from the normal API beyond what round-tripping requires.
+    /// The personal data export ("export my data", GDPR Art. 15 and 20). Its importable part is
+    /// the "v2" format (audit finding M4): every table of study content, serialized with the same
+    /// camelCase options as the rest of the API, through the same ToDto projections as the
+    /// respective aggregate services (NoteService/CourseGoalService/SessionService/SettingsService/
+    /// CourseResourceService/SessionTemplateService) plus three export-only DTOs for the tables
+    /// without an id-carrying API DTO (StudyProgramExportDto/CourseGroupExportDto/
+    /// CustomCourseExportDto), so the format does not drift from the API beyond what round-tripping
+    /// requires. On top of that (2026-11-17 GDPR audit F-9) come the "account" block - sign-in
+    /// methods, sessions, devices, consents, keys, apps, invites, timer state; they ARE the user's
+    /// personal data even though they are not study content - and the "about" block with the
+    /// Art. 15(1) information. Both are read-only: the import binds to BackupExportDto, which
+    /// ignores them, so re-importing can never plant a passkey, session or consent.
+    /// PersonalDataExportCatalog records, per table, where it appears in this document or why it
+    /// does not; secrets (hashes, tokens, push endpoints and keys) never do.
     /// </summary>
-    public async Task<BackupExportDto> BuildExportAsync()
+    public async Task<PersonalDataExportDto> BuildExportAsync()
     {
         var sessions = await db.Sessions.AsNoTracking()
             .Select(s => SessionService.ToDto(s)).ToListAsync();
@@ -115,7 +121,9 @@ public class BackupDataService(StudyLifeDb db, SettingsCacheVersion settingsCach
             .OrderBy(t => t.Name)
             .Select(t => SessionTemplateService.ToDto(t)).ToListAsync();
 
-        return new BackupExportDto
+        var account = await accountExport.BuildAsync(currentUser.AuthUserId);
+
+        return new PersonalDataExportDto
         {
             FormatVersion = 2,
             ExportedAt = DateTime.UtcNow,
@@ -131,6 +139,8 @@ public class BackupDataService(StudyLifeDb db, SettingsCacheVersion settingsCach
             CourseGroups = courseGroups,
             CustomCourses = customCourses,
             SessionTemplates = sessionTemplates,
+            Account = account,
+            About = await aboutExport.BuildAsync(account),
         };
     }
 

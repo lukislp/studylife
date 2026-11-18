@@ -19,6 +19,8 @@ const CACHE_NAME = 'studylife-dev-cache-v5';
 // builds - see service-worker.published.js for the full rationale on why importing it
 // to precache hash-versioned assets at install time is safe here too.
 self.importScripts('service-worker-assets.js');
+// Native app sign-in pages always run the bundle the server speaks with - see that file.
+self.importScripts('service-worker-app-sign-in.js');
 
 // Not everything in the manifest is worth downloading on install. The manifest lists all 26
 // languages' i18n tables (416 JSON files, ~1.7 MB raw) plus debug symbols and source maps, and
@@ -42,14 +44,17 @@ self.addEventListener('install', event => event.waitUntil(
         )))
         .then(() => self.skipWaiting())
 ));
-self.addEventListener('activate', event => event.waitUntil(
-    Promise.all([
+self.addEventListener('activate', event => event.waitUntil((async () => {
+    // Read before claim() and before the purge below drops the fresh-marks of the old worker.
+    const staleAppSignInPages = await findStaleAppSignInPages();
+    await Promise.all([
         self.clients.claim(),
         caches.keys().then(keys => Promise.all(
             keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
         )),
-    ])
-));
+    ]);
+    await reloadAppSignInPages(staleAppSignInPages);
+})()));
 
 // See service-worker.published.js for the full rationale: precached hash-versioned
 // assets are served straight from cache, everything else (API calls, navigation) is
@@ -60,6 +65,8 @@ self.addEventListener('fetch', event => {
 
     event.respondWith(
         caches.open(CACHE_NAME).then(async cache => {
+            if (await isAppSignInRequest(event)) return fetchForAppSignIn(event);
+
             const precached = await cache.match(event.request);
             if (precached) return precached;
 
