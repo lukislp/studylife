@@ -789,10 +789,11 @@ if (!EF.IsDesignTime)
     // Operator option SampleData:SeedUsername (never on a demo instance, which has its own data):
     // fill that one existing account with the sample dataset once - skipped while the account
     // does not exist yet or already holds data, so the option can stay set across restarts.
-    else if (builder.Configuration.Bind<SampleDataOptions>(SampleDataOptions.SectionName).SeedUsername is { } seedUsername
+    else if (builder.Configuration.Bind<SampleDataOptions>(SampleDataOptions.SectionName) is { SeedUsername: { } seedUsername } sampleData
              && !string.IsNullOrWhiteSpace(seedUsername))
     {
-        var outcome = await SampleAccountSeeder.SeedAsync(db, seedUsername, DateTime.Now);
+        var outcome = await SampleAccountSeeder.SeedAsync(db, seedUsername, DateTime.Now,
+            SampleDataContent.ParseLanguage(sampleData.Language));
         Console.WriteLine($"[sample-data] SampleData:SeedUsername set: {outcome}");
     }
 

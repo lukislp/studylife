@@ -4,6 +4,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
+using StudyLife.Server.Services;
 using StudyLife.Server.Services.SampleData;
 using StudyLife.Shared;
 
@@ -162,6 +163,136 @@ public class SampleAccountSeederTests : IClassFixture<CustomWebApplicationFactor
     }
 
     [Fact]
+    public async Task Seed_German_IsTheDefault_AndUsesTheBuiltInProgram()
+    {
+        var userId = await CreatePasswordAccountAsync("sample.german");
+
+        Assert.Equal(SampleAccountSeedOutcome.Seeded, await SeedAsync("sample.german", DateTime.Now));
+
+        var settings = await _factory.WithDbAsync(db => db.Settings.IgnoreQueryFilters().AsNoTracking()
+            .SingleAsync(s => s.AuthUserId == userId));
+        Assert.Null(settings.ActiveStudyProgramId);
+        Assert.False(settings.BuiltInProgramDismissed);
+        Assert.Equal(0, await _factory.WithDbAsync(db => db.StudyPrograms.IgnoreQueryFilters().CountAsync(p => p.AuthUserId == userId)));
+        var notes = await _factory.WithDbAsync(db => db.Notes.IgnoreQueryFilters().AsNoTracking()
+            .Where(n => n.AuthUserId == userId).Select(n => n.Title).ToListAsync());
+        Assert.Contains("Merkzettel Eigenwerte", notes);
+    }
+
+    [Fact]
+    public async Task Seed_English_CreatesTheEnglishProgram_AndEverythingPointsAtIt()
+    {
+        var userId = await CreatePasswordAccountAsync("sample.english");
+        var now = DateTime.Now;
+
+        Assert.Equal(SampleAccountSeedOutcome.Seeded,
+            await _factory.WithDbAsync(db => SampleAccountSeeder.SeedAsync(db, "sample.english", now, SampleDataLanguage.English)));
+
+        var (program, courses, settings, sessions, goals, notes) = await _factory.WithDbAsync(async db => (
+            await db.StudyPrograms.IgnoreQueryFilters().AsNoTracking().SingleAsync(p => p.AuthUserId == userId),
+            await db.CustomCourses.IgnoreQueryFilters().AsNoTracking().Where(c => c.AuthUserId == userId).ToListAsync(),
+            await db.Settings.IgnoreQueryFilters().AsNoTracking().SingleAsync(s => s.AuthUserId == userId),
+            await db.Sessions.IgnoreQueryFilters().AsNoTracking().Where(s => s.AuthUserId == userId).ToListAsync(),
+            await db.CourseGoals.IgnoreQueryFilters().AsNoTracking().Where(g => g.AuthUserId == userId).ToListAsync(),
+            await db.Notes.IgnoreQueryFilters().AsNoTracking().Where(n => n.AuthUserId == userId).ToListAsync()));
+
+        // The account's own English program is active; the German built-in one is hidden.
+        Assert.Equal(EnglishSampleProgram.Name, program.Name);
+        Assert.Equal(program.Id, settings.ActiveStudyProgramId);
+        Assert.True(settings.BuiltInProgramDismissed);
+        Assert.Equal(EnglishSampleProgram.Program.Courses.Count, courses.Count);
+        Assert.Equal(180, courses.Sum(c => c.Ects));
+
+        // Every reference uses the program's (offset) course ids and English names and topics.
+        var byApiId = courses.ToDictionary(c => StudyProgramCatalog.CustomCourseIdOffset + c.Id);
+        var englishNames = EnglishSampleProgram.Program.Courses.Select(c => c.Name).ToHashSet();
+        var englishTopics = EnglishSampleProgram.Program.Courses.SelectMany(c => c.Topics).ToHashSet();
+        Assert.All(settings.SelectedCourseIds.Split(','), id => Assert.Contains(int.Parse(id), byApiId.Keys));
+        Assert.All(settings.CompletedCourseIds.Split(','), id => Assert.Equal(1, byApiId[int.Parse(id)].Semester));
+        Assert.Equal(4, settings.SelectedCourseIds.Split(',').Length);
+        Assert.All(sessions, s =>
+        {
+            Assert.Equal(byApiId[s.CourseId].Name, s.CourseName);
+            Assert.Contains(s.CourseName, englishNames);
+            Assert.Contains(s.Topic!, englishTopics);
+        });
+        Assert.All(goals, g => Assert.Equal(byApiId[g.CourseId].Name, g.CourseName));
+        Assert.All(notes, n => Assert.Contains(n.CourseId!.Value, byApiId.Keys));
+
+        // Same structure as the German dataset, English texts.
+        Assert.Equal(7, goals.Count);
+        Assert.Equal(4, sessions.Count(s => !s.IsCompleted && s.StartTime > now));
+        Assert.Equal(
+            SampleDataContent.English.Notes.Select(n => n.Title).OrderBy(t => t),
+            notes.Select(n => n.Title).OrderBy(t => t));
+        Assert.Contains(goals, g => g.CompletionNote == SampleDataContent.English.CompletionNote);
+        Assert.DoesNotContain(goals, g => g.CompletionNote == SampleDataContent.German.CompletionNote);
+    }
+
+    [Fact]
+    public async Task Seed_English_TheApiShowsEnglishCourses()
+    {
+        var userId = await CreatePasswordAccountAsync("sample.english.api");
+        await _factory.WithDbAsync(db => SampleAccountSeeder.SeedAsync(db, "sample.english.api", DateTime.Now, SampleDataLanguage.English));
+        var token = await _factory.WithDbAsync(async db =>
+        {
+            var t = AuthSessionService.IssueSession(db, userId, DateTime.UtcNow);
+            await db.SaveChangesAsync();
+            return t;
+        });
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Remove(AuthSessionService.TokenHeaderName);
+        client.DefaultRequestHeaders.Add(AuthSessionService.TokenHeaderName, token);
+
+        var courses = await client.GetStringAsync("/api/courses");
+
+        Assert.Contains("Mathematics: Linear Algebra", courses);
+        Assert.DoesNotContain("Mathematik", courses);
+    }
+
+    [Fact]
+    public async Task Seed_English_IsIdempotent()
+    {
+        var userId = await CreatePasswordAccountAsync("sample.english.twice");
+        await _factory.WithDbAsync(db => SampleAccountSeeder.SeedAsync(db, "sample.english.twice", DateTime.Now, SampleDataLanguage.English));
+
+        Assert.Equal(SampleAccountSeedOutcome.AccountHasData,
+            await _factory.WithDbAsync(db => SampleAccountSeeder.SeedAsync(db, "sample.english.twice", DateTime.Now, SampleDataLanguage.English)));
+
+        Assert.Equal(1, await _factory.WithDbAsync(db => db.StudyPrograms.IgnoreQueryFilters().CountAsync(p => p.AuthUserId == userId)));
+    }
+
+    [Theory]
+    [InlineData(null, SampleDataLanguage.German)]
+    [InlineData("", SampleDataLanguage.German)]
+    [InlineData("de", SampleDataLanguage.German)]
+    [InlineData(" DE ", SampleDataLanguage.German)]
+    [InlineData("en", SampleDataLanguage.English)]
+    [InlineData("EN", SampleDataLanguage.English)]
+    public void ParseLanguage_AcceptsDeAndEn(string? value, SampleDataLanguage expected) =>
+        Assert.Equal(expected, SampleDataContent.ParseLanguage(value));
+
+    [Theory]
+    [InlineData("fr")]
+    [InlineData("english")]
+    public void ParseLanguage_RefusesAnythingElse(string value) =>
+        Assert.Throws<InvalidOperationException>(() => SampleDataContent.ParseLanguage(value));
+
+    [Fact]
+    public void EnglishProgram_MirrorsTheBuiltInStructure_ForTheSeededSemesters()
+    {
+        // SampleDataset derives completed (semester 1) and active (semester 2 minus projects)
+        // courses from the program - the English one must have the same shape there.
+        foreach (var semester in new[] { 1, 2 })
+        {
+            var builtIn = CourseCatalog.AppliedAICourses.Where(c => c.Semester == semester).ToList();
+            var english = EnglishSampleProgram.Program.Courses.Where(c => c.Semester == semester).ToList();
+            Assert.Equal(builtIn.Select(c => c.Code), english.Select(c => c.Code));
+        }
+        Assert.All(EnglishSampleProgram.Program.Courses, c => Assert.All(c.Topics, t => Assert.DoesNotContain(",", t)));
+    }
+
+    [Fact]
     public async Task Seed_TouchesNoOtherAccount()
     {
         var target = await CreatePasswordAccountAsync("sample.target");
@@ -184,6 +315,7 @@ public class SampleAccountSeederStartupTests : IClassFixture<SampleAccountSeeder
         {
             base.ConfigureWebHost(builder);
             builder.UseSetting("SampleData:SeedUsername", "not.registered.yet");
+            builder.UseSetting("SampleData:Language", "en");
         }
     }
 

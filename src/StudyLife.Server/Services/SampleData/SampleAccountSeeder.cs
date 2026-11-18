@@ -29,10 +29,12 @@ public enum SampleAccountSeedOutcome
 /// Idempotent by design: an account that already has any study data (sessions, notes, course
 /// goals, own courses or programs) is left alone, so the option can stay configured across
 /// restarts. Program.cs never calls this on a demo instance (DemoSeeder owns the data there).
+/// <c>SampleData:Language</c> picks German (default, the demo's data) or English.
 /// </summary>
 public static class SampleAccountSeeder
 {
-    public static async Task<SampleAccountSeedOutcome> SeedAsync(StudyLifeDb db, string username, DateTime now)
+    public static async Task<SampleAccountSeedOutcome> SeedAsync(StudyLifeDb db, string username, DateTime now,
+        SampleDataLanguage language = SampleDataLanguage.German)
     {
         var key = UsernamePolicy.Key(UsernamePolicy.Normalize(username));
         if (key.Length == 0) return SampleAccountSeedOutcome.AccountNotFound;
@@ -45,7 +47,7 @@ public static class SampleAccountSeeder
 
         if (await HasStudyDataAsync(db, id)) return SampleAccountSeedOutcome.AccountHasData;
 
-        await SampleDataset.PopulateAsync(db, id, now);
+        await SampleDataset.PopulateAsync(db, id, now, language);
         return SampleAccountSeedOutcome.Seeded;
     }
 

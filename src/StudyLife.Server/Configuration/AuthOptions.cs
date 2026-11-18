@@ -73,6 +73,10 @@ public sealed class SampleDataOptions
 
     /// <summary>Password sign-in username of the account to fill; blank or unset disables the feature.</summary>
     public string? SeedUsername { get; set; }
+
+    /// <summary>"de" (default when unset) or "en": language of the sample dataset. Any other value
+    /// stops the start (SampleDataContent.ParseLanguage).</summary>
+    public string? Language { get; set; }
 }
 
 /// <summary>

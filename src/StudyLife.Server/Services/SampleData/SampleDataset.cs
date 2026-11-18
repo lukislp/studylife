@@ -11,9 +11,11 @@ namespace StudyLife.Server.Services.SampleData;
 /// The sample study dataset, written into ONE existing account: a student in the built-in
 /// "Applied Artificial Intelligence" program, semester 1 fully completed (grades + ECTS
 /// progress), currently mid-semester-2 with an active study streak ending today, a handful of
-/// planned sessions in the coming days, two upcoming exam goals and a few notes. Courses and
-/// topics come straight from CourseCatalog.AppliedAICourses - real names, colors and topic
-/// lists, no invented placeholder strings.
+/// planned sessions in the coming days, two upcoming exam goals and a few notes. In German
+/// (the default, and what the demo shows) courses and topics come straight from
+/// CourseCatalog.AppliedAICourses; in English the account gets its own copy of that program
+/// with English names and topics (<see cref="EnglishSampleProgram"/>). The free texts per
+/// language are <see cref="SampleDataContent"/>; the structure is the same for both.
 ///
 /// Every date is generated relative to the moment of the call, so the data always looks current.
 /// The content itself is deterministic (seeded Random): two calls on the same day produce the
@@ -28,19 +30,24 @@ public static class SampleDataset
 {
     private const int RandomSeed = 20260805;
 
-    public static async Task PopulateAsync(StudyLifeDb db, int userId, DateTime now)
+    public static async Task PopulateAsync(StudyLifeDb db, int userId, DateTime now,
+        SampleDataLanguage language = SampleDataLanguage.German)
     {
+        var content = SampleDataContent.For(language);
         var rng = new Random(RandomSeed);
         var today = now.Date;
 
-        var catalog = CourseCatalog.AppliedAICourses;
-        var semester1 = catalog.Where(c => c.Semester == 1).ToList();
-        // Active courses: semester 2 minus the project module (typical "project comes last" order).
-        var active = catalog.Where(c => c.Semester == 2 && !c.Code.EndsWith("P")).ToList();
+        // All or nothing: the English variant writes its program first (the rest needs the
+        // generated course ids), so the whole dataset goes into one transaction. A caller that
+        // already holds one keeps it.
+        await using var transaction = db.Database.CurrentTransaction is null
+            ? await db.Database.BeginTransactionAsync()
+            : null;
 
         // ── Settings ─────────────────────────────────────────────────────────────
         // An existing account may already have its settings row (created on first use); only the
-        // course selection and the graduation target are set, everything else keeps its value.
+        // course selection, the program and the graduation target are set, everything else keeps
+        // its value.
         var settings = await db.Settings.IgnoreQueryFilters().FirstOrDefaultAsync(s => s.AuthUserId == userId);
         if (settings is null)
         {
@@ -48,6 +55,17 @@ public static class SampleDataset
             settings = new UserSettingsEntity { AuthUserId = userId };
             db.Settings.Add(settings);
         }
+
+        // German: the built-in catalog (no program row, ActiveStudyProgramId stays null).
+        // English: the account's own copy of the program with English names and topics.
+        var catalog = content.Program is null
+            ? CourseCatalog.AppliedAICourses
+            : await CreateProgramAsync(db, userId, content.Program, now, settings);
+
+        var semester1 = catalog.Where(c => c.Semester == 1).ToList();
+        // Active courses: semester 2 minus the project module (typical "project comes last" order).
+        var active = catalog.Where(c => c.Semester == 2 && !c.Code.EndsWith("P")).ToList();
+
         settings.SelectedCourseIds = string.Join(",", active.Select(c => c.Id));
         settings.CompletedCourseIds = string.Join(",", semester1.Select(c => c.Id));
         settings.TargetGraduationDate = today.AddYears(2).AddMonths(3);
@@ -66,7 +84,7 @@ public static class SampleDataset
                 CompletedAt = today.AddMonths(-6 + i).AddDays(-rng.Next(0, 12)),
                 Grade = grades[i % grades.Length],
                 CompletedTopics = string.Join(",", course.Topics),
-                CompletionNote = i == 0 ? "Klausur lief besser als erwartet." : null,
+                CompletionNote = i == 0 ? content.CompletionNote : null,
             });
         }
 
@@ -147,27 +165,67 @@ public static class SampleDataset
         }
 
         // ── A few notes tied to the active courses ───────────────────────────────
-        var notes = new (int CourseIdx, string Title, string Content)[]
+        foreach (var note in content.Notes)
         {
-            (0, "Merkzettel Eigenwerte", "Eigenwerte über det(A - λI) = 0 bestimmen.\nEigenvektoren: (A - λI)x = 0 lösen.\nWichtig für die Klausur: Diagonalisierbarkeit prüfen!"),
-            (1, "Verteilungen Übersicht", "Binomial: diskret, n Versuche, Trefferwahrscheinlichkeit p.\nNormal: stetig, μ und σ².\nPoisson: seltene Ereignisse pro Intervall.\nFaustregel: n·p > 5 und n·(1-p) > 5 → Normalapproximation ok."),
-            (2, "Fragen an Tutor", "- Unterschied Konfidenzintervall vs. Prognoseintervall nochmal durchgehen\n- Übungsblatt 4, Aufgabe 3b\n- Klausurzulassung: reicht das Testat?"),
-        };
-        foreach (var (courseIdx, title, content) in notes)
-        {
-            var course = active[courseIdx % active.Count];
+            var course = active[note.CourseIndex % active.Count];
             var created = today.AddDays(-rng.Next(3, 21)).AddHours(19);
             db.Notes.Add(new NoteEntity
             {
                 AuthUserId = userId,
                 CourseId = course.Id,
-                Title = title,
-                Content = content,
+                Title = note.Title,
+                Content = note.Content,
                 CreatedAt = created,
                 UpdatedAt = created,
             });
         }
 
         await db.SaveChangesAsync();
+        if (transaction is not null) await transaction.CommitAsync();
+    }
+
+    /// <summary>
+    /// Creates <paramref name="program"/> as the account's own study program, makes it the active
+    /// one and hides the built-in program from the account's switcher (allowed because a custom
+    /// program now exists - the invariant SettingsService.DismissBuiltInProgramAsync keeps).
+    /// Returns the courses as the API shows them (ids shifted by
+    /// <see cref="StudyProgramCatalog.CustomCourseIdOffset"/>).
+    /// </summary>
+    private static async Task<List<CourseDto>> CreateProgramAsync(
+        StudyLifeDb db, int userId, SampleProgram program, DateTime now, UserSettingsEntity settings)
+    {
+        var programRow = new StudyProgramEntity { AuthUserId = userId, Name = program.Name, CreatedAt = now };
+        db.StudyPrograms.Add(programRow);
+        await db.SaveChangesAsync();
+
+        var rows = program.Courses.Select(c => new CustomCourseEntity
+        {
+            AuthUserId = userId,
+            StudyProgramId = programRow.Id,
+            Semester = c.Semester,
+            Name = c.Name,
+            Code = c.Code,
+            Color = c.Color,
+            Icon = c.Icon,
+            Ects = c.Ects,
+            Topics = string.Join(",", c.Topics),
+        }).ToList();
+        db.CustomCourses.AddRange(rows);
+        await db.SaveChangesAsync();
+
+        settings.ActiveStudyProgramId = programRow.Id;
+        settings.BuiltInProgramDismissed = true;
+
+        return rows.Select(r => new CourseDto
+        {
+            Id = StudyProgramCatalog.CustomCourseIdOffset + r.Id,
+            Semester = r.Semester,
+            Name = r.Name,
+            Code = r.Code,
+            Color = r.Color,
+            Icon = r.Icon,
+            Ects = r.Ects,
+            Topics = r.Topics.Split(',').ToList(),
+        }).ToList();
     }
 }
