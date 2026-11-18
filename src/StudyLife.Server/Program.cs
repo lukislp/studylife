@@ -20,6 +20,7 @@ using StudyLife.Server.Discovery;
 using StudyLife.Server.OpenApi;
 using StudyLife.Server.Services;
 using StudyLife.Server.Services.Outbound;
+using StudyLife.Server.Services.SampleData;
 
 // Run-time assertions (docs/SECURITY-ASSURANCE.md 8.5): in a Debug build, failed Debug.Assert
 // calls are reported on stderr instead of killing the process; compiled away in Release.
@@ -784,6 +785,15 @@ if (!EF.IsDesignTime)
     {
         await DemoSeeder.ReseedAsync(db);
         Console.WriteLine("[demo] DEMO_MODE active: database wiped and reseeded with demo data");
+    }
+    // Operator option SampleData:SeedUsername (never on a demo instance, which has its own data):
+    // fill that one existing account with the sample dataset once - skipped while the account
+    // does not exist yet or already holds data, so the option can stay set across restarts.
+    else if (builder.Configuration.Bind<SampleDataOptions>(SampleDataOptions.SectionName).SeedUsername is { } seedUsername
+             && !string.IsNullOrWhiteSpace(seedUsername))
+    {
+        var outcome = await SampleAccountSeeder.SeedAsync(db, seedUsername, DateTime.Now);
+        Console.WriteLine($"[sample-data] SampleData:SeedUsername set: {outcome}");
     }
 
     // Setup secret for the very first registration (AuthController.RegisterBegin and the password
