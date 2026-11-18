@@ -45,6 +45,15 @@ small - but it is the same for every change, including the maintainer's own.
   or otherwise have the right to submit it under the project's licence (AGPL-3.0). Sign off
   every commit with `git commit -s`, which adds a `Signed-off-by: Your Name <email>` line.
   Automated dependency PRs (Dependabot, Renovate) are exempt; no check enforces the sign-off.
+- **Licence grant for app-store distribution.** The client (`src/StudyLife.Client`) and the code
+  it uses (`src/StudyLife.Shared`) also ship inside the StudyAtrium app, which is distributed
+  through app stores, including Apple's App Store, under store terms that the AGPL alone does not
+  permit. A contribution to code that ships in the app is therefore accepted only with a licence
+  grant in addition to AGPL-3.0: you grant the maintainer a non-exclusive, worldwide,
+  royalty-free, perpetual licence to distribute your contribution as part of the app through app
+  stores, including Apple's App Store, under their terms. Submitting such a pull request with
+  signed-off commits grants it. If you do not want to grant it, say so in the pull request; the
+  change is then not merged into code that ships in the app.
 - **Licence headers.** Every new file states its licence and copyright, see
   [Licence headers](#licence-headers) (checked by `reuse lint` in `test-lint`).
 - **All 26 languages.** UI strings live in the resource tables checked by `tools/check-i18n.py`
