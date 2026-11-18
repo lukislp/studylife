@@ -252,7 +252,7 @@ https://github.com/user-attachments/assets/0498d54b-f7e3-4854-b7cf-8eea538dd112
 - Can be disabled at any time or reissued with a new link
 
 ### Backup & Export
-- JSON export of your own data (sessions, notes, course goals, settings) and re-import
+- JSON export of your own data (sessions, notes, course goals, settings, plus your account details and how your data is processed) and re-import of the study content
 - Full database download, optionally encrypted with a self-chosen password (AES-256)
 - Restore from a previously downloaded backup, including the encrypted variant
 - Weekly automatic background backup (the last 4 weeks are retained; SQLite deployments)

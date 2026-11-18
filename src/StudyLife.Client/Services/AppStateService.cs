@@ -248,9 +248,24 @@ public class AppStateService : IAsyncDisposable
     {
         InvalidateHistoryMemo();
         StopChangeStream();
+        await RaiseSignedOutAsync();
         await PurgeCachesAndQueueAsync();
         try { await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", UserIdMarkerKey); }
         catch { /* best effort */ }
+    }
+
+    /// <summary>Raised (and awaited, before the logout reload can discard this WASM instance) when the
+    /// session ends - TelemetryService removes its device-side state on it. Subscribers must not throw.</summary>
+    public event Func<Task>? SignedOut;
+
+    private async Task RaiseSignedOutAsync()
+    {
+        if (SignedOut is not { } handlers) return;
+        foreach (var handler in handlers.GetInvocationList().Cast<Func<Task>>())
+        {
+            try { await handler(); }
+            catch { /* best effort - a failing subscriber must not block the logout purge */ }
+        }
     }
 
     /// <summary>Public so pages with their own data management (e.g. Notes.razor) can

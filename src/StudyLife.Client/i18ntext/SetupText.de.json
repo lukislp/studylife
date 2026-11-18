@@ -94,7 +94,7 @@
   "ReminderCustomValuesLabel": "Eigene Werte: {0}",
   "BackupHeading": "Backup & Export",
   "BackupDesc": "Lade eine konsistente Kopie deiner Datenbank herunter oder exportiere deine Daten als JSON. Zusätzlich wird automatisch einmal pro Woche ein Backup erstellt — die letzten 4 werden aufbewahrt.",
-  "ExportOwnDataDesc": "Lade eine Kopie all deiner Daten als JSON-Datei herunter — Kurse, Sessions, Notizen, Ziele und Einstellungen. Sie enthält nur deine eigenen Daten.",
+  "ExportOwnDataDesc": "Lade eine Kopie all deiner Daten als JSON-Datei herunter — Kurse, Sessions, Notizen, Ziele und Einstellungen, dazu deine Kontodaten (Anmeldemethoden, Geräte, Einwilligungen, verbundene Apps) und wie deine Daten verarbeitet werden. Sie enthält nur deine eigenen Daten.",
   "BackupDownloadDatabaseButton": "Datenbank-Backup herunterladen",
   "BackupExportJsonButton": "Als JSON exportieren",
   "RestoreHeading": "Aus Backup wiederherstellen",

@@ -19,6 +19,8 @@ const CACHE_NAME = 'studylife-cache-v5';
 // can be served straight from cache afterwards with zero network round-trip: a content
 // change always bakes a new hash into the URL, so a cached entry here can never go stale.
 self.importScripts('service-worker-assets.js');
+// Native app sign-in pages always run the bundle the server speaks with - see that file.
+self.importScripts('service-worker-app-sign-in.js');
 
 // Not everything in the manifest is worth downloading on install. The manifest lists all 26
 // languages' i18n tables (416 JSON files, ~1.7 MB raw) plus debug symbols and source maps, and
@@ -64,14 +66,17 @@ self.addEventListener('install', event => event.waitUntil(
         )))
         .then(() => self.skipWaiting())
 ));
-self.addEventListener('activate', event => event.waitUntil(
-    Promise.all([
+self.addEventListener('activate', event => event.waitUntil((async () => {
+    // Read before claim() and before the purge below drops the fresh-marks of the old worker.
+    const staleAppSignInPages = await findStaleAppSignInPages();
+    await Promise.all([
         self.clients.claim(),
         caches.keys().then(keys => Promise.all(
             keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
         )),
-    ])
-));
+    ]);
+    await reloadAppSignInPages(staleAppSignInPages);
+})()));
 
 // Two different strategies depending on what's being requested:
 // - Assets covered by the precache above (static, hash-versioned build output): serve
@@ -83,11 +88,15 @@ self.addEventListener('activate', event => event.waitUntil(
 //   surface as a failure, not silently hand back stale JSON with no indication it's out
 //   of date. Only navigation requests get a cache fallback for genuinely-offline use, so
 //   the app shell still opens to something instead of a bare network error.
+// The native app's sign-in pages (?app=1) and everything they load bypass both: network only,
+// see service-worker-app-sign-in.js.
 self.addEventListener('fetch', event => {
     if (event.request.method !== 'GET') return;
 
     event.respondWith(
         caches.open(CACHE_NAME).then(async cache => {
+            if (await isAppSignInRequest(event)) return fetchForAppSignIn(event);
+
             const precached = await cache.match(event.request);
             if (precached) return precached;
 

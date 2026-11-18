@@ -94,7 +94,7 @@
   "ReminderCustomValuesLabel": "Prilagođeno: {0}",
   "BackupHeading": "Sigurnosna kopija i izvoz",
   "BackupDesc": "Preuzmite dosljednu kopiju svoje baze podataka ili izvezite podatke kao JSON. Sigurnosna kopija se dodatno automatski izrađuje jednom tjedno — čuvaju se posljednje 4.",
-  "ExportOwnDataDesc": "Preuzmi kopiju svih svojih podataka kao JSON datoteku — kolegiji, sesije, bilješke, ciljevi i postavke. Sadrži samo tvoje podatke.",
+  "ExportOwnDataDesc": "Preuzmi kopiju svih svojih podataka kao JSON datoteku — kolegiji, sesije, bilješke, ciljevi i postavke, uz podatke o tvom računu (načini prijave, uređaji, privole, povezane aplikacije) i način na koji se tvoji podaci obrađuju. Sadrži samo tvoje podatke.",
   "BackupDownloadDatabaseButton": "Preuzmi sigurnosnu kopiju baze podataka",
   "BackupExportJsonButton": "Izvezi kao JSON",
   "RestoreHeading": "Vraćanje iz sigurnosne kopije",
