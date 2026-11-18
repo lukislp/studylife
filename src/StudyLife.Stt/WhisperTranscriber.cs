@@ -8,7 +8,7 @@ namespace StudyLife.Stt;
 
 /// <summary>
 /// Wraps a single loaded Whisper model for local, self-hosted speech-to-text. Unlike Piper's
-/// per-language voices, one multilingual Whisper model covers all of StudyLife's languages -
+/// per-language voices, one multilingual Whisper model covers all of StudyAtrium's languages -
 /// no per-language registry needed here. The model is loaded lazily on first use, not in the
 /// constructor - mirrors PiperVoiceRegistry's laziness (a Dockerfile concern, not a code
 /// concern): registering this as a DI singleton must not crash the whole app at startup in an

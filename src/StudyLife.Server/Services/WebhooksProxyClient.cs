@@ -19,7 +19,7 @@ namespace StudyLife.Server.Services;
 /// (RegisterKeyAsync/RevokeKeyAsync) - there is no per-request user-impersonation concern here the
 /// way there is for AiProxyController's /chat|/agent proxy (which forwards an interactive session
 /// to an LLM agent); every call here already carries its own explicit user_id in the body/query,
-/// and studylife-webhooks trusts the shared secret to mean "this really is StudyLife asking".
+/// and studylife-webhooks trusts the shared secret to mean "this really is StudyAtrium asking".
 ///
 /// "Enabled" gate mirrors AiProxyClient/ApnsSender - an optional integration that silently stays
 /// off (users simply can't register webhooks, and PublishEventAsync becomes a no-op) rather than

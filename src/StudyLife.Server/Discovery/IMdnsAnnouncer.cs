@@ -4,7 +4,7 @@
 namespace StudyLife.Server.Discovery;
 
 /// <summary>
-/// Announces the StudyLife service via mDNS / DNS-SD. The abstraction exists so the hosted service
+/// Announces the StudyAtrium service via mDNS / DNS-SD. The abstraction exists so the hosted service
 /// can be tested without sockets. Implementations must never throw for "cannot announce" reasons
 /// (no multicast, container without host networking): they log a warning and report false.
 /// </summary>

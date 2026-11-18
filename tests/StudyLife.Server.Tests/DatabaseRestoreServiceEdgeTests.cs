@@ -30,7 +30,7 @@ public class DatabaseRestoreServiceEdgeTests : IDisposable
 
     private string PathIn(string name) => Path.Combine(_dir, name);
 
-    /// <summary>Creates a real StudyLife schema (EnsureCreated builds all tables incl. the
+    /// <summary>Creates a real StudyAtrium schema (EnsureCreated builds all tables incl. the
     /// four RequiredTables) at <paramref name="path"/> and seeds one row so the file spans
     /// enough pages to corrupt one in the middle.</summary>
     private static void CreateValidStudyLifeDb(string path)

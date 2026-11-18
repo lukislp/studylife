@@ -50,7 +50,7 @@ public record RestoreApplyOutcome(RestoreApplyStatus Status, string? Detail = nu
 public class DatabaseRestoreService
 {
     /// <summary>
-    /// Core tables that every real StudyLife DB has (table names = DbSet names, see
+    /// Core tables that every real StudyAtrium DB has (table names = DbSet names, see
     /// Data/StudyLifeDb.cs or the CreateTable calls in Migrations/). Deliberately only the four
     /// oldest/most stable ones - a backup from an older app version may not yet have newer tables
     /// (e.g. StudyPrograms) and must still be restorable.
@@ -82,7 +82,7 @@ public class DatabaseRestoreService
     public DateTime? StagedAtUtc => IsRestorePending ? File.GetLastWriteTimeUtc(StagingPath) : null;
 
     /// <summary>
-    /// Checks whether <paramref name="candidatePath"/> is an intact StudyLife SQLite DB.
+    /// Checks whether <paramref name="candidatePath"/> is an intact StudyAtrium SQLite DB.
     /// Returns null on success, otherwise an (English) error description for the 400 response.
     /// Deliberately opens ReadOnly + Pooling=False: no write sidecars, no file lock held
     /// after Dispose (under Windows, a pooled connection would otherwise lock the file).

@@ -76,7 +76,7 @@ public class BackupRestoreTests
     private static string BackupDir(CustomWebApplicationFactory factory)
         => Path.Combine(factory.BackupContentRoot, "app_data", "backups");
 
-    /// <summary>Small, real SQLite file with a foreign schema (not a StudyLife backup).</summary>
+    /// <summary>Small, real SQLite file with a foreign schema (not a StudyAtrium backup).</summary>
     private static byte[] CreateForeignSqliteDb()
     {
         var path = Path.Combine(Path.GetTempPath(), $"studylife-foreign-{Guid.NewGuid():N}.db");

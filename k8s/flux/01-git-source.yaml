@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 Lukas Körber
 # SPDX-License-Identifier: AGPL-3.0-only
 
-# Points Flux at the StudyLife repo itself (public GitHub repo, see git remote -v). Read access
+# Points Flux at the StudyAtrium repo itself (public GitHub repo, see git remote -v). Read access
 # only: since 2026-09-12 the released image tag is written into the manifests by the CI pipeline
 # (deploy-bump job in .github/workflows/ci-cd.yml, pushing over a write-enabled deploy key),
 # so nothing in the cluster needs to push to this repo any more and no token is referenced here.

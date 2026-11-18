@@ -8,7 +8,7 @@ namespace StudyLife.Server.Services;
 
 /// <summary>
 /// Mints short-lived signed tokens proving a proxied request to studylife-ai really comes
-/// from an already-authenticated StudyLife session - NOT the user's AiApiKey (only a hash
+/// from an already-authenticated StudyAtrium session - NOT the user's AiApiKey (only a hash
 /// of that is ever stored, see SettingsController's ai-api-key group; this backend cannot
 /// retrieve the plaintext to forward it, discovered while first implementing the AI
 /// integration - see studylife-ai's docs/decisions.md "M4.5 Multi-user support", "Auth flow,
@@ -83,7 +83,7 @@ public static class AiProxyTokenService
     /// <summary>Mints the original, un-keyed token format: "{userId}.{expiry}.{sig}" - used
     /// only as an A5 rollout fallback when StudyLifeAi:TokenSigningSecret isn't configured yet
     /// (see AiProxyClient), so studylife-ai instances that haven't deployed the split can still
-    /// verify tokens from a StudyLife instance that has.</summary>
+    /// verify tokens from a StudyAtrium instance that has.</summary>
     public static string MintLegacy(int userId, string sharedSecret, DateTime utcNow)
     {
         var expiry = new DateTimeOffset(utcNow + Lifetime).ToUnixTimeSeconds();

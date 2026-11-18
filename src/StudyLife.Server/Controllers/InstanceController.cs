@@ -14,7 +14,7 @@ namespace StudyLife.Server.Controllers;
 /// <summary>
 /// GET /api/instance - the stable installation id (docs/MDNS.md). Deliberately anonymous: it carries
 /// nothing secret (a random id plus the version, which /api/system/version already exposes), and
-/// Home Assistant needs it before it has any credential to recognise "the same StudyLife" under a
+/// Home Assistant needs it before it has any credential to recognise "the same StudyAtrium" under a
 /// different URL. [AllowAnonymous] skips the ApiAccess policy, so - like the other anonymous
 /// endpoints - this action needs no ApiKeyScopes entry; the normal rate limiter still applies.
 /// It also names the pinned passkey domain (Fido2:ServerDomain / Fido2:Origins), the same values every

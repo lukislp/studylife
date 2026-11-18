@@ -1,5 +1,5 @@
 {
-  "name": "StudyLife",
+  "name": "StudyAtrium",
   "image": "mcr.microsoft.com/devcontainers/dotnet:10.0",
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:4": {},
@@ -13,13 +13,13 @@
   "forwardPorts": [53964],
   "portsAttributes": {
     "53964": {
-      "label": "StudyLife (dotnet run)",
+      "label": "StudyAtrium (dotnet run)",
       "protocol": "http",
       "onAutoForward": "notify",
       "visibility": "private"
     },
     "53963": {
-      "label": "StudyLife HTTPS (not needed in Codespaces)",
+      "label": "StudyAtrium HTTPS (not needed in Codespaces)",
       "onAutoForward": "ignore"
     }
   },
