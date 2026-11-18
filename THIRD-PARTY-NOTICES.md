@@ -372,7 +372,7 @@ Licence text: https://spdx.org/licenses/LicenseRef-package-file.html
 Copyright (c) J.Sakamoto
   Packages: Toolbelt.Blazor.I18nText
 
-MPL-2.0 is file-level copyleft: it only covers the package's own files (its assembly and the shipped helper.min.js / *.lib.module.js), not StudyLife. Used unmodified; this notice and the source location below satisfy MPL-2.0 section 3.2 for the executable form.
+MPL-2.0 is file-level copyleft: it only covers the package's own files (its assembly and the shipped helper.min.js / *.lib.module.js), not StudyAtrium. Used unmodified; this notice and the source location below satisfy MPL-2.0 section 3.2 for the executable form.
 
 Source code of this component: https://github.com/jsakamoto/Toolbelt.Blazor.I18nText/
 Licence text: https://spdx.org/licenses/MPL-2.0.html
