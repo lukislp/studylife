@@ -47,9 +47,13 @@ public class OneTimeLinkCardTests : ConsentBunitTest
 
         cut.WaitForElement("button.btn-secondary").Click();
 
-        var link = cut.WaitForElement("input.input", ChainTimeout).GetAttribute("value");
-        Assert.EndsWith("api/sessions/ics?calendarToken=fresh", link);
-        Assert.Contains("LinkShownOnceNotice", cut.Markup);
+        // Find the input inside the assertion: the card re-renders after the POST, so a reference
+        // taken before that render would point at a removed element (flaky ElementRemovedFromDom).
+        cut.WaitForAssertion(() =>
+        {
+            Assert.EndsWith("api/sessions/ics?calendarToken=fresh", cut.Find("input.input").GetAttribute("value"));
+            Assert.Contains("LinkShownOnceNotice", cut.Markup);
+        }, ChainTimeout);
     }
 
     [Fact]
@@ -71,8 +75,8 @@ public class OneTimeLinkCardTests : ConsentBunitTest
         server.OnJson("GET api/system/calendar-token", new CalendarTokenResponseDto { CalendarToken = "plain" });
         var cut = Render<SetupCalendarSubscriptionCard>();
 
-        var link = cut.WaitForElement("input.input").GetAttribute("value");
-        Assert.EndsWith("calendarToken=plain", link);
+        cut.WaitForAssertion(() =>
+            Assert.EndsWith("calendarToken=plain", cut.Find("input.input").GetAttribute("value")), ChainTimeout);
     }
 
     [Fact]
@@ -98,8 +102,10 @@ public class OneTimeLinkCardTests : ConsentBunitTest
 
         cut.WaitForElement("button.btn-secondary").Click();
 
-        var link = cut.WaitForElement("input.input", ChainTimeout).GetAttribute("value");
-        Assert.EndsWith("shared/share", link);
-        Assert.Contains("LinkShownOnceNotice", cut.Markup);
+        cut.WaitForAssertion(() =>
+        {
+            Assert.EndsWith("shared/share", cut.Find("input.input").GetAttribute("value"));
+            Assert.Contains("LinkShownOnceNotice", cut.Markup);
+        }, ChainTimeout);
     }
 }
