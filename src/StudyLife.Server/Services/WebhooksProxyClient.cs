@@ -43,9 +43,22 @@ public sealed class WebhooksProxyClient
     internal static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
     private readonly SemaphoreSlim _inFlight = new(MaxInFlight, MaxInFlight);
 
-    public WebhooksProxyClient(IOptions<StudyLifeWebhooksOptions> options, ILogger<WebhooksProxyClient> logger, HttpClient? httpClient = null)
+    // Data minimisation (GDPR audit F-17): an event carries user content (note titles, course
+    // names, ...), so it is only sent to studylife-webhooks for users that have at least one
+    // webhook registered. The answer is cached per user and per process: a positive answer for
+    // PositiveTtl, a negative one only for NegativeTtl so that a webhook created through another
+    // replica starts receiving events within seconds. Creating/deleting through this process
+    // updates the entry immediately. When the lookup itself fails the event is sent anyway (fail
+    // open) - the receiving service drops events without subscribers and stores nothing.
+    internal static readonly TimeSpan PositiveTtl = TimeSpan.FromSeconds(60);
+    internal static readonly TimeSpan NegativeTtl = TimeSpan.FromSeconds(10);
+    private readonly TimeProvider _time;
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<int, (bool HasWebhooks, DateTimeOffset ExpiresAt)> _hasWebhooks = new();
+
+    public WebhooksProxyClient(IOptions<StudyLifeWebhooksOptions> options, ILogger<WebhooksProxyClient> logger, HttpClient? httpClient = null, TimeProvider? timeProvider = null)
     {
         _logger = logger;
+        _time = timeProvider ?? TimeProvider.System;
         _http = httpClient ?? new HttpClient { Timeout = RequestTimeout };
         var webhooks = options.Value;
         _baseUrl = NullIfEmpty(webhooks.BaseUrl)?.TrimEnd('/');
@@ -69,6 +82,11 @@ public sealed class WebhooksProxyClient
     public async Task PublishEventAsync(int userId, string eventType, object payload, CancellationToken ct)
     {
         if (!Enabled) return;
+        if (!await UserHasWebhooksAsync(userId, ct))
+        {
+            StudyLifeMetrics.WebhookPublishes.Add(1, StudyLifeMetrics.Outcome("skipped"));
+            return;
+        }
         if (!await _inFlight.WaitAsync(SlotWait, ct))
         {
             StudyLifeMetrics.WebhookPublishes.Add(1, StudyLifeMetrics.Outcome("dropped"));
@@ -114,11 +132,42 @@ public sealed class WebhooksProxyClient
     public Task<HttpResponseMessage> ListWebhooksAsync(int userId, CancellationToken ct) =>
         SendAsync(HttpMethod.Get, $"/internal/webhooks?user_id={userId}", null, ct);
 
-    public Task<HttpResponseMessage> CreateWebhookAsync(int userId, string targetUrl, IReadOnlyList<string> events, CancellationToken ct) =>
-        SendAsync(HttpMethod.Post, "/internal/webhooks", new { user_id = userId, target_url = targetUrl, events }, ct);
+    public async Task<HttpResponseMessage> CreateWebhookAsync(int userId, string targetUrl, IReadOnlyList<string> events, CancellationToken ct)
+    {
+        var response = await SendAsync(HttpMethod.Post, "/internal/webhooks", new { user_id = userId, target_url = targetUrl, events }, ct);
+        if (response.IsSuccessStatusCode) Remember(userId, true);
+        return response;
+    }
 
-    public Task<HttpResponseMessage> DeleteWebhookAsync(int userId, string webhookId, CancellationToken ct) =>
-        SendAsync(HttpMethod.Delete, $"/internal/webhooks/{Uri.EscapeDataString(webhookId)}?user_id={userId}", null, ct);
+    public async Task<HttpResponseMessage> DeleteWebhookAsync(int userId, string webhookId, CancellationToken ct)
+    {
+        var response = await SendAsync(HttpMethod.Delete, $"/internal/webhooks/{Uri.EscapeDataString(webhookId)}?user_id={userId}", null, ct);
+        _hasWebhooks.TryRemove(userId, out _);
+        return response;
+    }
+
+    private void Remember(int userId, bool has) =>
+        _hasWebhooks[userId] = (has, _time.GetUtcNow() + (has ? PositiveTtl : NegativeTtl));
+
+    private async Task<bool> UserHasWebhooksAsync(int userId, CancellationToken ct)
+    {
+        if (_hasWebhooks.TryGetValue(userId, out var cached) && cached.ExpiresAt > _time.GetUtcNow())
+            return cached.HasWebhooks;
+        try
+        {
+            using var response = await ListWebhooksAsync(userId, ct);
+            if (!response.IsSuccessStatusCode) return true;
+            var list = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement[]>(await response.Content.ReadAsStringAsync(ct));
+            if (list is null) return true;
+            Remember(userId, list.Length > 0);
+            return list.Length > 0;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "studylife-webhooks lookup of registered webhooks failed - sending the event anyway");
+            return true;
+        }
+    }
 
     /// <summary>Asks studylife-webhooks to delete everything it holds for this user (account
     /// deletion). True = confirmed (also when nothing was registered, and also when the integration
