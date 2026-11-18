@@ -8,6 +8,20 @@ namespace StudyLife.Server.Services;
 
 public partial class BackgroundTaskService
 {
+    /// <summary>Daily retention cleanup (<see cref="DataRetentionCleaner"/>). The cleaner comes from
+    /// the service provider like the add-on clients of the outbox drain: direct-construction tests
+    /// then fall back to the default retention values.</summary>
+    internal async Task RunDataRetentionAsync(StudyLifeDb db)
+    {
+        var cleaner = _services.GetService<DataRetentionCleaner>()
+            ?? new DataRetentionCleaner(new Configuration.RetentionOptions());
+        var result = await cleaner.RunAsync(db, DateTime.UtcNow);
+        if (result.Total > 0)
+            _logger.LogInformation(
+                "Retention cleanup removed {Sessions} sessions, {Invites} invites, {RecoveryCodes} recovery codes, {Passkeys} unapproved passkeys, {PushSubscriptions} push subscriptions, {Reminders} stale reminder markers",
+                result.Sessions, result.Invites, result.RecoveryCodes, result.Passkeys, result.PushSubscriptions, result.Reminders);
+    }
+
     // internal instead of private: allows StudyLife.Server.Tests (InternalsVisibleTo in the csproj)
     // to call the method directly instead of only reaching it indirectly via the 30s
     // ExecuteAsync loop - see BackgroundTaskServiceTests.

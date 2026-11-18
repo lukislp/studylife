@@ -120,6 +120,10 @@ public partial class BackgroundTaskService
         // how many users exist.
         OncePerTick("AiKeyOutbox", null,
             "Error draining the AI key outbox", () => WithScopedDbAsync(RunAiKeyOutboxAsync)),
+        // Daily retention cleanup (GDPR audit F-15): expired sessions, spent invites/recovery codes,
+        // unapproved passkeys, inactive push subscriptions. Gate resets on restart: harmless, idempotent.
+        OncePerTick("DataRetention", DataRetentionInterval,
+            "Error during the data retention cleanup", () => WithScopedDbAsync(RunDataRetentionAsync)),
         // Weekly, and the gate resets on process restart like every other one - for a maintenance
         // task that means "at most weekly, more often with frequent deploys", which is harmless.
         OncePerTick("DatabaseMaintenance", DatabaseMaintenanceInterval,
