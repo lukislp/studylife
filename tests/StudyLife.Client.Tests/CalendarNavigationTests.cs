@@ -132,7 +132,12 @@ public class CalendarKeyboardNavigationTests : ConsentBunitTest
     public async Task In_day_view_the_arrows_move_by_one_day()
     {
         var cut = Arrange();
+        var week = Title(cut);
         cut.Find(".cal-view-opt:last-child").Click();
+        // The title switches to the day format asynchronously after the click; reading it right away
+        // could still return the week range (flaky in CI: Expected "16.11. - 22.11.2026",
+        // Actual "Wed, 18.11.2026"). Wait for the day title first.
+        cut.WaitForAssertion(() => Assert.NotEqual(week, Title(cut)), ChainTimeout);
         var day = Title(cut);
 
         await cut.InvokeAsync(() => cut.Instance.OnShortcutKey("ArrowRight", false, false, false, false, false));
