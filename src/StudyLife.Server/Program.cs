@@ -903,8 +903,8 @@ app.UseWhen(
 //   Browsers without CSP Level 3 style-src-attr support (Firefox < 108, Safari < 15.4) fall back
 //   to style-src and drop the inline attributes - degraded layout, no security loss - and are
 //   older than what .NET 10 WebAssembly supports anyway.
-// Referrer-Policy same-origin: a pure same-origin SPA, the only cross-origin requests (Google Fonts)
-// don't need a referrer. frame-ancestors 'none' + X-Frame-Options DENY: no embedding use case.
+// Referrer-Policy same-origin: a pure same-origin SPA, the only cross-origin requests (the public
+// GitHub marketplace catalog, see below) don't need a referrer. Fonts are self-hosted. frame-ancestors 'none' + X-Frame-Options DENY: no embedding use case.
 // media-src 'self' data:: the "read note aloud" feature (TtsController) hands the client a WAV
 // as a base64 data: URI for a plain <audio src="..."> - without this, default-src's implicit
 // media-src fallback blocks playback entirely (found live via a real browser, not just a code
