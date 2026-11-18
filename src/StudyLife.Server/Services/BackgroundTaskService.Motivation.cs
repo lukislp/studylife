@@ -67,12 +67,12 @@ public partial class BackgroundTaskService
         var body = PickDailyMotivationQuote(settings.MotivationalStyle, now.Date, settings.Language);
         var payload = System.Text.Json.JsonSerializer.Serialize(new { title = ServerText.Text("motivation.title", settings.Language), body });
 
-        _logger.LogInformation("Sende Tages-Motivation '{Key}': {Body}", key, body);
+        _logger.LogInformation("Sende Tages-Motivation '{Key}'", key);
 
         var client = GetPushClient();
         bool dbChanged = false;
 
-        var results = await Task.WhenAll(subscriptions.Select(sub => SendPushAsync(client, sub, payload, "Motivation push failed for {Endpoint}")));
+        var results = await Task.WhenAll(subscriptions.Select(sub => SendPushAsync(client, sub, payload, "Motivation push failed for subscription {SubscriptionId}")));
 
         foreach (var result in results)
         {

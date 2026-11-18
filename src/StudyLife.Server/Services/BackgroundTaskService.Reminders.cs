@@ -93,7 +93,7 @@ public partial class BackgroundTaskService
         {
             var minutesUntil = (session.StartTime - now).TotalMinutes;
 
-            _logger.LogInformation("Session {Id} '{Name}' startet in {Min:F1} min", session.Id, session.CourseName, minutesUntil);
+            _logger.LogInformation("Session {Id} starts in {Min:F1} min", session.Id, minutesUntil);
 
             // All not-yet-sent, already-due thresholds for this session, sorted with the
             // nearest first. Normally exactly one (the 30s tick passes thresholds one at a
@@ -128,16 +128,16 @@ public partial class BackgroundTaskService
             var body = BuildSessionReminderBody(session.CourseName, session.Topic, session.StartTime, resourceCount, settings?.Language);
             var payload = System.Text.Json.JsonSerializer.Serialize(new { title, body });
 
-            _logger.LogInformation("Sende Reminder '{Key}': {Title}", key, title);
+            _logger.LogInformation("Sende Reminder '{Key}'", key);
 
-            var results = await Task.WhenAll(subscriptions.Select(sub => SendPushAsync(client, sub, payload, "Push failed for {Endpoint}")));
+            var results = await Task.WhenAll(subscriptions.Select(sub => SendPushAsync(client, sub, payload, "Push failed for subscription {SubscriptionId}")));
 
             foreach (var result in results)
             {
                 if (!result.Expired) continue;
                 db.PushSubscriptions.Remove(result.Subscription);
                 dbChanged = true;
-                _logger.LogInformation("Abgelaufene Subscription entfernt: {Endpoint}", result.Subscription.Endpoint);
+                _logger.LogInformation("Expired push subscription removed: {SubscriptionId}", result.Subscription.Id);
             }
         }
 
@@ -211,7 +211,7 @@ public partial class BackgroundTaskService
                 var body = t.T("goal.body", goal.CourseName, goal.TargetDate);
                 var payload = System.Text.Json.JsonSerializer.Serialize(new { title, body });
 
-                var results = await Task.WhenAll(subscriptions.Select(sub => SendPushAsync(client, sub, payload, "Course goal push failed for {Endpoint}")));
+                var results = await Task.WhenAll(subscriptions.Select(sub => SendPushAsync(client, sub, payload, "Course goal push failed for subscription {SubscriptionId}")));
 
                 foreach (var result in results)
                 {
@@ -270,7 +270,7 @@ public partial class BackgroundTaskService
         var client = GetPushClient();
         bool dbChanged = false;
 
-        var results = await Task.WhenAll(subscriptions.Select(sub => SendPushAsync(client, sub, payload, "Inactivity push failed for {Endpoint}")));
+        var results = await Task.WhenAll(subscriptions.Select(sub => SendPushAsync(client, sub, payload, "Inactivity push failed for subscription {SubscriptionId}")));
 
         foreach (var result in results)
         {
@@ -346,7 +346,7 @@ public partial class BackgroundTaskService
             var body = t.T("courseInactivity.body", lastCourseSession.CourseName, daysSinceCourse);
             var payload = System.Text.Json.JsonSerializer.Serialize(new { title, body });
 
-            var results = await Task.WhenAll(subscriptions.Select(sub => SendPushAsync(client, sub, payload, "Course inactivity push failed for {Endpoint}")));
+            var results = await Task.WhenAll(subscriptions.Select(sub => SendPushAsync(client, sub, payload, "Course inactivity push failed for subscription {SubscriptionId}")));
 
             foreach (var result in results)
             {

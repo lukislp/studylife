@@ -68,12 +68,12 @@ public partial class BackgroundTaskService
         var body = t.T("streakRisk.body", streak);
         var payload = System.Text.Json.JsonSerializer.Serialize(new { title, body });
 
-        _logger.LogInformation("Sende Streak-Risiko-Push '{Key}': {Body}", key, body);
+        _logger.LogInformation("Sende Streak-Risiko-Push '{Key}'", key);
 
         var client = GetPushClient();
         bool dbChanged = false;
 
-        var results = await Task.WhenAll(subscriptions.Select(sub => SendPushAsync(client, sub, payload, "Streak risk push failed for {Endpoint}")));
+        var results = await Task.WhenAll(subscriptions.Select(sub => SendPushAsync(client, sub, payload, "Streak risk push failed for subscription {SubscriptionId}")));
         foreach (var result in results)
         {
             if (!result.Expired) continue;
@@ -129,12 +129,12 @@ public partial class BackgroundTaskService
         var body = t.T("weeklyGoal.body", studiedHours, settings.WeeklyGoalMinHours);
         var payload = System.Text.Json.JsonSerializer.Serialize(new { title, body });
 
-        _logger.LogInformation("Sende Wochenziel-Nudge '{Key}': {Body}", key, body);
+        _logger.LogInformation("Sende Wochenziel-Nudge '{Key}'", key);
 
         var client = GetPushClient();
         bool dbChanged = false;
 
-        var results = await Task.WhenAll(subscriptions.Select(sub => SendPushAsync(client, sub, payload, "Weekly goal nudge push failed for {Endpoint}")));
+        var results = await Task.WhenAll(subscriptions.Select(sub => SendPushAsync(client, sub, payload, "Weekly goal nudge push failed for subscription {SubscriptionId}")));
         foreach (var result in results)
         {
             if (!result.Expired) continue;
@@ -213,9 +213,9 @@ public partial class BackgroundTaskService
             var body = t.T("almostDone.body", course.Name, (int)Math.Round(percent));
             var payload = System.Text.Json.JsonSerializer.Serialize(new { title, body });
 
-            _logger.LogInformation("Sende Fast-geschafft-Push '{Key}': {Body}", key, body);
+            _logger.LogInformation("Sende Fast-geschafft-Push '{Key}'", key);
 
-            var results = await Task.WhenAll(subscriptions.Select(sub => SendPushAsync(client, sub, payload, "Almost-done push failed for {Endpoint}")));
+            var results = await Task.WhenAll(subscriptions.Select(sub => SendPushAsync(client, sub, payload, "Almost-done push failed for subscription {SubscriptionId}")));
             foreach (var result in results)
             {
                 if (!result.Expired) continue;
@@ -284,12 +284,12 @@ public partial class BackgroundTaskService
         var body = t.T("bestTime.body", new TimeOnly(bucketStartHour, 0), new TimeOnly((bucketStartHour + 2) % 24, 0));
         var payload = System.Text.Json.JsonSerializer.Serialize(new { title, body });
 
-        _logger.LogInformation("Sende Beste-Lernzeit-Push '{Key}': {Body}", key, body);
+        _logger.LogInformation("Sende Beste-Lernzeit-Push '{Key}'", key);
 
         var client = GetPushClient();
         bool dbChanged = false;
 
-        var results = await Task.WhenAll(subscriptions.Select(sub => SendPushAsync(client, sub, payload, "Best study time push failed for {Endpoint}")));
+        var results = await Task.WhenAll(subscriptions.Select(sub => SendPushAsync(client, sub, payload, "Best study time push failed for subscription {SubscriptionId}")));
         foreach (var result in results)
         {
             if (!result.Expired) continue;
