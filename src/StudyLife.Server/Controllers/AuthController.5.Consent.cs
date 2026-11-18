@@ -142,7 +142,7 @@ public partial class AuthController
     /// <summary>
     /// Step 4 of the MCP connect flow: exchanges a single-use, mcp-audience assertion for the real
     /// AuthUserId and the plaintext MCP key - called server-to-server by studylife-mcp against the
-    /// cluster-internal StudyLife URL, never by the browser. EXEMPT from the API gate ([AllowAnonymous])
+    /// cluster-internal StudyAtrium URL, never by the browser. EXEMPT from the API gate ([AllowAnonymous])
     /// and needs NO resolved user of its own: the assertion IS the credential, the userId it
     /// returns comes entirely from the cache entry McpConnect wrote - post-A2, an unresolved
     /// CurrentUserAccessor.AuthUserId must never silently fall back to "user 1", and this endpoint
@@ -176,7 +176,7 @@ public partial class AuthController
     /// <summary>
     /// Step 4 of the capture connect flow: exchanges a single-use, capture-audience assertion for
     /// the real AuthUserId and the plaintext capture key - called by the extension's own background
-    /// script against its configured StudyLife URL. EXEMPT from the API gate ([AllowAnonymous]),
+    /// script against its configured StudyAtrium URL. EXEMPT from the API gate ([AllowAnonymous]),
     /// same non-distinguishing-401 and audience-isolation rules as McpAssertionExchange.
     /// </summary>
     [AllowAnonymous]
@@ -206,7 +206,7 @@ public partial class AuthController
     /// <summary>
     /// Step 4 of the focusguard connect flow: exchanges a single-use, focusguard-audience
     /// assertion for the real AuthUserId and the plaintext focusguard key - called by the
-    /// extension's own background script against its configured StudyLife URL. EXEMPT from the
+    /// extension's own background script against its configured StudyAtrium URL. EXEMPT from the
     /// API gate ([AllowAnonymous]), same non-distinguishing-401 and audience-isolation rules as
     /// CaptureAssertionExchange.
     /// </summary>

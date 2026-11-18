@@ -28,7 +28,7 @@ public static class MdnsPacket
     private static readonly string[] ServiceEnumeration = ["_services", "_dns-sd", "_udp", "local"];
     private static readonly string[] ServiceTypeLabels = ["_studylife", "_tcp", "local"];
 
-    /// <summary>The DNS host name label used as SRV target (e.g. "studylife" for "StudyLife").</summary>
+    /// <summary>The DNS host name label used as SRV target (e.g. "studylife" for "StudyAtrium").</summary>
     public static string HostLabel(string instanceName)
     {
         var sb = new StringBuilder();

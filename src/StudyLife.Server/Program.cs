@@ -668,7 +668,7 @@ if (speechEnabled)
     builder.Services.AddSingleton(new TtsAudioCache(
         ttsOptions.CacheSizeMb * 1024L * 1024L));
     // Voice dictation: one multilingual Whisper model (see Dockerfile), unlike PiperVoiceRegistry's
-    // per-language voices - covers all of StudyLife's languages, so no per-language registry is
+    // per-language voices - covers all of StudyAtrium's languages, so no per-language registry is
     // needed here. Loaded lazily on first use, same as PiperVoiceRegistry (see WhisperTranscriber's
     // class comment) - registering the wrapper here does not read the model into memory.
     builder.Services.AddSingleton(new StudyLife.Stt.WhisperTranscriber(

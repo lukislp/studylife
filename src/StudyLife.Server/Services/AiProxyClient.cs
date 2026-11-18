@@ -330,7 +330,7 @@ public sealed class AiProxyClient
     // exactly (snake_case) - same manual-matching convention as PostInternalAsync's
     // Dictionary<string,string> bodies above, not a naming-policy-driven serializer, since this
     // internal contract has never used camelCase (unlike StudyLifeNote's alias_generator on the
-    // Python side, which exists specifically to match calls INTO StudyLife's own API).
+    // Python side, which exists specifically to match calls INTO StudyAtrium's own API).
     private sealed class EnrichCaptureRequestJson
     {
         [JsonPropertyName("user_id")] public string UserId { get; set; } = "";

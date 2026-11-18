@@ -922,7 +922,7 @@ public class McpAssertionExchangeRequestDto
 }
 
 /// <summary>Response of POST /api/auth/mcp-assertion-exchange: the real AuthUserId and the
-/// plaintext MCP key studylife-mcp needs to build its own StudyLife client for this user -
+/// plaintext MCP key studylife-mcp needs to build its own StudyAtrium client for this user -
 /// this is the only place the plaintext leaves the server for this flow.</summary>
 public class McpAssertionExchangeResponseDto
 {

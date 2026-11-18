@@ -12,7 +12,7 @@ namespace StudyLife.Server.Controllers;
 /// microservice, on behalf of whichever user actually authenticated the request.
 ///
 /// Deliberately NOT session-only, unlike AiProxyController: the whole point of studylife-webhooks
-/// is that OTHER programs/add-ons (not the StudyLife browser client itself) register their own
+/// is that OTHER programs/add-ons (not the StudyAtrium browser client itself) register their own
 /// subscriptions, so this needs to be reachable with just an API key - specifically the
 /// WebhooksApiKey slot (see ApiKeyScopes.Webhooks), generated once from the Setup page (like Ha's
 /// key) and handed to whichever external tool the user wants to let manage webhooks. No explicit
