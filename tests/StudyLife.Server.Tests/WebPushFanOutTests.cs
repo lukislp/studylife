@@ -138,7 +138,7 @@ public class WebPushFanOutTests : IClassFixture<CustomWebApplicationFactory>
                 {
                     // Sequential on purpose: without the budget this would take 5 x 60 seconds.
                     for (var i = 0; i < 5; i++)
-                        results.Add(await service.SendPushAsync(service.GetPushClient(), Subscription(hanging.Url), "{}", "push failed for {Endpoint}"));
+                        results.Add(await service.SendPushAsync(service.GetPushClient(), Subscription(hanging.Url), "{}", "push failed for subscription {SubscriptionId}"));
                 },
             },
             new()

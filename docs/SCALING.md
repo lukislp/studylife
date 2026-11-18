@@ -97,7 +97,7 @@ docker compose -f docker-compose.scale.yml up -d --scale server=5
 
 # 3. Read the setup code from the logs of any server OR worker container (all show
 #    the same code - that's exactly the DB-backed consistency this branch establishes)
-docker compose -f docker-compose.scale.yml logs server | grep -A2 "Setup-Code"
+docker compose -f docker-compose.scale.yml logs server | grep -i -A2 "setup code"
 
 # 4. Open the app at http://localhost:8090 (nginx load balancer, see nginx-scale/nginx.conf)
 
@@ -171,8 +171,8 @@ docker compose -f docker-compose.scale.yml down -v
     kubectl apply -f k8s/17-grafana.yaml
     kubectl apply -f k8s/18-loki.yaml -f k8s/19-promtail.yaml
     ```
-10. Setup code: `kubectl -n studylife-scale logs -l app=studylife-web | grep -A2 Setup-Code`
-    (or `kubectl -n studylife-scale logs deploy/studylife-worker | grep -A2 Setup-Code`).
+10. Setup code: `kubectl -n studylife-scale logs -l app=studylife-web | grep -i -A2 "setup code"`
+    (or `kubectl -n studylife-scale logs deploy/studylife-worker | grep -i -A2 "setup code"`).
 11. The app is reachable via the MetalLB IP of the `ingress-nginx-controller` service
     (`kubectl -n ingress-nginx get svc ingress-nginx-controller`) using the host header/DNS name
     configured in `k8s/07-ingress.yaml` - **no longer** via `localhost:8090` (that was purely
