@@ -19,7 +19,8 @@ public class WebhooksProxyClientTests
     private static WebhooksProxyClient CreateClient(
         StubHttpHandler? handler = null,
         string? baseUrl = "https://webhooks.test",
-        string? sharedSecret = "shared-secret")
+        string? sharedSecret = "shared-secret",
+        TimeProvider? timeProvider = null)
     {
         var config = new Dictionary<string, string?>
         {
@@ -28,7 +29,7 @@ public class WebhooksProxyClientTests
         };
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(config).Build();
         var httpClient = handler != null ? new HttpClient(handler) : null;
-        return new WebhooksProxyClient(TestOptions.For<StudyLifeWebhooksOptions>(configuration), NullLogger<WebhooksProxyClient>.Instance, httpClient);
+        return new WebhooksProxyClient(TestOptions.For<StudyLifeWebhooksOptions>(configuration), NullLogger<WebhooksProxyClient>.Instance, httpClient, timeProvider);
     }
 
     [Fact]
@@ -55,17 +56,101 @@ public class WebhooksProxyClientTests
     [Fact]
     public async Task PublishEventAsync_SendsSharedSecretAndEventPayload()
     {
-        var handler = new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
+        var handler = WithHookStub(hasWebhook: true);
         var client = CreateClient(handler);
 
         await client.PublishEventAsync(7, WebhookEventTypes.SessionCompleted, new { sessionId = 42 }, CancellationToken.None);
 
-        var request = Assert.Single(handler.Requests);
+        var request = Assert.Single(handler.Requests, r => r.Uri.EndsWith("/internal/events"));
         Assert.Equal("https://webhooks.test/internal/events", request.Uri);
         Assert.Equal("shared-secret", request.Headers["x-studylife-shared-secret"]);
         Assert.Contains("\"user_id\":7", request.Body);
         Assert.Contains("\"event_type\":\"session.completed\"", request.Body);
         Assert.Contains("\"sessionId\":42", request.Body);
+    }
+
+    private static StubHttpHandler WithHookStub(bool hasWebhook) =>
+        new(r => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(r.RequestUri!.AbsolutePath == "/internal/webhooks" && r.Method == HttpMethod.Get
+                ? (hasWebhook ? "[{\"id\":\"w1\"}]" : "[]")
+                : "{}"),
+        });
+
+    [Fact]
+    public async Task PublishEventAsync_UserWithoutWebhooks_SendsNothing()
+    {
+        var handler = WithHookStub(hasWebhook: false);
+        var client = CreateClient(handler);
+
+        await client.PublishEventAsync(7, WebhookEventTypes.NoteCreated, new { title = "secret" }, CancellationToken.None);
+
+        Assert.DoesNotContain(handler.Requests, r => r.Uri.EndsWith("/internal/events"));
+    }
+
+    [Fact]
+    public async Task PublishEventAsync_LookupIsCachedPerUser()
+    {
+        var handler = WithHookStub(hasWebhook: true);
+        var client = CreateClient(handler);
+
+        await client.PublishEventAsync(7, WebhookEventTypes.NoteCreated, new { }, CancellationToken.None);
+        await client.PublishEventAsync(7, WebhookEventTypes.NoteUpdated, new { }, CancellationToken.None);
+
+        Assert.Single(handler.Requests, r => r.Method == "GET");
+        Assert.Equal(2, handler.Requests.Count(r => r.Uri.EndsWith("/internal/events")));
+    }
+
+    [Fact]
+    public async Task PublishEventAsync_RightAfterCreatingAWebhook_IsSentEvenIfNoneWasCachedBefore()
+    {
+        var hasWebhook = false;
+        var handler = new StubHttpHandler(r => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(r.Method == HttpMethod.Get ? (hasWebhook ? "[{}]" : "[]") : "{}"),
+        });
+        var client = CreateClient(handler);
+
+        await client.PublishEventAsync(7, WebhookEventTypes.NoteCreated, new { }, CancellationToken.None);
+        Assert.DoesNotContain(handler.Requests, r => r.Uri.EndsWith("/internal/events"));
+
+        hasWebhook = true;
+        await client.CreateWebhookAsync(7, "https://example.com/hook", new[] { WebhookEventTypes.NoteCreated }, CancellationToken.None);
+        await client.PublishEventAsync(7, WebhookEventTypes.NoteCreated, new { }, CancellationToken.None);
+
+        Assert.Single(handler.Requests, r => r.Uri.EndsWith("/internal/events"));
+    }
+
+    [Fact]
+    public async Task PublishEventAsync_NegativeAnswerExpiresQuickly_SoWebhooksCreatedElsewhereAreSeen()
+    {
+        var hasWebhook = false;
+        var handler = new StubHttpHandler(r => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(r.Method == HttpMethod.Get ? (hasWebhook ? "[{}]" : "[]") : "{}"),
+        });
+        var time = new ManualTimeProvider();
+        var client = CreateClient(handler, timeProvider: time);
+
+        await client.PublishEventAsync(7, WebhookEventTypes.NoteCreated, new { }, CancellationToken.None);
+        hasWebhook = true;
+        time.Advance(WebhooksProxyClient.NegativeTtl + TimeSpan.FromSeconds(1));
+        await client.PublishEventAsync(7, WebhookEventTypes.NoteCreated, new { }, CancellationToken.None);
+
+        Assert.Single(handler.Requests, r => r.Uri.EndsWith("/internal/events"));
+    }
+
+    [Fact]
+    public async Task PublishEventAsync_WhenTheLookupFails_StillSendsTheEvent()
+    {
+        var handler = new StubHttpHandler(r => r.Method == HttpMethod.Get
+            ? new HttpResponseMessage(HttpStatusCode.InternalServerError)
+            : new HttpResponseMessage(HttpStatusCode.OK));
+        var client = CreateClient(handler);
+
+        await client.PublishEventAsync(7, WebhookEventTypes.NoteCreated, new { }, CancellationToken.None);
+
+        Assert.Single(handler.Requests, r => r.Uri.EndsWith("/internal/events"));
     }
 
     [Fact]
@@ -189,7 +274,7 @@ public class WebhooksProxyClientTests
     /// same deliberately plainly-built stub as AiProxyClientTests.StubHttpHandler.</summary>
     private sealed class StubHttpHandler : HttpMessageHandler
     {
-        public sealed record RecordedRequest(string Uri, Dictionary<string, string> Headers, string Body);
+        public sealed record RecordedRequest(string Method, string Uri, Dictionary<string, string> Headers, string Body);
 
         private readonly Func<HttpRequestMessage, HttpResponseMessage> _responder;
         public List<RecordedRequest> Requests { get; } = [];
@@ -202,7 +287,7 @@ public class WebhooksProxyClientTests
                 .ToDictionary(h => h.Key.ToLowerInvariant(), h => string.Join(",", h.Value));
             var body = request.Content == null ? "" : await request.Content.ReadAsStringAsync(cancellationToken);
             lock (Requests)
-                Requests.Add(new RecordedRequest(request.RequestUri!.ToString(), headers, body));
+                Requests.Add(new RecordedRequest(request.Method.Method, request.RequestUri!.ToString(), headers, body));
             return _responder(request);
         }
     }
