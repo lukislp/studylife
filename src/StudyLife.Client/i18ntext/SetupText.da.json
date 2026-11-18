@@ -94,7 +94,7 @@
   "ReminderCustomValuesLabel": "Brugerdefineret: {0}",
   "BackupHeading": "Backup & eksport",
   "BackupDesc": "Download en konsistent kopi af din database, eller eksportér dine data som JSON. Der oprettes desuden automatisk en backup hver uge — de seneste 4 gemmes.",
-  "ExportOwnDataDesc": "Download en kopi af alle dine data som JSON-fil — kurser, sessioner, noter, mål og indstillinger. Den indeholder kun dine egne data.",
+  "ExportOwnDataDesc": "Download en kopi af alle dine data som JSON-fil — kurser, sessioner, noter, mål og indstillinger samt dine kontooplysninger (login-metoder, enheder, samtykker, forbundne apps) og hvordan dine data behandles. Den indeholder kun dine egne data.",
   "BackupDownloadDatabaseButton": "Download databasebackup",
   "BackupExportJsonButton": "Eksportér som JSON",
   "RestoreHeading": "Gendan fra backup",

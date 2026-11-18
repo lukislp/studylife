@@ -140,7 +140,7 @@ public class SettingsService(
         entity.ComebackNudgeEnabled = dto.ComebackNudgeEnabled;
         entity.NewRecordNotificationsEnabled = dto.NewRecordNotificationsEnabled;
         entity.MonthlyReportEnabled = dto.MonthlyReportEnabled;
-        entity.TelemetryConsent = dto.TelemetryConsent;
+        TelemetryConsentRecord.Apply(entity, dto.TelemetryConsent, DateTime.UtcNow);
         entity.ActiveStudyProgramId = dto.ActiveStudyProgramId;
         // LastBackupDownloadAt deliberately NOT set here (audit F1): it is documented on
         // UserSettingsEntity as "set directly in BackupDataService, not via the normal settings

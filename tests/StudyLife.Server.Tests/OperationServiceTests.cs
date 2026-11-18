@@ -446,7 +446,7 @@ public class BackupDataServiceTests : IClassFixture<CustomWebApplicationFactory>
             EndTime = DateTime.Now.AddDays(1).AddHours(1),
         }));
 
-        var export = await _factory.WithServiceAsync<IBackupDataService, BackupExportDto>(
+        var export = await _factory.WithServiceAsync<IBackupDataService, PersonalDataExportDto>(
             (backup, _) => backup.BuildExportAsync());
 
         Assert.Equal(2, export.FormatVersion);
@@ -494,7 +494,7 @@ public class BackupDataServiceRoundTripTests : IClassFixture<CustomWebApplicatio
             EndTime = DateTime.Now.AddDays(2).AddHours(2),
         }));
 
-        var export = await _factory.WithServiceAsync<IBackupDataService, BackupExportDto>(
+        var export = await _factory.WithServiceAsync<IBackupDataService, PersonalDataExportDto>(
             (backup, _) => backup.BuildExportAsync());
 
         var result = await _factory.WithServiceAsync<IBackupDataService, ServiceResult<BackupImportResponseDto>>(

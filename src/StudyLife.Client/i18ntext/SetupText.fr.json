@@ -94,7 +94,7 @@
   "ReminderCustomValuesLabel": "Personnalisé : {0}",
   "BackupHeading": "Sauvegarde et export",
   "BackupDesc": "Téléchargez une copie cohérente de votre base de données ou exportez vos données au format JSON. Une sauvegarde est également créée automatiquement chaque semaine — les 4 dernières sont conservées.",
-  "ExportOwnDataDesc": "Téléchargez une copie de toutes vos données au format JSON — cours, sessions, notes, objectifs et réglages. Elle ne contient que vos propres données.",
+  "ExportOwnDataDesc": "Téléchargez une copie de toutes vos données au format JSON — cours, sessions, notes, objectifs et réglages, ainsi que les données de votre compte (méthodes de connexion, appareils, consentements, applications connectées) et la manière dont vos données sont traitées. Elle ne contient que vos propres données.",
   "BackupDownloadDatabaseButton": "Télécharger la sauvegarde de la base de données",
   "BackupExportJsonButton": "Exporter en JSON",
   "RestoreHeading": "Restaurer depuis une sauvegarde",

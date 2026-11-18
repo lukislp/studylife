@@ -1091,6 +1091,12 @@ namespace StudyLife.Server.Migrations.Postgres
                     b.Property<bool?>("TelemetryConsent")
                         .HasColumnType("boolean");
 
+                    b.Property<DateTime?>("TelemetryConsentAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int?>("TelemetryConsentVersion")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Theme")
                         .IsRequired()
                         .HasColumnType("text");
