@@ -380,7 +380,9 @@ public class PasskeyDeviceManagerRecoveryCodesDownloadTests : ConsentBunitTest
         var cut = Render<PasskeyDeviceManager>(p => p.Add(c => c.Open, true));
         cut.WaitForAssertion(() => cut.FindAll("button").Single(b => b.TextContent.Trim() == "RecoveryCodesButton"), ChainTimeout);
         cut.FindAll("button").Single(b => b.TextContent.Trim() == "RecoveryCodesButton").Click();
-        cut.Find(".modal-footer button.btn-primary").Click();
+        // The confirmation modal renders after the click asynchronously; finding its button right
+        // away was flaky in CI (ElementNotFoundException on '.modal-footer button.btn-primary').
+        cut.WaitForElement(".modal-footer button.btn-primary", ChainTimeout).Click();
         cut.WaitForAssertion(() => Assert.Contains("AAAA-1111", cut.Markup), ChainTimeout);
         return cut;
     }
