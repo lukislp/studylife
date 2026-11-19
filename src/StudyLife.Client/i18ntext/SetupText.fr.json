@@ -310,7 +310,7 @@
   "MarketplaceManualSetupLink": "Ouvrir le guide de configuration",
   "ClientKeysHeading": "Extensions connectées",
   "TelemetryHeading": "Rapports d'utilisation et d'erreurs",
-  "TelemetryDesc": "Nous aide à repérer les bugs et les ralentissements en envoyant des données anonymes de performance et d'erreurs — jamais tes notes, séances ou données de santé. Tu peux désactiver cela à tout moment.",
+  "TelemetryDesc": "Envoie des données anonymes de performance et d'erreurs à l'opérateur de ton serveur StudyAtrium (si tu l'héberges toi-même, c'est toi) pour repérer les bugs et les ralentissements — jamais tes notes, séances ou données de santé. Tu peux désactiver cela à tout moment.",
   "AriaCloseDialog": "Fermer la boîte de dialogue",
   "AriaRemoveGroup": "Supprimer le groupe",
   "AriaRemoveCourse": "Supprimer le cours",

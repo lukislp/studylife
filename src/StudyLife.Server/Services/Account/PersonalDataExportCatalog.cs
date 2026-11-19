@@ -41,6 +41,7 @@ public static class PersonalDataExportCatalog
         [typeof(AuthInviteEntity)] = "account.invitesCreated",
         [typeof(TimerStateEntity)] = "account.timerState",
         [typeof(SentReminderEntity)] = "account.sentNotifications",
+        [typeof(TelemetryConsentLogEntity)] = "account.telemetryConsent.history",
     };
 
     /// <summary>User data deliberately left out of the export, each with the reason.</summary>

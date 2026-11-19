@@ -310,7 +310,7 @@
   "MarketplaceManualSetupLink": "Otvori upute za postavljanje",
   "ClientKeysHeading": "Povezani dodaci",
   "TelemetryHeading": "Izvještaji o korištenju i pogreškama",
-  "TelemetryDesc": "Pomaže nam pronaći greške i spora mjesta slanjem anonimnih podataka o performansama i pogreškama — nikad tvoje bilješke, sesije ili zdravstvene podatke. To možeš isključiti bilo kad.",
+  "TelemetryDesc": "Šalje anonimne podatke o performansama i pogreškama operatoru tvog StudyAtrium poslužitelja (ako ga sam hostiraš, to si ti) radi pronalaženja grešaka i sporih mjesta — nikad tvoje bilješke, sesije ili zdravstvene podatke. To možeš isključiti bilo kad.",
   "AriaCloseDialog": "Zatvori dijalog",
   "AriaRemoveGroup": "Ukloni grupu",
   "AriaRemoveCourse": "Ukloni kolegij",

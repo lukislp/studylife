@@ -108,6 +108,18 @@ public class TelemetryConsentExportDto
     public DateTime? AnsweredAt { get; set; }
     /// <summary>Version of the consent text answered.</summary>
     public int? TextVersion { get; set; }
+    /// <summary>Every answer ever given, oldest first (the append-only consent log). Answers
+    /// given before the log existed were copied into it by its migration.</summary>
+    public List<TelemetryConsentLogEntryExportDto> History { get; set; } = [];
+}
+
+public class TelemetryConsentLogEntryExportDto
+{
+    /// <summary>true = agreed, false = declined or withdrawn.</summary>
+    public bool Answer { get; set; }
+    public DateTime AnsweredAt { get; set; }
+    /// <summary>Version of the consent text answered.</summary>
+    public int TextVersion { get; set; }
 }
 
 public class AccessKeyExportDto

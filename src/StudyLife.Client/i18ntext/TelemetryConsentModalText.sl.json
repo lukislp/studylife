@@ -1,6 +1,6 @@
 {
-  "Heading": "Pomagaj izboljšati StudyAtrium?",
-  "ExplainWhatText": "Radi bi zbirali anonimne podatke o zmogljivosti in napakah, da bi odkrili hrošče in počasna mesta — nikoli tvojih zapiskov, sej ali zdravstvenih podatkov.",
+  "Heading": "Pošiljati anonimne podatke o zmogljivosti in napakah upravljavcu tvojega strežnika StudyAtrium?",
+  "ExplainWhatText": "Podatki gredo tistemu, ki upravlja tvoj strežnik StudyAtrium (če ga gostiš sam, si to ti), in služijo iskanju hroščev in počasnih mest. Nikoli ne vsebujejo tvojih zapiskov, sej ali zdravstvenih podatkov.",
   "ExplainChangeText": "To lahko kadar koli spremeniš v Nastavitvah.",
   "AcceptButton": "Dovoli",
   "DeclineButton": "Ne, hvala"

@@ -310,7 +310,7 @@
   "MarketplaceManualSetupLink": "Ava häälestusjuhend",
   "ClientKeysHeading": "Ühendatud lisad",
   "TelemetryHeading": "Kasutus- ja vearaportid",
-  "TelemetryDesc": "Aitab meil leida vigu ja aeglaseid kohti, saates anonüümseid jõudlus- ja veaandmeid — mitte kunagi sinu märkmeid, seansse ega terviseandmeid. Saad selle igal ajal välja lülitada.",
+  "TelemetryDesc": "Saadab anonüümseid jõudlus- ja veaandmeid sinu StudyAtrium'i serveri haldajale (kui majutad seda ise, oled see sina), et leida vigu ja aeglaseid kohti — mitte kunagi sinu märkmeid, seansse ega terviseandmeid. Saad selle igal ajal välja lülitada.",
   "AriaCloseDialog": "Sulge dialoog",
   "AriaRemoveGroup": "Eemalda rühm",
   "AriaRemoveCourse": "Eemalda aine",

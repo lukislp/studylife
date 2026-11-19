@@ -310,7 +310,7 @@
   "MarketplaceManualSetupLink": "Iftaħ il-gwida tal-konfigurazzjoni",
   "ClientKeysHeading": "Add-ons konnessi",
   "TelemetryHeading": "Rapporti ta' Użu u Żbalji",
-  "TelemetryDesc": "Jgħinna nsibu bugs u postijiet bil-mod billi jintbagħtu dejta anonima dwar il-prestazzjoni u l-iżbalji — qatt in-noti, is-sessjonijiet, jew id-dejta tas-saħħa tiegħek. Tista' tiddiżattivah fi kwalunkwe ħin.",
+  "TelemetryDesc": "Tibgħat dejta anonima dwar il-prestazzjoni u l-iżbalji lill-operatur tas-server StudyAtrium tiegħek (jekk int tospitah int stess, int dak) biex jinstabu bugs u postijiet bil-mod — qatt in-noti, is-sessjonijiet, jew id-dejta tas-saħħa tiegħek. Tista' tiddiżattivah fi kwalunkwe ħin.",
   "AriaCloseDialog": "Agħlaq id-djalogu",
   "AriaRemoveGroup": "Neħħi l-grupp",
   "AriaRemoveCourse": "Neħħi l-kors",

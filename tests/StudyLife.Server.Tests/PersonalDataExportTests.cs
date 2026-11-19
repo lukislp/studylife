@@ -104,6 +104,11 @@ public class PersonalDataExportTests : IClassFixture<CustomWebApplicationFactory
             settings.TelemetryConsentVersion = TelemetryConsentRecord.CurrentVersion;
             settings.AiConsentGrantedAt = answeredAt;
             settings.AiConsentProviderFingerprint = new string('a', 64);
+            // The seeded account already has generated log rows; the answer history is exactly
+            // these two, oldest first.
+            await db.TelemetryConsentLog.IgnoreQueryFilters().Where(l => l.AuthUserId == userId).ExecuteDeleteAsync();
+            db.TelemetryConsentLog.Add(new TelemetryConsentLogEntity { AuthUserId = userId, Answer = false, AnsweredAt = answeredAt.AddDays(1), TextVersion = 2 });
+            db.TelemetryConsentLog.Add(new TelemetryConsentLogEntity { AuthUserId = userId, Answer = true, AnsweredAt = answeredAt, TextVersion = 1 });
             await db.SaveChangesAsync();
         });
 
@@ -112,6 +117,9 @@ public class PersonalDataExportTests : IClassFixture<CustomWebApplicationFactory
         Assert.False(export.Account.TelemetryConsent.Value);
         Assert.Equal(answeredAt, export.Account.TelemetryConsent.AnsweredAt);
         Assert.Equal(TelemetryConsentRecord.CurrentVersion, export.Account.TelemetryConsent.TextVersion);
+        Assert.Collection(export.Account.TelemetryConsent.History,
+            first => { Assert.True(first.Answer); Assert.Equal(answeredAt, first.AnsweredAt); Assert.Equal(1, first.TextVersion); },
+            second => { Assert.False(second.Answer); Assert.Equal(answeredAt.AddDays(1), second.AnsweredAt); Assert.Equal(2, second.TextVersion); });
         Assert.Equal(answeredAt, export.Account.AiConsent.GrantedAt);
         Assert.Equal(new string('a', 64), export.Account.AiConsent.ProviderFingerprint);
     }

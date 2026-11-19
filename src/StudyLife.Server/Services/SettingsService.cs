@@ -140,7 +140,10 @@ public class SettingsService(
         entity.ComebackNudgeEnabled = dto.ComebackNudgeEnabled;
         entity.NewRecordNotificationsEnabled = dto.NewRecordNotificationsEnabled;
         entity.MonthlyReportEnabled = dto.MonthlyReportEnabled;
-        TelemetryConsentRecord.Apply(entity, dto.TelemetryConsent, DateTime.UtcNow);
+        // TelemetryConsent deliberately NOT set here: this PUT is reachable with API keys (the
+        // Home Assistant slot), and a consent must be given on a real session - it has its own
+        // endpoint (PUT /api/settings/telemetry-consent, TelemetryConsentService). The field in
+        // the DTO is read-only.
         entity.ActiveStudyProgramId = dto.ActiveStudyProgramId;
         // LastBackupDownloadAt deliberately NOT set here (audit F1): it is documented on
         // UserSettingsEntity as "set directly in BackupDataService, not via the normal settings

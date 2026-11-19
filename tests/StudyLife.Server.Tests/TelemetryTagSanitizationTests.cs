@@ -62,7 +62,7 @@ public class TelemetryTagSanitizationTests : IClassFixture<CustomWebApplicationF
     [Fact]
     public async Task FreeFormClientStrings_AreNormalisedBeforeBecomingTags()
     {
-        Assert.True((await _client.PutAsJsonAsync("/api/settings", new UserSettingsDto { TelemetryConsent = true })).IsSuccessStatusCode);
+        Assert.True((await _client.PutAsJsonAsync("/api/settings/telemetry-consent", new SetTelemetryConsentRequest { Consent = true })).IsSuccessStatusCode);
 
         var seen = Capture(() =>
         {
@@ -84,7 +84,7 @@ public class TelemetryTagSanitizationTests : IClassFixture<CustomWebApplicationF
     [Fact]
     public async Task WellFormedClientStrings_PassThroughUnchanged()
     {
-        Assert.True((await _client.PutAsJsonAsync("/api/settings", new UserSettingsDto { TelemetryConsent = true })).IsSuccessStatusCode);
+        Assert.True((await _client.PutAsJsonAsync("/api/settings/telemetry-consent", new SetTelemetryConsentRequest { Consent = true })).IsSuccessStatusCode);
 
         var seen = Capture(() =>
         {
