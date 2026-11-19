@@ -138,37 +138,6 @@ public class BackgroundTaskServicePushNotificationTests : IClassFixture<CustomWe
     }
 
     [Fact]
-    public async Task StaleReminderKeys_OlderThanTwoDays_AreCleanedUp_ExceptAchievementAndCourseGoalKeys()
-    {
-        await BackgroundTaskTestSettings.PutAsync(_client, s =>
-        {
-            s.SessionRemindersEnabled = true;
-            s.SessionReminderMinutes = "5";
-        });
-        var endpoint = $"https://push.example.com/{Guid.NewGuid():N}";
-        await SubscribeAsync(endpoint, "p256dh-key-value", "auth-key-value");
-        // Cleanup only runs if RunPushNotificationsAsync gets past the early "no session in the
-        // window" return (line 25 in BackgroundTaskService.Reminders.cs) - hence a regular
-        // due session as trigger.
-        await CreateSessionAsync(4, DateTime.Now.AddSeconds(50), duration: TimeSpan.FromSeconds(10));
-
-        using (var scope = _factory.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<StudyLifeDb>();
-            db.SentReminders.Add(new SentReminderEntity { Key = "999:reminder5", SentAt = DateTime.Now.AddDays(-3) });
-            db.SentReminders.Add(new SentReminderEntity { Key = "achievement:hours:25", SentAt = DateTime.Now.AddDays(-30) });
-            db.SentReminders.Add(new SentReminderEntity { Key = "coursegoal:999:reminder0d", SentAt = DateTime.Now.AddDays(-30) });
-            await db.SaveChangesAsync();
-        }
-
-        await InvokeAsync();
-
-        Assert.Empty(await GetSentRemindersAsync("999:reminder5"));
-        Assert.Single(await GetSentRemindersAsync("achievement:hours:25"));
-        Assert.Single(await GetSentRemindersAsync("coursegoal:999:reminder0d"));
-    }
-
-    [Fact]
     public async Task MultipleThresholdsOverdueAtOnce_OnlyOnePushSent_ButAllThresholdsMarkedSent()
     {
         // Simulates poller downtime: the session is already so close that ALL configured

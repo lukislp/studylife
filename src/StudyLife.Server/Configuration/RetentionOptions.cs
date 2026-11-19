@@ -33,4 +33,16 @@ public sealed class RetentionOptions
     /// recently active account keeps its devices).</summary>
     [Range(1, 3650)]
     public int InactivePushSubscriptionDays { get; set; } = 180;
+
+    /// <summary>"Already sent" markers of session, inactivity and motivation reminders are deleted
+    /// after this long (a session reminder window is at most 61 minutes, inactivity and motivation
+    /// markers deduplicate per calendar day). Achievement and course-goal markers are not aged by
+    /// time: they deduplicate until the achievement category or the goal is gone.</summary>
+    [Range(1, 3650)]
+    public int ReminderMarkerDays { get; set; } = 2;
+
+    /// <summary>The safety copy taken before a restore holds every account's data of the moment: it
+    /// is deleted after this long, next to the weekly dumps' four weeks.</summary>
+    [Range(1, 3650)]
+    public int PreRestoreBackupDays { get; set; } = 28;
 }

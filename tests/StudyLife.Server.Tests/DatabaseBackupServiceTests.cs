@@ -190,6 +190,32 @@ public class DatabaseBackupServiceTests : IDisposable
     }
 
     [Fact]
+    public void DeleteOldPreRestoreBackups_RemovesOnlyOldSafetyCopies_ByAge()
+    {
+        var backupDir = Path.Combine(_contentRoot, "app_data", "backups");
+        Directory.CreateDirectory(backupDir);
+        var now = new DateTime(2026, 11, 19, 12, 0, 0, DateTimeKind.Utc);
+        File.WriteAllText(Path.Combine(backupDir, "prerestore-20260901-100000.db"), "old");
+        File.WriteAllText(Path.Combine(backupDir, "prerestore-20261105-100000.db"), "recent");
+        File.WriteAllText(Path.Combine(backupDir, "studylife-20200101.db"), "weekly dump, other prefix");
+        var unparseable = Path.Combine(backupDir, "prerestore-manual.db");
+        File.WriteAllText(unparseable, "no timestamp in the name");
+        File.SetLastWriteTimeUtc(unparseable, now.AddDays(-60));
+
+        var removed = new DatabaseBackupService(_dbPath, _contentRoot).DeleteOldPreRestoreBackups(TimeSpan.FromDays(28), now);
+
+        Assert.Equal(2, removed); // the September copy and the one whose age comes from its write time
+        Assert.False(File.Exists(Path.Combine(backupDir, "prerestore-20260901-100000.db")));
+        Assert.False(File.Exists(unparseable));
+        Assert.True(File.Exists(Path.Combine(backupDir, "prerestore-20261105-100000.db")));
+        Assert.True(File.Exists(Path.Combine(backupDir, "studylife-20200101.db")));
+    }
+
+    [Fact]
+    public void DeleteOldPreRestoreBackups_WithoutABackupFolder_IsANoOp() =>
+        Assert.Equal(0, new DatabaseBackupService(_dbPath, _contentRoot).DeleteOldPreRestoreBackups(TimeSpan.FromDays(28), DateTime.UtcNow));
+
+    [Fact]
     public void CreateWeeklyBackup_FewerFilesThanKeep_DeletesNothing()
     {
         using (var db = new StudyLifeDb(Options(_dbPath), new TestCurrentUserAccessor()))

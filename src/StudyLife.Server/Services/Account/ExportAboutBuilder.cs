@@ -30,6 +30,7 @@ public sealed class ExportAboutBuilder(
         {
             Purposes = Purposes(ai.Available),
             Categories = ExportAboutText.Categories,
+            AddonData = AddonData(account, ai.Available, webhooks.Enabled),
             Recipients = Recipients(account, ai, webhooks.Enabled, developers.Enabled),
             Retention =
             [
@@ -57,6 +58,18 @@ public sealed class ExportAboutBuilder(
         };
         if (aiAvailable) purposes.Add(ExportAboutText.PurposeAi);
         return purposes;
+    }
+
+    /// <summary>One line per add-on that holds data of its own about this account. This server cannot
+    /// read it, so the export says so instead of implying it is complete.</summary>
+    private static List<string> AddonData(AccountExportDto account, bool aiAvailable, bool webhooksEnabled)
+    {
+        var lines = new List<string>();
+        if (aiAvailable) lines.Add(ExportAboutText.AddonDataAi);
+        if (webhooksEnabled) lines.Add(ExportAboutText.AddonDataWebhooks);
+        if (account.AccessKeys.Count > 0 || account.ConnectedApps.Count > 0)
+            lines.Add(ExportAboutText.AddonDataIntegrations);
+        return lines;
     }
 
     private static List<ExportRecipientDto> Recipients(
@@ -116,7 +129,16 @@ internal static class ExportAboutText
         "AI features of the AI add-on, only after you agreed to them (see account.aiConsent).";
 
     public const string Categories =
-        "Everything stored about you is in this file: your study content in the top-level lists and settings, everything else about your account under \"account\".";
+        "This file contains what this server stores about you: your study content in the top-level lists and settings, everything else about your account under \"account\". It does not contain what add-ons of this installation store about you (see \"addonData\").";
+
+    private const string AddonDataWhere =
+        " This server cannot read it for this file. Ask the operator of this installation for a copy; deleting your account asks the add-on to delete it.";
+    public const string AddonDataAi =
+        "AI add-on: the search index built from your notes and your AI conversations." + AddonDataWhere;
+    public const string AddonDataWebhooks =
+        "Webhooks add-on: the webhook addresses you registered and their delivery log." + AddonDataWhere;
+    public const string AddonDataIntegrations =
+        "Add-ons for the integrations you connected (for example MCP, voice assistants, chat bots): the links between your account and those services and what they keep for them." + AddonDataWhere;
 
     public const string WebPushName = "Push service of your browser's vendor (Web Push)";
     public const string WebPushReceives = "Each notification for the browsers listed in account.pushDevices, encrypted so that only the browser can read it.";

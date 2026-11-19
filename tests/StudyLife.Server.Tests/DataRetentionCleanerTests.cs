@@ -131,13 +131,55 @@ public class DataRetentionCleanerTests : IClassFixture<CustomWebApplicationFacto
             db.SentReminders.Add(new SentReminderEntity { AuthUserId = 9111, Key = "achievement:hours:100", SentAt = Now.AddDays(-400) });
             db.SentReminders.Add(new SentReminderEntity { AuthUserId = 9111, Key = "achievement:allcourses", SentAt = Now.AddDays(-400) });
             db.SentReminders.Add(new SentReminderEntity { AuthUserId = 9111, Key = "achievement:retired:5", SentAt = Now.AddDays(-400) });
-            db.SentReminders.Add(new SentReminderEntity { AuthUserId = 9111, Key = "coursegoal:7:reminder3d", SentAt = Now.AddDays(-400) });
             return Task.CompletedTask;
         });
 
         var keys = await ReadAsync(db => db.SentReminders.IgnoreQueryFilters()
             .Where(r => r.AuthUserId == 9111).Select(r => r.Key).OrderBy(k => k).ToListAsync());
-        Assert.Equal(["achievement:allcourses", "achievement:hours:100", "coursegoal:7:reminder3d"], keys);
+        Assert.Equal(["achievement:allcourses", "achievement:hours:100"], keys);
+    }
+
+    [Fact]
+    public async Task SessionInactivityAndMotivationMarkers_OlderThanTwoDays_AreDeleted_ForEveryUser()
+    {
+        var result = await RunAsync(db =>
+        {
+            // 9120 has neither a push subscription nor an upcoming session: the worker's own
+            // reminder run never reaches its markers.
+            db.SentReminders.Add(new SentReminderEntity { AuthUserId = 9120, Key = "501:reminder5", SentAt = Now.AddDays(-3) });
+            db.SentReminders.Add(new SentReminderEntity { AuthUserId = 9120, Key = "inactivity:2026-11-10", SentAt = Now.AddDays(-8) });
+            db.SentReminders.Add(new SentReminderEntity { AuthUserId = 9120, Key = "motivation:2026-11-17", SentAt = Now.AddHours(-30) });
+            db.SentReminders.Add(new SentReminderEntity { AuthUserId = 9120, Key = "502:reminder5", SentAt = Now.AddHours(-1) });
+            db.SentReminders.Add(new SentReminderEntity { AuthUserId = 9120, Key = "achievement:hours:25", SentAt = Now.AddDays(-30) });
+            return Task.CompletedTask;
+        });
+
+        var keys = await ReadAsync(db => db.SentReminders.IgnoreQueryFilters()
+            .Where(r => r.AuthUserId == 9120).Select(r => r.Key).OrderBy(k => k).ToListAsync());
+        Assert.Equal(["502:reminder5", "achievement:hours:25", "motivation:2026-11-17"], keys);
+        Assert.True(result.Reminders >= 2);
+    }
+
+    [Fact]
+    public async Task CourseGoalMarkers_AreDeletedOnceNoOpenGoalCanFireThem_AndStayWhileOneCan()
+    {
+        await RunAsync(db =>
+        {
+            db.CourseGoals.Add(new CourseGoalEntity { AuthUserId = 9121, CourseId = 11, CourseName = "open", TargetDate = Now.AddDays(10) });
+            db.CourseGoals.Add(new CourseGoalEntity { AuthUserId = 9121, CourseId = 12, CourseName = "done", TargetDate = Now.AddDays(-5), CompletedAt = Now.AddDays(-4) });
+            db.CourseGoals.Add(new CourseGoalEntity { AuthUserId = 9121, CourseId = 13, CourseName = "no date", TargetDate = null });
+            db.SentReminders.Add(new SentReminderEntity { AuthUserId = 9121, Key = "coursegoal:11:reminder14d", SentAt = Now.AddDays(-9) }); // open goal: stays
+            db.SentReminders.Add(new SentReminderEntity { AuthUserId = 9121, Key = "coursegoal:12:reminder0d", SentAt = Now.AddDays(-5) });  // completed
+            db.SentReminders.Add(new SentReminderEntity { AuthUserId = 9121, Key = "coursegoal:13:reminder3d", SentAt = Now.AddDays(-5) });  // target date removed
+            db.SentReminders.Add(new SentReminderEntity { AuthUserId = 9121, Key = "coursegoal:14:reminder3d", SentAt = Now.AddDays(-5) });  // goal deleted
+            // The same course id on another account must not keep this one's marker alive.
+            db.CourseGoals.Add(new CourseGoalEntity { AuthUserId = 9122, CourseId = 14, CourseName = "other user", TargetDate = Now.AddDays(10) });
+            return Task.CompletedTask;
+        });
+
+        var keys = await ReadAsync(db => db.SentReminders.IgnoreQueryFilters()
+            .Where(r => r.AuthUserId == 9121).Select(r => r.Key).ToListAsync());
+        Assert.Equal(["coursegoal:11:reminder14d"], keys);
     }
 
     [Fact]
