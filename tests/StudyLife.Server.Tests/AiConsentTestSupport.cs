@@ -118,6 +118,8 @@ internal static class AiConsentTestHost
 
     public static string ExternalFingerprint() => AiConsentService.Fingerprint(ParseExternal(AiUpstreamStub.ExternalInfoJson));
 
+    public static AiProviderInfo ExternalInfo() => ParseExternal(AiUpstreamStub.ExternalInfoJson);
+
     public static string UnknownFingerprint() => AiConsentService.Fingerprint(null);
 
     private static AiProviderInfo ParseExternal(string json)

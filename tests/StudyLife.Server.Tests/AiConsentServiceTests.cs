@@ -141,6 +141,42 @@ public class AiConsentServiceTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task ConsentGivenUnderTheOldText_DoesNotCover_PausesAi_AndKeepsTheKey()
+    {
+        // Version 1 hashed only the provider description, without the text version.
+        var info = AiConsentTestHost.ExternalInfo();
+        var legacy = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(
+            string.Join('\n', info.Roles.Select(r => $"{r.Role}|{r.Provider}|{r.Model}|{(r.Local ? 1 : 0)}").Order(StringComparer.Ordinal)))))
+            .ToLowerInvariant();
+        Assert.NotEqual(legacy, AiConsentTestHost.ExternalFingerprint());
+        await AiConsentTestHost.SeedUserAsync(_factory, hasKey: true, legacy);
+        var stub = new AiUpstreamStub();
+
+        var (status, gate) = await WithServiceAsync(stub, async s => (await s.GetStatusAsync(1, default), await s.EnsureGrantedAsync(1, default)));
+
+        Assert.False(status.Granted);
+        Assert.True(status.NeedsDecision);
+        Assert.True(status.HasKey); // only re-asked, the AI key is not revoked
+        Assert.Equal(ServiceOutcome.Forbidden, gate.Outcome);
+    }
+
+    [Fact]
+    public async Task ConsentGivenUnderTheNewText_Covers()
+    {
+        await AiConsentTestHost.SeedUserAsync(_factory, hasKey: true, consentFingerprint: null);
+        var stub = new AiUpstreamStub();
+
+        var (granted, status, gate) = await WithServiceAsync(stub, async s =>
+            (await s.GrantAsync(1, AiConsentTestHost.ExternalFingerprint(), default),
+             await s.GetStatusAsync(1, default), await s.EnsureGrantedAsync(1, default)));
+
+        Assert.Equal(ServiceOutcome.Success, granted.Outcome);
+        Assert.True(status.Granted);
+        Assert.False(status.NeedsDecision);
+        Assert.Equal(ServiceOutcome.Success, gate.Outcome);
+    }
+
+    [Fact]
     public void Fingerprint_IgnoresRoleOrder_ButSeesModelProviderAndLocality()
     {
         var a = new AiProviderRole("chat", "OpenAI", "gpt-4o", false);
