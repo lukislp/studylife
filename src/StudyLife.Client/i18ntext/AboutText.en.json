@@ -15,6 +15,7 @@
   "Imprint": "Imprint",
   "OperatorPrivacyPolicy": "Operator privacy policy",
   "AppPrivacyPolicy": "App privacy policy",
+  "PublisherImprint": "Imprint of the app publisher",
   "NoticesHeading": "Third-party notices",
   "NoticesDesc": "The open-source components in this build, with their licences and copyright holders.",
   "ShowNotices": "Show notices",
