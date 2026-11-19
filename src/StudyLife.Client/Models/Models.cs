@@ -149,7 +149,7 @@ public static class DefaultData
 {
     public static List<TimerMode> TimerModes => new()
     {
-        new() { Id = 1, Name = "Pomodoro Classic", Description = "25 minutes focus, 5 minute break. The original. Builds rhythm through repetition.", FocusMinutes = 25, BreakMinutes = 5, Rounds = 4, Style = "pomodoro", Emoji = "🍅", GradientFrom = "#E17055", GradientTo = "#D63031" },
+        new() { Id = 1, Name = "Classic 25/5", Description = "25 minutes focus, 5 minute break. The original. Builds rhythm through repetition.", FocusMinutes = 25, BreakMinutes = 5, Rounds = 4, Style = "pomodoro", Emoji = "🍅", GradientFrom = "#E17055", GradientTo = "#D63031" },
         new() { Id = 2, Name = "Flow State", Description = "52 minutes deep work, 17 minute recovery. Based on research into natural attention rhythms.", FocusMinutes = 52, BreakMinutes = 17, Rounds = 3, Style = "flow", Emoji = "🌊", GradientFrom = "#0984E3", GradientTo = "#74B9FF" },
         new() { Id = 3, Name = "Ultradian Rhythm", Description = "90 minute cycles matching your brain's natural peaks. One session, one deep dive.", FocusMinutes = 90, BreakMinutes = 20, Rounds = 2, Style = "ultradian", Emoji = "🌙", GradientFrom = "#6C5CE7", GradientTo = "#A29BFE" },
         new() { Id = 4, Name = "Steady Focus", Description = "Balanced 40-minute focus blocks with 10-minute breaks. Your session, your energy.", FocusMinutes = 40, BreakMinutes = 10, Rounds = 3, Style = "steady", Emoji = "✦", GradientFrom = "#CC785C", GradientTo = "#E8A87C" },

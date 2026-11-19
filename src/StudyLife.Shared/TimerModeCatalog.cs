@@ -42,7 +42,7 @@ public static class TimerModeCatalog
     /// client and, previously, ServerTimerModes.BuiltIn on the server.</summary>
     public static readonly IReadOnlyList<ModeData> BuiltIn = new ModeData[]
     {
-        new(1, "Pomodoro Classic", 25, 5, 4),
+        new(1, "Classic 25/5", 25, 5, 4),
         new(2, "Flow State", 52, 17, 3),
         new(3, "Ultradian Rhythm", 90, 20, 2),
         new(4, "Steady Focus", 40, 10, 3),
