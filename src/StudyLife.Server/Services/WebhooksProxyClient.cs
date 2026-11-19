@@ -48,8 +48,9 @@ public sealed class WebhooksProxyClient
     // webhook registered. The answer is cached per user and per process: a positive answer for
     // PositiveTtl, a negative one only for NegativeTtl so that a webhook created through another
     // replica starts receiving events within seconds. Creating/deleting through this process
-    // updates the entry immediately. When the lookup itself fails the event is sent anyway (fail
-    // open) - the receiving service drops events without subscribers and stores nothing.
+    // updates the entry immediately. When the lookup itself fails the event is NOT sent (fail
+    // closed, audit 2026-11-19 S9) and the failure is not cached: a lost notification is cheaper than
+    // user content leaving for a user who may have no webhook at all.
     internal static readonly TimeSpan PositiveTtl = TimeSpan.FromSeconds(60);
     internal static readonly TimeSpan NegativeTtl = TimeSpan.FromSeconds(10);
     private readonly TimeProvider _time;
@@ -156,16 +157,26 @@ public sealed class WebhooksProxyClient
         try
         {
             using var response = await ListWebhooksAsync(userId, ct);
-            if (!response.IsSuccessStatusCode) return true;
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("studylife-webhooks lookup of registered webhooks returned {Status} - event not sent", response.StatusCode);
+                return false;
+            }
             var list = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement[]>(await response.Content.ReadAsStringAsync(ct));
-            if (list is null) return true;
+            if (list is null)
+            {
+                _logger.LogWarning("studylife-webhooks lookup of registered webhooks returned no list - event not sent");
+                return false;
+            }
             Remember(userId, list.Length > 0);
             return list.Length > 0;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            _logger.LogWarning(ex, "studylife-webhooks lookup of registered webhooks failed - sending the event anyway");
-            return true;
+            // Fail closed (audit 2026-11-19 S9): an event carries user content, so without a positive
+            // answer it stays here. The failure is not cached, the next event asks again.
+            _logger.LogWarning(ex, "studylife-webhooks lookup of registered webhooks failed - event not sent");
+            return false;
         }
     }
 

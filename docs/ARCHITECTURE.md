@@ -586,7 +586,7 @@ Six targeted optimizations with no behavior change, implemented in the same pass
 - `AppStateService.GetHistoryAsync(days, onlyCompleted)` memoizes the history windows Index, Stats, Planner, Report and Wrapped used to fetch independently on every navigation. The memo is dropped on every sessions change (poll, SSE event, local write) plus a 10-minute safety TTL — history depends on nothing but sessions, so this is never a stale read after a write. A general memo for `GetJsonCachedAsync` (goals, notes, programmes) was deliberately NOT added: those have no change signal and would show stale data right after a write on another page.
 - `MetricsController` caches both endpoints through `CacheHelper` (60 s TTL, key = user + programme + `now` + session version + settings version); programme resolution runs before the cache so a 404 is never cached. `CourseGoalsController` bumps the settings version on every goal write so grades/goals are visible on the next metrics call — goals feed the metrics but had no counter of their own.
 - `PublishReadyToRun` for the RID-specific container publishes (linux-x64/arm64): the Pi's cold start (migration before Kestrel listens, worker startup probe) was dominated by JIT.
-- `WebhooksProxyClient.PublishEventAsync` is bounded: at most 8 publishes in flight per process (5 s wait for a slot, then dropped with a warning) and a 10 s HTTP timeout — the fire-and-forget call sites could otherwise accumulate unobserved tasks against a slow studylife-webhooks.
+- `WebhooksProxyClient.PublishEventAsync` is bounded: at most 8 publishes in flight per process (5 s wait for a slot, then dropped with a warning) and a 10 s HTTP timeout — the fire-and-forget call sites could otherwise accumulate unobserved tasks against a slow studylife-webhooks. It also fails closed: an event (user content) is only sent once the lookup "does this user have a webhook?" has answered yes; when that lookup fails the event is dropped with a warning, and the failure is not cached.
 - `Services/LocalDate.cs`: short dates follow the UI language (the client runs with InvariantGlobalization, so `ToString("d")` was always US-style).
 - Not done, deliberately: `TrimMode=full`/lazy Markdig (owner decision — needs a manual browser pass), DbContext pooling (the accessor-in-constructor query filters would need restructuring for microseconds), notes pagination (contract change for HA/MCP/capture), a GIN index for the Postgres note search (needs a Postgres-only migration verified against a live Postgres first), batching the worker's 5 s tick (a BackgroundTaskService restructuring with ~100 tests behind it).
 
@@ -875,7 +875,13 @@ and every Npgsql command. Sampling happens at the source: `Telemetry:TraceSample
 The console logger emits activity scopes (`Logging:Console:IncludeScopes`), which puts
 `TraceId:<32 hex>` into every log line written during a request; promtail ships that to Loki
 and Grafana's Loki datasource turns it into a link to the trace in Tempo (and back via
-pod/namespace). Span attributes never include SQL parameter values or request bodies.
+pod/namespace). Span attributes never include SQL parameter values or request bodies. Addresses
+that are credentials never reach either store: the progress-share token in a request path is
+replaced by `{token}` (`TracePathRedaction`), outgoing client spans keep only scheme and host
+(`OutgoingUrlRedactionProcessor`; a web-push endpoint or an APNs device token is part of the URL;
+only `/internal/...` calls to the add-ons keep their path), and the hosting layer's request scope,
+which carries the raw `RequestPath`, is switched off (`RequestScopeLogging`), while the trace and
+span id scopes stay.
 
 **Phase 2 — client beacon.** `POST /api/telemetry` (`Controllers/TelemetryController.cs`,
 policy `SessionOnly`, `[EnableRateLimiting("telemetry")]` at 30 batches/minute per user, a 32 KB
