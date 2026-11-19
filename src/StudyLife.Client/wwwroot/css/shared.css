@@ -158,11 +158,18 @@ input::-webkit-date-and-time-value {
     border-radius: 16px;
     width: 440px;
     max-width: 92vw;
+    /* Never taller than the viewport (minus a margin and the safe areas): a long dialog (e.g. the
+       AI consent with its disclosures) keeps header and footer visible and scrolls its body, so
+       the buttons always stay reachable. Same pattern as .program-modal. */
+    max-height: calc(100dvh - 2rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    display: flex;
+    flex-direction: column;
     box-sizing: border-box;
     overflow: hidden;
 }
 
 .modal-header {
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -173,8 +180,8 @@ input::-webkit-date-and-time-value {
 .modal-close { color: var(--text3); font-size: 1rem; width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; background: var(--bg3); }
 .modal-close:hover { color: var(--text); }
 
-.modal-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
-.modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; gap: 0.5rem; justify-content: flex-end; }
+.modal-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.modal-footer { flex-shrink: 0; padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; gap: 0.5rem; justify-content: flex-end; }
 
 /* Device management (PushDeviceManager, FAB bell) - somewhat wider than the standard .modal
    (440px) so label + "X days ago" + button don't wrap. The list itself scrolls instead of
