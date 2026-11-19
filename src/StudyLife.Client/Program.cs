@@ -26,7 +26,7 @@ builder.Services.AddI18nText(options => options.PersistenceLevel = PersistanceLe
 builder.Services.AddScoped<SessionTokenStore>();
 // The one clock of the UI (ClockExtensions): the browser's real time. The native app registers
 // its own TimeProvider (in its store screenshot mode one pinned to the status bar's time).
-builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 builder.Services.AddScoped(sp =>
 {
     var baseAddress = new Uri(builder.HostEnvironment.BaseAddress);
