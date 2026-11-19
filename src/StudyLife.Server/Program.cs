@@ -546,7 +546,6 @@ builder.Services.AddScoped<IStudyProgramService, StudyProgramService>();
 builder.Services.AddScoped<IExamPlanService, ExamPlanService>();
 builder.Services.AddScoped<ITimerStateService, TimerStateService>();
 builder.Services.AddScoped<ISettingsService, SettingsService>();
-builder.Services.AddScoped<ITelemetryConsentService, TelemetryConsentService>();
 builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
 // The consent rule for sending user data to studylife-ai (see AiConsentService). Registered
 // through a factory because ApiKeyService depends on it and it needs ApiKeyService back only to
