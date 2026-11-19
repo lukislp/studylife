@@ -19,17 +19,21 @@
     overscroll-behavior: contain;
     background: var(--bg);
     color: var(--text);
+    /* Column: the page fills what is left, the legal footer sits at the bottom of the window
+       (not one full screen below the page, where nobody scrolls to) when the page is short. */
+    display: flex;
+    flex-direction: column;
 }
 
 /* Privacy policy and imprint under every public page (Shared/PublicLayout.razor). */
 .public-legal {
+    flex: 0 0 auto;
     padding: 0 1.25rem 1.5rem;
     text-align: center;
 }
 
 .progress-share-page {
-    min-height: 100vh;
-    min-height: 100dvh;
+    flex: 1 0 auto;
     display: flex;
     align-items: flex-start;
     justify-content: center;
