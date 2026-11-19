@@ -64,6 +64,9 @@ public class AuthAccountService(StudyLifeDb db, AuthSessionCache sessionCache, S
     public async Task LogoutAsync(int sessionId, string? sessionTokenHash)
     {
         await db.AuthSessions.Where(s => s.Id == sessionId).ExecuteDeleteAsync();
+        // The device this session registered for push must stop receiving pushes with it - done
+        // here, server side, so it does not depend on the app's best-effort unsubscribe call.
+        await PushService.DeleteBoundToSessionsAsync(db, [sessionId]);
         // The handler's per-pod session cache (AuthSessionCache) would otherwise keep answering
         // for this token for up to 30 more seconds on THIS pod.
         if (sessionTokenHash is not null) sessionCache.Remove(sessionTokenHash);
@@ -141,8 +144,10 @@ public class AuthAccountService(StudyLifeDb db, AuthSessionCache sessionCache, S
         // Evict the revoked tokens from this pod's AuthSessionCache as well - otherwise a device
         // signed out here could keep authenticating against THIS pod for up to 30 more seconds.
         // Other pods drop their entries at the cache's TTL (documented on AuthSessionCache).
-        var revokedHashes = await others.Select(s => s.TokenHash).ToListAsync();
+        var revoked = await others.Select(s => new { s.Id, s.TokenHash }).ToListAsync();
+        var revokedHashes = revoked.Select(s => s.TokenHash);
         var deleted = await others.ExecuteDeleteAsync();
+        await PushService.DeleteBoundToSessionsAsync(db, revoked.Select(s => s.Id).ToList());
         foreach (var hash in revokedHashes) sessionCache.Remove(hash);
         return deleted;
     }

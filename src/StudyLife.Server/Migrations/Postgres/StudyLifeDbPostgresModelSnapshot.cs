@@ -669,6 +669,9 @@ namespace StudyLife.Server.Migrations.Postgres
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int?>("AuthSessionId")
+                        .HasColumnType("integer");
+
                     b.Property<int>("AuthUserId")
                         .HasColumnType("integer");
 
@@ -691,6 +694,8 @@ namespace StudyLife.Server.Migrations.Postgres
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AuthSessionId");
 
                     b.HasIndex("AuthUserId", "Endpoint")
                         .IsUnique();
