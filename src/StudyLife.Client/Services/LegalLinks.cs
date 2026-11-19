@@ -21,6 +21,11 @@ public sealed record LegalLinks(string AppPrivacyUrl, string? OperatorPrivacyUrl
     /// policy are two separate links.</summary>
     public bool HasOperatorPrivacy => OperatorPrivacyUrl is not null;
 
+    /// <summary>True when the operator configured an imprint of their own. Without one the link goes
+    /// to the publisher's imprint, which is labelled as such: on a foreign operator's instance a bare
+    /// "Imprint" would name the wrong party as responsible for the service.</summary>
+    public bool HasOperatorImprint => ImprintUrl != PublisherImprint;
+
     /// <summary>Only the publisher's pages - what every installation without Legal:* shows.</summary>
     public static LegalLinks Publisher(string? language) => Resolve(language, null);
 

@@ -60,10 +60,23 @@ public class StoreReviewVisibilityTests : ConsentBunitTest
     }
 
     [Fact]
-    public void Registration_links_the_privacy_policy_before_sign_in()
+    public void Public_layout_links_the_privacy_policy_and_imprint_under_every_page()
     {
-        var cut = RenderRegister(new NoNativeAppAuth());
-        cut.WaitForAssertion(() => Assert.Contains("https://legal.lktec.org/", cut.Markup));
+        Ctx.JSInterop.Mode = JSRuntimeMode.Loose;
+        Services.AddI18nText();
+        var server = new ScriptedServer().OnJson("GET api/instance", new InstanceInfoDto { Id = "x" });
+        Services.AddSingleton(new HttpClient(server) { BaseAddress = new Uri("https://studylife.test/") });
+
+        var cut = Render<StudyLife.Client.Shared.PublicLayout>(p => p
+            .Add(c => c.Body, (Microsoft.AspNetCore.Components.RenderFragment)(b => b.AddMarkupContent(0, "<p id=\"page\">content</p>"))));
+
+        cut.Find("#page");
+        cut.WaitForAssertion(() =>
+        {
+            var hrefs = cut.Find("footer.public-legal").QuerySelectorAll("a").Select(a => a.GetAttribute("href")).ToList();
+            Assert.StartsWith("https://legal.lktec.org/", hrefs[0]);
+            Assert.Equal(LegalLinks.PublisherImprint, hrefs[1]);
+        });
     }
 
     [Fact]
