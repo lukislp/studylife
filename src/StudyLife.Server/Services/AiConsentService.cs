@@ -68,6 +68,16 @@ public sealed class AiConsentService : IAiConsentService
     /// reacts to it by showing the consent dialog.</summary>
     public const string ConsentRequiredProblem = "ai-consent-required";
 
+    /// <summary>
+    /// Version of the consent dialog's disclosure text (<c>AiConsentText.*.json</c>), folded into
+    /// <see cref="Fingerprint"/>. Raise it whenever the dialog starts disclosing something
+    /// materially new: every consent given under an older version then stops covering and the
+    /// user is asked once more (AI paused until answered, nothing revoked - see the class
+    /// comment). History: 1 = original text (no version in the hash), 2 = added third-country
+    /// transfer, agent checkpoint retention (30 days) and capture enrichment (2026-11-19 audit).
+    /// </summary>
+    public const int AiConsentTextVersion = 2;
+
     private readonly StudyLifeDb _db;
     private readonly AiProxyClient _client;
     private readonly bool _demo;
@@ -106,11 +116,14 @@ public sealed class AiConsentService : IAiConsentService
     /// to a real description once studylife-ai reports one.</summary>
     public static string Fingerprint(AiProviderInfo? info)
     {
-        var canonical = info is null
+        var description = info is null
             ? "unknown"
             : string.Join('\n', info.Roles
                 .Select(r => $"{r.Role}|{r.Provider}|{r.Model}|{(r.Local ? 1 : 0)}")
                 .Order(StringComparer.Ordinal));
+        // The text version is part of what a consent covers: raising it makes every stored
+        // consent stop covering, so each user is asked once more (see AiConsentTextVersion).
+        var canonical = $"text-v{AiConsentTextVersion}\n{description}";
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical))).ToLowerInvariant();
     }
 

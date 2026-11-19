@@ -55,6 +55,9 @@ public class AiConsentModalTests : ConsentBunitTest
         WhomHeading = "Who receives this data:",
         WhomUnknown = "The provider the operator configured.",
         LeavesServerText = "It leaves this server.",
+        ThirdCountryText = "May be processed outside the EU/EEA.",
+        CheckpointText = "Agent conversations are kept for 30 days.",
+        EnrichmentText = "Captured web pages are enriched.",
         OptionalText = "Optional.",
         WithdrawText = "Withdraw any time.",
         ExistingUserText = "You already use AI.",
@@ -103,6 +106,11 @@ public class AiConsentModalTests : ConsentBunitTest
         // OpenAI/gpt-4o-mini is used for two roles but named once; the local model is named too.
         Assert.Equal(["OpenAI (gpt-4o-mini)", "Ollama (local) (llama3.2)"], recipients);
         Assert.Contains("It leaves this server.", cut.Markup);
+        // The disclosures the 2026-11-19 GDPR audit asked for: third-country transfer, how long
+        // agent conversations are kept, and the capture enrichment.
+        Assert.Contains("May be processed outside the EU/EEA.", cut.Markup);
+        Assert.Contains("Agent conversations are kept for 30 days.", cut.Markup);
+        Assert.Contains("Captured web pages are enriched.", cut.Markup);
         Assert.Contains("Optional.", cut.Markup);
         Assert.Contains("Withdraw any time.", cut.Markup);
         Assert.DoesNotContain(Texts.WhomUnknown, cut.Markup);
