@@ -212,7 +212,7 @@ public partial class Index
 
     private void RefreshGreeting()
     {
-        var hour = DateTime.Now.Hour;
+        var hour = Clock.LocalNow().Hour;
         _greeting = hour < 12 ? T.GoodMorning : hour < 17 ? T.GoodAfternoon : T.GoodEvening;
     }
 
@@ -280,7 +280,7 @@ public partial class Index
         var sleepNightsTask = Health.IsAvailable ? Health.GetRecentSleepNightsAsync(30) : Task.FromResult<IReadOnlyList<SleepNight>?>(null);
         // One wall-clock read for the whole build: the server runs DashboardSummaryBuilder with
         // exactly this instant, so its numbers equal what the fallback below would compute here.
-        var now = DateTime.Now;
+        var now = Clock.LocalNow();
         // Server path (2026-09): GET api/dashboard/summary returns the complete builder output in
         // one small response instead of the six raw fetches (sessions, two history windows,
         // goals, programmes, notes - up to ~1.5 MB and dozens of LINQ passes in WASM for an older

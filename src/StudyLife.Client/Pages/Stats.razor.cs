@@ -100,7 +100,7 @@ public partial class Stats
             : Task.FromResult<IReadOnlyList<StudyLife.Client.Services.CardioFitnessPoint>?>(null);
         // One wall-clock read for the whole page: sent to the server and used by the local
         // fallback alike, so both paths compute every time-dependent number for the same instant.
-        _now = DateTime.Now;
+        _now = Clock.LocalNow();
         // Server path: one response with the complete builder output replaces the seven raw
         // fetches (sessions, two history windows, goals, quotas, notes, programmes + their N+1
         // catalogs). The raw fetches only start in the fallback, see StartRawFetches.
@@ -190,7 +190,7 @@ public partial class Stats
         // One wall-clock read for the whole build: nothing in the builder reads DateTime.Now/Today
         // itself, so every card below sees the exact same instant. A live refresh takes a fresh
         // instant instead of reusing the one from the initial page load.
-        var now = isRefresh ? DateTime.Now : _now;
+        var now = isRefresh ? Clock.LocalNow() : _now;
         _now = now;
 
         // A live refresh can't reuse OnInitializingAsync's tasks (those already resolved to the

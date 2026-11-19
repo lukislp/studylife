@@ -10,6 +10,7 @@
 @inject AppStateService State
 @inject HttpClient Http
 @implements IDisposable
+@inject TimeProvider Clock
 
 @if (IsTextLoaded)
 {
@@ -49,7 +50,7 @@
                         </div>
                         <div class="field">
                             <label>@T.FieldExamDate</label>
-                            <input type="date" class="input" @bind="_examDate" min="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")" />
+                            <input type="date" class="input" @bind="_examDate" min="@Clock.LocalToday().AddDays(1).ToString("yyyy-MM-dd")" />
                         </div>
                     </div>
                     <div class="field-row">
@@ -256,7 +257,7 @@
 
     // Exam planner
     private int _examCourseId;
-    private DateTime _examDate = DateTime.Today.AddDays(30);
+    private DateTime _examDate; // set from the clock in OnInitializingAsync
     private int _examSessionLengthMinutes = 90;
     private double _examTotalHours = 6;
     private List<string> _examOpenTopics = new();
@@ -342,6 +343,7 @@
 
     protected override Task OnInitializingAsync()
     {
+        _examDate = Clock.LocalToday().AddDays(30);
         _settingsTask = State.GetSettingsAsync();
         _coursesTask = State.GetCoursesAsync();
         _sessionsTask = State.GetSessionsAsync();
@@ -424,9 +426,9 @@
         _examOpenTopics = GetOpenTopics(course);
 
         var goal = _goals.FirstOrDefault(g => g.CourseId == _examCourseId);
-        _examDate = goal?.TargetDate.HasValue == true && goal.TargetDate!.Value.Date > DateTime.Today
+        _examDate = goal?.TargetDate.HasValue == true && goal.TargetDate!.Value.Date > Clock.LocalToday()
             ? goal.TargetDate.Value.Date
-            : DateTime.Today.AddDays(30);
+            : Clock.LocalToday().AddDays(30);
         _examTotalHours = Math.Max(1.5, _examOpenTopics.Count * 1.5);
     }
 
@@ -434,7 +436,7 @@
     {
         _examError = null;
         _examAcceptedMessage = null;
-        if (_examDate.Date <= DateTime.Today)
+        if (_examDate.Date <= Clock.LocalToday())
         {
             _examError = T.ExamDateInPastError;
             return;
@@ -449,7 +451,7 @@
         var totalMinutesNeeded = (int)Math.Round(_examTotalHours * 60);
         var sessionsNeeded = Math.Max(1, (int)Math.Ceiling(totalMinutesNeeded / (double)_examSessionLengthMinutes));
 
-        var fromDate = DateTime.Now;
+        var fromDate = Clock.LocalNow();
         var toDate = _examDate.Date.AddDays(-1);
         var daysAvailable = Math.Max(1, (toDate.Date - fromDate.Date).Days + 1);
         var maxSlotsPerDay = Math.Clamp((int)Math.Ceiling(sessionsNeeded / (double)daysAvailable), 1, 3);
@@ -535,9 +537,9 @@
         RecalcWeekHours();
     }
 
-    private static DateTime CurrentWeekStart()
+    private DateTime CurrentWeekStart()
     {
-        var today = DateTime.Today;
+        var today = Clock.LocalToday();
         var dowOffset = ((int)today.DayOfWeek + 6) % 7; // Montag = 0
         return today.AddDays(-dowOffset);
     }
@@ -565,14 +567,14 @@
 
         _settings = await State.GetSettingsAsync();
         _sessions = await State.GetSessionsAsync();
-        var today = DateTime.Today;
+        var today = Clock.LocalToday();
         var weekStart = CurrentWeekStart();
         var weekEnd = weekStart.AddDays(6); // Sonntag
 
         var sessionLength = TimeSpan.FromMinutes(_weekSessionLengthMinutes);
         var totalSessions = Math.Max(1, (int)Math.Ceiling(_weekRemainingHours * 60 / _weekSessionLengthMinutes));
 
-        var completedHistory = _history.Where(s => s.IsCompleted || s.EndTime <= DateTime.Now).ToList();
+        var completedHistory = _history.Where(s => s.IsCompleted || s.EndTime <= Clock.LocalNow()).ToList();
         var lastStudiedByCourse = completedHistory
             .GroupBy(s => s.CourseId)
             .ToDictionary(g => g.Key, g => g.Max(s => s.StartTime));
@@ -605,7 +607,7 @@
         var picks = StudyPlanner.WeightedRoundRobin(weights, totalSessions);
         var weekBusy = _sessions.Select(s => (s.StartTime, s.EndTime));
         var weekAllowedDays = StudyPlanner.ParseStudyDays(_settings.StudyDays);
-        var slots = StudyPlanner.FindFreeSlots(DateTime.Now, weekEnd, weekBusy, sessionLength, maxSlotsPerDay: 3, maxTotalSlots: totalSessions,
+        var slots = StudyPlanner.FindFreeSlots(Clock.LocalNow(), weekEnd, weekBusy, sessionLength, maxSlotsPerDay: 3, maxTotalSlots: totalSessions,
             dayStartHour: _settings.StudyWindowStartHour, dayEndHour: _settings.StudyWindowEndHour, allowedDays: weekAllowedDays);
 
         var count = Math.Min(picks.Count, slots.Count);

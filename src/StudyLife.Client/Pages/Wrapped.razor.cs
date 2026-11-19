@@ -77,11 +77,11 @@ public partial class Wrapped
         _coursesTask = State.GetCoursesAsync();
         // One wall-clock read shared by the server request and the local fallback, so both compute
         // the recap for the same instant. The raw history fetches only start in the fallback.
-        _now = DateTime.Now;
+        _now = Clock.LocalNow();
         _summaryTask = State.TryGetSummaryAsync<WrappedSummaryDto>("api/wrapped/summary", _now);
         // Doesn't depend on any fetch - computed here (instead of after the awaits below) so the
         // period line in the header is already correct on the very first shell render.
-        _periodEnd = DateTime.Today;
+        _periodEnd = Clock.LocalToday();
         _periodStart = _periodEnd.AddDays(-WrappedSummaryBuilder.PeriodHistoryDays);
 
         // Live updates (change stream): sessions/settings have their own events, notes/study
@@ -143,7 +143,7 @@ public partial class Wrapped
         // A live refresh takes a fresh instant and can't reuse OnInitializingAsync's tasks
         // (those already resolved to the page's initial data) - it starts its own, exactly like
         // the initial load did.
-        var now = isRefresh ? DateTime.Now : _now;
+        var now = isRefresh ? Clock.LocalNow() : _now;
         _now = now;
         var settingsTask = isRefresh ? State.GetSettingsAsync() : _settingsTask!;
         var coursesTask = isRefresh ? State.GetCoursesAsync() : _coursesTask!;
