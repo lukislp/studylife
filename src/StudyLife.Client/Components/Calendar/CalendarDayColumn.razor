@@ -3,12 +3,13 @@
   SPDX-License-Identifier: AGPL-3.0-only
 *@
 @using StudyLife.Client.Models
+@inject TimeProvider Clock
 
 <div class="cal-day @(IsToday ? "today" : "") @(IsPast ? "past" : "")">
     <div class="day-body" @onclick="(e) => OnDayClick.InvokeAsync(e)" style="position:relative;height:1440px;cursor:pointer">
         @if (IsToday)
         {
-            var nowTop = DateTime.Now.Hour * 60 + DateTime.Now.Minute;
+            var nowTop = Clock.LocalNow().Hour * 60 + Clock.LocalNow().Minute;
             if (nowTop >= 0 && nowTop <= 1440)
             {
                 <div class="cal-now-line" style="top:@(nowTop)px"></div>
@@ -33,6 +34,6 @@
     /// proposed sessions without duplicating this component's real-session rendering.</summary>
     [Parameter] public RenderFragment? GhostContent { get; set; }
 
-    private bool IsToday => Date.Date == DateTime.Today;
-    private bool IsPast => Date.Date < DateTime.Today;
+    private bool IsToday => Date.Date == Clock.LocalToday();
+    private bool IsPast => Date.Date < Clock.LocalToday();
 }

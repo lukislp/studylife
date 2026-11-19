@@ -9,6 +9,7 @@
 @inject IServerLinks Links
 @inject AppStateService State
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
+@inject TimeProvider Clock
 
 @* Registration invites (owner-only, audit finding A10): generates a "/register?invite=<token>"
    link so someone else can create their own account when Registration:Mode=invite. Self-contained
@@ -52,7 +53,7 @@
                             {
                                 <span class="pdm-pending-badge">@T.InvitesUsedLabel</span>
                             }
-                            else if (invite.ExpiresAt <= DateTime.UtcNow)
+                            else if (invite.ExpiresAt <= Clock.GetUtcNow().UtcDateTime)
                             {
                                 <span class="pdm-pending-badge">@T.InvitesExpiredLabel</span>
                             }

@@ -10,9 +10,10 @@ namespace StudyLife.Server.Services.SampleData;
 /// <summary>
 /// The sample study dataset, written into ONE existing account: a student in the built-in
 /// "Applied Artificial Intelligence" program, semester 1 fully completed (grades + ECTS
-/// progress), currently mid-semester-2 with an active study streak ending today, a handful of
-/// planned sessions in the coming days, two upcoming exam goals and a few notes. In German
-/// (the default, and what the demo shows) courses and topics come straight from
+/// progress), currently mid-semester-2 with an active study streak ending today, a day in
+/// progress (a session done this morning, one planned for later today), a handful of planned
+/// sessions in the coming days, two upcoming exam goals and a few notes. In German
+/// (the default, and the demo's unless Demo:Language says otherwise) courses and topics come straight from
 /// CourseCatalog.AppliedAICourses; in English the account gets its own copy of that program
 /// with English names and topics (<see cref="EnglishSampleProgram"/>). The free texts per
 /// language are <see cref="SampleDataContent"/>; the structure is the same for both.
@@ -29,6 +30,18 @@ namespace StudyLife.Server.Services.SampleData;
 public static class SampleDataset
 {
     private const int RandomSeed = 20260805;
+
+    /// <summary>Today's finished session: early morning, before a typical day starts.</summary>
+    internal static readonly TimeSpan TodaysCompletedStart = new(7, 30, 0);
+    internal static readonly TimeSpan TodaysCompletedLength = TimeSpan.FromMinutes(60);
+
+    /// <summary>Today's planned session starts at 14:00, or two full hours after "now" when that is
+    /// later; none once it would start after 20:00 (it lasts 90 minutes).</summary>
+    internal static DateTime? PlannedStartToday(DateTime now)
+    {
+        var hour = Math.Max(14, now.Hour + 2);
+        return hour <= 20 ? now.Date.AddHours(hour) : null;
+    }
 
     public static async Task PopulateAsync(StudyLifeDb db, int userId, DateTime now,
         SampleDataLanguage language = SampleDataLanguage.German)
@@ -108,9 +121,10 @@ public static class SampleDataset
 
         // ── Study history: ~10 weeks of sessions on the active courses ───────────
         // Weekdays study more often than weekends; the last 12 days ALL have at least one
-        // completed session so the dashboard shows a live, unbroken streak ending today.
+        // completed session so the dashboard shows a live, unbroken streak ending today. Today
+        // itself is not part of this loop; it gets the fixed shape further down.
         var durations = new[] { 45, 60, 60, 90, 90, 120 };
-        for (var dayOffset = 70; dayOffset >= 0; dayOffset--)
+        for (var dayOffset = 70; dayOffset >= 1; dayOffset--)
         {
             var day = today.AddDays(-dayOffset);
             var isWeekend = day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
@@ -125,9 +139,6 @@ public static class SampleDataset
                 var minutes = durations[rng.Next(durations.Length)];
                 var start = day.AddHours(hour).AddMinutes(15 * rng.Next(0, 4));
                 var end = start.AddMinutes(minutes);
-                // Today's session(s): only count as far as "now", so the day looks in-progress
-                // rather than containing sessions from the future.
-                if (day == today && end > now) break;
                 db.Sessions.Add(new StudySessionEntity
                 {
                     AuthUserId = userId,
@@ -143,6 +154,47 @@ public static class SampleDataset
                 hour += minutes / 60 + 2; // gap before the next session
                 if (hour >= 20) break;
             }
+        }
+
+        // ── Today: the day in progress ───────────────────────────────────────────
+        // A session finished this morning (once "now" is past it, so nothing completed lies in
+        // the future) and one still planned for later today: the dashboard's "Today" and "Up
+        // next", the calendar's day view and the focus page then all show a day in progress
+        // instead of an empty one. Fixed times instead of random ones, so the shape holds at
+        // every reseed time (a demo restart at any hour, a screenshot run with a pinned clock).
+        var morningStart = today.Add(TodaysCompletedStart);
+        var morningEnd = morningStart.Add(TodaysCompletedLength);
+        if (morningEnd <= now)
+        {
+            var course = active[0];
+            db.Sessions.Add(new StudySessionEntity
+            {
+                AuthUserId = userId,
+                CourseId = course.Id,
+                CourseName = course.Name,
+                CourseColor = course.Color,
+                StartTime = morningStart,
+                EndTime = morningEnd,
+                Topic = course.Topics[rng.Next(course.Topics.Count)],
+                IsCompleted = true,
+                TimerModeId = 1,
+            });
+        }
+        if (PlannedStartToday(now) is { } plannedToday)
+        {
+            var course = active[1 % active.Count];
+            db.Sessions.Add(new StudySessionEntity
+            {
+                AuthUserId = userId,
+                CourseId = course.Id,
+                CourseName = course.Name,
+                CourseColor = course.Color,
+                StartTime = plannedToday,
+                EndTime = plannedToday.AddMinutes(90),
+                Topic = course.Topics[rng.Next(course.Topics.Count)],
+                IsCompleted = false,
+                TimerModeId = 1,
+            });
         }
 
         // ── Planned sessions for the coming week ─────────────────────────────────

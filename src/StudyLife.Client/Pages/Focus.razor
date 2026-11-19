@@ -15,6 +15,7 @@
 @inject IJSRuntime JS
 @inject HttpClient Http
 @implements IDisposable
+@inject TimeProvider Clock
 
 @if (IsTextLoaded)
 {
@@ -198,7 +199,7 @@
         try
         {
             var sessions = await State.GetSessionsAsync();
-            var now = DateTime.Now;
+            var now = Clock.LocalNow();
             _activeSession = sessions.FirstOrDefault(s => !s.IsCompleted && s.StartTime <= now && s.EndTime >= now);
             _upcomingSession = sessions
                 .Where(s => !s.IsCompleted && s.StartTime > now)
@@ -229,7 +230,7 @@
         _langWatcher = new I18nLanguageWatcher(I18nText);
         await _langWatcher.InitAsync();
         var sessions = await _sessionsTask!;
-        var nowForSessions = DateTime.Now;
+        var nowForSessions = Clock.LocalNow();
         _activeSession = sessions.FirstOrDefault(s => !s.IsCompleted && s.StartTime <= nowForSessions && s.EndTime >= nowForSessions);
         _upcomingSession = sessions
             .Where(s => !s.IsCompleted && s.StartTime > nowForSessions)
@@ -562,8 +563,8 @@
                 Content = _reflectionText,
                 CourseId = _reflectionCourseId,
                 SessionId = _reflectionSessionId,
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
+                CreatedAt = Clock.LocalNow(),
+                UpdatedAt = Clock.LocalNow()
             };
             // Offline: the session reflection is especially likely to happen out of signal
             // range — enqueue instead of losing it (replayed on the next poll, see AppStateService).

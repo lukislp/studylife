@@ -19,6 +19,7 @@
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
 @inject LocalDateNames DateNames
 @implements IDisposable
+@inject TimeProvider Clock
 
 @if (_authenticated)
 {
@@ -533,10 +534,10 @@
         try
         {
             var sessions = await State.GetSessionsAsync();
-            var now = DateTime.Now;
+            var now = Clock.LocalNow();
             // Remaining today = not yet done; mirrors Index.razor's IsDone
             // semantics (done = IsCompleted || EndTime <= now).
-            var count = sessions.Count(s => s.StartTime.Date == DateTime.Today
+            var count = sessions.Count(s => s.StartTime.Date == Clock.LocalToday()
                                             && !s.IsCompleted
                                             && s.EndTime > now);
             await JS.InvokeVoidAsync("setAppBadge", count);

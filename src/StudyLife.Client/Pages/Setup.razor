@@ -15,6 +15,7 @@
 @inject HttpClient Http
 @inject IServerLinks Links
 @inject IJSRuntime JS
+@inject TimeProvider Clock
 
 @if (IsTextLoaded)
 {
@@ -1097,7 +1098,7 @@
         if (_completionGoal == null) return;
         _completionGoal.CompletionNote = _completionNoteDraft;
         _completionGoal.Grade = _completionGradeDraft;
-        _completionGoal.CompletedAt = DateTime.Now;
+        _completionGoal.CompletedAt = Clock.LocalNow();
         await PutCourseGoalAsync(_completionGoal);
         _showCompletionModal = false;
     }

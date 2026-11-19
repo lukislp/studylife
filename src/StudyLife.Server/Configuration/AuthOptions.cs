@@ -79,6 +79,22 @@ public sealed class SampleDataOptions
     public string? Language { get; set; }
 }
 
+/// <summary>Shape of the demo dataset on a demo instance (<see cref="Services.DemoSeeder"/>); read
+/// only when demo mode is armed (<see cref="Services.DemoModeGuard"/>). Env form
+/// <c>Demo__Language</c>, <c>Demo__Clock</c>.</summary>
+public sealed class DemoOptions
+{
+    public const string SectionName = "Demo";
+
+    /// <summary>"de" (default when unset) or "en", same values and validation as
+    /// <see cref="SampleDataOptions.Language"/>.</summary>
+    public string? Language { get; set; }
+
+    /// <summary>Optional 24-hour time ("09:41"): seed the dataset as if it were that time today
+    /// (<see cref="Services.DemoSeeder.SeedTime"/>). Unset = the real time of the start.</summary>
+    public string? Clock { get; set; }
+}
+
 /// <summary>
 /// Optional operator-pinned VAPID key pair. When both keys are set they win over the DB-backed
 /// pair (<see cref="Services.SystemSecretsService"/>); otherwise this section is simply absent.
