@@ -140,14 +140,44 @@ public class WebhooksProxyClientTests
         Assert.Single(handler.Requests, r => r.Uri.EndsWith("/internal/events"));
     }
 
-    [Fact]
-    public async Task PublishEventAsync_WhenTheLookupFails_StillSendsTheEvent()
+    [Theory]
+    [InlineData("status")]
+    [InlineData("network")]
+    [InlineData("null-body")]
+    public async Task PublishEventAsync_WhenTheLookupFails_DoesNotSendTheEvent(string failure)
     {
-        var handler = new StubHttpHandler(r => r.Method == HttpMethod.Get
-            ? new HttpResponseMessage(HttpStatusCode.InternalServerError)
-            : new HttpResponseMessage(HttpStatusCode.OK));
+        var handler = new StubHttpHandler(r =>
+        {
+            if (r.Method != HttpMethod.Get) return new HttpResponseMessage(HttpStatusCode.OK);
+            return failure switch
+            {
+                "status" => new HttpResponseMessage(HttpStatusCode.InternalServerError),
+                "network" => throw new HttpRequestException("connection refused"),
+                _ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("null") },
+            };
+        });
         var client = CreateClient(handler);
 
+        await client.PublishEventAsync(7, WebhookEventTypes.NoteCreated, new { }, CancellationToken.None);
+
+        Assert.DoesNotContain(handler.Requests, r => r.Uri.EndsWith("/internal/events"));
+    }
+
+    [Fact]
+    public async Task PublishEventAsync_ALookupFailureIsNotCached_SoTheNextEventAsksAgain()
+    {
+        var lookupFails = true;
+        var handler = new StubHttpHandler(r =>
+        {
+            if (r.Method != HttpMethod.Get) return new HttpResponseMessage(HttpStatusCode.OK);
+            return lookupFails
+                ? new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)
+                : new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("[{}]") };
+        });
+        var client = CreateClient(handler);
+
+        await client.PublishEventAsync(7, WebhookEventTypes.NoteCreated, new { }, CancellationToken.None);
+        lookupFails = false;
         await client.PublishEventAsync(7, WebhookEventTypes.NoteCreated, new { }, CancellationToken.None);
 
         Assert.Single(handler.Requests, r => r.Uri.EndsWith("/internal/events"));

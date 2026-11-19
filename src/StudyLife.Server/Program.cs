@@ -42,6 +42,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Consumers inject IOptions<T>/IOptionsMonitor<T>; the startup decisions below, which run before
 // the container exists, use the matching Bind<T>() of the same options class.
 builder.Services.AddStudyLifeOptions();
+// No raw request path in log scopes (a share token travels in a path): see RequestScopeLogging.
+builder.Logging.WithoutRequestPathScope();
 var telemetryOptions = builder.Configuration.Bind<TelemetryOptions>(TelemetryOptions.SectionName);
 var cacheOptions = builder.Configuration.Bind<CacheOptions>(CacheOptions.SectionName);
 var databaseOptions = builder.Configuration.Bind<DatabaseOptions>(DatabaseOptions.SectionName);
@@ -83,6 +85,8 @@ if (metricsPort is not null || !string.IsNullOrEmpty(otlpEndpoint))
                 options.EnrichWithHttpRequest = StudyLife.Server.Diagnostics.TracePathRedaction.Enrich;
             })
             .AddHttpClientInstrumentation()
+            // Web-push endpoints and APNs device tokens are part of outgoing URLs: never exported.
+            .AddProcessor(new StudyLife.Server.Diagnostics.OutgoingUrlRedactionProcessor())
             .AddNpgsql()
             .SetSampler(new ParentBasedSampler(new TraceIdRatioBasedSampler(traceSampleRatio)))
             .AddOtlpExporter(options => options.Endpoint = new Uri(otlpEndpoint)));
