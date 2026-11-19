@@ -350,12 +350,12 @@ public class SetupAboutCardTests : BunitContext
     }
 
     [Theory]
-    [InlineData("de", "https://legal.lktec.org/studylife/")]
-    [InlineData("de-AT", "https://legal.lktec.org/studylife/")]
-    [InlineData("en", "https://legal.lktec.org/en/studylife/")]
-    [InlineData("fr", "https://legal.lktec.org/en/studylife/")]
-    [InlineData("ru", "https://legal.lktec.org/en/studylife/")]
-    [InlineData(null, "https://legal.lktec.org/en/studylife/")]
+    [InlineData("de", "https://legal.lktec.org/studyatrium/")]
+    [InlineData("de-AT", "https://legal.lktec.org/studyatrium/")]
+    [InlineData("en", "https://legal.lktec.org/en/studyatrium/")]
+    [InlineData("fr", "https://legal.lktec.org/en/studyatrium/")]
+    [InlineData("ru", "https://legal.lktec.org/en/studyatrium/")]
+    [InlineData(null, "https://legal.lktec.org/en/studyatrium/")]
     public void Privacy_policy_link_follows_the_language_and_opens_externally(string? language, string expected)
     {
         var http = new HttpClient(Server()) { BaseAddress = new Uri("https://studylife.test/") };
