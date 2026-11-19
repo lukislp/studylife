@@ -12,7 +12,7 @@ namespace StudyLife.Server.Tests;
 /// Demo-instance write-block coverage beyond the single PUT sample in
 /// AuthControllerDemoModeTests: the endpoint families the middleware must block (OAuth-client
 /// registry, developer CRUD, backup GETs, DELETE verb), the two deliberate exemptions
-/// (demo-login exact path, dictate), and the two GET endpoints that CAN persist on a normal
+/// (demo-login exact path, telemetry), and the two GET endpoints that CAN persist on a normal
 /// instance but must never do so on a demo (ownership self-heal; the calendar link is only reported, never created on GET).
 /// Own factory instance (fresh DB) so the destructive AuthControllerDemoModeTests - which
 /// deletes all AuthUsers - can never race this class's demo-login dependency.
@@ -65,6 +65,7 @@ public class DemoModeWriteBlockTests : IClassFixture<AuthControllerDemoModeTests
     // The client reports its language on every start; on a demo that must be answered 403 (the
     // client swallows it) rather than change the shared demo user's row.
     [InlineData("PUT", "/api/settings/language")]
+
     [InlineData("DELETE", "/api/notes/1")]
     // AI consent (AiConsentController): granting or withdrawing is a write like any other, so a
     // demo visitor cannot record a consent or revoke the demo user's AI key.
@@ -126,13 +127,13 @@ public class DemoModeWriteBlockTests : IClassFixture<AuthControllerDemoModeTests
     }
 
     /// <summary>
-    /// POST /api/dictate is deliberately exempt from the write-block (pure transform, nothing
-    /// persisted). The test host has no Whisper model, so the controller itself answers 404 -
-    /// the point is that the request REACHES the controller instead of dying in the middleware
-    /// with the write-block's 403.
+    /// POST /api/dictate is blocked on a demo with its own message: the privacy policy (section 6)
+    /// says dictation is off there, so no visitor audio may reach the speech model. The request
+    /// must die in the middleware (403 with the dictation-specific error) and never reach the
+    /// controller, whose answer on this model-less test host would be 404.
     /// </summary>
     [Fact]
-    public async Task Dictate_IsExemptFromWriteBlock()
+    public async Task Dictate_IsBlockedOnDemoInstance()
     {
         var token = await DemoLoginAsync();
         // A well-formed multipart body with one non-file field: a fully EMPTY multipart form
@@ -145,8 +146,10 @@ public class DemoModeWriteBlockTests : IClassFixture<AuthControllerDemoModeTests
         };
         request.Headers.Add("X-Session-Token", token);
         var response = await _client.SendAsync(request);
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        Assert.Contains("no speech-to-text model", await response.Content.ReadAsStringAsync());
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("dictation is disabled on the demo instance", body);
+        Assert.DoesNotContain("no speech-to-text model", body);
     }
 
     /// <summary>
