@@ -265,7 +265,7 @@ public class OwnershipDemoReseedTests : IClassFixture<AuthControllerDemoModeTest
         // Container-restart scenario: a brand-new demo user with a brand-new Id (see
         // DemoSeederTests.SecondReseed_KeepsSingleUserWithFreshCalendarToken) - isOwner must
         // still read true for whoever is demo-logged-in afterward.
-        await _factory.WithDbAsync(db => DemoSeeder.ReseedAsync(db));
+        await _factory.WithDbAsync(db => DemoSeeder.ReseedAsync(db, DateTime.Now));
 
         var secondLogin = await _client.PostAsync("/api/auth/demo-login", null);
         Assert.Equal(HttpStatusCode.OK, secondLogin.StatusCode);

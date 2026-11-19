@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 using Bunit;
+using Microsoft.Extensions.DependencyInjection;
 using StudyLife.Client.Services;
 using StudyLife.Client.Shared;
 
@@ -20,6 +21,8 @@ public class LocalDateStateCollection
 public class SidebarClockTests : IDisposable
 {
     private readonly BunitContext _ctx = new();
+
+    public SidebarClockTests() => _ctx.Services.AddSingleton(TimeProvider.System);
 
     private static DateNames German() => new(
         ["So.", "Mo.", "Di.", "Mi.", "Do.", "Fr.", "Sa."],

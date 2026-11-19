@@ -11,6 +11,7 @@
 @inject IJSRuntime JS
 @inject HttpClient Http
 @implements IDisposable
+@inject TimeProvider Clock
 
 @if (IsTextLoaded)
 {
@@ -150,11 +151,11 @@
                 <div class="field-row">
                     <div class="field">
                         <label>@T.Start</label>
-                        <input type="datetime-local" @bind="_formStart" @bind:after="OnFormFieldChanged" class="input" min="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+                        <input type="datetime-local" @bind="_formStart" @bind:after="OnFormFieldChanged" class="input" min="@Clock.LocalNow().ToString("yyyy-MM-ddTHH:mm")" />
                     </div>
                     <div class="field">
                         <label>@T.End</label>
-                        <input type="datetime-local" @bind="_formEnd" @bind:after="OnFormFieldChanged" class="input" min="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+                        <input type="datetime-local" @bind="_formEnd" @bind:after="OnFormFieldChanged" class="input" min="@Clock.LocalNow().ToString("yyyy-MM-ddTHH:mm")" />
                     </div>
                 </div>
                 <div class="field field-save-template">

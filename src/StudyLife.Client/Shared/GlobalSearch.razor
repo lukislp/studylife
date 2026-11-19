@@ -9,6 +9,7 @@
 @inject NavigationManager Nav
 @inject Toolbelt.Blazor.I18nText.I18nText I18nText
 @implements IDisposable
+@inject TimeProvider Clock
 
 @* Global search (command palette): overlay above the entire shell, opened via
    Ctrl+K/Cmd+K (hotkey wiring in MainLayout) or the search button in the sidebar.
@@ -186,7 +187,7 @@
         try
         {
             var sessions = await sessionsTask;
-            var today = DateTime.Today;
+            var today = Clock.LocalToday();
             results.AddRange(sessions
                 .Where(s => s.StartTime.Date >= today
                     && (s.CourseName.Contains(q, StringComparison.OrdinalIgnoreCase)

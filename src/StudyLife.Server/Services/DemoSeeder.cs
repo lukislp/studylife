@@ -26,14 +26,36 @@ namespace StudyLife.Server.Services;
 /// ApiKeyHash/AiApiKeyHash/McpApiKeyHash: API keys (any slot) are meant to be completely
 /// unusable on a demo instance, and with a null hash every submitted key fails the gate with
 /// 401. Generating one is a POST and therefore blocked by the demo write-block middleware anyway.
+///
+/// Two optional settings (<see cref="Configuration.DemoOptions"/>) shape the dataset: its
+/// language (<c>Demo:Language</c>, German by default) and the time of day it is seeded for
+/// (<c>Demo:Clock</c>, see <see cref="SeedTime"/>).
 /// </summary>
 public static class DemoSeeder
 {
-    public static async Task ReseedAsync(StudyLifeDb db)
+    /// <summary>The moment the dataset is seeded for: <paramref name="now"/> itself, or today at
+    /// <paramref name="clock"/> ("HH:mm", 24-hour) when one is set. A store screenshot run pins the
+    /// app's clock to such a time; seeding for the same time keeps "done this morning" and "planned
+    /// for later today" on the right side of the time the screenshots show, whenever the run
+    /// happens. Anything but a valid 24-hour time stops the start, so a typo cannot silently seed
+    /// for the wrong time.</summary>
+    public static DateTime SeedTime(DateTime now, string? clock)
+    {
+        if (string.IsNullOrWhiteSpace(clock))
+            return now;
+        if (!TimeOnly.TryParseExact(clock.Trim(), "HH:mm", System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out var time))
+            throw new InvalidOperationException($"Demo:Clock must be a 24-hour time like 09:41 (got \"{clock}\").");
+        return now.Date.Add(time.ToTimeSpan());
+    }
+
+    /// <summary>Wipes all user data and seeds the demo user with the sample dataset, every date
+    /// relative to <paramref name="now"/> (normally the current time, see <see cref="SeedTime"/>).</summary>
+    public static async Task ReseedAsync(StudyLifeDb db, DateTime now,
+        SampleDataLanguage language = SampleDataLanguage.German)
     {
         // Content is deterministic (SampleDataset uses a seeded Random) - only the anchor date
         // moves, so two restarts on the same day produce the identical dataset.
-        var now = DateTime.Now;
         var today = now.Date;
 
         // ── Wipe all user data (order: dependents first, then users) ─────────────
@@ -81,6 +103,6 @@ public static class DemoSeeder
         await db.SaveChangesAsync(); // materialize user.Id for all rows below
 
         // ── The sample dataset itself (shared with SampleAccountSeeder) ──────────
-        await SampleDataset.PopulateAsync(db, user.Id, now);
+        await SampleDataset.PopulateAsync(db, user.Id, now, language);
     }
 }

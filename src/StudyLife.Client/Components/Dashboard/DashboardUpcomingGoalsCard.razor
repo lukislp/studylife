@@ -2,6 +2,7 @@
   SPDX-FileCopyrightText: 2026 Lukas Körber
   SPDX-License-Identifier: AGPL-3.0-only
 *@
+@inject TimeProvider Clock
 <div class="dash-card card-exams">
     <div class="card-label">@Label</div>
     @if (Goals.Any())
@@ -13,7 +14,7 @@
                 <div class="exam-date">
                     @LocalDate.Short(g.TargetDate!.Value)
                     <span class="exam-days">
-                        @(g.DaysRemaining >= 0 ? string.Format(InDaysFormat, g.DaysRemaining) : string.Format(OverdueByDaysFormat, -g.DaysRemaining))
+                        @(DaysRemaining(g) >= 0 ? string.Format(InDaysFormat, DaysRemaining(g)) : string.Format(OverdueByDaysFormat, -DaysRemaining(g)))
                     </span>
                 </div>
             </div>
@@ -26,10 +27,10 @@
 </div>
 
 @code {
-    public record UpcomingGoal(string CourseName, DateTime? TargetDate)
-    {
-        public int DaysRemaining => (TargetDate!.Value.Date - DateTime.Today).Days;
-    }
+    public record UpcomingGoal(string CourseName, DateTime? TargetDate);
+
+    /// <summary>Whole days from today (the injected clock) to the goal's date; negative when overdue.</summary>
+    private int DaysRemaining(UpcomingGoal g) => (g.TargetDate!.Value.Date - Clock.LocalToday()).Days;
 
     [Parameter] public string Label { get; set; } = "";
     [Parameter] public List<UpcomingGoal> Goals { get; set; } = new();
@@ -40,6 +41,6 @@
 
     // Urgency tiers: overdue or due within 3 days -> "urgent" (red), due within 7 days -> "soon"
     // (amber), otherwise the existing neutral styling.
-    private static string UrgencyClass(UpcomingGoal g) =>
-        g.DaysRemaining <= 3 ? "urgent" : g.DaysRemaining <= 7 ? "soon" : "";
+    private string UrgencyClass(UpcomingGoal g) =>
+        DaysRemaining(g) <= 3 ? "urgent" : DaysRemaining(g) <= 7 ? "soon" : "";
 }
