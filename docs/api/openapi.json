@@ -4336,6 +4336,38 @@
         }
       }
     },
+    "/api/settings/telemetry-consent": {
+      "put": {
+        "tags": [
+          "Settings"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetTelemetryConsentRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetTelemetryConsentRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetTelemetryConsentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/settings/progress-share/enable": {
       "post": {
         "tags": [
@@ -10599,6 +10631,20 @@
         "properties": {
           "isCompleted": {
             "type": "boolean"
+          }
+        }
+      },
+      "SetTelemetryConsentRequest": {
+        "required": [
+          "consent"
+        ],
+        "type": "object",
+        "properties": {
+          "consent": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },

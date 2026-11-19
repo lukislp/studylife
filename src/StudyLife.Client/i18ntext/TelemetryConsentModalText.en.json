@@ -1,6 +1,6 @@
 {
-  "Heading": "Help improve StudyAtrium?",
-  "ExplainWhatText": "We'd like to collect anonymous performance and error data to catch bugs and slow spots — never your notes, sessions, or health data.",
+  "Heading": "Send anonymous performance and error data to the operator of your StudyAtrium server?",
+  "ExplainWhatText": "This data goes to whoever runs your StudyAtrium server (if you host it yourself, that is you) and is used to find bugs and slow spots. It never includes your notes, sessions, or health data.",
   "ExplainChangeText": "You can change this anytime in Setup.",
   "AcceptButton": "Allow",
   "DeclineButton": "No thanks"

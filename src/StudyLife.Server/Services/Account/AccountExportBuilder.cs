@@ -86,6 +86,10 @@ public sealed class AccountExportBuilder(StudyLifeDb db) : IAccountExportBuilder
                 Value = settings?.TelemetryConsent,
                 AnsweredAt = settings?.TelemetryConsentAt,
                 TextVersion = settings?.TelemetryConsentVersion,
+                History = await db.TelemetryConsentLog.IgnoreQueryFilters().AsNoTracking()
+                    .Where(l => l.AuthUserId == userId).OrderBy(l => l.AnsweredAt).ThenBy(l => l.Id)
+                    .Select(l => new TelemetryConsentLogEntryExportDto { Answer = l.Answer, AnsweredAt = l.AnsweredAt, TextVersion = l.TextVersion })
+                    .ToListAsync(),
             },
             AccessKeys = AccessKeys(user),
             WebhookKeys = await db.WebhookApiKeys.AsNoTracking()

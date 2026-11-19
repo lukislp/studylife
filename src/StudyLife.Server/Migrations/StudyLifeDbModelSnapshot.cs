@@ -862,6 +862,31 @@ namespace StudyLife.Server.Migrations
                     b.ToTable("SystemSecrets");
                 });
 
+            modelBuilder.Entity("StudyLife.Server.Data.TelemetryConsentLogEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("Answer")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("AnsweredAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("AuthUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TextVersion")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthUserId", "AnsweredAt");
+
+                    b.ToTable("TelemetryConsentLog");
+                });
+
             modelBuilder.Entity("StudyLife.Server.Data.TimerStateEntity", b =>
                 {
                     b.Property<int>("Id")

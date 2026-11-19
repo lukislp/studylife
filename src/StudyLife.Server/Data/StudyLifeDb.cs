@@ -40,6 +40,7 @@ public class StudyLifeDb : DbContext
     public DbSet<UserSettingsEntity> Settings => Set<UserSettingsEntity>();
     public DbSet<PushSubscriptionEntity> PushSubscriptions => Set<PushSubscriptionEntity>();
     public DbSet<SentReminderEntity> SentReminders => Set<SentReminderEntity>();
+    public DbSet<TelemetryConsentLogEntity> TelemetryConsentLog => Set<TelemetryConsentLogEntity>();
     public DbSet<AiKeyOutboxEntity> AiKeyOutbox => Set<AiKeyOutboxEntity>();
     public DbSet<WebhookApiKeyEntity> WebhookApiKeys => Set<WebhookApiKeyEntity>();
     public DbSet<OAuthClientEntity> OAuthClients => Set<OAuthClientEntity>();
@@ -103,6 +104,7 @@ public class StudyLifeDb : DbContext
         modelBuilder.Entity<SessionTemplateEntity>().HasIndex(t => t.AuthUserId);
         modelBuilder.Entity<CustomCourseEntity>().HasIndex(c => c.AuthUserId);
         modelBuilder.Entity<SentReminderEntity>().HasIndex(r => new { r.AuthUserId, r.Key }).IsUnique();
+        modelBuilder.Entity<TelemetryConsentLogEntity>().HasIndex(l => new { l.AuthUserId, l.AnsweredAt });
         // Security/multi-user fix: PushSubscriptionEntity.Endpoint was originally GLOBALLY unique
         // ("one push endpoint belongs to exactly one browser profile") - that only held as long as a
         // browser profile also had only one user. Once two people log in with their own accounts
@@ -198,6 +200,7 @@ public class StudyLifeDb : DbContext
         modelBuilder.Entity<UserSettingsEntity>().HasQueryFilter(e => e.AuthUserId == _currentUser.AuthUserId);
         modelBuilder.Entity<PushSubscriptionEntity>().HasQueryFilter(e => e.AuthUserId == _currentUser.AuthUserId);
         modelBuilder.Entity<SentReminderEntity>().HasQueryFilter(e => e.AuthUserId == _currentUser.AuthUserId);
+        modelBuilder.Entity<TelemetryConsentLogEntity>().HasQueryFilter(e => e.AuthUserId == _currentUser.AuthUserId);
         modelBuilder.Entity<NoteEntity>().HasQueryFilter(e => e.AuthUserId == _currentUser.AuthUserId);
         modelBuilder.Entity<CourseGoalEntity>().HasQueryFilter(e => e.AuthUserId == _currentUser.AuthUserId);
         modelBuilder.Entity<TimerStateEntity>().HasQueryFilter(e => e.AuthUserId == _currentUser.AuthUserId);
@@ -848,7 +851,7 @@ public class UserSettingsEntity
     /// When <see cref="TelemetryConsent"/> last changed (UTC) - the proof of the answer the
     /// GDPR asks for (Art. 7(1)), for a grant as much as for a decline or a withdrawal. Null
     /// together with TelemetryConsent (never asked) and for answers given before this column
-    /// existed. Written only through <c>TelemetryConsentRecord.Apply</c>.
+    /// existed. Written only through <c>TelemetryConsentRecord.Apply</c> (by <c>TelemetryConsentService</c>).
     /// </summary>
     public DateTime? TelemetryConsentAt { get; set; }
     /// <summary>
@@ -925,6 +928,23 @@ public class SentReminderEntity
     /// <summary>e.g. "42:reminder5" - SessionId:reminderAt</summary>
     public string Key { get; set; } = "";
     public DateTime SentAt { get; set; }
+}
+
+/// <summary>
+/// Append-only log of a user's telemetry answers (GDPR Art. 7(1) proof): one row per answer,
+/// with the time and the version of the consent text it answered
+/// (<c>TelemetryConsentRecord.CurrentVersion</c>). Written only by
+/// <c>TelemetryConsentService</c>, never updated or deleted except with the account.
+/// <see cref="UserSettingsEntity.TelemetryConsent"/> keeps the current answer for the hot path.
+/// </summary>
+public class TelemetryConsentLogEntity
+{
+    public int Id { get; set; }
+    public int AuthUserId { get; set; }
+    /// <summary>true = agreed, false = declined or withdrawn.</summary>
+    public bool Answer { get; set; }
+    public DateTime AnsweredAt { get; set; }
+    public int TextVersion { get; set; }
 }
 
 /// <summary>
