@@ -1,6 +1,6 @@
 {
-  "Heading": "Aider à améliorer StudyAtrium ?",
-  "ExplainWhatText": "Nous aimerions collecter des données anonymes de performance et d'erreurs pour repérer les bugs et les ralentissements — jamais tes notes, séances ou données de santé.",
+  "Heading": "Envoyer des données anonymes de performance et d'erreurs à l'opérateur de ton serveur StudyAtrium ?",
+  "ExplainWhatText": "Ces données vont à la personne qui exploite ton serveur StudyAtrium (si tu l'héberges toi-même, c'est toi) et servent à repérer les bugs et les ralentissements. Elles ne contiennent jamais tes notes, séances ou données de santé.",
   "ExplainChangeText": "Tu peux changer cela à tout moment dans les Paramètres.",
   "AcceptButton": "Autoriser",
   "DeclineButton": "Non merci"

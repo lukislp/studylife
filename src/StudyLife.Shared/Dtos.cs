@@ -145,11 +145,21 @@ public class UserSettingsDto
     public bool MonthlyReportEnabled { get; set; } = true;
     /// <summary>
     /// Client telemetry opt-in (docs/ARCHITECTURE.md "Telemetry", phase 2). Null = undecided -
-    /// the consent modal (TelemetryConsentModal.razor) shows once and writes true/false here via
-    /// the normal settings save path; it never shows again afterward. Only true actually enables
-    /// POST /api/telemetry to record anything (see TelemetryController).
+    /// the consent modal (TelemetryConsentModal.razor) shows once; it never shows again afterward.
+    /// READ-ONLY here: the generic settings PUT ignores the field, the answer is written through
+    /// PUT /api/settings/telemetry-consent (session only, appended to the consent log). Only true
+    /// actually enables POST /api/telemetry to record anything (see TelemetryController).
     /// </summary>
     public bool? TelemetryConsent { get; set; }
+}
+
+/// <summary>Body of PUT /api/settings/telemetry-consent: the user's answer to the telemetry
+/// question. A missing field is a 400, never read as "no".</summary>
+public class SetTelemetryConsentRequest
+{
+    /// <summary>true = agree, false = decline or withdraw.</summary>
+    [Required]
+    public bool? Consent { get; set; }
 }
 
 /// <summary>

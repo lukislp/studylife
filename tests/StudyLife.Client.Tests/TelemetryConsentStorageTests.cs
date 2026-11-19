@@ -43,9 +43,16 @@ public class TelemetryConsentStorageTests
         public async Task SetConsentAsync(bool? consent)
         {
             Server.Consent = consent;
-            var settings = await State.GetSettingsAsync();
-            settings.TelemetryConsent = consent;
-            await State.SaveSettingsAsync(settings);
+            if (consent is bool answer)
+            {
+                Assert.True(await State.SetTelemetryConsentAsync(answer));
+            }
+            else
+            {
+                // No endpoint writes "undecided"; a plain settings save stands in for any other settings change.
+                var settings = await State.GetSettingsAsync();
+                await State.SaveSettingsAsync(settings);
+            }
             await Telemetry.PendingConsentChange;
         }
 
@@ -183,6 +190,12 @@ public class TelemetryConsentStorageTests
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
+            if (request.RequestUri!.AbsolutePath == "/api/settings/telemetry-consent")
+            {
+                var body = request.Content!.ReadAsStringAsync(cancellationToken).GetAwaiter().GetResult();
+                Consent = JsonSerializer.Deserialize<SetTelemetryConsentRequest>(body, StudyLifeJson.Options)!.Consent;
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NoContent));
+            }
             if (request.RequestUri!.AbsolutePath == "/api/settings")
             {
                 var json = JsonSerializer.Serialize(new UserSettingsDto { TelemetryConsent = Consent }, StudyLifeJson.Options);

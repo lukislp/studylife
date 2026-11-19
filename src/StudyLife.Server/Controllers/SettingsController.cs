@@ -17,12 +17,14 @@ public class SettingsController : ControllerBase
     private readonly IDistributedCache _cache;
     private readonly ISettingsService _settings;
     private readonly IApiKeyService _apiKeys;
+    private readonly ITelemetryConsentService _telemetryConsent;
 
-    public SettingsController(IDistributedCache cache, ISettingsService settings, IApiKeyService apiKeys)
+    public SettingsController(IDistributedCache cache, ISettingsService settings, IApiKeyService apiKeys, ITelemetryConsentService telemetryConsent)
     {
         _cache = cache;
         _settings = settings;
         _apiKeys = apiKeys;
+        _telemetryConsent = telemetryConsent;
     }
 
     [HttpGet]
@@ -78,6 +80,18 @@ public class SettingsController : ControllerBase
     [HttpPut("language")]
     public async Task<IActionResult> SetLanguage(SetLanguageRequest request) =>
         (await _settings.SetLanguageAsync(request.Language)).ToNoContentResult(this);
+
+    /// <summary>
+    /// The user's answer to the telemetry question (true = agree, false = decline or withdraw).
+    /// Its own endpoint, and session-only, instead of a field of the generic PUT: that PUT is in
+    /// the Home Assistant key's scope, and an API key must not be able to give a consent the user
+    /// never gave - or undo a withdrawal. Each change is appended to the consent log; see
+    /// TelemetryConsentService. The demo write-block rejects it on a demo instance like every write.
+    /// </summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpPut("telemetry-consent")]
+    public async Task<IActionResult> SetTelemetryConsent(SetTelemetryConsentRequest request, CancellationToken ct) =>
+        (await _telemetryConsent.SetAsync(request.Consent!.Value, ct)).ToNoContentResult(this);
 
     /// <summary>
     /// Activates the read-only progress link (ProgressController.GetShared) and always
