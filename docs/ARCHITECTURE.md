@@ -886,23 +886,41 @@ Loki for 7 days (`retention_period: 168h` with compactor retention on, homelab-i
 in Prometheus for 30 days (`--storage.tsdb.retention.time=30d`, homelab-infra
 `monitoring/01-prometheus.yaml`); they carry no user id, IP or content.
 
-Consent: `UserSettingsEntity.TelemetryConsent` (`bool?`, threaded through the usual four settings
-layers) — `null` (undecided) and `false` (declined) both make the endpoint answer `204 No
-Content` and record nothing; only an explicit `true` is accepted. A public demo instance
+Consent: `UserSettingsEntity.TelemetryConsent` (`bool?`, read through the usual settings layers;
+written only by `PUT /api/settings/telemetry-consent`, see below) — `null` (undecided) and
+`false` (declined) both make the endpoint answer `204 No Content` and record nothing; only an explicit `true` is accepted. A public demo instance
 (`DemoModeGuard`) always answers 204 regardless of consent — POST /api/telemetry is an
 exemption from the demo write-block middleware, since the contract requires 204, not the
 generic 403. `/api/dictate` is the opposite case: blocked on a demo for every method with its own
 403 (`dictation is disabled on the demo instance`), because the privacy policy says dictation is
 off there. The consent modal (`Components/TelemetryConsentModal.razor`)
 is shown once from `MainLayout.razor` after settings load, only when `TelemetryConsent == null`
-and the instance isn't in demo mode; Accept/Decline write the field through the normal settings
-save path and the modal never shows again either way. `Components/Setup/SetupTelemetryCard.razor`
-(next to the progress-share card on the setup page) lets it be changed again afterward.
-Every change of the answer (grant, decline, withdrawal) is recorded with `TelemetryConsentAt` (UTC)
-and `TelemetryConsentVersion` (`TelemetryConsentRecord.CurrentVersion`, the version of the consent
-text) - the Art. 7(1) proof (2026-11-17 GDPR audit F-8). `TelemetryConsentRecord.Apply` is the only
-writer; an unchanged answer keeps its original stamp, and `null` (never asked) carries none. Both
-fields are part of the personal data export (`account.telemetryConsent`).
+and the instance isn't in demo mode; Accept/Decline call `AppStateService.SetTelemetryConsentAsync`
+and the modal never shows again either way (it only closes once the server stored the answer).
+`Components/Setup/SetupTelemetryCard.razor` (next to the progress-share card on the setup page)
+lets it be changed again afterward through the same call.
+
+The answer has **its own endpoint**, `PUT /api/settings/telemetry-consent` (`{"consent": true|false}`,
+`SettingsController.SetTelemetryConsent` → `TelemetryConsentService`), and it is **session-only**
+(`SessionOnly` policy): the generic `PUT /api/settings` is inside the Home Assistant API key's
+scope, so a stale key there could otherwise undo a withdrawal (2026-11-19 GDPR audit S1). The
+generic PUT therefore ignores `UserSettingsDto.TelemetryConsent` (the field stays readable). A
+missing `consent` is a 400, never read as "no"; on a demo instance the write block answers 403.
+
+Every change of the answer is recorded (GDPR Art. 7(1) proof, 2026-11-17 audit F-8): the current
+answer in `TelemetryConsent` / `TelemetryConsentAt` (UTC) / `TelemetryConsentVersion`
+(`TelemetryConsentRecord.CurrentVersion`, the version of the consent text) for the hot path, and an
+**append-only** log in the `TelemetryConsentLog` table (`TelemetryConsentLogEntity`: answer, UTC
+time, text version) that is never updated or pruned - it goes only with the account (generic
+`UserDataCatalog` rule). `TelemetryConsentRecord.Apply` is the only writer of the settings columns;
+a repeat of the same answer to the same text version changes nothing and adds no log row, while the
+same answer to a newer text version is a new answer. The migration copies the answers the Settings
+rows already prove into the log. The consent text version is **2** since 2026-11-19: the dialog
+names the recipient ("the operator of your StudyAtrium server", who is the user on a self-hosted
+instance) instead of an unspecified "we" (App Store audit S1); bump `CurrentVersion` whenever what
+is collected, why, or who receives it changes in `TelemetryConsentModalText.*.json` or
+`SetupText.*.json` (`TelemetryDesc`). The settings columns and the log are part of the personal
+data export (`account.telemetryConsent`, its `history` is the log, oldest first).
 
 **Progressive dashboard render (2026-09):** `dashboardReadyMs` used to cover the entire startup
 chain of both `MainLayout.OnInitializedAsync` and `Index.LoadDataAsync` awaiting everything before

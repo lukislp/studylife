@@ -309,7 +309,7 @@
   "MarketplaceManualSetupLink": "Beállítási útmutató megnyitása",
   "ClientKeysHeading": "Csatlakoztatott kiegészítők",
   "TelemetryHeading": "Használati és hibajelentések",
-  "TelemetryDesc": "Segít nekünk megtalálni a hibákat és a lassú részeket névtelen teljesítmény- és hibaadatok küldésével — soha nem a jegyzeteidet, munkameneteidet vagy egészségügyi adataidat. Ezt bármikor kikapcsolhatod.",
+  "TelemetryDesc": "Névtelen teljesítmény- és hibaadatokat küld a StudyAtrium-szervered üzemeltetőjének (ha te magad hosztolod, akkor te vagy az), hogy megtalálják a hibákat és a lassú részeket — soha nem a jegyzeteidet, munkameneteidet vagy egészségügyi adataidat. Ezt bármikor kikapcsolhatod.",
   "AriaCloseDialog": "Párbeszédpanel bezárása",
   "AriaRemoveGroup": "Csoport eltávolítása",
   "AriaRemoveCourse": "Kurzus eltávolítása",

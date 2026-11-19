@@ -1,4 +1,4 @@
-﻿// SPDX-FileCopyrightText: 2026 Lukas Körber
+// SPDX-FileCopyrightText: 2026 Lukas Körber
 // SPDX-License-Identifier: AGPL-3.0-only
 
 using System.Diagnostics.Metrics;
@@ -71,7 +71,7 @@ public class TelemetryEventMappingTests : IClassFixture<CustomWebApplicationFact
 
     private async Task PostAsync(params TelemetryEventDto[] events)
     {
-        (await _client.PutAsJsonAsync("/api/settings", new UserSettingsDto { TelemetryConsent = true })).EnsureSuccessStatusCode();
+        (await _client.PutAsJsonAsync("/api/settings/telemetry-consent", new SetTelemetryConsentRequest { Consent = true })).EnsureSuccessStatusCode();
         var response = await _client.PostAsJsonAsync("/api/telemetry", new TelemetryBatchDto
         {
             SessionId = "mappingtests12345678",

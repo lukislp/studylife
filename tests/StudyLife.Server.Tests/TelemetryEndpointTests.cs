@@ -14,7 +14,7 @@ namespace StudyLife.Server.Tests;
 /// Phase 2 of the telemetry plan (docs/ARCHITECTURE.md "Telemetry"): POST /api/telemetry always
 /// answers 204 on anything that parses, but only actually records to the StudyLife.Client meter
 /// (ClientTelemetryMetrics) when the seeded user has explicitly opted in
-/// (UserSettingsEntity.TelemetryConsent == true, set here via the normal PUT /api/settings path,
+/// (UserSettingsEntity.TelemetryConsent == true, set here via PUT /api/settings/telemetry-consent,
 /// same as a real client would). Own class (own factory/DB) for the "no consent yet" case - a
 /// fresh database has TelemetryConsent == null (undecided), and that must stay true regardless of
 /// what any other test in the suite happens to run first/after.
@@ -84,7 +84,7 @@ public class TelemetryEndpointTests : IClassFixture<CustomWebApplicationFactory>
     /// xUnit's (undefined) execution order within the class, unlike relying on a constructor-time
     /// PUT (which can't be async anyway).</summary>
     private Task<HttpResponseMessage> GrantConsentAsync() =>
-        _client.PutAsJsonAsync("/api/settings", new UserSettingsDto { TelemetryConsent = true });
+        _client.PutAsJsonAsync("/api/settings/telemetry-consent", new SetTelemetryConsentRequest { Consent = true });
 
     private static TelemetryBatchDto Batch(params TelemetryEventDto[] events) => new()
     {

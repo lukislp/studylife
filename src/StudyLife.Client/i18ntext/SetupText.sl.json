@@ -309,7 +309,7 @@
   "MarketplaceManualSetupLink": "Odpri navodila za nastavitev",
   "ClientKeysHeading": "Povezani dodatki",
   "TelemetryHeading": "Poročila o uporabi in napakah",
-  "TelemetryDesc": "Pomaga nam odkriti hrošče in počasna mesta s pošiljanjem anonimnih podatkov o zmogljivosti in napakah — nikoli tvojih zapiskov, sej ali zdravstvenih podatkov. To lahko kadar koli izklopiš.",
+  "TelemetryDesc": "Pošilja anonimne podatke o zmogljivosti in napakah upravljavcu tvojega strežnika StudyAtrium (če ga gostiš sam, si to ti), da se odkrijejo hrošči in počasna mesta — nikoli tvojih zapiskov, sej ali zdravstvenih podatkov. To lahko kadar koli izklopiš.",
   "AriaCloseDialog": "Zapri pogovorno okno",
   "AriaRemoveGroup": "Odstrani skupino",
   "AriaRemoveCourse": "Odstrani predmet",

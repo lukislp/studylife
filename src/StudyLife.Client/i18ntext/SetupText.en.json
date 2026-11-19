@@ -309,7 +309,7 @@
   "MarketplaceManualSetupLink": "Open setup guide",
   "ClientKeysHeading": "Connected add-ons",
   "TelemetryHeading": "Usage & Error Reports",
-  "TelemetryDesc": "Helps us catch bugs and slow spots by sending anonymous performance and error data — never your notes, sessions, or health data. You can turn this off anytime.",
+  "TelemetryDesc": "Sends anonymous performance and error data to the operator of your StudyAtrium server (if you host it yourself, that is you) to help find bugs and slow spots — never your notes, sessions, or health data. You can turn this off anytime.",
   "AriaCloseDialog": "Close dialog",
   "AriaRemoveGroup": "Remove group",
   "AriaRemoveCourse": "Remove course",

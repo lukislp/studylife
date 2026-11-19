@@ -1,6 +1,6 @@
 {
-  "Heading": "Tgħin ittejjeb StudyAtrium?",
-  "ExplainWhatText": "Nixtiequ niġbru dejta anonima dwar il-prestazzjoni u l-iżbalji biex insibu bugs u postijiet bil-mod — qatt in-noti, is-sessjonijiet, jew id-dejta tas-saħħa tiegħek.",
+  "Heading": "Tibgħat dejta anonima dwar il-prestazzjoni u l-iżbalji lill-operatur tas-server StudyAtrium tiegħek?",
+  "ExplainWhatText": "Id-dejta tmur għand min iħaddem is-server StudyAtrium tiegħek (jekk int tospitah int stess, int dak) u tintuża biex jinstabu bugs u postijiet bil-mod. Qatt ma tinkludi n-noti, is-sessjonijiet, jew id-dejta tas-saħħa tiegħek.",
   "ExplainChangeText": "Tista' tibdel dan fi kwalunkwe ħin fis-Settings.",
   "AcceptButton": "Ippermetti",
   "DeclineButton": "Le, grazzi"

@@ -309,7 +309,7 @@
   "MarketplaceManualSetupLink": "Atidaryti sąrankos vadovą",
   "ClientKeysHeading": "Prijungti priedai",
   "TelemetryHeading": "Naudojimo ir klaidų ataskaitos",
-  "TelemetryDesc": "Padeda mums rasti klaidas ir lėtas vietas siunčiant anonimiškus našumo ir klaidų duomenis — niekada tavo pastabų, sesijų ar sveikatos duomenų. Tai gali išjungti bet kada.",
+  "TelemetryDesc": "Siunčia anonimiškus našumo ir klaidų duomenis tavo StudyAtrium serverio operatoriui (jei jį talpini pats, tai esi tu), kad būtų galima rasti klaidas ir lėtas vietas — niekada tavo pastabų, sesijų ar sveikatos duomenų. Tai gali išjungti bet kada.",
   "AriaCloseDialog": "Uždaryti dialogo langą",
   "AriaRemoveGroup": "Pašalinti grupę",
   "AriaRemoveCourse": "Pašalinti kursą",

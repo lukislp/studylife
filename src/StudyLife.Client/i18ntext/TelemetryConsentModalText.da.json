@@ -1,6 +1,6 @@
 {
-  "Heading": "Hjælp med at forbedre StudyAtrium?",
-  "ExplainWhatText": "Vi vil gerne indsamle anonyme data om ydeevne og fejl for at finde fejl og langsomme steder — aldrig dine noter, sessioner eller sundhedsdata.",
+  "Heading": "Send anonyme data om ydeevne og fejl til den, der driver din StudyAtrium-server?",
+  "ExplainWhatText": "Dataene går til den, der driver din StudyAtrium-server (hvis du selv hoster den, er det dig), og bruges til at finde fejl og langsomme steder. De indeholder aldrig dine noter, sessioner eller sundhedsdata.",
   "ExplainChangeText": "Du kan altid ændre dette i Indstillinger.",
   "AcceptButton": "Tillad",
   "DeclineButton": "Nej tak"
