@@ -1,6 +1,6 @@
 {
-  "Heading": "Segítesz a StudyAtrium fejlesztésében?",
-  "ExplainWhatText": "Szeretnénk névtelen teljesítmény- és hibaadatokat gyűjteni, hogy megtaláljuk a hibákat és a lassú részeket — soha nem a jegyzeteidet, munkameneteidet vagy egészségügyi adataidat.",
+  "Heading": "Küldesz névtelen teljesítmény- és hibaadatokat a StudyAtrium-szervered üzemeltetőjének?",
+  "ExplainWhatText": "Az adatok annak mennek, aki a StudyAtrium-szervered üzemelteti (ha te magad hosztolod, akkor te vagy az), és hibák, valamint lassú részek megtalálására szolgálnak. Soha nem tartalmazzák a jegyzeteidet, munkameneteidet vagy egészségügyi adataidat.",
   "ExplainChangeText": "Ezt bármikor módosíthatod a Beállításokban.",
   "AcceptButton": "Engedélyezés",
   "DeclineButton": "Nem, köszönöm"

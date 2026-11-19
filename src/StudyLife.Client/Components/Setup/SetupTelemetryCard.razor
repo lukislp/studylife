@@ -10,9 +10,8 @@
    UserSettingsEntity.TelemetryConsent field TelemetryConsentModal writes on first answer; this
    card is where it can be changed again afterward, next to the other privacy-relevant toggle on
    this page (SetupProgressShareCard, right above). Self-contained component (own SetupText
-   instance), same pattern as SetupProgressShareCard - but goes through the NORMAL settings save
-   path (AppStateService.SaveSettingsAsync) since TelemetryConsent has no dedicated endpoint of
-   its own, unlike ProgressShareEnabled. *@
+   instance), same pattern as SetupProgressShareCard. Writes through its own session-only endpoint
+   (AppStateService.SetTelemetryConsentAsync), not the generic settings save path. *@
 
 <div class="setup-section">
     <div class="ss-label">@T.TelemetryHeading</div>
@@ -45,10 +44,9 @@
         StateHasChanged();
         try
         {
-            var settings = await State.GetSettingsAsync();
-            settings.TelemetryConsent = (bool)(e.Value ?? false);
-            await State.SaveSettingsAsync(settings);
-            _consent = settings.TelemetryConsent == true;
+            await State.SetTelemetryConsentAsync((bool)(e.Value ?? false));
+            // Show what the server holds: the toggle snaps back when the answer was not stored.
+            _consent = (await State.GetSettingsAsync()).TelemetryConsent == true;
         }
         finally
         {
