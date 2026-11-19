@@ -59,7 +59,7 @@ public partial class Report
         _coursesTask = State.GetCoursesAsync();
         // One wall-clock read shared by the server request and the local fallback. The raw
         // fetches (goals, 10-year history, programmes, quotas) only start in the fallback.
-        _now = DateTime.Now;
+        _now = Clock.LocalNow();
         _summaryTask = State.TryGetSummaryAsync<ReportSummaryDto>("api/report/summary", _now);
 
         // Live updates (change stream): sessions/settings have their own events, course goals/
@@ -125,12 +125,12 @@ public partial class Report
         // not part of the report's DATA - refreshed on every live update too, so the printed
         // stamp always matches the data actually shown, independently of the builder's own
         // wall-clock input below (see ReportSummaryInput.Now's doc comment).
-        _generatedAt = DateTime.Now;
+        _generatedAt = Clock.LocalNow();
 
         // A live refresh takes a fresh instant and can't reuse OnInitializingAsync's tasks
         // (those already resolved to the page's initial data) - it starts its own, exactly like
         // the initial load did.
-        var now = isRefresh ? DateTime.Now : _now;
+        var now = isRefresh ? Clock.LocalNow() : _now;
         _now = now;
         var settingsTask = isRefresh ? State.GetSettingsAsync() : _settingsTask!;
         var coursesTask = isRefresh ? State.GetCoursesAsync() : _coursesTask!;

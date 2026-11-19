@@ -22,11 +22,11 @@ public partial class Calendar
 
     private void OnDayClick(DateTime day, MouseEventArgs e)
     {
-        if (day.Date < DateTime.Today) return;
+        if (day.Date < Clock.LocalToday()) return;
         var clickedHour = (int)(e.OffsetY / 60);
         var start = new DateTime(day.Year, day.Month, day.Day, Math.Max(0, Math.Min(23, clickedHour)), 0, 0);
-        if (start < DateTime.Now)
-            start = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, DateTime.Now.Hour, 0, 0).AddHours(1);
+        if (start < Clock.LocalNow())
+            start = new DateTime(Clock.LocalNow().Year, Clock.LocalNow().Month, Clock.LocalNow().Day, Clock.LocalNow().Hour, 0, 0).AddHours(1);
         _editSession = new StudySession();
         _formCourseId = _courses.FirstOrDefault()?.Id ?? 1;
         _formTopic = null;
@@ -79,7 +79,7 @@ public partial class Calendar
 
     private async Task SaveSession()
     {
-        if (_formStart < DateTime.Now && (_editSession == null || _editSession.Id == 0))
+        if (_formStart < Clock.LocalNow() && (_editSession == null || _editSession.Id == 0))
         {
             _formError = T.PastSessionError;
             return;

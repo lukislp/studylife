@@ -390,9 +390,15 @@ public class AppStateService : IAsyncDisposable
     /// (StepUpDialog). Composition for the same reason as <see cref="AiConsent"/>.</summary>
     public StepUpState StepUp { get; }
 
-    public AppStateService(HttpClient http, IJSRuntime jsRuntime, ILogger<AppStateService> logger, SessionTokenStore sessionTokenStore)
+    private readonly TimeProvider _clock;
+
+    /// <param name="clock">The UI's clock (ClockExtensions) for "active"/"upcoming" session decisions. Optional, so a host or test that
+    /// registers no TimeProvider gets the system clock.</param>
+    public AppStateService(HttpClient http, IJSRuntime jsRuntime, ILogger<AppStateService> logger, SessionTokenStore sessionTokenStore,
+        TimeProvider? clock = null)
     {
         _http = http;
+        _clock = clock ?? TimeProvider.System;
         AiConsent = new AiConsentState(http);
         AccountDeletion = new AccountDeletionState(http, sessionTokenStore);
         PasswordSignIn = new PasswordSignInState(http);
@@ -1717,14 +1723,14 @@ public class AppStateService : IAsyncDisposable
     public async Task<StudySession?> GetActiveSessionAsync()
     {
         var sessions = await GetSessionsAsync();
-        var now = DateTime.Now;
+        var now = _clock.LocalNow();
         return sessions.FirstOrDefault(s => !s.IsCompleted && s.StartTime <= now && s.EndTime >= now);
     }
 
     public async Task<StudySession?> GetUpcomingSessionAsync()
     {
         var sessions = await GetSessionsAsync();
-        var now = DateTime.Now;
+        var now = _clock.LocalNow();
         return sessions
             .Where(s => !s.IsCompleted && s.StartTime > now)
             .OrderBy(s => s.StartTime)

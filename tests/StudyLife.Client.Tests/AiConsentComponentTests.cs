@@ -27,6 +27,10 @@ public abstract class ConsentBunitTest : IAsyncLifetime
 
     protected IServiceCollection Services => Ctx.Services;
 
+    /// <summary>The UI's clock (ClockExtensions), registered like the app's Program.cs does; a test that
+    /// needs a fixed time registers its own TimeProvider afterwards (the last registration wins).</summary>
+    protected ConsentBunitTest() => Ctx.Services.AddSingleton(TimeProvider.System);
+
     protected IRenderedComponent<TComponent> Render<TComponent>(
         Action<ComponentParameterCollectionBuilder<TComponent>>? parameters = null)
         where TComponent : Microsoft.AspNetCore.Components.IComponent => Ctx.Render(parameters);

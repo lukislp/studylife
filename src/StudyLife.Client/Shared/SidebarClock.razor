@@ -4,6 +4,7 @@
 *@
 @using StudyLife.Client.Services
 @implements IDisposable
+@inject TimeProvider Clock
 
 @* The sidebar clock owns its own 10-second timer so that ticking re-renders ONLY these two
    lines. It used to be driven by MainLayout's timer calling StateHasChanged() on the layout,
@@ -17,11 +18,12 @@
 <div class="date-display">@($"{LocalDate.Weekday(_now, true)}, {LocalDate.DayMonth(_now)}")</div>
 
 @code {
-    private DateTime _now = DateTime.Now;
+    private DateTime _now;
     private System.Threading.Timer? _timer;
 
     protected override void OnInitialized()
     {
+        _now = Clock.LocalNow();
         _timer = new System.Threading.Timer(_ => _ = InvokeAsync(Tick), null, 10000, 10000);
         LocalDate.NamesChanged += OnDateNamesChanged;
     }
@@ -30,7 +32,7 @@
 
     private void Tick()
     {
-        var now = DateTime.Now;
+        var now = Clock.LocalNow();
         // Only the minute is displayed - skip the render entirely while it hasn't changed.
         if (now.Minute == _now.Minute && now.Day == _now.Day) { _now = now; return; }
         _now = now;
