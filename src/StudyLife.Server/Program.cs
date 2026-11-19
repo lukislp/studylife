@@ -1102,18 +1102,23 @@ if (DemoModeGuard.IsEnabled(app.Configuration))
             await context.Response.WriteAsJsonAsync(new { error = "backups are disabled on the demo instance" });
             return;
         }
+        // Dictation is off on the demo, for any method: the privacy policy (section 6) and the
+        // processing record promise that no visitor audio is processed there. It used to be
+        // exempt from the write-block as a "pure transform", but that still ran a visitor's
+        // recording through the speech model. The dedicated message lets the client tell this
+        // apart from the generic read-only 403 (the client also hides the button on a demo).
+        if (context.Request.Path.StartsWithSegments("/api/dictate"))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            await context.Response.WriteAsJsonAsync(new { error = "dictation is disabled on the demo instance" });
+            return;
+        }
         if (context.Request.Path.StartsWithSegments("/api")
             && !HttpMethods.IsGet(context.Request.Method)
             && !HttpMethods.IsHead(context.Request.Method)
             && !HttpMethods.IsOptions(context.Request.Method)
             && !(context.Request.Path.StartsWithSegments("/api/auth/demo-login", out var demoRemainder)
                  && string.IsNullOrEmpty(demoRemainder.Value))
-            // Same reasoning as TtsController being deliberately GET: dictation is POST only
-            // because file uploads need a body, but it's just as pure a transform+return
-            // operation - nothing persisted, so it's exempted here instead of appearing to
-            // "fail to save" on the demo the way an actual blocked note edit correctly does.
-            && !(context.Request.Path.StartsWithSegments("/api/dictate", out var dictateRemainder)
-                 && string.IsNullOrEmpty(dictateRemainder.Value))
             // Telemetry phase 2: POST /api/telemetry must answer its own contract (204, nothing
             // recorded - TelemetryController checks DemoModeGuard itself) rather than the generic
             // 403 write-block, so a demo visitor's beacon never surfaces a confusing error.

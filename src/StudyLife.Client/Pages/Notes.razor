@@ -261,6 +261,8 @@ else
                                     🔊 @(_ttsLoading ? T.ReadAloudLoading : T.ReadAloudButton)
                                 </button>
                             }
+                            @if (!_isDemo)
+                            {
                             <button type="button" id="note-dictate-btn" class="btn-secondary @(_dictationRecording ? "note-dictate-recording" : "")" style="font-size:0.75rem;padding:0.25rem 0.6rem;border-radius:6px" disabled="@_dictationProcessing" @onclick="ToggleDictation">
                                 @if (_dictationRecording)
                                 {
@@ -275,6 +277,7 @@ else
                                     <text>🎙️ @T.DictateButton</text>
                                 }
                             </button>
+                            }
                         </div>
                         @if (_editIsMarkdown && _showMarkdownPreview)
                         {
@@ -394,6 +397,10 @@ else
     private bool _ttsUnavailable;
     private bool _ttsTimedOut;
     private bool _ttsBrowserFallbackActive;
+    // Public demo instances have dictation switched off server-side (the privacy policy says so),
+    // so the button is not rendered there at all. Unknown yet counts as "not demo" - the server
+    // block is the real guard, this only spares a demo visitor a dead button.
+    private bool _isDemo;
     private bool _dictationRecording;
     private bool _dictationProcessing;
     private bool _dictationUnavailable;
@@ -521,6 +528,7 @@ else
         // dropdown shows.
         var settings = await _settingsTask!;
         var allCourses = await _coursesTask!;
+        _isDemo = await State.GetIsDemoAsync();
         _allProgramCourseIds = allCourses.Select(c => c.Id).ToHashSet();
         _courses = allCourses
             .Where(c => settings.SelectedCourseIds.Contains(c.Id) || settings.CompletedCourseIds.Contains(c.Id))
@@ -858,6 +866,13 @@ else
             // same recording on timeout would just make an already-slow Pi redo the same work.
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(150));
             using var response = await Http.PostAsync($"api/dictate?lang={lang}", content, cts.Token);
+            if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+            {
+                // Demo instance (or a server that disabled dictation): same UX as "no
+                // dictation possible here" rather than the generic failure message.
+                _dictationUnavailable = true;
+                return;
+            }
             if (!response.IsSuccessStatusCode)
             {
                 _dictationFailed = true;
