@@ -8,7 +8,14 @@
    login required) reachable pages such as /shared/{token} (SharedProgress.razor) - MainLayout
    would show the full app navigation (calendar, focus, notes, planner, setup, ...) and thereby
    suggest the anonymous viewer has access to more than the shared snapshot. Deliberately no
-   State/service injection here: the page needs nothing beyond its own fetched data. *@
+   State injection here: the page needs nothing beyond its own fetched data. The one exception is
+   the footer with the privacy policy and imprint (audit 2026-11-19 S3): anyone who opens a link
+   without an account has to be able to see who is behind the instance, so every page in this
+   layout carries them. PrivacyPolicyNote reads the operator's Legal:* settings from the anonymous
+   GET api/instance and labels the publisher's imprint as such when the operator set none. *@
 <div class="public-shell" tabindex="-1">
     @Body
+    <footer class="public-legal">
+        <PrivacyPolicyNote />
+    </footer>
 </div>

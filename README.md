@@ -365,14 +365,14 @@ Server configuration is the ConfigMap/Secret pair in `k8s/01-config-and-secret.y
 
 ### Your own privacy policy and imprint
 
-The app links the publisher's privacy policy (legal.lktec.org) and imprint (lktec.org/impressum) on the sign-in and registration pages and under Setup, About. The publisher's policy covers the app, not your server: whoever runs a server is the controller for the data on it. If you host StudyAtrium for other people, point the links at your own pages:
+The app links the publisher's privacy policy (legal.lktec.org) and imprint (lktec.org/impressum) in a footer on every page that does not need an account (sign-in, registration, shared progress links, device-connect pages, the not-found page) and under Setup, About. The publisher's policy covers the app, not your server: whoever runs a server is the controller for the data on it. If you host StudyAtrium for other people, point the links at your own pages:
 
 | Environment variable | Meaning |
 | --- | --- |
 | `Legal__PrivacyUrl` | Your privacy policy. When set, the client shows "Operator privacy policy" (your page) and "App privacy policy" (the publisher's) as two separate links. |
 | `Legal__ImprintUrl` | Your imprint (legal notice). When set, it replaces the publisher's imprint link. |
 
-Both are optional; unset keeps the publisher's pages, which is right for a private instance only you use. A value must be an absolute `https://` URL without credentials (`http://` only for `localhost`); anything else stops the server at startup with a message naming the key. The addresses are public: the client reads them before sign-in from the anonymous `GET /api/instance` (`legal.privacyUrl`, `legal.imprintUrl`). A short template to adapt for your own policy is in [docs/operator-privacy-template.md](docs/operator-privacy-template.md); it is not legal advice.
+Both are optional; unset keeps the publisher's pages, which is right for a private instance only you use. The publisher's imprint is then labelled "Imprint of the app publisher", so nobody takes it for yours. Once more than one account exists and neither is set, the server logs one warning at startup. A value must be an absolute `https://` URL without credentials (`http://` only for `localhost`); anything else stops the server at startup with a message naming the key. The addresses are public: the client reads them before sign-in from the anonymous `GET /api/instance` (`legal.privacyUrl`, `legal.imprintUrl`). A short template to adapt for your own policy is in [docs/operator-privacy-template.md](docs/operator-privacy-template.md); it is not legal advice.
 
 ### Your own certificate authority and internal addresses
 

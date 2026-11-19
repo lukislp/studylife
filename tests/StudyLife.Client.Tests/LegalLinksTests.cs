@@ -109,6 +109,7 @@ public class LegalLinksRenderingTests : BunitContext
         LicenceMeaning = "m",
         PrivacyPolicy = "Privacy policy",
         Imprint = "Imprint",
+        PublisherImprint = "Imprint of the app publisher",
         OperatorPrivacyPolicy = "Operator privacy policy",
         AppPrivacyPolicy = "App privacy policy",
         NoticesHeading = "Notices",
@@ -145,7 +146,9 @@ public class LegalLinksRenderingTests : BunitContext
 
         var links = cut.FindAll("a").ToDictionary(a => a.TextContent.Trim());
         AssertExternal(links["Privacy policy"], PrivacyPolicyLink.English);
-        AssertExternal(links["Imprint"], LegalLinks.PublisherImprint);
+        // No operator imprint configured: the publisher's one says whose it is.
+        AssertExternal(links["Imprint of the app publisher"], LegalLinks.PublisherImprint);
+        Assert.False(links.ContainsKey("Imprint"));
         Assert.DoesNotContain("Operator privacy policy", cut.Markup);
         Assert.DoesNotContain("App privacy policy", cut.Markup);
     }
@@ -173,6 +176,23 @@ public class LegalLinksRenderingTests : BunitContext
             .Add(c => c.Texts, Texts)
             .Add(c => c.Links, LegalLinks.Publisher("en")));
 
+        Assert.Equal(["Privacy policy", "Imprint of the app publisher"], cut.FindAll("a").Select(a => a.TextContent.Trim()));
+    }
+
+    [Fact]
+    public void Anchors_label_the_imprint_plainly_when_the_operator_set_one()
+    {
+        var cut = Render<LegalLinkAnchors>(p => p
+            .Add(c => c.Texts, Texts)
+            .Add(c => c.Links, LegalLinks.Resolve("en", new LegalLinksDto { ImprintUrl = "https://op.example.org/imprint" })));
+
         Assert.Equal(["Privacy policy", "Imprint"], cut.FindAll("a").Select(a => a.TextContent.Trim()));
+    }
+
+    [Fact]
+    public void Has_operator_imprint_only_for_a_configured_address()
+    {
+        Assert.False(LegalLinks.Publisher("en").HasOperatorImprint);
+        Assert.True(LegalLinks.Resolve("en", new LegalLinksDto { ImprintUrl = "https://op.example.org/i" }).HasOperatorImprint);
     }
 }

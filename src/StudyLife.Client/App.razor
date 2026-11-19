@@ -17,6 +17,8 @@
         <PageTitle>Not found</PageTitle>
         <LayoutView Layout="@typeof(MainLayout)">
             <p role="alert">Sorry, there's nothing at this address.</p>
+            @* Whoever lands on a dead link may not have an account: privacy policy and imprint (S3). *@
+            <PrivacyPolicyNote />
         </LayoutView>
     </NotFound>
 </Router>
