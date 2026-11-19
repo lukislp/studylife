@@ -889,9 +889,11 @@ in Prometheus for 30 days (`--storage.tsdb.retention.time=30d`, homelab-infra
 Consent: `UserSettingsEntity.TelemetryConsent` (`bool?`, threaded through the usual four settings
 layers) — `null` (undecided) and `false` (declined) both make the endpoint answer `204 No
 Content` and record nothing; only an explicit `true` is accepted. A public demo instance
-(`DemoModeGuard`) always answers 204 regardless of consent — POST /api/telemetry is one of the
-two exemptions (with `/api/dictate`) from the demo write-block middleware, since the contract
-requires 204, not the generic 403. The consent modal (`Components/TelemetryConsentModal.razor`)
+(`DemoModeGuard`) always answers 204 regardless of consent — POST /api/telemetry is an
+exemption from the demo write-block middleware, since the contract requires 204, not the
+generic 403. `/api/dictate` is the opposite case: blocked on a demo for every method with its own
+403 (`dictation is disabled on the demo instance`), because the privacy policy says dictation is
+off there. The consent modal (`Components/TelemetryConsentModal.razor`)
 is shown once from `MainLayout.razor` after settings load, only when `TelemetryConsent == null`
 and the instance isn't in demo mode; Accept/Decline write the field through the normal settings
 save path and the modal never shows again either way. `Components/Setup/SetupTelemetryCard.razor`
