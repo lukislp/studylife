@@ -636,6 +636,9 @@ namespace StudyLife.Server.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("AuthSessionId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("AuthUserId")
                         .HasColumnType("INTEGER");
 
@@ -658,6 +661,8 @@ namespace StudyLife.Server.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AuthSessionId");
 
                     b.HasIndex("AuthUserId", "Endpoint")
                         .IsUnique();

@@ -15,6 +15,10 @@ public class PushController : ControllerBase
 
     public PushController(IPushService push) => _push = push;
 
+    /// <summary>The session this request authenticated with, or null for any other credential -
+    /// what a registration is bound to (see PushSubscriptionEntity.AuthSessionId).</summary>
+    private int? CurrentSessionId => HttpContext.Items[AuthSessionService.SessionItemKey] as int?;
+
     [HttpGet("publickey")]
     public ActionResult<PushPublicKeyResponseDto> GetPublicKey() =>
         Ok(new PushPublicKeyResponseDto { PublicKey = _push.PublicKey });
@@ -30,7 +34,7 @@ public class PushController : ControllerBase
         var userAgent = Request.Headers.UserAgent.ToString();
         if (string.IsNullOrWhiteSpace(userAgent)) userAgent = null;
 
-        var result = await _push.SubscribeAsync(dto, userAgent);
+        var result = await _push.SubscribeAsync(dto, userAgent, CurrentSessionId);
         return result.Outcome == ServiceOutcome.Invalid ? BadRequest(result.Error) : Ok();
     }
 
@@ -38,7 +42,7 @@ public class PushController : ControllerBase
     public async Task<IActionResult> SubscribeApns(ApnsSubscribeRequest dto)
     {
         if (!PushService.IsValidApnsToken(dto.Token)) return BadRequest();
-        await _push.SubscribeApnsAsync(dto);
+        await _push.SubscribeApnsAsync(dto, CurrentSessionId);
         return Ok();
     }
 

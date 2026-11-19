@@ -350,7 +350,7 @@ public class PushServiceTests : IClassFixture<CustomWebApplicationFactory>
     public async Task SubscribeAsync_LoopbackEndpoint_IsRejectedByTheOutboundUrlPolicy()
     {
         var result = await _factory.WithServiceAsync<IPushService, ServiceResult>(
-            (push, _) => push.SubscribeAsync(new PushSubscribeRequest("http://127.0.0.1:9/push", "p", "a"), null));
+            (push, _) => push.SubscribeAsync(new PushSubscribeRequest("http://127.0.0.1:9/push", "p", "a"), null, null));
 
         Assert.Equal(ServiceOutcome.Invalid, result.Outcome);
         Assert.Equal("Endpoint must be a public https URL.", result.Error);
@@ -361,11 +361,11 @@ public class PushServiceTests : IClassFixture<CustomWebApplicationFactory>
     {
         const string endpoint = "https://push.example.com/abc";
         await _factory.WithServiceAsync<IPushService>(
-            (push, _) => push.SubscribeAsync(new PushSubscribeRequest(endpoint, "p1", "a1"), "Firefox"));
+            (push, _) => push.SubscribeAsync(new PushSubscribeRequest(endpoint, "p1", "a1"), "Firefox", null));
         var first = await _factory.WithDbAsync(db => db.PushSubscriptions.AsNoTracking().FirstAsync(s => s.Endpoint == endpoint));
 
         await _factory.WithServiceAsync<IPushService>(
-            (push, _) => push.SubscribeAsync(new PushSubscribeRequest(endpoint, "p2", "a2"), "Firefox 2"));
+            (push, _) => push.SubscribeAsync(new PushSubscribeRequest(endpoint, "p2", "a2"), "Firefox 2", null));
 
         var rows = await _factory.WithDbAsync(db => db.PushSubscriptions.AsNoTracking().Where(s => s.Endpoint == endpoint).ToListAsync());
         var only = Assert.Single(rows);
@@ -390,7 +390,7 @@ public class PushServiceTests : IClassFixture<CustomWebApplicationFactory>
     {
         const string token = "aabbccddeeff0011";
         await _factory.WithServiceAsync<IPushService>(
-            (push, _) => push.SubscribeApnsAsync(new ApnsSubscribeRequest(token, "Alex' iPhone")));
+            (push, _) => push.SubscribeApnsAsync(new ApnsSubscribeRequest(token, "Alex' iPhone"), null));
 
         var subs = await _factory.WithServiceAsync<IPushService, List<PushSubscriptionListItemDto>>(
             (push, _) => push.GetSubscriptionsAsync());
