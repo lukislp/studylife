@@ -41,6 +41,9 @@ public sealed class DemoSeederScenarioFixture : IAsyncLifetime
 {
     public CustomWebApplicationFactory Factory { get; } = new();
 
+    /// <summary>The moment both reseeds are anchored on: today, 09:41.</summary>
+    public static DateTime SeedTime { get; } = DateTime.Today.AddHours(9).AddMinutes(41);
+
     public const string DummyNoteTitle = "Pre-reseed dummy note - must be wiped";
     public const string DummySessionTopic = "Pre-reseed dummy session - must be wiped";
 
@@ -94,14 +97,17 @@ public sealed class DemoSeederScenarioFixture : IAsyncLifetime
         AuthSessionsExistedBeforeFirstReseed =
             await Factory.WithDbAsync(db => db.AuthSessions.AnyAsync());
 
-        TodayBeforeFirstReseed = DateTime.Now.Date;
-        await Factory.WithDbAsync(db => DemoSeeder.ReseedAsync(db));
-        NowAfterFirstReseed = DateTime.Now;
+        // Seeded for a fixed time of day (what Demo:Clock does): how many sessions today holds
+        // depends on it (see DemoSeedTodayTests), so the counts below must not depend on when the
+        // suite runs.
+        TodayBeforeFirstReseed = SeedTime.Date;
+        await Factory.WithDbAsync(db => DemoSeeder.ReseedAsync(db, SeedTime));
+        NowAfterFirstReseed = SeedTime;
         AfterFirst = await CaptureAsync();
 
         // Second reseed on the SAME database - the "container restart" scenario the seeder is
         // documented to support (refresh the demo without accumulating data).
-        await Factory.WithDbAsync(db => DemoSeeder.ReseedAsync(db));
+        await Factory.WithDbAsync(db => DemoSeeder.ReseedAsync(db, SeedTime));
         AfterSecond = await CaptureAsync();
     }
 
@@ -286,10 +292,10 @@ public class DemoSeederTests : IClassFixture<DemoSeederScenarioFixture>
     }
 
     [Fact]
-    public void FirstReseed_CreatesExactlyFourPlannedFutureSessions()
+    public void FirstReseed_CreatesFourPlannedSessionsAheadPlusOneLaterToday()
     {
         var planned = _fx.AfterFirst.Sessions.Where(s => !s.IsCompleted).ToList();
-        Assert.Equal(4, planned.Count);
+        Assert.Equal(5, planned.Count); // one later today (14:00), four in the coming days
 
         var activeIds = ActiveCourses.Select(c => c.Id).ToHashSet();
         foreach (var session in planned)
@@ -375,7 +381,7 @@ public class DemoSeederTests : IClassFixture<DemoSeederScenarioFixture>
         var demoUserId = Assert.Single(_fx.AfterSecond.Users).Id;
         Assert.Equal(7, _fx.AfterSecond.Goals.Count(g => g.AuthUserId == demoUserId));
         Assert.Equal(3, _fx.AfterSecond.Notes.Count(n => n.AuthUserId == demoUserId));
-        Assert.Equal(4, _fx.AfterSecond.Sessions.Count(s => s.AuthUserId == demoUserId && !s.IsCompleted));
+        Assert.Equal(5, _fx.AfterSecond.Sessions.Count(s => s.AuthUserId == demoUserId && !s.IsCompleted));
         Assert.Single(_fx.AfterSecond.Settings, s => s.AuthUserId == demoUserId);
     }
 }

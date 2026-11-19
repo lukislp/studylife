@@ -63,7 +63,8 @@ public class SampleAccountSeederTests : IClassFixture<CustomWebApplicationFactor
     public async Task Seed_FillsTheAccount_WithDatesRelativeToNow()
     {
         var userId = await CreatePasswordAccountAsync("sample.fill");
-        var now = DateTime.Now;
+        // A fixed time of day: how many sessions today holds depends on it (SampleDatasetTodayTests).
+        var now = DateTime.Today.AddHours(9).AddMinutes(41);
 
         Assert.Equal(SampleAccountSeedOutcome.Seeded, await SeedAsync("sample.fill", now));
 
@@ -75,7 +76,7 @@ public class SampleAccountSeederTests : IClassFixture<CustomWebApplicationFactor
 
         var planned = await _factory.WithDbAsync(db => db.Sessions.IgnoreQueryFilters().AsNoTracking()
             .Where(s => s.AuthUserId == userId && !s.IsCompleted).ToListAsync());
-        Assert.Equal(4, planned.Count);
+        Assert.Equal(5, planned.Count); // four in the coming days, one later today
         Assert.All(planned, s => Assert.True(s.StartTime > now, "planned sessions lie in the future"));
 
         var completed = await _factory.WithDbAsync(db => db.Sessions.IgnoreQueryFilters().AsNoTracking()
@@ -183,7 +184,7 @@ public class SampleAccountSeederTests : IClassFixture<CustomWebApplicationFactor
     public async Task Seed_English_CreatesTheEnglishProgram_AndEverythingPointsAtIt()
     {
         var userId = await CreatePasswordAccountAsync("sample.english");
-        var now = DateTime.Now;
+        var now = DateTime.Today.AddHours(9).AddMinutes(41); // fixed time of day, see Seed_FillsTheAccount
 
         Assert.Equal(SampleAccountSeedOutcome.Seeded,
             await _factory.WithDbAsync(db => SampleAccountSeeder.SeedAsync(db, "sample.english", now, SampleDataLanguage.English)));
@@ -221,7 +222,7 @@ public class SampleAccountSeederTests : IClassFixture<CustomWebApplicationFactor
 
         // Same structure as the German dataset, English texts.
         Assert.Equal(7, goals.Count);
-        Assert.Equal(4, sessions.Count(s => !s.IsCompleted && s.StartTime > now));
+        Assert.Equal(5, sessions.Count(s => !s.IsCompleted && s.StartTime > now));
         Assert.Equal(
             SampleDataContent.English.Notes.Select(n => n.Title).OrderBy(t => t),
             notes.Select(n => n.Title).OrderBy(t => t));

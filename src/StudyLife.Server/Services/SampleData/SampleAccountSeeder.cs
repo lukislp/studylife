@@ -29,7 +29,7 @@ public enum SampleAccountSeedOutcome
 /// Idempotent by design: an account that already has any study data (sessions, notes, course
 /// goals, own courses or programs) is left alone, so the option can stay configured across
 /// restarts. Program.cs never calls this on a demo instance (DemoSeeder owns the data there).
-/// <c>SampleData:Language</c> picks German (default, the demo's data) or English.
+/// <c>SampleData:Language</c> picks German (default, also the demo's default) or English.
 /// </summary>
 public static class SampleAccountSeeder
 {

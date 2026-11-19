@@ -5,10 +5,11 @@ using StudyLife.Shared;
 
 namespace StudyLife.Server.Services.SampleData;
 
-/// <summary>Language of the sample dataset (operator option <c>SampleData:Language</c>).</summary>
+/// <summary>Language of the sample dataset (operator options <c>SampleData:Language</c> and
+/// <c>Demo:Language</c>).</summary>
 public enum SampleDataLanguage
 {
-    /// <summary>The built-in study program and German texts - exactly the demo's data.</summary>
+    /// <summary>The built-in study program and German texts - the demo's default.</summary>
     German,
     /// <summary>An English copy of the study program (as the account's own program) and English texts.</summary>
     English,
@@ -27,15 +28,16 @@ public sealed record SampleNote(int CourseIndex, string Title, string Content);
 /// </summary>
 public sealed record SampleDataContent(SampleProgram? Program, string CompletionNote, IReadOnlyList<SampleNote> Notes)
 {
-    /// <summary>Accepted values of <c>SampleData:Language</c>: "de" (also unset/blank) and "en",
+    /// <summary>Accepted values of <c>SampleData:Language</c> and <c>Demo:Language</c>
+    /// (<paramref name="setting"/> names the one in the error): "de" (also unset/blank) and "en",
     /// case-insensitive. Anything else is refused, so a typo cannot silently seed the wrong language.</summary>
-    public static SampleDataLanguage ParseLanguage(string? value) =>
+    public static SampleDataLanguage ParseLanguage(string? value, string setting = "SampleData:Language") =>
         (value ?? "").Trim().ToLowerInvariant() switch
         {
             "" or "de" => SampleDataLanguage.German,
             "en" => SampleDataLanguage.English,
             _ => throw new InvalidOperationException(
-                $"SampleData:Language must be \"de\" or \"en\" (got \"{value}\")."),
+                $"{setting} must be \"de\" or \"en\" (got \"{value}\")."),
         };
 
     public static SampleDataContent For(SampleDataLanguage language) => language switch
@@ -44,7 +46,7 @@ public sealed record SampleDataContent(SampleProgram? Program, string Completion
         _ => German,
     };
 
-    /// <summary>The built-in catalog (Program null) with German texts - the demo's data.</summary>
+    /// <summary>The built-in catalog (Program null) with German texts - the demo's default.</summary>
     public static readonly SampleDataContent German = new(
         Program: null,
         CompletionNote: "Klausur lief besser als erwartet.",

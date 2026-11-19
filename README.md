@@ -22,9 +22,12 @@ https://github.com/user-attachments/assets/629aa127-8794-4bbb-89ac-f55b7af93165
 `ghcr.io/lukislp/studylife-server:latest` image published by this repo's own CI/CD pipeline
 (`DEMO_MODE=true` plus the explicit `DEMO_MODE_CONFIRM_DATA_LOSS` confirmation, see
 `Services/DemoModeGuard.cs`): signs you in automatically as a demo student mid-way through the
-built-in study program, with weeks of study history, a live streak, and planned sessions ahead.
+built-in study program, with weeks of study history, a live streak, a day in progress (a session
+done this morning, one planned for later today) and planned sessions ahead.
 Edits apply locally but are never saved; the dataset reseeds itself relative to "today" on every
-container restart.
+container restart. `Demo__Language=en` seeds the English dataset instead, `Demo__Clock=09:41` seeds
+it for a fixed time of day (the app's store screenshots use both; see docs/ARCHITECTURE.md,
+"Demo dataset options").
 
 ![StudyAtrium dashboard, live demo screenshot](docs/screenshot.png)
 

@@ -783,7 +783,11 @@ if (!EF.IsDesignTime)
     // DEMO_MODE_CONFIRM_DATA_LOSS guard (see DemoModeGuard) - this is a full-table wipe.
     if (DemoModeGuard.IsEnabled(builder.Configuration))
     {
-        await DemoSeeder.ReseedAsync(db);
+        // Demo:Language and Demo:Clock (DemoOptions): both optional, both refuse invalid values.
+        var demo = builder.Configuration.Bind<DemoOptions>(DemoOptions.SectionName);
+        await DemoSeeder.ReseedAsync(db,
+            DemoSeeder.SeedTime(DateTime.Now, demo.Clock),
+            SampleDataContent.ParseLanguage(demo.Language, "Demo:Language"));
         Console.WriteLine("[demo] DEMO_MODE active: database wiped and reseeded with demo data");
     }
     // Operator option SampleData:SeedUsername (never on a demo instance, which has its own data):
