@@ -5687,6 +5687,16 @@
             "description": "OK"
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "TimerState"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
       }
     },
     "/api/notes/{id}/tts": {

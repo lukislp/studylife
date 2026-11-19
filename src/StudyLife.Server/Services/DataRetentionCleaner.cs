@@ -47,6 +47,15 @@ public sealed class DataRetentionCleaner(RetentionOptions options)
             .Where(p => p.ApprovedAt == null && p.CreatedAt < passkeyCutoff)
             .ExecuteDeleteAsync(ct);
 
+        // Backstop for the session-bound push registrations (PushSubscriptionEntity.AuthSessionId):
+        // logout and revocation delete theirs immediately, this catches the sessions that simply
+        // expired - their device is signed out the same as any other - and any other route a
+        // session row can vanish by. Rows without a binding (null) are never touched here.
+        var orphanedBound = await db.PushSubscriptions.IgnoreQueryFilters()
+            .Where(p => p.AuthSessionId != null
+                && !db.AuthSessions.IgnoreQueryFilters().Any(s => s.Id == p.AuthSessionId))
+            .ExecuteDeleteAsync(ct);
+
         var pushCutoff = utcNow.AddDays(-options.InactivePushSubscriptionDays);
         var pushSubscriptions = await db.PushSubscriptions.IgnoreQueryFilters()
             .Where(p => (p.CreatedAt == null || p.CreatedAt < pushCutoff)
@@ -79,7 +88,7 @@ public sealed class DataRetentionCleaner(RetentionOptions options)
 
         reminders += await DeleteOrphanedCourseGoalMarkersAsync(db, ct);
 
-        return new Result(sessions, invites, recoveryCodes, passkeys, pushSubscriptions, reminders);
+        return new Result(sessions, invites, recoveryCodes, passkeys, pushSubscriptions + orphanedBound, reminders);
     }
 
     /// <summary>

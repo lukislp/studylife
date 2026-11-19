@@ -19,6 +19,10 @@ public interface ITimerStateService
     Task<TimerStateDto> GetAsync();
     Task<TimerStateDto> SaveAsync(TimerStateDto dto);
     Task<ServiceResult> SetLiveActivityPushTokenAsync(LiveActivityPushTokenDto dto);
+
+    /// <summary>Deletes the caller's own Live Activity push token (idempotent) - the explicit
+    /// deletion path for "activity ended" and for sign-out.</summary>
+    Task<ServiceResult> DeleteLiveActivityPushTokenAsync();
 }
 
 public class TimerStateService(StudyLifeDb db, WebhooksProxyClient webhooks, ICurrentUserAccessor currentUser) : ITimerStateService
@@ -162,6 +166,20 @@ public class TimerStateService(StudyLifeDb db, WebhooksProxyClient webhooks, ICu
         {
             var entity = await db.TimerState.GetOrCreateAsync(db);
             entity.LiveActivityPushToken = token;
+            if (await SaveWithReloadAsync(attempt)) return ServiceResult.Success();
+        }
+    }
+
+    public async Task<ServiceResult> DeleteLiveActivityPushTokenAsync()
+    {
+        // Same retry-and-re-apply shape as SetLiveActivityPushTokenAsync (the worker writes this
+        // row too). The row is per user (global query filter), so only the caller's own token is
+        // ever reachable. No row yet = nothing stored = already deleted.
+        for (var attempt = 0; ; attempt++)
+        {
+            var entity = await db.TimerState.FirstOrDefaultAsync();
+            if (entity?.LiveActivityPushToken is null) return ServiceResult.Success();
+            entity.LiveActivityPushToken = null;
             if (await SaveWithReloadAsync(attempt)) return ServiceResult.Success();
         }
     }

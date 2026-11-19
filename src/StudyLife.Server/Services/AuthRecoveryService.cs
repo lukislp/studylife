@@ -120,8 +120,11 @@ public class AuthRecoveryService(StudyLifeDb db, AuthSessionCache sessionCache) 
         // new session is issued so the fresh token is the only valid one afterwards (2026-09
         // audit S7).
         var priorSessions = db.AuthSessions.Where(s => s.AuthUserId == stored.AuthUserId);
-        var revokedHashes = await priorSessions.Select(s => s.TokenHash).ToListAsync();
+        var revoked = await priorSessions.Select(s => new { s.Id, s.TokenHash }).ToListAsync();
+        var revokedHashes = revoked.Select(s => s.TokenHash);
         await priorSessions.ExecuteDeleteAsync();
+        // Their devices' push registrations go with them (see PushSubscriptionEntity.AuthSessionId).
+        await PushService.DeleteBoundToSessionsAsync(db, revoked.Select(s => s.Id).ToList());
         // Same reasoning as AuthAccountService.RevokeOtherSessionsAsync: the revoked tokens must
         // also leave this pod's AuthSessionCache, not just the table.
         foreach (var revokedHash in revokedHashes) sessionCache.Remove(revokedHash);
