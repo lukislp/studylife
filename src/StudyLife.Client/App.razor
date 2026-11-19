@@ -7,6 +7,7 @@
 @inject AppStateService State
 @inject NavigationManager Nav
 @implements IDisposable
+@inject TimeProvider Clock
 
 <Router AppAssembly="@typeof(App).Assembly">
     <Found Context="routeData">
@@ -45,7 +46,7 @@
             await InvokeAsync(() =>
             {
                 var decision = AutoFocusSwitchPolicy.Decide(
-                    settings, active, upcoming, DateTime.Now,
+                    settings, active, upcoming, Clock.LocalNow(),
                     "/" + Nav.ToBaseRelativePath(Nav.Uri), _lastHandledSessionId);
                 if (decision.HandledSessionId is { } id) _lastHandledSessionId = id;
                 if (decision.Navigate) Nav.NavigateTo(AutoFocusSwitchPolicy.FocusPath);

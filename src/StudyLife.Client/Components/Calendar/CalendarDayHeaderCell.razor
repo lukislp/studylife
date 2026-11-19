@@ -2,6 +2,7 @@
   SPDX-FileCopyrightText: 2026 Lukas Körber
   SPDX-License-Identifier: AGPL-3.0-only
 *@
+@inject TimeProvider Clock
 <div class="cal-day-header-cell @(IsToday ? "today" : "") @(IsPast ? "past" : "")">
     <div class="day-name">@LocalDate.Weekday(Date, true)</div>
     <div class="day-num @(IsToday ? "today-dot" : "")">@Date.Day</div>
@@ -10,6 +11,6 @@
 @code {
     [Parameter] public DateTime Date { get; set; }
 
-    private bool IsToday => Date.Date == DateTime.Today;
-    private bool IsPast => Date.Date < DateTime.Today;
+    private bool IsToday => Date.Date == Clock.LocalToday();
+    private bool IsPast => Date.Date < Clock.LocalToday();
 }

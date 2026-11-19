@@ -24,6 +24,9 @@ builder.Services.AddI18nText(options => options.PersistenceLevel = PersistanceLe
 // been completely removed - API keys now only exist per user for Home Assistant & co. and
 // are never used by the browser.
 builder.Services.AddScoped<SessionTokenStore>();
+// The one clock of the UI (ClockExtensions): the browser's real time. The native app registers
+// its own TimeProvider (in its store screenshot mode one pinned to the status bar's time).
+builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 builder.Services.AddScoped(sp =>
 {
     var baseAddress = new Uri(builder.HostEnvironment.BaseAddress);

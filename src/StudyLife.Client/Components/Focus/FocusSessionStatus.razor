@@ -3,6 +3,7 @@
   SPDX-License-Identifier: AGPL-3.0-only
 *@
 @using StudyLife.Client.Models
+@inject TimeProvider Clock
 
 @if (UpcomingSession == null)
 {
@@ -32,7 +33,7 @@ else
 
     private string TimeUntil(DateTime dt)
     {
-        var diff = dt - DateTime.Now;
+        var diff = dt - Clock.LocalNow();
         if (diff.TotalMinutes < 1) return "less than a minute";
         if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes} minutes";
         return $"{(int)diff.TotalHours}h {diff.Minutes}m";

@@ -13,14 +13,14 @@ namespace StudyLife.Client.Pages;
 
 public partial class Calendar
 {
-    private DateTime _weekStart = MondayOf(DateTime.Today);
+    private DateTime _weekStart;
     private List<DateTime> _days = new();
 
     // View mode: "week" (default, desktop) or "day" (single column, mobile).
     // _currentDay is the day shown in day view; _weekStart/_days are always kept
     // up to date so switching back to week view works seamlessly.
     private string _viewMode = "week";
-    private DateTime _currentDay = DateTime.Today;
+    private DateTime _currentDay;
     private bool _userChoseMode; // a manual toggle choice always wins over the auto-default
     private List<StudySession> _sessions = new();
     private List<CourseDto> _courses = new();
@@ -54,6 +54,9 @@ public partial class Calendar
 
     protected override Task OnInitializingAsync()
     {
+        _currentDay = Clock.LocalToday();
+        _weekStart = MondayOf(_currentDay);
+        _formRepeatUntil = _currentDay.AddDays(7);
         _settingsTask = State.GetSettingsAsync();
         _coursesTask = State.GetCoursesAsync();
         _sessionsTask = State.GetSessionsAsync();
@@ -172,7 +175,7 @@ public partial class Calendar
                 {
                     _viewMode = "day";
                     _scrollPending = true;
-                    _currentDay = DateTime.Today;
+                    _currentDay = Clock.LocalToday();
                     UpdateLabel();
                     StateHasChanged();
                 }
@@ -189,7 +192,7 @@ public partial class Calendar
         {
             _scrollPending = false;
             var target = CalendarInitialScroll.Resolve(
-                DateTime.Now, VisibleDays, VisibleDays.SelectMany(SessionsForDay));
+                Clock.LocalNow(), VisibleDays, VisibleDays.SelectMany(SessionsForDay));
             try
             {
                 await JS.InvokeVoidAsync("scrollElementToMinute", "cal-outer", target.Minute, target.ViewportFraction);
@@ -277,8 +280,8 @@ public partial class Calendar
 
     private void GoToday()
     {
-        _currentDay = DateTime.Today;
-        _weekStart = MondayOf(DateTime.Today);
+        _currentDay = Clock.LocalToday();
+        _weekStart = MondayOf(Clock.LocalToday());
         BuildWeek();
         // Deliberate jump to "today": re-center on the "now" line again.
         _scrollPending = true;
@@ -294,8 +297,8 @@ public partial class Calendar
         {
             // Keep context: today if it lies within the displayed week,
             // otherwise the first day of the displayed week.
-            _currentDay = DateTime.Today >= _weekStart && DateTime.Today < _weekStart.AddDays(7)
-                ? DateTime.Today
+            _currentDay = Clock.LocalToday() >= _weekStart && Clock.LocalToday() < _weekStart.AddDays(7)
+                ? Clock.LocalToday()
                 : _weekStart;
         }
         else if (_currentDay < _weekStart || _currentDay >= _weekStart.AddDays(7))
