@@ -14,6 +14,7 @@
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 @implements IDisposable
+@inject TimeProvider Clock
 
 @if (IsTextLoaded)
 {
@@ -30,7 +31,7 @@
     <div class="notes-print-doc">
         <div class="notes-print-head">
             <h1>@T.PageHeading</h1>
-            <div class="notes-print-meta">@string.Format(T.PrintGeneratedOnFormat ?? "", LocalDate.DateAndTime(DateTime.Now))</div>
+            <div class="notes-print-meta">@string.Format(T.PrintGeneratedOnFormat ?? "", LocalDate.DateAndTime(Clock.LocalNow()))</div>
         </div>
         @if (PrintGroups.Count == 0)
         {
@@ -533,11 +534,16 @@ else
         _notesLoading = false;
         await RenderPhaseAsync();
 
-        // PWA app-icon shortcut ("New note") links here with ?new=1 to jump straight into a fresh note.
-        var uri = Nav.ToAbsoluteUri(Nav.Uri);
-        if (System.Web.HttpUtility.ParseQueryString(uri.Query)["new"] == "1")
+        // Deep links (NotesDeepLink): ?new=1 (PWA app-icon shortcut "New note") opens a fresh note,
+        // ?note=<id> opens that note (a note that does not exist, or no longer, leaves the list as it is).
+        var link = NotesDeepLink.Parse(Nav.ToAbsoluteUri(Nav.Uri).Query);
+        if (link.NewNote)
         {
             NewNote();
+        }
+        else if (link.NoteId is { } noteId && _notes.FirstOrDefault(n => n.Id == noteId) is { } linked)
+        {
+            SelectNote(linked);
         }
     }
 
@@ -560,7 +566,7 @@ else
 
     private void NewNote()
     {
-        _selectedNote = new NoteDto { Id = 0, Title = "", Content = "", CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
+        _selectedNote = new NoteDto { Id = 0, Title = "", Content = "", CreatedAt = Clock.LocalNow(), UpdatedAt = Clock.LocalNow() };
         _editTitle = "";
         _editContent = "";
         _editCourseId = 0;
@@ -998,8 +1004,8 @@ else
             catch
             {
                 _selectedNote.Id = -(int)(DateTime.UtcNow.Ticks / TimeSpan.TicksPerMillisecond % int.MaxValue);
-                _selectedNote.CreatedAt = DateTime.Now;
-                _selectedNote.UpdatedAt = DateTime.Now;
+                _selectedNote.CreatedAt = Clock.LocalNow();
+                _selectedNote.UpdatedAt = Clock.LocalNow();
                 await State.EnqueueNoteSaveAsync(_selectedNote);
                 _notes.Insert(0, _selectedNote);
             }
@@ -1025,7 +1031,7 @@ else
                     existing.Title = _selectedNote.Title;
                     existing.Content = _selectedNote.Content;
                     existing.CourseId = _selectedNote.CourseId;
-                    existing.UpdatedAt = DateTime.Now;
+                    existing.UpdatedAt = Clock.LocalNow();
                 }
             }
         }
@@ -1081,7 +1087,7 @@ else
 
     private string FormatDate(DateTime dt)
     {
-        var diff = DateTime.Now - dt;
+        var diff = Clock.LocalNow() - dt;
         if (diff.TotalMinutes < 1) return T.JustNow;
         if (diff.TotalHours < 1) return string.Format(T.MinAgo ?? "", (int)diff.TotalMinutes);
         if (diff.TotalDays < 1) return string.Format(T.HourAgo ?? "", (int)diff.TotalHours);

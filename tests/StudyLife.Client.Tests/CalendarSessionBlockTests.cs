@@ -33,7 +33,8 @@ public class CalendarSessionBlockTests : ConsentBunitTest
             EndTime = Start.AddMinutes(minutes),
             IsCompleted = completed,
         };
-        var cut = Render<CalendarSessionBlock>(p => p.Add(c => c.Session, session).Add(c => c.Clock, new FixedClock(now)));
+        Services.AddSingleton<TimeProvider>(new FixedClock(now));
+        var cut = Render<CalendarSessionBlock>(p => p.Add(c => c.Session, session));
         cut.WaitForElement(".cal-session");
         return cut;
     }

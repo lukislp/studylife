@@ -9,6 +9,7 @@
 @inject AppStateService State
 @inject HttpClient Http
 @implements IDisposable
+@inject TimeProvider Clock
 
 @if (IsTextLoaded)
 {

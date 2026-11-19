@@ -4,6 +4,7 @@
 *@
 @using StudyLife.Client.Models
 @implements IDisposable
+@inject TimeProvider Clock
 
 <div class="dash-card card-next">
     <div class="card-label">@(ActiveSession != null ? NowLabel : UpNextLabel)</div>
@@ -78,7 +79,7 @@
 
     private string TimeUntil(DateTime dt)
     {
-        var diff = dt - DateTime.Now;
+        var diff = dt - Clock.LocalNow();
         if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes}m";
         return $"{(int)diff.TotalHours}h {diff.Minutes}m";
     }

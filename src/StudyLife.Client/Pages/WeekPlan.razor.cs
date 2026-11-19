@@ -98,10 +98,10 @@ public partial class WeekPlan
         // "Generated on"/the current week are page-level, wall-clock concerns - refreshed on
         // every live update too, so the printed stamp and week window always match the moment
         // the data was actually rebuilt.
-        _generatedAt = DateTime.Now;
+        _generatedAt = Clock.LocalNow();
         // Monday start, same convention as Calendar.razor.cs (MondayOf) - here via the shared
         // StudyMetrics helper instead of its own copy of the offset calculation.
-        _weekStart = StudyMetrics.WeekStartOf(DateTime.Today);
+        _weekStart = StudyMetrics.WeekStartOf(Clock.LocalToday());
         _weekEnd = _weekStart.AddDays(6);
 
         // A live refresh can't reuse OnInitializingAsync's tasks (those already resolved to the

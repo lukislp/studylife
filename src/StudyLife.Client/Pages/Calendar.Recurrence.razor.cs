@@ -6,7 +6,7 @@ namespace StudyLife.Client.Pages;
 public partial class Calendar
 {
     private bool _formRepeatWeekly;
-    private DateTime _formRepeatUntil = DateTime.Today.AddDays(7);
+    private DateTime _formRepeatUntil; // set from the clock in OnInitializingAsync
     private int _formRepeatIntervalWeeks = 1;
     private HashSet<DayOfWeek> _formRepeatWeekdays = new();
     private const int MaxRepeatOccurrences = 52;
