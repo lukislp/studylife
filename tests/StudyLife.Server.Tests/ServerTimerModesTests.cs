@@ -21,7 +21,7 @@ public class ServerTimerModesTests
         var mode = ServerTimerModes.Resolve(1, "{not json");
 
         Assert.NotNull(mode);
-        Assert.Equal("Pomodoro Classic", mode!.Name);
+        Assert.Equal("Classic 25/5", mode!.Name);
         Assert.Equal(25, mode.FocusMinutes);
         Assert.Equal(5, mode.BreakMinutes);
         Assert.Equal(4, mode.Rounds);

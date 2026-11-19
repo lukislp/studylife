@@ -170,7 +170,7 @@ public class TimerModeCatalogTests
         var mode = TimerModeCatalog.Resolve(1, "{not json");
 
         Assert.NotNull(mode);
-        Assert.Equal("Pomodoro Classic", mode!.Value.Name);
+        Assert.Equal("Classic 25/5", mode!.Value.Name);
         Assert.Equal(25, mode.Value.FocusMinutes);
         Assert.Equal(5, mode.Value.BreakMinutes);
         Assert.Equal(4, mode.Value.Rounds);
@@ -192,14 +192,14 @@ public class TimerModeCatalogTests
 
     // --- AdvancePhase (phase-transition math) ---
 
-    private static readonly TimerModeCatalog.ModeData PomodoroClassic = new(1, "Pomodoro Classic", 25, 5, 4);
+    private static readonly TimerModeCatalog.ModeData ClassicMode = new(1, "Classic 25/5", 25, 5, 4);
 
     [Fact]
     public void AdvancePhase_FocusEnds_TransitionsToBreakSameRound()
     {
         var endsAt = new DateTime(2026, 1, 1, 10, 0, 0);
 
-        var step = TimerModeCatalog.AdvancePhase(PomodoroClassic, isBreak: false, round: 1, phaseEndsAt: endsAt);
+        var step = TimerModeCatalog.AdvancePhase(ClassicMode, isBreak: false, round: 1, phaseEndsAt: endsAt);
 
         Assert.True(step.IsBreak);
         Assert.Equal(1, step.Round); // round doesn't advance until the break ends
@@ -213,7 +213,7 @@ public class TimerModeCatalogTests
     {
         var endsAt = new DateTime(2026, 1, 1, 10, 0, 0);
 
-        var step = TimerModeCatalog.AdvancePhase(PomodoroClassic, isBreak: true, round: 1, phaseEndsAt: endsAt);
+        var step = TimerModeCatalog.AdvancePhase(ClassicMode, isBreak: true, round: 1, phaseEndsAt: endsAt);
 
         Assert.False(step.IsBreak);
         Assert.Equal(2, step.Round);
@@ -227,7 +227,7 @@ public class TimerModeCatalogTests
         var endsAt = new DateTime(2026, 1, 1, 10, 0, 0);
 
         // Round 4 of 4 (Rounds=4): the break after round 4 ends the session.
-        var step = TimerModeCatalog.AdvancePhase(PomodoroClassic, isBreak: true, round: 4, phaseEndsAt: endsAt);
+        var step = TimerModeCatalog.AdvancePhase(ClassicMode, isBreak: true, round: 4, phaseEndsAt: endsAt);
 
         Assert.True(step.Complete);
         Assert.Equal(5, step.Round); // incremented, then rejected as > Rounds
@@ -251,7 +251,7 @@ public class TimerModeCatalogTests
         var steps = 0;
         while (now >= endsAt)
         {
-            var step = TimerModeCatalog.AdvancePhase(PomodoroClassic, isBreak, round, endsAt);
+            var step = TimerModeCatalog.AdvancePhase(ClassicMode, isBreak, round, endsAt);
             isBreak = step.IsBreak;
             round = step.Round;
             endsAt = step.PhaseEndsAt;
@@ -274,7 +274,7 @@ public class TimerModeCatalogTests
         var now = endsAt;
 
         Assert.True(now >= endsAt);
-        var step = TimerModeCatalog.AdvancePhase(PomodoroClassic, isBreak: false, round: 1, phaseEndsAt: endsAt);
+        var step = TimerModeCatalog.AdvancePhase(ClassicMode, isBreak: false, round: 1, phaseEndsAt: endsAt);
         Assert.True(step.IsBreak);
     }
 

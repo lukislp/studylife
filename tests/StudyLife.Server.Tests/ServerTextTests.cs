@@ -191,9 +191,9 @@ public class NotificationTextBuilderTests
     [Fact]
     public void Phase_alert_is_localised()
     {
-        var alert = BackgroundTaskService.BuildPhaseChangeAlert("Pomodoro", isBreak: true, round: 2, totalRounds: 4, phaseMinutes: 5, language: "en");
+        var alert = BackgroundTaskService.BuildPhaseChangeAlert("Classic 25/5", isBreak: true, round: 2, totalRounds: 4, phaseMinutes: 5, language: "en");
         Assert.Equal("Time for a break", alert.Title);
-        Assert.Equal("Pomodoro: round 2 of 4 done – 5 min break.", alert.Body);
+        Assert.Equal("Classic 25/5: round 2 of 4 done – 5 min break.", alert.Body);
     }
 
     [Fact]

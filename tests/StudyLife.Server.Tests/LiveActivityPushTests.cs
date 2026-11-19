@@ -199,13 +199,13 @@ public class LiveActivityPushWorkerTests : IClassFixture<CustomWebApplicationFac
     [Fact]
     public void BuildPhaseChangeAlert_NamesThePhaseThatBegins()
     {
-        var breakAlert = BackgroundTaskService.BuildPhaseChangeAlert("Pomodoro", isBreak: true, round: 2, totalRounds: 4, phaseMinutes: 5);
+        var breakAlert = BackgroundTaskService.BuildPhaseChangeAlert("Classic 25/5", isBreak: true, round: 2, totalRounds: 4, phaseMinutes: 5);
         Assert.Equal("Zeit für eine Pause", breakAlert.Title);
-        Assert.Equal("Pomodoro: Runde 2 von 4 geschafft - 5 Minuten Pause.", breakAlert.Body);
+        Assert.Equal("Classic 25/5: Runde 2 von 4 geschafft - 5 Minuten Pause.", breakAlert.Body);
 
-        var focusAlert = BackgroundTaskService.BuildPhaseChangeAlert("Pomodoro", isBreak: false, round: 3, totalRounds: 4, phaseMinutes: 25);
+        var focusAlert = BackgroundTaskService.BuildPhaseChangeAlert("Classic 25/5", isBreak: false, round: 3, totalRounds: 4, phaseMinutes: 25);
         Assert.Equal("Weiter geht's", focusAlert.Title);
-        Assert.Equal("Pomodoro: Runde 3 von 4 - 25 Minuten Fokus.", focusAlert.Body);
+        Assert.Equal("Classic 25/5: Runde 3 von 4 - 25 Minuten Fokus.", focusAlert.Body);
     }
 
     [Fact]
@@ -228,7 +228,7 @@ public class LiveActivityPushWorkerTests : IClassFixture<CustomWebApplicationFac
     [Fact]
     public async Task RunLiveActivityPushAsync_FocusPhaseEnds_SendsUpdateAndAdvancesToBreak()
     {
-        // Pomodoro Classic (Id 1): 25 focus / 5 break minutes, 4 rounds.
+        // Classic 25/5 (Id 1): 25 focus / 5 break minutes, 4 rounds.
         await SeedTimerStateAsync(e =>
         {
             e.IsRunning = true;
