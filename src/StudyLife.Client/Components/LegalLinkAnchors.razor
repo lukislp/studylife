@@ -26,12 +26,17 @@
     }
     <span aria-hidden="true"> · </span>
     <a href="@Links.ImprintUrl" target="_blank" rel="noopener noreferrer"
-       aria-label="@Label(Texts.Imprint)">@Texts.Imprint</a>
+       aria-label="@Label(ImprintText)">@ImprintText</a>
 }
 
 @code {
     [Parameter] public LegalLinks Links { get; set; } = default!;
     [Parameter] public AboutText Texts { get; set; } = default!;
+
+    // The operator's own imprint is just "Imprint"; the publisher's default says whose it is.
+    private string ImprintText => Links.HasOperatorImprint || string.IsNullOrEmpty(Texts.PublisherImprint)
+        ? Texts.Imprint
+        : Texts.PublisherImprint;
 
     private string Label(string text) => $"{text} ({Texts.NewTab})";
 }

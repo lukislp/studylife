@@ -98,6 +98,7 @@ public static class StudyLifeOptionsRegistration
         services.AddOptions<LegalOptions>()
             .BindConfiguration(LegalOptions.SectionName)
             .ValidateOnStart();
+        services.AddHostedService<LegalStartupCheck>();
 
         return services;
     }
