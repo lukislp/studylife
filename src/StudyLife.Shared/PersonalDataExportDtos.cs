@@ -190,6 +190,9 @@ public class ExportAboutDto
 {
     public List<string> Purposes { get; set; } = new();
     public string Categories { get; set; } = "";
+    /// <summary>Data the add-ons of this installation hold about the account, which is NOT in this
+    /// file, and where to get it (2026-11-19 audit S2). Only add-ons that are configured or in use.</summary>
+    public List<string> AddonData { get; set; } = new();
     public List<ExportRecipientDto> Recipients { get; set; } = new();
     public List<string> Retention { get; set; } = new();
     public List<string> Rights { get; set; } = new();

@@ -76,6 +76,13 @@ public partial class BackgroundTaskService
         {
             _backupService.CreateWeeklyBackup();
             _logger.LogInformation("Weekly database backup created");
+
+            // The safety copies taken before a restore age out here too (Retention:PreRestoreBackupDays).
+            var retention = _services.GetService<Microsoft.Extensions.Options.IOptions<Configuration.RetentionOptions>>()?.Value
+                ?? new Configuration.RetentionOptions();
+            var removed = _backupService.DeleteOldPreRestoreBackups(TimeSpan.FromDays(retention.PreRestoreBackupDays), DateTime.UtcNow);
+            if (removed > 0)
+                _logger.LogInformation("Removed {Count} pre-restore safety backup(s) older than {Days} days", removed, retention.PreRestoreBackupDays);
         });
     }
 }

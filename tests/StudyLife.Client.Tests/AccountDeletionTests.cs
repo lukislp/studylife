@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using StudyLife.Client.Components.Setup;
 using StudyLife.Client.Services;
 using StudyLife.Shared;
+using Toolbelt.Blazor.Extensions.DependencyInjection;
 
 namespace StudyLife.Client.Tests;
 
@@ -286,6 +287,24 @@ public class SetupDeleteAccountCardTests : ConsentBunitTest
         Assert.Equal("{\"formatVersion\":2}", System.Text.Encoding.UTF8.GetString(file.Content));
         Assert.DoesNotContain("ExportFailed", cut.Markup);
     }
+
+    [Fact]
+    public void AnExportThatNeedsAFreshConfirmation_AsksForItInsteadOfFailing()
+    {
+        Services.AddI18nText(); // the step-up dialog loads its own texts
+        var (cut, server, _, _) = Render(Available());
+        server.On("GET api/backup/export", _ => Problem403("step-up-required"));
+        cut.Find("button.btn-danger").Click();
+
+        cut.FindAll("button").Single(b => b.TextContent == "ExportButton").Click();
+
+        cut.WaitForAssertion(() => cut.Find("#step-up-title"), ChainTimeout);
+        Assert.DoesNotContain("ExportFailed", cut.Markup);
+        Assert.Empty(Downloads.Saved);
+    }
+
+    private static HttpResponseMessage Problem403(string type) =>
+        new(HttpStatusCode.Forbidden) { Content = JsonContent.Create(new { type, title = type, status = 403 }) };
 
     [Fact]
     public void AnExportTheDeviceCannotOffer_ShowsTheErrorText()

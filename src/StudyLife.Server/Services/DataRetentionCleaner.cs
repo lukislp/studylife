@@ -11,8 +11,9 @@ namespace StudyLife.Server.Services;
 /// <summary>
 /// Deletes rows that have outlived their purpose (GDPR audit F-15): expired login sessions, used
 /// or expired invites, spent recovery codes, never-approved additional passkeys, push
-/// subscriptions of long-inactive accounts and achievement markers that no category produces any
-/// more. Instance-wide (all users in one pass, hence IgnoreQueryFilters), idempotent, and driven by
+/// subscriptions of long-inactive accounts, achievement markers that no category produces any
+/// more, aged session/inactivity/motivation reminder markers and course-goal markers whose goal
+/// can no longer fire them. Instance-wide (all users in one pass, hence IgnoreQueryFilters), idempotent, and driven by
 /// <see cref="RetentionOptions"/>; BackgroundTaskService runs it once a day.
 /// </summary>
 public sealed class DataRetentionCleaner(RetentionOptions options)
@@ -65,6 +66,61 @@ public sealed class DataRetentionCleaner(RetentionOptions options)
                 && r.Key != "achievement:" + AchievementCatalog.AllCoursesKey)
             .ExecuteDeleteAsync(ct);
 
+        // Session, inactivity and motivation markers age out by time, for every user (the worker's
+        // own reminder runs return early for accounts without a push subscription or an upcoming
+        // session and used to be the only place that deleted them). SentAt is written in server
+        // local time; a difference of hours against a cutoff of days does not matter.
+        var markerCutoff = utcNow.AddDays(-options.ReminderMarkerDays);
+        reminders += await db.SentReminders.IgnoreQueryFilters()
+            .Where(r => r.SentAt < markerCutoff
+                && !r.Key.StartsWith("achievement:")
+                && !r.Key.StartsWith("coursegoal:"))
+            .ExecuteDeleteAsync(ct);
+
+        reminders += await DeleteOrphanedCourseGoalMarkersAsync(db, ct);
+
         return new Result(sessions, invites, recoveryCodes, passkeys, pushSubscriptions, reminders);
+    }
+
+    /// <summary>
+    /// "coursegoal:{courseId}:reminder{n}d" markers deduplicate the goal reminders for as long as the
+    /// goal can still fire them (they compare "days until the target date &lt;= n", so deleting a
+    /// marker of an open goal would send the reminder again every day). Once the goal is deleted,
+    /// completed or has no target date any more nothing can fire, and the marker only remains as a
+    /// trace of the account's study planning. Keys that do not parse are left alone.
+    /// </summary>
+    private static async Task<int> DeleteOrphanedCourseGoalMarkersAsync(StudyLifeDb db, CancellationToken ct)
+    {
+        var markers = await db.SentReminders.IgnoreQueryFilters()
+            .Where(r => r.Key.StartsWith(CourseGoalMarkerPrefix))
+            .Select(r => new { r.Id, r.AuthUserId, r.Key })
+            .ToListAsync(ct);
+        if (markers.Count == 0) return 0;
+
+        var open = (await db.CourseGoals.IgnoreQueryFilters()
+                .Where(g => g.TargetDate != null && g.CompletedAt == null)
+                .Select(g => new { g.AuthUserId, g.CourseId })
+                .ToListAsync(ct))
+            .Select(g => (g.AuthUserId, g.CourseId))
+            .ToHashSet();
+
+        var orphaned = markers
+            .Where(m => TryParseCourseId(m.Key, out var courseId) && !open.Contains((m.AuthUserId, courseId)))
+            .Select(m => m.Id)
+            .ToList();
+
+        var deleted = 0;
+        foreach (var batch in orphaned.Chunk(500))
+            deleted += await db.SentReminders.IgnoreQueryFilters().Where(r => batch.Contains(r.Id)).ExecuteDeleteAsync(ct);
+        return deleted;
+    }
+
+    private const string CourseGoalMarkerPrefix = "coursegoal:";
+
+    private static bool TryParseCourseId(string key, out int courseId)
+    {
+        var parts = key.Split(':');
+        courseId = 0;
+        return parts.Length >= 2 && int.TryParse(parts[1], out courseId);
     }
 }

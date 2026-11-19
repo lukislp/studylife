@@ -156,6 +156,14 @@
     </div>
 }
 
+@* The export before deleting is guarded like the backup downloads (2026-11-19 audit S2): when the
+   server wants a fresh "it's me" first, the dialog asks and the export repeats. Only rendered while
+   it is needed, so the card keeps no dependency on the dialog's texts otherwise. *@
+@if (_retryAfterStepUp is not null)
+{
+    <StepUpDialog Open="true" OnConfirmed="OnStepUpConfirmedAsync" OnCancel="() => _retryAfterStepUp = null" />
+}
+
 @code {
     /// <summary>Texts to render with. Left null in the app (loaded from the i18n table for the
     /// current language); component tests pass them in directly.</summary>
@@ -254,6 +262,15 @@
     }
 
     // ── the existing JSON export, offered before anything is deleted ────────────────────────────
+    private Func<Task>? _retryAfterStepUp;
+
+    private async Task OnStepUpConfirmedAsync()
+    {
+        var retry = _retryAfterStepUp;
+        _retryAfterStepUp = null;
+        if (retry is not null) await retry();
+    }
+
     private async Task ExportAsync()
     {
         _busy = true;
@@ -261,6 +278,11 @@
         try
         {
             using var response = await Http.GetAsync("api/backup/export");
+            if (await StepUpState.IsStepUpRequiredAsync(response))
+            {
+                _retryAfterStepUp = ExportAsync;
+                return;
+            }
             if (!response.IsSuccessStatusCode) { _error = T!.ExportFailed; return; }
             await Downloads.SaveResponseAsync(response, $"studyatrium-export-{DateTime.UtcNow:yyyyMMdd}.json");
         }

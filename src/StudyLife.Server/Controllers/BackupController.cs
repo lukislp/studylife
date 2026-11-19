@@ -188,9 +188,13 @@ public class BackupController : ControllerBase
     /// leaves out. Serialized here rather than by the framework's output formatter because the
     /// response is a downloadable File(), not a plain ActionResult&lt;T&gt; - with the SAME
     /// JsonSerializerOptions every other endpoint uses (_jsonOptions), which is the fix for the
-    /// divergent-casing bug (audit finding M4(a)).
+    /// divergent-casing bug (audit finding M4(a)). Needs a confirmed session ([RequireStepUp],
+    /// 2026-11-19 audit S2): the file carries the account details and the whole study content, so a
+    /// stolen session token (or a per-user API key, which never counts as confirmed) alone must not
+    /// be enough to walk off with it. A session that signed in moments ago counts as confirmed.
     /// </summary>
     [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting(RateLimitPolicies.Expensive)]
+    [RequireStepUp]
     [HttpGet("export")]
     public async Task<IActionResult> Export()
     {
