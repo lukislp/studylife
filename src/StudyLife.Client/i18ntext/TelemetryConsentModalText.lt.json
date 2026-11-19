@@ -1,6 +1,6 @@
 {
-  "Heading": "Padėti tobulinti StudyAtrium?",
-  "ExplainWhatText": "Norėtume rinkti anonimiškus našumo ir klaidų duomenis, kad rastume klaidas ir lėtas vietas — niekada tavo pastabų, sesijų ar sveikatos duomenų.",
+  "Heading": "Siųsti anonimiškus našumo ir klaidų duomenis tavo StudyAtrium serverio operatoriui?",
+  "ExplainWhatText": "Duomenys keliauja tam, kas valdo tavo StudyAtrium serverį (jei jį talpini pats, tai esi tu), ir naudojami klaidoms bei lėtoms vietoms rasti. Juose niekada nėra tavo pastabų, sesijų ar sveikatos duomenų.",
   "ExplainChangeText": "Tai gali pakeisti bet kada Nustatymuose.",
   "AcceptButton": "Leisti",
   "DeclineButton": "Ne, ačiū"

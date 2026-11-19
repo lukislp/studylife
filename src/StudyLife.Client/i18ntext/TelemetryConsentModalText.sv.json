@@ -1,6 +1,6 @@
 {
-  "Heading": "Hjälpa till att förbättra StudyAtrium?",
-  "ExplainWhatText": "Vi skulle vilja samla in anonym prestanda- och felinformation för att hitta buggar och långsamma delar — aldrig dina anteckningar, sessioner eller hälsodata.",
+  "Heading": "Skicka anonym prestanda- och felinformation till operatören av din StudyAtrium-server?",
+  "ExplainWhatText": "Informationen går till den som driver din StudyAtrium-server (om du driver den själv är det du) och används för att hitta buggar och långsamma delar. Den innehåller aldrig dina anteckningar, sessioner eller hälsodata.",
   "ExplainChangeText": "Du kan ändra detta när som helst i Inställningar.",
   "AcceptButton": "Tillåt",
   "DeclineButton": "Nej tack"

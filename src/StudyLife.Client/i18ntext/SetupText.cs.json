@@ -309,7 +309,7 @@
   "MarketplaceManualSetupLink": "Otevřít návod k nastavení",
   "ClientKeysHeading": "Připojené doplňky",
   "TelemetryHeading": "Hlášení o používání a chybách",
-  "TelemetryDesc": "Pomáhá nám odhalit chyby a zpomalení odesíláním anonymních dat o výkonu a chybách — nikdy tvé poznámky, session ani zdravotní údaje. Kdykoli to můžeš vypnout.",
+  "TelemetryDesc": "Odesílá anonymní data o výkonu a chybách provozovateli tvého serveru StudyAtrium (pokud ho hostuješ sám, jsi to ty), aby bylo možné odhalit chyby a zpomalení — nikdy tvé poznámky, session ani zdravotní údaje. Kdykoli to můžeš vypnout.",
   "AriaCloseDialog": "Zavřít dialog",
   "AriaRemoveGroup": "Odebrat skupinu",
   "AriaRemoveCourse": "Odebrat předmět",

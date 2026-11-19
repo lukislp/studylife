@@ -309,7 +309,7 @@
   "MarketplaceManualSetupLink": "Installatiehandleiding openen",
   "ClientKeysHeading": "Verbonden add-ons",
   "TelemetryHeading": "Gebruiks- en foutrapporten",
-  "TelemetryDesc": "Helpt ons bugs en trage plekken op te sporen door anonieme prestatie- en foutgegevens te versturen — nooit je notities, sessies of gezondheidsgegevens. Je kunt dit altijd uitschakelen.",
+  "TelemetryDesc": "Stuurt anonieme prestatie- en foutgegevens naar de beheerder van je StudyAtrium-server (host je hem zelf, dan ben jij dat) om bugs en trage plekken op te sporen — nooit je notities, sessies of gezondheidsgegevens. Je kunt dit altijd uitschakelen.",
   "AriaCloseDialog": "Dialoogvenster sluiten",
   "AriaRemoveGroup": "Groep verwijderen",
   "AriaRemoveCourse": "Vak verwijderen",

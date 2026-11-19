@@ -53,10 +53,10 @@
         StateHasChanged();
         try
         {
-            var settings = await State.GetSettingsAsync();
-            settings.TelemetryConsent = consent;
-            await State.SaveSettingsAsync(settings);
-            await OnAnswered.InvokeAsync();
+            // Only a recorded answer closes the dialog: if the server did not store it (offline,
+            // error) the question stays, instead of looking answered while nothing was saved.
+            if (await State.SetTelemetryConsentAsync(consent))
+                await OnAnswered.InvokeAsync();
         }
         finally { _busy = false; }
     }

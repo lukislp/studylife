@@ -1389,6 +1389,32 @@ public class AppStateService : IAsyncDisposable
     }
 
     /// <summary>
+    /// Sends the user's answer to the telemetry question to its own endpoint (the generic settings
+    /// PUT ignores the field: API keys can reach that PUT, and a consent must be given on a real
+    /// session). Returns whether the server stored it; nothing changes locally on a failure, so the
+    /// caller can say so and ask again - a consent that was not recorded must not look given.
+    /// On success the local copy follows (and listeners such as TelemetryService hear about it,
+    /// like after any settings change).
+    /// </summary>
+    public async Task<bool> SetTelemetryConsentAsync(bool consent)
+    {
+        try
+        {
+            var response = await _http.PutAsJsonAsync("api/settings/telemetry-consent",
+                new SetTelemetryConsentRequest { Consent = consent }, StudyLifeJson.Options);
+            if (!response.IsSuccessStatusCode) return false;
+        }
+        catch { return false; }
+
+        var settings = await GetSettingsAsync();
+        settings.TelemetryConsent = consent;
+        _settingsHash = ComputeSettingsHash(ToDto(settings));
+        OnSettingsChanged?.Invoke();
+        NotifyStateChanged();
+        return true;
+    }
+
+    /// <summary>
     /// 409 handling for SaveSettingsAsync (audit S4/S5 concurrency semantics): our Version was
     /// stale, meaning another device/tab saved settings after this client last fetched. Chosen
     /// semantics: refetch the server's current state (this also updates the local cache/hash and
