@@ -273,10 +273,33 @@ public class AiKeyOutboxDrainTests : IClassFixture<CustomWebApplicationFactory>
             Assert.Single(handler.Requests);
             var row = Assert.Single(await LoadRowsAsync());
             Assert.Equal(100, row.Attempts); // kept as evidence, not deleted
+            Assert.Null(row.AiApiKeyPlaintext); // ... but not the credential (audit 2026-11-19 S6)
 
             // A second drain tick must not retry it again - it has given up.
             await _factory.WithDbAsync(db => service.RunAiKeyOutboxAsync(db));
             Assert.Single(handler.Requests); // still just the one request from the first tick
+        }
+        finally
+        {
+            await ClearOutboxAsync();
+        }
+    }
+
+    [Fact]
+    public async Task RunAiKeyOutboxAsync_ARowThatGaveUpEarlier_LosesItsPlaintextOnTheNextTick()
+    {
+        await ClearOutboxAsync();
+        try
+        {
+            await SeedRowAsync(AiKeyOutboxEntity.ActionRegister, "legacy-plaintext-key", DateTime.UtcNow.AddDays(-30),
+                attempts: 100, lastAttemptAt: DateTime.UtcNow.AddDays(-20));
+            var (service, handler) = CreateService();
+
+            await _factory.WithDbAsync(db => service.RunAiKeyOutboxAsync(db));
+
+            Assert.Empty(handler.Requests); // still not retried
+            var row = Assert.Single(await LoadRowsAsync());
+            Assert.Null(row.AiApiKeyPlaintext);
         }
         finally
         {

@@ -180,6 +180,22 @@ public class StepUpEndpointTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal(HttpStatusCode.OK, confirmedDownload.StatusCode);
     }
 
+    [Fact]
+    public async Task AStolenAgedToken_CannotDownloadThePersonalDataExport()
+    {
+        var (token, passkey, _) = await _http.NewUserAsync("Export Eve");
+        Assert.Equal(HttpStatusCode.OK, (await _http.SendAsync(HttpMethod.Get, "/api/backup/export", token)).StatusCode);
+        await _http.AgeAsync(token);
+
+        var refused = await _http.SendAsync(HttpMethod.Get, "/api/backup/export", token);
+
+        Assert.Equal(HttpStatusCode.Forbidden, refused.StatusCode);
+        Assert.Equal("step-up-required", await PasswordHttp.ProblemTypeAsync(refused));
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await _http.SendAsync(HttpMethod.Post, "/api/auth/account/reauth", token, await _http.PasskeyProofAsync(token, passkey))).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await _http.SendAsync(HttpMethod.Get, "/api/backup/export", token)).StatusCode);
+    }
+
     private Task<int> SessionIdAsync(string token) => _factory.WithDbAsync(async db =>
     {
         var hash = Services.AuthSessionService.HashToken(token);

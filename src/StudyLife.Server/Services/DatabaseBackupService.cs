@@ -102,4 +102,29 @@ public class DatabaseBackupService
             .Skip(keep);
         foreach (var f in stale) File.Delete(f);
     }
+
+    /// <summary>
+    /// Deletes safety copies from before a restore that are older than <paramref name="maxAge"/>
+    /// (audit 2026-11-19 S6): they hold every account's data of that day, and the count limit alone
+    /// keeps the last three for ever when nobody restores again. Age comes from the timestamp in the
+    /// file name, the file's write time when the name does not parse. Runs with the weekly dump.
+    /// </summary>
+    public int DeleteOldPreRestoreBackups(TimeSpan maxAge, DateTime utcNow)
+    {
+        if (!Directory.Exists(_backupDir)) return 0;
+        var cutoff = utcNow - maxAge;
+        var deleted = 0;
+        foreach (var file in Directory.GetFiles(_backupDir, "prerestore-*.db"))
+        {
+            var stamp = Path.GetFileNameWithoutExtension(file)["prerestore-".Length..];
+            var taken = DateTime.TryParseExact(stamp, "yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.AssumeUniversal | System.Globalization.DateTimeStyles.AdjustToUniversal, out var parsed)
+                ? parsed
+                : File.GetLastWriteTimeUtc(file);
+            if (taken >= cutoff) continue;
+            File.Delete(file);
+            deleted++;
+        }
+        return deleted;
+    }
 }

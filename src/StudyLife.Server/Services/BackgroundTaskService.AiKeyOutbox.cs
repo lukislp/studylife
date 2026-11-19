@@ -66,7 +66,16 @@ public partial class BackgroundTaskService
             {
                 // A "register" that gave up earlier - evidence only, doesn't block later rows of
                 // the same user forever (unlike an un-given-up failure below, which does).
-                if (AddonOutbox.MayGiveUp(row.Action) && row.Attempts >= AiKeyOutboxMaxAttempts) continue;
+                if (AddonOutbox.MayGiveUp(row.Action) && row.Attempts >= AiKeyOutboxMaxAttempts)
+                {
+                    // Also rows that gave up before the plaintext was dropped at that moment.
+                    if (row.AiApiKeyPlaintext is not null)
+                    {
+                        row.AiApiKeyPlaintext = null;
+                        await db.SaveChangesAsync();
+                    }
+                    continue;
+                }
 
                 if (row.LastAttemptAt is DateTime lastAttempt)
                 {
@@ -96,6 +105,10 @@ public partial class BackgroundTaskService
 
                 if (AddonOutbox.MayGiveUp(row.Action) && row.Attempts >= AiKeyOutboxMaxAttempts)
                 {
+                    // The row stays as evidence, but not the key: a registration that gave up is
+                    // useless to studylife-ai by now and must not keep a credential at rest forever
+                    // (audit 2026-11-19 S6). The user generates a new key.
+                    row.AiApiKeyPlaintext = null;
                     _logger.LogError(
                         "AI key outbox row {Id} (user {AuthUserId}, action {Action}) gave up after {Attempts} attempts",
                         row.Id, row.AuthUserId, row.Action, row.Attempts);

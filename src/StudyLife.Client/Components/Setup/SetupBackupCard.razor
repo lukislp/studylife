@@ -18,6 +18,10 @@
 <div class="setup-section">
     <div class="ss-label">@Label</div>
     <p class="ss-desc">@Desc</p>
+    @if (!string.IsNullOrEmpty(AddonsNote))
+    {
+        <p class="ss-desc">@AddonsNote</p>
+    }
 
     @if (ShowsRawBackup)
     {
@@ -64,6 +68,9 @@
     [Parameter] public bool RawBackupSupported { get; set; }
     [Parameter] public string Label { get; set; } = "";
     [Parameter] public string Desc { get; set; } = "";
+    /// <summary>What neither the export nor the backup contains: data that add-ons hold about the
+    /// account, and where to ask for it (2026-11-19 audit S2). Shown below the description.</summary>
+    [Parameter] public string AddonsNote { get; set; } = "";
     [Parameter] public string DownloadDatabaseButtonText { get; set; } = "";
     [Parameter] public string ExportJsonButtonText { get; set; } = "";
     [Parameter] public string PasswordPlaceholder { get; set; } = "";

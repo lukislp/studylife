@@ -141,20 +141,9 @@ public partial class BackgroundTaskService
             }
         }
 
-        // Clean up old reminder entries (older than 2 days). Achievement and course-goal keys
-        // are deliberately excluded: achievements deduplicate permanently, and course-goal
-        // reminders fire via threshold comparison (daysUntil <= reminderAt) - if their key were
-        // deleted after 2 days, e.g. the 14-day reminder would fire again every 2 days as long
-        // as the target date is within the window. Only session (window max. 61 min), inactivity,
-        // and motivation keys (both deduplicated per calendar day, daily re-firing is intended
-        // there) age out.
-        var cutoff = now.AddDays(-2);
-        var old = await db.SentReminders
-            .Where(r => r.SentAt < cutoff
-                && !r.Key.StartsWith("achievement:")
-                && !r.Key.StartsWith("coursegoal:"))
-            .ToListAsync();
-        if (old.Any()) { db.SentReminders.RemoveRange(old); dbChanged = true; }
+        // Old reminder markers are no longer removed here: this method returns early for every
+        // user without a session in the window or without a push subscription, so their markers
+        // never aged out. The daily DataRetentionCleaner does it for everyone (audit 2026-11-19 S6).
 
         if (dbChanged)
             await db.SaveChangesAsync();

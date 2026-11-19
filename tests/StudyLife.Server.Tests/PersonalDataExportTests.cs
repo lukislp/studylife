@@ -359,4 +359,27 @@ public class ExportAboutBuilderTests
         Assert.Equal(9, names.Count);
         Assert.Contains(about.Purposes, p => p.Contains("AI", StringComparison.Ordinal));
     }
+
+    [Fact]
+    public async Task TheExportDoesNotClaimToBeComplete_AndNamesWhatAddOnsKeepElsewhere()
+    {
+        var account = new AccountExportDto { ConnectedApps = [new ConnectedAppExportDto { ClientId = "app" }] };
+
+        var about = await Builder(new AiCapabilities(true, null), addons: true).BuildAsync(account);
+
+        Assert.DoesNotContain("Everything stored about you", about.Categories, StringComparison.Ordinal);
+        Assert.Contains("add-ons", about.Categories, StringComparison.Ordinal);
+        Assert.Equal(3, about.AddonData.Count);
+        Assert.All(about.AddonData, line => Assert.Contains("operator", line, StringComparison.Ordinal));
+        Assert.Contains(about.AddonData, l => l.StartsWith("AI add-on", StringComparison.Ordinal));
+        Assert.Contains(about.AddonData, l => l.StartsWith("Webhooks add-on", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task NoAddOnNote_ForAnAddOnThatIsNeitherConfiguredNorUsed()
+    {
+        var about = await Builder(new AiCapabilities(false, null), addons: false).BuildAsync(new AccountExportDto());
+
+        Assert.Empty(about.AddonData);
+    }
 }
