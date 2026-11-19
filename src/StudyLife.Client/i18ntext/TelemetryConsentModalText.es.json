@@ -1,6 +1,6 @@
 {
-  "Heading": "¿Ayudar a mejorar StudyAtrium?",
-  "ExplainWhatText": "Nos gustaría recopilar datos anónimos de rendimiento y errores para detectar fallos y puntos lentos — nunca tus notas, sesiones ni datos de salud.",
+  "Heading": "¿Enviar datos anónimos de rendimiento y errores al operador de tu servidor de StudyAtrium?",
+  "ExplainWhatText": "Los datos van a quien gestiona tu servidor de StudyAtrium (si lo alojas tú mismo, eres tú) y sirven para detectar fallos y puntos lentos. Nunca incluyen tus notas, sesiones ni datos de salud.",
   "ExplainChangeText": "Puedes cambiar esto en cualquier momento en Ajustes.",
   "AcceptButton": "Permitir",
   "DeclineButton": "No, gracias"

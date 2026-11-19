@@ -1,6 +1,6 @@
 {
-  "Heading": "Kas aidata StudyAtrium'i paremaks muuta?",
-  "ExplainWhatText": "Sooviksime koguda anonüümseid jõudlus- ja veaandmeid, et leida vigu ja aeglaseid kohti — mitte kunagi sinu märkmeid, seansse ega terviseandmeid.",
+  "Heading": "Kas saata anonüümsed jõudlus- ja veaandmed sinu StudyAtrium'i serveri haldajale?",
+  "ExplainWhatText": "Andmed lähevad sellele, kes sinu StudyAtrium'i serverit haldab (kui majutad seda ise, oled see sina), ning neid kasutatakse vigade ja aeglaste kohtade leidmiseks. Need ei sisalda kunagi sinu märkmeid, seansse ega terviseandmeid.",
   "ExplainChangeText": "Seda saad igal ajal muuta seadetes.",
   "AcceptButton": "Luba",
   "DeclineButton": "Ei, aitäh"

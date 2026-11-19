@@ -907,6 +907,33 @@ namespace StudyLife.Server.Migrations.Postgres
                     b.ToTable("SystemSecrets");
                 });
 
+            modelBuilder.Entity("StudyLife.Server.Data.TelemetryConsentLogEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Answer")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("AnsweredAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("AuthUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TextVersion")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthUserId", "AnsweredAt");
+
+                    b.ToTable("TelemetryConsentLog");
+                });
+
             modelBuilder.Entity("StudyLife.Server.Data.TimerStateEntity", b =>
                 {
                     b.Property<int>("Id")
