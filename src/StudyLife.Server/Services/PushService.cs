@@ -30,12 +30,14 @@ public interface IPushService
     /// <summary>VAPID public key for Web Push registration in the browser.</summary>
     string PublicKey { get; }
 
-    Task<ServiceResult> SubscribeAsync(PushSubscribeRequest dto, string? userAgent);
+    /// <param name="sessionId">The sign-in session making the call; the registration is bound to
+    /// it and dies with it (see <see cref="PushSubscriptionEntity.AuthSessionId"/>).</param>
+    Task<ServiceResult> SubscribeAsync(PushSubscribeRequest dto, string? userAgent, int? sessionId);
 
     /// <summary>Upserts the APNs registration. The token must already have passed
     /// <see cref="PushService.IsValidApnsToken"/> - that check is the controller's, because the
     /// endpoint answers it with a bodyless 400.</summary>
-    Task SubscribeApnsAsync(ApnsSubscribeRequest dto);
+    Task SubscribeApnsAsync(ApnsSubscribeRequest dto, int? sessionId);
     Task UnsubscribeAsync(string endpoint);
     Task UnsubscribeApnsAsync(string token);
     Task<List<PushSubscriptionListItemDto>> GetSubscriptionsAsync();
@@ -59,7 +61,7 @@ public class PushService(StudyLifeDb db, VapidKeysHolder vapidKeysHolder) : IPus
 
     public string PublicKey => vapidKeysHolder.Keys!.PublicKey; // always set - see VapidKeysHolder comment
 
-    public async Task<ServiceResult> SubscribeAsync(PushSubscribeRequest dto, string? userAgent)
+    public async Task<ServiceResult> SubscribeAsync(PushSubscribeRequest dto, string? userAgent, int? sessionId)
     {
         // The endpoint is a URL the WORKER later POSTs to unattended - see OutboundUrlPolicy for
         // why it must be a public https origin and nothing else (2026-09 audit S4).
@@ -81,7 +83,8 @@ public class PushService(StudyLifeDb db, VapidKeysHolder vapidKeysHolder) : IPus
                 P256dh = dto.P256dh,
                 Auth = dto.Auth,
                 CreatedAt = DateTime.UtcNow,
-                UserAgent = userAgent
+                UserAgent = userAgent,
+                AuthSessionId = sessionId
             });
             await db.SaveChangesAsync();
         }
@@ -92,6 +95,9 @@ public class PushService(StudyLifeDb db, VapidKeysHolder vapidKeysHolder) : IPus
             // UserAgent is refreshed on every re-subscribe (browser update etc.),
             // but CreatedAt stays the original registration - that's the "registered X days ago".
             existing.UserAgent = userAgent;
+            // A re-subscribe after a fresh sign-in rebinds the device to the new session; a call
+            // without a session (null) never strips an existing binding.
+            existing.AuthSessionId = sessionId ?? existing.AuthSessionId;
             await db.SaveChangesAsync();
         }
 
@@ -114,7 +120,7 @@ public class PushService(StudyLifeDb db, VapidKeysHolder vapidKeysHolder) : IPus
     // device token instead of web-push credentials. The synthetic endpoint "apns:<token>"
     // serves the unique index, dedup, and EndpointHash of the device list unchanged (the
     // app computes its "this device" hash over the same synthetic value).
-    public async Task SubscribeApnsAsync(ApnsSubscribeRequest dto)
+    public async Task SubscribeApnsAsync(ApnsSubscribeRequest dto, int? sessionId)
     {
         var syntheticEndpoint = SyntheticApnsEndpoint(dto.Token);
         var deviceName = string.IsNullOrWhiteSpace(dto.DeviceName) ? "StudyAtrium App" : dto.DeviceName.Trim();
@@ -131,12 +137,14 @@ public class PushService(StudyLifeDb db, VapidKeysHolder vapidKeysHolder) : IPus
                 Channel = PushSubscriptionEntity.ChannelApns,
                 ApnsToken = dto.Token,
                 CreatedAt = DateTime.UtcNow,
-                UserAgent = deviceName
+                UserAgent = deviceName,
+                AuthSessionId = sessionId
             });
         }
         else
         {
             existing.UserAgent = deviceName; // like the web subscribe: refresh the display, keep CreatedAt
+            existing.AuthSessionId = sessionId ?? existing.AuthSessionId; // rebind to the current session
         }
         await db.SaveChangesAsync();
     }
@@ -194,6 +202,25 @@ public class PushService(StudyLifeDb db, VapidKeysHolder vapidKeysHolder) : IPus
         db.PushSubscriptions.Remove(existing);
         await db.SaveChangesAsync();
         return ServiceResult.Success();
+    }
+
+    /// <summary>
+    /// Deletes every web-push and APNs registration bound to one of the given (just ended)
+    /// sessions - the server-side half of "signing out stops the pushes". Static and taking the
+    /// caller's context, like <see cref="IsValidApnsToken"/>: it runs inside the session-ending
+    /// operations (AuthAccountService, AuthRecoveryService, DataRetentionCleaner), which have no
+    /// reason to depend on the whole subscribe/unsubscribe service. Ignores the per-user query
+    /// filter because a recovery login or the retention worker has no current user. Returns the
+    /// number of registrations removed.
+    /// </summary>
+    public static async Task<int> DeleteBoundToSessionsAsync(
+        StudyLifeDb db, IReadOnlyCollection<int> sessionIds, CancellationToken ct = default)
+    {
+        if (sessionIds.Count == 0) return 0;
+        var ids = sessionIds.Select(id => (int?)id).ToList();
+        return await db.PushSubscriptions.IgnoreQueryFilters()
+            .Where(p => ids.Contains(p.AuthSessionId))
+            .ExecuteDeleteAsync(ct);
     }
 
     private static string SyntheticApnsEndpoint(string token) => $"apns:{token}";

@@ -115,6 +115,7 @@ public class StudyLifeDb : DbContext
         // both accounts get their own subscription row for the same
         // physical endpoint, each only gets ITS OWN reminders on a push event.
         modelBuilder.Entity<PushSubscriptionEntity>().HasIndex(s => new { s.AuthUserId, s.Endpoint }).IsUnique();
+        modelBuilder.Entity<PushSubscriptionEntity>().HasIndex(s => s.AuthSessionId);
         modelBuilder.Entity<CourseGroupEntity>().HasIndex(g => g.StudyProgramId);
         modelBuilder.Entity<CustomCourseEntity>().HasIndex(c => c.StudyProgramId);
         modelBuilder.Entity<CourseResourceEntity>().HasIndex(r => r.CourseId);
@@ -912,6 +913,15 @@ public class PushSubscriptionEntity
     // device list keep working unchanged. P256dh/Auth stay empty.
     public string Channel { get; set; } = ChannelWebPush;
     public string? ApnsToken { get; set; }
+
+    // The sign-in session (AuthSessionEntity.Id) that registered / last re-registered this
+    // device. Ending that session - logout, "sign out everywhere else", recovery login, expiry -
+    // deletes the row, so a signed-out device stops receiving pushes without relying on the
+    // app's own best-effort unsubscribe call. Deliberately no foreign key: the delete is done
+    // explicitly (PushService.DeleteBoundToSessionsAsync, DataRetentionCleaner backstop). Null
+    // for rows from before this column and for registrations not made by a session; those stay
+    // until unsubscribed, account deletion, or the inactivity retention.
+    public int? AuthSessionId { get; set; }
 
     public const string ChannelWebPush = "webpush";
     public const string ChannelApns = "apns";

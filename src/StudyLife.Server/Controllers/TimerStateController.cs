@@ -1,7 +1,9 @@
 // SPDX-FileCopyrightText: 2026 Lukas Körber
 // SPDX-License-Identifier: AGPL-3.0-only
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using StudyLife.Server.Auth;
 using StudyLife.Server.Services;
 using StudyLife.Shared;
 
@@ -37,4 +39,12 @@ public class TimerStateController : ControllerBase
         var result = await _timerState.SetLiveActivityPushTokenAsync(dto);
         return result.Outcome == ServiceOutcome.Invalid ? BadRequest(result.Error) : Ok();
     }
+
+    /// <summary>Deletes the caller's own Live Activity push token. Session-only: the token is
+    /// registered by the app of a signed-in user, and a bare API key has no business removing it.
+    /// Idempotent - 204 whether or not a token was stored.</summary>
+    [Authorize(Policy = StudyLifeAuthorizationPolicies.SessionOnly)]
+    [HttpDelete("liveactivity-token")]
+    public async Task<IActionResult> DeleteLiveActivityPushToken() =>
+        (await _timerState.DeleteLiveActivityPushTokenAsync()).ToNoContentResult(this);
 }
