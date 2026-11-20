@@ -3,5 +3,7 @@
   "ExplainWhatText": "Andmed lähevad sellele, kes sinu StudyAtrium'i serverit haldab (kui majutad seda ise, oled see sina), ning neid kasutatakse vigade ja aeglaste kohtade leidmiseks. Need ei sisalda kunagi sinu märkmeid, seansse ega terviseandmeid.",
   "ExplainChangeText": "Seda saad igal ajal muuta seadetes.",
   "AcceptButton": "Luba",
-  "DeclineButton": "Ei, aitäh"
+  "DeclineButton": "Ei, aitäh",
+  "ErrorText": "Sinu vastust ei õnnestunud salvestada. Kontrolli ühendust.",
+  "LaterButton": "Küsi hiljem"
 }

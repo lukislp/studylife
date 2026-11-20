@@ -3,5 +3,7 @@
   "ExplainWhatText": "Tiedot menevät sille, joka ylläpitää StudyAtrium-palvelintasi (jos isännöit sitä itse, se olet sinä), ja niitä käytetään bugien ja hitaiden kohtien löytämiseen. Ne eivät koskaan sisällä muistiinpanojasi, istuntojasi tai terveystietojasi.",
   "ExplainChangeText": "Voit muuttaa tätä milloin tahansa Asetuksista.",
   "AcceptButton": "Salli",
-  "DeclineButton": "Ei kiitos"
+  "DeclineButton": "Ei kiitos",
+  "ErrorText": "Vastaustasi ei voitu tallentaa. Tarkista yhteytesi.",
+  "LaterButton": "Kysy myöhemmin"
 }

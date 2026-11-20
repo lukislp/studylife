@@ -3,5 +3,7 @@
   "ExplainWhatText": "Tato data jdou tomu, kdo provozuje tvůj server StudyAtrium (pokud ho hostuješ sám, jsi to ty), a slouží k hledání chyb a zpomalení. Nikdy neobsahují tvé poznámky, session ani zdravotní údaje.",
   "ExplainChangeText": "Kdykoli to můžeš změnit v Nastavení.",
   "AcceptButton": "Povolit",
-  "DeclineButton": "Ne, díky"
+  "DeclineButton": "Ne, díky",
+  "ErrorText": "Tvou odpověď se nepodařilo uložit. Zkontroluj připojení.",
+  "LaterButton": "Zeptat se později"
 }

@@ -161,6 +161,31 @@ public class DataRetentionCleanerTests : IClassFixture<CustomWebApplicationFacto
     }
 
     [Fact]
+    public async Task WeekAndMonthMarkers_SurviveTheTwoDayRule_AndAgeOutAfterTheirPeriod()
+    {
+        await RunAsync(db =>
+        {
+            db.SentReminders.Add(new SentReminderEntity { AuthUserId = 9122, Key = "weeklygoalnudge:2026-W47", SentAt = Now.AddDays(-3) });
+            db.SentReminders.Add(new SentReminderEntity { AuthUserId = 9122, Key = "coursealmostdone:7:2026-W47", SentAt = Now.AddDays(-3) });
+            db.SentReminders.Add(new SentReminderEntity { AuthUserId = 9122, Key = "weeklyreport:2026-W47", SentAt = Now.AddDays(-7) });
+            db.SentReminders.Add(new SentReminderEntity { AuthUserId = 9122, Key = "monthlyreport:2026-10", SentAt = Now.AddDays(-20) });
+            // Past their period: gone.
+            db.SentReminders.Add(new SentReminderEntity { AuthUserId = 9122, Key = "weeklygoalnudge:2026-W44", SentAt = Now.AddDays(-9) });
+            db.SentReminders.Add(new SentReminderEntity { AuthUserId = 9122, Key = "coursealmostdone:7:2026-W44", SentAt = Now.AddDays(-9) });
+            db.SentReminders.Add(new SentReminderEntity { AuthUserId = 9122, Key = "monthlyreport:2026-09", SentAt = Now.AddDays(-33) });
+            // Per-day markers still follow the two-day rule.
+            db.SentReminders.Add(new SentReminderEntity { AuthUserId = 9122, Key = "streakrisk:20261115", SentAt = Now.AddDays(-3) });
+            return Task.CompletedTask;
+        });
+
+        var keys = await ReadAsync(db => db.SentReminders.IgnoreQueryFilters()
+            .Where(r => r.AuthUserId == 9122).Select(r => r.Key).OrderBy(k => k).ToListAsync());
+        Assert.Equal(
+            ["coursealmostdone:7:2026-W47", "monthlyreport:2026-10", "weeklygoalnudge:2026-W47", "weeklyreport:2026-W47"],
+            keys);
+    }
+
+    [Fact]
     public async Task CourseGoalMarkers_AreDeletedOnceNoOpenGoalCanFireThem_AndStayWhileOneCan()
     {
         await RunAsync(db =>
