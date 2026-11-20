@@ -227,7 +227,8 @@
     private DotNetObjectReference<MainLayout>? _searchHotkeyRef;
     private ErrorBoundary? _errorBoundary;
     private bool _authenticated;
-    // False until the real UI language is read; the page body is not rendered before (UiLanguageScope).
+    // False until the real UI language is read; the page body is not rendered before (UiLanguageScope),
+    // and once true the scope always renders it (an empty/unknown language falls back to English).
     private bool _languageKnown;
     private bool _demoMode;
     private bool _showTelemetryConsentModal;
@@ -297,7 +298,11 @@
             // ContinueStartupAsync, which runs detached from this method so the shell (rendered
             // as soon as this method returns) doesn't wait for any of it.
             T = await i18nTask;
-            _lang = await currentLanguageTask;
+            // Never the library's raw answer: in the native app shell it can be "" on an English start
+            // (its built-in default is "en", so UiLanguageStartup's SetCurrentLanguageAsync("en") returns
+            // early, and the library's own initial detection then supplies an empty code; see #522).
+            // In v3.39.11 that left _lang empty and UiLanguageScope held the page body back for good.
+            _lang = await UiLanguageStartup.GetCurrentCodeAsync(JS, () => currentLanguageTask);
             LocalDate.Language = _lang;
             _languageKnown = true;
             LocalDate.NamesChanged += OnDateNamesChanged;

@@ -6,25 +6,40 @@
   Hosts the page body under a known UI language. LocalDate/LocalNumber read their language from a
   static that defaults to German, and the layout only learns the real language after its first
   awaits - while the page body was already being rendered. Cards with unchanged parameters never
-  re-render, so a native/English start froze "1,66" and "19.05.26" in them. This scope renders
-  nothing until the language is known, applies it BEFORE any child renders, and rebuilds the
-  subtree (key) when the language changes so already-rendered cards pick up the new formats.
+  re-render, so a native/English start froze "1,66" and "19.05.26" in them. This scope holds the
+  body back only while the layout is still asking (Language null), applies the language BEFORE any
+  child renders, and rebuilds the subtree (key) when the language changes so already-rendered cards
+  pick up the new formats.
+
+  Once the layout has asked, the body always renders: an answer that is empty or not a supported
+  language falls back to UiLanguage.Fallback instead of leaving the page blank (the I18nText library
+  reports "" in the native app shell when the start language is English, see
+  UiLanguageStartup.GetCurrentCodeAsync).
 *@
-@if (!string.IsNullOrEmpty(Language))
+@if (_effective is not null)
 {
-    <CascadingValue Value="@Language" IsFixed="true" @key="Language">
+    <CascadingValue Name="UiLanguage" Value="@_effective" IsFixed="true" @key="_effective">
         @ChildContent
     </CascadingValue>
 }
 
 @code {
-    /// <summary>The active UI language code; null or empty while it is still being determined.</summary>
+    private string? _effective;
+
+    /// <summary>The active UI language code; null only while the layout is still determining it.</summary>
     [Parameter] public string? Language { get; set; }
 
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     protected override void OnParametersSet()
     {
-        if (!string.IsNullOrEmpty(Language)) LocalDate.Language = Language;
+        _effective = Effective(Language);
+        if (_effective is not null) LocalDate.Language = _effective;
     }
+
+    /// <summary>null while the language is unknown (null); otherwise the supported code for
+    /// <paramref name="language"/>, or <see cref="UiLanguage.Fallback"/> when it is empty or
+    /// unsupported, so a determined language never leaves the body empty.</summary>
+    private static string? Effective(string? language) =>
+        language is null ? null : UiLanguage.Match(language) ?? UiLanguage.Fallback;
 }
