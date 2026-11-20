@@ -221,8 +221,11 @@ public class BackupDataService(
         var consent = await db.Settings.AsNoTracking()
             .Select(s => new
             {
-                s.TelemetryConsent, s.TelemetryConsentAt, s.TelemetryConsentVersion,
-                s.AiConsentGrantedAt, s.AiConsentProviderFingerprint,
+                s.TelemetryConsent,
+                s.TelemetryConsentAt,
+                s.TelemetryConsentVersion,
+                s.AiConsentGrantedAt,
+                s.AiConsentProviderFingerprint,
             })
             .FirstOrDefaultAsync();
         await db.Settings.ExecuteDeleteAsync();
