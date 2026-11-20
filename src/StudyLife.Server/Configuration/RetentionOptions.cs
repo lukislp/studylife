@@ -37,7 +37,9 @@ public sealed class RetentionOptions
     /// <summary>"Already sent" markers of session, inactivity and motivation reminders are deleted
     /// after this long (a session reminder window is at most 61 minutes, inactivity and motivation
     /// markers deduplicate per calendar day). Achievement and course-goal markers are not aged by
-    /// time: they deduplicate until the achievement category or the goal is gone.</summary>
+    /// time: they deduplicate until the achievement category or the goal is gone. Per-week and
+    /// per-month markers (weekly nudge, almost-done push, weekly/monthly report) are kept for 8 and
+    /// 32 days regardless of this value.</summary>
     [Range(1, 3650)]
     public int ReminderMarkerDays { get; set; } = 2;
 
