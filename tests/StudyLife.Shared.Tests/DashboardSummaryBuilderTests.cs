@@ -203,6 +203,20 @@ public class DashboardSummaryBuilderTests
     }
 
     [Fact]
+    public void MonthComparison_HasNoDeltaLabelsWhenExactlyLevel()
+    {
+        var input = Input();
+        input.History = [];
+        input.HeavyHistory = [];
+        input.Sessions = [];
+
+        var comparison = DashboardSummaryBuilder.Build(input).Progress.MonthComparison;
+
+        Assert.Null(comparison.VsLastMonthLabel);
+        Assert.Null(comparison.VsLastYearLabel);
+    }
+
+    [Fact]
     public void FocusScore_CountsOnlySessionsAlreadyStudied()
     {
         var focus = DashboardSummaryBuilder.Build(Input()).Sessions.FocusScore;

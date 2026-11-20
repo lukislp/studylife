@@ -7769,10 +7769,8 @@
       "DashboardMonthComparisonDto": {
         "required": [
           "currentLabel",
-          "vsLastMonthLabel",
           "vsLastMonthUp",
           "hasYearData",
-          "vsLastYearLabel",
           "vsLastYearUp"
         ],
         "type": "object",
@@ -7781,7 +7779,10 @@
             "type": "string"
           },
           "vsLastMonthLabel": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "vsLastMonthUp": {
             "type": "boolean"
@@ -7790,7 +7791,10 @@
             "type": "boolean"
           },
           "vsLastYearLabel": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "vsLastYearUp": {
             "type": "boolean"
@@ -11927,8 +11931,7 @@
       },
       "StatsMonthComparisonDto": {
         "required": [
-          "up",
-          "deltaLabel"
+          "up"
         ],
         "type": "object",
         "properties": {
@@ -11936,7 +11939,10 @@
             "type": "boolean"
           },
           "deltaLabel": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

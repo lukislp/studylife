@@ -298,8 +298,8 @@
     // Only ever called (via RefreshWeekCourseHints) from GenerateWeekPlan (button click) or the
     // language-switch relocalization below, both post-load - T is guaranteed loaded here.
     private string BuildHintText(HintFact f) =>
-        f.ExamDaysUntil is int daysUntil ? string.Format(T.ExamInDays, daysUntil)
-        : f.DaysSinceStudied is int daysSince ? string.Format(T.LastStudiedDaysAgo, daysSince)
+        f.ExamDaysUntil is int daysUntil ? Plural.Format(T.ExamInDays, daysUntil)
+        : f.DaysSinceStudied is int daysSince ? Plural.Format(T.LastStudiedDaysAgo, daysSince)
         : T.NeverStudied;
 
     private void RefreshWeekCourseHints() =>

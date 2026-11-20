@@ -31,8 +31,8 @@
   "WeekPlanAccepted": "{0} sessjonijiet ġew miżjuda.",
   "MinutesSuffix": "min",
   "HoursSuffix": "h",
-  "LastStudiedDaysAgo": "l-aħħar studjat {0} ijiem ilu",
+  "LastStudiedDaysAgo": "few=l-aħħar studjat {0} jiem ilu|other=l-aħħar studjat {0} jum ilu",
   "NeverStudied": "għadu ma ġiex studjat",
-  "ExamInDays": "eżami fi {0} ijiem",
+  "ExamInDays": "few=eżami fi {0} jiem|other=eżami fi {0} jum",
   "ReviewTopicFallback": "Reviżjoni"
 }

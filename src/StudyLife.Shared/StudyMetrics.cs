@@ -133,6 +133,13 @@ public static partial class StudyMetrics
         return m == 0 && omitZeroMinutes ? $"{h}h" : $"{h}h {m}m";
     }
 
+    /// <summary>A change in studied hours as an unsigned label ("2h 30m"), or null when it is exactly
+    /// level (to the minute) - no change is not a trend, so callers show no arrow and no "0h".</summary>
+    public static string? FormatDeltaHours(double deltaHours) =>
+        Math.Round(Math.Abs(deltaHours) * 60, MidpointRounding.AwayFromZero) == 0
+            ? null
+            : FormatHoursMinutes(Math.Abs(deltaHours), omitZeroMinutes: true);
+
     /// <summary>
     /// Result of <see cref="CalcForecast"/>. BaselineWeeksNeeded / RecentWeeklyHours /
     /// ReferenceWeeklyHours are only populated when Available=true - Index.razor additionally

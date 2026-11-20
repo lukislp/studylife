@@ -31,8 +31,8 @@
   "WeekPlanAccepted": "{0} sessies zijn toegevoegd.",
   "MinutesSuffix": "min",
   "HoursSuffix": "u",
-  "LastStudiedDaysAgo": "voor het laatst {0} dagen geleden bestudeerd",
+  "LastStudiedDaysAgo": "one=voor het laatst {0} dag geleden bestudeerd|other=voor het laatst {0} dagen geleden bestudeerd",
   "NeverStudied": "nog niet bestudeerd",
-  "ExamInDays": "examen over {0} dagen",
+  "ExamInDays": "one=examen over {0} dag|other=examen over {0} dagen",
   "ReviewTopicFallback": "Herhaling"
 }
