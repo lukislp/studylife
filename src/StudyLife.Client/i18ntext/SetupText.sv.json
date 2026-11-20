@@ -90,7 +90,7 @@
   "TimerModeAddButton": "Lägg till läge",
   "ReminderMinutesFormat": "{0} min",
   "ReminderTodayLabel": "Idag",
-  "ReminderDaysFormat": "{0} dag(ar)",
+  "ReminderDaysFormat": "one={0} dag|other={0} dagar",
   "ReminderCustomValuesLabel": "Anpassat: {0}",
   "BackupHeading": "Säkerhetskopiering och export",
   "BackupDesc": "Ladda ner en konsekvent kopia av din databas eller exportera dina data som JSON. Dessutom skapas en säkerhetskopia automatiskt varje vecka — de senaste 4 sparas.",

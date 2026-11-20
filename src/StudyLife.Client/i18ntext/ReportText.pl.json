@@ -24,8 +24,8 @@
   "TableStatus": "Status",
   "StatusCompleted": "Ukończony",
   "StatusInProgress": "W trakcie",
-  "StatusOverdueFormat": "Zaległość: {0} dzień/dni",
-  "StatusDueFormat": "Termin za {0} dzień/dni",
+  "StatusOverdueFormat": "one=Zaległość: {0} dzień|other=Zaległość: {0} dni",
+  "StatusDueFormat": "one=Termin za {0} dzień|other=Termin za {0} dni",
   "NoCourses": "Nie zarejestrowano jeszcze żadnych ukończonych sesji nauki.",
   "FooterNote": "Wygenerowano automatycznie przez StudyAtrium.",
   "ReportButton": "📄 Eksportuj raport z nauki"

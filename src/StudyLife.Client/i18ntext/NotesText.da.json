@@ -24,7 +24,7 @@
   "JustNow": "lige nu",
   "MinAgo": "{0} min siden",
   "HourAgo": "{0} t siden",
-  "DayAgo": "{0} dag(e) siden",
+  "DayAgo": "one={0} dag siden|other={0} dage siden",
   "NoContent": "Intet indhold",
   "SearchPlaceholder": "Søg i noter…",
   "AllCoursesOption": "Alle kurser",

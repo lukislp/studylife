@@ -24,7 +24,7 @@
   "JustNow": "adesso",
   "MinAgo": "{0} min fa",
   "HourAgo": "{0} h fa",
-  "DayAgo": "{0} giorno/i fa",
+  "DayAgo": "one={0} giorno fa|other={0} giorni fa",
   "NoContent": "Nessun contenuto",
   "SearchPlaceholder": "Cerca note…",
   "AllCoursesOption": "Tutti i corsi",

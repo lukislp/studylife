@@ -24,7 +24,7 @@
   "JustNow": "tikko",
   "MinAgo": "pirms {0} min",
   "HourAgo": "pirms {0} h",
-  "DayAgo": "pirms {0} dienas(-ām)",
+  "DayAgo": "one=pirms {0} dienas|other=pirms {0} dienām",
   "NoContent": "Nav satura",
   "SearchPlaceholder": "Meklēt piezīmes…",
   "AllCoursesOption": "Visi kursi",

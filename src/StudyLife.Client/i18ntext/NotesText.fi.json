@@ -24,7 +24,7 @@
   "JustNow": "juuri nyt",
   "MinAgo": "{0} min sitten",
   "HourAgo": "{0} t sitten",
-  "DayAgo": "{0} päivää sitten",
+  "DayAgo": "one={0} päivä sitten|other={0} päivää sitten",
   "NoContent": "Ei sisältöä",
   "SearchPlaceholder": "Hae muistiinpanoja…",
   "AllCoursesOption": "Kaikki kurssit",

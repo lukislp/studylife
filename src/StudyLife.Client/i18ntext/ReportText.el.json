@@ -24,8 +24,8 @@
   "TableStatus": "Κατάσταση",
   "StatusCompleted": "Ολοκληρώθηκε",
   "StatusInProgress": "Σε εξέλιξη",
-  "StatusOverdueFormat": "Εκπρόθεσμο κατά {0} ημέρα(ες)",
-  "StatusDueFormat": "Προθεσμία σε {0} ημέρα(ες)",
+  "StatusOverdueFormat": "one=Εκπρόθεσμο κατά {0} ημέρα|other=Εκπρόθεσμο κατά {0} ημέρες",
+  "StatusDueFormat": "one=Προθεσμία σε {0} ημέρα|other=Προθεσμία σε {0} ημέρες",
   "NoCourses": "Δεν έχουν καταγραφεί ακόμη ολοκληρωμένες περίοδοι μελέτης.",
   "FooterNote": "Δημιουργήθηκε αυτόματα από το StudyAtrium.",
   "ReportButton": "📄 Εξαγωγή αναφοράς σπουδών"

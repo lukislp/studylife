@@ -27,7 +27,7 @@
     "CompletedBadge":  "✓ suoritettu",
     "GradeFormat":  "Arvosana {0}",
     "DueInDays":  "Erääntyy {0} päivän kuluttua",
-    "OverdueByDays":  "myöhässä {0} päivää",
+    "OverdueByDays":  "one=myöhässä {0} päivä|other=myöhässä {0} päivää",
     "NoSession":  "ei jaksoa",
     "CourseFallback":  "Kurssi {0}",
     "WeekdayMon":  "Ma",

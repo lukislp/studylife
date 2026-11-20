@@ -199,8 +199,8 @@ public partial class Report
         if (row.DaysRemaining.HasValue)
         {
             return row.DaysRemaining.Value >= 0
-                ? string.Format(T.StatusDueFormat, row.DaysRemaining.Value)
-                : string.Format(T.StatusOverdueFormat, -row.DaysRemaining.Value);
+                ? Plural.Format(T.StatusDueFormat, row.DaysRemaining.Value)
+                : Plural.Format(T.StatusOverdueFormat, -row.DaysRemaining.Value);
         }
         return T.StatusInProgress;
     }

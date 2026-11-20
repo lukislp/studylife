@@ -90,7 +90,7 @@
   "TimerModeAddButton": "Pridať režim",
   "ReminderMinutesFormat": "{0} min",
   "ReminderTodayLabel": "Dnes",
-  "ReminderDaysFormat": "{0} deň(dní)",
+  "ReminderDaysFormat": "one={0} deň|few={0} dni|other={0} dní",
   "ReminderCustomValuesLabel": "Vlastné: {0}",
   "BackupHeading": "Záloha a export",
   "BackupDesc": "Stiahnite si konzistentnú kópiu databázy alebo exportujte svoje dáta ako JSON. Záloha sa navyše automaticky vytvára raz týždenne — uchovávajú sa posledné 4.",

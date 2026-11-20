@@ -24,7 +24,7 @@
   "JustNow": "issa stess",
   "MinAgo": "{0} min ilu",
   "HourAgo": "{0} h ilu",
-  "DayAgo": "{0} jum(ijiet) ilu",
+  "DayAgo": "few={0} jiem ilu|other={0} jum ilu",
   "NoContent": "L-ebda kontenut",
   "SearchPlaceholder": "Fittex noti…",
   "AllCoursesOption": "Il-korsijiet kollha",

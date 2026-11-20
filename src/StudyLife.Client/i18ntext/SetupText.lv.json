@@ -90,7 +90,7 @@
   "TimerModeAddButton": "Pievienot režīmu",
   "ReminderMinutesFormat": "{0} min",
   "ReminderTodayLabel": "Šodien",
-  "ReminderDaysFormat": "{0} dienas(-ām)",
+  "ReminderDaysFormat": "one={0} diena|other={0} dienas",
   "ReminderCustomValuesLabel": "Pielāgoti: {0}",
   "BackupHeading": "Dublējums un eksports",
   "BackupDesc": "Lejupielādējiet konsekventu datubāzes kopiju vai eksportējiet savus datus kā JSON. Turklāt reizi nedēļā automātiski tiek izveidots dublējums — tiek saglabāti pēdējie 4.",

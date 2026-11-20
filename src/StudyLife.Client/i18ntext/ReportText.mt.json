@@ -24,8 +24,8 @@
   "TableStatus": "Status",
   "StatusCompleted": "Mitmum",
   "StatusInProgress": "Għaddej",
-  "StatusOverdueFormat": "Tard b'{0} jum/jiem",
-  "StatusDueFormat": "Dovut fi {0} jum/jiem",
+  "StatusOverdueFormat": "few=Tard b'{0} jiem|other=Tard b'{0} jum",
+  "StatusDueFormat": "few=Dovut fi {0} jiem|other=Dovut fi {0} jum",
   "NoCourses": "Għadhom ma ġewx irreġistrati sessjonijiet ta' studju mitmuma.",
   "FooterNote": "Iġġenerat awtomatikament minn StudyAtrium.",
   "ReportButton": "📄 Esporta r-rapport tal-istudju"

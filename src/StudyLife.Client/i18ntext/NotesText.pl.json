@@ -24,7 +24,7 @@
   "JustNow": "przed chwilą",
   "MinAgo": "{0} min temu",
   "HourAgo": "{0} godz. temu",
-  "DayAgo": "{0} dzień/dni temu",
+  "DayAgo": "one={0} dzień temu|other={0} dni temu",
   "NoContent": "Brak treści",
   "SearchPlaceholder": "Szukaj notatek…",
   "AllCoursesOption": "Wszystkie kursy",

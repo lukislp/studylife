@@ -24,8 +24,8 @@
   "TableStatus": "Статус",
   "StatusCompleted": "Завършен",
   "StatusInProgress": "В процес",
-  "StatusOverdueFormat": "Просрочен с {0} ден(а)",
-  "StatusDueFormat": "Краен срок след {0} ден(а)",
+  "StatusOverdueFormat": "one=Просрочен с {0} ден|other=Просрочен с {0} дни",
+  "StatusDueFormat": "one=Краен срок след {0} ден|other=Краен срок след {0} дни",
   "NoCourses": "Все още няма завършени учебни сесии.",
   "FooterNote": "Автоматично създаден от StudyAtrium.",
   "ReportButton": "📄 Експортирай отчет за обучението"

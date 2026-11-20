@@ -24,8 +24,8 @@
   "TableStatus": "Status",
   "StatusCompleted": "Afsluttet",
   "StatusInProgress": "I gang",
-  "StatusOverdueFormat": "Overskredet med {0} dag(e)",
-  "StatusDueFormat": "Forfalder om {0} dag(e)",
+  "StatusOverdueFormat": "one=Overskredet med {0} dag|other=Overskredet med {0} dage",
+  "StatusDueFormat": "one=Forfalder om {0} dag|other=Forfalder om {0} dage",
   "NoCourses": "Ingen afsluttede studiesessioner registreret endnu.",
   "FooterNote": "Genereret automatisk af StudyAtrium.",
   "ReportButton": "📄 Eksportér studierapport"

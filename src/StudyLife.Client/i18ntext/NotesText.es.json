@@ -24,7 +24,7 @@
   "JustNow": "justo ahora",
   "MinAgo": "hace {0} min",
   "HourAgo": "hace {0} h",
-  "DayAgo": "hace {0} día(s)",
+  "DayAgo": "one=hace {0} día|other=hace {0} días",
   "NoContent": "Sin contenido",
   "SearchPlaceholder": "Buscar notas…",
   "AllCoursesOption": "Todos los cursos",

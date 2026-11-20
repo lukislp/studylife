@@ -90,7 +90,7 @@
   "TimerModeAddButton": "Modus toevoegen",
   "ReminderMinutesFormat": "{0} min",
   "ReminderTodayLabel": "Vandaag",
-  "ReminderDaysFormat": "{0} dag(en)",
+  "ReminderDaysFormat": "one={0} dag|other={0} dagen",
   "ReminderCustomValuesLabel": "Aangepast: {0}",
   "BackupHeading": "Back-up & export",
   "BackupDesc": "Download een consistente kopie van je database of exporteer je gegevens als JSON. Daarnaast wordt er automatisch elke week een back-up gemaakt — de laatste 4 worden bewaard.",

@@ -24,8 +24,8 @@
   "TableStatus": "Status",
   "StatusCompleted": "Završeno",
   "StatusInProgress": "U tijeku",
-  "StatusOverdueFormat": "Kasni {0} dan(a)",
-  "StatusDueFormat": "Rok za {0} dan(a)",
+  "StatusOverdueFormat": "one=Kasni {0} dan|other=Kasni {0} dana",
+  "StatusDueFormat": "one=Rok za {0} dan|other=Rok za {0} dana",
   "NoCourses": "Još nema zabilježenih završenih sesija učenja.",
   "FooterNote": "Automatski generirano putem StudyAtriuma.",
   "ReportButton": "📄 Izvezi izvještaj o studiju"

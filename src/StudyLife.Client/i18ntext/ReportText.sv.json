@@ -24,8 +24,8 @@
   "TableStatus": "Status",
   "StatusCompleted": "Avklarad",
   "StatusInProgress": "Pågår",
-  "StatusOverdueFormat": "Försenad med {0} dag(ar)",
-  "StatusDueFormat": "Deadline om {0} dag(ar)",
+  "StatusOverdueFormat": "one=Försenad med {0} dag|other=Försenad med {0} dagar",
+  "StatusDueFormat": "one=Deadline om {0} dag|other=Deadline om {0} dagar",
   "NoCourses": "Inga avklarade studiepass registrerade än.",
   "FooterNote": "Genererad automatiskt av StudyAtrium.",
   "ReportButton": "📄 Exportera studierapport"

@@ -24,8 +24,8 @@
   "TableStatus": "Stanje",
   "StatusCompleted": "Zaključeno",
   "StatusInProgress": "V teku",
-  "StatusOverdueFormat": "Zamuda {0} dni",
-  "StatusDueFormat": "Rok čez {0} dni",
+  "StatusOverdueFormat": "one=Zamuda {0} dan|two=Zamuda {0} dneva|other=Zamuda {0} dni",
+  "StatusDueFormat": "one=Rok čez {0} dan|two=Rok čez {0} dneva|other=Rok čez {0} dni",
   "NoCourses": "Še ni zabeleženih zaključenih učnih sej.",
   "FooterNote": "Samodejno ustvaril StudyAtrium.",
   "ReportButton": "📄 Izvozi študijsko poročilo"

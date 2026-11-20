@@ -24,7 +24,7 @@
   "JustNow": "just nu",
   "MinAgo": "för {0} min sedan",
   "HourAgo": "för {0} tim sedan",
-  "DayAgo": "för {0} dag(ar) sedan",
+  "DayAgo": "one=för {0} dag sedan|other=för {0} dagar sedan",
   "NoContent": "Inget innehåll",
   "SearchPlaceholder": "Sök anteckningar…",
   "AllCoursesOption": "Alla kurser",

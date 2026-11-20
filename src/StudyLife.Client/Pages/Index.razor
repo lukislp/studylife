@@ -121,10 +121,10 @@
                         @if (_courseDeadlineDays.TryGetValue(c.Id, out var deadlineDays))
                         {
                             <span class="pill-deadline @(deadlineDays <= 3 ? "deadline-urgent" : deadlineDays <= 7 ? "deadline-soon" : "")">
-                                @(deadlineDays < 0 ? string.Format(T.OverdueByDays ?? "", -deadlineDays)
+                                @(deadlineDays < 0 ? Plural.Format(T.OverdueByDays, -deadlineDays)
                                     : deadlineDays == 0 ? T.CourseDeadlineTodayText
                                     : deadlineDays == 1 ? T.CourseDeadlineTomorrowText
-                                    : string.Format(T.CourseDeadlineInDaysFormat ?? "", deadlineDays))
+                                    : Plural.Format(T.CourseDeadlineInDaysFormat, deadlineDays))
                             </span>
                         }
                     </div>

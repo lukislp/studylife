@@ -24,8 +24,8 @@
   "TableStatus": "Stato",
   "StatusCompleted": "Completato",
   "StatusInProgress": "In corso",
-  "StatusOverdueFormat": "In ritardo di {0} giorno/i",
-  "StatusDueFormat": "Scade tra {0} giorno/i",
+  "StatusOverdueFormat": "one=In ritardo di {0} giorno|other=In ritardo di {0} giorni",
+  "StatusDueFormat": "one=Scade tra {0} giorno|other=Scade tra {0} giorni",
   "NoCourses": "Nessuna sessione di studio completata ancora registrata.",
   "FooterNote": "Generato automaticamente da StudyAtrium.",
   "ReportButton": "📄 Esporta rapporto di studio"
