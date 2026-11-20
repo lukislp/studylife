@@ -71,6 +71,11 @@ public sealed class AddonPurgeClient
             _logger.LogWarning("Account-deletion purge for {Addon}: {Section}:SharedSecret is set without a BaseUrl - ignored, nothing is purged there", target.Name, target.SectionPath);
         else
             _logger.LogInformation("Account-deletion purge for {Addon} not configured ({Section}:*) - nothing to purge there", target.Name, target.SectionPath);
+
+        // The purge carries a shared secret and key hashes: plain HTTP is only meant for an add-on
+        // that cannot serve TLS (AllowPlainHttp under RequireHttps) or a private test setup.
+        if (Configured && !_baseUrl!.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            _logger.LogWarning("Account-deletion purge for {Addon} goes over plain HTTP ({Section}:BaseUrl is not https://): the shared secret and the key hashes are not encrypted - give the add-on a certificate and an https:// URL (docs/SECURITY-ASSURANCE.md 8.3)", target.Name, target.SectionPath);
     }
 
     public AddonPurgeTarget Target { get; }

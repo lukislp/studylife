@@ -160,17 +160,11 @@ spec:
             # Account-deletion purge - identical to k8s/04-web.yaml (see the comment there). The
             # worker's outbox drain (RunAiKeyOutboxAsync) retries the purges web could not deliver.
             - name: AddonPurge__Mcp__BaseUrl
-              value: http://studylife-mcp.studylife-mcp.svc.cluster.local:8000
-            - name: AddonPurge__Mcp__AllowPlainHttp
-              value: "true"
+              value: https://studylife-mcp.studylife-mcp.svc.cluster.local:8443
             - name: AddonPurge__Alexa__BaseUrl
-              value: http://studylife-alexa.studylife-alexa.svc.cluster.local:8000
-            - name: AddonPurge__Alexa__AllowPlainHttp
-              value: "true"
+              value: https://studylife-alexa.studylife-alexa.svc.cluster.local:8443
             - name: AddonPurge__Telegram__BaseUrl
-              value: http://studylife-telegram.studylife-telegram.svc.cluster.local:8000
-            - name: AddonPurge__Telegram__AllowPlainHttp
-              value: "true"
+              value: https://studylife-telegram.studylife-telegram.svc.cluster.local:8443
             # DataProtection key-ring-at-rest encryption (Program.cs, ProtectKeysWithCertificate)
             # - identical to k8s/04-web.yaml, required whenever Cache__Provider=Redis. The
             # worker runs the same AddDataProtection() setup as web (shared Program.cs), so it

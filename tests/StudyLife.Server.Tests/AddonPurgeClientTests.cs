@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 using System.Net;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using StudyLife.Server.Configuration;
@@ -117,6 +118,29 @@ public class AddonPurgeClientTests
         Assert.True(client.Configured);
         Assert.False(await client.PurgeUserAsync(7, [HashA], CancellationToken.None));
         Assert.Empty(handler.Requests);
+    }
+
+    [Theory]
+    [InlineData("http://studylife-mcp.local:8000", true)]
+    [InlineData("HTTP://studylife-mcp.local:8000", true)]
+    [InlineData("https://studylife-mcp.local:8443", false)]
+    public void PlainHttpBaseUrl_LogsAWarning_ButHttpsDoesNot(string baseUrl, bool warns)
+    {
+        var logger = new CapturingLogger<AddonPurgeClient>();
+        _ = new AddonPurgeClient(AddonPurgeTarget.Mcp, new AddonPurgeOptions { BaseUrl = baseUrl, SharedSecret = "purge-secret" }, logger);
+
+        var plainHttpWarnings = logger.Entries.Where(e => e.Level == LogLevel.Warning && e.Message.Contains("plain HTTP", StringComparison.Ordinal)).ToList();
+        Assert.Equal(warns, plainHttpWarnings.Count == 1);
+        Assert.DoesNotContain(plainHttpWarnings, e => e.Everything.Contains("purge-secret", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void NoBaseUrl_NoPlainHttpWarning()
+    {
+        var logger = new CapturingLogger<AddonPurgeClient>();
+        _ = new AddonPurgeClient(AddonPurgeTarget.Mcp, new AddonPurgeOptions(), logger);
+
+        Assert.DoesNotContain(logger.Entries, e => e.Level == LogLevel.Warning);
     }
 
     [Fact]

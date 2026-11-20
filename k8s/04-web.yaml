@@ -197,23 +197,21 @@ spec:
             # Account-deletion purge of the add-ons with per-user data (AddonPurgeClient,
             # docs/ARCHITECTURE.md "Account deletion"). Web makes the immediate attempt right
             # after a deletion, the worker retries (k8s/05-worker.yaml has the same values).
-            # These three do not serve TLS yet, so each is exempted from RequireHttps explicitly
-            # (AllowPlainHttp, docs/SECURITY-ASSURANCE.md 8.3); switch to https:// and drop the
-            # exemption once they do. The secrets (AddonPurge__<Addon>__SharedSecret) belong in
-            # the studylife-secrets Secret (k8s/dev/README.md); until they are set, purges are
-            # queued and retried, never dropped.
+            # Each add-on serves HTTPS (port 8443) with a cert-manager certificate from the same
+            # internal CA as the three above, so the same AddonTls__CaCertificatePath validates
+            # it, host name included, and RequireHttps refuses http:// without any per-add-on
+            # exemption (AddonPurge:<Addon>:AllowPlainHttp is no longer set). Precondition
+            # (rollout order, docs/SECURITY-ASSURANCE.md 8.3): the add-ons serve their TLS port
+            # and the NetworkPolicies allow it (12-network-policies.yaml here, each add-on's own
+            # policy file). Until then purges stay in the outbox and are retried, never dropped.
+            # The secrets (AddonPurge__<Addon>__SharedSecret) belong in the studylife-secrets
+            # Secret (k8s/dev/README.md); until they are set, purges are queued and retried.
             - name: AddonPurge__Mcp__BaseUrl
-              value: http://studylife-mcp.studylife-mcp.svc.cluster.local:8000
-            - name: AddonPurge__Mcp__AllowPlainHttp
-              value: "true"
+              value: https://studylife-mcp.studylife-mcp.svc.cluster.local:8443
             - name: AddonPurge__Alexa__BaseUrl
-              value: http://studylife-alexa.studylife-alexa.svc.cluster.local:8000
-            - name: AddonPurge__Alexa__AllowPlainHttp
-              value: "true"
+              value: https://studylife-alexa.studylife-alexa.svc.cluster.local:8443
             - name: AddonPurge__Telegram__BaseUrl
-              value: http://studylife-telegram.studylife-telegram.svc.cluster.local:8000
-            - name: AddonPurge__Telegram__AllowPlainHttp
-              value: "true"
+              value: https://studylife-telegram.studylife-telegram.svc.cluster.local:8443
             # DataProtection key-ring-at-rest encryption (Program.cs, ProtectKeysWithCertificate)
             # - required whenever Cache__Provider=Redis is set below, same as
             # Cache__ConnectionString.
