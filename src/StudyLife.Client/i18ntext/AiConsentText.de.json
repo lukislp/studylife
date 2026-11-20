@@ -18,5 +18,6 @@
   "LocalRunsHere": "Die KI läuft auf der eigenen Hardware dieses Servers. Deine Daten werden nicht an einen externen KI-Anbieter gesendet.",
   "ConsentGivenOn": "KI-Einwilligung erteilt am {0}.",
   "WithdrawButton": "Einwilligung widerrufen und KI ausschalten",
-  "WithdrawConfirmWarning": "Beim Widerruf wird die KI ausgeschaltet und deine indizierten Notizen und Chatdaten werden aus dem KI-Dienst gelöscht. Das lässt sich nicht rückgängig machen."
+  "WithdrawConfirmWarning": "Beim Widerruf wird die KI ausgeschaltet und deine indizierten Notizen und Chatdaten werden aus dem KI-Dienst gelöscht. Das lässt sich nicht rückgängig machen.",
+  "UpdateRequiredError": "Diese App-Version kann den aktuellen Einwilligungstext nicht anzeigen. Bitte aktualisiere die App und versuche es erneut."
 }

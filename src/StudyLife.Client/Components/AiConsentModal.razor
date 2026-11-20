@@ -60,7 +60,7 @@
                 <p class="ss-desc">@t.WithdrawText</p>
                 @if (_failed)
                 {
-                    <p class="ss-desc" role="alert" style="color:var(--danger, #e74c3c)">@t.ErrorGeneric</p>
+                    <p class="ss-desc" role="alert" style="color:var(--danger, #e74c3c)">@(State.AiConsent.UpdateRequired ? t.UpdateRequiredError : t.ErrorGeneric)</p>
                 }
             </div>
             <div class="modal-footer">

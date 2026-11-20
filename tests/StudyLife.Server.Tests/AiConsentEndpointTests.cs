@@ -119,6 +119,20 @@ public class AiConsentEndpointTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task Grant_FromAClientShowingOlderText_Returns409WithTheRequiredTextVersion_AndRecordsNothing()
+    {
+        await AiConsentTestHost.SeedUserAsync(_factory, hasKey: false, consentFingerprint: null);
+        var client = AiConsentTestHost.CreateHttpClient(_factory, new AiUpstreamStub());
+
+        var response = await client.PostAsJsonAsync("/api/ai/consent/grant",
+            new AiConsentGrantRequestDto { Fingerprint = ExternalFp, TextVersion = StudyLife.Server.Services.AiConsentService.AiConsentTextVersion - 1 });
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        var current = await response.Content.ReadFromJsonAsync<AiConsentStatusDto>();
+        Assert.Equal(StudyLife.Server.Services.AiConsentService.AiConsentTextVersion, current!.TextVersion);
+        Assert.False((await client.GetFromJsonAsync<AiConsentStatusDto>("/api/ai/consent"))!.Granted);
+    }
+    [Fact]
     public async Task Grant_ForAProviderThatChangedSinceTheDialog_Returns409WithTheCurrentStatus()
     {
         await AiConsentTestHost.SeedUserAsync(_factory, hasKey: false, consentFingerprint: null);

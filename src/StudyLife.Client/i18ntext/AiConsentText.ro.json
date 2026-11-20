@@ -18,5 +18,6 @@
   "LocalRunsHere": "AI rulează pe hardware-ul propriu al acestui server. Datele tale nu sunt trimise unui furnizor de AI extern.",
   "ConsentGivenOn": "Consimțământ AI acordat la {0}.",
   "WithdrawButton": "Retrage consimțământul și dezactivează AI",
-  "WithdrawConfirmWarning": "Retragerea dezactivează AI și șterge din serviciul AI notițele tale indexate și datele de chat. Nu poate fi anulată."
+  "WithdrawConfirmWarning": "Retragerea dezactivează AI și șterge din serviciul AI notițele tale indexate și datele de chat. Nu poate fi anulată.",
+  "UpdateRequiredError": "Această versiune a aplicației nu poate afișa cel mai recent text de consimțământ. Actualizează aplicația și încearcă din nou."
 }

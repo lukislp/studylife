@@ -18,5 +18,6 @@
   "LocalRunsHere": "Tehisintellekt töötab selle serveri enda riistvaral. Sinu andmeid ei saadeta välisele tehisintellekti pakkujale.",
   "ConsentGivenOn": "Tehisintellekti nõusolek antud {0}.",
   "WithdrawButton": "Võta nõusolek tagasi ja lülita tehisintellekt välja",
-  "WithdrawConfirmWarning": "Tagasivõtmine lülitab tehisintellekti välja ning kustutab sinu indekseeritud märkmed ja vestlusandmed tehisintellekti teenusest. Seda ei saa tagasi võtta."
+  "WithdrawConfirmWarning": "Tagasivõtmine lülitab tehisintellekti välja ning kustutab sinu indekseeritud märkmed ja vestlusandmed tehisintellekti teenusest. Seda ei saa tagasi võtta.",
+  "UpdateRequiredError": "See rakenduse versioon ei saa kuvada uusimat nõusolekuteksti. Uuenda rakendust ja proovi uuesti."
 }

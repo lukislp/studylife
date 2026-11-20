@@ -1303,6 +1303,7 @@ public class AppStateService : IAsyncDisposable
             var dto = await _http.GetFromJsonAsync<UserSettingsDto>("api/settings", StudyLifeJson.Options);
             _settingsCache = FromDto(dto!);
             _settingsHash = ComputeSettingsHash(dto!);
+            SettingsAreDefaultFallback = false;
             await StoreReadCacheAsync(ReadCacheKeySettings, dto!);
         }
         catch
@@ -1314,11 +1315,22 @@ public class AppStateService : IAsyncDisposable
                 _settingsCache = FromDto(cachedDto);
                 _settingsHash = ComputeSettingsHash(cachedDto);
             }
-            _settingsCache ??= new UserSettings { SelectedCourseIds = new List<int> { 1, 2, 3, 4 } };
+            if (_settingsCache == null)
+            {
+                _settingsCache = new UserSettings { SelectedCourseIds = new List<int> { 1, 2, 3, 4 } };
+                SettingsAreDefaultFallback = true;
+            }
         }
         await ApplyAccentColorAsync(_settingsCache.AccentColor);
         return _settingsCache;
     }
+
+    /// <summary>
+    /// True while the settings in use are the built-in defaults because neither the server nor the
+    /// read cache could be reached. Their "undecided" answers (telemetry consent, ...) say nothing
+    /// about the account, so callers must not ask questions based on them.
+    /// </summary>
+    public bool SettingsAreDefaultFallback { get; private set; }
 
     /// <summary>
     /// Every call site mutates the FULL UserSettings object it last read (e.g. Setup.razor's
@@ -1403,21 +1415,31 @@ public class AppStateService : IAsyncDisposable
     /// like after any settings change).
     /// </summary>
     public async Task<bool> SetTelemetryConsentAsync(bool consent)
+        => await TrySetTelemetryConsentAsync(consent) == TelemetryConsentSaveResult.Saved;
+
+    /// <summary>
+    /// Same as <see cref="SetTelemetryConsentAsync"/> but tells a transient failure (offline, server
+    /// error: the question may be asked again) from a server that does not have the endpoint at all
+    /// (404/405, a server older than 3.38.0: the feature is unavailable and asking is pointless).
+    /// </summary>
+    public async Task<TelemetryConsentSaveResult> TrySetTelemetryConsentAsync(bool consent)
     {
         try
         {
             var response = await _http.PutAsJsonAsync("api/settings/telemetry-consent",
                 new SetTelemetryConsentRequest { Consent = consent }, StudyLifeJson.Options);
-            if (!response.IsSuccessStatusCode) return false;
+            if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.MethodNotAllowed)
+                return TelemetryConsentSaveResult.Unavailable;
+            if (!response.IsSuccessStatusCode) return TelemetryConsentSaveResult.Failed;
         }
-        catch { return false; }
+        catch { return TelemetryConsentSaveResult.Failed; }
 
         var settings = await GetSettingsAsync();
         settings.TelemetryConsent = consent;
         _settingsHash = ComputeSettingsHash(ToDto(settings));
         OnSettingsChanged?.Invoke();
         NotifyStateChanged();
-        return true;
+        return TelemetryConsentSaveResult.Saved;
     }
 
     /// <summary>

@@ -10,7 +10,10 @@
    null (docs/ARCHITECTURE.md "Telemetry", phase 2) - never again afterward, on either answer.
    Deliberately no backdrop-click-to-dismiss and no close button (unlike every other modal in
    this app): a consent prompt needs an explicit choice, not an implicit dismiss that would leave
-   the setting undecided and the modal reappearing on the next load. *@
+   the setting undecided and the modal reappearing on the next load. It must still never trap the
+   user: when the answer cannot be saved (offline, server error) the dialog says so and offers
+   "later" (closes for this start, nothing recorded, asked again on the next start); a server
+   without the endpoint (older than 3.38.0) closes it right away. *@
 
 @if (Show)
 {
@@ -22,8 +25,18 @@
             <div class="modal-body">
                 <p class="ss-desc">@T.ExplainWhatText</p>
                 <p class="ss-desc">@T.ExplainChangeText</p>
+                @if (_saveFailed)
+                {
+                    <p class="ss-desc" role="alert" data-testid="telemetry-consent-error">@T.ErrorText</p>
+                }
             </div>
             <div class="modal-footer">
+                @if (_saveFailed)
+                {
+                    <button type="button" class="btn-secondary" @onclick="LaterAsync" disabled="@_busy" data-testid="telemetry-consent-later">
+                        @T.LaterButton
+                    </button>
+                }
                 <button type="button" class="btn-secondary" @onclick="() => AnswerAsync(false)" disabled="@_busy">
                     @T.DeclineButton
                 </button>
@@ -41,6 +54,7 @@
 
     private I18nText.TelemetryConsentModalText T = new();
     private bool _busy;
+    private bool _saveFailed;
 
     protected override async Task OnInitializedAsync()
     {
@@ -53,11 +67,28 @@
         StateHasChanged();
         try
         {
-            // Only a recorded answer closes the dialog: if the server did not store it (offline,
-            // error) the question stays, instead of looking answered while nothing was saved.
-            if (await State.SetTelemetryConsentAsync(consent))
-                await OnAnswered.InvokeAsync();
+            // A recorded answer closes the dialog. A server without the endpoint cannot record
+            // anything, ever: close as well. Any other failure keeps the question on screen with an
+            // error and a way out (LaterAsync) instead of looking answered while nothing was saved.
+            switch (await State.TrySetTelemetryConsentAsync(consent))
+            {
+                case TelemetryConsentSaveResult.Saved:
+                case TelemetryConsentSaveResult.Unavailable:
+                    _saveFailed = false;
+                    await OnAnswered.InvokeAsync();
+                    break;
+                default:
+                    _saveFailed = true;
+                    break;
+            }
         }
         finally { _busy = false; }
+    }
+
+    /// <summary>Closes for this start without recording a decision; the question comes back next start.</summary>
+    private async Task LaterAsync()
+    {
+        _saveFailed = false;
+        await OnAnswered.InvokeAsync();
     }
 }

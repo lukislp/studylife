@@ -146,6 +146,16 @@ public sealed class AiConsentState
 
     // ── the dialog's side ────────────────────────────────────────────────────────────────────
 
+    /// <summary>The last "agree" was refused because this build's disclosure text is older than the
+    /// server requires: the dialog then says the app has to be updated.</summary>
+    public bool UpdateRequired { get; private set; }
+
+    private static async Task<AiConsentStatusDto?> TryReadStatusAsync(HttpResponseMessage response)
+    {
+        try { return await response.Content.ReadFromJsonAsync<AiConsentStatusDto>(); }
+        catch { return null; }
+    }
+
     /// <summary>The dialog's "agree": records the consent for the description it showed. False when
     /// that failed (the dialog stays open and says so); a provider change since the dialog opened
     /// swaps in the new description and keeps it open for another look.</summary>
@@ -153,10 +163,17 @@ public sealed class AiConsentState
     {
         var request = Pending;
         if (request is null) return false;
+        UpdateRequired = false;
         try
         {
+            // The text version is the one this build renders (compiled in with AiConsentText.*),
+            // not the server's: the server refuses a grant for text older than its own.
             var response = await _http.PostAsJsonAsync("api/ai/consent/grant",
-                new AiConsentGrantRequestDto { Fingerprint = request.Status.Fingerprint });
+                new AiConsentGrantRequestDto
+                {
+                    Fingerprint = request.Status.Fingerprint,
+                    TextVersion = AiConsentTextVersion.Current,
+                });
             if (response.IsSuccessStatusCode)
             {
                 _status = await response.Content.ReadFromJsonAsync<AiConsentStatusDto>();
@@ -165,6 +182,15 @@ public sealed class AiConsentState
             }
             if (response.StatusCode == HttpStatusCode.Conflict)
             {
+                var current = await TryReadStatusAsync(response);
+                if (current is { } c && c.TextVersion > AiConsentTextVersion.Current)
+                {
+                    // The server needs a newer disclosure text than this build can show:
+                    // re-asking would show the same old text again. Nothing was recorded; the
+                    // dialog stays open and tells the user to update (declining still works).
+                    UpdateRequired = true;
+                    return false;
+                }
                 // The provider changed after the dialog opened: nothing was recorded.
                 Complete(request, AiConsentAnswer.ProviderChanged);
                 return true;
@@ -183,6 +209,7 @@ public sealed class AiConsentState
     {
         var request = Pending;
         if (request is null) return false;
+        UpdateRequired = false;
         if (request.ExistingUser && !await WithdrawAsync()) return false;
         Complete(request, AiConsentAnswer.Declined);
         return true;

@@ -18,5 +18,6 @@
   "LocalRunsHere": "AI działa na własnym sprzęcie tego serwera. Twoje dane nie są wysyłane do zewnętrznego dostawcy AI.",
   "ConsentGivenOn": "Zgoda na AI udzielona {0}.",
   "WithdrawButton": "Wycofaj zgodę i wyłącz AI",
-  "WithdrawConfirmWarning": "Wycofanie wyłącza AI i usuwa z usługi AI Twoje zindeksowane notatki oraz dane czatu. Nie można tego cofnąć."
+  "WithdrawConfirmWarning": "Wycofanie wyłącza AI i usuwa z usługi AI Twoje zindeksowane notatki oraz dane czatu. Nie można tego cofnąć.",
+  "UpdateRequiredError": "Ta wersja aplikacji nie może pokazać najnowszego tekstu zgody. Zaktualizuj aplikację i spróbuj ponownie."
 }

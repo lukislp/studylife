@@ -3,5 +3,7 @@
   "ExplainWhatText": "Die Daten gehen an den, der deinen StudyAtrium-Server betreibt (bei Selbst-Hosting bist du das), und dienen dazu, Bugs und langsame Stellen zu finden. Sie enthalten nie deine Notizen, Sessions oder Gesundheitsdaten.",
   "ExplainChangeText": "Das kannst du jederzeit in den Einstellungen ändern.",
   "AcceptButton": "Erlauben",
-  "DeclineButton": "Nein danke"
+  "DeclineButton": "Nein danke",
+  "ErrorText": "Deine Antwort konnte nicht gespeichert werden. Prüfe deine Verbindung.",
+  "LaterButton": "Später fragen"
 }

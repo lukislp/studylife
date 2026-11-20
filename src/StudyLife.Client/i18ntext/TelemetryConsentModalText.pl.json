@@ -3,5 +3,7 @@
   "ExplainWhatText": "Dane trafiają do osoby, która prowadzi Twój serwer StudyAtrium (jeśli hostujesz go samodzielnie, to Ty), i służą do wykrywania usterek i spowolnień. Nigdy nie zawierają Twoich notatek, sesji ani danych zdrowotnych.",
   "ExplainChangeText": "Możesz to zmienić w każdej chwili w Ustawieniach.",
   "AcceptButton": "Zezwól",
-  "DeclineButton": "Nie, dziękuję"
+  "DeclineButton": "Nie, dziękuję",
+  "ErrorText": "Nie udało się zapisać Twojej odpowiedzi. Sprawdź połączenie.",
+  "LaterButton": "Zapytaj później"
 }

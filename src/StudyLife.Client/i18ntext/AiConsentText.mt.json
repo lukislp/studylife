@@ -18,5 +18,6 @@
   "LocalRunsHere": "L-IA taħdem fuq il-hardware proprju ta' dan is-server. Id-dejta tiegħek ma tintbagħtx lil fornitur estern tal-IA.",
   "ConsentGivenOn": "Kunsens għall-IA mogħti fi {0}.",
   "WithdrawButton": "Irtira l-kunsens u itfi l-IA",
-  "WithdrawConfirmWarning": "Meta tirtira, l-IA tintefa u n-noti indiċjati u d-dejta taċ-chat tiegħek jitħassru mis-servizz tal-IA. Dan ma jistax jitreġġa' lura."
+  "WithdrawConfirmWarning": "Meta tirtira, l-IA tintefa u n-noti indiċjati u d-dejta taċ-chat tiegħek jitħassru mis-servizz tal-IA. Dan ma jistax jitreġġa' lura.",
+  "UpdateRequiredError": "Din il-verżjoni tal-app ma tistax turi l-aħħar test tal-kunsens. Aġġorna l-app u erġa' pprova."
 }

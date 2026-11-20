@@ -40,10 +40,11 @@ public class AiConsentController : ControllerBase
     }
 
     /// <summary>Records the consent for the provider description the user was shown. 400 for a
-    /// malformed fingerprint, 409 (with the current status) when the description changed since.</summary>
+    /// malformed fingerprint, 409 (with the current status) when the description changed since or
+    /// the client's disclosure text is older than the server's.</summary>
     [HttpPost("grant")]
     public async Task<ActionResult<AiConsentStatusDto>> Grant([FromBody] AiConsentGrantRequestDto request, CancellationToken ct) =>
-        (await _consent.GrantAsync(SessionUserId, request.Fingerprint, ct)).ToActionResult(this);
+        (await _consent.GrantAsync(SessionUserId, request.Fingerprint, request.TextVersion, ct)).ToActionResult(this);
 
     /// <summary>Withdraws the consent and revokes the AI key, which purges the user's data in
     /// studylife-ai. Also the answer to "not now" for an existing AI user asked at app start.</summary>

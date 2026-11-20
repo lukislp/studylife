@@ -3,5 +3,7 @@
   "ExplainWhatText": "Dataene går til den, der driver din StudyAtrium-server (hvis du selv hoster den, er det dig), og bruges til at finde fejl og langsomme steder. De indeholder aldrig dine noter, sessioner eller sundhedsdata.",
   "ExplainChangeText": "Du kan altid ændre dette i Indstillinger.",
   "AcceptButton": "Tillad",
-  "DeclineButton": "Nej tak"
+  "DeclineButton": "Nej tak",
+  "ErrorText": "Dit svar kunne ikke gemmes. Tjek din forbindelse.",
+  "LaterButton": "Spørg mig senere"
 }

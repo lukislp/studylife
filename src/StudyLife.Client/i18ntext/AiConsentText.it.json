@@ -18,5 +18,6 @@
   "LocalRunsHere": "L'IA funziona sull'hardware di questo server. I tuoi dati non vengono inviati a un fornitore di IA esterno.",
   "ConsentGivenOn": "Consenso all'IA dato il {0}.",
   "WithdrawButton": "Revoca il consenso e disattiva l'IA",
-  "WithdrawConfirmWarning": "La revoca disattiva l'IA ed elimina dal servizio IA i tuoi appunti indicizzati e i dati delle chat. L'operazione non può essere annullata."
+  "WithdrawConfirmWarning": "La revoca disattiva l'IA ed elimina dal servizio IA i tuoi appunti indicizzati e i dati delle chat. L'operazione non può essere annullata.",
+  "UpdateRequiredError": "Questa versione dell'app non può mostrare il testo di consenso più recente. Aggiorna l'app e riprova."
 }

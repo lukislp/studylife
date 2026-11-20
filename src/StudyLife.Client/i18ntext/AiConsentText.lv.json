@@ -18,5 +18,6 @@
   "LocalRunsHere": "MI darbojas uz šī servera paša aparatūras. Tavi dati netiek sūtīti ārējam MI sniedzējam.",
   "ConsentGivenOn": "MI piekrišana sniegta {0}.",
   "WithdrawButton": "Atsaukt piekrišanu un izslēgt MI",
-  "WithdrawConfirmWarning": "Atsaukšana izslēdz MI un izdzēš tavas indeksētās piezīmes un tērzēšanas datus no MI pakalpojuma. To nevar atsaukt."
+  "WithdrawConfirmWarning": "Atsaukšana izslēdz MI un izdzēš tavas indeksētās piezīmes un tērzēšanas datus no MI pakalpojuma. To nevar atsaukt.",
+  "UpdateRequiredError": "Šī lietotnes versija nevar parādīt jaunāko piekrišanas tekstu. Atjaunini lietotni un mēģini vēlreiz."
 }
