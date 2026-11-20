@@ -1051,7 +1051,7 @@ values are normalized (`TelemetryRouteCatalog` replaces integer/GUID/>40-char se
 `route` tag stays a bounded set; `appVersion`/`language` are tags only on `studylife.client.boots`
 and (appVersion only) `studylife.client.errors`; every other instrument carries only `platform`
 plus its own small fixed enumeration. `health_query` events never carry a sample/night count or
-any health value, only outcome/duration. Unrecognized event types are counted under
+any health value, only outcome/duration; `result` is `ok` or `error` (older app builds also send `empty`/`below_minimum`/`sufficient` and an `authorization` value, which stay accepted). Unrecognized event types are counted under
 `studylife.client.events.dropped{reason="unknown_type"}` instead of silently vanishing or
 rejecting the whole batch.
 

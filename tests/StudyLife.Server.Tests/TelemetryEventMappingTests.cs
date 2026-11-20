@@ -290,6 +290,32 @@ public class TelemetryEventMappingTests : IClassFixture<CustomWebApplicationFact
         Assert.Contains(queries, m => Equals(m.Tags["kind"], "unknown") && Equals(m.Tags["result"], "unknown"));
     }
 
+    [Theory]
+    [InlineData("ok")]
+    [InlineData("error")]
+    [InlineData("empty")]
+    [InlineData("below_minimum")]
+    [InlineData("sufficient")]
+    public async Task HealthQuery_AcceptsTheCurrentAndTheLegacyResultValues(string result)
+    {
+        using var recorder = new Recorder();
+
+        await PostAsync(new TelemetryEventDto { Type = "health_query", Kind = "hrv", Result = result, DurationMs = 7711 });
+
+        Assert.Contains(recorder.On(ClientTelemetryMetrics.HealthQueries),
+            m => Equals(m.Tags["kind"], "hrv") && Equals(m.Tags["result"], result));
+    }
+
+    [Fact]
+    public async Task HealthQuery_WithoutAuthorization_IsRecordedAsUnknown()
+    {
+        using var recorder = new Recorder();
+
+        await PostAsync(new TelemetryEventDto { Type = "health_query", Kind = "steps", Result = "ok", DurationMs = 7712 });
+
+        var query = Assert.Single(recorder.On(ClientTelemetryMetrics.HealthQueries), m => Equals(m.Tags["kind"], "steps") && Equals(m.Tags["result"], "ok"));
+        Assert.Equal("unknown", query.Tags["authorization"]);
+    }
     [Fact]
     public async Task Push_ClampsTheEvent_AndRecordsTheLatencyInMilliseconds()
     {

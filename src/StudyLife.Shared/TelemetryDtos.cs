@@ -118,9 +118,9 @@ public class TelemetryEventDto
 
     // health_query (Kind above carries hrv|sleep|steps|vo2max here)
     [MaxLength(20)]
-    public string? Authorization { get; set; } // granted|denied|undetermined
+    public string? Authorization { get; set; } // granted|denied|undetermined (older app builds only; current builds send none)
     [MaxLength(20)]
-    public string? Result { get; set; } // error|empty|below_minimum|sufficient
+    public string? Result { get; set; } // ok|error (older app builds: also empty|below_minimum|sufficient)
     public bool? OutlierFiltered { get; set; }
 
     // push

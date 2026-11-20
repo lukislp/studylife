@@ -116,7 +116,7 @@ public static class ClientTelemetryMetrics
     public static readonly Histogram<double> HealthQueryDuration = Meter.CreateHistogram<double>(
         "studylife.client.health.query.duration", "s", "HealthKit query wall time", advice: DurationBuckets);
     /// <summary>Tags: <c>kind</c>, <c>authorization</c> (granted/denied/undetermined), <c>result</c>
-    /// (error/empty/below_minimum/sufficient), <c>outlier_filtered</c>. Never a sample/night count
+    /// (ok/error; older app builds also send empty/below_minimum/sufficient), <c>outlier_filtered</c>. Never a sample/night count
     /// or any health value - see docs/ARCHITECTURE.md.</summary>
     public static readonly Counter<long> HealthQueries = Meter.CreateCounter<long>(
         "studylife.client.health.queries", "{query}", "HealthKit queries by kind/authorization/result");
