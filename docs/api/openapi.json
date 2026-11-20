@@ -5993,12 +5993,21 @@
       },
       "AiConsentGrantRequestDto": {
         "required": [
-          "fingerprint"
+          "fingerprint",
+          "textVersion"
         ],
         "type": "object",
         "properties": {
           "fingerprint": {
             "type": "string"
+          },
+          "textVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -6010,7 +6019,8 @@
           "hasKey",
           "providerKnown",
           "fingerprint",
-          "needsDecision"
+          "needsDecision",
+          "textVersion"
         ],
         "type": "object",
         "properties": {
@@ -6051,6 +6061,14 @@
           },
           "needsDecision": {
             "type": "boolean"
+          },
+          "textVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },

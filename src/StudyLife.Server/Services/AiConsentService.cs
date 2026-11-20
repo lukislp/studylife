@@ -37,10 +37,12 @@ public interface IAiConsentService
     Task<AiConsentStatusDto> GetStatusAsync(int userId, CancellationToken ct);
 
     /// <summary>Records the user's consent for the provider description they were shown
-    /// (<paramref name="fingerprint"/>). Invalid for a malformed fingerprint or an installation
-    /// without AI; Conflict (carrying the current status) when the description changed since the
-    /// user was shown it.</summary>
-    Task<ServiceResult<AiConsentStatusDto>> GrantAsync(int userId, string fingerprint, CancellationToken ct);
+    /// (<paramref name="fingerprint"/>) under the disclosure text their client rendered
+    /// (<paramref name="clientTextVersion"/>, 0 = a client that sends none). Invalid for a
+    /// malformed fingerprint or an installation without AI; Conflict (carrying the current status)
+    /// when the description changed since the user was shown it or the client's text is older than
+    /// <see cref="AiConsentService.AiConsentTextVersion"/> - nothing is recorded then.</summary>
+    Task<ServiceResult<AiConsentStatusDto>> GrantAsync(int userId, string fingerprint, int clientTextVersion, CancellationToken ct);
 
     /// <summary>Clears the consent and revokes the user's AI key (which purges their data in
     /// studylife-ai). Also what "not now" means for an existing AI user who is asked at app
@@ -75,8 +77,11 @@ public sealed class AiConsentService : IAiConsentService
     /// user is asked once more (AI paused until answered, nothing revoked - see the class
     /// comment). History: 1 = original text (no version in the hash), 2 = added third-country
     /// transfer, agent checkpoint retention (30 days) and capture enrichment (2026-11-19 audit).
+    /// The constant lives in Shared (<see cref="StudyLife.Shared.AiConsentTextVersion"/>) so each
+    /// client build knows the version of the text it renders and sends it with the grant; this
+    /// service refuses a grant for older text.
     /// </summary>
-    public const int AiConsentTextVersion = 2;
+    public const int AiConsentTextVersion = StudyLife.Shared.AiConsentTextVersion.Current;
 
     private readonly StudyLifeDb _db;
     private readonly AiProxyClient _client;
@@ -149,10 +154,11 @@ public sealed class AiConsentService : IAiConsentService
             Provider = ToDto(decision.Info),
             Fingerprint = decision.Fingerprint,
             NeedsDecision = decision.Available && decision.Required && !covers && hasKey,
+            TextVersion = AiConsentTextVersion,
         };
     }
 
-    public async Task<ServiceResult<AiConsentStatusDto>> GrantAsync(int userId, string fingerprint, CancellationToken ct)
+    public async Task<ServiceResult<AiConsentStatusDto>> GrantAsync(int userId, string fingerprint, int clientTextVersion, CancellationToken ct)
     {
         if (fingerprint is not { Length: 64 } || !fingerprint.All(Uri.IsHexDigit))
             return ServiceResult<AiConsentStatusDto>.Invalid("Fingerprint must be 64 hexadecimal characters.");
@@ -164,6 +170,17 @@ public sealed class AiConsentService : IAiConsentService
         var hasKey = await HasKeyAsync(userId, ct);
         var settings = await GetOrCreateSettingsAsync(userId, ct);
         if (settings is null) return ServiceResult<AiConsentStatusDto>.Unauthorized();
+        // The fingerprint only proves which PROVIDER the client was told about; the disclosure text
+        // lives in the client build. A client still rendering older text would echo the current
+        // fingerprint and record a consent that claims disclosures the user never saw. So the
+        // client states the text version it rendered; older than ours = nothing is recorded and
+        // the status (carrying TextVersion) goes back, the client then tells the user to update.
+        // A client that sends none is read as the last text before this handshake.
+        var renderedTextVersion = clientTextVersion <= 0
+            ? StudyLife.Shared.AiConsentTextVersion.AssumedWhenMissing
+            : clientTextVersion;
+        if (renderedTextVersion < AiConsentTextVersion)
+            return ServiceResult<AiConsentStatusDto>.Conflict(ToStatus(decision, settings, hasKey));
         if (!string.Equals(fingerprint, decision.Fingerprint, StringComparison.OrdinalIgnoreCase))
             // The provider changed after the user was shown the dialog: hand back the current
             // state so the client can show the new description instead of recording a consent

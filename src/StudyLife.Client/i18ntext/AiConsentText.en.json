@@ -18,5 +18,6 @@
   "LocalRunsHere": "The AI runs on this server's own hardware. Your data is not sent to an external AI provider.",
   "ConsentGivenOn": "AI consent given on {0}.",
   "WithdrawButton": "Withdraw consent and switch AI off",
-  "WithdrawConfirmWarning": "Withdrawing switches AI off and deletes your indexed notes and chat data from the AI service. This cannot be undone."
+  "WithdrawConfirmWarning": "Withdrawing switches AI off and deletes your indexed notes and chat data from the AI service. This cannot be undone.",
+  "UpdateRequiredError": "This app version cannot show the latest consent text. Please update the app and try again."
 }

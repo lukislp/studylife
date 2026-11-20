@@ -18,5 +18,6 @@
   "LocalRunsHere": "AI radi na vlastitom hardveru ovog poslužitelja. Tvoji podaci ne šalju se vanjskom AI pružatelju.",
   "ConsentGivenOn": "AI privola dana {0}.",
   "WithdrawButton": "Povuci privolu i isključi AI",
-  "WithdrawConfirmWarning": "Povlačenjem se AI isključuje, a tvoje indeksirane bilješke i podaci razgovora brišu se iz AI usluge. To se ne može poništiti."
+  "WithdrawConfirmWarning": "Povlačenjem se AI isključuje, a tvoje indeksirane bilješke i podaci razgovora brišu se iz AI usluge. To se ne može poništiti.",
+  "UpdateRequiredError": "Ova verzija aplikacije ne može prikazati najnoviji tekst privole. Ažuriraj aplikaciju i pokušaj ponovno."
 }

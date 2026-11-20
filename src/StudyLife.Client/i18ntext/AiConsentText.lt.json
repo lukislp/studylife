@@ -18,5 +18,6 @@
   "LocalRunsHere": "DI veikia pačiame šio serverio aparatinėje įrangoje. Tavo duomenys nesiunčiami išoriniam DI teikėjui.",
   "ConsentGivenOn": "DI sutikimas duotas {0}.",
   "WithdrawButton": "Atšaukti sutikimą ir išjungti DI",
-  "WithdrawConfirmWarning": "Atšaukus DI išjungiamas, o tavo indeksuoti užrašai ir pokalbių duomenys ištrinami iš DI paslaugos. Šio veiksmo atšaukti negalima."
+  "WithdrawConfirmWarning": "Atšaukus DI išjungiamas, o tavo indeksuoti užrašai ir pokalbių duomenys ištrinami iš DI paslaugos. Šio veiksmo atšaukti negalima.",
+  "UpdateRequiredError": "Ši programėlės versija negali parodyti naujausio sutikimo teksto. Atnaujink programėlę ir bandyk dar kartą."
 }

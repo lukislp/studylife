@@ -167,7 +167,7 @@ public class AiConsentServiceTests : IClassFixture<CustomWebApplicationFactory>
         var stub = new AiUpstreamStub();
 
         var (granted, status, gate) = await WithServiceAsync(stub, async s =>
-            (await s.GrantAsync(1, AiConsentTestHost.ExternalFingerprint(), default),
+            (await s.GrantAsync(1, AiConsentTestHost.ExternalFingerprint(), AiConsentService.AiConsentTextVersion, default),
              await s.GetStatusAsync(1, default), await s.EnsureGrantedAsync(1, default)));
 
         Assert.Equal(ServiceOutcome.Success, granted.Outcome);
@@ -200,7 +200,7 @@ public class AiConsentServiceTests : IClassFixture<CustomWebApplicationFactory>
         var stub = new AiUpstreamStub();
         var before = DateTime.UtcNow.AddSeconds(-1);
 
-        var result = await WithServiceAsync(stub, s => s.GrantAsync(1, AiConsentTestHost.ExternalFingerprint(), default));
+        var result = await WithServiceAsync(stub, s => s.GrantAsync(1, AiConsentTestHost.ExternalFingerprint(), AiConsentService.AiConsentTextVersion, default));
 
         Assert.Equal(ServiceOutcome.Success, result.Outcome);
         Assert.True(result.Value!.Granted);
@@ -210,13 +210,65 @@ public class AiConsentServiceTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task Grant_FromAClientShowingOlderText_IsAConflict_AndStoresNothing()
+    {
+        await AiConsentTestHost.SeedUserAsync(_factory, hasKey: false, consentFingerprint: null);
+
+        // The client echoes the CURRENT fingerprint but says it rendered text version 1.
+        var result = await WithServiceAsync(new AiUpstreamStub(),
+            s => s.GrantAsync(1, AiConsentTestHost.ExternalFingerprint(), AiConsentService.AiConsentTextVersion - 1, default));
+
+        Assert.Equal(ServiceOutcome.Conflict, result.Outcome);
+        Assert.Equal(AiConsentService.AiConsentTextVersion, result.Value!.TextVersion);
+        var stored = await _factory.WithDbAsync(db => db.Settings.AsNoTracking().FirstAsync());
+        Assert.Null(stored.AiConsentGrantedAt);
+        Assert.Null(stored.AiConsentProviderFingerprint);
+    }
+
+    [Fact]
+    public async Task Grant_FromAClientThatSendsNoTextVersion_IsReadAsTheLastTextBeforeTheHandshake()
+    {
+        await AiConsentTestHost.SeedUserAsync(_factory, hasKey: false, consentFingerprint: null);
+
+        var result = await WithServiceAsync(new AiUpstreamStub(),
+            s => s.GrantAsync(1, AiConsentTestHost.ExternalFingerprint(), 0, default));
+
+        // Accepted exactly as long as the current text is the one such clients show.
+        Assert.Equal(
+            AiConsentTextVersion.AssumedWhenMissing >= AiConsentService.AiConsentTextVersion
+                ? ServiceOutcome.Success
+                : ServiceOutcome.Conflict,
+            result.Outcome);
+    }
+
+    [Fact]
+    public async Task Grant_FromANewerClient_IsAccepted()
+    {
+        await AiConsentTestHost.SeedUserAsync(_factory, hasKey: false, consentFingerprint: null);
+
+        var result = await WithServiceAsync(new AiUpstreamStub(),
+            s => s.GrantAsync(1, AiConsentTestHost.ExternalFingerprint(), AiConsentService.AiConsentTextVersion + 1, default));
+
+        Assert.Equal(ServiceOutcome.Success, result.Outcome);
+    }
+
+    [Fact]
+    public async Task Status_CarriesTheRequiredTextVersion()
+    {
+        await AiConsentTestHost.SeedUserAsync(_factory, hasKey: false, consentFingerprint: null);
+
+        var status = await WithServiceAsync(new AiUpstreamStub(), s => s.GetStatusAsync(1, default));
+
+        Assert.Equal(AiConsentService.AiConsentTextVersion, status.TextVersion);
+    }
+    [Fact]
     public async Task Grant_ForAStaleDescription_IsAConflictCarryingTheCurrentStatus_AndStoresNothing()
     {
         await AiConsentTestHost.SeedUserAsync(_factory, hasKey: false, consentFingerprint: null);
         var stub = new AiUpstreamStub();
         var stale = new string('a', 64);
 
-        var result = await WithServiceAsync(stub, s => s.GrantAsync(1, stale, default));
+        var result = await WithServiceAsync(stub, s => s.GrantAsync(1, stale, AiConsentService.AiConsentTextVersion, default));
 
         Assert.Equal(ServiceOutcome.Conflict, result.Outcome);
         Assert.Equal(AiConsentTestHost.ExternalFingerprint(), result.Value!.Fingerprint);
@@ -232,7 +284,7 @@ public class AiConsentServiceTests : IClassFixture<CustomWebApplicationFactory>
     {
         await AiConsentTestHost.SeedUserAsync(_factory, hasKey: false, consentFingerprint: null);
 
-        var result = await WithServiceAsync(new AiUpstreamStub(), s => s.GrantAsync(1, fingerprint, default));
+        var result = await WithServiceAsync(new AiUpstreamStub(), s => s.GrantAsync(1, fingerprint, AiConsentService.AiConsentTextVersion, default));
 
         Assert.Equal(ServiceOutcome.Invalid, result.Outcome);
     }
@@ -242,7 +294,7 @@ public class AiConsentServiceTests : IClassFixture<CustomWebApplicationFactory>
     {
         var result = await _factory.WithDbAsync(db =>
             new AiConsentService(db, _factory.Services.GetRequiredService<AiProxyClient>(), demo: false)
-                .GrantAsync(1, new string('a', 64), default));
+                .GrantAsync(1, new string('a', 64), AiConsentService.AiConsentTextVersion, default));
 
         Assert.Equal(ServiceOutcome.Invalid, result.Outcome);
     }
@@ -371,7 +423,7 @@ public class AiConsentServiceTests : IClassFixture<CustomWebApplicationFactory>
              await s.GetStatusAsync(2, default),
              await s.EnsureGrantedAsync(2, default),
              await s.MayProcessInBackgroundAsync(2, default),
-             await s.GrantAsync(2, AiConsentTestHost.ExternalFingerprint(), default)));
+             await s.GrantAsync(2, AiConsentTestHost.ExternalFingerprint(), AiConsentService.AiConsentTextVersion, default)));
 
         Assert.True(own.Granted);
         Assert.False(other.Granted);

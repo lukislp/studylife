@@ -18,5 +18,6 @@
   "LocalRunsHere": "Ritheann an AI ar crua-earraí an fhreastalaí seo féin. Ní sheoltar do shonraí chuig soláthraí AI seachtrach.",
   "ConsentGivenOn": "Toiliú AI tugtha ar {0}.",
   "WithdrawButton": "Tarraing siar an toiliú agus cuir AI as",
-  "WithdrawConfirmWarning": "Cuireann tarraingt siar AI as agus scriosann sé do nótaí innéacsaithe agus do shonraí comhrá ón tseirbhís AI. Ní féidir é seo a chealú."
+  "WithdrawConfirmWarning": "Cuireann tarraingt siar AI as agus scriosann sé do nótaí innéacsaithe agus do shonraí comhrá ón tseirbhís AI. Ní féidir é seo a chealú.",
+  "UpdateRequiredError": "Ní féidir leis an leagan seo den aip an téacs toilithe is déanaí a thaispeáint. Nuashonraigh an aip agus bain triail eile as."
 }

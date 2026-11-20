@@ -109,6 +109,45 @@ public class AiConsentStateTests
     }
 
     [Fact]
+    public async Task Agree_SendsTheTextVersionThisBuildRenders()
+    {
+        var server = new ScriptedServer()
+            .OnJson("GET api/ai/consent", Status(fingerprint: 'b'))
+            .OnJson("POST api/ai/consent/grant", Status(granted: true, fingerprint: 'b'));
+        var state = NewState(server);
+
+        var ensure = state.EnsureConsentAsync();
+        await WaitForDialogAsync(state);
+        await state.AgreeAsync();
+        await ensure;
+
+        using var body = System.Text.Json.JsonDocument.Parse(Assert.Single(server.Bodies));
+        Assert.Equal(StudyLife.Shared.AiConsentTextVersion.Current, body.RootElement.GetProperty("textVersion").GetInt32());
+    }
+
+    [Fact]
+    public async Task Agree_WhenTheServerNeedsNewerText_KeepsTheDialogOpenAndAsksForAnUpdate()
+    {
+        var server = new ScriptedServer().OnJson("GET api/ai/consent", Status(fingerprint: 'b'));
+        var required = Status(fingerprint: 'b');
+        required.TextVersion = StudyLife.Shared.AiConsentTextVersion.Current + 1;
+        server.OnJson("POST api/ai/consent/grant", required, HttpStatusCode.Conflict);
+        var state = NewState(server);
+
+        var ensure = state.EnsureConsentAsync();
+        var request = await WaitForDialogAsync(state);
+
+        Assert.False(await state.AgreeAsync());
+
+        // No re-ask loop with the same old text: the very same dialog stays, flagged for an update.
+        Assert.Same(request, state.Pending);
+        Assert.True(state.UpdateRequired);
+        Assert.Equal(1, server.Count("POST api/ai/consent/grant"));
+        await state.DeclineAsync();
+        Assert.False(state.UpdateRequired);
+        Assert.False(await ensure);
+    }
+    [Fact]
     public async Task Agree_WhenTheProviderChangedMeanwhile_ShowsTheNewDescriptionAndAsksAgain()
     {
         var server = new ScriptedServer();
