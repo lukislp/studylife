@@ -33,6 +33,6 @@
   "HoursSuffix": "Std.",
   "LastStudiedDaysAgo": "one=zuletzt vor {0} Tag gelernt|other=zuletzt vor {0} Tagen gelernt",
   "NeverStudied": "noch nicht gelernt",
-  "ExamInDays": "Prüfung in {0} Tagen",
+  "ExamInDays": "one=Prüfung in {0} Tag|other=Prüfung in {0} Tagen",
   "ReviewTopicFallback": "Wiederholung"
 }

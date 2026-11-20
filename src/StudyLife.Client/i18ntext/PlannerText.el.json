@@ -33,6 +33,6 @@
   "HoursSuffix": "ώ.",
   "LastStudiedDaysAgo": "one=τελευταία μελέτη πριν από {0} ημέρα|other=τελευταία μελέτη πριν από {0} ημέρες",
   "NeverStudied": "δεν έχει μελετηθεί ακόμα",
-  "ExamInDays": "εξέταση σε {0} ημέρες",
+  "ExamInDays": "one=εξέταση σε {0} ημέρα|other=εξέταση σε {0} ημέρες",
   "ReviewTopicFallback": "Επανάληψη"
 }

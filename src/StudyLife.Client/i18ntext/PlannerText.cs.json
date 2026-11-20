@@ -33,6 +33,6 @@
   "HoursSuffix": "h",
   "LastStudiedDaysAgo": "one=naposledy studováno před {0} dnem|other=naposledy studováno před {0} dny",
   "NeverStudied": "zatím nestudováno",
-  "ExamInDays": "zkouška za {0} dní",
+  "ExamInDays": "one=zkouška za {0} den|few=zkouška za {0} dny|other=zkouška za {0} dní",
   "ReviewTopicFallback": "Opakování"
 }

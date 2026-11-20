@@ -33,6 +33,6 @@
   "HoursSuffix": "t",
   "LastStudiedDaysAgo": "one=sidst læst for {0} dag siden|other=sidst læst for {0} dage siden",
   "NeverStudied": "endnu ikke læst",
-  "ExamInDays": "eksamen om {0} dage",
+  "ExamInDays": "one=eksamen om {0} dag|other=eksamen om {0} dage",
   "ReviewTopicFallback": "Repetition"
 }

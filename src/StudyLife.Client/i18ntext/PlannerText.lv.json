@@ -33,6 +33,6 @@
   "HoursSuffix": "h",
   "LastStudiedDaysAgo": "one=pēdējoreiz mācīts pirms {0} dienas|other=pēdējoreiz mācīts pirms {0} dienām",
   "NeverStudied": "vēl nav mācīts",
-  "ExamInDays": "eksāmens pēc {0} dienām",
+  "ExamInDays": "one=eksāmens pēc {0} dienas|other=eksāmens pēc {0} dienām",
   "ReviewTopicFallback": "Atkārtošana"
 }

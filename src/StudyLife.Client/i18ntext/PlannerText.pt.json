@@ -33,6 +33,6 @@
   "HoursSuffix": "h",
   "LastStudiedDaysAgo": "one=estudado pela última vez há {0} dia|other=estudado pela última vez há {0} dias",
   "NeverStudied": "ainda não estudado",
-  "ExamInDays": "exame em {0} dias",
+  "ExamInDays": "one=exame em {0} dia|other=exame em {0} dias",
   "ReviewTopicFallback": "Revisão"
 }

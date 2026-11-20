@@ -33,6 +33,6 @@
   "HoursSuffix": "h",
   "LastStudiedDaysAgo": "one=nazadnje obravnavano pred {0} dnevom|two=nazadnje obravnavano pred {0} dnevoma|other=nazadnje obravnavano pred {0} dnevi",
   "NeverStudied": "še ni obravnavano",
-  "ExamInDays": "izpit čez {0} dni",
+  "ExamInDays": "one=izpit čez {0} dan|two=izpit čez {0} dneva|other=izpit čez {0} dni",
   "ReviewTopicFallback": "Ponavljanje"
 }
