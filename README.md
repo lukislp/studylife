@@ -243,7 +243,7 @@ https://github.com/user-attachments/assets/0498d54b-f7e3-4854-b7cf-8eea538dd112
 - Course time distribution as a donut chart
 - Study rhythm: distribution by weekday and time of day
 - Monthly course history (last 6 months) as a stacked bar chart
-- Year in review: "Wrapped"-style summary (total hours, strongest course, most productive day/time, longest streak, total sessions)
+- Year in review: summary of your study year (total hours, strongest course, most productive day/time, longest streak, total sessions)
 - ECTS forecast and month comparison (previous month) in the study progress tile
 - Study report as a printable PDF: total hours, hours per course, ECTS progress including grade average, course goal status - for scholarship applications or academic advising
 - Cardio fitness (VO2max) trend (native app only): chart of Apple Watch-measured cardio fitness over the last year, via Apple HealthKit
