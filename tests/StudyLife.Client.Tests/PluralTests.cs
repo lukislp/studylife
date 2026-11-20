@@ -15,7 +15,7 @@ public class PluralTests
         ("IndexText", "InDays"), ("IndexText", "OverdueByDays"), ("IndexText", "CourseDeadlineInDaysFormat"),
         ("IndexText", "LastStudiedDaysAgo"), ("NotesText", "DayAgo"), ("ReportText", "StatusOverdueFormat"),
         ("ReportText", "StatusDueFormat"), ("SetupText", "ReminderDaysFormat"),
-        ("StatsText", "DueInDays"), ("StatsText", "OverdueByDays"),
+        ("StatsText", "DueInDays"), ("StatsText", "OverdueByDays"), ("PlannerText", "LastStudiedDaysAgo"),
     ];
 
     [Theory]

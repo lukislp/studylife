@@ -158,7 +158,7 @@ public class StatsForecastDto
 public class StatsMonthComparisonDto
 {
     public bool Up { get; set; }
-    public string DeltaLabel { get; set; } = "0h";
+    public string? DeltaLabel { get; set; }
 }
 
 /// <summary>One half-grade band of the grade distribution. The band labels ("1,0–1,5", "&gt; 4,0")

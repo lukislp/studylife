@@ -11,7 +11,7 @@ public partial class Stats
     private bool _forecastAvailable;
     private bool _forecastAlreadyDone;
     private string _forecastDateLabel = "";
-    private string _monthCompDeltaLabel = "0h";
+    private string? _monthCompDeltaLabel;
     private bool _monthCompUp;
     private List<StatsEctsTimelineCard.TimelinePoint> _ectsTimelinePoints = new();
     private List<StatsProductivityScoreCard.WeekPoint> _productivityWeeks = new();

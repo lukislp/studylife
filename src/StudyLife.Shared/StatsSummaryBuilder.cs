@@ -824,7 +824,7 @@ public static class StatsSummaryBuilder
         return new StatsMonthComparisonDto
         {
             Up = delta >= 0,
-            DeltaLabel = StudyMetrics.FormatHoursMinutes(Math.Abs(delta), omitZeroMinutes: true),
+            DeltaLabel = StudyMetrics.FormatDeltaHours(delta),
         };
     }
 

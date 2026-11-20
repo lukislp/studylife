@@ -24,10 +24,10 @@ public partial class Index
 
     // Month-over-month / year-over-year hours comparison (reuses the achievements' long-range history)
     private string _monthCompCurrentLabel = "0h";
-    private string _monthCompVsLastMonthLabel = "0h";
+    private string? _monthCompVsLastMonthLabel;
     private bool _monthCompVsLastMonthUp;
     private bool _monthCompHasYearData;
-    private string _monthCompVsLastYearLabel = "0h";
+    private string? _monthCompVsLastYearLabel;
     private bool _monthCompVsLastYearUp;
 
     // Best-record card: single best all-time day/week, plus whether today/the current week

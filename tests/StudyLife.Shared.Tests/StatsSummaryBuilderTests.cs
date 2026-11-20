@@ -286,6 +286,17 @@ public class StatsSummaryBuilderTests
         Assert.Equal("36h 30m", comparison.DeltaLabel);
     }
 
+    [Fact]
+    public void MonthComparison_HasNoDeltaLabelWhenExactlyLevel()
+    {
+        var input = Input();
+        input.History = [];
+        input.HeavyHistory = [];
+        input.Sessions = [];
+
+        Assert.Null(StatsSummaryBuilder.Build(input).Core.MonthComparison.DeltaLabel);
+    }
+
     // ── Grades ────────────────────────────────────────────────────────────────
 
     [Fact]

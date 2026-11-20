@@ -327,10 +327,12 @@ public class DashboardGraduationGoalDto
 public class DashboardMonthComparisonDto
 {
     public string CurrentLabel { get; set; } = "0h";
-    public string VsLastMonthLabel { get; set; } = "0h";
+    /// <summary>Change against the earlier month, unsigned; null when exactly level (no arrow shown).</summary>
+    public string? VsLastMonthLabel { get; set; }
     public bool VsLastMonthUp { get; set; }
     public bool HasYearData { get; set; }
-    public string VsLastYearLabel { get; set; } = "0h";
+    /// <summary>Change against the same month last year, unsigned; null when exactly level or without year data.</summary>
+    public string? VsLastYearLabel { get; set; }
     public bool VsLastYearUp { get; set; }
 }
 
