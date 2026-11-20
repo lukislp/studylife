@@ -31,7 +31,7 @@
   "WeekPlanAccepted": "Bylo přidáno {0} session.",
   "MinutesSuffix": "min",
   "HoursSuffix": "h",
-  "LastStudiedDaysAgo": "naposledy studováno před {0} dny",
+  "LastStudiedDaysAgo": "one=naposledy studováno před {0} dnem|other=naposledy studováno před {0} dny",
   "NeverStudied": "zatím nestudováno",
   "ExamInDays": "zkouška za {0} dní",
   "ReviewTopicFallback": "Opakování"

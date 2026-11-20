@@ -31,7 +31,7 @@
   "WeekPlanAccepted": "{0} Sessions wurden angelegt.",
   "MinutesSuffix": "Min.",
   "HoursSuffix": "Std.",
-  "LastStudiedDaysAgo": "zuletzt vor {0} Tagen gelernt",
+  "LastStudiedDaysAgo": "one=zuletzt vor {0} Tag gelernt|other=zuletzt vor {0} Tagen gelernt",
   "NeverStudied": "noch nicht gelernt",
   "ExamInDays": "Prüfung in {0} Tagen",
   "ReviewTopicFallback": "Wiederholung"

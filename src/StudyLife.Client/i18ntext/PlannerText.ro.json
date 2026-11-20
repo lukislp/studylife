@@ -31,7 +31,7 @@
   "WeekPlanAccepted": "{0} sesiuni au fost adăugate.",
   "MinutesSuffix": "min",
   "HoursSuffix": "h",
-  "LastStudiedDaysAgo": "studiat ultima dată acum {0} zile",
+  "LastStudiedDaysAgo": "one=studiat ultima dată acum {0} zi|few=studiat ultima dată acum {0} zile|other=studiat ultima dată acum {0} de zile",
   "NeverStudied": "încă nestudiat",
   "ExamInDays": "examen în {0} zile",
   "ReviewTopicFallback": "Recapitulare"

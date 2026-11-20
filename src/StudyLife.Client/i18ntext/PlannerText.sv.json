@@ -31,7 +31,7 @@
   "WeekPlanAccepted": "{0} sessioner lades till.",
   "MinutesSuffix": "min",
   "HoursSuffix": "h",
-  "LastStudiedDaysAgo": "senast pluggat för {0} dagar sedan",
+  "LastStudiedDaysAgo": "one=senast pluggat för {0} dag sedan|other=senast pluggat för {0} dagar sedan",
   "NeverStudied": "inte pluggat än",
   "ExamInDays": "tenta om {0} dagar",
   "ReviewTopicFallback": "Repetition"

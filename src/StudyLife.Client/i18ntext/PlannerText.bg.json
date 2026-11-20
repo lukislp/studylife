@@ -31,7 +31,7 @@
   "WeekPlanAccepted": "Добавени бяха {0} сесии.",
   "MinutesSuffix": "мин",
   "HoursSuffix": "ч.",
-  "LastStudiedDaysAgo": "последно учено преди {0} дни",
+  "LastStudiedDaysAgo": "one=последно учено преди {0} ден|other=последно учено преди {0} дни",
   "NeverStudied": "все още не е учено",
   "ExamInDays": "изпит след {0} дни",
   "ReviewTopicFallback": "Повторение"

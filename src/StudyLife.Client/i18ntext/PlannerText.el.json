@@ -31,7 +31,7 @@
   "WeekPlanAccepted": "Προστέθηκαν {0} συνεδρίες.",
   "MinutesSuffix": "λεπ.",
   "HoursSuffix": "ώ.",
-  "LastStudiedDaysAgo": "τελευταία μελέτη πριν από {0} ημέρες",
+  "LastStudiedDaysAgo": "one=τελευταία μελέτη πριν από {0} ημέρα|other=τελευταία μελέτη πριν από {0} ημέρες",
   "NeverStudied": "δεν έχει μελετηθεί ακόμα",
   "ExamInDays": "εξέταση σε {0} ημέρες",
   "ReviewTopicFallback": "Επανάληψη"

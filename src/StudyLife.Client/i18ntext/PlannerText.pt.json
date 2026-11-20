@@ -31,7 +31,7 @@
   "WeekPlanAccepted": "{0} sessões foram adicionadas.",
   "MinutesSuffix": "min",
   "HoursSuffix": "h",
-  "LastStudiedDaysAgo": "estudado pela última vez há {0} dias",
+  "LastStudiedDaysAgo": "one=estudado pela última vez há {0} dia|other=estudado pela última vez há {0} dias",
   "NeverStudied": "ainda não estudado",
   "ExamInDays": "exame em {0} dias",
   "ReviewTopicFallback": "Revisão"

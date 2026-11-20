@@ -31,7 +31,7 @@
   "WeekPlanAccepted": "{0} sessioner blev tilføjet.",
   "MinutesSuffix": "min",
   "HoursSuffix": "t",
-  "LastStudiedDaysAgo": "sidst læst for {0} dage siden",
+  "LastStudiedDaysAgo": "one=sidst læst for {0} dag siden|other=sidst læst for {0} dage siden",
   "NeverStudied": "endnu ikke læst",
   "ExamInDays": "eksamen om {0} dage",
   "ReviewTopicFallback": "Repetition"

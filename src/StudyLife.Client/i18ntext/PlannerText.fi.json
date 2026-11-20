@@ -31,7 +31,7 @@
   "WeekPlanAccepted": "{0} sessiota lisättiin.",
   "MinutesSuffix": "min",
   "HoursSuffix": "h",
-  "LastStudiedDaysAgo": "opiskeltu viimeksi {0} päivää sitten",
+  "LastStudiedDaysAgo": "one=opiskeltu viimeksi {0} päivä sitten|other=opiskeltu viimeksi {0} päivää sitten",
   "NeverStudied": "ei vielä opiskeltu",
   "ExamInDays": "tentti {0} päivän kuluttua",
   "ReviewTopicFallback": "Kertaus"

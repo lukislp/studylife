@@ -31,7 +31,7 @@
   "WeekPlanAccepted": "Dodano je {0} sesija.",
   "MinutesSuffix": "min",
   "HoursSuffix": "h",
-  "LastStudiedDaysAgo": "zadnje učeno prije {0} dana",
+  "LastStudiedDaysAgo": "one=zadnje učeno prije {0} dan|other=zadnje učeno prije {0} dana",
   "NeverStudied": "još nije učeno",
   "ExamInDays": "ispit za {0} dana",
   "ReviewTopicFallback": "Ponavljanje"
