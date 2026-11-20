@@ -79,11 +79,22 @@ public sealed class DataRetentionCleaner(RetentionOptions options)
         // own reminder runs return early for accounts without a push subscription or an upcoming
         // session and used to be the only place that deleted them). SentAt is written in server
         // local time; a difference of hours against a cutoff of days does not matter.
+        //
+        // Per-week and per-month markers (weeklygoalnudge, coursealmostdone, weeklyreport,
+        // monthlyreport) deduplicate for their whole period, not per day: the nudge conditions keep
+        // holding after the marker's day, so a 2-day cutoff would send the same push again within
+        // the same week. They age out after the period plus a margin instead.
         var markerCutoff = utcNow.AddDays(-options.ReminderMarkerDays);
+        var weeklyCutoff = utcNow.AddDays(-WeeklyMarkerDays);
+        var monthlyCutoff = utcNow.AddDays(-MonthlyMarkerDays);
         reminders += await db.SentReminders.IgnoreQueryFilters()
-            .Where(r => r.SentAt < markerCutoff
-                && !r.Key.StartsWith("achievement:")
-                && !r.Key.StartsWith("coursegoal:"))
+            .Where(r => !r.Key.StartsWith("achievement:")
+                && !r.Key.StartsWith("coursegoal:")
+                && (r.Key.StartsWith("weeklygoalnudge:") || r.Key.StartsWith("coursealmostdone:") || r.Key.StartsWith("weeklyreport:")
+                    ? r.SentAt < weeklyCutoff
+                    : r.Key.StartsWith("monthlyreport:")
+                        ? r.SentAt < monthlyCutoff
+                        : r.SentAt < markerCutoff))
             .ExecuteDeleteAsync(ct);
 
         reminders += await DeleteOrphanedCourseGoalMarkersAsync(db, ct);
@@ -123,6 +134,12 @@ public sealed class DataRetentionCleaner(RetentionOptions options)
             deleted += await db.SentReminders.IgnoreQueryFilters().Where(r => batch.Contains(r.Id)).ExecuteDeleteAsync(ct);
         return deleted;
     }
+
+    /// <summary>ISO week plus a day of margin for the week-keyed markers.</summary>
+    private const int WeeklyMarkerDays = 8;
+
+    /// <summary>Longest month plus a day of margin for the month-keyed markers.</summary>
+    private const int MonthlyMarkerDays = 32;
 
     private const string CourseGoalMarkerPrefix = "coursegoal:";
 
