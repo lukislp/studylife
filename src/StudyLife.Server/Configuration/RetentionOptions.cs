@@ -47,4 +47,12 @@ public sealed class RetentionOptions
     /// is deleted after this long, next to the weekly dumps' four weeks.</summary>
     [Range(1, 3650)]
     public int PreRestoreBackupDays { get; set; } = 28;
+
+    /// <summary>How long the erasure journal (deleted accounts and consent withdrawals: user id and
+    /// time, nothing else) keeps an entry. It has to cover the oldest database backup that could
+    /// still be restored: the weekly dumps span four weeks and the safety copies before a restore
+    /// 28 days, so the default adds a margin. Operators who keep older backups elsewhere raise it;
+    /// restoring a backup older than this brings back what the journal no longer remembers.</summary>
+    [Range(1, 3650)]
+    public int ErasureJournalDays { get; set; } = 90;
 }

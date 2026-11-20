@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 using StudyLife.Server.Data;
+using StudyLife.Server.Services.Erasure;
 
 namespace StudyLife.Server.Services;
 
@@ -24,12 +25,14 @@ public interface ITelemetryConsentService
 public class TelemetryConsentService(
     StudyLifeDb db,
     SettingsCacheVersion settingsCacheVersion,
-    ICurrentUserAccessor currentUser) : ITelemetryConsentService
+    ICurrentUserAccessor currentUser,
+    IErasureJournal journal) : ITelemetryConsentService
 {
     public async Task<ServiceResult> SetAsync(bool answer, CancellationToken ct = default)
     {
         var now = DateTime.UtcNow;
         var settings = await db.Settings.GetOrCreateAsync(db);
+        var wasAgreed = settings.TelemetryConsent == true;
         if (!TelemetryConsentRecord.Apply(settings, answer, now)) return ServiceResult.Success();
 
         // Append-only: the log is never updated or pruned (it goes with the account on deletion),
@@ -42,6 +45,9 @@ public class TelemetryConsentService(
             TextVersion = TelemetryConsentRecord.CurrentVersion,
         });
         await db.SaveChangesAsync(ct);
+        // A withdrawal is remembered outside the database too, so a restored backup cannot revert it.
+        if (wasAgreed && !answer)
+            await journal.RecordAsync(db, ErasureKind.TelemetryWithdrawn, currentUser.AuthUserId, now);
         await settingsCacheVersion.BumpAsync(currentUser.AuthUserId);
         return ServiceResult.Success();
     }

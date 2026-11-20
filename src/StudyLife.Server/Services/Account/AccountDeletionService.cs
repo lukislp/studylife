@@ -4,6 +4,7 @@
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
+using StudyLife.Server.Services.Erasure;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Services.Account;
@@ -80,6 +81,7 @@ public sealed class AccountDeletionService(
     AddonPurgeClients purges,
     SettingsCacheVersion settingsVersion,
     SessionHistoryCacheVersion sessionsVersion,
+    IErasureJournal journal,
     ILogger<AccountDeletionService> logger) : IAccountDeletionService
 {
     public async Task<AccountDeletionPreviewDto> PreviewAsync(int userId)
@@ -203,6 +205,10 @@ public sealed class AccountDeletionService(
         }
 
         // From here on the account is gone; everything below is best effort and never undoes it.
+        // Remembered outside the database (user id + creation time + when, nothing else), so a
+        // restore of an older backup deletes the account again (Services/Erasure). Written only
+        // after the commit: an entry for a live account would delete it at the next start.
+        journal.Record(new ErasureEntry(ErasureKind.AccountDeleted, userId, user.CreatedAt, DateTime.UtcNow));
         foreach (var hash in tokenHashes) sessionCache.Remove(hash);
         await TryBumpAsync(userId);
 

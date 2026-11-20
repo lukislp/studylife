@@ -15,6 +15,13 @@ public partial class BackgroundTaskService
     {
         var cleaner = _services.GetService<DataRetentionCleaner>()
             ?? new DataRetentionCleaner(new Configuration.RetentionOptions());
+        // The erasure journal ages out with the same daily pass (Retention:ErasureJournalDays).
+        if (_services.GetService<Erasure.IErasureJournal>() is { Enabled: true } journal)
+        {
+            var days = (_services.GetService<Microsoft.Extensions.Options.IOptions<Configuration.RetentionOptions>>()?.Value
+                ?? new Configuration.RetentionOptions()).ErasureJournalDays;
+            journal.Prune(DateTime.UtcNow.AddDays(-days));
+        }
         var result = await cleaner.RunAsync(db, DateTime.UtcNow);
         if (result.Total > 0)
             _logger.LogInformation(

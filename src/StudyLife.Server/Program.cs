@@ -559,7 +559,8 @@ builder.Services.AddScoped<IAiConsentService>(sp => new AiConsentService(
     sp.GetRequiredService<StudyLifeDb>(),
     sp.GetRequiredService<AiProxyClient>(),
     DemoModeGuard.IsEnabled(sp.GetRequiredService<IConfiguration>()),
-    () => sp.GetRequiredService<IApiKeyService>()));
+    () => sp.GetRequiredService<IApiKeyService>(),
+    sp.GetRequiredService<StudyLife.Server.Services.Erasure.IErasureJournal>()));
 builder.Services.AddScoped<IPushService, PushService>();
 builder.Services.AddScoped<IBackupDataService, BackupDataService>();
 // The account and about blocks of the personal data export (GDPR Art. 15), see BackupDataService.
@@ -639,6 +640,26 @@ if (!isPostgres)
     builder.Services.AddSingleton(new DatabaseBackupService(dbPath, builder.Environment.ContentRootPath));
     builder.Services.AddSingleton(new DatabaseRestoreService(dbPath));
 }
+// Erasure journal (docs/ARCHITECTURE.md "Erasure journal"): deleted accounts and consent
+// withdrawals, kept in a file OUTSIDE the database so a restored backup cannot undo them.
+// Default next to the SQLite file; Postgres has no such file, so it needs ErasureJournal:Path on
+// a volume that is not rolled back with the database - without it the journal stays off.
+var erasureJournalPath = builder.Configuration.Bind<ErasureJournalOptions>(ErasureJournalOptions.SectionName).Path
+    ?? (isPostgres ? null : Path.Combine(Path.GetDirectoryName(dbPath)!, "erasure-journal.jsonl"));
+if (erasureJournalPath is null)
+    builder.Services.AddSingleton<StudyLife.Server.Services.Erasure.IErasureJournal, StudyLife.Server.Services.Erasure.NullErasureJournal>();
+else
+    builder.Services.AddSingleton<StudyLife.Server.Services.Erasure.IErasureJournal>(sp =>
+        new StudyLife.Server.Services.Erasure.FileErasureJournal(
+            erasureJournalPath, sp.GetRequiredService<ILogger<StudyLife.Server.Services.Erasure.FileErasureJournal>>()));
+builder.Services.AddScoped(sp => new StudyLife.Server.Services.Erasure.ErasureReconciler(
+    sp.GetRequiredService<StudyLife.Server.Services.Erasure.IErasureJournal>(),
+    sp.GetRequiredService<StudyLifeDb>(),
+    sp.GetRequiredService<StudyLife.Server.Services.Account.IAccountDeletionService>(),
+    sp.GetRequiredService<IAiConsentService>(),
+    sp.GetRequiredService<SettingsCacheVersion>(),
+    sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<RetentionOptions>>().Value,
+    sp.GetRequiredService<ILogger<StudyLife.Server.Services.Erasure.ErasureReconciler>>()));
 builder.Services.AddScoped<SystemSecretsService>();
 builder.Services.AddSingleton<IInstanceIdProvider, InstanceIdProvider>();
 builder.Services.AddSingleton<VapidKeysHolder>();
@@ -783,6 +804,14 @@ if (!EF.IsDesignTime)
     var systemSecrets = scope.ServiceProvider.GetRequiredService<SystemSecretsService>();
     scope.ServiceProvider.GetRequiredService<VapidKeysHolder>().Keys =
         await systemSecrets.EnsureVapidKeysAsync();
+
+    // After a restore of an older database backup: delete the accounts it brought back and
+    // withdraw the consents it reverted, from the erasure journal outside the database. A no-op
+    // on every start where the database did not go back in time. Only the migrating process runs
+    // it (like Migrate()), and never on a demo instance, which wipes its data anyway.
+    if (shouldMigrate && !DemoModeGuard.IsEnabled(builder.Configuration))
+        await scope.ServiceProvider.GetRequiredService<StudyLife.Server.Services.Erasure.ErasureReconciler>()
+            .RunAsync(DateTime.UtcNow);
 
     // Public demo instances: wipe and re-create the demo dataset on EVERY start - the data is
     // generated relative to "today", so restarting the container is also what keeps the demo
