@@ -41,23 +41,6 @@ public static class LocalNumber
     public static string? Localize(string? serverLabel) =>
         serverLabel is not null && UsesPoint(LocalDate.Language) ? serverLabel.Replace(',', '.') : serverLabel;
 
-    /// <summary>
-    /// Reads a typed grade. Both "," and "." count as the decimal separator in every UI language
-    /// (grades have no thousands separators, so "1,3" is never thirteen hundred); anything that is
-    /// not a plain decimal number yields false.
-    /// </summary>
-    public static bool TryParseGrade(string? text, out decimal grade)
-    {
-        grade = 0;
-        if (string.IsNullOrWhiteSpace(text)) return false;
-        var normalized = text.Trim().Replace(',', '.');
-        return decimal.TryParse(normalized, NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint,
-            CultureInfo.InvariantCulture, out grade);
-    }
-
-    /// <summary>A stored grade as it appears in an input field, in the UI language ("" when unset).</summary>
-    public static string GradeInput(decimal? grade) => grade.HasValue ? Number(grade.Value, "0.0#") : "";
-
     private static bool UsesPoint(string language)
     {
         var code = (language.Length >= 2 ? language[..2] : language).ToLowerInvariant();

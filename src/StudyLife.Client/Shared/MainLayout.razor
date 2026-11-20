@@ -195,7 +195,6 @@
            for the split second until the forceLoad reload anyway; Recover() in OnLocationChanged
            resets the boundary on normal navigation so a genuine error on one page doesn't
            permanently block every following page. *@
-        <UiLanguageScope Language="@(_languageKnown ? _lang : null)">
         <ErrorBoundary @ref="_errorBoundary">
             <ChildContent>
                 @Body
@@ -205,7 +204,6 @@
                 <div class="setup-section"><p class="ss-desc">@T.PageLoadErrorText</p></div>
             </ErrorContent>
         </ErrorBoundary>
-        </UiLanguageScope>
     </main>
 </div>
 }
@@ -227,8 +225,6 @@
     private DotNetObjectReference<MainLayout>? _searchHotkeyRef;
     private ErrorBoundary? _errorBoundary;
     private bool _authenticated;
-    // False until the real UI language is read; the page body is not rendered before (UiLanguageScope).
-    private bool _languageKnown;
     private bool _demoMode;
     private bool _showTelemetryConsentModal;
     private bool _aiAvailable;
@@ -299,7 +295,6 @@
             T = await i18nTask;
             _lang = await currentLanguageTask;
             LocalDate.Language = _lang;
-            _languageKnown = true;
             LocalDate.NamesChanged += OnDateNamesChanged;
             // Normally a no-op: Program.cs already loaded the names before the first render.
             // Only if that path was skipped (localStorage unavailable) does this actually fetch,
