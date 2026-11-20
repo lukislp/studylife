@@ -189,6 +189,20 @@ public class DashboardSummaryBuilderTests
     }
 
     [Fact]
+    public void WeekDelta_HasNoLabelWhenTheWeekIsExactlyLevel()
+    {
+        var input = Input();
+        input.History = [];
+        input.HeavyHistory = [];
+        input.Sessions = [];
+
+        var s = DashboardSummaryBuilder.Build(input).Sessions;
+
+        // 0h against 0h is no trend: no label, so the page shows no "▲ 0h".
+        Assert.Null(s.WeekDeltaLabel);
+    }
+
+    [Fact]
     public void FocusScore_CountsOnlySessionsAlreadyStudied()
     {
         var focus = DashboardSummaryBuilder.Build(Input()).Sessions.FocusScore;

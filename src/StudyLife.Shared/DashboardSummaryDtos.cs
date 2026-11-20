@@ -68,8 +68,8 @@ public class DashboardSessionsSummaryDto
 
     public List<DashboardTrendWeekDto> WeeklyTrend { get; set; } = new();
 
-    /// <summary>Week-over-week delta, absolute value already formatted. Null is never produced
-    /// by the builder (the page's field is nullable only because it starts out unset).</summary>
+    /// <summary>Week-over-week delta, absolute value already formatted. Null when the week is
+    /// exactly level with the comparison stretch (no change, so the page shows no arrow).</summary>
     public string? WeekDeltaLabel { get; set; }
 
     public bool WeekDeltaUp { get; set; }
