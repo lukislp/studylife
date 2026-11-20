@@ -316,7 +316,7 @@ public class AccountDeletionServiceTests : IClassFixture<CustomWebApplicationFac
     }
 
     [Fact]
-    public async Task Delete_WithoutAddonKeys_PurgesMcpByUserIdOnly_AndSkipsAlexaAndTelegram()
+    public async Task Delete_WithoutAddonKeys_StillPurgesEveryAddonByUserId()
     {
         int a = 0;
         await _factory.WithDbAsync(async db => a = await UserDataSeeder.SeedUserAsync(db, "Lane"));
@@ -327,10 +327,31 @@ public class AccountDeletionServiceTests : IClassFixture<CustomWebApplicationFac
 
         Assert.Equal(0, result.Value!.AddonCleanupPending);
         Assert.Empty(await _factory.WithDbAsync(db => db.AiKeyOutbox.Where(o => o.AuthUserId == a).ToListAsync()));
-        // studylife-mcp also keys data by the user id; the other two know a user only by a key.
-        Assert.Equal("{\"key_hashes\":[]}", Assert.Single(healthy.Mcp.Requests).Body);
-        Assert.Empty(healthy.Alexa.Requests);
-        Assert.Empty(healthy.Telegram.Requests);
+        // Every add-on stores the user id too, so a user who revoked the key earlier is still reached.
+        foreach (var handler in new[] { healthy.Mcp, healthy.Alexa, healthy.Telegram })
+        {
+            var call = Assert.Single(handler.Requests);
+            Assert.EndsWith($"/internal/users/{a}/purge", call.Uri, StringComparison.Ordinal);
+            Assert.Equal("{\"key_hashes\":[]}", call.Body);
+        }
+    }
+
+    [Fact]
+    public async Task Delete_WithAnAddonOutage_KeepsTheKeylessPurgeQueuedForRetry()
+    {
+        int a = 0;
+        await _factory.WithDbAsync(async db => a = await UserDataSeeder.SeedUserAsync(db, "Mika"));
+
+        var outage = new Addons(HttpStatusCode.ServiceUnavailable, withPurges: true);
+        using var scope = _factory.Services.CreateScope();
+        var result = await Service(scope, outage).DeleteAsync(a, a, CancellationToken.None);
+
+        var rows = await _factory.WithDbAsync(db => db.AiKeyOutbox.AsNoTracking().Where(o => o.AuthUserId == a).ToListAsync());
+        Assert.Equal(
+            new[] { AiKeyOutboxEntity.ActionPurgeAlexa, AiKeyOutboxEntity.ActionPurgeMcp, AiKeyOutboxEntity.ActionPurgeTelegram, AiKeyOutboxEntity.ActionPurgeWebhooks }.Order(),
+            rows.Select(r => r.Action).Order());
+        Assert.All(rows.Where(r => AddonPurgeTarget.ForAction(r.Action) is not null), r => Assert.Null(r.KeyHashes));
+        Assert.Equal(4, result.Value!.AddonCleanupPending);
     }
 
     [Fact]

@@ -16,8 +16,15 @@ namespace StudyLife.Server.Services;
 /// <code>
 /// POST {BaseUrl}/internal/users/{userId}/purge
 /// X-StudyLife-Shared-Secret: {SharedSecret}
-/// {"key_hashes": ["&lt;64 lowercase hex&gt;", ...]}
+/// {"key_hashes": ["&lt;64 lowercase hex&gt;", ...], "instance_url": "https://..."}
 /// </code>
+/// <c>key_hashes</c> may be empty (the user holds no key for the add-on, or revoked it earlier).
+/// <c>instance_url</c> is this server's public origin (the pinned <c>Fido2:Origins</c> value) and is
+/// left out when none is configured. An add-on that stores the user id with its links
+/// (studylife-alexa, studylife-telegram) matches on user id AND instance, so the purge also reaches
+/// a link whose key is gone. An add-on version that does not know the field ignores it, and one
+/// that matches only by key hash answers 204 for an empty list, so server and add-ons can be
+/// deployed in either order.
 /// 204 (also when nothing matched) means done; 401 wrong secret, 422 invalid request, 503 the
 /// add-on has no purge secret configured. Any non-2xx keeps the outbox row for a retry.
 ///
@@ -40,13 +47,15 @@ public sealed class AddonPurgeClient
     private readonly HttpClient _http;
     private readonly string? _baseUrl;
     private readonly string? _sharedSecret;
+    private readonly Func<string?> _instanceUrl;
 
-    public AddonPurgeClient(AddonPurgeTarget target, AddonPurgeOptions options, ILogger<AddonPurgeClient> logger, HttpClient? httpClient = null)
+    public AddonPurgeClient(AddonPurgeTarget target, AddonPurgeOptions options, ILogger<AddonPurgeClient> logger, HttpClient? httpClient = null, Func<string?>? instanceUrl = null)
     {
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(options);
         Target = target;
         _logger = logger;
+        _instanceUrl = instanceUrl ?? (() => null);
         _http = httpClient ?? new HttpClient { Timeout = RequestTimeout };
         _baseUrl = string.IsNullOrWhiteSpace(options.BaseUrl) ? null : options.BaseUrl.Trim().TrimEnd('/');
         _sharedSecret = string.IsNullOrEmpty(options.SharedSecret) ? null : options.SharedSecret;
@@ -86,7 +95,7 @@ public sealed class AddonPurgeClient
         {
             using var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/internal/users/{userId}/purge")
             {
-                Content = JsonContent.Create(new PurgeRequest(keyHashes)),
+                Content = JsonContent.Create(new PurgeRequest(keyHashes, _instanceUrl())),
             };
             request.Headers.Add("X-StudyLife-Shared-Secret", _sharedSecret);
             using var response = await _http.SendAsync(request, ct);
@@ -103,7 +112,9 @@ public sealed class AddonPurgeClient
         }
     }
 
-    private sealed record PurgeRequest([property: JsonPropertyName("key_hashes")] IReadOnlyList<string> KeyHashes);
+    private sealed record PurgeRequest(
+        [property: JsonPropertyName("key_hashes")] IReadOnlyList<string> KeyHashes,
+        [property: JsonPropertyName("instance_url"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? InstanceUrl);
 }
 
 /// <summary>The purge clients of all <see cref="AddonPurgeTarget.All"/>, one per add-on, as one
@@ -117,13 +128,15 @@ public sealed class AddonPurgeClients(IEnumerable<AddonPurgeClient> clients)
     public AddonPurgeClient? For(AddonPurgeTarget target) => _clients.FirstOrDefault(c => c.Target == target);
 
     /// <summary>The production wiring (Program.cs): one client per add-on from its named options,
-    /// each with its own HttpClient from <paramref name="createHttpClient"/> (add-on TLS trust).</summary>
+    /// each with its own HttpClient from <paramref name="createHttpClient"/> (add-on TLS trust).
+    /// <paramref name="instanceUrl"/> names this server's public origin for the add-ons (null = none).</summary>
     public static AddonPurgeClients Create(
-        IOptionsMonitor<AddonPurgeOptions> options, ILogger<AddonPurgeClient> logger, Func<HttpClient> createHttpClient)
+        IOptionsMonitor<AddonPurgeOptions> options, ILogger<AddonPurgeClient> logger, Func<HttpClient> createHttpClient,
+        Func<string?>? instanceUrl = null)
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(createHttpClient);
         return new AddonPurgeClients(AddonPurgeTarget.All.Select(target =>
-            new AddonPurgeClient(target, options.Get(target.Name), logger, createHttpClient())));
+            new AddonPurgeClient(target, options.Get(target.Name), logger, createHttpClient(), instanceUrl)));
     }
 }
