@@ -15,7 +15,7 @@
     {
         <div class="quota-row">
             <div class="quota-hours">
-                <span class="stat-val">@RequiredValue</span>
+                <span class="stat-val">@LocalNumber.Localize(RequiredValue)</span>
                 <span class="quota-target">@RequiredSuffix</span>
             </div>
             <div class="quota-badge @(OnTrack ? "badge-ok" : "badge-warn")">

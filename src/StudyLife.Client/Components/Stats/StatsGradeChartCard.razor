@@ -23,7 +23,7 @@
 @code {
     public record GradePoint(string Label, decimal AvgGrade, int CourseCount, double BarPercent)
     {
-        public string GradeLabel => StudyMetrics.FormatGrade(AvgGrade);
+        public string GradeLabel => LocalNumber.Grade(AvgGrade);
     }
 
     [Parameter] public string Label { get; set; } = "";

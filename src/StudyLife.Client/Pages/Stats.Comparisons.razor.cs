@@ -115,7 +115,7 @@ public partial class Stats
 
         static string HoursLabel(double h) => StudyMetrics.FormatHoursMinutes(h);
         static string GradeLabel(double? g) => g.HasValue
-            ? StudyMetrics.FormatGrade((decimal)g.Value)
+            ? LocalNumber.Grade((decimal)g.Value)
             : "–";
         // Grade bar inverted like everywhere else on this page (1.0 fills, 5.0 stays empty);
         // missing grade = "–" with an empty bar instead of a misleading zero value.
@@ -129,7 +129,7 @@ public partial class Stats
             new(T.SemesterCompGrade ?? "", GradeLabel(curGrade), GradeBar(curGrade),
                 GradeLabel(_semesterCompPrevGrade), GradeBar(_semesterCompPrevGrade)),
             new(T.SemesterCompEcts ?? "", _semesterCompCurEcts.ToString(), _semesterCompCurEcts / _semesterCompMaxEctsScale * 100,
-                _semesterCompPrevEcts.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ','), _semesterCompPrevEcts / _semesterCompMaxEctsScale * 100),
+                LocalNumber.Number(_semesterCompPrevEcts, "0.#"), _semesterCompPrevEcts / _semesterCompMaxEctsScale * 100),
         };
         _semesterComparisonCurrentLabel = string.Format(T.SemesterComparisonCurrentFormat ?? "", _semesterCompCurrentSemester);
     }

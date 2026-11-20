@@ -72,7 +72,7 @@
                 <table class="report-table report-summary-table">
                     <tbody>
                         <tr><th>@T.TableEcts</th><td>@string.Format(T.EctsProgressFormat, _ectsEarned, _ectsTotal, _ectsPercent.ToString("0"))</td></tr>
-                        <tr><th>@T.AverageGradeLabel</th><td>@(_averageGradeLabel ?? T.AverageGradeEmpty)</td></tr>
+                        <tr><th>@T.AverageGradeLabel</th><td>@(LocalNumber.Localize(_averageGradeLabel) ?? T.AverageGradeEmpty)</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -107,7 +107,7 @@
                                         <td>@row.Course.Ects</td>
                                         <td>@row.HoursLabel</td>
                                         <td>@row.SessionCount</td>
-                                        <td>@(row.Grade.HasValue ? row.GradeLabel : "–")</td>
+                                        <td>@(row.Grade.HasValue ? LocalNumber.Localize(row.GradeLabel) : "–")</td>
                                         <td>@StatusFor(row)</td>
                                     </tr>
                                 }

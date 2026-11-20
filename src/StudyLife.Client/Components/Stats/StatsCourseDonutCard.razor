@@ -25,7 +25,7 @@
                     <button type="button" class="donut-legend-row @(_selected == slice ? "selected" : "")" @onclick="() => ToggleSlice(slice)">
                         <span class="donut-swatch" style="background:@slice.Color"></span>
                         <span class="donut-legend-name">@slice.Name</span>
-                        <span class="donut-legend-val">@slice.Percent.ToString("0.#")% · @((int)slice.Hours)h</span>
+                        <span class="donut-legend-val">@LocalNumber.Number(slice.Percent, "0.#")% · @((int)slice.Hours)h</span>
                     </button>
                 }
             </div>

@@ -56,7 +56,7 @@
                     <div class="progress-share-stat-label">@string.Format(T.EctsFormat, _data.EarnedEcts, _data.TotalEcts)</div>
                 </div>
                 <div class="progress-share-stat">
-                    <div class="progress-share-stat-value">@(_data.AverageGrade.HasValue ? _data.AverageGrade.Value.ToString("0.00") : "—")</div>
+                    <div class="progress-share-stat-value">@(_data.AverageGrade.HasValue ? LocalNumber.Grade(_data.AverageGrade.Value) : "—")</div>
                     <div class="progress-share-stat-label">@(_data.AverageGrade.HasValue ? T.AverageGradeLabel : T.NoGradeYet)</div>
                 </div>
             </div>

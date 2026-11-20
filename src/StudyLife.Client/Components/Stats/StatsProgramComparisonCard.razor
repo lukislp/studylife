@@ -27,7 +27,7 @@
                 <span>@string.Format(EctsFormat ?? "", r.EctsEarned, r.EctsTotal)</span>
                 @if (r.GradeLabel != null)
                 {
-                    <span>@string.Format(GradeFormat ?? "", r.GradeLabel)</span>
+                    <span>@string.Format(GradeFormat ?? "", LocalNumber.Localize(r.GradeLabel))</span>
                 }
             </div>
         </div>
