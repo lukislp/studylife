@@ -97,7 +97,7 @@
 
         public string HoursLabel => StudyMetrics.FormatHoursMinutes(Hours);
         public string GradeLabel => Grade.HasValue
-            ? StudyMetrics.FormatGrade(Grade.Value, "0.0")
+            ? LocalNumber.Grade(Grade.Value, "0.0")
             : "";
 
         // +/-5% counts as "flat" so tiny noise doesn't flash an arrow either way.

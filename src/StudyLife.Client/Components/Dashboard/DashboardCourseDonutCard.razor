@@ -24,7 +24,7 @@
                     <div class="donut-legend-row clickable" @onclick="GoToStats" title="@StatsLinkHint">
                         <span class="donut-swatch" style="background:@s.Color"></span>
                         <span class="donut-legend-name">@s.Name</span>
-                        <span class="donut-legend-val">@s.Percent.ToString("0.#")%</span>
+                        <span class="donut-legend-val">@LocalNumber.Number(s.Percent, "0.#")%</span>
                     </div>
                 }
             </div>
