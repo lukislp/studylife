@@ -210,8 +210,6 @@
 .fu-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-bottom: 0.5rem; }
 .fu-name { font-size: 1.25rem; font-weight: 500; }
 .fu-time { font-family: var(--font-mono); font-size: 0.875rem; color: var(--text2); }
-.focus-motivation-text { font-size: 0.875rem; color: var(--text3); font-style: italic; margin-top: 1rem; max-width: 420px; line-height: 1.7; }
-
 .focus-reflection {
     position: relative;
     z-index: 1;
