@@ -259,6 +259,7 @@ https://github.com/user-attachments/assets/0498d54b-f7e3-4854-b7cf-8eea538dd112
 - Full database download, optionally encrypted with a self-chosen password (AES-256)
 - Restore from a previously downloaded backup, including the encrypted variant
 - Weekly automatic background backup (the last 4 weeks are retained; SQLite deployments)
+- Deleted accounts and withdrawn consents survive a restore of an older backup: a small journal outside the database (user id and time only, 90 days by default) is applied again at the next start
 - Database download/restore is reserved for the account's original setup user; the JSON export is available to every account
 
 ### Notifications

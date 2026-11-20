@@ -44,6 +44,9 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     /// <summary>Temp content root only for DatabaseBackupService (app_data/backups lands under this).</summary>
     public string BackupContentRoot { get; } = Path.Combine(Path.GetTempPath(), $"studylife-test-root-{Guid.NewGuid():N}");
 
+    /// <summary>This factory's erasure journal file (temp, unique per instance).</summary>
+    public string ErasureJournalPath { get; } = Path.Combine(Path.GetTempPath(), $"studylife-test-erasures-{Guid.NewGuid():N}.jsonl");
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         // Registration gate (audit finding A10): production defaults to "invite" when unset, but
@@ -105,6 +108,12 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             // file name (DatabaseRestoreService.GetStagingPath) and therefore unique per factory.
             services.RemoveAll(typeof(DatabaseRestoreService));
             services.AddSingleton(new DatabaseRestoreService(DbPath));
+
+            // The erasure journal's default file sits in the REAL app_data next to the live DB;
+            // every factory gets its own temp file instead.
+            services.RemoveAll<StudyLife.Server.Services.Erasure.IErasureJournal>();
+            services.AddSingleton<StudyLife.Server.Services.Erasure.IErasureJournal>(
+                new StudyLife.Server.Services.Erasure.FileErasureJournal(ErasureJournalPath));
 
             // The push delivery tests point subscriptions at fake push servers on 127.0.0.1
             // (PushTestSubscriptions). The vetted user-URL client refuses loopback in production;
