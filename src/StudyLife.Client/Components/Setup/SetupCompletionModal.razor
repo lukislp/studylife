@@ -11,9 +11,9 @@
         <div class="modal-body">
             <div class="field">
                 <label>@GradeOptionalLabel</label>
-                <input type="number" class="input input-sm" step="0.1" min="1" max="5"
-                       placeholder="@GradePlaceholder" value="@GradeDraft"
-                       @onchange="e => GradeDraftChanged.InvokeAsync(decimal.TryParse(e.Value?.ToString(), out var v) ? v : (decimal?)null)" />
+                <input type="text" inputmode="decimal" class="input input-sm"
+                       placeholder="@LocalNumber.Localize(GradePlaceholder)" value="@LocalNumber.GradeInput(GradeDraft)"
+                       @onchange="e => GradeDraftChanged.InvokeAsync(LocalNumber.TryParseGrade(e.Value?.ToString(), out var v) ? v : (decimal?)null)" />
             </div>
             <div class="field">
                 <label>@CompletionNoteLabel</label>
