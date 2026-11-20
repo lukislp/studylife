@@ -16,9 +16,9 @@ internal static class AddonPurgeQueue
 {
     /// <summary>
     /// One row per configured add-on (more if the user holds more than
-    /// <see cref="AddonOutbox.MaxKeyHashesPerRow"/> keys for it). studylife-mcp is always called -
-    /// it also keys data by the user id. An add-on that knows users only by key gets no row when
-    /// the user holds no key for it: the call could not match anything.
+    /// <see cref="AddonOutbox.MaxKeyHashesPerRow"/> keys for it). Every add-on is always called,
+    /// also without a key: they all store the user id as well (the call carries it in the URL), and
+    /// a user who revoked the key earlier still has data there that only the user id can reach.
     /// </summary>
     public static async Task<List<AiKeyOutboxEntity>> RowsForAsync(
         StudyLifeDb db, AddonPurgeClients purges, AuthUserEntity user, DateTime now, CancellationToken ct)
@@ -29,8 +29,7 @@ internal static class AddonPurgeQueue
             var hashes = (await KeyHashesAsync(db, client, user, ct)).Where(AddonOutbox.IsKeyHash).Distinct().ToList();
             if (hashes.Count == 0)
             {
-                if (client.Target.KeySource == AddonPurgeKeySource.McpApiKey)
-                    rows.Add(Row(user.Id, client.Target, [], now));
+                rows.Add(Row(user.Id, client.Target, [], now));
                 continue;
             }
             rows.AddRange(hashes.Chunk(AddonOutbox.MaxKeyHashesPerRow).Select(chunk => Row(user.Id, client.Target, chunk, now)));
