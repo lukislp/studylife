@@ -3,5 +3,7 @@
   "ExplainWhatText": "Dati nonāk pie tā, kas darbina tavu StudyAtrium serveri (ja to hostē pats, tas esi tu), un tiek izmantoti kļūdu un lēno vietu atrašanai. Tajos nekad nav tavu piezīmju, sesiju vai veselības datu.",
   "ExplainChangeText": "To vari mainīt jebkurā laikā Iestatījumos.",
   "AcceptButton": "Atļaut",
-  "DeclineButton": "Nē, paldies"
+  "DeclineButton": "Nē, paldies",
+  "ErrorText": "Tavu atbildi neizdevās saglabāt. Pārbaudi savienojumu.",
+  "LaterButton": "Pajautāt vēlāk"
 }

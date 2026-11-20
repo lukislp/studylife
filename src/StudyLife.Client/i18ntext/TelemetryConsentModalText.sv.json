@@ -3,5 +3,7 @@
   "ExplainWhatText": "Informationen går till den som driver din StudyAtrium-server (om du driver den själv är det du) och används för att hitta buggar och långsamma delar. Den innehåller aldrig dina anteckningar, sessioner eller hälsodata.",
   "ExplainChangeText": "Du kan ändra detta när som helst i Inställningar.",
   "AcceptButton": "Tillåt",
-  "DeclineButton": "Nej tack"
+  "DeclineButton": "Nej tack",
+  "ErrorText": "Ditt svar kunde inte sparas. Kontrollera din anslutning.",
+  "LaterButton": "Fråga mig senare"
 }

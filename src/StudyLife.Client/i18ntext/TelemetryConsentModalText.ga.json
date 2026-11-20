@@ -3,5 +3,7 @@
   "ExplainWhatText": "Téann na sonraí chuig an té a reáchtálann do fhreastalaí StudyAtrium (más tusa féin a óstálann é, is tusa é) agus úsáidtear iad chun fabhtanna agus moilleanna a aimsiú. Ní bhíonn do nótaí, seisiúin, ná sonraí sláinte iontu choíche.",
   "ExplainChangeText": "Is féidir leat é seo a athrú am ar bith sa Socrú.",
   "AcceptButton": "Ceadaigh",
-  "DeclineButton": "Níl, go raibh maith agat"
+  "DeclineButton": "Níl, go raibh maith agat",
+  "ErrorText": "Níorbh fhéidir do fhreagra a shábháil. Seiceáil do nasc.",
+  "LaterButton": "Fiafraigh díom níos déanaí"
 }

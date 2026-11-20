@@ -358,7 +358,9 @@
             // never shows it again, see TelemetryConsentModal). Demo instances never ask (there is
             // no meaningful account behind the shared demo user to remember an answer for, and
             // TelemetryController drops everything from a demo instance regardless).
-            _showTelemetryConsentModal = !_demoMode && settings.TelemetryConsent is null;
+            // Not asked when the settings are only the built-in defaults (server and cache both
+            // unreachable): their null says nothing about what this account answered earlier.
+            _showTelemetryConsentModal = !_demoMode && !State.SettingsAreDefaultFallback && settings.TelemetryConsent is null;
             await InvokeAsync(StateHasChanged);
 
             // AI add-on: whether the floating AI entry exists at all, and - for an existing AI

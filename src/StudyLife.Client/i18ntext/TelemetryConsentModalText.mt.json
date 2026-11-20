@@ -3,5 +3,7 @@
   "ExplainWhatText": "Id-dejta tmur għand min iħaddem is-server StudyAtrium tiegħek (jekk int tospitah int stess, int dak) u tintuża biex jinstabu bugs u postijiet bil-mod. Qatt ma tinkludi n-noti, is-sessjonijiet, jew id-dejta tas-saħħa tiegħek.",
   "ExplainChangeText": "Tista' tibdel dan fi kwalunkwe ħin fis-Settings.",
   "AcceptButton": "Ippermetti",
-  "DeclineButton": "Le, grazzi"
+  "DeclineButton": "Le, grazzi",
+  "ErrorText": "It-tweġiba tiegħek ma setgħetx tinħażen. Iċċekkja l-konnessjoni tiegħek.",
+  "LaterButton": "Staqsini aktar tard"
 }
