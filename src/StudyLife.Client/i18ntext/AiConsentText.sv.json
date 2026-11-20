@@ -18,5 +18,6 @@
   "LocalRunsHere": "AI:n körs på serverns egen hårdvara. Dina data skickas inte till en extern AI-leverantör.",
   "ConsentGivenOn": "AI-samtycke givet den {0}.",
   "WithdrawButton": "Återkalla samtycket och stäng av AI",
-  "WithdrawConfirmWarning": "Återkallandet stänger av AI och raderar dina indexerade anteckningar och chattdata från AI-tjänsten. Det går inte att ångra."
+  "WithdrawConfirmWarning": "Återkallandet stänger av AI och raderar dina indexerade anteckningar och chattdata från AI-tjänsten. Det går inte att ångra.",
+  "UpdateRequiredError": "Den här appversionen kan inte visa den senaste samtyckestexten. Uppdatera appen och försök igen."
 }

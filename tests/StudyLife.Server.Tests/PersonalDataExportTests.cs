@@ -305,7 +305,7 @@ public class ExportAboutBuilderTests
     {
         public Task<AiCapabilities> GetCapabilitiesAsync(CancellationToken ct) => Task.FromResult(capabilities);
         public Task<AiConsentStatusDto> GetStatusAsync(int userId, CancellationToken ct) => throw new NotSupportedException();
-        public Task<ServiceResult<AiConsentStatusDto>> GrantAsync(int userId, string fingerprint, CancellationToken ct) => throw new NotSupportedException();
+        public Task<ServiceResult<AiConsentStatusDto>> GrantAsync(int userId, string fingerprint, int clientTextVersion, CancellationToken ct) => throw new NotSupportedException();
         public Task<ServiceResult> WithdrawAsync(int userId, CancellationToken ct) => throw new NotSupportedException();
         public Task<ServiceResult> EnsureGrantedAsync(int userId, CancellationToken ct) => throw new NotSupportedException();
         public Task<bool> MayProcessInBackgroundAsync(int userId, CancellationToken ct) => throw new NotSupportedException();

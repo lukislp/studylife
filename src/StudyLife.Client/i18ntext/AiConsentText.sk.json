@@ -18,5 +18,6 @@
   "LocalRunsHere": "AI beží na vlastnom hardvéri tohto servera. Vaše údaje sa neodosielajú externému poskytovateľovi AI.",
   "ConsentGivenOn": "Súhlas s AI udelený {0}.",
   "WithdrawButton": "Odvolať súhlas a vypnúť AI",
-  "WithdrawConfirmWarning": "Odvolaním sa AI vypne a vaše indexované poznámky a údaje chatu sa zo služby AI odstránia. Nedá sa to vrátiť späť."
+  "WithdrawConfirmWarning": "Odvolaním sa AI vypne a vaše indexované poznámky a údaje chatu sa zo služby AI odstránia. Nedá sa to vrátiť späť.",
+  "UpdateRequiredError": "Táto verzia aplikácie nevie zobraziť najnovší text súhlasu. Aktualizuj aplikáciu a skús to znova."
 }

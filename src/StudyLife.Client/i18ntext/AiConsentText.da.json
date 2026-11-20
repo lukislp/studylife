@@ -18,5 +18,6 @@
   "LocalRunsHere": "AI'en kører på denne servers egen hardware. Dine data sendes ikke til en ekstern AI-udbyder.",
   "ConsentGivenOn": "AI-samtykke givet den {0}.",
   "WithdrawButton": "Træk samtykket tilbage og sluk AI",
-  "WithdrawConfirmWarning": "Tilbagetrækning slår AI fra og sletter dine indekserede noter og chatdata fra AI-tjenesten. Det kan ikke fortrydes."
+  "WithdrawConfirmWarning": "Tilbagetrækning slår AI fra og sletter dine indekserede noter og chatdata fra AI-tjenesten. Det kan ikke fortrydes.",
+  "UpdateRequiredError": "Denne version af appen kan ikke vise den nyeste samtyktetekst. Opdater appen, og prøv igen."
 }

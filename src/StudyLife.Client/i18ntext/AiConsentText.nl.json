@@ -18,5 +18,6 @@
   "LocalRunsHere": "De AI draait op de eigen hardware van deze server. Je gegevens worden niet naar een externe AI-aanbieder gestuurd.",
   "ConsentGivenOn": "Toestemming voor AI gegeven op {0}.",
   "WithdrawButton": "Toestemming intrekken en AI uitzetten",
-  "WithdrawConfirmWarning": "Intrekken zet AI uit en verwijdert je geïndexeerde notities en chatgegevens uit de AI-dienst. Dit kan niet ongedaan worden gemaakt."
+  "WithdrawConfirmWarning": "Intrekken zet AI uit en verwijdert je geïndexeerde notities en chatgegevens uit de AI-dienst. Dit kan niet ongedaan worden gemaakt.",
+  "UpdateRequiredError": "Deze appversie kan de nieuwste toestemmingstekst niet tonen. Werk de app bij en probeer het opnieuw."
 }

@@ -18,5 +18,6 @@
   "LocalRunsHere": "UI deluje na lastni strojni opremi tega strežnika. Vaši podatki se ne pošiljajo zunanjemu ponudniku UI.",
   "ConsentGivenOn": "Soglasje za UI podano {0}.",
   "WithdrawButton": "Prekliči soglasje in izklopi UI",
-  "WithdrawConfirmWarning": "S preklicem se UI izklopi, vaši indeksirani zapiski in podatki klepeta pa se izbrišejo iz storitve UI. Tega ni mogoče razveljaviti."
+  "WithdrawConfirmWarning": "S preklicem se UI izklopi, vaši indeksirani zapiski in podatki klepeta pa se izbrišejo iz storitve UI. Tega ni mogoče razveljaviti.",
+  "UpdateRequiredError": "Ta različica aplikacije ne more prikazati najnovejšega besedila soglasja. Posodobi aplikacijo in poskusi znova."
 }

@@ -18,5 +18,6 @@
   "LocalRunsHere": "Tekoäly toimii tämän palvelimen omalla laitteistolla. Tietojasi ei lähetetä ulkoiselle tekoälypalveluntarjoajalle.",
   "ConsentGivenOn": "Tekoälysuostumus annettu {0}.",
   "WithdrawButton": "Peru suostumus ja kytke tekoäly pois",
-  "WithdrawConfirmWarning": "Peruutus kytkee tekoälyn pois ja poistaa indeksoidut muistiinpanosi ja keskustelutietosi tekoälypalvelusta. Sitä ei voi perua."
+  "WithdrawConfirmWarning": "Peruutus kytkee tekoälyn pois ja poistaa indeksoidut muistiinpanosi ja keskustelutietosi tekoälypalvelusta. Sitä ei voi perua.",
+  "UpdateRequiredError": "Tämä sovellusversio ei voi näyttää uusinta suostumustekstiä. Päivitä sovellus ja yritä uudelleen."
 }

@@ -1550,6 +1550,10 @@ public class AiConsentStatusDto
     /// <summary>The user must be asked now because they use (or are about to use) AI without a
     /// covering consent.</summary>
     public bool NeedsDecision { get; set; }
+    /// <summary>The disclosure text version the server requires (<see cref="AiConsentTextVersion"/>).
+    /// A client whose own text is older cannot collect a valid consent and should ask the user to
+    /// update. 0 from servers that predate the field.</summary>
+    public int TextVersion { get; set; }
 }
 
 /// <summary>Body of POST /api/ai/consent/grant.</summary>
@@ -1559,6 +1563,11 @@ public class AiConsentGrantRequestDto
     /// characters). Rejected with 400 when malformed and 409 when the description changed in the
     /// meantime.</summary>
     public string Fingerprint { get; set; } = "";
+    /// <summary>The disclosure text version (<see cref="AiConsentTextVersion.Current"/> of the
+    /// client build) the dialog actually rendered. 0 or missing = a client from before this field
+    /// (read as <see cref="AiConsentTextVersion.AssumedWhenMissing"/>). A version older than the
+    /// server's is answered with 409 and nothing is recorded.</summary>
+    public int TextVersion { get; set; }
 }
 
 // Audit finding M4: JSON export/import ("v2") - BackupController.Export/ImportJson. Unlike the

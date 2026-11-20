@@ -18,5 +18,6 @@
   "LocalRunsHere": "Az MI a szerver saját hardverén fut. Az adataid nem kerülnek külső MI-szolgáltatóhoz.",
   "ConsentGivenOn": "MI-hozzájárulás megadva: {0}.",
   "WithdrawButton": "Hozzájárulás visszavonása és az MI kikapcsolása",
-  "WithdrawConfirmWarning": "A visszavonás kikapcsolja az MI-t, és törli az indexelt jegyzeteidet és csevegési adataidat az MI-szolgáltatásból. Ez nem vonható vissza."
+  "WithdrawConfirmWarning": "A visszavonás kikapcsolja az MI-t, és törli az indexelt jegyzeteidet és csevegési adataidat az MI-szolgáltatásból. Ez nem vonható vissza.",
+  "UpdateRequiredError": "Az alkalmazás ezen verziója nem tudja megjeleníteni a legfrissebb hozzájárulási szöveget. Frissítsd az alkalmazást, és próbáld újra."
 }

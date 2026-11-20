@@ -18,5 +18,6 @@
   "LocalRunsHere": "La IA se ejecuta en el propio hardware de este servidor. Tus datos no se envían a un proveedor de IA externo.",
   "ConsentGivenOn": "Consentimiento de IA otorgado el {0}.",
   "WithdrawButton": "Retirar el consentimiento y desactivar la IA",
-  "WithdrawConfirmWarning": "Al retirarlo se desactiva la IA y se eliminan del servicio de IA tus notas indexadas y tus datos de chat. No se puede deshacer."
+  "WithdrawConfirmWarning": "Al retirarlo se desactiva la IA y se eliminan del servicio de IA tus notas indexadas y tus datos de chat. No se puede deshacer.",
+  "UpdateRequiredError": "Esta versión de la app no puede mostrar el texto de consentimiento más reciente. Actualiza la app e inténtalo de nuevo."
 }
