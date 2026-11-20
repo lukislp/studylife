@@ -1106,7 +1106,7 @@ else
         if (diff.TotalMinutes < 1) return T.JustNow;
         if (diff.TotalHours < 1) return string.Format(T.MinAgo ?? "", (int)diff.TotalMinutes);
         if (diff.TotalDays < 1) return string.Format(T.HourAgo ?? "", (int)diff.TotalHours);
-        if (diff.TotalDays < 7) return string.Format(T.DayAgo ?? "", (int)diff.TotalDays);
+        if (diff.TotalDays < 7) return Plural.Format(T.DayAgo, (int)diff.TotalDays);
         return LocalDate.Short(dt);
     }
 

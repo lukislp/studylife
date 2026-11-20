@@ -47,7 +47,7 @@
                 @if (row.DaysRemaining.HasValue && !row.IsCompleted)
                 {
                     <span class="@(row.DaysRemaining < 0 ? "csr-overdue" : "")">
-                        @(row.DaysRemaining >= 0 ? string.Format(DueInDaysFormat, row.DaysRemaining) : string.Format(OverdueByDaysFormat, -row.DaysRemaining.Value))
+                        @(row.DaysRemaining >= 0 ? Plural.Format(DueInDaysFormat, row.DaysRemaining.Value) : Plural.Format(OverdueByDaysFormat, -row.DaysRemaining.Value))
                     </span>
                 }
                 @if (row.SparkPercents.Count > 0)

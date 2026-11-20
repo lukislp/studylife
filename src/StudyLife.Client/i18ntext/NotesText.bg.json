@@ -24,7 +24,7 @@
   "JustNow": "току-що",
   "MinAgo": "преди {0} мин",
   "HourAgo": "преди {0} ч",
-  "DayAgo": "преди {0} ден(и)",
+  "DayAgo": "one=преди {0} ден|other=преди {0} дни",
   "NoContent": "Няма съдържание",
   "SearchPlaceholder": "Търсене на бележки…",
   "AllCoursesOption": "Всички курсове",

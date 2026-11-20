@@ -24,8 +24,8 @@
   "TableStatus": "Estado",
   "StatusCompleted": "Completado",
   "StatusInProgress": "En curso",
-  "StatusOverdueFormat": "Atrasado {0} día(s)",
-  "StatusDueFormat": "Vence en {0} día(s)",
+  "StatusOverdueFormat": "one=Atrasado {0} día|other=Atrasado {0} días",
+  "StatusDueFormat": "one=Vence en {0} día|other=Vence en {0} días",
   "NoCourses": "Todavía no se han registrado sesiones de estudio completadas.",
   "FooterNote": "Generado automáticamente por StudyAtrium.",
   "ReportButton": "📄 Exportar informe de estudios"

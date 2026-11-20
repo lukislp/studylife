@@ -24,7 +24,7 @@
   "JustNow": "zojuist",
   "MinAgo": "{0} min geleden",
   "HourAgo": "{0} u geleden",
-  "DayAgo": "{0} dag(en) geleden",
+  "DayAgo": "one={0} dag geleden|other={0} dagen geleden",
   "NoContent": "Geen inhoud",
   "SearchPlaceholder": "Notities zoeken…",
   "AllCoursesOption": "Alle cursussen",

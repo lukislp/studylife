@@ -90,7 +90,7 @@
   "TimerModeAddButton": "Żid mod",
   "ReminderMinutesFormat": "{0} min",
   "ReminderTodayLabel": "Illum",
-  "ReminderDaysFormat": "{0} jum(ijiet)",
+  "ReminderDaysFormat": "few={0} jiem|other={0} jum",
   "ReminderCustomValuesLabel": "Personalizzat: {0}",
   "BackupHeading": "Backup u Esportazzjoni",
   "BackupDesc": "Niżżel kopja konsistenti tad-database tiegħek, jew esporta d-data tiegħek bħala JSON. Backup jinħoloq ukoll awtomatikament kull ġimgħa — jinżammu l-aħħar 4.",

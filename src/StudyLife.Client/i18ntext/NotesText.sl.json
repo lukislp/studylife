@@ -24,7 +24,7 @@
   "JustNow": "pravkar",
   "MinAgo": "pred {0} min",
   "HourAgo": "pred {0} h",
-  "DayAgo": "pred {0} dnevi",
+  "DayAgo": "one=pred {0} dnevom|two=pred {0} dnevoma|other=pred {0} dnevi",
   "NoContent": "Brez vsebine",
   "SearchPlaceholder": "Iskanje po zapiskih…",
   "AllCoursesOption": "Vsi predmeti",

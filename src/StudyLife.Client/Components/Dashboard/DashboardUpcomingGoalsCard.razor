@@ -14,7 +14,7 @@
                 <div class="exam-date">
                     @LocalDate.Short(g.TargetDate!.Value)
                     <span class="exam-days">
-                        @(DaysRemaining(g) >= 0 ? string.Format(InDaysFormat, DaysRemaining(g)) : string.Format(OverdueByDaysFormat, -DaysRemaining(g)))
+                        @(DaysRemaining(g) >= 0 ? Plural.Format(InDaysFormat, DaysRemaining(g)) : Plural.Format(OverdueByDaysFormat, -DaysRemaining(g)))
                     </span>
                 </div>
             </div>

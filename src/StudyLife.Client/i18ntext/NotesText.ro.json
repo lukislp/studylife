@@ -24,7 +24,7 @@
   "JustNow": "chiar acum",
   "MinAgo": "acum {0} min",
   "HourAgo": "acum {0} h",
-  "DayAgo": "acum {0} zi(le)",
+  "DayAgo": "one=acum {0} zi|few=acum {0} zile|other=acum {0} de zile",
   "NoContent": "Fără conținut",
   "SearchPlaceholder": "Caută notițe…",
   "AllCoursesOption": "Toate cursurile",

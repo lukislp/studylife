@@ -24,8 +24,8 @@
   "TableStatus": "Status",
   "StatusCompleted": "Abgeschlossen",
   "StatusInProgress": "In Bearbeitung",
-  "StatusOverdueFormat": "Ziel überfällig seit {0} Tag(en)",
-  "StatusDueFormat": "Ziel in {0} Tag(en)",
+  "StatusOverdueFormat": "one=Ziel überfällig seit {0} Tag|other=Ziel überfällig seit {0} Tagen",
+  "StatusDueFormat": "one=Ziel in {0} Tag|other=Ziel in {0} Tagen",
   "NoCourses": "Noch keine abgeschlossenen Lernsessions erfasst.",
   "FooterNote": "Automatisch erstellt von StudyAtrium.",
   "ReportButton": "📄 Studienbericht exportieren"

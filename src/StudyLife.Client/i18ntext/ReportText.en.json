@@ -24,8 +24,8 @@
   "TableStatus": "Status",
   "StatusCompleted": "Completed",
   "StatusInProgress": "In progress",
-  "StatusOverdueFormat": "Overdue by {0} day(s)",
-  "StatusDueFormat": "Due in {0} day(s)",
+  "StatusOverdueFormat": "one=Overdue by {0} day|other=Overdue by {0} days",
+  "StatusDueFormat": "one=Due in {0} day|other=Due in {0} days",
   "NoCourses": "No completed study sessions recorded yet.",
   "FooterNote": "Generated automatically by StudyAtrium.",
   "ReportButton": "📄 Export study report"

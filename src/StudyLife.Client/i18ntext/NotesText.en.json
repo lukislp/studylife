@@ -24,7 +24,7 @@
   "JustNow": "just now",
   "MinAgo": "{0} min ago",
   "HourAgo": "{0} h ago",
-  "DayAgo": "{0} day(s) ago",
+  "DayAgo": "one={0} day ago|other={0} days ago",
   "NoContent": "No content",
   "SearchPlaceholder": "Search notes…",
   "AllCoursesOption": "All courses",

@@ -24,7 +24,7 @@
   "JustNow": "práve teraz",
   "MinAgo": "pred {0} min",
   "HourAgo": "pred {0} h",
-  "DayAgo": "pred {0} dňami",
+  "DayAgo": "one=pred {0} dňom|other=pred {0} dňami",
   "NoContent": "Žiadny obsah",
   "SearchPlaceholder": "Hľadať poznámky…",
   "AllCoursesOption": "Všetky kurzy",

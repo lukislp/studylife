@@ -24,7 +24,7 @@
   "JustNow": "upravo sada",
   "MinAgo": "prije {0} min",
   "HourAgo": "prije {0} h",
-  "DayAgo": "prije {0} dan(a)",
+  "DayAgo": "one=prije {0} dan|other=prije {0} dana",
   "NoContent": "Nema sadržaja",
   "SearchPlaceholder": "Pretraži bilješke…",
   "AllCoursesOption": "Svi kolegiji",

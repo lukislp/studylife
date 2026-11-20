@@ -90,7 +90,7 @@
   "TimerModeAddButton": "Dodaj način",
   "ReminderMinutesFormat": "{0} min",
   "ReminderTodayLabel": "Danes",
-  "ReminderDaysFormat": "{0} dni",
+  "ReminderDaysFormat": "one={0} dan|two={0} dneva|other={0} dni",
   "ReminderCustomValuesLabel": "Po meri: {0}",
   "BackupHeading": "Varnostna kopija in izvoz",
   "BackupDesc": "Prenesite dosledno kopijo svoje podatkovne baze ali izvozite podatke kot JSON. Poleg tega se enkrat tedensko samodejno ustvari varnostna kopija — ohranijo se zadnje 4.",

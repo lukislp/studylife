@@ -24,7 +24,7 @@
   "JustNow": "gerade eben",
   "MinAgo": "vor {0} Min.",
   "HourAgo": "vor {0} Std.",
-  "DayAgo": "vor {0} Tag(en)",
+  "DayAgo": "one=vor {0} Tag|other=vor {0} Tagen",
   "NoContent": "Keine Inhalte",
   "SearchPlaceholder": "Notizen durchsuchen…",
   "AllCoursesOption": "Alle Kurse",

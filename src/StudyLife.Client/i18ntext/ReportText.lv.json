@@ -24,8 +24,8 @@
   "TableStatus": "Statuss",
   "StatusCompleted": "Pabeigts",
   "StatusInProgress": "Norisinās",
-  "StatusOverdueFormat": "Nokavēts par {0} dienu(ām)",
-  "StatusDueFormat": "Termiņš pēc {0} dienas(ām)",
+  "StatusOverdueFormat": "one=Nokavēts par {0} dienu|other=Nokavēts par {0} dienām",
+  "StatusDueFormat": "one=Termiņš pēc {0} dienas|other=Termiņš pēc {0} dienām",
   "NoCourses": "Vēl nav reģistrēta neviena pabeigta mācību sesija.",
   "FooterNote": "Automātiski izveidojis StudyAtrium.",
   "ReportButton": "📄 Eksportēt studiju atskaiti"

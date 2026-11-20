@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 using StudyLife.Client.Components.Dashboard;
+using StudyLife.Client.Services;
 using StudyLife.Shared;
 
 namespace StudyLife.Client.Pages;
@@ -61,7 +62,7 @@ public partial class Index
 
         _neglectedCourse = new DashboardNeglectedCourseCard.NeglectedCourse(pick.Name, pick.Icon, pick.Color);
         _neglectedCourseHint = pick.DaysSinceLastStudied.HasValue
-            ? string.Format(T.LastStudiedDaysAgo ?? "", pick.DaysSinceLastStudied.Value)
+            ? Plural.Format(T.LastStudiedDaysAgo, pick.DaysSinceLastStudied.Value)
             : string.Format(T.NotStudiedYet ?? "", StudyMetrics.NeglectedCourseHistoryDays);
     }
 

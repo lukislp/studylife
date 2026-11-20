@@ -90,7 +90,7 @@
   "TimerModeAddButton": "Lisää tila",
   "ReminderMinutesFormat": "{0} min",
   "ReminderTodayLabel": "Tänään",
-  "ReminderDaysFormat": "{0} päivää",
+  "ReminderDaysFormat": "one={0} päivä|other={0} päivää",
   "ReminderCustomValuesLabel": "Mukautetut: {0}",
   "BackupHeading": "Varmuuskopio ja vienti",
   "BackupDesc": "Lataa yhtenäinen kopio tietokannastasi tai vie tietosi JSON-muodossa. Lisäksi varmuuskopio luodaan automaattisesti kerran viikossa — viimeiset 4 säilytetään.",

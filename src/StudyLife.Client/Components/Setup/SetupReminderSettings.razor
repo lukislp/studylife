@@ -151,5 +151,5 @@
     private string GetSessionMinuteLabel(int minutes) => string.Format(T.ReminderMinutesFormat ?? "", minutes);
 
     private string GetCourseGoalDayLabel(int days) =>
-        days == 0 ? (T.ReminderTodayLabel ?? "") : string.Format(T.ReminderDaysFormat ?? "", days);
+        days == 0 ? (T.ReminderTodayLabel ?? "") : Plural.Format(T.ReminderDaysFormat, days);
 }

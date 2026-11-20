@@ -23,6 +23,8 @@ EXPECTED_LANGUAGES = {"bg", "cs", "da", "de", "el", "en", "es", "et", "fi", "fr"
 I18N_DIR = Path("src/StudyLife.Client/i18ntext")
 SERVER_TEXT_DIR = Path("src/StudyLife.Server/Texts")
 PLACEHOLDER = re.compile(r"\{[^{}]*\}")
+PLURAL_CATEGORIES = ("zero", "one", "two", "few", "many", "other")
+PLURAL_VARIANT = re.compile(r"^(zero|one|two|few|many|other)=")
 
 
 def discover_tables():
@@ -42,6 +44,27 @@ def load_keys(file_path):
     with open(file_path, "r", encoding="utf-8-sig") as f:
         data = json.load(f)
         return set(data.keys())
+
+
+def check_plural_values(table_name):
+    """A value written as plural variants ("one=... day|other=... days", see Services/Plural.cs)
+    needs the fallback variant "other", and every variant has to keep the {0} count."""
+    ok = True
+    for lang in sorted(EXPECTED_LANGUAGES):
+        with open(I18N_DIR / f"{table_name}.{lang}.json", "r", encoding="utf-8-sig") as f:
+            data = json.load(f)
+        for key, value in data.items():
+            if not isinstance(value, str) or not PLURAL_VARIANT.match(value):
+                continue
+            variants = value.split("|")
+            names = [v.split("=", 1)[0] for v in variants]
+            if not all(PLURAL_VARIANT.match(v) for v in variants) or "other" not in names or len(set(names)) != len(names):
+                ok = False
+                print(f"MISMATCH {table_name}.{lang}.{key}: plural variants need unique categories and an \"other\" variant")
+            elif any("{0}" not in v for v in variants):
+                ok = False
+                print(f"MISMATCH {table_name}.{lang}.{key}: every plural variant must contain {{0}}")
+    return ok
 
 
 def check_table(table_name):
@@ -88,6 +111,9 @@ def check_table(table_name):
             missing = reference_keys - lang_keys
             extra = lang_keys - reference_keys
             mismatches[lang] = {"missing": missing, "extra": extra}
+
+    if all_match and not check_plural_values(table_name):
+        return False
 
     if all_match:
         key_count = len(reference_keys)

@@ -90,7 +90,7 @@
   "TimerModeAddButton": "Adaugă mod",
   "ReminderMinutesFormat": "{0} min",
   "ReminderTodayLabel": "Astăzi",
-  "ReminderDaysFormat": "{0} zi(le)",
+  "ReminderDaysFormat": "one={0} zi|few={0} zile|other={0} de zile",
   "ReminderCustomValuesLabel": "Personalizat: {0}",
   "BackupHeading": "Backup și export",
   "BackupDesc": "Descarcă o copie consistentă a bazei tale de date sau exportă datele ca JSON. În plus, se creează automat un backup săptămânal — se păstrează ultimele 4.",

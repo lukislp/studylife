@@ -321,8 +321,12 @@ public static class DashboardSummaryBuilder
         var daysElapsed = DaysElapsedInWeek(weekStart, today);
         var lastWeekHoursVal = PartialWeekHours(completedHistory, weekStart.AddDays(-7), daysElapsed);
         var deltaHours = weekStudiedHours - lastWeekHoursVal;
+        // No change (to the minute) is not a trend: no label, so the page shows no "▲ 0h".
+        var levelWithLastWeek = Math.Round(Math.Abs(deltaHours) * 60) == 0;
         result.WeekDeltaUp = deltaHours >= 0;
-        result.WeekDeltaLabel = StudyMetrics.FormatHoursMinutes(Math.Abs(deltaHours), omitZeroMinutes: true);
+        result.WeekDeltaLabel = levelWithLastWeek
+            ? null
+            : StudyMetrics.FormatHoursMinutes(Math.Abs(deltaHours), omitZeroMinutes: true);
 
         // Recently completed sessions (quick "what did I last study" recall)
         result.RecentSessions = completedHistory

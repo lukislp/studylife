@@ -24,8 +24,8 @@
   "TableStatus": "Stav",
   "StatusCompleted": "Dokončeno",
   "StatusInProgress": "Probíhá",
-  "StatusOverdueFormat": "Termín překročen o {0} den/dní",
-  "StatusDueFormat": "Termín za {0} den/dní",
+  "StatusOverdueFormat": "one=Termín překročen o {0} den|few=Termín překročen o {0} dny|other=Termín překročen o {0} dní",
+  "StatusDueFormat": "one=Termín za {0} den|few=Termín za {0} dny|other=Termín za {0} dní",
   "NoCourses": "Zatím nejsou zaznamenány žádné dokončené studijní seance.",
   "FooterNote": "Automaticky vytvořeno aplikací StudyAtrium.",
   "ReportButton": "📄 Exportovat studijní zprávu"

@@ -90,7 +90,7 @@
   "TimerModeAddButton": "Add mode",
   "ReminderMinutesFormat": "{0} min",
   "ReminderTodayLabel": "Today",
-  "ReminderDaysFormat": "{0} day(s)",
+  "ReminderDaysFormat": "one={0} day|other={0} days",
   "ReminderCustomValuesLabel": "Custom: {0}",
   "BackupHeading": "Backup & Export",
   "BackupDesc": "Download a consistent copy of your database, or export your data as JSON. A backup is also created automatically every week and the last 4 are kept.",

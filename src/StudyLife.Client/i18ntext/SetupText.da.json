@@ -90,7 +90,7 @@
   "TimerModeAddButton": "Tilføj tilstand",
   "ReminderMinutesFormat": "{0} min",
   "ReminderTodayLabel": "I dag",
-  "ReminderDaysFormat": "{0} dag(e)",
+  "ReminderDaysFormat": "one={0} dag|other={0} dage",
   "ReminderCustomValuesLabel": "Brugerdefineret: {0}",
   "BackupHeading": "Backup & eksport",
   "BackupDesc": "Download en konsistent kopi af din database, eller eksportér dine data som JSON. Der oprettes desuden automatisk en backup hver uge — de seneste 4 gemmes.",

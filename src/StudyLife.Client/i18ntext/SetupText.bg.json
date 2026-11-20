@@ -90,7 +90,7 @@
   "TimerModeAddButton": "Добави режим",
   "ReminderMinutesFormat": "{0} мин",
   "ReminderTodayLabel": "Днес",
-  "ReminderDaysFormat": "{0} ден(и)",
+  "ReminderDaysFormat": "one={0} ден|other={0} дни",
   "ReminderCustomValuesLabel": "Персонализирани: {0}",
   "BackupHeading": "Архивиране и износ",
   "BackupDesc": "Изтеглете последователно копие на базата данни или изнесете данните си като JSON. Автоматично се създава архив всяка седмица, като се пазят последните 4.",

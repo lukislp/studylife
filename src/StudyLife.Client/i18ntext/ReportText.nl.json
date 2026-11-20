@@ -24,8 +24,8 @@
   "TableStatus": "Status",
   "StatusCompleted": "Afgerond",
   "StatusInProgress": "Bezig",
-  "StatusOverdueFormat": "{0} dag(en) te laat",
-  "StatusDueFormat": "Over {0} dag(en)",
+  "StatusOverdueFormat": "one={0} dag te laat|other={0} dagen te laat",
+  "StatusDueFormat": "one=Over {0} dag|other=Over {0} dagen",
   "NoCourses": "Nog geen afgeronde studiesessies geregistreerd.",
   "FooterNote": "Automatisch gegenereerd door StudyAtrium.",
   "ReportButton": "📄 Studierapport exporteren"

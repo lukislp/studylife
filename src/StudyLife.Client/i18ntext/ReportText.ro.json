@@ -24,8 +24,8 @@
   "TableStatus": "Stare",
   "StatusCompleted": "Finalizat",
   "StatusInProgress": "În desfășurare",
-  "StatusOverdueFormat": "Întârziat cu {0} zi(le)",
-  "StatusDueFormat": "Termen în {0} zi(le)",
+  "StatusOverdueFormat": "one=Întârziat cu {0} zi|few=Întârziat cu {0} zile|other=Întârziat cu {0} de zile",
+  "StatusDueFormat": "one=Termen în {0} zi|few=Termen în {0} zile|other=Termen în {0} de zile",
   "NoCourses": "Nu există încă sesiuni de studiu finalizate înregistrate.",
   "FooterNote": "Generat automat de StudyAtrium.",
   "ReportButton": "📄 Exportă raportul de studiu"
