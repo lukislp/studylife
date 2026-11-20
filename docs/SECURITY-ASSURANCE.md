@@ -257,12 +257,18 @@ restart.
   HTTPRoute. StudyAtrium no longer uses them (`RequireHttps`). The NetworkPolicies still admit
   StudyAtrium on them for the switch-over and can drop those ports afterwards.
 - The account-deletion purge call to studylife-mcp, studylife-alexa and studylife-telegram
-  (`AddonPurge:<Addon>:BaseUrl`, port `8000`). These add-ons do not serve TLS yet, so the
-  deployments exempt exactly these three URLs from `RequireHttps` with
-  `AddonPurge__<Addon>__AllowPlainHttp=true`. The call carries a purge-only shared secret (it can
-  delete that add-on's data of a user, nothing else) and SHA-256 hashes of already deleted keys.
-  NetworkPolicies on both sides admit only the web and worker pods. Switch the URLs to `https://`
-  and drop the exemption once the add-ons serve TLS (ROADMAP).
+  (`AddonPurge:<Addon>:BaseUrl`) goes over HTTPS on port `8443` like the other add-on hops: each
+  add-on serves a cert-manager certificate from the internal CA, StudyAtrium validates it
+  (CA + host name) and `RequireHttps` refuses `http://`. The deployments no longer set
+  `AddonPurge__<Addon>__AllowPlainHttp`. That per-add-on exemption still exists for a self-hosted
+  add-on that cannot serve TLS (default off, a warning at every start); it never turns the
+  certificate validation off. The call carries a purge-only shared secret (it can delete that
+  add-on's data of a user, nothing else) and SHA-256 hashes of already deleted keys.
+  NetworkPolicies on both sides admit only the web and worker pods. Rollout order for the move
+  from `http://...:8000`: add-ons first (Certificate, listener, add-on NetworkPolicies applied by
+  hand), then StudyAtrium's NetworkPolicy (`k8s/12-network-policies.yaml`, by hand), then the
+  `k8s/04-web.yaml` / `k8s/05-worker.yaml` merge that switches the URLs. Purges that fail in
+  between stay in the outbox and are retried.
 - The web and worker pods' own plain port `8080` and metrics port, for probes and Prometheus,
   next to the TLS backend port `8443` that the gateway uses (TB2).
 - The OTLP export from web and worker to the in-cluster OpenTelemetry collector
@@ -329,7 +335,7 @@ ZAP findings themselves do not fail the workflow; they are triaged here. The fir
 | Risk | Why accepted | Mitigation |
 |---|---|---|
 | Plain-HTTP ports kept in the cluster: add-on probe/metrics ports, the developer portal's gateway → pod hop, OTLP to the collector (8.3) | Probes, Prometheus and the gateway have no client certificate setup for these targets yet; none of these hops carries StudyAtrium's add-on secrets or user credentials | StudyAtrium → add-on calls are HTTPS-only (`AddonTls:RequireHttps`, CA + host-name validation). NetworkPolicies restrict each port to its caller. Follow-ups in [ROADMAP.md](../ROADMAP.md). |
-| Account-deletion purge to studylife-mcp/-alexa/-telegram over plain HTTP (8.3) | Those add-ons do not serve TLS yet; someone sniffing pod traffic could replay the purge-only secret and delete a user's add-on data (not read it) | Explicit per-add-on exemption (`AddonPurge:<Addon>:AllowPlainHttp`), NetworkPolicies on both sides admit only web and worker, only key hashes travel. Follow-up in [ROADMAP.md](../ROADMAP.md). |
+| Account-deletion purge to a self-hosted add-on without TLS over plain HTTP (8.3) | An operator who does not give the add-on a certificate keeps `http://` (explicit `AddonPurge:<Addon>:AllowPlainHttp` under `RequireHttps`, otherwise a startup warning); someone sniffing that network could replay the purge-only secret and delete a user's add-on data (not read it) | Off in the supplied Kubernetes setup (HTTPS + CA validation). Where used: private network, NetworkPolicies/firewall, only key hashes travel. |
 | Redis cluster bus (gossip) in plaintext | `tls-cluster yes` broke the pod-IP-based cluster during a rolling update ([SCALING.md](SCALING.md)) | Bus port reachable only between Redis pods (NetworkPolicy). No user payload on the bus beyond replication. |
 | Redis password visible in the Redis process command line | Redis reads it as CLI flags from a Secret | Visible only to someone who can exec into the Redis pod, which is already past the boundary |
 | `X-Forwarded-For` trust on a flat pod network | No CIDR can single out the gateway | Default trust is loopback + container gateway only (2026-11-16 M8), Kubernetes lists its pod CIDR explicitly; IP-independent global buckets for recovery login, account deletion, registration (setup code) and device-link codes; configurable `KnownNetworks` |
@@ -347,6 +353,7 @@ ZAP findings themselves do not fail the workflow; they are triaged here. The fir
 | 2026-08 / 2026-09 | Multi-user overhaul (phases 1–3), audit rounds A1–A6, S1–S12, O1–O6 | Maintainer (internal) | Findings and fixes documented in [ARCHITECTURE.md](ARCHITECTURE.md#security), each with regression tests |
 | 2026-11-03 | This assurance case: requirements, trust boundaries, TLS validation of internal peers | Maintainer (internal) | TLS validation for Redis and the K8s API fixed. In-cluster plain-HTTP hops assessed and planned (8.3). Residual risks listed (9). |
 | 2026-11-04 | TLS for the add-on hops | Maintainer (internal) | studylife-ai, studylife-webhooks and studylife-developers serve HTTPS from the internal CA; StudyAtrium calls them over `https://` with CA and host-name validation and `RequireHttps` (8.3). Remaining plain-HTTP ports listed (9). |
+| 2026-11-20 | TLS for the account-deletion purge hop | Maintainer (internal) | studylife-mcp, studylife-alexa and studylife-telegram serve HTTPS from the internal CA; the purge call validates it (CA + host name) and the Kubernetes deployments drop `AllowPlainHttp` (8.3). |
 
 No external security review has taken place so far. The next internal review is due when a
 trust boundary changes, and at the latest after twelve months.

@@ -410,9 +410,10 @@ spec:
         - { protocol: TCP, port: 8443 }
         - { protocol: TCP, port: 8000 }
     # The account-deletion purge (AddonPurge__*__BaseUrl in k8s/04-web.yaml/05-worker.yaml):
-    # web makes the first attempt, the worker's outbox retries, so both pod roles need it. Plain
-    # HTTP on 8000 until these add-ons serve TLS. Each add-on admits the two roles in its own
-    # policy file (allow-studylife-server-to-<add-on>).
+    # web makes the first attempt, the worker's outbox retries, so both pod roles need it. HTTPS
+    # on 8443; the plain 8000 stays listed only for the switch-over (this file is applied by hand
+    # before the Flux-reconciled https:// URLs go live) and can be dropped afterwards. Each
+    # add-on admits the two roles in its own policy file (allow-studylife-server-to-<add-on>).
     - to:
         - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: studylife-mcp } }
           podSelector: { matchLabels: { app: studylife-mcp } }
@@ -421,6 +422,7 @@ spec:
         - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: studylife-telegram } }
           podSelector: { matchLabels: { app: studylife-telegram } }
       ports:
+        - { protocol: TCP, port: 8443 }
         - { protocol: TCP, port: 8000 }
     - to:
         - ipBlock:
