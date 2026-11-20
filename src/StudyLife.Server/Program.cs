@@ -624,7 +624,10 @@ builder.Services.AddSingleton(sp => new DeveloperProxyClient(
 builder.Services.AddSingleton(sp => AddonPurgeClients.Create(
     sp.GetRequiredService<Microsoft.Extensions.Options.IOptionsMonitor<AddonPurgeOptions>>(),
     sp.GetRequiredService<ILogger<AddonPurgeClient>>(),
-    () => sp.GetRequiredService<AddonTlsTrust>().CreateHttpClient(AddonPurgeClient.RequestTimeout)));
+    () => sp.GetRequiredService<AddonTlsTrust>().CreateHttpClient(AddonPurgeClient.RequestTimeout),
+    // The pinned public origin lets add-ons that store the user id match a link by user id + instance.
+    () => sp.GetRequiredService<Microsoft.Extensions.Options.IOptionsMonitor<Fido2Options>>().CurrentValue
+        .Origins?.FirstOrDefault(o => !string.IsNullOrWhiteSpace(o))?.Trim()));
 // Raw DB backup/restore + the former file-based VAPID/setup-secret storage are bound to a
 // local single SQLite file (online backup API, PRAGMA integrity_check, file swap) -
 // deliberately NOT registered in Postgres mode (multiple pods, no guaranteed shared volume);

@@ -57,6 +57,18 @@ public class AddonPurgeClientTests
     }
 
     [Fact]
+    public async Task Purge_WithAPinnedInstanceUrl_SendsItNextToTheHashes()
+    {
+        var handler = new RecordingHandler(_ => new HttpResponseMessage(HttpStatusCode.NoContent));
+        var client = new AddonPurgeClient(AddonPurgeTarget.Alexa,
+            new AddonPurgeOptions { BaseUrl = "https://alexa.test", SharedSecret = "purge-secret" },
+            NullLogger<AddonPurgeClient>.Instance, new HttpClient(handler), () => "https://studyatrium.test");
+
+        Assert.True(await client.PurgeUserAsync(7, [], CancellationToken.None));
+        Assert.Equal("{\"key_hashes\":[],\"instance_url\":\"https://studyatrium.test\"}", Assert.Single(handler.Requests).Body);
+    }
+
+    [Fact]
     public async Task Purge_WithoutHashes_SendsAnEmptyList()
     {
         var (client, handler) = Client(AddonPurgeTarget.Mcp, _ => new HttpResponseMessage(HttpStatusCode.NoContent));
