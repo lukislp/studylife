@@ -31,6 +31,41 @@ public static class SampleDataset
 {
     private const int RandomSeed = 20260805;
 
+    /// <summary>The most recent days that all have a completed session (the live streak).</summary>
+    private const int LiveStreakDays = 12;
+
+    /// <summary>The earlier month keeps at most this share of the hours the current month has so far.</summary>
+    private const double EarlierMonthShare = 0.8;
+
+    /// <summary>
+    /// Keeps the demo's month comparison ("vs last month") from showing an artificial drop. The app
+    /// compares the month in progress with the WHOLE earlier month, so an evenly spread history
+    /// always reads as a fall, whatever the day of the month. The earlier month is therefore thinned
+    /// out (every other session first, never the live-streak days) until it holds at most
+    /// <see cref="EarlierMonthShare"/> of what the current month has so far; the dashboard then
+    /// shows growth. Does nothing while the current month has no history yet.
+    /// </summary>
+    internal static void ShapeMonthTrend(List<StudySessionEntity> history, DateTime today)
+    {
+        static double Hours(StudySessionEntity s) => (s.EndTime - s.StartTime).TotalHours;
+
+        var thisMonth = history.Where(s => s.StartTime.Year == today.Year && s.StartTime.Month == today.Month).Sum(Hours);
+        if (thisMonth <= 0) return;
+
+        var earlier = today.AddMonths(-1);
+        var inEarlierMonth = history.Where(s => s.StartTime.Year == earlier.Year && s.StartTime.Month == earlier.Month).ToList();
+        var removable = inEarlierMonth.Where(s => s.StartTime.Date < today.AddDays(-LiveStreakDays)).OrderBy(s => s.StartTime).ToList();
+        var candidates = removable.Where((_, i) => i % 2 == 1).Concat(removable.Where((_, i) => i % 2 == 0));
+
+        var total = inEarlierMonth.Sum(Hours);
+        foreach (var session in candidates)
+        {
+            if (total <= thisMonth * EarlierMonthShare) break;
+            history.Remove(session);
+            total -= Hours(session);
+        }
+    }
+
     /// <summary>Today's finished session: early morning, before a typical day starts.</summary>
     internal static readonly TimeSpan TodaysCompletedStart = new(7, 30, 0);
     internal static readonly TimeSpan TodaysCompletedLength = TimeSpan.FromMinutes(60);
@@ -124,11 +159,12 @@ public static class SampleDataset
         // completed session so the dashboard shows a live, unbroken streak ending today. Today
         // itself is not part of this loop; it gets the fixed shape further down.
         var durations = new[] { 45, 60, 60, 90, 90, 120 };
+        var history = new List<StudySessionEntity>();
         for (var dayOffset = 70; dayOffset >= 1; dayOffset--)
         {
             var day = today.AddDays(-dayOffset);
             var isWeekend = day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
-            var mustStudy = dayOffset <= 12; // live streak
+            var mustStudy = dayOffset <= LiveStreakDays;
             if (!mustStudy && rng.NextDouble() > (isWeekend ? 0.4 : 0.8)) continue;
 
             var sessionsToday = mustStudy ? 1 + rng.Next(0, 2) : 1 + rng.Next(0, 3);
@@ -139,7 +175,7 @@ public static class SampleDataset
                 var minutes = durations[rng.Next(durations.Length)];
                 var start = day.AddHours(hour).AddMinutes(15 * rng.Next(0, 4));
                 var end = start.AddMinutes(minutes);
-                db.Sessions.Add(new StudySessionEntity
+                history.Add(new StudySessionEntity
                 {
                     AuthUserId = userId,
                     CourseId = course.Id,
@@ -155,6 +191,8 @@ public static class SampleDataset
                 if (hour >= 20) break;
             }
         }
+        ShapeMonthTrend(history, today);
+        db.Sessions.AddRange(history);
 
         // ── Today: the day in progress ───────────────────────────────────────────
         // A session finished this morning (once "now" is past it, so nothing completed lies in
