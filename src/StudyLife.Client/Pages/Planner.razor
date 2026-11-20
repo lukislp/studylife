@@ -84,7 +84,7 @@
                 @if (_examProposals.Count > 0)
                 {
                     <div class="planner-proposal dash-card">
-                        <div class="card-label">@string.Format(T.ProposalHeading, _examProposals.Count, ExamProposalHours.ToString("0.0"))</div>
+                        <div class="card-label">@string.Format(T.ProposalHeading, _examProposals.Count, LocalNumber.Number(ExamProposalHours, "0.0"))</div>
                         <div class="planner-view-toggle">
                             <button type="button" class="planner-view-opt @(_examViewMode == "list" ? "active" : "")" @onclick='() => _examViewMode = "list"'>@T.ViewAsListButton</button>
                             <button type="button" class="planner-view-opt @(_examViewMode == "calendar" ? "active" : "")" @onclick='() => _examViewMode = "calendar"'>@T.ViewAsCalendarButton</button>
@@ -142,7 +142,7 @@
             else
             {
             <div class="planner-form dash-card">
-                <div class="quota-legend">@string.Format(T.CurrentWeekHours, _weekAlreadyHours.ToString("0.0"), WeekMin, WeekMax)</div>
+                <div class="quota-legend">@string.Format(T.CurrentWeekHours, LocalNumber.Number(_weekAlreadyHours, "0.0"), WeekMin, WeekMax)</div>
                 <div class="field">
                     <label>@T.FieldSessionLength</label>
                     <select class="select" @bind="_weekSessionLengthMinutes">
@@ -158,7 +158,7 @@
                 }
                 else
                 {
-                    <div class="planner-topics-hint">@string.Format(T.RemainingHoursLabel, _weekRemainingHours.ToString("0.0"))</div>
+                    <div class="planner-topics-hint">@string.Format(T.RemainingHoursLabel, LocalNumber.Number(_weekRemainingHours, "0.0"))</div>
                     <button class="btn-primary" @onclick="GenerateWeekPlan">✦ @T.GenerateWeekPlanButton</button>
                 }
             </div>
@@ -181,7 +181,7 @@
             @if (_weekProposals.Count > 0)
             {
                 <div class="planner-proposal dash-card">
-                    <div class="card-label">@string.Format(T.WeekPlanHeading, _weekProposals.Count, WeekProposalHours.ToString("0.0"))</div>
+                    <div class="card-label">@string.Format(T.WeekPlanHeading, _weekProposals.Count, LocalNumber.Number(WeekProposalHours, "0.0"))</div>
                     <div class="planner-view-toggle">
                         <button type="button" class="planner-view-opt @(_weekViewMode == "list" ? "active" : "")" @onclick='() => _weekViewMode = "list"'>@T.ViewAsListButton</button>
                         <button type="button" class="planner-view-opt @(_weekViewMode == "calendar" ? "active" : "")" @onclick='() => _weekViewMode = "calendar"'>@T.ViewAsCalendarButton</button>
