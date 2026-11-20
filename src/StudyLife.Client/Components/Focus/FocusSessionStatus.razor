@@ -19,7 +19,6 @@ else
         <div class="fu-label">@string.Format(UpNextInFormat, TimeUntil(UpcomingSession.StartTime))</div>
         <div class="fu-name">@UpcomingSession.CourseName</div>
         <div class="fu-time">@LocalDate.Time(UpcomingSession.StartTime) – @LocalDate.Time(UpcomingSession.EndTime)</div>
-        <p class="focus-motivation-text">@MotivationText</p>
     </div>
 }
 
@@ -29,7 +28,6 @@ else
     [Parameter] public string PlanSessionPrompt { get; set; } = "";
     [Parameter] public string OpenCalendarText { get; set; } = "";
     [Parameter] public string UpNextInFormat { get; set; } = "";
-    [Parameter] public string MotivationText { get; set; } = "";
 
     private string TimeUntil(DateTime dt)
     {
