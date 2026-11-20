@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
+using StudyLife.Server.Services.Erasure;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Services;
@@ -91,12 +92,18 @@ public sealed class AiConsentService : IAiConsentService
     // generation is gated here), and a plain constructor dependency would be a cycle.
     private readonly Func<IApiKeyService>? _apiKeys;
 
-    public AiConsentService(StudyLifeDb db, AiProxyClient client, bool demo, Func<IApiKeyService>? apiKeys = null)
+    // Remembers a withdrawal outside the database, so a restored backup cannot bring the consent
+    // back (Services/Erasure). Null = not recorded (tests, background construction).
+    private readonly IErasureJournal? _journal;
+
+    public AiConsentService(StudyLifeDb db, AiProxyClient client, bool demo, Func<IApiKeyService>? apiKeys = null,
+        IErasureJournal? journal = null)
     {
         _db = db;
         _client = client;
         _demo = demo;
         _apiKeys = apiKeys;
+        _journal = journal;
     }
 
     private readonly record struct Decision(bool Available, AiProviderInfo? Info, bool Required, string Fingerprint);
@@ -198,12 +205,16 @@ public sealed class AiConsentService : IAiConsentService
         if (_apiKeys is null)
             throw new InvalidOperationException("Withdrawing consent needs the API key service to revoke the AI key.");
 
-        var settings = await _db.Settings.FirstOrDefaultAsync(s => s.AuthUserId == userId, ct);
+        // IgnoreQueryFilters: the explicit user id scopes it, and the erasure reconciler calls this
+        // at start-up for a user other than (and without) the request's current one.
+        var settings = await _db.Settings.IgnoreQueryFilters().FirstOrDefaultAsync(s => s.AuthUserId == userId, ct);
         if (settings is { AiConsentGrantedAt: not null } or { AiConsentProviderFingerprint: not null })
         {
             settings.AiConsentGrantedAt = null;
             settings.AiConsentProviderFingerprint = null;
             await _db.SaveChangesAsync(ct);
+            if (_journal is not null)
+                await _journal.RecordAsync(_db, ErasureKind.AiConsentWithdrawn, userId, DateTime.UtcNow);
         }
         // The existing revoke path: removes the key hash and tells studylife-ai (through the
         // outbox, so an unreachable add-on is retried) to forget the key and purge the user's

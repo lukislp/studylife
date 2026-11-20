@@ -213,6 +213,21 @@ public class BackupDataService(
         await db.CustomCourses.ExecuteDeleteAsync();
         await db.CourseGroups.ExecuteDeleteAsync();
         await db.StudyPrograms.ExecuteDeleteAsync();
+        // The consent state is the user's own answer on this server, never something a file can
+        // set (the export does not even carry it) - and it must not vanish with the row either
+        // (audit 2026-11-20 S9: telemetry fell back to "never asked" while its log still ended
+        // with the old answer, the AI consent disappeared without revoking the key). The five
+        // columns are read before the row goes and written back onto the new one.
+        var consent = await db.Settings.AsNoTracking()
+            .Select(s => new
+            {
+                s.TelemetryConsent,
+                s.TelemetryConsentAt,
+                s.TelemetryConsentVersion,
+                s.AiConsentGrantedAt,
+                s.AiConsentProviderFingerprint,
+            })
+            .FirstOrDefaultAsync();
         await db.Settings.ExecuteDeleteAsync();
 
         // ── Study programs ───────────────────────────────────────────────────────────────────
@@ -486,6 +501,11 @@ public class BackupDataService(
             // SettingsService.SaveAsync (see UserSettingsEntity): a fresh import shouldn't
             // silently re-activate a public progress-share link or backdate the reminder.
             ActiveStudyProgramId = newActiveStudyProgramId,
+            TelemetryConsent = consent?.TelemetryConsent,
+            TelemetryConsentAt = consent?.TelemetryConsentAt,
+            TelemetryConsentVersion = consent?.TelemetryConsentVersion,
+            AiConsentGrantedAt = consent?.AiConsentGrantedAt,
+            AiConsentProviderFingerprint = consent?.AiConsentProviderFingerprint,
             // Round-trips like any other setting, but only a code the server knows: a hand-edited
             // or newer-version file must not park an unsupported value in the column that
             // decides the language of every push text (the client reports its own on next start).

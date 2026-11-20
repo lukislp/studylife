@@ -1170,6 +1170,14 @@ above, this also protects against data corruption/accidental `DELETE` (replicas 
 against node failure - a faulty write replicates immediately to all replicas too) and enables
 point-in-time recovery instead of just "failover to a replica".
 
+**After a point-in-time recovery or any restore: erasures.** A recovered database is an older one -
+accounts deleted and consents withdrawn since then come back. The app re-applies them from the
+erasure journal ([ARCHITECTURE.md "Erasure journal"](ARCHITECTURE.md)), but with Postgres that
+journal is off until `ErasureJournal__Path` points at a file on a volume that is not rolled back
+with the database and is shared by the replica that runs the migrating process
+(`Database__Migrate=true`). Entries are kept `Retention__ErasureJournalDays` (default 90); keep it at
+least as long as the oldest base backup/WAL range you would recover to.
+
 **Manual steps (only possible in the Cloudflare dashboard/account)**:
 1. Create an R2 bucket (ours is `studylifebackup`).
 2. Generate an R2 API token with write permissions (Dashboard → R2 → "Manage API Tokens") →
