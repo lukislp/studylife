@@ -3,5 +3,7 @@
   "ExplainWhatText": "This data goes to whoever runs your StudyAtrium server (if you host it yourself, that is you) and is used to find bugs and slow spots. It never includes your notes, sessions, or health data.",
   "ExplainChangeText": "You can change this anytime in Setup.",
   "AcceptButton": "Allow",
-  "DeclineButton": "No thanks"
+  "DeclineButton": "No thanks",
+  "ErrorText": "Your answer could not be saved. Check your connection.",
+  "LaterButton": "Ask me later"
 }

@@ -3,5 +3,7 @@
   "ExplainWhatText": "Duomenys keliauja tam, kas valdo tavo StudyAtrium serverį (jei jį talpini pats, tai esi tu), ir naudojami klaidoms bei lėtoms vietoms rasti. Juose niekada nėra tavo pastabų, sesijų ar sveikatos duomenų.",
   "ExplainChangeText": "Tai gali pakeisti bet kada Nustatymuose.",
   "AcceptButton": "Leisti",
-  "DeclineButton": "Ne, ačiū"
+  "DeclineButton": "Ne, ačiū",
+  "ErrorText": "Tavo atsakymo nepavyko išsaugoti. Patikrink ryšį.",
+  "LaterButton": "Paklausti vėliau"
 }

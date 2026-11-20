@@ -3,5 +3,7 @@
   "ExplainWhatText": "Az adatok annak mennek, aki a StudyAtrium-szervered üzemelteti (ha te magad hosztolod, akkor te vagy az), és hibák, valamint lassú részek megtalálására szolgálnak. Soha nem tartalmazzák a jegyzeteidet, munkameneteidet vagy egészségügyi adataidat.",
   "ExplainChangeText": "Ezt bármikor módosíthatod a Beállításokban.",
   "AcceptButton": "Engedélyezés",
-  "DeclineButton": "Nem, köszönöm"
+  "DeclineButton": "Nem, köszönöm",
+  "ErrorText": "A válaszod nem sikerült elmenteni. Ellenőrizd a kapcsolatot.",
+  "LaterButton": "Kérdezz később"
 }

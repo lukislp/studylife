@@ -3,5 +3,7 @@
   "ExplainWhatText": "Ces données vont à la personne qui exploite ton serveur StudyAtrium (si tu l'héberges toi-même, c'est toi) et servent à repérer les bugs et les ralentissements. Elles ne contiennent jamais tes notes, séances ou données de santé.",
   "ExplainChangeText": "Tu peux changer cela à tout moment dans les Paramètres.",
   "AcceptButton": "Autoriser",
-  "DeclineButton": "Non merci"
+  "DeclineButton": "Non merci",
+  "ErrorText": "Ta réponse n'a pas pu être enregistrée. Vérifie ta connexion.",
+  "LaterButton": "Me demander plus tard"
 }

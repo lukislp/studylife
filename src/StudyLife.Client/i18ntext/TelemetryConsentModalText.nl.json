@@ -3,5 +3,7 @@
   "ExplainWhatText": "De gegevens gaan naar wie je StudyAtrium-server beheert (host je hem zelf, dan ben jij dat) en worden gebruikt om bugs en trage plekken op te sporen. Ze bevatten nooit je notities, sessies of gezondheidsgegevens.",
   "ExplainChangeText": "Je kunt dit altijd wijzigen in Instellingen.",
   "AcceptButton": "Toestaan",
-  "DeclineButton": "Nee, bedankt"
+  "DeclineButton": "Nee, bedankt",
+  "ErrorText": "Je antwoord kon niet worden opgeslagen. Controleer je verbinding.",
+  "LaterButton": "Vraag het me later"
 }

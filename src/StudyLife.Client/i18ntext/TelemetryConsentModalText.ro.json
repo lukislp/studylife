@@ -3,5 +3,7 @@
   "ExplainWhatText": "Datele ajung la cel care administrează serverul tău StudyAtrium (dacă îl găzduiești tu, ești tu) și sunt folosite pentru a detecta buguri și puncte lente. Nu includ niciodată notițele, sesiunile sau datele tale de sănătate.",
   "ExplainChangeText": "Poți schimba asta oricând din Setări.",
   "AcceptButton": "Permite",
-  "DeclineButton": "Nu, mulțumesc"
+  "DeclineButton": "Nu, mulțumesc",
+  "ErrorText": "Răspunsul tău nu a putut fi salvat. Verifică conexiunea.",
+  "LaterButton": "Întreabă-mă mai târziu"
 }
