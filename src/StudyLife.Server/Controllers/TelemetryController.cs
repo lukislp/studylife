@@ -247,8 +247,10 @@ public class TelemetryController : ControllerBase
         new(StringComparer.OrdinalIgnoreCase) { "hrv", "sleep", "steps", "vo2max" };
     private static readonly HashSet<string> HealthAuthorizationValues =
         new(StringComparer.OrdinalIgnoreCase) { "granted", "denied", "undetermined" };
+    // "ok"/"error" is the current contract (app #234); empty/below_minimum/sufficient and the
+    // authorization field are what older app builds still send, so they stay accepted.
     private static readonly HashSet<string> HealthResultValues =
-        new(StringComparer.OrdinalIgnoreCase) { "error", "empty", "below_minimum", "sufficient" };
+        new(StringComparer.OrdinalIgnoreCase) { "ok", "error", "empty", "below_minimum", "sufficient" };
     private static readonly HashSet<string> PushEventKinds =
         new(StringComparer.OrdinalIgnoreCase) { "registered", "received", "shown" };
 
