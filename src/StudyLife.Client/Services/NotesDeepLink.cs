@@ -11,6 +11,10 @@ namespace StudyLife.Client.Services;
 /// </summary>
 public readonly record struct NotesDeepLink(bool NewNote, int? NoteId)
 {
+    /// <summary>The relative URL that opens the given note on the notes page.</summary>
+    public static string ForNote(int noteId) =>
+        string.Create(System.Globalization.CultureInfo.InvariantCulture, $"/notes?note={noteId}");
+
     public static NotesDeepLink Parse(string? query)
     {
         var values = System.Web.HttpUtility.ParseQueryString(query ?? "");

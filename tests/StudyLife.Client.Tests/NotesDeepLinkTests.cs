@@ -39,4 +39,16 @@ public class NotesDeepLinkTests
     [Fact]
     public void New_wins_over_note() =>
         Assert.Equal(new NotesDeepLink(true, null), NotesDeepLink.Parse("?note=4&new=1"));
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(42)]
+    [InlineData(2147483647)]
+    public void ForNote_round_trips_through_Parse(int id)
+    {
+        var url = NotesDeepLink.ForNote(id);
+
+        Assert.StartsWith("/notes?", url);
+        Assert.Equal(new NotesDeepLink(false, id), NotesDeepLink.Parse(url[url.IndexOf('?')..]));
+    }
 }

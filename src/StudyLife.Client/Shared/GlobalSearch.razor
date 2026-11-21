@@ -178,7 +178,7 @@
                     .Take(MaxPerGroup)
                     .Select(n => new SearchResult("notes", "◪",
                         string.IsNullOrWhiteSpace(n.Title) ? Preview(n.Content, 40) : n.Title,
-                        Preview(n.Content, 60), "/notes")));
+                        Preview(n.Content, 60), NotesDeepLink.ForNote(n.Id))));
             }
         }
         catch { /* offline/error: leave the group empty */ }
