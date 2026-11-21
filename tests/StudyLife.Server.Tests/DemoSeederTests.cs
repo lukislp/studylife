@@ -4,6 +4,7 @@
 using Microsoft.EntityFrameworkCore;
 using StudyLife.Server.Data;
 using StudyLife.Server.Services;
+using StudyLife.Server.Services.SampleData;
 using StudyLife.Shared;
 
 namespace StudyLife.Server.Tests;
@@ -240,15 +241,27 @@ public class DemoSeederTests : IClassFixture<DemoSeederScenarioFixture>
     public void FirstReseed_CompletedSessions_ArePastAndConsistentWithCatalog()
     {
         var activeById = ActiveCourses.ToDictionary(c => c.Id);
+        var semester1ById = Semester1Courses.ToDictionary(c => c.Id);
         var completed = _fx.AfterFirst.Sessions.Where(s => s.IsCompleted).ToList();
         Assert.NotEmpty(completed);
+        var currentSemesterStart = _fx.TodayAfterFirstReseed.AddDays(-SampleDataset.EarlierSemesterLastDay);
 
         foreach (var session in completed)
         {
-            // Only actively studied (semester 2, non-project) courses appear in the history.
-            Assert.True(activeById.ContainsKey(session.CourseId),
-                $"Session course {session.CourseId} is not an active course.");
-            var course = activeById[session.CourseId];
+            // The current semester's history is on the actively studied (semester 2, non-project)
+            // courses; before it, the completed first semester has its own history (the stats
+            // page's semester comparison needs hours for the previous semester).
+            var isEarlierSemester = semester1ById.ContainsKey(session.CourseId);
+            Assert.True(activeById.ContainsKey(session.CourseId) || isEarlierSemester,
+                $"Session course {session.CourseId} is neither an active nor a semester-1 course.");
+            if (isEarlierSemester)
+            {
+                Assert.True(session.StartTime.Date <= currentSemesterStart,
+                    "Semester-1 sessions lie before the current semester's history.");
+                var completedAt = _fx.AfterFirst.Goals.Single(g => g.CourseId == session.CourseId).CompletedAt!.Value;
+                Assert.True(session.StartTime.Date < completedAt.Date, "No sessions on a course after it was completed.");
+            }
+            var course = isEarlierSemester ? semester1ById[session.CourseId] : activeById[session.CourseId];
             Assert.Equal(course.Name, session.CourseName);
             Assert.Equal(course.Color, session.CourseColor);
             Assert.NotNull(session.Topic);
@@ -294,19 +307,32 @@ public class DemoSeederTests : IClassFixture<DemoSeederScenarioFixture>
     [Fact]
     public void FirstReseed_CreatesFourPlannedSessionsAheadPlusOneLaterToday()
     {
-        var planned = _fx.AfterFirst.Sessions.Where(s => !s.IsCompleted).ToList();
+        var allPlanned = _fx.AfterFirst.Sessions.Where(s => !s.IsCompleted).ToList();
+        // The goal plan (SampleDataset.PlanUpToGoals) adds evening sessions on otherwise free days
+        // of the current week/month depending on the date; the fixed shape (today and days 1, 2,
+        // 4 and 6 ahead) is the rest.
+        var fixedDays = new[] { 0, 1, 2, 4, 6 }.Select(d => _fx.TodayAfterFirstReseed.AddDays(d)).ToHashSet();
+        var goalPlan = allPlanned.Where(s => !fixedDays.Contains(s.StartTime.Date)).ToList();
+        Assert.All(goalPlan, s => Assert.Equal(SampleDataset.GoalPlanStart, s.StartTime.TimeOfDay));
+        var planned = allPlanned.Except(goalPlan).ToList();
         Assert.Equal(5, planned.Count); // one later today (14:00), four in the coming days
 
         var activeIds = ActiveCourses.Select(c => c.Id).ToHashSet();
-        foreach (var session in planned)
+        foreach (var session in allPlanned)
         {
             Assert.True(session.StartTime > _fx.NowAfterFirstReseed, "Planned sessions must lie in the future.");
             Assert.True(session.EndTime > session.StartTime);
             Assert.Contains(session.CourseId, activeIds);
+        }
+        foreach (var session in planned)
+        {
             // "The coming week", not some far-away date.
             Assert.True(session.StartTime <= _fx.TodayAfterFirstReseed.AddDays(7),
                 "Planned sessions should fall within the coming week.");
         }
+        var today = _fx.TodayAfterFirstReseed;
+        var planEnd = new[] { StudyMetrics.WeekStartOf(today).AddDays(7), new DateTime(today.Year, today.Month, 1).AddMonths(1) }.Max();
+        Assert.All(goalPlan, s => Assert.True(s.StartTime < planEnd, "The goal plan stays within the current week and month."));
     }
 
     // ── 5. Notes ─────────────────────────────────────────────────────────────────
@@ -381,7 +407,8 @@ public class DemoSeederTests : IClassFixture<DemoSeederScenarioFixture>
         var demoUserId = Assert.Single(_fx.AfterSecond.Users).Id;
         Assert.Equal(7, _fx.AfterSecond.Goals.Count(g => g.AuthUserId == demoUserId));
         Assert.Equal(3, _fx.AfterSecond.Notes.Count(n => n.AuthUserId == demoUserId));
-        Assert.Equal(5, _fx.AfterSecond.Sessions.Count(s => s.AuthUserId == demoUserId && !s.IsCompleted));
+        Assert.Equal(_fx.AfterFirst.Sessions.Count(s => !s.IsCompleted),
+            _fx.AfterSecond.Sessions.Count(s => s.AuthUserId == demoUserId && !s.IsCompleted));
         Assert.Single(_fx.AfterSecond.Settings, s => s.AuthUserId == demoUserId);
     }
 }
