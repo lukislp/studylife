@@ -22,8 +22,10 @@
     <div class="setup-header">
         <h1>@T.Stats</h1>
         <p>@T.Subtitle</p>
-        <a class="wrapped-trigger-btn" href="/wrapped">🎉 @T.WrappedButton</a>
-        <ReportExportLink />
+        <div class="stats-header-actions">
+            <a class="wrapped-trigger-btn" href="/wrapped">🎉 @T.WrappedButton</a>
+            <ReportExportLink />
+        </div>
     </div>
 
     <div class="setup-sections">
@@ -44,7 +46,7 @@
 
             <StatsProgressCard Label="@T.StudyProgress" EctsEarned="@_ectsEarned" EctsTotal="@_ectsTotal" EctsPercent="@_ectsPercent"
                 PercentCompletedSuffix="@T.PercentCompleted" ForecastLabel="@T.ForecastLabel"
-                ForecastText="@(_forecastAlreadyDone ? T.ForecastAlreadyDone : _forecastAvailable ? string.Format(T.ForecastCompletionText ?? "", _forecastDateLabel) : T.ForecastNotEnoughData)" />
+                ForecastText="@(_forecastAlreadyDone ? T.ForecastAlreadyDone : _forecastAvailable ? string.Format(T.ForecastCompletionText ?? "", ForecastDateLabel) : T.ForecastNotEnoughData)" />
 
             <StatsEctsTimelineCard Label="@T.EctsTimeline" Points="@_ectsTimelinePoints"
                 TooltipFormat="@T.EctsTimelineTooltip" EmptyText="@T.EctsTimelineEmpty" />

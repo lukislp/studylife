@@ -259,6 +259,9 @@ public class DashboardSummaryBuilderTests
 
         Assert.Equal(new[] { "13.07", "20.07", "27.07", "03.08", "10.08", "17.08", "24.08", "31.08" },
             trend.Select(t => t.Label));
+        // The raw week start travels along so the client can format the axis in the UI language.
+        Assert.Equal(new DateTime(2026, 7, 13), trend[0].WeekStart);
+        Assert.Equal(new DateTime(2026, 8, 31), trend[7].WeekStart);
         // studied-only: only the current bar moves - the three planned sessions (1+2+2 h) drop out
         // of the 31.08. week, 11.5 -> 6.5. Every earlier week is fully in the past and unchanged.
         Assert.Equal(new[] { 0.0, 0.0, 0.0, 9.0, 9.0, 10.0, 9.0, 6.5 }, trend.Select(t => t.Hours));
@@ -322,6 +325,7 @@ public class DashboardSummaryBuilderTests
         Assert.Equal(2, s.ProductivityHint.BestBucketIndex); // 9-12
         Assert.True(s.ProductivityHint.Planned);
         Assert.Equal("09:00", s.ProductivityHint.PlannedStartTimeLabel);
+        Assert.Equal(9, s.ProductivityHint.PlannedStartTime!.Value.Hour);
         Assert.False(s.ProductivityHint.ShowSuggestText);
         Assert.False(s.ProductivityHint.ShowPlanLink);
 
@@ -395,6 +399,7 @@ public class DashboardSummaryBuilderTests
         Assert.True(p.Forecast.Available);
         Assert.False(p.Forecast.AlreadyDone);
         Assert.Equal("31.08.2029", p.Forecast.DateLabel);
+        Assert.Equal(new DateTime(2029, 8, 31), p.Forecast.Date!.Value.Date);
 
         Assert.True(p.GraduationGoal.Visible);
         Assert.False(p.GraduationGoal.Expired);
@@ -402,6 +407,7 @@ public class DashboardSummaryBuilderTests
         Assert.Equal("19,2", p.GraduationGoal.RequiredValue);
         Assert.Equal("5,4", p.GraduationGoal.PaceValue);
         Assert.Equal("30.09.2027", p.GraduationGoal.TargetDateValue);
+        Assert.Equal(new DateTime(2027, 9, 30), p.GraduationGoal.TargetDate);
     }
 
     [Fact]
@@ -418,10 +424,12 @@ public class DashboardSummaryBuilderTests
 
         Assert.Equal("5h", p.BestRecords.BestDayHoursLabel);
         Assert.Equal("02.07.2026", p.BestRecords.BestDayDateLabel);
+        Assert.Equal(new DateTime(2026, 7, 2), p.BestRecords.BestDay);
         Assert.False(p.BestRecords.BestDayIsNew);
         Assert.Equal("10h", p.BestRecords.BestWeekHoursLabel);
         Assert.Equal("17.08. – 23.08.2026", p.BestRecords.BestWeekRangeLabel);
         Assert.False(p.BestRecords.BestWeekIsNew);
+        Assert.Equal(new DateTime(2026, 8, 17), p.BestRecords.BestWeekStart);
     }
 
     [Fact]

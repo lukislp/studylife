@@ -140,8 +140,11 @@ public class DashboardQuotaTileDto
 /// <summary>One bar of the 8-week trend chart.</summary>
 public class DashboardTrendWeekDto
 {
-    /// <summary>Week start as "dd.MM".</summary>
+    /// <summary>Week start as "dd.MM" - fixed-format fallback for responses consumed without
+    /// <see cref="WeekStart"/>; the client formats <see cref="WeekStart"/> in the UI language.</summary>
     public string Label { get; set; } = "";
+    /// <summary>Monday of the week. Null only in a response from an older server.</summary>
+    public DateTime? WeekStart { get; set; }
     public double Hours { get; set; }
     public double Percent { get; set; }
     public bool IsCurrent { get; set; }
@@ -213,8 +216,11 @@ public class DashboardProductivityHintDto
     public int BestBucketIndex { get; set; }
     /// <summary>A session already overlaps the best window today.</summary>
     public bool Planned { get; set; }
-    /// <summary>"HH:mm" of that session; null when nothing is planned in the window.</summary>
+    /// <summary>"HH:mm" of that session; null when nothing is planned in the window. Fixed-format
+    /// fallback - the client formats <see cref="PlannedStartTime"/> in the UI language.</summary>
     public string? PlannedStartTimeLabel { get; set; }
+    /// <summary>Start of that session; null when nothing is planned (or from an older server).</summary>
+    public DateTime? PlannedStartTime { get; set; }
     /// <summary>Show the "plan one now" suggestion sentence.</summary>
     public bool ShowSuggestText { get; set; }
     public bool ShowPlanLink { get; set; }
@@ -306,8 +312,11 @@ public class DashboardForecastDto
 {
     public bool Available { get; set; }
     public bool AlreadyDone { get; set; }
-    /// <summary>"dd.MM.yyyy"; empty when not available.</summary>
+    /// <summary>"dd.MM.yyyy"; empty when not available. Fixed-format fallback - the client
+    /// formats <see cref="Date"/> in the UI language.</summary>
     public string DateLabel { get; set; } = "";
+    /// <summary>Forecast completion date; null when not available (or from an older server).</summary>
+    public DateTime? Date { get; set; }
 }
 
 /// <summary>Desired-graduation-date card: the inverse of the forecast. Values are formatted with
@@ -319,7 +328,10 @@ public class DashboardGraduationGoalDto
     public bool OnTrack { get; set; }
     public string RequiredValue { get; set; } = "";
     public string PaceValue { get; set; } = "";
+    /// <summary>"dd.MM.yyyy" fixed-format fallback of <see cref="TargetDate"/>.</summary>
     public string TargetDateValue { get; set; } = "";
+    /// <summary>Desired graduation date; null when not visible (or from an older server).</summary>
+    public DateTime? TargetDate { get; set; }
 }
 
 /// <summary>Month-over-month / year-over-year comparison. Delta labels are absolute values; the
@@ -345,6 +357,10 @@ public class DashboardBestRecordsDto
     public string BestWeekHoursLabel { get; set; } = "0h";
     public string BestWeekRangeLabel { get; set; } = "–";
     public bool BestWeekIsNew { get; set; }
+    /// <summary>Raw dates behind the two fixed-format labels above, so the client can format
+    /// them in the UI language. Null without any studied session (or from an older server).</summary>
+    public DateTime? BestDay { get; set; }
+    public DateTime? BestWeekStart { get; set; }
 }
 
 /// <summary>

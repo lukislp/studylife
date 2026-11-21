@@ -97,7 +97,7 @@ public partial class Index
         : _forecastAlreadyDone
             ? T.ForecastAlreadyDone ?? ""
             : _forecastAvailable
-                ? string.Format(T.ForecastCompletionText ?? "", _forecastDateLabel)
+                ? string.Format(T.ForecastCompletionText ?? "", ForecastDateLabel)
                 : T.ForecastNotEnoughData ?? "";
 
     private List<DashboardTrendChart.WeekTrend> _weeklyTrend = new();
@@ -477,7 +477,7 @@ public partial class Index
         _quotaMissing = s.MonthQuota.MissingLabel;
 
         _weeklyTrend = s.WeeklyTrend
-            .Select(w => new DashboardTrendChart.WeekTrend(w.Label, w.Hours, w.Percent, w.IsCurrent))
+            .Select(w => new DashboardTrendChart.WeekTrend(w.WeekStart, w.Label, w.Hours, w.Percent, w.IsCurrent))
             .ToList();
         _weekDeltaLabel = s.WeekDeltaLabel;
         _weekDeltaUp = s.WeekDeltaUp;

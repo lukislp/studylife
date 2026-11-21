@@ -49,12 +49,12 @@ public partial class Stats
             .ToList();
     }
 
-    /// <summary>Phase 2 result -> fields. The week labels are numeric ("dd.MM."), so nothing here
-    /// is localized.</summary>
+    /// <summary>Phase 2 result -> fields. The week labels are resolved from the raw week start at
+    /// render time (see SummaryDateLabels), so they follow the UI language.</summary>
     private void ApplyNotes(StatsNotesSummaryDto notes)
     {
         _notesCorrelationWeeks = notes.CorrelationWeeks
-            .Select(w => new StatsNotesCorrelationCard.WeekPair(w.Label, w.NotesCount, w.NotesPercent, w.Hours, w.HoursPercent))
+            .Select(w => new StatsNotesCorrelationCard.WeekPair(w.WeekStart, w.Label, w.NotesCount, w.NotesPercent, w.Hours, w.HoursPercent))
             .ToList();
     }
 

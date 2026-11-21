@@ -37,7 +37,10 @@
 @code {
     // ActualEcts/ActualPercent are null for months after today - there's only the
     // target marker there, no misleading empty actual bar.
-    public record PlanPoint(string Label, int? ActualEcts, double? ActualPercent, int TargetEcts, double TargetPercent);
+    public record PlanPoint(DateTime? Month, string FallbackLabel, int? ActualEcts, double? ActualPercent, int TargetEcts, double TargetPercent)
+    {
+        public string Label => SummaryDateLabels.MonthYear(Month, FallbackLabel);
+    }
 
     [Parameter] public string Label { get; set; } = "";
     [Parameter] public string ActualLabel { get; set; } = "";

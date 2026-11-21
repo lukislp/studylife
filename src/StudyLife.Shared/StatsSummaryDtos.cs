@@ -149,8 +149,11 @@ public class StatsForecastDto
 {
     public bool Available { get; set; }
     public bool AlreadyDone { get; set; }
-    /// <summary>"dd.MM.yyyy"; empty when not available.</summary>
+    /// <summary>"dd.MM.yyyy"; empty when not available. Fixed-format fallback - the client
+    /// formats <see cref="Date"/> in the UI language.</summary>
     public string DateLabel { get; set; } = "";
+    /// <summary>Forecast completion date; null when not available (or from an older server).</summary>
+    public DateTime? Date { get; set; }
 }
 
 /// <summary>This month vs. last month, within the 12-month history window. The delta label is an
@@ -384,10 +387,13 @@ public class StatsEctsTimelinePointDto
 }
 
 /// <summary>One month of the actual-vs-target ECTS plan. Actual is null for months in the future.
-/// The label ("MM.yy") is numeric-only, hence pre-formatted.</summary>
+/// The label ("MM.yy") is a fixed-format fallback; the client formats <see cref="Month"/> in the
+/// UI language.</summary>
 public class StatsEctsPlanPointDto
 {
     public string Label { get; set; } = "";
+    /// <summary>First day of the month. Null only in a response from an older server.</summary>
+    public DateTime? Month { get; set; }
     public int? ActualEcts { get; set; }
     public double? ActualPercent { get; set; }
     public int TargetEcts { get; set; }
@@ -398,7 +404,10 @@ public class StatsEctsPlanPointDto
 /// session (no misleading 0% bar).</summary>
 public class StatsProductivityWeekDto
 {
+    /// <summary>"dd.MM." fixed-format fallback of <see cref="WeekStart"/>.</summary>
     public string Label { get; set; } = "";
+    /// <summary>Monday of the week. Null only in a response from an older server.</summary>
+    public DateTime? WeekStart { get; set; }
     public double? Percent { get; set; }
 }
 
@@ -413,7 +422,10 @@ public class StatsGoalHistoryWeekDto
 /// <summary>One bar of the continuous hours-per-week trend.</summary>
 public class StatsInactivityWeekDto
 {
+    /// <summary>"dd.MM." fixed-format fallback of <see cref="WeekStart"/>.</summary>
     public string Label { get; set; } = "";
+    /// <summary>Monday of the week. Null only in a response from an older server.</summary>
+    public DateTime? WeekStart { get; set; }
     public double Hours { get; set; }
     public double Percent { get; set; }
 }
@@ -457,7 +469,10 @@ public class StatsCourseBalanceRowDto
 /// <summary>One week of the notes-vs-hours correlation chart.</summary>
 public class StatsNotesCorrelationWeekDto
 {
+    /// <summary>"dd.MM." fixed-format fallback of <see cref="WeekStart"/>.</summary>
     public string Label { get; set; } = "";
+    /// <summary>Monday of the week. Null only in a response from an older server.</summary>
+    public DateTime? WeekStart { get; set; }
     public int NotesCount { get; set; }
     public double NotesPercent { get; set; }
     public double Hours { get; set; }
