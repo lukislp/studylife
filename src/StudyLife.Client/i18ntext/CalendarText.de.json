@@ -39,7 +39,7 @@
   "ImportRecurrenceWarning": "Wiederkehrender Termin — nur der erste Termin wurde importiert.",
   "ImportParseButton": "Datei lesen",
   "ImportConfirmButton": "Importieren",
-  "ImportSummary": "{0} Sitzung(en) importiert.",
+  "ImportSummary": "one={0} Sitzung importiert.|other={0} Sitzungen importiert.",
   "ImportDoneCloseButton": "Fertig",
   "TemplatesButton": "Vorlagen",
   "TemplatesModalTitle": "Sitzungsvorlagen",

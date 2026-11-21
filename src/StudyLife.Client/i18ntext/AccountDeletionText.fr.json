@@ -17,7 +17,7 @@
   "ItemAccess": "Vos clés d'accès, codes de récupération et tous les appareils connectés",
   "ItemIntegrations": "Toutes les clés d'API, applications connectées, inscriptions aux notifications push et votre lien de calendrier",
   "ItemAddons": "Les données conservées par les modules complémentaires (assistant IA, webhooks, portail développeur). Si un module est hors ligne, la suppression y est retentée jusqu'à ce qu'elle aboutisse",
-  "OwnedAppsText": "Vous avez enregistré {0} application(s) en tant que développeur. Elles sont également supprimées et les intégrations d'autres personnes avec ces applications cessent de fonctionner.",
+  "OwnedAppsText": "one=Vous avez enregistré {0} application en tant que développeur. Elle est également supprimée et les intégrations d'autres personnes avec cette application cessent de fonctionner.|other=Vous avez enregistré {0} applications en tant que développeur. Elles sont également supprimées et les intégrations d'autres personnes avec ces applications cessent de fonctionner.",
   "LastUserText": "Vous êtes le seul compte de cette installation. La supprimer ramène l'installation à son état de première utilisation, et un nouveau code de configuration apparaît dans le journal du serveur.",
   "NotDeletedHeading": "Ce qui n'est pas supprimé :",
   "NotDeletedBackups": "Les sauvegardes faites avant la suppression contiennent encore une copie jusqu'à leur rotation : les copies hebdomadaires intégrées sont conservées quatre semaines ; les autres sauvegardes le sont aussi longtemps que l'opérateur de ce serveur l'a configuré (30 jours dans la configuration Kubernetes fournie).",

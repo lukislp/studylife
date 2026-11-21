@@ -17,7 +17,7 @@
   "ItemAccess": "Dine adgangsnøgler, gendannelseskoder og alle enheder, der er logget ind",
   "ItemIntegrations": "Alle API-nøgler, tilsluttede apps, registreringer til push-notifikationer og dit kalenderlink",
   "ItemAddons": "Data hos tilføjelser (AI-assistent, webhooks, udviklerportal). Hvis en tilføjelse er offline, gentages sletningen dér, indtil den lykkes",
-  "OwnedAppsText": "Du har registreret {0} app(s) som udvikler. De slettes også, og andres integrationer med dem holder op med at virke.",
+  "OwnedAppsText": "one=Du har registreret {0} app som udvikler. Den slettes også, og andres integrationer med den holder op med at virke.|other=Du har registreret {0} apps som udvikler. De slettes også, og andres integrationer med dem holder op med at virke.",
   "LastUserText": "Du er den eneste konto i denne installation. Når den slettes, vender installationen tilbage til sin første tilstand, og en ny opsætningskode vises i serverloggen.",
   "NotDeletedHeading": "Dette sletter ikke:",
   "NotDeletedBackups": "Sikkerhedskopier lavet før sletningen indeholder stadig en kopi, indtil de udskiftes: de indbyggede ugentlige kopier gemmes i fire uger, andre sikkerhedskopier så længe, som operatøren af denne server har indstillet (30 dage i den medfølgende Kubernetes-opsætning).",

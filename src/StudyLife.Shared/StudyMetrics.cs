@@ -116,6 +116,14 @@ public static partial class StudyMetrics
     public static string FormatGrade(decimal grade, string format) => grade.ToString(format, GradeDisplayFormat);
 
     /// <summary>
+    /// A non-grade number in a server-built label ("19,2" h/week, "3,9h" daily target), with the
+    /// same comma convention as <see cref="FormatGrade(decimal)"/>: every decimal the summary
+    /// builders put into a label uses that one separator, and the client re-expresses it in the
+    /// UI language (LocalNumber.Localize), so an English dashboard never shows "11,1 h/week".
+    /// </summary>
+    public static string FormatDecimal(double value, string format) => value.ToString(format, GradeDisplayFormat);
+
+    /// <summary>
     /// The one "3h 20m" label shape of the whole app (dashboard tiles, stats cards, report,
     /// wrapped). Rounds to the NEAREST whole minute instead of truncating: the hand-rolled
     /// `(int)((h - (int)h) * 60)` this replaces turned a 1.4999-hour sum into "1h 29m", which

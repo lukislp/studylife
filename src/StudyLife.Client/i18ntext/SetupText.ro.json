@@ -156,7 +156,7 @@
   "ProgramErrorGroupInvalid": "Introdu un nume de grupă și un plafon ECTS mai mare decât 0.",
   "ProgramErrorDuplicateGroup": "Există deja o grupă cu acest nume.",
   "ProgramErrorCreateFailed": "Crearea programului de studii a eșuat. Încearcă din nou.",
-  "ProgramSummaryLabel": "{0} cursuri · {1} ECTS contabilizabile",
+  "ProgramSummaryLabel": "one={0} curs · {1} ECTS contabilizabile|other={0} cursuri · {1} ECTS contabilizabile",
   "ProgramCompletedSuffix": "✓ finalizat",
   "MarkProgramCompletedButton": "Marchează programul ca finalizat",
   "UnmarkProgramCompletedButton": "Elimină marcajul de finalizare",

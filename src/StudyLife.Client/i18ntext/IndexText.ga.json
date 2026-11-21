@@ -97,7 +97,7 @@
   "ProductivityBucketEvening": "sa tráthnóna déanach (18–21)",
   "ProductivityBucketLateEvening": "go déanach san oíche (21–24)",
   "FocusScoreLabel": "Scór dírithe",
-  "FocusScoreRatioFormat": "{0} as {1} seisiún déanta",
+  "FocusScoreRatioFormat": "{1} as {0} seisiún déanta",
   "FocusScoreAllOnPlan": "Gach rud de réir an phlean",
   "FocusScorePartial": "Go páirteach",
   "FocusScoreMissed": "Ar iarraidh",

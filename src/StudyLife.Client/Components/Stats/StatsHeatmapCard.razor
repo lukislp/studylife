@@ -73,7 +73,7 @@
             }
             else
             {
-                <div class="heatmap-detail-summary">@_selectedDay.HoursLabel(NoSessionText) · @string.Format(SessionCountFormat ?? "", _selectedDay.SessionCount)</div>
+                <div class="heatmap-detail-summary">@_selectedDay.HoursLabel(NoSessionText) · @Plural.Format(SessionCountFormat, _selectedDay.SessionCount)</div>
                 <div class="heatmap-detail-courses">
                     @foreach (var course in _selectedDay.Courses)
                     {

@@ -39,7 +39,7 @@
   "ImportRecurrenceWarning": "Pasikartojantis įvykis — importuota tik pirma data.",
   "ImportParseButton": "Nuskaityti failą",
   "ImportConfirmButton": "Importuoti",
-  "ImportSummary": "Importuota {0} sesijų.",
+  "ImportSummary": "one=Importuota {0} sesija.|few=Importuotos {0} sesijos.|other=Importuota {0} sesijų.",
   "ImportDoneCloseButton": "Baigta",
   "TemplatesButton": "Šablonai",
   "TemplatesModalTitle": "Sesijų šablonai",

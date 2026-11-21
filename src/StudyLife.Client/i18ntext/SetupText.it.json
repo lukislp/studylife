@@ -156,7 +156,7 @@
   "ProgramErrorGroupInvalid": "Inserisci un nome di gruppo e un tetto ECTS maggiore di 0.",
   "ProgramErrorDuplicateGroup": "Esiste già un gruppo con questo nome.",
   "ProgramErrorCreateFailed": "Creazione del corso di laurea non riuscita. Riprova.",
-  "ProgramSummaryLabel": "{0} corsi · {1} ECTS conteggiabili",
+  "ProgramSummaryLabel": "one={0} corso · {1} ECTS conteggiabili|other={0} corsi · {1} ECTS conteggiabili",
   "ProgramCompletedSuffix": "✓ completato",
   "MarkProgramCompletedButton": "Segna il corso di studi come completato",
   "UnmarkProgramCompletedButton": "Rimuovi il contrassegno di completamento",

@@ -156,7 +156,7 @@
   "ProgramErrorGroupInvalid": "Voer een groepsnaam en een ECTS-limiet groter dan 0 in.",
   "ProgramErrorDuplicateGroup": "Er bestaat al een groep met deze naam.",
   "ProgramErrorCreateFailed": "Het aanmaken van de opleiding is mislukt. Probeer het opnieuw.",
-  "ProgramSummaryLabel": "{0} vakken · {1} meetellende ECTS",
+  "ProgramSummaryLabel": "one={0} vak · {1} meetellende ECTS|other={0} vakken · {1} meetellende ECTS",
   "ProgramCompletedSuffix": "✓ afgerond",
   "MarkProgramCompletedButton": "Opleiding markeren als afgerond",
   "UnmarkProgramCompletedButton": "Afgerond-markering verwijderen",

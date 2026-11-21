@@ -156,7 +156,7 @@
   "ProgramErrorGroupInvalid": "Δώσε όνομα ομάδας και όριο ECTS μεγαλύτερο από 0.",
   "ProgramErrorDuplicateGroup": "Υπάρχει ήδη ομάδα με αυτό το όνομα.",
   "ProgramErrorCreateFailed": "Η δημιουργία του προγράμματος απέτυχε. Δοκίμασε ξανά.",
-  "ProgramSummaryLabel": "{0} μαθήματα · {1} προσμετρώμενα ECTS",
+  "ProgramSummaryLabel": "one={0} μάθημα · {1} προσμετρώμενα ECTS|other={0} μαθήματα · {1} προσμετρώμενα ECTS",
   "ProgramCompletedSuffix": "✓ ολοκληρωμένο",
   "MarkProgramCompletedButton": "Επισήμανση του προγράμματος ως ολοκληρωμένου",
   "UnmarkProgramCompletedButton": "Αφαίρεση της επισήμανσης ολοκλήρωσης",

@@ -39,7 +39,7 @@
   "ImportRecurrenceWarning": "Επαναλαμβανόμενο συμβάν — εισήχθη μόνο η πρώτη ημερομηνία.",
   "ImportParseButton": "Ανάγνωση αρχείου",
   "ImportConfirmButton": "Εισαγωγή",
-  "ImportSummary": "Εισήχθησαν {0} συνεδρίες.",
+  "ImportSummary": "one=Εισήχθη {0} συνεδρία.|other=Εισήχθησαν {0} συνεδρίες.",
   "ImportDoneCloseButton": "Ολοκληρώθηκε",
   "TemplatesButton": "Πρότυπα",
   "TemplatesModalTitle": "Πρότυπα συνεδριών",

@@ -39,7 +39,7 @@
   "ImportRecurrenceWarning": "Ponavljajoč se dogodek — uvožen je bil samo prvi datum.",
   "ImportParseButton": "Preberi datoteko",
   "ImportConfirmButton": "Uvozi",
-  "ImportSummary": "Uvoženih {0} sej.",
+  "ImportSummary": "one=Uvožena {0} seja.|two=Uvoženi {0} seji.|few=Uvožene {0} seje.|other=Uvoženih {0} sej.",
   "ImportDoneCloseButton": "Končano",
   "TemplatesButton": "Predloge",
   "TemplatesModalTitle": "Predloge sej",

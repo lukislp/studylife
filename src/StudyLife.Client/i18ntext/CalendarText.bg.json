@@ -39,7 +39,7 @@
   "ImportRecurrenceWarning": "Повтарящо се събитие — импортирана е само първата дата.",
   "ImportParseButton": "Прочети файла",
   "ImportConfirmButton": "Импортиране",
-  "ImportSummary": "Импортирани {0} сесия(и).",
+  "ImportSummary": "one=Импортирана {0} сесия.|other=Импортирани {0} сесии.",
   "ImportDoneCloseButton": "Готово",
   "TemplatesButton": "Шаблони",
   "TemplatesModalTitle": "Шаблони за сесии",

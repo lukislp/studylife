@@ -94,7 +94,7 @@ public partial class Index
             ? T.FocusScorePartial ?? ""
             : T.FocusScoreMissed ?? "";
 
-    private string FocusScoreRatioText => string.Format(T.FocusScoreRatioFormat ?? "", _focusScoreStudied, _focusScorePlanned);
+    private string FocusScoreRatioText => Plural.Format(T.FocusScoreRatioFormat, _focusScorePlanned, _focusScoreStudied);
 
     // Forecast text lives inside DashboardProgressCard (Phase 3/goals group), but its value
     // (_forecastAvailable/_forecastAlreadyDone) is only computed in Phase 5 (needs the all-time

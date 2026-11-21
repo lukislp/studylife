@@ -156,7 +156,7 @@
   "ProgramErrorGroupInvalid": "Unesi naziv grupe i granicu ECTS-a veću od 0.",
   "ProgramErrorDuplicateGroup": "Grupa s ovim nazivom već postoji.",
   "ProgramErrorCreateFailed": "Stvaranje studijskog programa nije uspjelo. Pokušaj ponovno.",
-  "ProgramSummaryLabel": "{0} kolegija · {1} priznatih ECTS-a",
+  "ProgramSummaryLabel": "one={0} kolegij · {1} priznatih ECTS-a|other={0} kolegija · {1} priznatih ECTS-a",
   "ProgramCompletedSuffix": "✓ završeno",
   "MarkProgramCompletedButton": "Označi program kao završen",
   "UnmarkProgramCompletedButton": "Ukloni oznaku završenosti",

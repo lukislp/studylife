@@ -48,7 +48,7 @@
   "LoginPendingApproval": "Ten klucz dostępu czeka na zatwierdzenie na już zalogowanym urządzeniu. Otwórz tam listę kluczy, zatwierdź go i spróbuj ponownie.",
   "LinkNewDeviceButton": "Połącz nowe urządzenie",
   "LinkNewDeviceInstructions": "Na nowym urządzeniu otwórz /link w przeglądarce (ten sam adres co ta aplikacja) i wpisz ten kod:",
-  "LinkNewDeviceExpiresFormat": "Ważny jeszcze przez {0} minut.",
+  "LinkNewDeviceExpiresFormat": "one=Ważny jeszcze przez {0} minutę.|few=Ważny jeszcze przez {0} minuty.|many=Ważny jeszcze przez {0} minut.|other=Ważny jeszcze przez {0} minut.",
   "LinkNewDeviceDone": "Gotowe",
   "LinkHeading": "Połącz to urządzenie",
   "LinkIntro": "Wpisz kod wyświetlony na Twoim drugim, już zalogowanym urządzeniu, aby połączyć to urządzenie.",

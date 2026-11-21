@@ -39,7 +39,7 @@
   "ImportRecurrenceWarning": "Eveniment recurent — a fost importată doar prima dată.",
   "ImportParseButton": "Citește fișierul",
   "ImportConfirmButton": "Importă",
-  "ImportSummary": "{0} sesiune(i) importată(e).",
+  "ImportSummary": "one={0} sesiune importată.|other={0} sesiuni importate.",
   "ImportDoneCloseButton": "Gata",
   "TemplatesButton": "Șabloane",
   "TemplatesModalTitle": "Șabloane de sesiune",

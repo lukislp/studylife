@@ -187,7 +187,7 @@
         var days = Math.Max(0, (int)(Clock.GetUtcNow().UtcDateTime - createdAt.Value).TotalDays);
         return days == 0
             ? T.PushDevicesRegisteredToday ?? ""
-            : string.Format(T.PushDevicesRegisteredDaysAgo ?? "", days);
+            : Plural.Format(T.PushDevicesRegisteredDaysAgo, days);
     }
 
     // Deliberately no full User-Agent parsing library (see task description) - simple

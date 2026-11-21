@@ -48,7 +48,7 @@
   "LoginPendingApproval": "Dieser Passkey wartet auf Freigabe auf einem bereits angemeldeten Gerät. Öffne dort die Passkey-Liste, gib ihn frei und versuch es dann erneut.",
   "LinkNewDeviceButton": "Neues Gerät verknüpfen",
   "LinkNewDeviceInstructions": "Öffne auf dem neuen Gerät /link im Browser (dieselbe Adresse wie diese App) und gib diesen Code ein:",
-  "LinkNewDeviceExpiresFormat": "Gültig für noch {0} Minute(n).",
+  "LinkNewDeviceExpiresFormat": "one=Gültig für noch {0} Minute.|other=Gültig für noch {0} Minuten.",
   "LinkNewDeviceDone": "Fertig",
   "LinkHeading": "Dieses Gerät verknüpfen",
   "LinkIntro": "Gib den Code ein, der auf deinem anderen, bereits angemeldeten Gerät angezeigt wird, um dieses Gerät zu verbinden.",

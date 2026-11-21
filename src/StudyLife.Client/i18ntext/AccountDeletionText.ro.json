@@ -17,7 +17,7 @@
   "ItemAccess": "Cheile tale de acces, codurile de recuperare și toate dispozitivele autentificate",
   "ItemIntegrations": "Toate cheile API, aplicațiile conectate, înregistrările pentru notificări push și linkul tău de calendar",
   "ItemAddons": "Datele păstrate de suplimente (asistent AI, webhookuri, portal pentru dezvoltatori). Dacă un supliment este offline, ștergerea acolo este reluată până reușește",
-  "OwnedAppsText": "Ai înregistrat {0} aplicație/aplicații ca dezvoltator. Acestea sunt șterse și ele, iar integrările altor persoane cu ele nu vor mai funcționa.",
+  "OwnedAppsText": "one=Ai înregistrat {0} aplicație ca dezvoltator. Aceasta este ștearsă și ea, iar integrările altor persoane cu ea nu vor mai funcționa.|other=Ai înregistrat {0} aplicații ca dezvoltator. Acestea sunt șterse și ele, iar integrările altor persoane cu ele nu vor mai funcționa.",
   "LastUserText": "Este singurul cont din această instalare. Ștergerea lui readuce instalarea în starea de prim start, iar în jurnalul serverului apare un nou cod de configurare.",
   "NotDeletedHeading": "Aceasta nu șterge:",
   "NotDeletedBackups": "Copiile de rezervă făcute înainte de ștergere conțin în continuare o copie până când sunt înlocuite: copiile săptămânale încorporate se păstrează patru săptămâni, celelalte atât cât a configurat operatorul acestui server (30 de zile în configurarea Kubernetes furnizată).",

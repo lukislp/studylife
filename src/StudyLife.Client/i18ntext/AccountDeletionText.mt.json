@@ -17,7 +17,7 @@
   "ItemAccess": "Iċ-ċwievet tal-aċċess tiegħek, il-kodiċijiet tal-irkupru u kull apparat illoggjat",
   "ItemIntegrations": "Iċ-ċwievet kollha tal-API, l-applikazzjonijiet imqabbda, ir-reġistrazzjonijiet tan-notifiki push u r-rabta tal-kalendarju tiegħek",
   "ItemAddons": "Dejta miżmuma mill-add-ons (assistent tal-AI, webhooks, portal tal-iżviluppaturi). Jekk add-on ikun offline, it-tħassir hemmhekk jerġa' jiġi pprovat sakemm jirnexxi",
-  "OwnedAppsText": "Irreġistrajt {0} applikazzjoni/jiet bħala żviluppatur. Dawn jitħassru wkoll, u l-integrazzjonijiet ta' persuni oħra magħhom jieqfu jaħdmu.",
+  "OwnedAppsText": "one=Irreġistrajt {0} applikazzjoni bħala żviluppatur. Din titħassar ukoll, u l-integrazzjonijiet ta' persuni oħra magħha jieqfu jaħdmu.|other=Irreġistrajt {0} applikazzjonijiet bħala żviluppatur. Dawn jitħassru wkoll, u l-integrazzjonijiet ta' persuni oħra magħhom jieqfu jaħdmu.",
   "LastUserText": "Dan huwa l-unika kont f'din l-installazzjoni. It-tħassir tiegħu jrodd l-installazzjoni fl-istat tal-ewwel użu, u jidher kodiċi ġdid tas-setup fil-log tas-server.",
   "NotDeletedHeading": "Dan ma jħassarx:",
   "NotDeletedBackups": "Il-backups magħmula qabel it-tħassir għad fihom kopja sakemm jiġu sostitwiti: il-kopji ta' kull ġimgħa mibnija fihom jinżammu għal erba' ġimgħat; backups oħra jinżammu sakemm kien ikkonfigura l-operatur ta' dan is-server (30 jum fis-setup ta' Kubernetes ipprovdut).",

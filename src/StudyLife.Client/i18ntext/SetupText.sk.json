@@ -156,7 +156,7 @@
   "ProgramErrorGroupInvalid": "Zadaj názov skupiny a limit ECTS väčší ako 0.",
   "ProgramErrorDuplicateGroup": "Skupina s týmto názvom už existuje.",
   "ProgramErrorCreateFailed": "Študijný program sa nepodarilo vytvoriť. Skús to znova.",
-  "ProgramSummaryLabel": "{0} predmetov · {1} započítateľných ECTS",
+  "ProgramSummaryLabel": "one={0} predmet · {1} započítateľných ECTS|few={0} predmety · {1} započítateľných ECTS|other={0} predmetov · {1} započítateľných ECTS",
   "ProgramCompletedSuffix": "✓ dokončený",
   "MarkProgramCompletedButton": "Označiť program ako dokončený",
   "UnmarkProgramCompletedButton": "Odstrániť označenie dokončenia",

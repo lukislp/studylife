@@ -28,7 +28,7 @@
     @if (_showInactivityNudge)
     {
         <div class="quota-hint dash-inactivity-banner">
-            ⏳ @string.Format(T.InactivityNudgeText ?? "", _daysSinceLastSession) <a href="/calendar">@T.PlanNowLink</a>
+            ⏳ @Plural.Format(T.InactivityNudgeText, _daysSinceLastSession) <a href="/calendar">@T.PlanNowLink</a>
         </div>
     }
 
@@ -168,7 +168,7 @@
                                          RequiredValue="@_gradGoalRequiredValue"
                                          RequiredSuffix="@T.GraduationGoalRequiredSuffix"
                                          TargetText="@(string.Format(T.GraduationGoalTargetFormat ?? "", GradGoalTargetDateValue))"
-                                         PaceText="@(string.Format(T.GraduationGoalPaceFormat ?? "", _gradGoalPaceValue))"
+                                         PaceFormat="@(T.GraduationGoalPaceFormat ?? "{0}")" PaceValue="@_gradGoalPaceValue"
                                          OnTrack="_gradGoalOnTrack"
                                          OnTrackText="@T.GraduationGoalOnTrack"
                                          BehindText="@T.GraduationGoalBehind"
@@ -188,7 +188,7 @@
         {
             <DashboardCourseDonutCard Label="@T.CourseFocus30Days" Slices="@_miniDonutSlices" Gradient="@_miniDonutGradient" TotalHours="@_miniDonutTotalHours" EmptyText="@T.NoCompletedSessions30Days" StatsLinkHint="@T.CourseFocusOpenStatsHint" />
 
-            <DashboardTodayRingCard Label="@T.TodayRingLabel" RingPercent="@_todayRingPercent" HoursLabel="@_todayHoursLabel" TargetLabel="@(string.Format(T.OfTarget ?? "", _dailyTargetLabel))" StreakStrip="@_streakStrip" Exceeded="_todayRingExceeded" ExceededHint="@T.TodayRingExceededHint" />
+            <DashboardTodayRingCard Label="@T.TodayRingLabel" RingPercent="@_todayRingPercent" HoursLabel="@_todayHoursLabel" TargetLabel="@(string.Format(T.OfTarget ?? "", LocalNumber.Localize(_dailyTargetLabel)))" StreakStrip="@_streakStrip" Exceeded="_todayRingExceeded" ExceededHint="@T.TodayRingExceededHint" />
 
             <DashboardRecentSessionsCard Label="@T.RecentlyCompleted" Sessions="@_recentSessions" EmptyText="@T.NoCompletedSessionsYet" />
 

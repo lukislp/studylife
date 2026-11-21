@@ -48,7 +48,7 @@
   "LoginPendingApproval": "Cette clé d'accès attend une approbation sur un appareil déjà connecté. Ouvrez-y la liste des clés, approuvez-la, puis réessayez.",
   "LinkNewDeviceButton": "Associer un nouvel appareil",
   "LinkNewDeviceInstructions": "Sur le nouvel appareil, ouvrez /link dans un navigateur (même adresse que cette application) et saisissez ce code :",
-  "LinkNewDeviceExpiresFormat": "Valide encore {0} minute(s).",
+  "LinkNewDeviceExpiresFormat": "one=Valide encore {0} minute.|other=Valide encore {0} minutes.",
   "LinkNewDeviceDone": "Terminé",
   "LinkHeading": "Associer cet appareil",
   "LinkIntro": "Saisissez le code affiché sur votre autre appareil déjà connecté pour connecter cet appareil.",

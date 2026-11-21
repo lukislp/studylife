@@ -39,7 +39,7 @@
   "ImportRecurrenceWarning": "Ponavljajući događaj — uvezen je samo prvi datum.",
   "ImportParseButton": "Učitaj datoteku",
   "ImportConfirmButton": "Uvezi",
-  "ImportSummary": "Uvezeno {0} sesija.",
+  "ImportSummary": "one=Uvezena je {0} sesija.|few=Uvezene su {0} sesije.|other=Uvezeno {0} sesija.",
   "ImportDoneCloseButton": "Gotovo",
   "TemplatesButton": "Predlošci",
   "TemplatesModalTitle": "Predlošci sesija",

@@ -46,7 +46,7 @@
     "ForecastAlreadyDone":  "Gach creidmheas ECTS bainte amach! 🎉",
     "GradeHistory":  "Forbairt na ngrád",
     "SemesterShortFormat":  "Seim. {0}",
-    "GradeHistoryTooltip":  "Meán-ghrád {0} · cúrsaí: {1}",
+    "GradeHistoryTooltip":  "Meán-ghrád {1} · cúrsaí: {0}",
     "HoursGradeScatter":  "Uaireanta vs. grád",
     "SessionCountFormat":  "{0} seisiún",
     "HeatmapFilterAll":  "Uile",

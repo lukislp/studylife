@@ -17,7 +17,7 @@
   "ItemAccess": "Vaše přístupové klíče, záložní kódy a všechna přihlášená zařízení",
   "ItemIntegrations": "Všechny klíče API, propojené aplikace, registrace push oznámení a váš odkaz na kalendář",
   "ItemAddons": "Data uložená v doplňcích (asistent AI, webhooky, vývojářský portál). Pokud je doplněk offline, mazání se tam opakuje, dokud se nezdaří",
-  "OwnedAppsText": "Jako vývojář jste zaregistrovali {0} aplikací. Budou smazány také a integrace ostatních lidí s nimi přestanou fungovat.",
+  "OwnedAppsText": "one=Jako vývojář jste zaregistrovali {0} aplikaci. Bude smazána také a integrace ostatních lidí s ní přestanou fungovat.|few=Jako vývojář jste zaregistrovali {0} aplikace. Budou smazány také a integrace ostatních lidí s nimi přestanou fungovat.|other=Jako vývojář jste zaregistrovali {0} aplikací. Budou smazány také a integrace ostatních lidí s nimi přestanou fungovat.",
   "LastUserText": "Jste jediný účet v této instalaci. Smazáním se instalace vrátí do stavu prvního spuštění a v protokolu serveru se objeví nový instalační kód.",
   "NotDeletedHeading": "Toto nesmaže:",
   "NotDeletedBackups": "Zálohy pořízené před smazáním stále obsahují kopii, dokud nejsou přepsány: vestavěné týdenní kopie se uchovávají čtyři týdny, ostatní zálohy tak dlouho, jak nastavil provozovatel tohoto serveru (30 dní v dodávaném nastavení Kubernetes).",

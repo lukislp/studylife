@@ -310,7 +310,8 @@ public class DashboardSummaryBuilderTests
         Assert.Equal(38.181818, s.TodayRing.RingPercent, 5);
         Assert.False(s.TodayRing.Exceeded);
         Assert.Equal("1h 30m", s.TodayRing.HoursLabel);
-        Assert.Equal("3.9h", s.TodayRing.DailyTargetLabel);
+        // Comma convention of every server-built label; the client localizes it (LocalNumber.Localize).
+        Assert.Equal("3,9h", s.TodayRing.DailyTargetLabel);
 
         Assert.Equal(new[] { "Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri" }, s.StreakStrip.Select(d => d.Label));
         Assert.Equal(new[] { false, false, true, true, true, true, true }, s.StreakStrip.Select(d => d.Studied));

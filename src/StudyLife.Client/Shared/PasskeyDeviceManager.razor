@@ -114,7 +114,7 @@
                         <div class="setup-section" style="margin-bottom:0.75rem;">
                             <p class="ss-desc">@T.LinkNewDeviceInstructions</p>
                             <p style="font-size:1.4rem; font-weight:600; letter-spacing:0.05em; text-align:center; margin:0.5rem 0;">@_linkCode</p>
-                            <p class="ss-desc" style="text-align:center;">@string.Format(T.LinkNewDeviceExpiresFormat ?? "", _linkCodeExpiresInMinutes)</p>
+                            <p class="ss-desc" style="text-align:center;">@Plural.Format(T.LinkNewDeviceExpiresFormat, _linkCodeExpiresInMinutes)</p>
                             <button type="button" class="btn-secondary" @onclick="FinishLinkDeviceAsync">@T.LinkNewDeviceDone</button>
                         </div>
                     }

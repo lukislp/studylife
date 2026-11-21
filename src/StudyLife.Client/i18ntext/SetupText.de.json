@@ -156,7 +156,7 @@
   "ProgramErrorGroupInvalid": "Bitte gib einen Gruppennamen und ein ECTS-Kontingent größer als 0 ein.",
   "ProgramErrorDuplicateGroup": "Eine Gruppe mit diesem Namen existiert bereits.",
   "ProgramErrorCreateFailed": "Der Studiengang konnte nicht erstellt werden. Bitte versuch es erneut.",
-  "ProgramSummaryLabel": "{0} Kurse · {1} anrechenbare ECTS",
+  "ProgramSummaryLabel": "one={0} Kurs · {1} anrechenbare ECTS|other={0} Kurse · {1} anrechenbare ECTS",
   "ProgramCompletedSuffix": "✓ abgeschlossen",
   "MarkProgramCompletedButton": "Studiengang als abgeschlossen markieren",
   "UnmarkProgramCompletedButton": "Abschluss-Markierung entfernen",

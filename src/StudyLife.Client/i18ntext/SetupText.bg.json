@@ -156,7 +156,7 @@
   "ProgramErrorGroupInvalid": "Въведи име на група и таван на ECTS, по-голям от 0.",
   "ProgramErrorDuplicateGroup": "Вече съществува група с това име.",
   "ProgramErrorCreateFailed": "Създаването на специалността не успя. Опитай отново.",
-  "ProgramSummaryLabel": "{0} курса · {1} зачитани ECTS",
+  "ProgramSummaryLabel": "one={0} курс · {1} зачитани ECTS|other={0} курса · {1} зачитани ECTS",
   "ProgramCompletedSuffix": "✓ завършена",
   "MarkProgramCompletedButton": "Отбележи програмата като завършена",
   "UnmarkProgramCompletedButton": "Премахни отметката за завършване",

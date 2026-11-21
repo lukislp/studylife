@@ -39,7 +39,7 @@
   "ImportRecurrenceWarning": "Recurring event — only the first date was imported.",
   "ImportParseButton": "Read file",
   "ImportConfirmButton": "Import",
-  "ImportSummary": "{0} session(s) imported.",
+  "ImportSummary": "one={0} session imported.|other={0} sessions imported.",
   "ImportDoneCloseButton": "Done",
   "TemplatesButton": "Templates",
   "TemplatesModalTitle": "Session templates",

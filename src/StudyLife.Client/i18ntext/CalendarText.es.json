@@ -39,7 +39,7 @@
   "ImportRecurrenceWarning": "Evento recurrente — solo se importó la primera fecha.",
   "ImportParseButton": "Leer archivo",
   "ImportConfirmButton": "Importar",
-  "ImportSummary": "{0} sesión(es) importada(s).",
+  "ImportSummary": "one={0} sesión importada.|other={0} sesiones importadas.",
   "ImportDoneCloseButton": "Listo",
   "TemplatesButton": "Plantillas",
   "TemplatesModalTitle": "Plantillas de sesión",

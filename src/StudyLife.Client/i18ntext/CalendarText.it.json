@@ -39,7 +39,7 @@
   "ImportRecurrenceWarning": "Evento ricorrente — è stata importata solo la prima data.",
   "ImportParseButton": "Leggi file",
   "ImportConfirmButton": "Importa",
-  "ImportSummary": "{0} sessione/i importata/e.",
+  "ImportSummary": "one={0} sessione importata.|other={0} sessioni importate.",
   "ImportDoneCloseButton": "Fatto",
   "TemplatesButton": "Modelli",
   "TemplatesModalTitle": "Modelli di sessione",

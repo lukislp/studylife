@@ -156,7 +156,7 @@
   "ProgramErrorGroupInvalid": "Укажи название группы и лимит ECTS больше 0.",
   "ProgramErrorDuplicateGroup": "Группа с таким названием уже существует.",
   "ProgramErrorCreateFailed": "Не удалось создать программу. Попробуй ещё раз.",
-  "ProgramSummaryLabel": "{0} курсов · {1} засчитываемых ECTS",
+  "ProgramSummaryLabel": "one={0} курс · {1} засчитываемых ECTS|few={0} курса · {1} засчитываемых ECTS|other={0} курсов · {1} засчитываемых ECTS",
   "ProgramCompletedSuffix": "✓ завершена",
   "MarkProgramCompletedButton": "Отметить программу как завершённую",
   "UnmarkProgramCompletedButton": "Убрать отметку о завершении",

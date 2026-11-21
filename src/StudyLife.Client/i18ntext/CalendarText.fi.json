@@ -39,7 +39,7 @@
   "ImportRecurrenceWarning": "Toistuva tapahtuma — vain ensimmäinen päivämäärä tuotiin.",
   "ImportParseButton": "Lue tiedosto",
   "ImportConfirmButton": "Tuo",
-  "ImportSummary": "{0} jaksoa tuotu.",
+  "ImportSummary": "one={0} jakso tuotu.|other={0} jaksoa tuotu.",
   "ImportDoneCloseButton": "Valmis",
   "TemplatesButton": "Mallit",
   "TemplatesModalTitle": "Jaksomallit",

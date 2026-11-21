@@ -48,7 +48,7 @@
   "LoginPendingApproval": "Ta ključ za dostop čaka na odobritev na že prijavljeni napravi. Tam odprite seznam ključev, ga odobrite in poskusite znova.",
   "LinkNewDeviceButton": "Poveži novo napravo",
   "LinkNewDeviceInstructions": "V novi napravi odprite /link v brskalniku (enak naslov kot ta aplikacija) in vnesite to kodo:",
-  "LinkNewDeviceExpiresFormat": "Veljavno še {0} minut.",
+  "LinkNewDeviceExpiresFormat": "one=Veljavno še {0} minuto.|two=Veljavno še {0} minuti.|few=Veljavno še {0} minute.|other=Veljavno še {0} minut.",
   "LinkNewDeviceDone": "Končano",
   "LinkHeading": "Poveži to napravo",
   "LinkIntro": "Vnesite kodo, prikazano na vaši drugi, že prijavljeni napravi, da povežete to napravo.",

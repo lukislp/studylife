@@ -29,7 +29,7 @@
   "PushDevicesConfirmYes": "Видалити",
   "PasskeysLabel": "Ключі доступу",
   "PageLoadErrorText": "Під час завантаження цієї сторінки щось пішло не так. Будь ласка, спробуйте ще раз.",
-  "PendingSyncTooltip": "{0} змін очікують синхронізації",
+  "PendingSyncTooltip": "one={0} зміна очікує синхронізації|few={0} зміни очікують синхронізації|other={0} змін очікують синхронізації",
   "UpdateAvailableText": "Доступна нова версія",
   "UpdateReloadButton": "Перезавантажити",
   "AgentChatLabel": "AI-асистент",

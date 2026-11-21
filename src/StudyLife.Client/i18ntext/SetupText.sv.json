@@ -156,7 +156,7 @@
   "ProgramErrorGroupInvalid": "Ange ett gruppnamn och ett ECTS-tak större än 0.",
   "ProgramErrorDuplicateGroup": "En grupp med detta namn finns redan.",
   "ProgramErrorCreateFailed": "Programmet kunde inte skapas. Försök igen.",
-  "ProgramSummaryLabel": "{0} kurser · {1} tillgodoräknade ECTS",
+  "ProgramSummaryLabel": "one={0} kurs · {1} tillgodoräknade ECTS|other={0} kurser · {1} tillgodoräknade ECTS",
   "ProgramCompletedSuffix": "✓ avslutat",
   "MarkProgramCompletedButton": "Markera programmet som avslutat",
   "UnmarkProgramCompletedButton": "Ta bort avslutat-markeringen",

@@ -156,7 +156,7 @@
   "ProgramErrorGroupInvalid": "Įvesk grupės pavadinimą ir didesnę nei 0 ECTS ribą.",
   "ProgramErrorDuplicateGroup": "Grupė tokiu pavadinimu jau egzistuoja.",
   "ProgramErrorCreateFailed": "Nepavyko sukurti studijų programos. Bandyk dar kartą.",
-  "ProgramSummaryLabel": "{0} kursai · {1} įskaitomi ECTS",
+  "ProgramSummaryLabel": "one={0} kursas · {1} įskaitomi ECTS|few={0} kursai · {1} įskaitomi ECTS|other={0} kursų · {1} įskaitomi ECTS",
   "ProgramCompletedSuffix": "✓ baigta",
   "MarkProgramCompletedButton": "Pažymėti programą kaip baigtą",
   "UnmarkProgramCompletedButton": "Pašalinti baigtumo žymą",

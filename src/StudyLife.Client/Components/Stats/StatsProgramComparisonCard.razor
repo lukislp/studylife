@@ -23,7 +23,7 @@
                 <div class="csr-bar-fill" style="--c: var(--accent); width: @r.BarPercent%"></div>
             </div>
             <div class="csr-meta">
-                <span>@r.HoursLabel · @string.Format(SessionCountFormat ?? "", r.SessionCount)</span>
+                <span>@r.HoursLabel · @Plural.Format(SessionCountFormat, r.SessionCount)</span>
                 <span>@string.Format(EctsFormat ?? "", r.EctsEarned, r.EctsTotal)</span>
                 @if (r.GradeLabel != null)
                 {

@@ -156,7 +156,7 @@
   "ProgramErrorGroupInvalid": "Ievadi grupas nosaukumu un ECTS ierobežojumu, kas lielāks par 0.",
   "ProgramErrorDuplicateGroup": "Grupa ar šādu nosaukumu jau pastāv.",
   "ProgramErrorCreateFailed": "Neizdevās izveidot studiju programmu. Mēģini vēlreiz.",
-  "ProgramSummaryLabel": "{0} kursi · {1} ieskaitāmie ECTS",
+  "ProgramSummaryLabel": "one={0} kurss · {1} ieskaitāmie ECTS|other={0} kursi · {1} ieskaitāmie ECTS",
   "ProgramCompletedSuffix": "✓ pabeigta",
   "MarkProgramCompletedButton": "Atzīmēt programmu kā pabeigtu",
   "UnmarkProgramCompletedButton": "Noņemt pabeigtas programmas atzīmi",

@@ -48,7 +48,7 @@
   "LoginPendingApproval": "Šī piekļuves atslēga gaida apstiprinājumu jau pieteiktā ierīcē. Atveriet tur atslēgu sarakstu, apstipriniet to un mēģiniet vēlreiz.",
   "LinkNewDeviceButton": "Savienot jaunu ierīci",
   "LinkNewDeviceInstructions": "Jaunajā ierīcē pārlūkprogrammā atveriet /link (tā pati adrese, kas šai lietotnei) un ievadiet šo kodu:",
-  "LinkNewDeviceExpiresFormat": "Derīgs vēl {0} minūtes.",
+  "LinkNewDeviceExpiresFormat": "one=Derīgs vēl {0} minūti.|other=Derīgs vēl {0} minūtes.",
   "LinkNewDeviceDone": "Gatavs",
   "LinkHeading": "Savienot šo ierīci",
   "LinkIntro": "Ievadiet kodu, kas redzams jūsu otrā, jau pieteiktā ierīcē, lai savienotu šo ierīci.",

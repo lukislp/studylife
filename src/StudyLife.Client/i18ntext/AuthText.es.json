@@ -48,7 +48,7 @@
   "LoginPendingApproval": "Esta llave de acceso está esperando aprobación en un dispositivo ya conectado. Abre allí la lista de llaves, apruébala e inténtalo de nuevo.",
   "LinkNewDeviceButton": "Vincular un nuevo dispositivo",
   "LinkNewDeviceInstructions": "En el nuevo dispositivo, abre /link en un navegador (la misma dirección que esta app) e introduce este código:",
-  "LinkNewDeviceExpiresFormat": "Válido durante {0} minuto(s) más.",
+  "LinkNewDeviceExpiresFormat": "one=Válido durante {0} minuto más.|other=Válido durante {0} minutos más.",
   "LinkNewDeviceDone": "Listo",
   "LinkHeading": "Vincular este dispositivo",
   "LinkIntro": "Introduce el código que aparece en tu otro dispositivo, ya conectado, para conectar este dispositivo.",
