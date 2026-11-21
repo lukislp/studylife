@@ -5,14 +5,14 @@
 @using StudyLife.Shared
 <div class="dash-card card-trend">
     <div class="card-label">@Label</div>
-    <div class="trend-chart">
+    <div class="trend-chart chart-plot">
         @foreach (var w in Weeks)
         {
             <div class="trend-bar-col" title="@w.Label: @w.HoursLabel">
                 <div class="trend-bar-track">
                     <div class="trend-bar-fill @(w.IsCurrent ? "current" : "") @(IsPeak(w) ? "peak" : "")" style="height: @w.Percent%"></div>
                 </div>
-                <div class="trend-bar-label @(IsPeak(w) ? "peak" : "")">@(IsPeak(w) ? "★ " : "")@w.Label</div>
+                <div class="trend-bar-label chart-axis-label @(IsPeak(w) ? "peak" : "")">@(IsPeak(w) ? "★ " : "")@w.Label</div>
             </div>
         }
     </div>

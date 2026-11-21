@@ -10,8 +10,8 @@
         @* Individual grades chronologically by completion date - unlike the per-semester grade
            trend (StatsGradeChartCard, avg per catalog semester), each bar shows ONE grade at its
            actual date. Same scrolling-columns pattern as the ECTS timeline. *@
-        <div class="timeline-chart-wrap">
-            <div class="timeline-chart grade-timeline-chart">
+        <div class="chart-scroll">
+            <div class="timeline-chart chart-plot grade-timeline-chart">
                 @foreach (var p in Points)
                 {
                     <div class="timeline-col" title="@($"{p.DateLabel} · {p.CourseName}: {string.Format(GradeFormat, p.GradeLabel)}")">
@@ -20,7 +20,7 @@
                             @* Inverted scale like .grade-chart: 1.0 (best grade) fills the bar. *@
                             <div class="timeline-fill" style="height: @p.BarPercentLabel%; background: @p.Color"></div>
                         </div>
-                        <div class="timeline-label">@p.DateLabel</div>
+                        <div class="timeline-label chart-axis-label">@p.DateLabel</div>
                     </div>
                 }
             </div>

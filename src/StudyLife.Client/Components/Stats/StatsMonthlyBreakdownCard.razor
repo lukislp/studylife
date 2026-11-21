@@ -10,7 +10,7 @@
     }
     else
     {
-        <div class="stacked-chart">
+        <div class="stacked-chart chart-plot">
             @foreach (var m in Stacks)
             {
                 <div class="stacked-col" title="@m.Label: @m.TotalLabel">
@@ -20,7 +20,7 @@
                             <div class="stacked-seg" style="height: @seg.HeightPercent%; background: @seg.Color"></div>
                         }
                     </div>
-                    <div class="stacked-label">@m.Label</div>
+                    <div class="stacked-label chart-axis-label">@m.Label</div>
                 </div>
             }
         </div>
