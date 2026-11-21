@@ -308,6 +308,7 @@ public static class DashboardSummaryBuilder
             .Select(i => new DashboardTrendWeekDto
             {
                 Label = trendStarts[i].ToString("dd.MM"),
+                WeekStart = trendStarts[i],
                 Hours = trendHours[i],
                 Percent = Math.Min(100, trendHours[i] / maxTrendHours * 100),
                 IsCurrent = trendStarts[i] == weekStart,
@@ -516,6 +517,7 @@ public static class DashboardSummaryBuilder
         {
             hint.Planned = true;
             hint.PlannedStartTimeLabel = plannedSession.StartTime.ToString("HH:mm");
+            hint.PlannedStartTime = plannedSession.StartTime;
             return hint;
         }
 
@@ -713,6 +715,7 @@ public static class DashboardSummaryBuilder
                 Available = forecast.Available,
                 AlreadyDone = forecast.AlreadyDone,
                 DateLabel = forecast.Available ? forecast.ForecastDate!.Value.ToString("dd.MM.yyyy") : "",
+                Date = forecast.Available ? forecast.ForecastDate : null,
             },
             GraduationGoal = BuildGraduationGoal(input, forecast),
             MonthComparison = BuildMonthComparison(allTimeHistory, input.Today),
@@ -738,6 +741,7 @@ public static class DashboardSummaryBuilder
         goal.Visible = true;
         var targetDate = input.Settings.TargetGraduationDate.Value.Date;
         goal.TargetDateValue = targetDate.ToString("dd.MM.yyyy");
+        goal.TargetDate = targetDate;
         var weeksUntilTarget = (targetDate - input.Today).TotalDays / 7.0;
         goal.Expired = weeksUntilTarget <= 0;
         if (goal.Expired) return goal;
@@ -810,6 +814,8 @@ public static class DashboardSummaryBuilder
             BestWeekHoursLabel = FormatHoursLabel(bestWeek.Hours),
             BestWeekRangeLabel = $"{bestWeek.WeekStart:dd.MM.} – {bestWeek.WeekStart.AddDays(6):dd.MM.yyyy}",
             BestWeekIsNew = thisWeekHours > 0 && thisWeekHours >= bestWeek.Hours,
+            BestDay = bestDay.Day,
+            BestWeekStart = bestWeek.WeekStart,
         };
     }
 

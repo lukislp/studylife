@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 using StudyLife.Client.Components.Stats;
+using StudyLife.Client.Services;
 using StudyLife.Shared;
 
 namespace StudyLife.Client.Pages;
@@ -10,7 +11,10 @@ public partial class Stats
 {
     private bool _forecastAvailable;
     private bool _forecastAlreadyDone;
-    private string _forecastDateLabel = "";
+    private DateTime? _forecastDate;
+    private string _forecastDateFallback = "";
+    /// <summary>Resolved at render time in the UI language (see SummaryDateLabels).</summary>
+    private string ForecastDateLabel => SummaryDateLabels.Date(_forecastDate, _forecastDateFallback);
     private string? _monthCompDeltaLabel;
     private bool _monthCompUp;
     private List<StatsEctsTimelineCard.TimelinePoint> _ectsTimelinePoints = new();
@@ -26,7 +30,8 @@ public partial class Stats
     {
         _forecastAvailable = core.Forecast.Available;
         _forecastAlreadyDone = core.Forecast.AlreadyDone;
-        _forecastDateLabel = core.Forecast.DateLabel;
+        _forecastDate = core.Forecast.Date;
+        _forecastDateFallback = core.Forecast.DateLabel;
 
         _monthCompUp = core.MonthComparison.Up;
         _monthCompDeltaLabel = core.MonthComparison.DeltaLabel;
@@ -36,11 +41,11 @@ public partial class Stats
             .ToList();
 
         _ectsPlanPoints = core.EctsPlan
-            .Select(p => new StatsEctsPlanCard.PlanPoint(p.Label, p.ActualEcts, p.ActualPercent, p.TargetEcts, p.TargetPercent))
+            .Select(p => new StatsEctsPlanCard.PlanPoint(p.Month, p.Label, p.ActualEcts, p.ActualPercent, p.TargetEcts, p.TargetPercent))
             .ToList();
 
         _productivityWeeks = core.ProductivityWeeks
-            .Select(w => new StatsProductivityScoreCard.WeekPoint(w.Label, w.Percent))
+            .Select(w => new StatsProductivityScoreCard.WeekPoint(w.WeekStart, w.Label, w.Percent))
             .ToList();
 
         _goalHistoryWeeks = core.GoalHistoryWeeks
@@ -48,7 +53,7 @@ public partial class Stats
             .ToList();
 
         _inactivityWeeks = core.InactivityWeeks
-            .Select(w => new StatsInactivityTrendCard.WeekBar(w.Label, w.Hours, w.Percent))
+            .Select(w => new StatsInactivityTrendCard.WeekBar(w.WeekStart, w.Label, w.Hours, w.Percent))
             .ToList();
 
         _sessionLengthBuckets = core.SessionLengthBuckets

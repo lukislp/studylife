@@ -272,6 +272,7 @@ public class StatsSummaryBuilderTests
         Assert.True(forecast.Available);
         Assert.False(forecast.AlreadyDone);
         Assert.Equal("19.08.2028", forecast.DateLabel);
+        Assert.Equal(new DateTime(2028, 8, 19), forecast.Date!.Value.Date);
     }
 
     [Fact]
@@ -525,6 +526,8 @@ public class StatsSummaryBuilderTests
         Assert.Equal(15, points.Count);
         Assert.Equal("07.26", points[0].Label);
         Assert.Equal("09.27", points[14].Label);
+        Assert.Equal(new DateTime(2026, 7, 1), points[0].Month);
+        Assert.Equal(new DateTime(2027, 9, 1), points[14].Month);
         // Actual stops at the current month; the target line reaches EctsTotal at the target date.
         Assert.Equal(new int?[] { 5, 15, 15 }, points.Take(3).Select(p => p.ActualEcts));
         Assert.All(points.Skip(3), p => Assert.Null(p.ActualEcts));
@@ -540,6 +543,7 @@ public class StatsSummaryBuilderTests
 
         Assert.Equal(new[] { "15.06.", "22.06.", "29.06.", "06.07.", "13.07.", "20.07.", "27.07.", "03.08.", "10.08.", "17.08.", "24.08.", "31.08." },
             weeks.Select(w => w.Label));
+        Assert.Equal(new DateTime(2026, 6, 15), weeks[0].WeekStart);
         // Only the week of 03.08. holds the one non-timer-completed session (3 of 4).
         Assert.Equal(new double?[] { 100, 100, 100, 100, 100, 100, 100, 75, 100, 100, 100, 100 },
             weeks.Select(w => w.Percent));
@@ -559,6 +563,7 @@ public class StatsSummaryBuilderTests
 
         Assert.Equal(expectedHours, core.InactivityWeeks.Select(w => w.Hours));
         Assert.Equal(100.0, core.InactivityWeeks[8].Percent, 6);
+        Assert.Equal(core.GoalHistoryWeeks.Select(w => (DateTime?)w.WeekStart), core.InactivityWeeks.Select(w => w.WeekStart));
         Assert.Equal(17.391304, core.InactivityWeeks[0].Percent, 5);
     }
 
@@ -612,6 +617,7 @@ public class StatsSummaryBuilderTests
 
         Assert.Equal(12, weeks.Count);
         Assert.Equal("15.06.", weeks[0].Label);
+        Assert.Equal(new DateTime(2026, 6, 15), weeks[0].WeekStart);
         // Note 7 belongs to another programme and note 8 predates the window.
         Assert.Equal(new[] { 0, 1, 0, 0, 1, 0, 0, 2, 0, 1, 0, 1 }, weeks.Select(w => w.NotesCount));
         Assert.Equal(new[] { 0.0, 50, 0, 0, 50, 0, 0, 100, 0, 50, 0, 50 }, weeks.Select(w => w.NotesPercent));

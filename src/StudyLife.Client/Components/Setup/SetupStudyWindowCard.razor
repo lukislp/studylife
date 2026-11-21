@@ -12,7 +12,7 @@
                     @onchange="e => StartHourChanged.InvokeAsync(int.TryParse(e.Value?.ToString(), out var v) ? v : StartHour)">
                 @for (var h = 0; h <= 22; h++)
                 {
-                    <option value="@h">@(h.ToString("00")):00</option>
+                    <option value="@h">@LocalDate.HourMark(h)</option>
                 }
             </select>
         </div>
@@ -22,7 +22,7 @@
                     @onchange="e => EndHourChanged.InvokeAsync(int.TryParse(e.Value?.ToString(), out var v) ? v : EndHour)">
                 @for (var h = 1; h <= 23; h++)
                 {
-                    <option value="@h">@(h.ToString("00")):00</option>
+                    <option value="@h">@LocalDate.HourMark(h)</option>
                 }
             </select>
         </div>

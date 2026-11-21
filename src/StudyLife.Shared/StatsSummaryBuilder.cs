@@ -807,6 +807,7 @@ public static class StatsSummaryBuilder
             Available = forecast.Available,
             AlreadyDone = forecast.AlreadyDone,
             DateLabel = forecast.Available ? forecast.ForecastDate!.Value.ToString("dd.MM.yyyy") : "",
+            Date = forecast.Available ? forecast.ForecastDate : null,
         };
     }
 
@@ -911,6 +912,7 @@ public static class StatsSummaryBuilder
             points.Add(new StatsEctsPlanPointDto
             {
                 Label = m.ToString("MM.yy"),
+                Month = m,
                 ActualEcts = actualEcts,
                 ActualPercent = actualEcts.HasValue ? Math.Min(100, actualEcts.Value / (double)scaleMax * 100) : null,
                 TargetEcts = target,
@@ -937,11 +939,12 @@ public static class StatsSummaryBuilder
                 .Where(s => s.StartTime.Date >= ws && s.StartTime.Date < we && StudyMetrics.IsStudied(s, now))
                 .ToList();
             if (studied.Count == 0)
-                return new StatsProductivityWeekDto { Label = ws.ToString("dd.MM."), Percent = null };
+                return new StatsProductivityWeekDto { Label = ws.ToString("dd.MM."), WeekStart = ws, Percent = null };
             var completedCount = studied.Count(s => s.IsCompleted);
             return new StatsProductivityWeekDto
             {
                 Label = ws.ToString("dd.MM."),
+                WeekStart = ws,
                 Percent = completedCount / (double)studied.Count * 100,
             };
         }).ToList();
@@ -985,6 +988,7 @@ public static class StatsSummaryBuilder
             .Select((ws, i) => new StatsInactivityWeekDto
             {
                 Label = ws.ToString("dd.MM."),
+                WeekStart = ws,
                 Hours = weekHours[i],
                 Percent = Math.Min(100, weekHours[i] / maxHours * 100),
             })
@@ -1101,6 +1105,7 @@ public static class StatsSummaryBuilder
             .Select((ws, i) => new StatsNotesCorrelationWeekDto
             {
                 Label = ws.ToString("dd.MM."),
+                WeekStart = ws,
                 NotesCount = weekData[i].NotesCount,
                 NotesPercent = weekData[i].NotesCount / (double)maxNotes * 100,
                 Hours = weekData[i].Hours,

@@ -167,7 +167,7 @@
             <DashboardGraduationGoalCard Label="@T.GraduationGoalLabel"
                                          RequiredValue="@_gradGoalRequiredValue"
                                          RequiredSuffix="@T.GraduationGoalRequiredSuffix"
-                                         TargetText="@(string.Format(T.GraduationGoalTargetFormat ?? "", _gradGoalTargetDateValue))"
+                                         TargetText="@(string.Format(T.GraduationGoalTargetFormat ?? "", GradGoalTargetDateValue))"
                                          PaceText="@(string.Format(T.GraduationGoalPaceFormat ?? "", _gradGoalPaceValue))"
                                          OnTrack="_gradGoalOnTrack"
                                          OnTrackText="@T.GraduationGoalOnTrack"
@@ -287,8 +287,8 @@
         else
         {
             <DashboardBestRecordCard Label="@T.BestRecordLabel"
-                                      DayLabel="@T.BestRecordDayLabel" BestDayHours="@_bestDayHoursLabel" BestDayDate="@_bestDayDateLabel" BestDayIsNew="_bestDayIsNew"
-                                      WeekLabel="@T.BestRecordWeekLabel" BestWeekHours="@_bestWeekHoursLabel" BestWeekRange="@_bestWeekRangeLabel" BestWeekIsNew="_bestWeekIsNew"
+                                      DayLabel="@T.BestRecordDayLabel" BestDayHours="@_bestDayHoursLabel" BestDayDate="@BestDayDateLabel" BestDayIsNew="_bestDayIsNew"
+                                      WeekLabel="@T.BestRecordWeekLabel" BestWeekHours="@_bestWeekHoursLabel" BestWeekRange="@BestWeekRangeLabel" BestWeekIsNew="_bestWeekIsNew"
                                       NewRecordText="@T.BestRecordNewRecordText" />
         }
     </div>
