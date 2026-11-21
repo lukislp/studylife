@@ -33,6 +33,7 @@
          project of its own, and referencing a Blazor WASM project from one would drag in the
          whole WASM SDK. -->
     <Compile Include="..\..\src\StudyLife.Client\Services\LocalDate.cs" Link="LocalDate.cs" />
+    <Compile Include="..\..\src\StudyLife.Client\Services\SummaryDateLabels.cs" Link="SummaryDateLabels.cs" />
   </ItemGroup>
 
 </Project>

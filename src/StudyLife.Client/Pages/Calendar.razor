@@ -80,12 +80,12 @@
                     <div class="cal-hours">
                         @for (int h = 0; h <= 23; h++)
                         {
-                            <div class="hour-label" style="top: @(h * 60)px">@h.ToString("00"):00</div>
+                            <div class="hour-label" style="top: @(h * 60)px">@LocalDate.HourMark(h)</div>
                         }
                         <!-- Closing "24:00" mark at the very bottom edge, purely to visualize where the
                              day ends - every other label is the hour it starts, this one has no session
                              slot below it. -->
-                        <div class="hour-label hour-label-end">24:00</div>
+                        <div class="hour-label hour-label-end">@LocalDate.HourMark(24)</div>
                     </div>
 
                     <!-- Day columns (day view: only _currentDay, full width) -->
@@ -324,7 +324,7 @@
                                         @template.CourseName · @string.Format(T.TemplateMinutesFormat ?? "", template.DurationMinutes)
                                         @if (template.DefaultWeekday.HasValue && template.DefaultStartTime.HasValue)
                                         {
-                                            <text> · @WeekdayShortLabel(template.DefaultWeekday.Value) @template.DefaultStartTime.Value.ToString("hh\\:mm")</text>
+                                            <text> · @WeekdayShortLabel(template.DefaultWeekday.Value) @LocalDate.Time(template.DefaultStartTime.Value)</text>
                                         }
                                     </div>
                                     @if (!string.IsNullOrWhiteSpace(template.Topic))

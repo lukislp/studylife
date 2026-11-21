@@ -20,8 +20,9 @@
 </div>
 
 @code {
-    public record WeekBar(string Label, double Hours, double Percent)
+    public record WeekBar(DateTime? WeekStart, string FallbackLabel, double Hours, double Percent)
     {
+        public string Label => SummaryDateLabels.DayMonth(WeekStart, FallbackLabel);
         public string HoursLabel => StudyMetrics.FormatHoursMinutes(Hours);
     }
 

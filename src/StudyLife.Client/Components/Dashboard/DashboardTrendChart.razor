@@ -19,8 +19,10 @@
 </div>
 
 @code {
-    public record WeekTrend(string Label, double Hours, double Percent, bool IsCurrent)
+    public record WeekTrend(DateTime? WeekStart, string FallbackLabel, double Hours, double Percent, bool IsCurrent)
     {
+        /// <summary>Resolved at render time, so a live language switch re-labels the axis.</summary>
+        public string Label => SummaryDateLabels.AxisDayMonth(WeekStart, FallbackLabel);
         public string HoursLabel => StudyMetrics.FormatHoursMinutes(Hours);
     }
 

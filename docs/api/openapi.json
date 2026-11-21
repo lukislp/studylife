@@ -7425,6 +7425,20 @@
           },
           "bestWeekIsNew": {
             "type": "boolean"
+          },
+          "bestDay": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "bestWeekStart": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -7549,6 +7563,13 @@
           },
           "dateLabel": {
             "type": "string"
+          },
+          "date": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -7680,6 +7701,13 @@
           },
           "targetDateValue": {
             "type": "string"
+          },
+          "targetDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -7867,6 +7895,13 @@
               "null",
               "string"
             ]
+          },
+          "plannedStartTime": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           },
           "showSuggestText": {
             "type": "boolean"
@@ -8173,6 +8208,13 @@
         "properties": {
           "label": {
             "type": "string"
+          },
+          "weekStart": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           },
           "hours": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -11443,6 +11485,13 @@
           "label": {
             "type": "string"
           },
+          "month": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
           "actualEcts": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
@@ -11543,6 +11592,13 @@
           },
           "dateLabel": {
             "type": "string"
+          },
+          "date": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -11882,6 +11938,13 @@
           "label": {
             "type": "string"
           },
+          "weekStart": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
           "hours": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
             "type": [
@@ -12022,6 +12085,13 @@
           "label": {
             "type": "string"
           },
+          "weekStart": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
           "notesCount": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
@@ -12078,6 +12148,13 @@
         "properties": {
           "label": {
             "type": "string"
+          },
+          "weekStart": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           },
           "percent": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",

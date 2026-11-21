@@ -103,7 +103,7 @@ public partial class Index
             : "";
         _productivityPlanned = hint.Planned;
         _productivityStatus = hint.PlannedStartTimeLabel != null
-            ? string.Format(T.ProductivityPlannedFormat ?? "", hint.PlannedStartTimeLabel)
+            ? string.Format(T.ProductivityPlannedFormat ?? "", SummaryDateLabels.Time(hint.PlannedStartTime, hint.PlannedStartTimeLabel))
             : hint.ShowSuggestText ? T.ProductivitySuggestText : null;
         _productivityShowPlanLink = hint.ShowPlanLink;
 

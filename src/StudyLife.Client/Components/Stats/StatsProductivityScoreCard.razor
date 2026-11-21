@@ -30,8 +30,9 @@
 </div>
 
 @code {
-    public record WeekPoint(string Label, double? Percent)
+    public record WeekPoint(DateTime? WeekStart, string FallbackLabel, double? Percent)
     {
+        public string Label => SummaryDateLabels.DayMonth(WeekStart, FallbackLabel);
         public bool HasData => Percent.HasValue;
         public string PercentLabel => Percent.HasValue ? $"{Math.Round(Percent.Value)}%" : "";
     }

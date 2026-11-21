@@ -82,6 +82,101 @@ public class LocalDateTests
         Assert.Equal("30.08.2026 14:05", LocalDate.DateAndTime(Sample));
     }
 
+    [Theory]
+    [InlineData("de", "30.08")]
+    [InlineData("en", "30/08")]
+    [InlineData("hu", "08. 30")]
+    public void AxisDayMonth_DropsOnlyTheTrailingSeparator(string language, string expected)
+    {
+        LocalDate.Language = language;
+        Assert.Equal(expected, LocalDate.AxisDayMonth(Sample));
+    }
+
+    [Theory]
+    [InlineData("de", "08.26")]
+    [InlineData("en", "08/26")]
+    [InlineData("nl", "08-26")]
+    [InlineData("sv", "26-08")]
+    public void MonthYear_FollowsTheLanguagesDateFamily(string language, string expected)
+    {
+        LocalDate.Language = language;
+        Assert.Equal(expected, LocalDate.MonthYear(Sample));
+    }
+
+    [Theory]
+    [InlineData("de", "24.08. – 30.08.2026")]
+    [InlineData("en", "24/08 – 30/08/2026")]
+    public void DayRange_UsesDayMonthAndTheFullEndDate(string language, string expected)
+    {
+        LocalDate.Language = language;
+        Assert.Equal(expected, LocalDate.DayRange(Sample.AddDays(-6), Sample));
+    }
+
+    [Theory]
+    [InlineData("de", "07:30")]
+    [InlineData("en", "7:30 AM")]
+    public void Time_OfATimeOfDayFollowsTheSameClock(string language, string expected)
+    {
+        LocalDate.Language = language;
+        Assert.Equal(expected, LocalDate.Time(new TimeSpan(7, 30, 0)));
+    }
+
+    [Theory]
+    [InlineData("de", 0, "00:00")]
+    [InlineData("de", 7, "07:00")]
+    [InlineData("de", 24, "24:00")]
+    [InlineData("en", 0, "12 AM")]
+    [InlineData("en", 7, "7 AM")]
+    [InlineData("en", 12, "12 PM")]
+    [InlineData("en", 19, "7 PM")]
+    [InlineData("en", 24, "12 AM")]
+    public void HourMark_Uses12hForEnglishAnd24hElsewhere(string language, int hour, string expected)
+    {
+        LocalDate.Language = language;
+        Assert.Equal(expected, LocalDate.HourMark(hour));
+    }
+
+    // SummaryDateLabels lives here (not in its own class) because it reads the same static
+    // LocalDate.Language - a second test class would race these tests under xunit's parallelism.
+
+    [Fact]
+    public void SummaryDateLabels_FormatTheRawDateInTheUiLanguage()
+    {
+        LocalDate.Language = "en";
+        var monday = new DateTime(2034, 8, 28);
+
+        Assert.Equal("28/08/2034", SummaryDateLabels.Date(monday, "28.08.2034"));
+        Assert.Equal("28/08", SummaryDateLabels.DayMonth(monday, "28.08."));
+        Assert.Equal("28/08", SummaryDateLabels.AxisDayMonth(monday, "28.08"));
+        Assert.Equal("08/34", SummaryDateLabels.MonthYear(monday, "08.34"));
+        Assert.Equal("28/08 – 03/09/2034", SummaryDateLabels.WeekRange(monday, "28.08. – 03.09.2034"));
+        Assert.Equal("2:00 PM", SummaryDateLabels.Time(monday.AddHours(14), "14:00"));
+    }
+
+    [Fact]
+    public void SummaryDateLabels_KeepGermanExactlyAsTheServerLabels()
+    {
+        LocalDate.Language = "de";
+        var monday = new DateTime(2034, 8, 28);
+
+        Assert.Equal("28.08.2034", SummaryDateLabels.Date(monday, ""));
+        Assert.Equal("28.08.", SummaryDateLabels.DayMonth(monday, ""));
+        Assert.Equal("28.08", SummaryDateLabels.AxisDayMonth(monday, ""));
+        Assert.Equal("08.34", SummaryDateLabels.MonthYear(monday, ""));
+        Assert.Equal("28.08. – 03.09.2034", SummaryDateLabels.WeekRange(monday, ""));
+        Assert.Equal("14:00", SummaryDateLabels.Time(monday.AddHours(14), ""));
+    }
+
+    [Fact]
+    public void SummaryDateLabels_FallBackToTheServerLabelWithoutARawDate()
+    {
+        LocalDate.Language = "en";
+
+        Assert.Equal("28.08.2034", SummaryDateLabels.Date(null, "28.08.2034"));
+        Assert.Equal("–", SummaryDateLabels.WeekRange(null, "–"));
+        Assert.Null(SummaryDateLabels.Time(null, null));
+    }
+
     [Fact]
     public void Names_FallBackToInvariantEnglishBeforeAnythingIsLoaded()
     {
