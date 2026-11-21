@@ -252,6 +252,33 @@ public class DashboardSummaryBuilderTests
         Assert.Equal("90h 30m", s.MonthQuota.MissingLabel);
     }
 
+    /// <summary>The quota tiles name their planned share, so they add up with the studied-only
+    /// figures: week 6h 30m studied ("This week" card) + 5h planned (#28 running, #29 tonight,
+    /// #30 Sunday) = the 11h 30m quota; month 4h 30m studied + the same 5h = 9h 30m.</summary>
+    [Fact]
+    public void Quotas_NameThePlannedShare_SoTheyAddUpWithTheStudiedHours()
+    {
+        var s = DashboardSummaryBuilder.Build(Input()).Sessions;
+
+        Assert.Equal("6h 30m", s.WeekHoursLabel);
+        Assert.Equal("5h", s.WeekQuota.PlannedLabel);
+        Assert.Equal("11h 30m", s.WeekQuota.HoursLabel);
+        Assert.Equal("5h", s.MonthQuota.PlannedLabel);
+        Assert.Equal("9h 30m", s.MonthQuota.HoursLabel);
+    }
+
+    [Fact]
+    public void Quotas_HaveNoPlannedLabel_OnceEverythingCountedWasStudied()
+    {
+        var input = Input();
+        input.Now = new DateTime(2026, 9, 6, 23, 0, 0); // Sunday night: all of the week's sessions lie in the past
+
+        var s = DashboardSummaryBuilder.Build(input).Sessions;
+
+        Assert.Equal("", s.WeekQuota.PlannedLabel);
+        Assert.Equal("", s.MonthQuota.PlannedLabel);
+    }
+
     [Fact]
     public void WeeklyTrend_HasEightWeeksOldestFirstAndScalesToThePeak()
     {

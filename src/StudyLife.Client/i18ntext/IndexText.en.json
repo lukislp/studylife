@@ -30,6 +30,7 @@
   "MonthQuotaTargetSuffix": "/ {0} – {1} h",
   "MonthTargetLegend": "Target: {0} – {1} h",
   "MonthlyGoalMissingText": "Still need {0} to hit the monthly goal.",
+  "QuotaIncludesPlanned": "incl. {0} planned",
   "Last8Weeks": "Last 8 weeks",
   "UpcomingCourseGoals": "Upcoming course goals",
   "InDays": "one=in {0} day|other=in {0} days",

@@ -30,6 +30,7 @@
   "MonthQuotaTargetSuffix": "/ {0}–{1} h",
   "MonthTargetLegend": "Mål: {0}–{1} h",
   "MonthlyGoalMissingText": "Behöver ytterligare {0} för att nå månadsmålet.",
+  "QuotaIncludesPlanned": "inkl. {0} planerat",
   "Last8Weeks": "Senaste 8 veckorna",
   "UpcomingCourseGoals": "Kommande kursmål",
   "InDays": "one=om {0} dag|other=om {0} dagar",

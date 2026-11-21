@@ -30,6 +30,7 @@
   "MonthQuotaTargetSuffix": "/ {0}–{1} h",
   "MonthTargetLegend": "Eesmärk: {0}–{1} h",
   "MonthlyGoalMissingText": "Kuueesmärgi saavutamiseks on vaja veel {0}.",
+  "QuotaIncludesPlanned": "sh {0} planeeritud",
   "Last8Weeks": "Viimased 8 nädalat",
   "UpcomingCourseGoals": "Eesseisvad kursuseeesmärgid",
   "InDays": "{0} päeva pärast",

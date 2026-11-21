@@ -23,6 +23,12 @@
         <span>@Data.ZeroLabel</span>
         <span>@Data.TargetLegend</span>
     </div>
+    @if (!string.IsNullOrEmpty(Data.PlannedNote))
+    {
+        <div class="quota-legend quota-planned-note">
+            <span>@Data.PlannedNote</span>
+        </div>
+    }
     @if (Data.Warning && Data.Hint.HasValue)
     {
         <div class="quota-hint">
@@ -42,7 +48,10 @@
         double MinPercent,
         string ZeroLabel,
         string TargetLegend,
-        MarkupString? Hint);
+        MarkupString? Hint,
+        // "incl. 3h planned": the tile counts the planned week/month, the page's other hours
+        // figures only studied time - this names the difference. Empty = nothing planned, no line.
+        string PlannedNote = "");
 
     [Parameter] public QuotaCardData Data { get; set; } = new("", "", "", "", false, 0, 0, "", "", null);
     [Parameter] public string OnTrackText { get; set; } = "";
