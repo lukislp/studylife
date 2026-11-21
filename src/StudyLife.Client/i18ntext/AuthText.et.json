@@ -48,7 +48,7 @@
   "LoginPendingApproval": "See pääsuvõti ootab kinnitust juba sisse logitud seadmes. Ava seal võtmete loend, kinnita see ja proovi uuesti.",
   "LinkNewDeviceButton": "Ühenda uus seade",
   "LinkNewDeviceInstructions": "Ava uues seadmes brauseris /link (sama aadress mis sellel rakendusel) ja sisesta see kood:",
-  "LinkNewDeviceExpiresFormat": "Kehtib veel {0} minut(it).",
+  "LinkNewDeviceExpiresFormat": "one=Kehtib veel {0} minut.|other=Kehtib veel {0} minutit.",
   "LinkNewDeviceDone": "Valmis",
   "LinkHeading": "Selle seadme ühendamine",
   "LinkIntro": "Sisesta kood, mis kuvatakse sinu teises, juba sisse logitud seadmes, et see seade ühendada.",

@@ -48,7 +48,7 @@
   "LoginPendingApproval": "Esta chave de acesso está a aguardar aprovação num dispositivo já com sessão iniciada. Abra lá a lista de chaves, aprove-a e tente novamente.",
   "LinkNewDeviceButton": "Associar um novo dispositivo",
   "LinkNewDeviceInstructions": "No novo dispositivo, abre /link num navegador (o mesmo endereço desta app) e introduz este código:",
-  "LinkNewDeviceExpiresFormat": "Válido por mais {0} minuto(s).",
+  "LinkNewDeviceExpiresFormat": "one=Válido por mais {0} minuto.|other=Válido por mais {0} minutos.",
   "LinkNewDeviceDone": "Concluído",
   "LinkHeading": "Associar este dispositivo",
   "LinkIntro": "Introduz o código apresentado no teu outro dispositivo, já com sessão iniciada, para ligar este dispositivo.",

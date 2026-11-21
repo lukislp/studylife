@@ -29,7 +29,7 @@
   "PushDevicesConfirmYes": "Удалить",
   "PasskeysLabel": "Ключи доступа",
   "PageLoadErrorText": "Что-то пошло не так при загрузке этой страницы. Пожалуйста, попробуйте ещё раз.",
-  "PendingSyncTooltip": "{0} изменений ожидают синхронизации",
+  "PendingSyncTooltip": "one={0} изменение ожидает синхронизации|few={0} изменения ожидают синхронизации|other={0} изменений ожидают синхронизации",
   "UpdateAvailableText": "Доступна новая версия",
   "UpdateReloadButton": "Перезагрузить",
   "AgentChatLabel": "AI-ассистент",

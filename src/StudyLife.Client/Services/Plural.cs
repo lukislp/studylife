@@ -23,19 +23,31 @@ public static class Plural
     /// <summary>Formats a plural template for the current UI language; {0} is the count.</summary>
     public static string Format(string? template, long count) => Format(template, LocalDate.Language, count);
 
-    public static string Format(string? template, string language, long count)
+    public static string Format(string? template, string language, long count) =>
+        string.IsNullOrEmpty(template) ? "" : string.Format(CultureInfo.InvariantCulture, Pick(template, language, count), count);
+
+    /// <summary>
+    /// Formats a plural template that carries more than the count ("{0} sessions · {1} h total"):
+    /// {0} is the count the variant agrees with, <paramref name="args"/> fill {1}, {2}, ... in order.
+    /// Numbers among them are passed already formatted (see <see cref="LocalNumber"/>).
+    /// </summary>
+    public static string Format(string? template, long count, params object?[] args) =>
+        Format(template, LocalDate.Language, count, args);
+
+    public static string Format(string? template, string language, long count, params object?[] args) =>
+        string.IsNullOrEmpty(template)
+            ? ""
+            : string.Format(CultureInfo.InvariantCulture, Pick(template, language, count), [count, .. args]);
+
+    /// <summary>The variant a count picks in a language; a template without variants is used as it is.</summary>
+    private static string Pick(string template, string language, long count)
     {
-        if (string.IsNullOrEmpty(template)) return "";
         var variants = Parse(template);
-        var text = template;
-        if (variants is not null)
-        {
-            var category = Category(language, count);
-            text = variants.TryGetValue(category, out var picked) ? picked
-                : variants.TryGetValue("other", out var other) ? other
-                : variants.Values.Last();
-        }
-        return string.Format(CultureInfo.InvariantCulture, text, count);
+        if (variants is null) return template;
+        var category = Category(language, count);
+        return variants.TryGetValue(category, out var picked) ? picked
+            : variants.TryGetValue("other", out var other) ? other
+            : variants.Values.Last();
     }
 
     /// <summary>The variants of a plural template, or null when the value is a plain text.</summary>

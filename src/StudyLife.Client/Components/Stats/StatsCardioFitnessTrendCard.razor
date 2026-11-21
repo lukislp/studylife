@@ -35,7 +35,7 @@
     public record CardioPoint(DateTime Date, double Vo2Max, double Percent)
     {
         public string DateLabel => LocalDate.MonthYear(Date);
-        public string Vo2MaxLabel => Vo2Max.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture);
+        public string Vo2MaxLabel => LocalNumber.Number(Vo2Max, "0.0");
         // Formatted invariantly so CSS percent values never get a decimal comma (cf. GradeTimelineCard).
         public string PercentLabel => Percent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
     }

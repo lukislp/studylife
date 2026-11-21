@@ -39,7 +39,7 @@
   "ImportRecurrenceWarning": "Wydarzenie cykliczne — zaimportowano tylko pierwszą datę.",
   "ImportParseButton": "Wczytaj plik",
   "ImportConfirmButton": "Importuj",
-  "ImportSummary": "Zaimportowano {0} sesji.",
+  "ImportSummary": "one=Zaimportowano {0} sesję.|few=Zaimportowano {0} sesje.|many=Zaimportowano {0} sesji.|other=Zaimportowano {0} sesji.",
   "ImportDoneCloseButton": "Gotowe",
   "TemplatesButton": "Szablony",
   "TemplatesModalTitle": "Szablony sesji",

@@ -17,7 +17,7 @@
   "ItemAccess": "Your passkeys, recovery codes and every device that is signed in",
   "ItemIntegrations": "All API keys, connected apps, push notification registrations and your calendar link",
   "ItemAddons": "Data held by add-ons (AI assistant, webhooks, developer portal). If an add-on is offline, the deletion there is retried until it succeeds",
-  "OwnedAppsText": "You registered {0} app(s) as a developer. They are deleted as well, and other people's integrations with them stop working.",
+  "OwnedAppsText": "one=You registered {0} app as a developer. It is deleted as well, and other people's integrations with it stop working.|other=You registered {0} apps as a developer. They are deleted as well, and other people's integrations with them stop working.",
   "LastUserText": "You are the only account on this installation. Deleting it returns the installation to its first-run state, and a new setup code appears in the server log.",
   "NotDeletedHeading": "This does not delete:",
   "NotDeletedBackups": "Backups made before the deletion still contain a copy until they are rotated out: the built-in weekly copies are kept for four weeks; any further backups are kept as long as the operator of this server has configured (30 days in the supplied Kubernetes setup).",

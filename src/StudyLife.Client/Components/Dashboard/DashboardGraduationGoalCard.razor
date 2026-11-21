@@ -24,20 +24,22 @@
         </div>
         <div class="quota-legend">
             <span>@TargetText</span>
-            <span>@PaceText</span>
+            <span>@string.Format(PaceFormat, LocalNumber.Localize(PaceValue))</span>
         </div>
     }
 </div>
 
 @code {
     [Parameter] public string Label { get; set; } = "";
-    /// <summary>Required study hours per week, already formatted (one decimal place, comma).</summary>
+    /// <summary>Required study hours per week as the server labels it ("19,2"); shown in the UI language.</summary>
     [Parameter] public string RequiredValue { get; set; } = "";
     [Parameter] public string RequiredSuffix { get; set; } = "";
     /// <summary>Formatted "Target: {date}" line.</summary>
     [Parameter] public string TargetText { get; set; } = "";
-    /// <summary>Formatted "Current pace: {0} h/week" line.</summary>
-    [Parameter] public string PaceText { get; set; } = "";
+    /// <summary>The "Current pace: {0} h/week" template.</summary>
+    [Parameter] public string PaceFormat { get; set; } = "{0}";
+    /// <summary>Current weekly pace as the server labels it ("11,1"); shown in the UI language like <see cref="RequiredValue"/>.</summary>
+    [Parameter] public string PaceValue { get; set; } = "";
     [Parameter] public bool OnTrack { get; set; }
     [Parameter] public string OnTrackText { get; set; } = "";
     [Parameter] public string BehindText { get; set; } = "";

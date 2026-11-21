@@ -156,7 +156,7 @@
   "ProgramErrorGroupInvalid": "Anna ryhmän nimi ja nollaa suurempi ECTS-yläraja.",
   "ProgramErrorDuplicateGroup": "Tämänniminen ryhmä on jo olemassa.",
   "ProgramErrorCreateFailed": "Tutkinto-ohjelman luonti epäonnistui. Yritä uudelleen.",
-  "ProgramSummaryLabel": "{0} kurssia · {1} hyväksiluettavaa ECTS-pistettä",
+  "ProgramSummaryLabel": "one={0} kurssi · {1} hyväksiluettavaa ECTS-pistettä|other={0} kurssia · {1} hyväksiluettavaa ECTS-pistettä",
   "ProgramCompletedSuffix": "✓ suoritettu",
   "MarkProgramCompletedButton": "Merkitse ohjelma suoritetuksi",
   "UnmarkProgramCompletedButton": "Poista suoritettu-merkintä",

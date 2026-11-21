@@ -48,7 +48,7 @@
   "LoginPendingApproval": "Dan il-passkey qed jistenna approvazzjoni fuq apparat li diġà daħal. Iftaħ il-lista tal-passkeys hemm, approvah, u erġa' pprova.",
   "LinkNewDeviceButton": "Għaqqad apparat ġdid",
   "LinkNewDeviceInstructions": "Fuq l-apparat il-ġdid, iftaħ /link f'browser (l-istess indirizz ta' din l-app) u daħħal dan il-kodiċi:",
-  "LinkNewDeviceExpiresFormat": "Validu għal {0} minuta oħra.",
+  "LinkNewDeviceExpiresFormat": "one=Validu għal {0} minuta oħra.|other=Validu għal {0} minuti oħra.",
   "LinkNewDeviceDone": "Lest",
   "LinkHeading": "Għaqqad dan l-apparat",
   "LinkIntro": "Daħħal il-kodiċi muri fuq l-apparat l-ieħor tiegħek, li diġà daħal, biex tgħaqqad dan l-apparat.",

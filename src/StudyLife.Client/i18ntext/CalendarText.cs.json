@@ -39,7 +39,7 @@
   "ImportRecurrenceWarning": "Opakující se událost — importováno pouze první datum.",
   "ImportParseButton": "Načíst soubor",
   "ImportConfirmButton": "Importovat",
-  "ImportSummary": "Importováno {0} studijních bloků.",
+  "ImportSummary": "one=Importován {0} studijní blok.|few=Importovány {0} studijní bloky.|other=Importováno {0} studijních bloků.",
   "ImportDoneCloseButton": "Hotovo",
   "TemplatesButton": "Šablony",
   "TemplatesModalTitle": "Šablony studijních bloků",

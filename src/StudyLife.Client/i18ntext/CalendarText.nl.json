@@ -39,7 +39,7 @@
   "ImportRecurrenceWarning": "Terugkerende gebeurtenis — alleen de eerste datum is geïmporteerd.",
   "ImportParseButton": "Bestand lezen",
   "ImportConfirmButton": "Importeren",
-  "ImportSummary": "{0} sessie(s) geïmporteerd.",
+  "ImportSummary": "one={0} sessie geïmporteerd.|other={0} sessies geïmporteerd.",
   "ImportDoneCloseButton": "Klaar",
   "TemplatesButton": "Sjablonen",
   "TemplatesModalTitle": "Sessiesjablonen",

@@ -156,7 +156,7 @@
   "ProgramErrorGroupInvalid": "Sisesta rühma nimi ja nullist suurem ECTS-i ülempiir.",
   "ProgramErrorDuplicateGroup": "Sellenimeline rühm on juba olemas.",
   "ProgramErrorCreateFailed": "Õppekava loomine ebaõnnestus. Proovi uuesti.",
-  "ProgramSummaryLabel": "{0} kursust · {1} arvestatavat ECTS-i",
+  "ProgramSummaryLabel": "one={0} kursus · {1} arvestatavat ECTS-i|other={0} kursust · {1} arvestatavat ECTS-i",
   "ProgramCompletedSuffix": "✓ lõpetatud",
   "MarkProgramCompletedButton": "Märgi õppekava lõpetatuks",
   "UnmarkProgramCompletedButton": "Eemalda lõpetatuse märge",

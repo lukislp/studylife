@@ -96,7 +96,7 @@
   "ProductivityBucketEvening": "este (18–21)",
   "ProductivityBucketLateEvening": "késő este (21–24)",
   "FocusScoreLabel": "Fókusz-pontszám",
-  "FocusScoreRatioFormat": "{0}/{1} munkamenet teljesítve",
+  "FocusScoreRatioFormat": "{1}/{0} munkamenet teljesítve",
   "FocusScoreAllOnPlan": "Minden terv szerint",
   "FocusScorePartial": "Részben",
   "FocusScoreMissed": "Elmaradt",

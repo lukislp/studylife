@@ -39,7 +39,7 @@
   "ImportRecurrenceWarning": "Gentagen begivenhed — kun den første dato blev importeret.",
   "ImportParseButton": "Læs fil",
   "ImportConfirmButton": "Importér",
-  "ImportSummary": "{0} session(er) importeret.",
+  "ImportSummary": "one={0} session importeret.|other={0} sessioner importeret.",
   "ImportDoneCloseButton": "Færdig",
   "TemplatesButton": "Skabeloner",
   "TemplatesModalTitle": "Sessionsskabeloner",

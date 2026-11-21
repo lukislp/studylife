@@ -84,7 +84,7 @@
                 @if (_examProposals.Count > 0)
                 {
                     <div class="planner-proposal dash-card">
-                        <div class="card-label">@string.Format(T.ProposalHeading, _examProposals.Count, LocalNumber.Number(ExamProposalHours, "0.0"))</div>
+                        <div class="card-label">@Plural.Format(T.ProposalHeading, _examProposals.Count, LocalNumber.Number(ExamProposalHours, "0.0"))</div>
                         <div class="planner-view-toggle">
                             <button type="button" class="planner-view-opt @(_examViewMode == "list" ? "active" : "")" @onclick='() => _examViewMode = "list"'>@T.ViewAsListButton</button>
                             <button type="button" class="planner-view-opt @(_examViewMode == "calendar" ? "active" : "")" @onclick='() => _examViewMode = "calendar"'>@T.ViewAsCalendarButton</button>
@@ -181,7 +181,7 @@
             @if (_weekProposals.Count > 0)
             {
                 <div class="planner-proposal dash-card">
-                    <div class="card-label">@string.Format(T.WeekPlanHeading, _weekProposals.Count, LocalNumber.Number(WeekProposalHours, "0.0"))</div>
+                    <div class="card-label">@Plural.Format(T.WeekPlanHeading, _weekProposals.Count, LocalNumber.Number(WeekProposalHours, "0.0"))</div>
                     <div class="planner-view-toggle">
                         <button type="button" class="planner-view-opt @(_weekViewMode == "list" ? "active" : "")" @onclick='() => _weekViewMode = "list"'>@T.ViewAsListButton</button>
                         <button type="button" class="planner-view-opt @(_weekViewMode == "calendar" ? "active" : "")" @onclick='() => _weekViewMode = "calendar"'>@T.ViewAsCalendarButton</button>
@@ -326,8 +326,8 @@
             foreach (var p in _weekProposals.Where(p => _weekFallbackCourseIds.Contains(p.CourseId)))
                 p.Topic = T.ReviewTopicFallback;
             RefreshWeekCourseHints();
-            if (_examAcceptedCount is int examCount) _examAcceptedMessage = string.Format(T.ExamPlanAccepted, examCount);
-            if (_weekAcceptedCount is int weekCount) _weekAcceptedMessage = string.Format(T.WeekPlanAccepted, weekCount);
+            if (_examAcceptedCount is int examCount) _examAcceptedMessage = Plural.Format(T.ExamPlanAccepted, examCount);
+            if (_weekAcceptedCount is int weekCount) _weekAcceptedMessage = Plural.Format(T.WeekPlanAccepted, weekCount);
             await InvokeAsync(StateHasChanged);
         }
     }
@@ -504,12 +504,12 @@
         if (ReferenceEquals(proposals, _examProposals))
         {
             _examAcceptedCount = 1;
-            _examAcceptedMessage = string.Format(T.ExamPlanAccepted, 1);
+            _examAcceptedMessage = Plural.Format(T.ExamPlanAccepted, 1);
         }
         else
         {
             _weekAcceptedCount = 1;
-            _weekAcceptedMessage = string.Format(T.WeekPlanAccepted, 1);
+            _weekAcceptedMessage = Plural.Format(T.WeekPlanAccepted, 1);
         }
         RecalcWeekHours();
     }
@@ -533,7 +533,7 @@
         _examUsedFallbackTopic = false;
         _examGenerated = _examProposals.Count > 0;
         _examAcceptedCount = count;
-        _examAcceptedMessage = string.Format(T.ExamPlanAccepted, count);
+        _examAcceptedMessage = Plural.Format(T.ExamPlanAccepted, count);
         RecalcWeekHours();
     }
 
@@ -664,7 +664,7 @@
             _weekGenerated = false;
         }
         _weekAcceptedCount = count;
-        _weekAcceptedMessage = string.Format(T.WeekPlanAccepted, count);
+        _weekAcceptedMessage = Plural.Format(T.WeekPlanAccepted, count);
         RecalcWeekHours();
     }
 }

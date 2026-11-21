@@ -48,7 +48,7 @@
   "LoginPendingApproval": "Ovaj pristupni ključ čeka odobrenje na već prijavljenom uređaju. Otvorite tamo popis ključeva, odobrite ga i pokušajte ponovno.",
   "LinkNewDeviceButton": "Poveži novi uređaj",
   "LinkNewDeviceInstructions": "Na novom uređaju otvorite /link u pregledniku (ista adresa kao ova aplikacija) i unesite ovaj kod:",
-  "LinkNewDeviceExpiresFormat": "Vrijedi još {0} minuta.",
+  "LinkNewDeviceExpiresFormat": "one=Vrijedi još {0} minutu.|few=Vrijedi još {0} minute.|other=Vrijedi još {0} minuta.",
   "LinkNewDeviceDone": "Gotovo",
   "LinkHeading": "Poveži ovaj uređaj",
   "LinkIntro": "Unesite kod prikazan na vašem drugom, već prijavljenom uređaju kako biste povezali ovaj uređaj.",

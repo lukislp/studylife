@@ -17,7 +17,7 @@
   "ItemAccess": "Je passkeys, herstelcodes en elk aangemeld apparaat",
   "ItemIntegrations": "Alle API-sleutels, gekoppelde apps, registraties voor pushmeldingen en je agendalink",
   "ItemAddons": "Gegevens bij add-ons (AI-assistent, webhooks, ontwikkelaarsportaal). Als een add-on offline is, wordt de verwijdering daar herhaald totdat het lukt",
-  "OwnedAppsText": "Je hebt {0} app(s) als ontwikkelaar geregistreerd. Die worden ook verwijderd, en de integraties van anderen met deze apps werken niet meer.",
+  "OwnedAppsText": "one=Je hebt {0} app als ontwikkelaar geregistreerd. Die wordt ook verwijderd, en de integraties van anderen met deze app werken niet meer.|other=Je hebt {0} apps als ontwikkelaar geregistreerd. Die worden ook verwijderd, en de integraties van anderen met deze apps werken niet meer.",
   "LastUserText": "Je bent het enige account van deze installatie. Als je het verwijdert, keert de installatie terug naar de eerste-gebruikstoestand en verschijnt er een nieuwe setupcode in het serverlogboek.",
   "NotDeletedHeading": "Dit wordt niet verwijderd:",
   "NotDeletedBackups": "Back-ups die vóór de verwijdering zijn gemaakt, bevatten nog een kopie totdat ze worden vervangen: de ingebouwde wekelijkse kopieën worden vier weken bewaard; andere back-ups zolang de beheerder van deze server heeft ingesteld (30 dagen in de meegeleverde Kubernetes-opzet).",

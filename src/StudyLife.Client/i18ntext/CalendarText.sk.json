@@ -39,7 +39,7 @@
   "ImportRecurrenceWarning": "Opakujúca sa udalosť — importovaný bol iba prvý dátum.",
   "ImportParseButton": "Načítať súbor",
   "ImportConfirmButton": "Importovať",
-  "ImportSummary": "Importovaných {0} relácií.",
+  "ImportSummary": "one=Importovaná {0} relácia.|few=Importované {0} relácie.|other=Importovaných {0} relácií.",
   "ImportDoneCloseButton": "Hotovo",
   "TemplatesButton": "Šablóny",
   "TemplatesModalTitle": "Šablóny relácií",

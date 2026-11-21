@@ -48,7 +48,7 @@
   "LoginPendingApproval": "Den här passkeyn väntar på godkännande på en enhet som redan är inloggad. Öppna nyckellistan där, godkänn den och försök igen.",
   "LinkNewDeviceButton": "Länka en ny enhet",
   "LinkNewDeviceInstructions": "Öppna /link i en webbläsare på den nya enheten (samma adress som den här appen) och ange den här koden:",
-  "LinkNewDeviceExpiresFormat": "Giltig i {0} minut(er) till.",
+  "LinkNewDeviceExpiresFormat": "one=Giltig i {0} minut till.|other=Giltig i {0} minuter till.",
   "LinkNewDeviceDone": "Klar",
   "LinkHeading": "Länka den här enheten",
   "LinkIntro": "Ange koden som visas på din andra, redan inloggade enhet för att ansluta den här enheten.",

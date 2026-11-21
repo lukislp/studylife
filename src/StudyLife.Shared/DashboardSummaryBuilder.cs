@@ -344,7 +344,7 @@ public static class DashboardSummaryBuilder
             RingPercent = Math.Min(100, todayRingPercentRaw),
             Exceeded = todayRingPercentRaw >= 100,
             HoursLabel = StudyMetrics.FormatHoursMinutes(todayHoursVal, omitZeroMinutes: true),
-            DailyTargetLabel = $"{dailyTargetHours.ToString("0.#", CultureInfo.InvariantCulture)}h",
+            DailyTargetLabel = $"{StudyMetrics.FormatDecimal(dailyTargetHours, "0.#")}h",
         };
 
         // 7-day streak strip (studied = at least one completed session that day)
@@ -749,8 +749,8 @@ public static class DashboardSummaryBuilder
         var remainingEffortHours = forecast.BaselineWeeksNeeded * forecast.ReferenceWeeklyHours;
         var requiredWeeklyHours = remainingEffortHours / weeksUntilTarget;
         goal.OnTrack = forecast.RecentWeeklyHours >= requiredWeeklyHours;
-        goal.RequiredValue = requiredWeeklyHours.ToString("0.0", CultureInfo.InvariantCulture).Replace('.', ',');
-        goal.PaceValue = forecast.RecentWeeklyHours.ToString("0.0", CultureInfo.InvariantCulture).Replace('.', ',');
+        goal.RequiredValue = StudyMetrics.FormatDecimal(requiredWeeklyHours, "0.0");
+        goal.PaceValue = StudyMetrics.FormatDecimal(forecast.RecentWeeklyHours, "0.0");
         return goal;
     }
 

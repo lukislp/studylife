@@ -17,7 +17,7 @@
   "ItemAccess": "Twoje klucze dostępu, kody odzyskiwania i wszystkie zalogowane urządzenia",
   "ItemIntegrations": "Wszystkie klucze API, połączone aplikacje, rejestracje powiadomień push i Twój link do kalendarza",
   "ItemAddons": "Dane przechowywane przez dodatki (asystent AI, webhooki, portal deweloperski). Jeśli dodatek jest offline, usuwanie jest tam ponawiane, aż się powiedzie",
-  "OwnedAppsText": "Zarejestrowano {0} aplikacji jako deweloper. Zostaną one również usunięte, a integracje innych osób z nimi przestaną działać.",
+  "OwnedAppsText": "one=Zarejestrowano {0} aplikację jako deweloper. Zostanie ona również usunięta, a integracje innych osób z nią przestaną działać.|few=Zarejestrowano {0} aplikacje jako deweloper. Zostaną one również usunięte, a integracje innych osób z nimi przestaną działać.|many=Zarejestrowano {0} aplikacji jako deweloper. Zostaną one również usunięte, a integracje innych osób z nimi przestaną działać.|other=Zarejestrowano {0} aplikacji jako deweloper. Zostaną one również usunięte, a integracje innych osób z nimi przestaną działać.",
   "LastUserText": "To jedyne konto w tej instalacji. Jego usunięcie przywraca instalację do stanu pierwszego uruchomienia, a w dzienniku serwera pojawia się nowy kod konfiguracyjny.",
   "NotDeletedHeading": "To nie usuwa:",
   "NotDeletedBackups": "Kopie zapasowe wykonane przed usunięciem nadal zawierają kopię danych do czasu ich rotacji: wbudowane kopie tygodniowe są przechowywane cztery tygodnie, pozostałe tak długo, jak ustawił operator tego serwera (30 dni w dostarczonej konfiguracji Kubernetes).",

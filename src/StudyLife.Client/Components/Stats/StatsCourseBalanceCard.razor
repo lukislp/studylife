@@ -35,8 +35,8 @@
     public record BalanceRow(string Name, string Icon, string Color, double TargetPercent, double ActualPercent)
     {
         public double DeltaPercent => ActualPercent - TargetPercent;
-        public string TargetPercentText => TargetPercent.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
-        public string ActualPercentText => ActualPercent.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
+        public string TargetPercentText => LocalNumber.Number(TargetPercent, "0.#");
+        public string ActualPercentText => LocalNumber.Number(ActualPercent, "0.#");
         // Invariant + clamped to the track's 0-100 bounds, same reasoning as _donutGradient/
         // ScatterPoint elsewhere in this codebase.
         public string TargetPercentLabel => Math.Clamp(TargetPercent, 0, 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
@@ -47,7 +47,7 @@
         // sum to ~100% rather than a relative week-over-week change.
         public string DeltaArrow => DeltaPercent switch { > 2 => "↑", < -2 => "↓", _ => "→" };
         public string DeltaCssClass => DeltaPercent switch { > 2 => "balance-delta-over", < -2 => "balance-delta-under", _ => "balance-delta-flat" };
-        public string DeltaLabel => $"{(DeltaPercent >= 0 ? "+" : "")}{DeltaPercent.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)}%";
+        public string DeltaLabel => $"{(DeltaPercent >= 0 ? "+" : "")}{LocalNumber.Number(DeltaPercent, "0.#")}%";
     }
 
     [Parameter] public string Label { get; set; } = "";

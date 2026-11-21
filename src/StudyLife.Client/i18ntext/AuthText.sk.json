@@ -48,7 +48,7 @@
   "LoginPendingApproval": "Tento prístupový kľúč čaká na schválenie na už prihlásenom zariadení. Otvorte tam zoznam kľúčov, schváľte ho a skúste to znova.",
   "LinkNewDeviceButton": "Prepojiť nové zariadenie",
   "LinkNewDeviceInstructions": "Na novom zariadení otvorte v prehliadači /link (rovnaká adresa ako táto aplikácia) a zadajte tento kód:",
-  "LinkNewDeviceExpiresFormat": "Platný ešte {0} minút.",
+  "LinkNewDeviceExpiresFormat": "one=Platný ešte {0} minútu.|few=Platný ešte {0} minúty.|other=Platný ešte {0} minút.",
   "LinkNewDeviceDone": "Hotovo",
   "LinkHeading": "Prepojiť toto zariadenie",
   "LinkIntro": "Zadajte kód zobrazený na vašom druhom, už prihlásenom zariadení, aby ste prepojili toto zariadenie.",

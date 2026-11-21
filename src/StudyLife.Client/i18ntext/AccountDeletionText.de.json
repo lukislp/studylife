@@ -17,7 +17,7 @@
   "ItemAccess": "Deine Passkeys, Wiederherstellungscodes und jedes angemeldete Gerät",
   "ItemIntegrations": "Alle API-Schlüssel, verbundenen Apps, Push-Benachrichtigungen und dein Kalenderlink",
   "ItemAddons": "Daten bei Add-ons (KI-Assistent, Webhooks, Entwicklerportal). Ist ein Add-on gerade nicht erreichbar, wird die Löschung dort so lange wiederholt, bis sie gelingt",
-  "OwnedAppsText": "Du hast {0} App(s) als Entwickler registriert. Sie werden ebenfalls gelöscht, und die Integrationen anderer Personen mit diesen Apps funktionieren nicht mehr.",
+  "OwnedAppsText": "one=Du hast {0} App als Entwickler registriert. Sie wird ebenfalls gelöscht, und die Integrationen anderer Personen mit dieser App funktionieren nicht mehr.|other=Du hast {0} Apps als Entwickler registriert. Sie werden ebenfalls gelöscht, und die Integrationen anderer Personen mit diesen Apps funktionieren nicht mehr.",
   "LastUserText": "Du bist das einzige Konto auf dieser Installation. Mit dem Löschen kehrt die Installation in den Zustand der Ersteinrichtung zurück, und im Server-Log erscheint ein neuer Setup-Code.",
   "NotDeletedHeading": "Das wird nicht gelöscht:",
   "NotDeletedBackups": "Vor der Löschung erstellte Backups enthalten weiterhin eine Kopie, bis sie rotiert werden: Die eingebauten wöchentlichen Kopien werden vier Wochen aufbewahrt; weitere Backups so lange, wie der Betreiber dieses Servers es eingestellt hat (30 Tage im mitgelieferten Kubernetes-Setup).",

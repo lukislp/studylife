@@ -28,7 +28,7 @@
     {
         <!-- Offline sync badge: visible as long as writes from an offline period are
              still waiting to be replayed (AppStateService write queue, replay on the 30s poll). -->
-        <div class="pending-sync-chip" title="@string.Format(T.PendingSyncTooltip ?? "", _pendingWrites)">
+        <div class="pending-sync-chip" title="@Plural.Format(T.PendingSyncTooltip, _pendingWrites)">
             <span class="psc-icon">⟳</span>@_pendingWrites
         </div>
     }

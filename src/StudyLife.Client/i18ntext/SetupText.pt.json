@@ -156,7 +156,7 @@
   "ProgramErrorGroupInvalid": "Introduz um nome de grupo e um limite de ECTS superior a 0.",
   "ProgramErrorDuplicateGroup": "Já existe um grupo com este nome.",
   "ProgramErrorCreateFailed": "Não foi possível criar o plano de estudos. Tenta novamente.",
-  "ProgramSummaryLabel": "{0} disciplinas · {1} ECTS contabilizáveis",
+  "ProgramSummaryLabel": "one={0} disciplina · {1} ECTS contabilizáveis|other={0} disciplinas · {1} ECTS contabilizáveis",
   "ProgramCompletedSuffix": "✓ concluído",
   "MarkProgramCompletedButton": "Marcar o curso como concluído",
   "UnmarkProgramCompletedButton": "Remover a marca de concluído",

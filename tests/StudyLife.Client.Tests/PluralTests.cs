@@ -10,8 +10,30 @@ namespace StudyLife.Client.Tests;
 /// chip used to say "Due in 24 day(s)"), and Slavic or Baltic forms where one noun is not enough.</summary>
 public class PluralTests
 {
+    /// <summary>The counted texts beyond days: achievement milestones ("1 courses completed" on the
+    /// review account), the former "(s)" texts and every other "N noun" label that can show a 1.
+    /// {0} is always the count; a second number is passed through the args overload of Plural.Format.
+    /// Declared before <see cref="PluralKeys"/>, which includes it (static fields initialise in order).</summary>
+    internal static readonly (string Table, string Key)[] CountedTexts =
+    [
+        ("IndexText", "AchievementSessionsName"), ("IndexText", "AchievementCoursesName"),
+        ("IndexText", "AchievementProgramsName"), ("IndexText", "AchievementEarlyBirdName"),
+        ("IndexText", "AchievementNightOwlName"), ("IndexText", "AchievementWeekendWarriorName"),
+        ("IndexText", "AchievementPerfectWeekName"), ("IndexText", "AchievementNotesName"),
+        ("IndexText", "AchievementCourseDiversityName"), ("IndexText", "InactivityNudgeText"),
+        ("IndexText", "FocusScoreRatioFormat"), ("AccountDeletionText", "OwnedAppsText"),
+        ("AuthText", "LinkNewDeviceExpiresFormat"), ("CalendarText", "ImportSummary"),
+        ("MainLayoutText", "PushDevicesRegisteredDaysAgo"), ("MainLayoutText", "PendingSyncTooltip"),
+        ("PlannerText", "ProposalHeading"), ("PlannerText", "WeekPlanHeading"),
+        ("PlannerText", "ExamPlanAccepted"), ("PlannerText", "WeekPlanAccepted"),
+        ("SetupText", "ProgramSummaryLabel"), ("StatsText", "GradeHistoryTooltip"),
+        ("StatsText", "SessionCountFormat"), ("StatsText", "GradeDistributionCourseFormat"),
+        ("StatsText", "DonutDetailMoreFormat"),
+    ];
+
     private static readonly (string Table, string Key)[] PluralKeys =
     [
+        .. CountedTexts,
         ("IndexText", "InDays"), ("IndexText", "OverdueByDays"), ("IndexText", "CourseDeadlineInDaysFormat"),
         ("IndexText", "LastStudiedDaysAgo"), ("NotesText", "DayAgo"), ("ReportText", "StatusOverdueFormat"),
         ("ReportText", "StatusDueFormat"), ("SetupText", "ReminderDaysFormat"),
@@ -110,14 +132,75 @@ public class PluralTests
             .OrderBy(l => l)
             .Select(l => new object[] { l });
 
-    private static string ReadValue(string table, string language, string key)
+    [Fact]
+    public void A_template_with_a_second_number_keeps_the_count_as_zero_and_fills_the_rest_in_order()
+    {
+        const string template = "one={0} session · {1} h total|other={0} sessions · {1} h total";
+
+        Assert.Equal("1 session · 1.5 h total", Plural.Format(template, "en", 1, "1.5"));
+        Assert.Equal("3 sessions · 4.5 h total", Plural.Format(template, "en", 3, "4.5"));
+        Assert.Equal("Avg. grade 1,7 · 2 courses", Plural.Format("Avg. grade {1} · {0} courses", "de", 2, "1,7"));
+        Assert.Equal("", Plural.Format(null, "en", 1, "x"));
+    }
+
+    [Theory]
+    [MemberData(nameof(AllLanguages))]
+    public void Every_counted_text_formats_for_one_and_for_many_without_error(string language)
+    {
+        foreach (var (table, key) in CountedTexts)
+        {
+            var template = ReadValue(table, language, key);
+            foreach (var count in new long[] { 0, 1, 2, 5, 11, 21, 101 })
+            {
+                var text = Plural.Format(template, language, count, "X");
+                Assert.Contains(count.ToString(System.Globalization.CultureInfo.InvariantCulture), text);
+                Assert.DoesNotContain("{", text);
+            }
+        }
+    }
+
+    [Fact]
+    public void No_english_text_counts_a_noun_in_brackets()
+    {
+        var offenders = Directory.GetFiles(I18nDirectory(), "*.en.json")
+            .SelectMany(f =>
+            {
+                using var doc = JsonDocument.Parse(File.ReadAllText(f), new JsonDocumentOptions { AllowTrailingCommas = true });
+                return doc.RootElement.EnumerateObject()
+                    .Where(p => p.Value.ValueKind == JsonValueKind.String && p.Value.GetString()!.Contains("(s)"))
+                    .Select(p => $"{Path.GetFileName(f)}:{p.Name}")
+                    .ToList();
+            })
+            .ToList();
+
+        Assert.Empty(offenders);
+    }
+
+    [Theory]
+    [InlineData("en", "AchievementCoursesName", "1 course completed", "10 courses completed")]
+    [InlineData("en", "AchievementPerfectWeekName", "1 perfect week", "4 perfect weeks")]
+    [InlineData("en", "AchievementProgramsName", "1 degree program completed", "2 degree programs completed")]
+    [InlineData("de", "AchievementCoursesName", "1 Kurs abgeschlossen", "10 Kurse abgeschlossen")]
+    [InlineData("de", "AchievementPerfectWeekName", "1 perfekte Woche", "4 perfekte Wochen")]
+    [InlineData("de", "AchievementProgramsName", "1 Studiengang abgeschlossen", "2 Studiengänge abgeschlossen")]
+    [InlineData("pl", "AchievementCoursesName", "1 ukończony kurs", "10 ukończonych kursów")]
+    public void Achievement_milestones_of_one_use_the_singular(string language, string key, string one, string many)
+    {
+        var template = ReadValue("IndexText", language, key);
+        var manyCount = long.Parse(many.Split(' ')[0], System.Globalization.CultureInfo.InvariantCulture);
+
+        Assert.Equal(one, Plural.Format(template, language, 1));
+        Assert.Equal(many, Plural.Format(template, language, manyCount));
+    }
+
+    internal static string ReadValue(string table, string language, string key)
     {
         using var doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(I18nDirectory(), $"{table}.{language}.json")),
             new JsonDocumentOptions { AllowTrailingCommas = true });
         return doc.RootElement.GetProperty(key).GetString()!;
     }
 
-    private static string I18nDirectory()
+    internal static string I18nDirectory()
     {
         for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
         {

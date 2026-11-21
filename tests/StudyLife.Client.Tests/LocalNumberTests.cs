@@ -177,4 +177,77 @@ public class LocalNumberTests : IDisposable
         Assert.Equal(new[] { first, last }, labels);
         Assert.Contains(first, cut.Find(".mini-bar-col").GetAttribute("title"));
     }
+
+    [Theory]
+    [InlineData("en", "31.4", "Current pace: 11.1 h/week")]
+    [InlineData("de", "31,4", "Aktuelles Tempo: 11,1 h/Woche")]
+    public void The_graduation_goal_shows_required_hours_and_pace_in_the_ui_language(string language, string required, string pace)
+    {
+        // The store screenshots showed "Current pace: 11,1 h/week" on the English dashboard: the
+        // server labels both values with a comma and only the required value was localized.
+        LocalDate.Language = language;
+        using var ctx = new BunitContext();
+
+        var cut = ctx.Render<StudyLife.Client.Components.Dashboard.DashboardGraduationGoalCard>(p => p
+            .Add(c => c.RequiredValue, "31,4")
+            .Add(c => c.PaceFormat, language == "en" ? "Current pace: {0} h/week" : "Aktuelles Tempo: {0} h/Woche")
+            .Add(c => c.PaceValue, "11,1"));
+
+        Assert.Equal(required, cut.Find(".stat-val").TextContent);
+        Assert.Contains(pace, cut.Find(".quota-legend").TextContent);
+    }
+
+    [Theory]
+    [InlineData("en", "Target: 12.5%", "Actual: 20%", "+7.5%")]
+    [InlineData("de", "Target: 12,5%", "Actual: 20%", "+7,5%")]
+    public void The_course_balance_percentages_follow_the_ui_language(string language, string target, string actual, string delta)
+    {
+        LocalDate.Language = language;
+        using var ctx = new BunitContext();
+
+        var cut = ctx.Render<StatsCourseBalanceCard>(p => p
+            .Add(c => c.TargetLabel, "Target")
+            .Add(c => c.ActualLabel, "Actual")
+            .Add(c => c.Rows, new List<StatsCourseBalanceCard.BalanceRow> { new("Maths", "∑", "#fff", 12.5, 20) }));
+
+        var meta = cut.Find(".balance-meta").TextContent;
+        Assert.Contains(target, meta);
+        Assert.Contains(actual, meta);
+        Assert.Contains(delta, cut.Find(".balance-delta").TextContent);
+        // The bar geometry stays machine-formatted whatever the language.
+        Assert.Contains("width: 20%", cut.Find(".balance-actual-fill").GetAttribute("style"));
+    }
+
+    [Theory]
+    [InlineData("en", "42.5")]
+    [InlineData("de", "42,5")]
+    public void The_vo2max_values_follow_the_ui_language(string language, string expected)
+    {
+        LocalDate.Language = language;
+        using var ctx = new BunitContext();
+
+        var cut = ctx.Render<StatsCardioFitnessTrendCard>(p => p
+            .Add(c => c.ValueFormat, "{0} ml/kg/min")
+            .Add(c => c.Points, new List<StatsCardioFitnessTrendCard.CardioPoint>
+            {
+                new(new DateTime(2026, 9, 1), 41.25, 40.5), new(new DateTime(2026, 10, 1), 42.5, 60.25),
+            }));
+
+        Assert.Equal(expected, cut.FindAll(".mini-bar-value")[1].TextContent);
+    }
+
+    [Theory]
+    [InlineData("en", "Avg. grade 1.66 · 1 course")]
+    [InlineData("de", "Ø Note 1,66 · 1 Kurs")]
+    public void The_grade_history_tooltip_shows_the_grade_in_the_ui_language_and_a_singular_course(string language, string expected)
+    {
+        LocalDate.Language = language;
+        using var ctx = new BunitContext();
+
+        var cut = ctx.Render<StatsGradeChartCard>(p => p
+            .Add(c => c.TooltipFormat, PluralTests.ReadValue("StatsText", language, "GradeHistoryTooltip"))
+            .Add(c => c.Points, new List<StatsGradeChartCard.GradePoint> { new("WS 25/26", 1.66m, 1, 85) }));
+
+        Assert.EndsWith(expected, cut.Find(".mini-bar-col").GetAttribute("title"));
+    }
 }

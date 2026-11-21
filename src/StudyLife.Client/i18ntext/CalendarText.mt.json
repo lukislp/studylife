@@ -39,7 +39,7 @@
   "ImportRecurrenceWarning": "Avveniment rikorrenti — ġiet impurtata biss l-ewwel data.",
   "ImportParseButton": "Aqra l-fajl",
   "ImportConfirmButton": "Importa",
-  "ImportSummary": "Ġew impurtati {0} sessjoni(jiet).",
+  "ImportSummary": "one=Ġiet impurtata {0} sessjoni.|other=Ġew impurtati {0} sessjonijiet.",
   "ImportDoneCloseButton": "Lest",
   "TemplatesButton": "Mudelli",
   "TemplatesModalTitle": "Mudelli tas-sessjonijiet",

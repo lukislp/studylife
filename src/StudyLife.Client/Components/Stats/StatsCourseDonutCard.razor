@@ -44,7 +44,7 @@
                     <span class="heatmap-detail-date"><span class="donut-swatch" style="background:@_selected.Color"></span> @_selected.Name</span>
                     <button type="button" class="heatmap-detail-close" aria-label="@CloseDetailsLabel" @onclick="() => _selected = null">✕</button>
                 </div>
-                <div class="heatmap-detail-summary">@_selected.HoursLabel · @string.Format(SessionCountFormat ?? "", _selected.SessionCount)</div>
+                <div class="heatmap-detail-summary">@_selected.HoursLabel · @Plural.Format(SessionCountFormat, _selected.SessionCount)</div>
                 <div class="mini-bar-chart donut-detail-chart">
                     @foreach (var m in _selected.Months)
                     {
@@ -72,7 +72,7 @@
                 </div>
                 @if (_selected.SessionCount > _selected.RecentSessions.Count)
                 {
-                    <div class="donut-detail-more">@string.Format(MoreSessionsFormat ?? "", _selected.SessionCount - _selected.RecentSessions.Count)</div>
+                    <div class="donut-detail-more">@Plural.Format(MoreSessionsFormat, _selected.SessionCount - _selected.RecentSessions.Count)</div>
                 }
             </div>
         }

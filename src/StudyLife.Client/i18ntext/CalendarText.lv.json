@@ -39,7 +39,7 @@
   "ImportRecurrenceWarning": "Atkārtots notikums — importēts tikai pirmais datums.",
   "ImportParseButton": "Nolasīt failu",
   "ImportConfirmButton": "Importēt",
-  "ImportSummary": "Importētas {0} sesijas.",
+  "ImportSummary": "one=Importēta {0} sesija.|other=Importētas {0} sesijas.",
   "ImportDoneCloseButton": "Gatavs",
   "TemplatesButton": "Veidnes",
   "TemplatesModalTitle": "Sesiju veidnes",

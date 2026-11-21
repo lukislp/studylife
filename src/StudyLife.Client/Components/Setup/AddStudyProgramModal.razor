@@ -174,7 +174,7 @@
             </div>
 
             <!-- Summary -->
-            <div class="apm-summary">@string.Format(T.ProgramSummaryLabel ?? "", TotalCourseCount, TotalCreditableEcts)</div>
+            <div class="apm-summary">@Plural.Format(T.ProgramSummaryLabel, TotalCourseCount, TotalCreditableEcts)</div>
             @if (_submitError)
             {
                 <div class="apm-error">@T.ProgramErrorCreateFailed</div>

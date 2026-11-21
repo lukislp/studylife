@@ -156,7 +156,7 @@
   "ProgramErrorGroupInvalid": "Podaj nazwę grupy i limit ECTS większy niż 0.",
   "ProgramErrorDuplicateGroup": "Grupa o tej nazwie już istnieje.",
   "ProgramErrorCreateFailed": "Nie udało się utworzyć kierunku. Spróbuj ponownie.",
-  "ProgramSummaryLabel": "{0} przedmiotów · {1} zaliczanych ECTS",
+  "ProgramSummaryLabel": "one={0} przedmiot · {1} zaliczanych ECTS|few={0} przedmioty · {1} zaliczanych ECTS|many={0} przedmiotów · {1} zaliczanych ECTS|other={0} przedmiotów · {1} zaliczanych ECTS",
   "ProgramCompletedSuffix": "✓ ukończony",
   "MarkProgramCompletedButton": "Oznacz kierunek jako ukończony",
   "UnmarkProgramCompletedButton": "Usuń oznaczenie ukończenia",

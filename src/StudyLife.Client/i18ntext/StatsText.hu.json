@@ -46,7 +46,7 @@
     "ForecastAlreadyDone":  "Minden ECTS kredit megszerezve! 🎉",
     "GradeHistory":  "Jegyek alakulása",
     "SemesterShortFormat":  "{0}. félév",
-    "GradeHistoryTooltip":  "Átlagos jegy {0} · {1} tantárgy",
+    "GradeHistoryTooltip":  "Átlagos jegy {1} · {0} tantárgy",
     "HoursGradeScatter":  "Órák vs. jegy",
     "SessionCountFormat":  "{0} munkamenet",
     "HeatmapFilterAll":  "Összes",

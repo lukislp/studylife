@@ -48,7 +48,7 @@
   "LoginPendingApproval": "Denne adgangsnøgle afventer godkendelse på en allerede logget ind enhed. Åbn nøglelisten der, godkend den, og prøv igen.",
   "LinkNewDeviceButton": "Tilknyt en ny enhed",
   "LinkNewDeviceInstructions": "Åbn /link i en browser på den nye enhed (samme adresse som denne app), og indtast denne kode:",
-  "LinkNewDeviceExpiresFormat": "Gyldig i {0} minut(ter) endnu.",
+  "LinkNewDeviceExpiresFormat": "one=Gyldig i {0} minut endnu.|other=Gyldig i {0} minutter endnu.",
   "LinkNewDeviceDone": "Færdig",
   "LinkHeading": "Tilknyt denne enhed",
   "LinkIntro": "Indtast koden, der vises på din anden, allerede logget ind enhed, for at forbinde denne enhed.",

@@ -48,7 +48,7 @@
   "LoginPendingApproval": "Questa passkey è in attesa di approvazione su un dispositivo già connesso. Apri lì l'elenco delle passkey, approvala e riprova.",
   "LinkNewDeviceButton": "Collega un nuovo dispositivo",
   "LinkNewDeviceInstructions": "Sul nuovo dispositivo, apri /link in un browser (stesso indirizzo di questa app) e inserisci questo codice:",
-  "LinkNewDeviceExpiresFormat": "Valido ancora per {0} minuti.",
+  "LinkNewDeviceExpiresFormat": "one=Valido ancora per {0} minuto.|other=Valido ancora per {0} minuti.",
   "LinkNewDeviceDone": "Fatto",
   "LinkHeading": "Collega questo dispositivo",
   "LinkIntro": "Inserisci il codice mostrato sul tuo altro dispositivo, già connesso, per collegare questo dispositivo.",

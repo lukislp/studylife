@@ -5,6 +5,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Components.Forms;
 using StudyLife.Client.Models;
+using StudyLife.Client.Services;
 using StudyLife.Shared;
 
 namespace StudyLife.Client.Pages;
@@ -152,7 +153,7 @@ public partial class Calendar
                 if ((await State.SaveSessionAsync(session)).Success) imported++;
             }
             _sessions = await State.GetSessionsAsync();
-            _importSummary = string.Format(T.ImportSummary ?? "", imported);
+            _importSummary = Plural.Format(T.ImportSummary, imported);
             _importStep = "done";
         }
         finally

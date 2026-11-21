@@ -48,7 +48,7 @@
   "LoginPendingApproval": "Tämä avainkoodi odottaa hyväksyntää jo kirjautuneella laitteella. Avaa siellä avainlista, hyväksy se ja yritä uudelleen.",
   "LinkNewDeviceButton": "Yhdistä uusi laite",
   "LinkNewDeviceInstructions": "Avaa uudella laitteella selaimessa /link (sama osoite kuin tässä sovelluksessa) ja syötä tämä koodi:",
-  "LinkNewDeviceExpiresFormat": "Voimassa vielä {0} minuutti(a).",
+  "LinkNewDeviceExpiresFormat": "one=Voimassa vielä {0} minuutin.|other=Voimassa vielä {0} minuuttia.",
   "LinkNewDeviceDone": "Valmis",
   "LinkHeading": "Yhdistä tämä laite",
   "LinkIntro": "Syötä koodi, joka näkyy toisella, jo kirjautuneella laitteellasi, yhdistääksesi tämän laitteen.",

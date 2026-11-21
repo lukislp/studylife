@@ -108,7 +108,7 @@
                         </ul>
                         @if (_preview is { OwnedClientCount: > 0 })
                         {
-                            <p class="ss-desc">⚠️ @string.Format(T.OwnedAppsText ?? "", _preview.OwnedClientCount)</p>
+                            <p class="ss-desc">⚠️ @Plural.Format(T.OwnedAppsText, _preview.OwnedClientCount)</p>
                         }
                         @if (_preview is { InstallationWillReset: true })
                         {

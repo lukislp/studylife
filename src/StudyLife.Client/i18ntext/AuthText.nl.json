@@ -48,7 +48,7 @@
   "LoginPendingApproval": "Deze passkey wacht op goedkeuring op een al ingelogd apparaat. Open daar de passkeylijst, keur hem goed en probeer het opnieuw.",
   "LinkNewDeviceButton": "Nieuw apparaat koppelen",
   "LinkNewDeviceInstructions": "Open op het nieuwe apparaat /link in een browser (hetzelfde adres als deze app) en voer deze code in:",
-  "LinkNewDeviceExpiresFormat": "Nog {0} minu(u)t(en) geldig.",
+  "LinkNewDeviceExpiresFormat": "one=Nog {0} minuut geldig.|other=Nog {0} minuten geldig.",
   "LinkNewDeviceDone": "Klaar",
   "LinkHeading": "Dit apparaat koppelen",
   "LinkIntro": "Voer de code in die wordt getoond op je andere, al ingelogde apparaat, om dit apparaat te verbinden.",

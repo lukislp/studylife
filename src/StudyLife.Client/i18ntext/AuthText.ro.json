@@ -48,7 +48,7 @@
   "LoginPendingApproval": "Această cheie de acces așteaptă aprobare pe un dispozitiv deja autentificat. Deschide acolo lista de chei, aprob-o și încearcă din nou.",
   "LinkNewDeviceButton": "Conectează un dispozitiv nou",
   "LinkNewDeviceInstructions": "Pe noul dispozitiv, deschide /link într-un browser (aceeași adresă ca a acestei aplicații) și introdu acest cod:",
-  "LinkNewDeviceExpiresFormat": "Valabil încă {0} minute.",
+  "LinkNewDeviceExpiresFormat": "one=Valabil încă {0} minut.|other=Valabil încă {0} minute.",
   "LinkNewDeviceDone": "Gata",
   "LinkHeading": "Conectează acest dispozitiv",
   "LinkIntro": "Introdu codul afișat pe celălalt dispozitiv al tău, deja autentificat, pentru a conecta acest dispozitiv.",

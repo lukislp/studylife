@@ -156,7 +156,7 @@
   "ProgramErrorGroupInvalid": "Angiv et gruppenavn og et ECTS-loft større end 0.",
   "ProgramErrorDuplicateGroup": "Der findes allerede en gruppe med dette navn.",
   "ProgramErrorCreateFailed": "Uddannelsen kunne ikke oprettes. Prøv igen.",
-  "ProgramSummaryLabel": "{0} kurser · {1} ECTS der tæller med",
+  "ProgramSummaryLabel": "one={0} kursus · {1} ECTS der tæller med|other={0} kurser · {1} ECTS der tæller med",
   "ProgramCompletedSuffix": "✓ afsluttet",
   "MarkProgramCompletedButton": "Markér uddannelsen som afsluttet",
   "UnmarkProgramCompletedButton": "Fjern afsluttet-markering",

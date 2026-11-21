@@ -39,7 +39,7 @@
   "ImportRecurrenceWarning": "Korduv sündmus — imporditi ainult esimene kuupäev.",
   "ImportParseButton": "Loe fail",
   "ImportConfirmButton": "Impordi",
-  "ImportSummary": "Imporditi {0} seanssi.",
+  "ImportSummary": "one=Imporditi {0} seanss.|other=Imporditi {0} seanssi.",
   "ImportDoneCloseButton": "Valmis",
   "TemplatesButton": "Mallid",
   "TemplatesModalTitle": "Seansimallid",

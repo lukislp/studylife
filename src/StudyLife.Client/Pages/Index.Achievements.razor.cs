@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 using StudyLife.Client.Components.Dashboard;
+using StudyLife.Client.Services;
 using StudyLife.Shared;
 
 namespace StudyLife.Client.Pages;
@@ -53,17 +54,17 @@ public partial class Index
     {
         AchievementCatalog.HoursKey => string.Format(T.AchievementHoursName ?? "", threshold),
         AchievementCatalog.StreakKey => string.Format(T.AchievementStreakName ?? "", threshold),
-        AchievementCatalog.SessionsKey => string.Format(T.AchievementSessionsName ?? "", threshold),
-        AchievementCatalog.CoursesKey => string.Format(T.AchievementCoursesName ?? "", threshold),
+        AchievementCatalog.SessionsKey => Plural.Format(T.AchievementSessionsName, threshold),
+        AchievementCatalog.CoursesKey => Plural.Format(T.AchievementCoursesName, threshold),
         AchievementCatalog.AllCoursesKey => T.AchievementAllCoursesName ?? "",
-        AchievementCatalog.EarlyBirdKey => string.Format(T.AchievementEarlyBirdName ?? "", threshold),
-        AchievementCatalog.NightOwlKey => string.Format(T.AchievementNightOwlName ?? "", threshold),
-        AchievementCatalog.WeekendKey => string.Format(T.AchievementWeekendWarriorName ?? "", threshold),
+        AchievementCatalog.EarlyBirdKey => Plural.Format(T.AchievementEarlyBirdName, threshold),
+        AchievementCatalog.NightOwlKey => Plural.Format(T.AchievementNightOwlName, threshold),
+        AchievementCatalog.WeekendKey => Plural.Format(T.AchievementWeekendWarriorName, threshold),
         AchievementCatalog.MarathonKey => string.Format(T.AchievementMarathonName ?? "", threshold),
-        AchievementCatalog.PerfectWeekKey => string.Format(T.AchievementPerfectWeekName ?? "", threshold),
-        AchievementCatalog.NotesKey => string.Format(T.AchievementNotesName ?? "", threshold),
-        AchievementCatalog.CourseDiversityKey => string.Format(T.AchievementCourseDiversityName ?? "", threshold),
-        AchievementCatalog.ProgramsKey => string.Format(T.AchievementProgramsName ?? "", threshold),
+        AchievementCatalog.PerfectWeekKey => Plural.Format(T.AchievementPerfectWeekName, threshold),
+        AchievementCatalog.NotesKey => Plural.Format(T.AchievementNotesName, threshold),
+        AchievementCatalog.CourseDiversityKey => Plural.Format(T.AchievementCourseDiversityName, threshold),
+        AchievementCatalog.ProgramsKey => Plural.Format(T.AchievementProgramsName, threshold),
         _ => "",
     };
 }

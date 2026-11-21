@@ -39,7 +39,7 @@
   "ImportRecurrenceWarning": "Återkommande händelse — endast det första datumet importerades.",
   "ImportParseButton": "Läs fil",
   "ImportConfirmButton": "Importera",
-  "ImportSummary": "{0} session(er) importerade.",
+  "ImportSummary": "one={0} session importerad.|other={0} sessioner importerade.",
   "ImportDoneCloseButton": "Klart",
   "TemplatesButton": "Mallar",
   "TemplatesModalTitle": "Sessionsmallar",

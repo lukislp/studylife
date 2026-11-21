@@ -156,6 +156,7 @@ public class DashboardTodayRingDto
     /// <summary>Capped at 100 - it is an angle. See <see cref="Exceeded"/> for the overshoot.</summary>
     public double RingPercent { get; set; }
     public string HoursLabel { get; set; } = "0h";
+    /// <summary>"3,9h": decimal comma like every server-built label (StudyMetrics.FormatDecimal); the client localizes it.</summary>
     public string DailyTargetLabel { get; set; } = "0h";
     public bool Exceeded { get; set; }
 }
@@ -326,7 +327,9 @@ public class DashboardGraduationGoalDto
     public bool Visible { get; set; }
     public bool Expired { get; set; }
     public bool OnTrack { get; set; }
+    /// <summary>Required h/week, "19,2" (decimal comma like every server-built label; the client localizes it).</summary>
     public string RequiredValue { get; set; } = "";
+    /// <summary>Current h/week pace, "5,4" (same convention as <see cref="RequiredValue"/>).</summary>
     public string PaceValue { get; set; } = "";
     /// <summary>"dd.MM.yyyy" fixed-format fallback of <see cref="TargetDate"/>.</summary>
     public string TargetDateValue { get; set; } = "";

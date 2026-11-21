@@ -22,4 +22,12 @@ public class FormatGradeTests
     [InlineData(1.7, "0.00", "1,70")]
     public void FormatGrade_WithFormat_UsesCommaSeparator(decimal grade, string format, string expected)
         => Assert.Equal(expected, StudyMetrics.FormatGrade(grade, format));
+
+    [Theory]
+    [InlineData(11.06, "0.0", "11,1")]
+    [InlineData(31.44, "0.0", "31,4")]
+    [InlineData(3.857, "0.#", "3,9")]
+    [InlineData(4.0, "0.#", "4")]
+    public void FormatDecimal_UsesTheSameCommaConventionAsGrades(double value, string format, string expected)
+        => Assert.Equal(expected, StudyMetrics.FormatDecimal(value, format));
 }

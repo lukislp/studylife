@@ -17,7 +17,7 @@
   "ItemAccess": "Pääsyavaimesi, palautuskoodisi ja kaikki kirjautuneet laitteet",
   "ItemIntegrations": "Kaikki API-avaimet, yhdistetyt sovellukset, push-ilmoitusten rekisteröinnit ja kalenterilinkkisi",
   "ItemAddons": "Lisäosien säilyttämät tiedot (tekoälyavustaja, webhookit, kehittäjäportaali). Jos lisäosa on offline-tilassa, poistoa yritetään siellä uudelleen, kunnes se onnistuu",
-  "OwnedAppsText": "Olet rekisteröinyt kehittäjänä {0} sovellusta. Myös ne poistetaan, ja muiden käyttäjien integraatiot niihin lakkaavat toimimasta.",
+  "OwnedAppsText": "one=Olet rekisteröinyt kehittäjänä {0} sovelluksen. Myös se poistetaan, ja muiden käyttäjien integraatiot siihen lakkaavat toimimasta.|other=Olet rekisteröinyt kehittäjänä {0} sovellusta. Myös ne poistetaan, ja muiden käyttäjien integraatiot niihin lakkaavat toimimasta.",
   "LastUserText": "Tämä on asennuksen ainoa tili. Sen poistaminen palauttaa asennuksen ensikäynnistyksen tilaan, ja palvelimen lokiin ilmestyy uusi asetuskoodi.",
   "NotDeletedHeading": "Tämä ei poista:",
   "NotDeletedBackups": "Ennen poistoa tehdyt varmuuskopiot sisältävät kopion, kunnes ne korvataan: sisäänrakennetut viikkokopiot säilytetään neljä viikkoa, muut varmuuskopiot niin kauan kuin tämän palvelimen ylläpitäjä on määrittänyt (30 päivää mukana tulevassa Kubernetes-asetuksessa).",

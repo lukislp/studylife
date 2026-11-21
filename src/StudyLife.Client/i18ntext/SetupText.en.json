@@ -156,7 +156,7 @@
   "ProgramErrorGroupInvalid": "Please enter a group name and an ECTS cap greater than 0.",
   "ProgramErrorDuplicateGroup": "A group with this name already exists.",
   "ProgramErrorCreateFailed": "Creating the programme failed. Please try again.",
-  "ProgramSummaryLabel": "{0} courses · {1} creditable ECTS",
+  "ProgramSummaryLabel": "one={0} course · {1} creditable ECTS|other={0} courses · {1} creditable ECTS",
   "ProgramCompletedSuffix": "✓ completed",
   "MarkProgramCompletedButton": "Mark programme as completed",
   "UnmarkProgramCompletedButton": "Remove completed mark",

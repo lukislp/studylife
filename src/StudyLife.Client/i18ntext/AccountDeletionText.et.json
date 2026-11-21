@@ -17,7 +17,7 @@
   "ItemAccess": "Sinu pääsuvõtmed, taastekoodid ja kõik sisselogitud seadmed",
   "ItemIntegrations": "Kõik API-võtmed, ühendatud rakendused, tõuketeavituste registreeringud ja sinu kalendrilink",
   "ItemAddons": "Lisandmoodulites hoitavad andmed (tehisintellekti assistent, veebikonksud, arendajaportaal). Kui lisandmoodul on võrguväline, korratakse seal kustutamist, kuni see õnnestub",
-  "OwnedAppsText": "Oled arendajana registreerinud {0} rakendust. Needki kustutatakse ning teiste inimeste integratsioonid nendega lakkavad töötamast.",
+  "OwnedAppsText": "one=Oled arendajana registreerinud {0} rakenduse. Seegi kustutatakse ning teiste inimeste integratsioonid sellega lakkavad töötamast.|other=Oled arendajana registreerinud {0} rakendust. Needki kustutatakse ning teiste inimeste integratsioonid nendega lakkavad töötamast.",
   "LastUserText": "See on selle paigalduse ainus konto. Kustutamisel läheb paigaldus tagasi esmakäivituse olekusse ja serveri logisse ilmub uus seadistuskood.",
   "NotDeletedHeading": "See ei kustuta:",
   "NotDeletedBackups": "Enne kustutamist tehtud varukoopiad sisaldavad koopiat, kuni need välja vahetatakse: sisseehitatud iganädalaseid koopiaid hoitakse neli nädalat, muid varukoopiaid nii kaua, kui selle serveri haldaja on seadistanud (30 päeva kaasasolevas Kubernetese seadistuses).",

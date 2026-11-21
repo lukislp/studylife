@@ -156,7 +156,7 @@
   "ProgramErrorGroupInvalid": "Daħħal isem ta' grupp u limitu ta' ECTS akbar minn 0.",
   "ProgramErrorDuplicateGroup": "Diġà jeżisti grupp b'dan l-isem.",
   "ProgramErrorCreateFailed": "Il-ħolqien tal-programm ma rnexxiex. Erġa' pprova.",
-  "ProgramSummaryLabel": "{0} korsijiet · {1} ECTS li jgħoddu",
+  "ProgramSummaryLabel": "one={0} kors · {1} ECTS li jgħoddu|other={0} korsijiet · {1} ECTS li jgħoddu",
   "ProgramCompletedSuffix": "✓ lest",
   "MarkProgramCompletedButton": "Immarka l-programm bħala lest",
   "UnmarkProgramCompletedButton": "Neħħi l-marka ta' lest",
