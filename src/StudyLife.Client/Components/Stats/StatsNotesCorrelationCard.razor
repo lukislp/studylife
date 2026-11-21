@@ -43,8 +43,9 @@
 </div>
 
 @code {
-    public record WeekPair(string Label, double NotesCount, double NotesPercent, double Hours, double HoursPercent)
+    public record WeekPair(DateTime? WeekStart, string FallbackLabel, double NotesCount, double NotesPercent, double Hours, double HoursPercent)
     {
+        public string Label => SummaryDateLabels.DayMonth(WeekStart, FallbackLabel);
         public string HoursLabelText => StudyMetrics.FormatHoursMinutes(Hours);
         public string NotesPercentLabel => Math.Clamp(NotesPercent, 0, 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
         public string HoursPercentLabel => Math.Clamp(HoursPercent, 0, 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);

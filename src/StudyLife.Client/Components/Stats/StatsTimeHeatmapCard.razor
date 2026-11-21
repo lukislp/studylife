@@ -51,7 +51,7 @@
                  same lesson as the detail panel of the date heatmap (StatsHeatmapCard). -->
             <div class="heatmap-detail">
                 <div class="heatmap-detail-head">
-                    <span class="heatmap-detail-date">@_selectedCell.WeekdayLabel, @($"{_selectedCell.Hour:00}:00–{(_selectedCell.Hour + 1) % 24:00}:00")</span>
+                    <span class="heatmap-detail-date">@_selectedCell.WeekdayLabel, @($"{LocalDate.HourMark(_selectedCell.Hour)}–{LocalDate.HourMark((_selectedCell.Hour + 1) % 24)}")</span>
                     <button type="button" class="heatmap-detail-close" aria-label="@CloseDetailsLabel" @onclick="() => _selectedCell = null">✕</button>
                 </div>
                 @if (_selectedCell.Courses.Count == 0)

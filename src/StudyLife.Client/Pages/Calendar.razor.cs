@@ -248,7 +248,7 @@ public partial class Calendar
 
     private void UpdateLabel() => _weekLabel = _viewMode == "day"
         ? $"{LocalDate.Weekday(_currentDay, true)}, {LocalDate.Short(_currentDay)}"
-        : $"{LocalDate.DayMonth(_weekStart)} – {LocalDate.Short(_weekStart.AddDays(6))}";
+        : LocalDate.DayRange(_weekStart, _weekStart.AddDays(6));
 
     // In day view, only _currentDay is rendered; week view shows _days.
     private IReadOnlyList<DateTime> VisibleDays => _viewMode == "day"

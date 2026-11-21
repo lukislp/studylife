@@ -90,6 +90,35 @@ public static class LocalDate
         ? value.ToString("h:mm tt", CultureInfo.InvariantCulture)
         : value.ToString("HH:mm", CultureInfo.InvariantCulture);
 
+    /// <summary>Day and month without a trailing separator, e.g. 30.08 / 30/08 - for tight chart
+    /// axis labels where <see cref="DayMonth"/>'s closing dot would only add width.</summary>
+    public static string AxisDayMonth(DateTime value) => DayMonth(value).TrimEnd('.', ' ');
+
+    /// <summary>Month and two-digit year in the language's numeric order, e.g. 08.26 / 08/26 /
+    /// 26-08 - for month-bucketed chart axes.</summary>
+    public static string MonthYear(DateTime value) => value.ToString(MonthYearPatternFor(Language), CultureInfo.InvariantCulture);
+
+    /// <summary>A day range inside the language's date family, e.g. 16.11. – 22.11.2026 /
+    /// 16/11 – 22/11/2026.</summary>
+    public static string DayRange(DateTime start, DateTime end) => $"{DayMonth(start)} – {Short(end)}";
+
+    /// <summary>Clock time of a time-of-day value (same 12h/24h rule as <see cref="Time(DateTime)"/>).</summary>
+    public static string Time(TimeSpan timeOfDay) => Time(DateTime.MinValue.Add(timeOfDay));
+
+    /// <summary>
+    /// Full-hour mark for time axes and hour pickers, <paramref name="hour"/> 0-24. Same clock
+    /// family as <see cref="Time(DateTime)"/>: 24h languages get 07:00 (and the closing 24:00),
+    /// English gets the compact 12h form 7 AM / 12 PM (the closing mark is midnight, 12 AM) that
+    /// fits the narrow hour gutter.
+    /// </summary>
+    public static string HourMark(int hour)
+    {
+        if (!IsEnglish(Language)) return $"{hour:00}:00";
+        var h = ((hour % 24) + 24) % 24;
+        var twelve = h % 12 == 0 ? 12 : h % 12;
+        return $"{twelve} {(h < 12 ? "AM" : "PM")}";
+    }
+
     /// <summary>Full numeric date plus clock time.</summary>
     public static string DateAndTime(DateTime value) => $"{Short(value)} {Time(value)}";
 
@@ -129,5 +158,14 @@ public static class LocalDate
         "sv" or "lt" => "MM-dd",
         "hu" => "MM. dd.",
         _ => "dd.MM.",
+    };
+
+    private static string MonthYearPatternFor(string language) => TwoLetter(language) switch
+    {
+        "en" or "ga" or "mt" or "es" or "fr" or "it" or "pt" or "el" => "MM/yy",
+        "nl" => "MM-yy",
+        "sv" or "lt" => "yy-MM",
+        "hu" => "yy. MM.",
+        _ => "MM.yy",
     };
 }
