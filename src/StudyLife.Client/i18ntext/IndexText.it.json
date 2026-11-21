@@ -30,6 +30,7 @@
   "MonthQuotaTargetSuffix": "/ {0} – {1} h",
   "MonthTargetLegend": "Obiettivo: {0} – {1} h",
   "MonthlyGoalMissingText": "Mancano ancora {0} per raggiungere l'obiettivo mensile.",
+  "QuotaIncludesPlanned": "di cui {0} pianificate",
   "Last8Weeks": "Ultime 8 settimane",
   "UpcomingCourseGoals": "Prossimi obiettivi dei corsi",
   "InDays": "one=tra {0} giorno|other=tra {0} giorni",

@@ -7946,7 +7946,8 @@
           "percent",
           "minPercent",
           "warning",
-          "missingLabel"
+          "missingLabel",
+          "plannedLabel"
         ],
         "type": "object",
         "properties": {
@@ -7989,6 +7990,9 @@
             "type": "boolean"
           },
           "missingLabel": {
+            "type": "string"
+          },
+          "plannedLabel": {
             "type": "string"
           }
         }

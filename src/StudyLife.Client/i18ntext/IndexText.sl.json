@@ -30,6 +30,7 @@
   "MonthQuotaTargetSuffix": "/ {0} – {1} h",
   "MonthTargetLegend": "Cilj: {0} – {1} h",
   "MonthlyGoalMissingText": "Do mesečnega cilja manjka še {0}.",
+  "QuotaIncludesPlanned": "vklj. {0} načrtovanih",
   "Last8Weeks": "Zadnjih 8 tednov",
   "UpcomingCourseGoals": "Prihajajoči cilji predmetov",
   "InDays": "one=čez {0} dan|two=čez {0} dneva|other=čez {0} dni",

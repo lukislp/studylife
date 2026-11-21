@@ -30,6 +30,7 @@
   "MonthQuotaTargetSuffix": "/ {0} – {1} h",
   "MonthTargetLegend": "Mērķis: {0} – {1} h",
   "MonthlyGoalMissingText": "Vēl nepieciešams {0}, lai sasniegtu mēneša mērķi.",
+  "QuotaIncludesPlanned": "t. sk. {0} plānotas",
   "Last8Weeks": "Pēdējās 8 nedēļas",
   "UpcomingCourseGoals": "Gaidāmie kursu mērķi",
   "InDays": "one=pēc {0} dienas|other=pēc {0} dienām",
