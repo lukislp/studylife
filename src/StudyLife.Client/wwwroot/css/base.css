@@ -426,14 +426,22 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 
 /* Speed dial: combined floating action button at the bottom right for search + language switcher
    (replaces the previous dedicated sidebar search entry and the top-right fixed
-   language switcher). Higher than the sidebar (z-index 100) and the lang-popup backdrop. */
-.fab-dial { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 110; display: flex; flex-direction: column; align-items: flex-end; gap: 0.6rem; }
+   language switcher). Higher than the sidebar (z-index 100) and the lang-popup backdrop.
+   Its geometry lives in variables because .main-content reserves room for it (see there):
+   page content must never end up underneath the button. */
+:root {
+    --fab-size: 52px;
+    --fab-inset: 1.25rem;
+    /* Width of the strip along the right edge the button occupies, plus a small gap. */
+    --fab-lane: calc(var(--fab-size) + var(--fab-inset) + 0.5rem);
+}
+.fab-dial { position: fixed; right: var(--fab-inset); bottom: var(--fab-inset); z-index: 110; display: flex; flex-direction: column; align-items: flex-end; gap: 0.6rem; }
 .fab-main {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 52px;
-    height: 52px;
+    width: var(--fab-size);
+    height: var(--fab-size);
     border-radius: 50%;
     background: var(--accent);
     color: #fff;
@@ -614,6 +622,11 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
        so inside their own container, never through this one. */
     overflow-x: hidden;
     overscroll-behavior-x: none;
+    /* Keep the floating action button's lane free: every page already pads its content 2rem
+       from the right edge, this adds the rest of --fab-lane, so no card, legend value or chart
+       label ever sits underneath the button (iPad store screenshots showed the dashboard
+       donut's percentages covered). Phones get bottom clearance instead, see responsive.css. */
+    padding-right: max(0px, calc(var(--fab-lane) - 2rem));
 }
 
 /* Calendar page: cap the entire shell at 100vh, no page scroll */
@@ -629,5 +642,8 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    /* The calendar grid runs to the right edge (no page padding of its own there), so it
+       reserves the full lane. */
+    padding-right: var(--fab-lane);
 }
 

@@ -31,7 +31,12 @@
 }
 .wrapped-trigger-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(131, 58, 180, 0.45); }
 
-.report-export-link { display: inline-block; margin-top: 1rem; margin-left: 0.75rem; }
+/* The two header actions share one wrapping row: when the second one no longer fits (long
+   German labels on a phone) it starts flush left on its own line instead of keeping an inline
+   margin-left that indented it under the first. */
+.stats-header-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-top: 1rem; }
+.stats-header-actions .wrapped-trigger-btn { margin-top: 0; }
+.report-export-link { display: inline-block; }
 
 /* Full-screen year-in-review (Wrapped.razor) - a single column of scrollable gradient "slides",
    the same visual language as the earlier modal prototype (.wrapped-slide/-grad-*), just without
