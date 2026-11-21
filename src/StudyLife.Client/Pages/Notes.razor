@@ -542,9 +542,29 @@ else
         _notesLoading = false;
         await RenderPhaseAsync();
 
-        // Deep links (NotesDeepLink): ?new=1 (PWA app-icon shortcut "New note") opens a fresh note,
-        // ?note=<id> opens that note (a note that does not exist, or no longer, leaves the list as it is).
-        var link = NotesDeepLink.Parse(Nav.ToAbsoluteUri(Nav.Uri).Query);
+        // Deep links (NotesDeepLink) on first load, and again whenever the URL changes while this page
+        // stays mounted (global search on /notes -> /notes?note=<id> re-uses the component, so
+        // OnInitialized does not run a second time).
+        ApplyDeepLink(Nav.Uri);
+        Nav.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        var path = Nav.ToBaseRelativePath(e.Location).Split('?', '#')[0].TrimEnd('/');
+        if (!string.Equals(path, "notes", StringComparison.OrdinalIgnoreCase)) return;
+        _ = InvokeAsync(() =>
+        {
+            ApplyDeepLink(e.Location);
+            StateHasChanged();
+        });
+    }
+
+    // ?new=1 (PWA app-icon shortcut "New note") opens a fresh note, ?note=<id> opens that note
+    // (a note that does not exist, or no longer, leaves the list as it is).
+    private void ApplyDeepLink(string uri)
+    {
+        var link = NotesDeepLink.Parse(Nav.ToAbsoluteUri(uri).Query);
         if (link.NewNote)
         {
             NewNote();
@@ -1199,6 +1219,7 @@ else
     public void Dispose()
     {
         State.OnServerChanged -= OnServerChanged;
+        Nav.LocationChanged -= OnLocationChanged;
         _debounce?.Dispose();
         _searchDebounce?.Dispose();
     }

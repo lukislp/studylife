@@ -17,7 +17,10 @@
                 'background:#7a1f1f;color:#fff;font:12px monospace;padding:8px;' +
                 'max-height:40vh;overflow:auto;white-space:pre-wrap;word-break:break-all;';
             var dismiss = document.createElement('div');
-            dismiss.textContent = '✕ schließen';
+            dismiss.textContent = '✕';
+            dismiss.setAttribute('aria-label', 'Close');
+            dismiss.title = 'Close';
+            dismiss.setAttribute('role', 'button');
             dismiss.style.cssText = 'text-align:right;cursor:pointer;font-weight:bold;';
             dismiss.onclick = function () { el.remove(); };
             el.appendChild(dismiss);
@@ -308,28 +311,32 @@ function getNotificationPermissionStatus() {
 // title/body come from the caller (Setup.razor passes the i18n table text): the notification is
 // shown locally, so the text must be in the language the UI is in.
 async function sendTestNotification(title, body) {
-    if (!('serviceWorker' in navigator)) return;
+    if (!canShowNotifications()) return;
     const reg = await navigator.serviceWorker.ready;
+    // Permission can still be revoked between the check and the call: never surface that rejection.
     reg.showNotification(title, {
         body: body,
         icon: '/icons/icon-192.png',
         badge: '/icons/icon-192.png',
         tag: 'studylife-test',
         renotify: true
-    });
+    }).catch(() => { /* ignore */ });
+}
+
+// showNotification rejects ("No notification permission has been granted") unless permission is granted.
+function canShowNotifications() {
+    return 'serviceWorker' in navigator && 'Notification' in window && Notification.permission === 'granted';
 }
 
 function showLocalNotification(title, body) {
-    if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.ready.then(reg => {
-        reg.showNotification(title, {
-            body: body,
-            icon: '/icons/icon-192.png',
-            badge: '/icons/icon-192.png',
-            tag: 'studylife-timer',
-            renotify: true
-        });
-    });
+    if (!canShowNotifications()) return;
+    navigator.serviceWorker.ready.then(reg => reg.showNotification(title, {
+        body: body,
+        icon: '/icons/icon-192.png',
+        badge: '/icons/icon-192.png',
+        tag: 'studylife-timer',
+        renotify: true
+    })).catch(() => { /* ignore */ });
 }
 
 function showSessionNotification(title, body) {
