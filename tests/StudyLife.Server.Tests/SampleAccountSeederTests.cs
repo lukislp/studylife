@@ -52,6 +52,99 @@ public class SampleAccountSeederTests : IClassFixture<CustomWebApplicationFactor
     private Task<SampleAccountSeedOutcome> SeedAsync(string username, DateTime now) =>
         _factory.WithDbAsync(db => SampleAccountSeeder.SeedAsync(db, username, now));
 
+    /// <summary>The days of the dataset's fixed planned sessions (later today, days 1, 2, 4 and 6
+    /// ahead); the goal plan only adds sessions on days without any session.</summary>
+    private static HashSet<DateTime> FixedPlanDays(DateTime now) =>
+        new[] { 0, 1, 2, 4, 6 }.Select(d => now.Date.AddDays(d)).ToHashSet();
+
+    private Task<UserSettingsEntity> SettingsOfAsync(int userId) =>
+        _factory.WithDbAsync(db => db.Settings.IgnoreQueryFilters().AsNoTracking().SingleAsync(s => s.AuthUserId == userId));
+
+    /// <summary>A Monday morning, the 1st of a month, a mid-month Friday and a month's last day
+    /// (the hardest days for the quota tiles), each in both languages.</summary>
+    public static TheoryData<string, SampleDataLanguage> SeedDays()
+    {
+        var data = new TheoryData<string, SampleDataLanguage>();
+        foreach (var day in new[] { "2026-11-30", "2026-12-01", "2026-12-11", "2026-12-31" })
+            foreach (var language in new[] { SampleDataLanguage.German, SampleDataLanguage.English })
+                data.Add(day, language);
+        return data;
+    }
+
+    [Theory]
+    [MemberData(nameof(SeedDays))]
+    public async Task Seed_GoalsMatchTheSamplePace_QuotasOnTrack_GraduationNotBehind(string day, SampleDataLanguage language)
+    {
+        var username = $"sample.pace.{day.Replace("-", "")}.{language}".ToLowerInvariant();
+        var userId = await CreatePasswordAccountAsync(username);
+        var now = DateTime.Parse(day, System.Globalization.CultureInfo.InvariantCulture).Add(new TimeSpan(9, 41, 0));
+
+        Assert.Equal(SampleAccountSeedOutcome.Seeded,
+            await _factory.WithDbAsync(db => SampleAccountSeeder.SeedAsync(db, username, now, language)));
+
+        var settings = await SettingsOfAsync(userId);
+        Assert.Equal(SampleStudyGoals.SamplePace.WeeklyMinHours, settings.WeeklyGoalMinHours);
+        Assert.Equal(SampleStudyGoals.SamplePace.WeeklyMaxHours, settings.WeeklyGoalMaxHours);
+        Assert.Equal(SampleStudyGoals.SamplePace.MonthlyMinHours, settings.MonthlyGoalMinHours);
+        Assert.Equal(SampleStudyGoals.SamplePace.MonthlyMaxHours, settings.MonthlyGoalMaxHours);
+
+        var inputs = await _factory.WithDbAsync(db => SeededSummaryInputs.LoadAsync(db, userId, now));
+        var summary = DashboardSummaryBuilder.Build(inputs.Dashboard);
+        Assert.False(summary.Sessions.WeekQuota.Warning, $"week {summary.Sessions.WeekQuota.HoursLabel} below target");
+        Assert.False(summary.Sessions.MonthQuota.Warning, $"month {summary.Sessions.MonthQuota.HoursLabel} below target");
+        var graduation = summary.Progress.GraduationGoal;
+        Assert.True(graduation.Visible, "the graduation goal card is shown");
+        Assert.False(graduation.Expired);
+        Assert.True(graduation.OnTrack, $"graduation goal behind pace: needs {graduation.RequiredValue} h/week, pace {graduation.PaceValue}");
+    }
+
+    [Fact]
+    public async Task Seed_KeepsGoalsAndGraduationTargetTheAccountSetItself()
+    {
+        var userId = await CreatePasswordAccountAsync("sample.owngoals");
+        var ownTarget = DateTime.Today.AddYears(4);
+        await _factory.WithDbAsync(async db =>
+        {
+            db.Settings.Add(new UserSettingsEntity
+            {
+                AuthUserId = userId,
+                WeeklyGoalMinHours = 20,
+                WeeklyGoalMaxHours = 24,
+                MonthlyGoalMinHours = 80,
+                MonthlyGoalMaxHours = 95,
+                TargetGraduationDate = ownTarget,
+            });
+            await db.SaveChangesAsync();
+        });
+        var now = DateTime.Today.AddHours(9).AddMinutes(41);
+
+        Assert.Equal(SampleAccountSeedOutcome.Seeded, await SeedAsync("sample.owngoals", now));
+
+        var settings = await SettingsOfAsync(userId);
+        Assert.Equal((20, 24, 80, 95), (settings.WeeklyGoalMinHours, settings.WeeklyGoalMaxHours,
+            settings.MonthlyGoalMinHours, settings.MonthlyGoalMaxHours));
+        Assert.Equal(ownTarget, settings.TargetGraduationDate);
+        // No plan up to goals the dataset did not set: only the fixed planned sessions.
+        var planned = await _factory.WithDbAsync(db => db.Sessions.IgnoreQueryFilters().AsNoTracking()
+            .CountAsync(s => s.AuthUserId == userId && !s.IsCompleted));
+        Assert.Equal(5, planned);
+    }
+
+    [Fact]
+    public async Task Seed_ReplacesTheDefaultGoalsOfAnExistingSettingsRow()
+    {
+        // A settings row created on first use still holds the entity defaults: those are no goals
+        // the account chose, so the sample goals replace them.
+        var userId = await CreatePasswordAccountAsync("sample.defaultgoals", withSettings: true);
+
+        Assert.Equal(SampleAccountSeedOutcome.Seeded, await SeedAsync("sample.defaultgoals", DateTime.Today.AddHours(9).AddMinutes(41)));
+
+        var settings = await SettingsOfAsync(userId);
+        Assert.Equal(SampleStudyGoals.SamplePace.WeeklyMinHours, settings.WeeklyGoalMinHours);
+        Assert.Equal(SampleStudyGoals.SamplePace.MonthlyMaxHours, settings.MonthlyGoalMaxHours);
+        Assert.NotNull(settings.TargetGraduationDate);
+    }
+
     private Task<(int Sessions, int Notes, int Goals, int Settings)> CountAsync(int userId) =>
         _factory.WithDbAsync(async db => (
             await db.Sessions.IgnoreQueryFilters().CountAsync(s => s.AuthUserId == userId),
@@ -76,7 +169,9 @@ public class SampleAccountSeederTests : IClassFixture<CustomWebApplicationFactor
 
         var planned = await _factory.WithDbAsync(db => db.Sessions.IgnoreQueryFilters().AsNoTracking()
             .Where(s => s.AuthUserId == userId && !s.IsCompleted).ToListAsync());
-        Assert.Equal(5, planned.Count); // four in the coming days, one later today
+        // Four in the coming days and one later today; the goal plan (evening sessions on free
+        // days, SampleDataset.PlanUpToGoals) comes on top, depending on the date.
+        Assert.Equal(5, planned.Count(s => FixedPlanDays(now).Contains(s.StartTime.Date)));
         Assert.All(planned, s => Assert.True(s.StartTime > now, "planned sessions lie in the future"));
 
         var completed = await _factory.WithDbAsync(db => db.Sessions.IgnoreQueryFilters().AsNoTracking()
@@ -222,7 +317,7 @@ public class SampleAccountSeederTests : IClassFixture<CustomWebApplicationFactor
 
         // Same structure as the German dataset, English texts.
         Assert.Equal(7, goals.Count);
-        Assert.Equal(5, sessions.Count(s => !s.IsCompleted && s.StartTime > now));
+        Assert.Equal(5, sessions.Count(s => !s.IsCompleted && s.StartTime > now && FixedPlanDays(now).Contains(s.StartTime.Date)));
         Assert.Equal(
             SampleDataContent.English.Notes.Select(n => n.Title).OrderBy(t => t),
             notes.Select(n => n.Title).OrderBy(t => t));
