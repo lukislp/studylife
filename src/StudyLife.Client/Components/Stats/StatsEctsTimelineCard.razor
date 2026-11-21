@@ -6,15 +6,15 @@
     <div class="ss-label">@Label</div>
     @if (Points.Count >= 2)
     {
-        <div class="timeline-chart-wrap">
-            <div class="timeline-chart">
+        <div class="chart-scroll">
+            <div class="timeline-chart chart-plot">
                 @foreach (var p in Points)
                 {
                     <div class="timeline-col" title="@($"{p.DateLabel}: {string.Format(TooltipFormat, p.CumulativeEcts)}")">
                         <div class="timeline-track">
                             <div class="timeline-fill" style="height: @p.Percent%"></div>
                         </div>
-                        <div class="timeline-label">@p.DateLabel</div>
+                        <div class="timeline-label chart-axis-label">@p.DateLabel</div>
                     </div>
                 }
             </div>

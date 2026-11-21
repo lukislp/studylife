@@ -62,9 +62,45 @@ public class FabClearanceContractTests
     {
         var css = Css("responsive.css");
 
+        Assert.Contains("--fab-clearance: calc(var(--fab-size) + 1.5rem);", Css("base.css"));
         var main = Rule(css, ".main-content", from: "@media (max-width: 768px)");
         Assert.Contains("padding-right: 0;", main);
-        Assert.Contains("padding-bottom: calc(var(--fab-size) + 1.5rem);", main);
+        Assert.Contains("padding-bottom: var(--fab-clearance);", main);
+    }
+
+    [Fact]
+    public void The_stats_page_scrolls_in_the_cleared_main_content()
+    {
+        // The bottom clearance only protects the last chart's axis labels if the stats page
+        // scrolls in .main-content itself, not in a height-capped container of its own.
+        var markup = RepoFile("src", "StudyLife.Client", "Pages", "Stats.razor");
+        Assert.Contains(@"<div class=""setup-page stats-page"">", markup);
+        foreach (var sheet in new[] { "stats.css", "setup.css", "responsive.css" })
+        {
+            Assert.DoesNotMatch(new Regex(@"\.(stats-page|setup-page)[^{]*\{[^}]*(overflow|height)\s*:"), Css(sheet));
+        }
+    }
+
+    /// <summary>
+    /// v3.39.13 iPhone screenshots: the phone clearance on the calendar's height-capped shell
+    /// shrank the day grid (the 2 PM session and hour label were cut). The shell keeps its plain
+    /// padding, the grid's own scroll area carries the clearance instead.
+    /// </summary>
+    [Fact]
+    public void Phones_keep_the_calendar_grid_height_and_clear_the_button_inside_the_grid()
+    {
+        var css = Css("responsive.css");
+
+        var shell = Rule(css, ".app-shell.page-calendar .main-content", from: "@media (max-width: 768px)");
+        Assert.Contains("padding-bottom: 1rem;", shell);
+        Assert.DoesNotContain("fab", shell);
+        Assert.Contains("padding-bottom: var(--fab-clearance);", Rule(css, ".fab-scroll-end", from: "@media (max-width: 768px)"));
+
+        var markup = RepoFile("src", "StudyLife.Client", "Pages", "Calendar.razor");
+        Assert.Contains(@"<div class=""cal-outer fab-scroll-end"" id=""cal-outer""", markup);
+        // .cal-outer is the grid's scroll container (overflow: auto), so its end padding
+        // extends the scroll range instead of the visible grid shrinking.
+        Assert.Contains("overflow: auto;", Rule(Css("calendar.css"), ".cal-outer"));
     }
 
     [Fact]

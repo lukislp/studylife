@@ -278,12 +278,12 @@ button.time-heatmap-cell.selected { outline: 2px solid var(--accent); outline-of
 
 /* ECTS cumulative timeline (step chart, reuses mini-bar-* look via its own track/fill pair
    so columns can be pinned to a fixed width and scroll horizontally instead of squeezing
-   arbitrarily many completed-goal points into the card width) */
-.timeline-chart-wrap { overflow-x: auto; padding-bottom: 0.25rem; }
-.timeline-chart { display: flex; align-items: flex-end; gap: 0.4rem; height: 110px; width: max-content; min-width: 100%; }
+   arbitrarily many completed-goal points into the card width). Scrolling, width and edge
+   padding come from the shared .chart-scroll/.chart-plot classes (shared.css). */
+.timeline-chart { display: flex; align-items: flex-end; gap: 0.4rem; height: 110px; }
 /* Wide enough for the full "dd.MM.yy" label below (~46px at 0.6rem monospace) - each column
    reserves its own label space so consecutive dates can't visually overlap. The chart already
-   scrolls horizontally (.timeline-chart-wrap), same established pattern as the heatmap.
+   scrolls horizontally (.chart-scroll), same established pattern as the heatmap.
    flex-grow (not a fixed width) so a handful of columns spread out to use a wide card instead of
    clustering at the left with empty space trailing them - flex-shrink stays 0 and flex-basis
    stays 54px, so once enough columns exist to fill/overflow the card, growth has nothing left to
@@ -291,11 +291,11 @@ button.time-heatmap-cell.selected { outline: 2px solid var(--accent); outline-of
 .timeline-col { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; height: 100%; flex: 1 0 54px; max-width: 120px; }
 .timeline-track { position: relative; flex: 1 1 auto; width: 100%; max-width: 22px; display: flex; align-items: flex-end; background: var(--bg3); border-radius: 3px; }
 .timeline-fill { width: 100%; background: var(--accent); border-radius: 3px; min-height: 2px; transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-.timeline-label { font-size: 0.6rem; color: var(--text3); font-family: var(--font-mono); white-space: nowrap; }
+.timeline-label { font-size: 0.6rem; color: var(--text3); font-family: var(--font-mono); }
 
 /* ECTS actual-vs-target (monthly columns up to the desired completion date): actual as .timeline-fill,
    target as a thin cross marker in the track (same marker idea as .balance-target-marker,
-   just horizontal on a vertical column). Scrolls horizontally like .timeline-chart-wrap. */
+   just horizontal on a vertical column). Scrolls horizontally in a .chart-scroll like the timeline. */
 .ectsplan-col { width: 44px; }
 .ectsplan-target-marker { position: absolute; left: -2px; right: -2px; height: 2px; background: var(--text); border-radius: 1px; }
 .ectsplan-legend { display: flex; gap: 1rem; font-size: 0.72rem; color: var(--text2); margin-bottom: 0.5rem; }
@@ -310,13 +310,13 @@ button.time-heatmap-cell.selected { outline: 2px solid var(--accent); outline-of
 /* Session follow-through (productivity) weekly trend - reuses .mini-bar-* chart like .grade-chart.
    12 weekly columns don't fit a phone-width card at .mini-bar-col's default shrink-to-fit sizing
    (flex-shrink never goes below the "dd.MM." label's intrinsic width, so the row overflowed the
-   card on mobile instead of scrolling) - fixed-width, non-shrinking columns + overflow-x here
-   mirror the .timeline-chart-wrap pattern above. */
-.productivity-chart { height: 100px; overflow-x: auto; padding-bottom: 0.25rem; }
+   card on mobile instead of scrolling) - fixed-width, non-shrinking columns inside a shared
+   .chart-scroll wrapper mirror the timeline pattern above. */
+.productivity-chart { height: 100px; }
 .productivity-chart .mini-bar-col { flex: 0 0 34px; }
 
 /* Weekly study-frequency trend (early-warning bar chart, distinct from the goal dot-strip below) - same 12-column overflow fix as .productivity-chart above. */
-.inactivity-chart { height: 80px; overflow-x: auto; padding-bottom: 0.25rem; }
+.inactivity-chart { height: 80px; }
 .inactivity-chart .mini-bar-col { flex: 0 0 34px; }
 
 /* Session length histogram - reuses .mini-bar-* chart with a count label like .grade-chart */
@@ -332,14 +332,13 @@ button.time-heatmap-cell.selected { outline: 2px solid var(--accent); outline-of
    cluster. Used by the course-comparison chart (one bar per course) and the notes-vs-hours
    correlation chart (fixed two-bar cluster) - same visual language as .stacked-chart above,
    just side-by-side instead of stacked, since both need per-series color coding. Horizontally
-   scrollable like .timeline-chart-wrap/.heatmap-wrap since 12 weeks rarely fit a narrow card. */
-.grouped-chart-wrap { overflow-x: auto; padding-bottom: 0.25rem; }
-.grouped-chart { display: flex; align-items: flex-end; gap: 0.7rem; width: max-content; min-width: 100%; }
+   scrollable (.chart-scroll) like the timeline/.heatmap-wrap since 12 weeks rarely fit a narrow card. */
+.grouped-chart { display: flex; align-items: flex-end; gap: 0.7rem; }
 .grouped-col { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; flex-shrink: 0; }
 .grouped-bars { display: flex; align-items: flex-end; gap: 2px; height: 120px; }
 .grouped-bar-track { width: 8px; height: 100%; display: flex; align-items: flex-end; background: var(--bg3); border-radius: 2px; overflow: hidden; }
 .grouped-bar-fill { width: 100%; border-radius: 2px; min-height: 2px; transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-.grouped-label { font-size: 0.6rem; color: var(--text3); font-family: var(--font-mono); white-space: nowrap; }
+.grouped-label { font-size: 0.6rem; color: var(--text3); font-family: var(--font-mono); }
 
 /* Course balance: ECTS-weighted target time-share vs. actual time-share per active course.
    A single track shows the actual share as a filled bar with the target share overlaid as a
@@ -432,7 +431,7 @@ button.time-heatmap-cell.selected { outline: 2px solid var(--accent); outline-of
 .report-table thead th { color: var(--text2); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
 /* The course breakdown has 7 columns and used to run past the card edge on phone width instead of
    scrolling (width:100% above doesn't force the columns to shrink) - same
-   overflow-x pattern as .timeline-chart-wrap etc.; .report-table stays as wide as its content
+   overflow-x pattern as .chart-scroll etc.; .report-table stays as wide as its content
    needs, min-width:100% fills the card when there's enough room. */
 .report-table-wrap { overflow-x: auto; padding-bottom: 0.25rem; }
 .report-table-wrap .report-table { width: auto; min-width: 100%; }

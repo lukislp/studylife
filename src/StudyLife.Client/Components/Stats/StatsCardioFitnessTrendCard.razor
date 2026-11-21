@@ -10,8 +10,8 @@
            workouts) plotted chronologically - same scrolling-columns pattern as the grade/ECTS
            timelines, just with a series-relative percent scale instead of an absolute one, since
            a healthy VO2max range varies a lot by person/age/fitness level. *@
-        <div class="timeline-chart-wrap">
-            <div class="timeline-chart grade-timeline-chart">
+        <div class="chart-scroll">
+            <div class="timeline-chart chart-plot grade-timeline-chart">
                 @foreach (var p in Points)
                 {
                     <div class="timeline-col" title="@($"{p.DateLabel}: {string.Format(ValueFormat, p.Vo2MaxLabel)}")">
@@ -19,7 +19,7 @@
                         <div class="timeline-track">
                             <div class="timeline-fill" style="height: @p.PercentLabel%"></div>
                         </div>
-                        <div class="timeline-label">@p.DateLabel</div>
+                        <div class="timeline-label chart-axis-label">@p.DateLabel</div>
                     </div>
                 }
             </div>

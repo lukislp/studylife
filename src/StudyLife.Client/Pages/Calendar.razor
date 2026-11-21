@@ -51,8 +51,9 @@
 
     <!-- Outer: horizontal scroll only. Keeps its id/element identity across the
          skeleton<->grid swap below, so the JS interop attached to it (initCalendarSwipe,
-         scrollElementToMinute - see Calendar.razor.cs) never has to re-attach. -->
-    <div class="cal-outer" id="cal-outer" tabindex="-1">
+         scrollElementToMinute - see Calendar.razor.cs) never has to re-attach.
+         .fab-scroll-end: on phones the grid's last hours scroll above the action button. -->
+    <div class="cal-outer fab-scroll-end" id="cal-outer" tabindex="-1">
         @if (_gridLoading)
         {
             <div class="sl-skeleton sl-skeleton-xl" aria-hidden="true"></div>

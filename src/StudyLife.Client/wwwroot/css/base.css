@@ -434,6 +434,8 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
     --fab-inset: 1.25rem;
     /* Width of the strip along the right edge the button occupies, plus a small gap. */
     --fab-lane: calc(var(--fab-size) + var(--fab-inset) + 0.5rem);
+    /* Phones: room at the end of a scroll area, so its last content scrolls above the button. */
+    --fab-clearance: calc(var(--fab-size) + 1.5rem);
 }
 .fab-dial { position: fixed; right: var(--fab-inset); bottom: var(--fab-inset); z-index: 110; display: flex; flex-direction: column; align-items: flex-end; gap: 0.6rem; }
 .fab-main {

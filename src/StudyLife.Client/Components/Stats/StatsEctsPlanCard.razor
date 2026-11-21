@@ -14,8 +14,8 @@
             <span class="ectsplan-legend-item"><span class="ectsplan-legend-fill"></span>@ActualLabel</span>
             <span class="ectsplan-legend-item"><span class="ectsplan-legend-marker"></span>@TargetLabel</span>
         </div>
-        <div class="timeline-chart-wrap">
-            <div class="timeline-chart ectsplan-chart">
+        <div class="chart-scroll">
+            <div class="timeline-chart chart-plot ectsplan-chart">
                 @foreach (var p in Points)
                 {
                     <div class="timeline-col ectsplan-col" title="@ColumnTitle(p)">
@@ -26,7 +26,7 @@
                             }
                             <div class="ectsplan-target-marker" style="bottom: @p.TargetPercent%"></div>
                         </div>
-                        <div class="timeline-label">@p.Label</div>
+                        <div class="timeline-label chart-axis-label">@p.Label</div>
                     </div>
                 }
             </div>
