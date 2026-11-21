@@ -78,8 +78,110 @@ public static class SampleDataset
         return hour <= 20 ? now.Date.AddHours(hour) : null;
     }
 
+    /// <summary>Length of a session the goal plan adds (same as every other planned session).</summary>
+    internal static readonly TimeSpan PlannedLength = TimeSpan.FromMinutes(90);
+
+    /// <summary>Start of a session the goal plan adds: an evening slot.</summary>
+    internal static readonly TimeSpan GoalPlanStart = new(18, 0, 0);
+
+    /// <summary>
+    /// Plans the rest of the current week and month up to the minimum study goals, the way a
+    /// student fills the calendar with the planner. The dashboard's quota tiles count planned
+    /// sessions of the week/month too, so without this the seeded demo read "below target" on
+    /// most days (a Monday morning has hardly anything studied yet). Free future days are filled
+    /// in order, weekdays before weekends, one evening session each, until both minimums are met
+    /// or no free day within the week/month is left. Returns only the added sessions;
+    /// <paramref name="plan"/> builds one from its start and a running number.
+    /// </summary>
+    internal static List<StudySessionEntity> PlanUpToGoals(IReadOnlyList<StudySessionEntity> sessions, DateTime now,
+        SampleStudyGoals goals, Func<DateTime, int, StudySessionEntity> plan)
+    {
+        var today = now.Date;
+        var weekStart = StudyMetrics.WeekStartOf(today);
+        var weekEnd = weekStart.AddDays(7);
+        var monthStart = new DateTime(today.Year, today.Month, 1);
+        var monthEnd = monthStart.AddMonths(1);
+        var all = sessions.ToList();
+        var added = new List<StudySessionEntity>();
+
+        double HoursBetween(DateTime from, DateTime to) => all
+            .Where(s => s.StartTime.Date >= from && s.StartTime.Date < to)
+            .Sum(s => (s.EndTime - s.StartTime).TotalHours);
+
+        var lastDay = weekEnd > monthEnd ? weekEnd : monthEnd;
+        var freeDays = Enumerable.Range(1, (lastDay - today).Days - 1)
+            .Select(offset => today.AddDays(offset))
+            .Where(day => !all.Any(s => s.StartTime.Date == day))
+            .OrderBy(day => day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
+            .ThenBy(day => day)
+            .ToList();
+
+        foreach (var day in freeDays)
+        {
+            var weekShort = HoursBetween(weekStart, weekEnd) < goals.WeeklyMinHours;
+            var monthShort = HoursBetween(monthStart, monthEnd) < goals.MonthlyMinHours;
+            if (!weekShort && !monthShort) break;
+            if (!(weekShort && day < weekEnd) && !(monthShort && day < monthEnd)) continue;
+
+            var session = plan(day.Add(GoalPlanStart), added.Count);
+            added.Add(session);
+            all.Add(session);
+        }
+        return added;
+    }
+
+    /// <summary>Days before today the first semester's history starts and ends - it stays clear of
+    /// the current semester's 70-day history and of the month comparison's earlier month.</summary>
+    internal const int EarlierSemesterFirstDay = 235;
+    internal const int EarlierSemesterLastDay = 76;
+
+    /// <summary>
+    /// Study history of the completed first semester, so the stats page's semester comparison
+    /// sets the current semester against a previous one with real hours (without it the previous
+    /// semester read "0h 0m"). Sessions run from about eight months ago until shortly before the
+    /// current semester's history starts, each on a semester-1 course that was not yet completed
+    /// on that day. Its own seeded Random, so the current semester's sessions stay exactly as they
+    /// were.
+    /// </summary>
+    internal static List<StudySessionEntity> EarlierSemesterHistory(int userId, IReadOnlyList<CourseDto> semester1,
+        IReadOnlyList<DateTime> completedAt, DateTime today)
+    {
+        var rng = new Random(RandomSeed + 1);
+        var durations = new[] { 45, 60, 60, 90, 90, 120 };
+        var sessions = new List<StudySessionEntity>();
+        for (var dayOffset = EarlierSemesterFirstDay; dayOffset >= EarlierSemesterLastDay; dayOffset--)
+        {
+            var day = today.AddDays(-dayOffset);
+            var isWeekend = day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+            if (rng.NextDouble() > (isWeekend ? 0.25 : 0.65)) continue;
+
+            var open = semester1.Where((_, i) => completedAt[i].Date > day).ToList();
+            if (open.Count == 0) continue;
+
+            var course = open[rng.Next(open.Count)];
+            var minutes = durations[rng.Next(durations.Length)];
+            var start = day.AddHours(9 + rng.Next(0, 4)).AddMinutes(15 * rng.Next(0, 4));
+            sessions.Add(new StudySessionEntity
+            {
+                AuthUserId = userId,
+                CourseId = course.Id,
+                CourseName = course.Name,
+                CourseColor = course.Color,
+                StartTime = start,
+                EndTime = start.AddMinutes(minutes),
+                Topic = course.Topics[rng.Next(course.Topics.Count)],
+                IsCompleted = true,
+                TimerModeId = 1 + rng.Next(0, 3),
+            });
+        }
+        return sessions;
+    }
+
+    /// <param name="goals">Weekly/monthly study goals to seed with; the rest of the current week
+    /// and month is then planned up to their minimums. Null (an operator-chosen account) keeps the
+    /// account's own goals and plans nothing extra.</param>
     public static async Task PopulateAsync(StudyLifeDb db, int userId, DateTime now,
-        SampleDataLanguage language = SampleDataLanguage.German)
+        SampleDataLanguage language = SampleDataLanguage.German, SampleStudyGoals? goals = null)
     {
         var content = SampleDataContent.For(language);
         var rng = new Random(RandomSeed);
@@ -117,19 +219,29 @@ public static class SampleDataset
         settings.SelectedCourseIds = string.Join(",", active.Select(c => c.Id));
         settings.CompletedCourseIds = string.Join(",", semester1.Select(c => c.Id));
         settings.TargetGraduationDate = today.AddYears(2).AddMonths(3);
+        if (goals is not null)
+        {
+            settings.WeeklyGoalMinHours = goals.WeeklyMinHours;
+            settings.WeeklyGoalMaxHours = goals.WeeklyMaxHours;
+            settings.MonthlyGoalMinHours = goals.MonthlyMinHours;
+            settings.MonthlyGoalMaxHours = goals.MonthlyMaxHours;
+        }
 
         // ── Completed semester 1: one goal row per course with grade + completion ──
         var grades = new[] { 1.3m, 1.7m, 2.0m, 2.3m, 1.0m };
+        var semester1CompletedAt = new List<DateTime>();
         for (var i = 0; i < semester1.Count; i++)
         {
             var course = semester1[i];
+            var completedAt = today.AddMonths(-6 + i).AddDays(-rng.Next(0, 12));
+            semester1CompletedAt.Add(completedAt);
             db.CourseGoals.Add(new CourseGoalEntity
             {
                 AuthUserId = userId,
                 CourseId = course.Id,
                 CourseName = course.Name,
                 TargetDate = today.AddMonths(-6 + i),
-                CompletedAt = today.AddMonths(-6 + i).AddDays(-rng.Next(0, 12)),
+                CompletedAt = completedAt,
                 Grade = grades[i % grades.Length],
                 CompletedTopics = string.Join(",", course.Topics),
                 CompletionNote = i == 0 ? content.CompletionNote : null,
@@ -193,6 +305,7 @@ public static class SampleDataset
         }
         ShapeMonthTrend(history, today);
         db.Sessions.AddRange(history);
+        db.Sessions.AddRange(EarlierSemesterHistory(userId, semester1, semester1CompletedAt, today));
 
         // ── Today: the day in progress ───────────────────────────────────────────
         // A session finished this morning (once "now" is past it, so nothing completed lies in
@@ -200,12 +313,13 @@ public static class SampleDataset
         // next", the calendar's day view and the focus page then all show a day in progress
         // instead of an empty one. Fixed times instead of random ones, so the shape holds at
         // every reseed time (a demo restart at any hour, a screenshot run with a pinned clock).
+        var ahead = new List<StudySessionEntity>();
         var morningStart = today.Add(TodaysCompletedStart);
         var morningEnd = morningStart.Add(TodaysCompletedLength);
         if (morningEnd <= now)
         {
             var course = active[0];
-            db.Sessions.Add(new StudySessionEntity
+            ahead.Add(new StudySessionEntity
             {
                 AuthUserId = userId,
                 CourseId = course.Id,
@@ -221,7 +335,7 @@ public static class SampleDataset
         if (PlannedStartToday(now) is { } plannedToday)
         {
             var course = active[1 % active.Count];
-            db.Sessions.Add(new StudySessionEntity
+            ahead.Add(new StudySessionEntity
             {
                 AuthUserId = userId,
                 CourseId = course.Id,
@@ -240,7 +354,7 @@ public static class SampleDataset
         {
             var course = active[courseIdx % active.Count];
             var start = today.AddDays(dayAhead).AddHours(startHour);
-            db.Sessions.Add(new StudySessionEntity
+            ahead.Add(new StudySessionEntity
             {
                 AuthUserId = userId,
                 CourseId = course.Id,
@@ -253,6 +367,28 @@ public static class SampleDataset
                 TimerModeId = 1,
             });
         }
+
+        // ── Planned up to the study goals (demo) ─────────────────────────────────
+        if (goals is not null)
+        {
+            ahead.AddRange(PlanUpToGoals([.. history, .. ahead], now, goals, (start, n) =>
+            {
+                var course = active[n % active.Count];
+                return new StudySessionEntity
+                {
+                    AuthUserId = userId,
+                    CourseId = course.Id,
+                    CourseName = course.Name,
+                    CourseColor = course.Color,
+                    StartTime = start,
+                    EndTime = start.Add(PlannedLength),
+                    Topic = course.Topics[n % course.Topics.Count],
+                    IsCompleted = false,
+                    TimerModeId = 1,
+                };
+            }));
+        }
+        db.Sessions.AddRange(ahead);
 
         // ── A few notes tied to the active courses ───────────────────────────────
         foreach (var note in content.Notes)

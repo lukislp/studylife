@@ -294,6 +294,21 @@ public class SampleAccountSeederTests : IClassFixture<CustomWebApplicationFactor
     }
 
     [Fact]
+    public void EnglishProgram_CreditsTheSameEctsAsTheBuiltInCatalog()
+    {
+        // The German and English demo must show the same ECTS, progress and forecast: same
+        // credits per module in the seeded semesters, same creditable total, same semester count.
+        foreach (var semester in new[] { 1, 2 })
+        {
+            var builtIn = CourseCatalog.AppliedAICourses.Where(c => c.Semester == semester).Select(c => c.Ects);
+            var english = EnglishSampleProgram.Program.Courses.Where(c => c.Semester == semester).Select(c => c.Ects);
+            Assert.Equal(builtIn, english);
+        }
+        Assert.Equal(CourseCatalog.CalcTotalEcts(CourseCatalog.AppliedAICourses), EnglishSampleProgram.Program.Courses.Sum(c => c.Ects));
+        Assert.Equal(CourseCatalog.AppliedAICourses.Max(c => c.Semester), EnglishSampleProgram.Program.Courses.Max(c => c.Semester));
+    }
+
+    [Fact]
     public async Task Seed_TouchesNoOtherAccount()
     {
         var target = await CreatePasswordAccountAsync("sample.target");

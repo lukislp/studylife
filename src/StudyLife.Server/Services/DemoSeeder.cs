@@ -103,6 +103,8 @@ public static class DemoSeeder
         await db.SaveChangesAsync(); // materialize user.Id for all rows below
 
         // ── The sample dataset itself (shared with SampleAccountSeeder) ──────────
-        await SampleDataset.PopulateAsync(db, user.Id, now, language);
+        // The demo seeds with study goals that match the sample pace and plans the current week
+        // and month up to them, so the quota tiles show the app "on track" (see SampleStudyGoals).
+        await SampleDataset.PopulateAsync(db, user.Id, now, language, SampleStudyGoals.Demo);
     }
 }
