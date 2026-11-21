@@ -8,7 +8,7 @@
     <div class="rhythm-grid">
         <div class="rhythm-col">
             <div class="rhythm-subtitle">@ByWeekdayLabel</div>
-            <div class="mini-bar-chart">
+            <div class="mini-bar-chart chart-plot chart-plot">
                 @foreach (var b in WeekdayHours)
                 {
                     <div class="mini-bar-col" title="@BarTitle(b)">
@@ -19,14 +19,14 @@
                             }
                             <div class="mini-bar-fill @(b.IsPeak ? "peak" : "")" style="height: @b.Percent%"></div>
                         </div>
-                        <div class="mini-bar-label">@b.Label</div>
+                        <div class="mini-bar-label chart-axis-label">@b.Label</div>
                     </div>
                 }
             </div>
         </div>
         <div class="rhythm-col">
             <div class="rhythm-subtitle">@ByTimeOfDayLabel</div>
-            <div class="mini-bar-chart">
+            <div class="mini-bar-chart chart-plot chart-plot">
                 @foreach (var b in TimeOfDayHours)
                 {
                     <div class="mini-bar-col" title="@BarTitle(b)">
@@ -37,7 +37,7 @@
                             }
                             <div class="mini-bar-fill @(b.IsPeak ? "peak" : "")" style="height: @b.Percent%"></div>
                         </div>
-                        <div class="mini-bar-label">@b.Label</div>
+                        <div class="mini-bar-label chart-axis-label">@b.Label</div>
                     </div>
                 }
             </div>

@@ -135,6 +135,13 @@ public class DashboardQuotaTileDto
     public bool Warning { get; set; }
     /// <summary>Shortfall to the minimum goal, formatted; empty when there is no shortfall.</summary>
     public string MissingLabel { get; set; } = "";
+    /// <summary>
+    /// The planned share of <see cref="HoursLabel"/> (sessions not studied yet, see
+    /// StudyMetrics.IsStudied), formatted; empty when everything counted has been studied. The
+    /// tile counts the planned week/month while the "This week" card and the month comparison count
+    /// studied hours only, so the tile names this share to make both figures add up.
+    /// </summary>
+    public string PlannedLabel { get; set; } = "";
 }
 
 /// <summary>One bar of the 8-week trend chart.</summary>

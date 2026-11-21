@@ -30,6 +30,7 @@
   "MonthQuotaTargetSuffix": "/ {0} – {1} óra",
   "MonthTargetLegend": "Cél: {0} – {1} óra",
   "MonthlyGoalMissingText": "Még {0} hiányzik a havi cél eléréséhez.",
+  "QuotaIncludesPlanned": "ebből {0} tervezett",
   "Last8Weeks": "Utolsó 8 hét",
   "UpcomingCourseGoals": "Közelgő tantárgyi célok",
   "InDays": "{0} nap múlva",

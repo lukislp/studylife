@@ -11,8 +11,8 @@
     }
     else
     {
-        <div class="grouped-chart-wrap">
-            <div class="grouped-chart">
+        <div class="chart-scroll">
+            <div class="grouped-chart chart-plot">
                 @foreach (var w in Weeks)
                 {
                     <div class="grouped-col">
@@ -24,7 +24,7 @@
                                 </div>
                             }
                         </div>
-                        <div class="grouped-label">@w.Label</div>
+                        <div class="grouped-label chart-axis-label">@w.Label</div>
                     </div>
                 }
             </div>

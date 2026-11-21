@@ -30,6 +30,7 @@
   "MonthQuotaTargetSuffix": "/ {0} – {1} h",
   "MonthTargetLegend": "Țintă: {0} – {1} h",
   "MonthlyGoalMissingText": "Mai ai nevoie de {0} pentru a atinge obiectivul lunar.",
+  "QuotaIncludesPlanned": "incl. {0} planificate",
   "Last8Weeks": "Ultimele 8 săptămâni",
   "UpcomingCourseGoals": "Obiective de curs viitoare",
   "InDays": "one=în {0} zi|few=în {0} zile|other=în {0} de zile",

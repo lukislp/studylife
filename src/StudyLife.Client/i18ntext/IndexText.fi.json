@@ -30,6 +30,7 @@
   "MonthQuotaTargetSuffix": "/ {0}–{1} h",
   "MonthTargetLegend": "Tavoite: {0}–{1} h",
   "MonthlyGoalMissingText": "Kuukausitavoitteeseen tarvitaan vielä {0}.",
+  "QuotaIncludesPlanned": "sis. {0} suunniteltua",
   "Last8Weeks": "Viimeiset 8 viikkoa",
   "UpcomingCourseGoals": "Tulevat kurssitavoitteet",
   "InDays": "{0} päivän kuluttua",

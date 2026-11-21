@@ -344,3 +344,21 @@ input::-webkit-date-and-time-value {
         scroll-behavior: auto !important;
     }
 }
+
+/* === Bar charts (stats cards, dashboard trend) ===
+   Every column chart shares these three classes, so axis labels behave the same everywhere:
+   - .chart-plot: the row of columns. Inner horizontal padding, so the first and last column's
+     centered label never touches or runs past the card edge (or the scroll edge of a
+     scrolling chart, where the last label used to end flush against the clip line).
+   - .chart-scroll: the wrapper of a chart that may be wider than its card (many weeks/months).
+     It scrolls sideways; its .chart-plot is as wide as its columns need, at least the card.
+     Scrolling happens here, never on the row itself, because WebKit drops a flex scroll
+     container's end padding and the last column would be clipped again.
+   - .chart-axis-label: a column's axis label (date, month, weekday). Never wrapped, ellipsized
+     or clipped: each column is at least as wide as its label (flex min-width: auto), and the
+     row's edge padding covers the outermost ones. */
+:root { --chart-edge-pad: 0.5rem; }
+.chart-plot { padding-inline: var(--chart-edge-pad); }
+.chart-scroll { overflow-x: auto; padding-bottom: 0.25rem; scroll-padding-inline: var(--chart-edge-pad); }
+.chart-scroll > .chart-plot { width: max-content; min-width: 100%; }
+.chart-axis-label { text-align: center; white-space: nowrap; overflow: visible; text-overflow: clip; }

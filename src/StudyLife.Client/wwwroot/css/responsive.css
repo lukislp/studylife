@@ -66,11 +66,11 @@
         height: calc(100dvh - 64px);
         margin-bottom: 0;
         /* A right lane for the floating action button would cost a phone ~15% of its width,
-           so here the button gets bottom clearance instead: the end of every page (and the
-           calendar grid's bottom edge) stays above it, nothing is left stuck underneath it.
-           The button sits 0.75rem above the tab bar, i.e. above this element's bottom edge. */
+           so here the button gets bottom clearance instead: the end of every page stays above
+           it, nothing is left stuck underneath it. The button sits 0.75rem above the tab bar,
+           i.e. above this element's bottom edge. */
         padding-right: 0;
-        padding-bottom: calc(var(--fab-size) + 1.5rem);
+        padding-bottom: var(--fab-clearance);
         /* On mobile the nav bar sits at the bottom, so nothing else reserves the top notch/
            Dynamic Island area - the WebView now covers the full physical screen
            (SafeAreaEdges="None"), so page content needs its own top inset here. Scrolls
@@ -80,11 +80,19 @@
         overflow-y: auto;
     }
 
+    /* The calendar shell is capped at the viewport and does not scroll, so bottom clearance
+       here would only shrink the grid (fewer hours visible). It keeps its plain bottom padding;
+       the grid's own scroll area reserves the room instead (.fab-scroll-end below). */
     .app-shell.page-calendar .main-content {
         height: calc(100vh - 64px);
         height: calc(100dvh - 64px);
         padding-right: 0;
+        padding-bottom: 1rem;
     }
+
+    /* A scroll area inside a non-scrolling page shell (the calendar grid): padding at the end
+       of its own scroll range, so its last rows can be scrolled above the button. */
+    .fab-scroll-end { padding-bottom: var(--fab-clearance); }
 
     .dashboard { padding: 1.25rem 1rem; }
     .dash-grid { grid-template-columns: 1fr; }

@@ -30,6 +30,7 @@
   "MonthQuotaTargetSuffix": "/ {0} – {1} год",
   "MonthTargetLegend": "Ціль: {0} – {1} год",
   "MonthlyGoalMissingText": "Ще потрібно {0}, щоб досягти місячної цілі.",
+  "QuotaIncludesPlanned": "у т. ч. {0} заплановано",
   "Last8Weeks": "Останні 8 тижнів",
   "UpcomingCourseGoals": "Найближчі цілі курсів",
   "InDays": "через {0} дн.",

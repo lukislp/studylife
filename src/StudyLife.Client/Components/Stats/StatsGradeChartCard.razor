@@ -5,7 +5,7 @@
 @using StudyLife.Shared
 <div class="setup-section">
     <div class="ss-label">@Label</div>
-    <div class="mini-bar-chart grade-chart">
+    <div class="mini-bar-chart chart-plot grade-chart">
         @foreach (var p in Points)
         {
             <div class="mini-bar-col" title="@p.Label: @Plural.Format(TooltipFormat, p.CourseCount, p.GradeLabel)">
@@ -14,7 +14,7 @@
                     @* Inverted scale: 1.0 (best grade) fills the bar, 5.0 stays near zero. *@
                     <div class="mini-bar-fill" style="height: @p.BarPercent%"></div>
                 </div>
-                <div class="mini-bar-label">@p.Label</div>
+                <div class="mini-bar-label chart-axis-label">@p.Label</div>
             </div>
         }
     </div>

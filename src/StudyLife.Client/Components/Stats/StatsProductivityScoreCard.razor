@@ -7,20 +7,22 @@
     <div class="rhythm-subtitle">@Description</div>
     @if (Weeks.Any(w => w.HasData))
     {
-        <div class="mini-bar-chart productivity-chart">
-            @foreach (var w in Weeks)
-            {
-                <div class="mini-bar-col" title="@(w.HasData ? $"{w.Label}: {w.PercentLabel}" : $"{w.Label}: {NoDataText}")">
-                    <div class="mini-bar-value">@(w.HasData ? w.PercentLabel : "–")</div>
-                    <div class="mini-bar-track">
-                        @if (w.HasData)
-                        {
-                            <div class="mini-bar-fill" style="height: @(w.Percent)%"></div>
-                        }
+        <div class="chart-scroll">
+            <div class="mini-bar-chart chart-plot productivity-chart">
+                @foreach (var w in Weeks)
+                {
+                    <div class="mini-bar-col" title="@(w.HasData ? $"{w.Label}: {w.PercentLabel}" : $"{w.Label}: {NoDataText}")">
+                        <div class="mini-bar-value">@(w.HasData ? w.PercentLabel : "–")</div>
+                        <div class="mini-bar-track">
+                            @if (w.HasData)
+                            {
+                                <div class="mini-bar-fill" style="height: @(w.Percent)%"></div>
+                            }
+                        </div>
+                        <div class="mini-bar-label chart-axis-label">@w.Label</div>
                     </div>
-                    <div class="mini-bar-label">@w.Label</div>
-                </div>
-            }
+                }
+            </div>
         </div>
     }
     else

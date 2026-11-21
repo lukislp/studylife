@@ -30,6 +30,7 @@
   "MonthQuotaTargetSuffix": "/ {0} – {1} ώ",
   "MonthTargetLegend": "Στόχος: {0} – {1} ώ",
   "MonthlyGoalMissingText": "Χρειάζονται ακόμη {0} για να επιτευχθεί ο μηνιαίος στόχος.",
+  "QuotaIncludesPlanned": "συμπ. {0} προγραμματισμένα",
   "Last8Weeks": "Τελευταίες 8 εβδομάδες",
   "UpcomingCourseGoals": "Επερχόμενοι στόχοι μαθημάτων",
   "InDays": "one=σε {0} ημέρα|other=σε {0} ημέρες",

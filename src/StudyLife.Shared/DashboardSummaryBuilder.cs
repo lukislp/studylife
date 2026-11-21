@@ -269,6 +269,7 @@ public static class DashboardSummaryBuilder
             Warning = weekQuota.Warning,
             HoursLabel = StudyMetrics.FormatHoursMinutes(weekHoursVal, omitZeroMinutes: true),
             MissingLabel = weekQuota.Warning ? StudyMetrics.FormatHoursMinutes(weekQuota.MissingHours, omitZeroMinutes: true) : "",
+            PlannedLabel = PlannedHoursLabel(weekSessions, now),
         };
 
         // Monthly quota: absolute monthly goal, independently configurable from the weekly goal.
@@ -288,6 +289,7 @@ public static class DashboardSummaryBuilder
             Warning = monthQuota.Warning,
             HoursLabel = StudyMetrics.FormatHoursMinutes(monthHoursVal, omitZeroMinutes: true),
             MissingLabel = monthQuota.Warning ? StudyMetrics.FormatHoursMinutes(monthQuota.MissingHours, omitZeroMinutes: true) : "",
+            PlannedLabel = PlannedHoursLabel(monthSessions, now),
         };
 
         // Weekly trend (last 8 weeks) - studied hours, same semantics as the week stats card, so
@@ -365,6 +367,18 @@ public static class DashboardSummaryBuilder
         result.AnomalyHint = BuildAnomalyHint(completedHistory, today);
         result.LatestNote = BuildLatestNote(input.Notes, allCourses);
         return result;
+    }
+
+    /// <summary>
+    /// The not-yet-studied share of a quota tile's sessions as an hours label, or "" when there is
+    /// none. The quota tiles count the planned week/month (studied + planned), every other hours
+    /// figure on the page only what was studied; naming the planned share on the tile is what lets
+    /// the two add up for the reader (e.g. 14h studied this week, a quota of 17h incl. 3h planned).
+    /// </summary>
+    private static string PlannedHoursLabel(IEnumerable<StudySessionDto> sessions, DateTime now)
+    {
+        var plannedHours = sessions.Where(s => !StudyMetrics.IsStudied(s, now)).Sum(s => (s.EndTime - s.StartTime).TotalHours);
+        return plannedHours > 0 ? StudyMetrics.FormatHoursMinutes(plannedHours, omitZeroMinutes: true) : "";
     }
 
     /// <summary>Weekdays of the current week that have already happened: 1 (Monday) .. 7 (Sunday).</summary>

@@ -25,74 +25,15 @@ public class DemoStoreNumbersTests : IClassFixture<CustomWebApplicationFactory>
         _factory.CreateClient();
     }
 
-    private sealed record Seeded(DashboardSummaryInput Dashboard, StatsSummaryInput Stats);
-
     /// <summary>Reseeds the demo for <paramref name="now"/> and assembles the builder inputs from
-    /// the database the way the summary endpoints do (all sessions are the demo user's).</summary>
-    private async Task<Seeded> SeedAsync(DateTime now, SampleDataLanguage language)
+    /// the database the way the summary endpoints do (the demo has exactly one settings row).</summary>
+    private async Task<SeededSummaryInputs.Inputs> SeedAsync(DateTime now, SampleDataLanguage language)
     {
         await _factory.WithDbAsync(db => DemoSeeder.ReseedAsync(db, now, language));
         return await _factory.WithDbAsync(async db =>
         {
-            var settingsEntity = await db.Settings.IgnoreQueryFilters().AsNoTracking().SingleAsync();
-            var settings = SettingsService.ToDto(settingsEntity);
-            var sessions = (await db.Sessions.IgnoreQueryFilters().AsNoTracking().ToListAsync())
-                .Select(SessionService.ToDto).ToList();
-            var goals = (await db.CourseGoals.IgnoreQueryFilters().AsNoTracking().ToListAsync())
-                .Select(CourseGoalService.ToDto).ToList();
-            var notes = (await db.Notes.IgnoreQueryFilters().AsNoTracking().ToListAsync())
-                .Select(NoteService.ToDto).ToList();
-
-            List<CourseDto> courses;
-            IReadOnlyDictionary<string, int> quotas;
-            if (settingsEntity.ActiveStudyProgramId is null)
-            {
-                courses = CourseCatalog.AppliedAICourses.ToList();
-                quotas = CourseCatalog.GroupEctsQuotas;
-            }
-            else
-            {
-                courses = (await db.CustomCourses.IgnoreQueryFilters().AsNoTracking().ToListAsync())
-                    .Select(c => new CourseDto
-                    {
-                        Id = StudyProgramCatalog.CustomCourseIdOffset + c.Id,
-                        Semester = c.Semester,
-                        Name = c.Name,
-                        Code = c.Code,
-                        Ects = c.Ects,
-                        Topics = c.Topics.Split(',').ToList(),
-                    })
-                    .ToList();
-                quotas = new Dictionary<string, int>();
-            }
-
-            var history = SummaryInputLoader.SliceHistory(sessions, now, DashboardSummaryBuilder.HistoryDays, onlyCompleted: false);
-            var heavy = SummaryInputLoader.SliceHistory(sessions, now, DashboardSummaryBuilder.AchievementHistoryDays);
-            return new Seeded(
-                new DashboardSummaryInput
-                {
-                    Settings = settings,
-                    AllCourses = courses,
-                    Sessions = sessions,
-                    History = history,
-                    HeavyHistory = heavy,
-                    Goals = goals,
-                    GroupQuotas = quotas,
-                    Notes = notes,
-                    Now = now,
-                },
-                new StatsSummaryInput
-                {
-                    Settings = settings,
-                    AllCourses = courses,
-                    Sessions = sessions,
-                    History = SummaryInputLoader.SliceHistory(sessions, now, StatsSummaryBuilder.HistoryDays),
-                    HeavyHistory = SummaryInputLoader.SliceHistory(sessions, now, StatsSummaryBuilder.AllTimeHistoryDays),
-                    Goals = goals,
-                    GroupQuotas = quotas,
-                    Notes = notes,
-                    Now = now,
-                });
+            var demoUserId = await db.Settings.IgnoreQueryFilters().AsNoTracking().Select(s => s.AuthUserId).SingleAsync();
+            return await SeededSummaryInputs.LoadAsync(db, demoUserId, now);
         });
     }
 
@@ -110,17 +51,21 @@ public class DemoStoreNumbersTests : IClassFixture<CustomWebApplicationFactory>
 
     [Theory]
     [MemberData(nameof(Days))]
-    public async Task The_demo_week_and_month_quotas_are_on_track_at_the_screenshot_clock(string day, SampleDataLanguage language)
+    public async Task The_demo_quotas_and_graduation_goal_are_on_track_at_the_screenshot_clock(string day, SampleDataLanguage language)
     {
         var now = DateTime.Parse(day).Add(new TimeSpan(9, 41, 0));
         var seeded = await SeedAsync(now, language);
 
-        var sessions = DashboardSummaryBuilder.BuildSessions(seeded.Dashboard);
+        var summary = DashboardSummaryBuilder.Build(seeded.Dashboard);
+        var sessions = summary.Sessions;
+        var graduation = summary.Progress.GraduationGoal;
+        Assert.True(graduation.Visible && !graduation.Expired && graduation.OnTrack,
+            $"graduation goal behind pace: needs {graduation.RequiredValue} h/week, pace {graduation.PaceValue}");
 
         Assert.False(sessions.WeekQuota.Warning, $"week {sessions.WeekQuota.HoursLabel} below {sessions.WeekQuota.TargetMin}h");
         Assert.False(sessions.MonthQuota.Warning, $"month {sessions.MonthQuota.HoursLabel} below {sessions.MonthQuota.TargetMin}h");
-        Assert.Equal(SampleStudyGoals.Demo.WeeklyMinHours, sessions.WeekQuota.TargetMin);
-        Assert.Equal(SampleStudyGoals.Demo.MonthlyMaxHours, sessions.MonthQuota.TargetMax);
+        Assert.Equal(SampleStudyGoals.SamplePace.WeeklyMinHours, sessions.WeekQuota.TargetMin);
+        Assert.Equal(SampleStudyGoals.SamplePace.MonthlyMaxHours, sessions.MonthQuota.TargetMax);
     }
 
     [Fact]

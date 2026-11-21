@@ -177,9 +177,51 @@ public static class SampleDataset
         return sessions;
     }
 
-    /// <param name="goals">Weekly/monthly study goals to seed with; the rest of the current week
-    /// and month is then planned up to their minimums. Null (an operator-chosen account) keeps the
-    /// account's own goals and plans nothing extra.</param>
+    /// <summary>
+    /// The account still has the entity's default study goals (25-30 h a week, 100-130 h a month),
+    /// i.e. it never set its own. Only then may the sample goals replace them; an account whose
+    /// goals differ keeps them. (An account that deliberately saved exactly the defaults cannot be
+    /// told apart; it gets the sample goals, which is what the sample data is for.)
+    /// </summary>
+    internal static bool HasDefaultStudyGoals(UserSettingsEntity settings)
+    {
+        var defaults = new UserSettingsEntity();
+        return settings.WeeklyGoalMinHours == defaults.WeeklyGoalMinHours
+            && settings.WeeklyGoalMaxHours == defaults.WeeklyGoalMaxHours
+            && settings.MonthlyGoalMinHours == defaults.MonthlyGoalMinHours
+            && settings.MonthlyGoalMaxHours == defaults.MonthlyGoalMaxHours;
+    }
+
+    /// <summary>Months the seeded graduation target lies after the forecast date.</summary>
+    internal const int GraduationTargetMarginMonths = 3;
+
+    /// <summary>
+    /// A desired graduation date the seeded pace actually reaches: the end of the month
+    /// <see cref="GraduationTargetMarginMonths"/> months after the forecast the dashboard computes
+    /// from the same data (<see cref="StudyMetrics.CalcForecast"/>, the shared implementation, so
+    /// nothing of its model is repeated here). The forecast date is exactly where the required
+    /// weekly hours of the graduation goal card equal the recent pace, so any later target reads
+    /// "on track" at seed time; a fixed "two years from now" read "behind pace" because the sample
+    /// student studies part-time (about 11-12 h a week). Falls back to two years and three months
+    /// when no forecast is possible.
+    /// </summary>
+    internal static DateTime GraduationTarget(IReadOnlyList<CourseDto> catalog, IReadOnlyDictionary<string, int> groupQuotas,
+        IEnumerable<int> completedCourseIds, IEnumerable<StudySessionEntity> sessions, int weeklyGoalMinHours,
+        int weeklyGoalMaxHours, DateTime now)
+    {
+        var forecast = StudyMetrics.CalcForecast(
+            CourseCatalog.CalcTotalEcts(catalog, groupQuotas),
+            CourseCatalog.CalcEctsEarned(catalog, completedCourseIds, groupQuotas),
+            catalog, weeklyGoalMinHours, weeklyGoalMaxHours, sessions.Select(SessionService.ToDto), now);
+        if (forecast.ForecastDate is not { } forecastDate) return now.Date.AddYears(2).AddMonths(3);
+
+        return new DateTime(forecastDate.Year, forecastDate.Month, 1).AddMonths(GraduationTargetMarginMonths + 1).AddDays(-1);
+    }
+
+    /// <param name="goals">Weekly/monthly study goals to seed with, unless the account already set
+    /// its own (<see cref="HasDefaultStudyGoals"/>); when they are seeded, the rest of the current
+    /// week and month is planned up to their minimums. Null keeps the account's goals and plans
+    /// nothing extra.</param>
     public static async Task PopulateAsync(StudyLifeDb db, int userId, DateTime now,
         SampleDataLanguage language = SampleDataLanguage.German, SampleStudyGoals? goals = null)
     {
@@ -196,8 +238,8 @@ public static class SampleDataset
 
         // ── Settings ─────────────────────────────────────────────────────────────
         // An existing account may already have its settings row (created on first use); only the
-        // course selection, the program and the graduation target are set, everything else keeps
-        // its value.
+        // course selection and the program are set, the study goals and the graduation target only
+        // where the account has none of its own, everything else keeps its value.
         var settings = await db.Settings.IgnoreQueryFilters().FirstOrDefaultAsync(s => s.AuthUserId == userId);
         if (settings is null)
         {
@@ -218,13 +260,15 @@ public static class SampleDataset
 
         settings.SelectedCourseIds = string.Join(",", active.Select(c => c.Id));
         settings.CompletedCourseIds = string.Join(",", semester1.Select(c => c.Id));
-        settings.TargetGraduationDate = today.AddYears(2).AddMonths(3);
-        if (goals is not null)
+        // Goals the account set itself are never overwritten: the sample goals (and the plan up to
+        // them further down) only replace the entity defaults.
+        var planGoals = goals is not null && HasDefaultStudyGoals(settings) ? goals : null;
+        if (planGoals is not null)
         {
-            settings.WeeklyGoalMinHours = goals.WeeklyMinHours;
-            settings.WeeklyGoalMaxHours = goals.WeeklyMaxHours;
-            settings.MonthlyGoalMinHours = goals.MonthlyMinHours;
-            settings.MonthlyGoalMaxHours = goals.MonthlyMaxHours;
+            settings.WeeklyGoalMinHours = planGoals.WeeklyMinHours;
+            settings.WeeklyGoalMaxHours = planGoals.WeeklyMaxHours;
+            settings.MonthlyGoalMinHours = planGoals.MonthlyMinHours;
+            settings.MonthlyGoalMaxHours = planGoals.MonthlyMaxHours;
         }
 
         // ── Completed semester 1: one goal row per course with grade + completion ──
@@ -368,10 +412,10 @@ public static class SampleDataset
             });
         }
 
-        // ── Planned up to the study goals (demo) ─────────────────────────────────
-        if (goals is not null)
+        // ── Planned up to the study goals (when the sample goals were seeded) ────
+        if (planGoals is not null)
         {
-            ahead.AddRange(PlanUpToGoals([.. history, .. ahead], now, goals, (start, n) =>
+            ahead.AddRange(PlanUpToGoals([.. history, .. ahead], now, planGoals, (start, n) =>
             {
                 var course = active[n % active.Count];
                 return new StudySessionEntity
@@ -389,6 +433,16 @@ public static class SampleDataset
             }));
         }
         db.Sessions.AddRange(ahead);
+
+        // ── Graduation target matching the seeded pace ───────────────────────────
+        // A target date the account already set stays.
+        // Elective-group quotas as the app applies them: the built-in catalog has its own, the
+        // English sample program defines none.
+        IReadOnlyDictionary<string, int> groupQuotas = content.Program is null
+            ? CourseCatalog.GroupEctsQuotas
+            : new Dictionary<string, int>();
+        settings.TargetGraduationDate ??= GraduationTarget(catalog, groupQuotas, semester1.Select(c => c.Id),
+            [.. history, .. ahead], settings.WeeklyGoalMinHours, settings.WeeklyGoalMaxHours, now);
 
         // ── A few notes tied to the active courses ───────────────────────────────
         foreach (var note in content.Notes)

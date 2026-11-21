@@ -30,6 +30,7 @@
   "MonthQuotaTargetSuffix": "/ {0} – {1} h",
   "MonthTargetLegend": "Cieľ: {0} – {1} h",
   "MonthlyGoalMissingText": "Do splnenia mesačného cieľa ešte chýba {0}.",
+  "QuotaIncludesPlanned": "vrát. {0} naplánovaných",
   "Last8Weeks": "Posledných 8 týždňov",
   "UpcomingCourseGoals": "Nadchádzajúce ciele kurzov",
   "InDays": "one=o {0} deň|few=o {0} dni|other=o {0} dní",

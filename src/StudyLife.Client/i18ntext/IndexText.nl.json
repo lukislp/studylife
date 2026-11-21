@@ -30,6 +30,7 @@
   "MonthQuotaTargetSuffix": "/ {0} – {1} u",
   "MonthTargetLegend": "Doel: {0} – {1} u",
   "MonthlyGoalMissingText": "Nog {0} nodig om het maandelijkse doel te halen.",
+  "QuotaIncludesPlanned": "incl. {0} gepland",
   "Last8Weeks": "Laatste 8 weken",
   "UpcomingCourseGoals": "Aankomende vakdoelen",
   "InDays": "one=over {0} dag|other=over {0} dagen",
