@@ -30,6 +30,7 @@
   "MonthQuotaTargetSuffix": "/ {0} – {1} u",
   "MonthTargetLegend": "Sprioc: {0} – {1} u",
   "MonthlyGoalMissingText": "Tá {0} fós ag teastáil chun an sprioc mhíosúil a bhaint amach.",
+  "QuotaIncludesPlanned": "lena n-áirítear {0} pleanáilte",
   "Last8Weeks": "Na 8 seachtaine seo caite",
   "UpcomingCourseGoals": "Spriocanna cúrsa atá le teacht",
   "InDays": "i {0} lá",

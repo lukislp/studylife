@@ -47,7 +47,9 @@ public static class SampleAccountSeeder
 
         if (await HasStudyDataAsync(db, id)) return SampleAccountSeedOutcome.AccountHasData;
 
-        await SampleDataset.PopulateAsync(db, id, now, language);
+        // Same goals as the demo, so a sample account (e.g. App Review) shows on-track quotas;
+        // goals the account already set itself stay (SampleDataset.HasDefaultStudyGoals).
+        await SampleDataset.PopulateAsync(db, id, now, language, SampleStudyGoals.SamplePace);
         return SampleAccountSeedOutcome.Seeded;
     }
 

@@ -45,6 +45,7 @@ public partial class Index
     private string _weekQuotaMissing = "";
     private int _weekQuotaMin;
     private int _weekQuotaMax;
+    private string _weekQuotaPlanned = "";
 
     // Monthly quota
     private string _monthHours = "0h";
@@ -54,6 +55,12 @@ public partial class Index
     private double _quotaMinPercent;
     private bool _quotaWarning;
     private string _quotaMissing = "";
+    private string _quotaPlanned = "";
+
+    // The quota tiles count the planned week/month, the "This week" card and the month comparison
+    // only studied time: the tile names its planned share ("incl. 3h planned") so both add up.
+    private string QuotaPlannedNote(string plannedLabel) =>
+        string.IsNullOrEmpty(plannedLabel) ? "" : string.Format(T.QuotaIncludesPlanned ?? "", plannedLabel);
 
     private DashboardQuotaCard.QuotaCardData WeekQuotaData => new(
         "card-quota-week",
@@ -65,7 +72,8 @@ public partial class Index
         _weekQuotaMinPercent,
         T.ZeroHours,
         string.Format(T.WeekTargetLegend ?? "", _weekQuotaMin, _weekQuotaMax),
-        _weekQuotaWarning ? (MarkupString?)new MarkupString(string.Format(T.WeeklyGoalMissingText ?? "", $"<strong>{_weekQuotaMissing}</strong>")) : null);
+        _weekQuotaWarning ? (MarkupString?)new MarkupString(string.Format(T.WeeklyGoalMissingText ?? "", $"<strong>{_weekQuotaMissing}</strong>")) : null,
+        QuotaPlannedNote(_weekQuotaPlanned));
 
     private DashboardQuotaCard.QuotaCardData MonthQuotaData => new(
         "card-quota",
@@ -77,7 +85,8 @@ public partial class Index
         _quotaMinPercent,
         T.ZeroHours,
         string.Format(T.MonthTargetLegend ?? "", _monthTargetMin, _monthTargetMax),
-        _quotaWarning ? (MarkupString?)new MarkupString(string.Format(T.MonthlyGoalMissingText ?? "", $"<strong>{_quotaMissing}</strong>")) : null);
+        _quotaWarning ? (MarkupString?)new MarkupString(string.Format(T.MonthlyGoalMissingText ?? "", $"<strong>{_quotaMissing}</strong>")) : null,
+        QuotaPlannedNote(_quotaPlanned));
 
     private string FocusScoreStatusText => _focusScorePercent >= 100
         ? T.FocusScoreAllOnPlan ?? ""
@@ -467,6 +476,7 @@ public partial class Index
         _weekQuotaWarning = s.WeekQuota.Warning;
         _weekQuotaHours = s.WeekQuota.HoursLabel;
         _weekQuotaMissing = s.WeekQuota.MissingLabel;
+        _weekQuotaPlanned = s.WeekQuota.PlannedLabel;
 
         _monthTargetMin = s.MonthQuota.TargetMin;
         _monthTargetMax = s.MonthQuota.TargetMax;
@@ -475,6 +485,7 @@ public partial class Index
         _quotaWarning = s.MonthQuota.Warning;
         _monthHours = s.MonthQuota.HoursLabel;
         _quotaMissing = s.MonthQuota.MissingLabel;
+        _quotaPlanned = s.MonthQuota.PlannedLabel;
 
         _weeklyTrend = s.WeeklyTrend
             .Select(w => new DashboardTrendChart.WeekTrend(w.WeekStart, w.Label, w.Hours, w.Percent, w.IsCurrent))

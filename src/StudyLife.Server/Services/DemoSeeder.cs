@@ -105,6 +105,6 @@ public static class DemoSeeder
         // ── The sample dataset itself (shared with SampleAccountSeeder) ──────────
         // The demo seeds with study goals that match the sample pace and plans the current week
         // and month up to them, so the quota tiles show the app "on track" (see SampleStudyGoals).
-        await SampleDataset.PopulateAsync(db, user.Id, now, language, SampleStudyGoals.Demo);
+        await SampleDataset.PopulateAsync(db, user.Id, now, language, SampleStudyGoals.SamplePace);
     }
 }

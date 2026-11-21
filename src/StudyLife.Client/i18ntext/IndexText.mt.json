@@ -30,6 +30,7 @@
   "MonthQuotaTargetSuffix": "/ {0} – {1} h",
   "MonthTargetLegend": "Mira: {0} – {1} h",
   "MonthlyGoalMissingText": "Għad jonqsu {0} biex tilħaq il-mira ta' dan ix-xahar.",
+  "QuotaIncludesPlanned": "inkl. {0} ippjanati",
   "Last8Weeks": "Aħħar 8 ġimgħat",
   "UpcomingCourseGoals": "Miri li ġejjin għall-korsijiet",
   "InDays": "few=fi {0} jiem|other=fi {0} jum",

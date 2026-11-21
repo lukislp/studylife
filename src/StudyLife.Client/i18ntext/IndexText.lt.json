@@ -30,6 +30,7 @@
   "MonthQuotaTargetSuffix": "/ {0} – {1} val.",
   "MonthTargetLegend": "Tikslas: {0} – {1} val.",
   "MonthlyGoalMissingText": "Iki mėnesio tikslo trūksta {0}.",
+  "QuotaIncludesPlanned": "įskaitant {0} suplanuotų",
   "Last8Weeks": "Paskutinės 8 savaitės",
   "UpcomingCourseGoals": "Artėjantys kursų tikslai",
   "InDays": "po {0} d.",
