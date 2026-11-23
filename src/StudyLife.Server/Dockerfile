@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 Lukas Körber
 # SPDX-License-Identifier: AGPL-3.0-only
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0@sha256:12b1135f5f8b3c0a214f2a680ff2033dff4f684f445d6c697d9524ceeb303586 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:10.0@sha256:aac50ceef10391e78a899e3d2ccd00bbafa2dcb56ccf4586cbccf00edb84fc21 AS base
 WORKDIR /app
 EXPOSE 8080
 ENV TZ=Europe/Berlin
