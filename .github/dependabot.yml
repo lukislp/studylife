@@ -73,6 +73,10 @@ updates:
         versions: ["11.*"]
       - dependency-name: "Npgsql.EntityFrameworkCore.PostgreSQL"
         versions: ["11.*"]
+      # Npgsql.OpenTelemetry 11 pulls the Npgsql 11 driver underneath the 10.x EF Core provider,
+      # a combination the provider is not built for (#626). It moves with the provider.
+      - dependency-name: "Npgsql.OpenTelemetry"
+        versions: ["11.*"]
       - dependency-name: "Microsoft.SourceLink.*"
         versions: ["11.*"]
     commit-message:
