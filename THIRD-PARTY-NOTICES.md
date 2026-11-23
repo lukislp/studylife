@@ -62,7 +62,7 @@ holder (years are left out) or project URL changes.
 | Microsoft.Extensions.Configuration.FileExtensions | MIT | https://dot.net/ | Client |
 | Microsoft.Extensions.Configuration.Json | MIT | https://dot.net/ | Client |
 | Microsoft.Extensions.DependencyInjection | MIT | https://dot.net/ | Client |
-| Microsoft.Extensions.DependencyInjection.Abstractions | MIT | https://dot.net/ | Client |
+| Microsoft.Extensions.DependencyInjection.Abstractions | MIT | https://dot.net/ | Client, Server |
 | Microsoft.Extensions.DependencyModel | MIT | https://dot.net/ | Server |
 | Microsoft.Extensions.Diagnostics | MIT | https://dot.net/ | Client |
 | Microsoft.Extensions.Diagnostics.Abstractions | MIT | https://dot.net/ | Client |
@@ -71,7 +71,7 @@ holder (years are left out) or project URL changes.
 | Microsoft.Extensions.FileSystemGlobbing | MIT | https://dot.net/ | Client |
 | Microsoft.Extensions.Http | MIT | https://dot.net/ | Client |
 | Microsoft.Extensions.Logging | MIT | https://dot.net/ | Client |
-| Microsoft.Extensions.Logging.Abstractions | MIT | https://dot.net/ | Client |
+| Microsoft.Extensions.Logging.Abstractions | MIT | https://dot.net/ | Client, Server |
 | Microsoft.Extensions.Options | MIT | https://dot.net/ | Client |
 | Microsoft.Extensions.Options.ConfigurationExtensions | MIT | https://dot.net/ | Client |
 | Microsoft.Extensions.Primitives | MIT | https://dot.net/ | Client |
