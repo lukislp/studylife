@@ -177,6 +177,10 @@ spec:
         - podSelector: { matchLabels: { cnpg.io/cluster: studylife-pg } }
       ports:
         - { protocol: TCP, port: 5432 }
+        # Instance status port. When the API server is unreachable, the liveness probe asks the
+        # peer instances here whether the primary is isolated; without it a short API server
+        # outage restarts the primary and forces a failover.
+        - { protocol: TCP, port: 8000 }
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
