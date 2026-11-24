@@ -169,7 +169,7 @@ spec:
           # Tag AND digest on purpose: the digest is what gets pulled, the tag is the human- and
           # Renovate-readable version. Renovate's kubernetes manager (renovate.json) moves both
           # together from here, so updates stay a reviewable pull request.
-          image: redis:8.12.0-alpine@sha256:ff55e25203f915f2fe9cc1428e6da969fec257dd6e6feb71a34fd0cf3a86b289
+          image: redis:8.12.0-alpine@sha256:5af80107c1eeecb484a2269b80a26d12bfa6521787da4663bd9f19f60a163483
           # Redis AUTH (audit O6 round 2, enabled 2026-09 via the zero-downtime ACL path in
           # docs/SCALING.md "Redis AUTH"): requirepass locks the default user, masterauth lets
           # each replica keep authenticating to its master (replication runs over the regular
@@ -259,7 +259,7 @@ spec:
         # shard-claim keys (see RedisWorkerShardClaim.cs) directly as a Prometheus metric,
         # WITHOUT any app code change - the basis of the worker shard dashboard.
         - name: redis-exporter
-          image: oliver006/redis_exporter:v1.98.0
+          image: oliver006/redis_exporter:v1.99.0
           # With requirepass active this exporter needs the password too, or every scrape fails
           # (NOAUTH) and the shard-claim dashboard silently goes stale while the exporter's OWN
           # /health below stays green (it only checks the exporter process, not its Redis link).
@@ -314,7 +314,7 @@ spec:
         # and cheap, so a false positive costs nothing; a rolling restart never triggers it
         # (five nodes stay up and gossip the new address). Peer count must match .spec.replicas.
         - name: cluster-mender
-          image: redis:8.12.0-alpine@sha256:ff55e25203f915f2fe9cc1428e6da969fec257dd6e6feb71a34fd0cf3a86b289
+          image: redis:8.12.0-alpine@sha256:5af80107c1eeecb484a2269b80a26d12bfa6521787da4663bd9f19f60a163483
           command:
             - sh
             - -c
