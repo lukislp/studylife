@@ -13,7 +13,6 @@
   "HealthConnectButton": "Yhdistä Apple Health",
   "HealthConnected": "Yhdistetty. Sen, mitä StudyAtrium saa lukea ja kirjoittaa, voit muuttaa Terveys-sovelluksessa.",
   "HealthDeclined": "Pääsy Apple Healthiin on pois päältä. Ota se käyttöön avaamalla Terveys-sovellus, napauttamalla profiilikuvaasi, valitsemalla Sovellukset ja sitten StudyAtrium.",
-  "HealthSourceLabel": "Apple Health",
   "LanguageFromSystemHint": "StudyAtrium käyttää kieltä, jonka olet valinnut sille järjestelmän asetuksissa.",
   "OpenLanguageSettingsButton": "Avaa asetukset"
 }

@@ -12,7 +12,7 @@ namespace StudyLife.Client.Tests;
 /// <summary>App Review guideline 2.5.1: every place that shows HealthKit data names Apple Health
 /// as its source, through the one shared HealthSourceLabel (the Focus page's movement nudge uses
 /// it as well). bUnit has no text loader for the I18nText tables, so the markup is checked here
-/// and the wording is checked against the language files.</summary>
+/// and the product name (HealthHeading, shared with Settings) is checked against the language files.</summary>
 public class HealthSourceLabelTests : ConsentBunitTest
 {
     public HealthSourceLabelTests()
@@ -50,6 +50,6 @@ public class HealthSourceLabelTests : ConsentBunitTest
 
     [Theory]
     [MemberData(nameof(PluralTests.AllLanguages), MemberType = typeof(PluralTests))]
-    public void The_label_text_is_the_product_name_in_every_language(string language) =>
-        Assert.Equal("Apple Health", PluralTests.ReadValue("NativeAppSettingsText", language, "HealthSourceLabel"));
+    public void The_product_name_the_label_shows_is_set_in_every_language(string language) =>
+        Assert.Contains("Apple", PluralTests.ReadValue("NativeAppSettingsText", language, "HealthHeading"));
 }

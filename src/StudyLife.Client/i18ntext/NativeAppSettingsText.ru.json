@@ -13,7 +13,6 @@
   "HealthConnectButton": "Подключить Apple Health",
   "HealthConnected": "Подключено. Что StudyAtrium может читать и записывать, можно изменить в приложении «Здоровье».",
   "HealthDeclined": "Доступ к Apple Health выключен. Чтобы включить его, открой приложение «Здоровье», коснись фото профиля, выбери «Приложения», затем StudyAtrium.",
-  "HealthSourceLabel": "Apple Health",
   "LanguageFromSystemHint": "StudyAtrium использует язык, заданный для приложения в настройках системы.",
   "OpenLanguageSettingsButton": "Открыть настройки"
 }

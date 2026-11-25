@@ -13,7 +13,6 @@
   "HealthConnectButton": "Apple Health összekapcsolása",
   "HealthConnected": "Összekapcsolva. Hogy a StudyAtrium mit olvashat és írhat, azt az Egészség appban módosíthatod.",
   "HealthDeclined": "Az Apple Health-hozzáférés ki van kapcsolva. A bekapcsoláshoz nyisd meg az Egészség appot, koppints a profilképedre, válaszd az Appok, majd a StudyAtrium lehetőséget.",
-  "HealthSourceLabel": "Apple Health",
   "LanguageFromSystemHint": "A StudyAtrium azt a nyelvet használja, amelyet a rendszerbeállításokban megadtál neki.",
   "OpenLanguageSettingsButton": "Beállítások megnyitása"
 }

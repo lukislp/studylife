@@ -13,7 +13,6 @@
   "HealthConnectButton": "Připojit Apple Health",
   "HealthConnected": "Připojeno. Co smí StudyAtrium v aplikaci Zdraví číst a zapisovat, můžeš změnit tam.",
   "HealthDeclined": "Přístup k Apple Health je vypnutý. Zapneš ho tak, že otevřeš aplikaci Zdraví, klepneš na profilový obrázek, vybereš Aplikace a pak StudyAtrium.",
-  "HealthSourceLabel": "Apple Health",
   "LanguageFromSystemHint": "StudyAtrium používá jazyk, který je pro aplikaci nastavený v nastavení systému.",
   "OpenLanguageSettingsButton": "Otevřít nastavení"
 }
