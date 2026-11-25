@@ -85,7 +85,10 @@
     @if (_showMovementNudge)
     {
         <div class="focus-remote-banner">
-            🧍 @T.MovementNudgeText
+            <div>
+                🧍 @T.MovementNudgeText
+                <HealthSourceLabel />
+            </div>
             <button type="button" class="focus-nudge-dismiss" @onclick="DismissMovementNudge">@T.MovementNudgeDismiss</button>
         </div>
     }

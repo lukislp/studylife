@@ -362,3 +362,8 @@ input::-webkit-date-and-time-value {
 .chart-scroll { overflow-x: auto; padding-bottom: 0.25rem; scroll-padding-inline: var(--chart-edge-pad); }
 .chart-scroll > .chart-plot { width: max-content; min-width: 100%; }
 .chart-axis-label { text-align: center; white-space: nowrap; overflow: visible; text-overflow: clip; }
+
+/* Source caption under cards that show Apple Health data (HealthSourceLabel.razor); --text3 is the
+   AA-checked muted text colour in both themes. */
+.health-source { display: flex; align-items: center; gap: 0.3rem; margin-top: 0.6rem; font-size: 0.7rem; color: var(--text3); }
+.health-source-icon { flex-shrink: 0; }
