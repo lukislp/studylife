@@ -4,6 +4,7 @@
 using Bunit;
 using StudyLife.Client.Components.Stats;
 using StudyLife.Client.Services;
+using Toolbelt.Blazor.Extensions.DependencyInjection;
 
 namespace StudyLife.Client.Tests;
 
@@ -221,10 +222,13 @@ public class LocalNumberTests : IDisposable
     [Theory]
     [InlineData("en", "42.5")]
     [InlineData("de", "42,5")]
-    public void The_vo2max_values_follow_the_ui_language(string language, string expected)
+    public async Task The_vo2max_values_follow_the_ui_language(string language, string expected)
     {
         LocalDate.Language = language;
-        using var ctx = new BunitContext();
+        // The card's Apple Health caption loads its text table, which only implements IAsyncDisposable.
+        await using var ctx = new BunitContext();
+        ctx.JSInterop.Mode = JSRuntimeMode.Loose;
+        ctx.Services.AddI18nText();
 
         var cut = ctx.Render<StatsCardioFitnessTrendCard>(p => p
             .Add(c => c.ValueFormat, "{0} ml/kg/min")

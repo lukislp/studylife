@@ -13,6 +13,7 @@
   "HealthConnectButton": "Poveži Apple Health",
   "HealthConnected": "Povezano. Kaj sme StudyAtrium brati in zapisovati, lahko spremeniš v aplikaciji Zdravje.",
   "HealthDeclined": "Dostop do Apple Health je izklopljen. Za vklop odpri aplikacijo Zdravje, tapni profilno sliko, izberi Aplikacije in nato StudyAtrium.",
+  "HealthSourceLabel": "Apple Health",
   "LanguageFromSystemHint": "StudyAtrium uporablja jezik, ki je zanj nastavljen v sistemskih nastavitvah.",
   "OpenLanguageSettingsButton": "Odpri nastavitve"
 }

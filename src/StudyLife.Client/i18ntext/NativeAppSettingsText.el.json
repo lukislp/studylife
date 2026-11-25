@@ -13,6 +13,7 @@
   "HealthConnectButton": "Σύνδεση με Apple Health",
   "HealthConnected": "Συνδέθηκε. Τι μπορεί να διαβάζει και να γράφει το StudyAtrium στην εφαρμογή Υγεία, το αλλάζεις εκεί.",
   "HealthDeclined": "Η πρόσβαση στο Apple Health είναι απενεργοποιημένη. Για να την ενεργοποιήσεις, άνοιξε την εφαρμογή Υγεία, πάτησε την εικόνα προφίλ σου, επίλεξε Εφαρμογές και μετά StudyAtrium.",
+  "HealthSourceLabel": "Apple Health",
   "LanguageFromSystemHint": "Το StudyAtrium χρησιμοποιεί τη γλώσσα που έχεις ορίσει για την εφαρμογή στις ρυθμίσεις του συστήματος.",
   "OpenLanguageSettingsButton": "Άνοιγμα ρυθμίσεων"
 }

@@ -13,6 +13,7 @@
   "HealthConnectButton": "Qabbad Apple Health",
   "HealthConnected": "Konness. Dak li StudyAtrium jista' jaqra u jikteb tista' tbiddlu fl-app Health.",
   "HealthDeclined": "L-aċċess għal Apple Health huwa mitfi. Biex iddawwru, iftaħ l-app Health, tektek ir-ritratt tal-profil tiegħek, agħżel Apps u mbagħad StudyAtrium.",
+  "HealthSourceLabel": "Apple Health",
   "LanguageFromSystemHint": "StudyAtrium juża l-lingwa li ssettjajt għalih fis-settings tas-sistema.",
   "OpenLanguageSettingsButton": "Iftaħ is-settings"
 }

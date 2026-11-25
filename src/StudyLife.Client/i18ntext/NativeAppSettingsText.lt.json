@@ -13,6 +13,7 @@
   "HealthConnectButton": "Prijungti „Apple Health“",
   "HealthConnected": "Prijungta. Ką „StudyAtrium“ gali skaityti ir rašyti, gali pakeisti programėlėje „Health“.",
   "HealthDeclined": "Prieiga prie „Apple Health“ išjungta. Norėdamas ją įjungti, atidaryk programėlę „Health“, bakstelėk savo profilio nuotrauką, pasirink „Apps“, tada „StudyAtrium“.",
+  "HealthSourceLabel": "Apple Health",
   "LanguageFromSystemHint": "„StudyAtrium“ naudoja kalbą, kuri jai nustatyta sistemos nustatymuose.",
   "OpenLanguageSettingsButton": "Atidaryti nustatymus"
 }

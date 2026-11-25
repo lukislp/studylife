@@ -13,6 +13,7 @@
   "HealthConnectButton": "Conectar Apple Health",
   "HealthConnected": "Conectado. Lo que StudyAtrium puede leer o escribir lo cambias en la app Salud.",
   "HealthDeclined": "El acceso a Apple Health está desactivado. Para activarlo, abre la app Salud, toca tu foto de perfil, elige Apps y después StudyAtrium.",
+  "HealthSourceLabel": "Apple Health",
   "LanguageFromSystemHint": "StudyAtrium usa el idioma que hayas elegido para la app en los ajustes del sistema.",
   "OpenLanguageSettingsButton": "Abrir ajustes"
 }

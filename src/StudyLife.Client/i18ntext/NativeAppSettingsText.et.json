@@ -13,6 +13,7 @@
   "HealthConnectButton": "Ühenda Apple Health",
   "HealthConnected": "Ühendatud. Mida StudyAtrium võib rakenduses Health lugeda ja kirjutada, saad muuta seal.",
   "HealthDeclined": "Juurdepääs Apple Healthile on välja lülitatud. Sisselülitamiseks ava rakendus Health, puuduta oma profiilipilti, vali Apps ja seejärel StudyAtrium.",
+  "HealthSourceLabel": "Apple Health",
   "LanguageFromSystemHint": "StudyAtrium kasutab keelt, mille oled rakendusele süsteemi seadetes määranud.",
   "OpenLanguageSettingsButton": "Ava seaded"
 }

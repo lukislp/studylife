@@ -13,6 +13,7 @@
   "HealthConnectButton": "Anslut Apple Hälsa",
   "HealthConnected": "Ansluten. Vad StudyAtrium får läsa och skriva ändrar du i Hälsa-appen.",
   "HealthDeclined": "Åtkomst till Apple Hälsa är avstängd. Slå på den genom att öppna Hälsa-appen, trycka på din profilbild, välja Appar och sedan StudyAtrium.",
+  "HealthSourceLabel": "Apple Health",
   "LanguageFromSystemHint": "StudyAtrium använder det språk du har valt för appen i systeminställningarna.",
   "OpenLanguageSettingsButton": "Öppna inställningar"
 }
